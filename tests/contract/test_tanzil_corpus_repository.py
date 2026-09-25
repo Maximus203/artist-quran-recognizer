@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from aqr.corpus.checksums import CorpusChecksumError, CorpusLock
+from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.domain.models import Riwaya, VerseRef
 from aqr.domain.quran_structure import SURAH_COUNT, TOTAL_AYAHS, ayah_count
@@ -61,9 +62,18 @@ def test_texte_exact_octet_pour_octet_vs_fichier_source(repo):  # P10
         assert repo.text(ref) == raw_by_ref[ref]
 
 
-def test_words_retourne_le_decoupage_par_espace_du_texte_uthmani(repo):
+def test_words_exclut_les_marques_de_pause_isolees(repo):
+    # 2:255 (Ayat al-Kursi) porte 8 marques de pause (ۖ ۗ) séparées par des espaces
+    # dans le texte Tanzil : ce sont des indications de récitation, pas des mots.
+    raw_tokens = repo.text(VerseRef(2, 255)).split()
+    words = repo.words(VerseRef(2, 255))
+    assert len(words) < len(raw_tokens)
+    assert all(normalize_arabic(w) for w in words)
+
+
+def test_words_retourne_le_decoupage_du_texte_uthmani_sans_les_marques(repo):
     for ref in [VerseRef(1, 1), VerseRef(112, 1), VerseRef(2, 255)]:
-        assert repo.words(ref) == tuple(repo.text(ref).split())
+        assert repo.words(ref) == tuple(w for w in repo.text(ref).split() if normalize_arabic(w))
     # 112:1 inclut la basmala dans le texte Tanzil (convention pour les sourates
     # autres qu'At-Tawbah) : 4 mots de basmala + 4 mots de "قُلْ هُوَ ٱللَّهُ أَحَدٌ".
     assert len(repo.words(VerseRef(112, 1))) == 8
@@ -105,6 +115,12 @@ def test_correspondance_mot_a_mot_uthmani_simple_sur_echantillon(repo, ref):
 
 
 def _simple_clean_words(ref: VerseRef) -> list[str]:
+    """Mots simple-clean d'un verset, hors marques de pause isolées (ۖ ۗ ۚ ...).
+
+    Le fichier simple-clean de Tanzil les inclut aussi comme tokens séparés malgré
+    `marks=false` — mêmes règle de filtrage que `TanzilCorpusRepository.words()`,
+    pour comparer des grandeurs comparables (nombre de mots réellement récités).
+    """
     lock = CorpusLock.load(CORPUS_DIR / "LOCK.json")
     raw = (CORPUS_DIR / lock.files["simple_clean"].path).read_text(encoding="utf-8")
     for line in raw.splitlines():
@@ -115,7 +131,7 @@ def _simple_clean_words(ref: VerseRef) -> list[str]:
             continue
         surah_s, ayah_s, text = parts
         if int(surah_s) == ref.surah and int(ayah_s) == ref.ayah:
-            return text.split()
+            return [w for w in text.split() if normalize_arabic(w)]
     raise AssertionError(f"verset {ref} introuvable dans simple-clean")
 
 

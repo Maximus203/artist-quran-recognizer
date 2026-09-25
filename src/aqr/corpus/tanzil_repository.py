@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from aqr.corpus.checksums import CorpusChecksumError, CorpusLock
+from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_format import parse_tanzil_txt
 from aqr.domain.models import Riwaya, VerseRef
 from aqr.domain.quran_structure import SURAH_COUNT, ayah_count
@@ -51,7 +52,15 @@ class TanzilCorpusRepository:
         return self._texts[ref]
 
     def words(self, ref: VerseRef) -> tuple[str, ...]:
-        return tuple(self._texts[ref].split())
+        """Mots du verset (tokenisation Uthmani), sans les marques de pause (waqf).
+
+        Le texte Tanzil sépare par des espaces aussi bien les mots que les signes de
+        pause isolés (ۖ ۗ ۚ ۛ ...) et de sajda/rub — ce ne sont pas des mots récités,
+        `text()` les conserve (rendu fidèle, I1) mais `words()` les exclut : un token
+        qui ne normalise vers aucune lettre arabe (`normalize_arabic` vide) n'est pas
+        un mot. Découvert sur 2:255 (8 marques de pause) lors de la brique B6.
+        """
+        return tuple(w for w in self._texts[ref].split() if normalize_arabic(w))
 
     def all_refs(self) -> Sequence[VerseRef]:
         return self._refs

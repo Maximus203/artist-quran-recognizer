@@ -24,3 +24,20 @@
   verset. À prendre en compte dans le matcher et le rendu par lots.
 - Corpus Hafs Tanzil Uthmani + simple-clean téléchargés et épinglés (CC-BY-3.0),
   6236 versets vérifiés. `data/corpus/` gitignoré (poids) ; seul `LOCK.json` versionné.
+
+## 2026-09-25 — Brique `NgramVerseMatcher` (B6)
+- **Bug trouvé en écrivant P3** (transcription exacte de 2:255 devait matcher à
+  score 1.0, obtenait 0.93) : le texte Tanzil sépare par des espaces non seulement
+  les mots mais aussi les marques de pause isolées (ۖ ۗ ۚ ۛ...) — 8 sur 2:255 à elles
+  seules, dans le fichier Uthmani **et** simple-clean malgré `marks=false` sur ce
+  dernier. `words()` les comptait comme des « mots ».
+- **Correction** : `TanzilCorpusRepository.words()` exclut désormais tout token dont
+  `normalize_arabic()` est vide (aucune lettre arabe) — `text()` reste inchangé
+  (rendu fidèle, I1, les marques de pause en font partie du Mushaf affiché).
+- Index B6 : n-grammes de mots (trigrammes, replis uni/bigramme pour les ~quelques
+  versets < 3 mots comme 55:64) construits sur `words()` (Uthmani, jamais
+  simple-clean, cf. décision précédente). Pas de seuil de rejet codé en dur dans le
+  matcher : l'absence de recouvrement de n-gramme suffit pour F3/F4, le seuil de
+  confiance final reste une décision calibrée de la brique appelante (I3).
+- Perf mesurée : construction de l'index sur 6236 versets + 6 tests ≈ 0,85 s ;
+  une requête après échauffement < 50 ms (budget NF3 respecté).
