@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from aqr.domain.models import Riwaya, Timeline, TimeSpan, VerseRef, WordSpan
+from aqr.domain.models import Detection, Riwaya, Timeline, TimeSpan, VerseRef, WordSpan
 
 
 @dataclass(frozen=True)
@@ -105,3 +105,25 @@ class Translation:
 
 class TranslationRepository(Protocol):
     def get(self, ref: VerseRef, translation_id: str) -> Translation: ...
+
+
+# --- B9 -------------------------------------------------------------------
+@dataclass(frozen=True)
+class BatchOptions:
+    batch_size: int | None = None
+    """Nombre de versets par lot (F8 : `--batch-size N`). None = un seul lot."""
+
+
+@dataclass(frozen=True)
+class RenderedBatch:
+    index: int
+    detections: tuple[Detection, ...]
+    json: dict[str, object]
+    srt: str
+    vtt: str
+
+
+class Renderer(Protocol):
+    def render(
+        self, timeline: Timeline, translation_id: str, options: BatchOptions
+    ) -> list[RenderedBatch]: ...
