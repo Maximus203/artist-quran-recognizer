@@ -61,3 +61,21 @@
 - Testé en pur (sans corpus, mécanique de transition/fusion/comblement) et contre le
   corpus réel (P5-P9, F5) + une propriété Hypothesis : toute suite consécutive propre
   tirée du Mushaf est restituée à l'identique, RECOGNIZED, sans fusion ni trou.
+
+## 2026-09-25 — Brique `Renderer` (B9) + `QuranEncTranslationRepository`
+- **Port `Renderer` ajouté à `domain/ports.py`** : absent du fichier malgré
+  l'architecture (§3 le liste). `BatchOptions`/`RenderedBatch` complètent le port.
+- Pas de dossier dédié prévu dans l'arbre `docs/ARCHITECTURE.md` §6 pour B9 (oubli de
+  la doc) : créé `src/aqr/rendering/` par cohérence avec `matching/`/`decoding/` (un
+  dossier par brique pure).
+- `HomeRenderer` lit toujours le texte via `CorpusRepository.text(ref)` (I1) — la
+  `Detection` ne porte qu'une référence, jamais de texte, donc l'invariant est
+  garanti par construction, pas seulement par convention.
+- `QuranEncTranslationRepository` : cache local par (traduction, sourate) — un seul
+  appel API renvoie toute la sourate (`/translation/sura/<id>/<n>`), réutilisé pour
+  chaque verset. Checksum sidecar (`<n>.sha256`) vérifié à chaque lecture (F8).
+  Slugs FR confirmés sur quranenc.com : `french_hameedullah` (Hamidullah, défaut),
+  `french_rashid` (Rachid Maach), `french_montada` (Centre Nûr).
+- Attribution/version ne sont pas dans la réponse API (juste `arabic_text`/
+  `translation`/`footnotes`) : portées par un petit registre `TRANSLATION_METADATA`
+  dans l'adapter, un seul endroit (I2).
