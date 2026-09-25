@@ -41,3 +41,23 @@
   confiance final reste une décision calibrée de la brique appelante (I3).
 - Perf mesurée : construction de l'index sur 6236 versets + 6 tests ≈ 0,85 s ;
   une requête après échauffement < 50 ms (budget NF3 respecté).
+
+## 2026-09-25 — Brique `ViterbiSequenceDecoder` (B7)
+- États = candidats (VerseRef) proposés par le matcher à chaque étape ; poids de
+  transition dans `DecoderWeights` (next_verse, repetition, one_verse_gap,
+  arbitrary_jump) — objet de configuration, pas de constante éparpillée.
+- `min_recognized_score` (défaut 0.75) filtre les candidats avant même le Viterbi :
+  porte d'entrée pour I3/F5 (un mot isolé faiblement ressemblant ne doit jamais
+  atteindre RECOGNIZED), sans mêler ce seuil à la logique de transition.
+- `uncertainty_ratio` (défaut 0.92) : si le 2ᵉ meilleur chemin à une étape est trop
+  proche du meilleur, statut UNCERTAIN + liste des candidats à égalité (P9 sans
+  contexte) ; avec un contexte fort (transition next_verse vs arbitrary_jump), l'écart
+  devient large et RECOGNIZED l'emporte naturellement (P9 avec contexte).
+- Post-traitement en deux passes après le chemin optimal : fusion des répétitions
+  consécutives d'un même verset (P8, une seule détection à plage fusionnée) puis
+  comblement des trous d'exactement un verset (P6, INFERRED, temps interpolé si les
+  bornes temporelles le permettent) — les sauts plus larges ou vers une autre sourate
+  (P7) ne déclenchent aucun comblement.
+- Testé en pur (sans corpus, mécanique de transition/fusion/comblement) et contre le
+  corpus réel (P5-P9, F5) + une propriété Hypothesis : toute suite consécutive propre
+  tirée du Mushaf est restituée à l'identique, RECOGNIZED, sans fusion ni trou.
