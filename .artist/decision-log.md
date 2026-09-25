@@ -79,3 +79,67 @@
 - Attribution/version ne sont pas dans la réponse API (juste `arabic_text`/
   `translation`/`footnotes`) : portées par un petit registre `TRANSLATION_METADATA`
   dans l'adapter, un seul endroit (I2).
+
+## 2026-09-25 — Phase 2 : robustesse du matcher (ADR-0003)
+- **Constat vérifié indépendamment** (pas seulement recopié du prompt) : sur le
+  corpus épinglé, 3843/6236 versets (61,6 %) ont au moins un mot dont la forme
+  imla'i normalisée (`normalize_arabic`) est absente du vocabulaire Uthmani indexé
+  par `NgramVerseMatcher` ; 7297/78248 mots (9,3 %). `NgramVerseMatcher` ne
+  retrouvait donc correctement que du texte reconstruit depuis le corpus
+  lui-même — jamais testé contre une vraie sortie d'ASR (orthographe imla'i).
+- **Règle de caractères générique essayée puis rejetée** : mapper systématiquement
+  l'alef supérieur (dagger alef, ٰ) vers un ا plein corrige la majorité des cas
+  (سموت -> سماوات) mais casse « الرحمن » (jamais « الرحمان », y compris dans la
+  basmala — 159 occurrences dans le seul texte simple-clean) : l'orthographe
+  moderne retient elle-même certaines graphies courtes historiques. Une règle
+  aveugle aurait *dégradé* le matching sur ce mot, très fréquent.
+- **Décision : dictionnaire de corrections appris depuis le corpus lui-même**
+  (`aqr.corpus.imlai_corrections.build_word_corrections`), pas une règle générique.
+  Pour chaque verset où Uthmani et simple-clean ont le même nombre de mots
+  (alignement position par position fiable — exclut les ~363 versets déjà connus
+  pour diverger, cf. brique B6 du 2026-09-25), on compare `normalize_arabic(mot
+  Uthmani)` à `normalize_arabic(mot simple-clean)` ; en cas d'écart, la forme
+  imla'i majoritaire observée devient la correction. Table dérivée déterministe
+  du corpus épinglé (LOCK.json), jamais committée : reconstruite à l'init du
+  matcher, comme son index (même budget de temps, cf. mesure ci-dessous).
+- **Matcher à deux niveaux (ADR-0003)** : index n-grammes de *caractères* (5-grammes
+  sur le texte squeletté sans espaces) en premier niveau, tolérant au bruit lettre
+  par lettre ; index trigrammes de *mots* corrigés en second niveau ; les deux
+  alimentent le même réalignement fin (`difflib`) pour le score final et le
+  `WordSpan` — aucun seuil de rejet en dur, comme avant.
+- **2ᵉ bug trouvé en testant `build_word_corrections`** : le vote majoritaire
+  n'enregistrait que les paires où la forme Uthmani ET la forme imla'i différaient
+  — donc pour un mot presque toujours bien aligné (« الذين », 810 occurrences), les
+  810 votes « identité » étaient ignorés et le seul (rare) mauvais alignement
+  position-par-position devenait *la* correction retenue, cassant ce mot très
+  fréquent (corrigé à tort vers « اللذين »). Fix : compter aussi les votes
+  d'identité, ne retenir une correction que si elle est réellement majoritaire.
+- **Mesure après correction** : taux de mots hors du vocabulaire Uthmani corrigé
+  9,3 % → 1,07 %. Résiduel dominant connu : le « يا » vocatif, fusionné au mot
+  suivant en Uthmani (« يَـٰٓأَيُّهَا ») mais séparé en imla'i (« يا أيها ») — aucune
+  substitution mot-à-mot ne peut le corriger puisqu'il n'existe jamais comme mot
+  Uthmani isolé dans un verset aligné ; c'est l'index de caractères (sans espaces,
+  donc insensible à la frontière de mot) qui l'absorbe.
+- **Résultats réels du banc de robustesse** (`scripts/bench_matcher.py`, 2000
+  requêtes, graine 42, corpus réel) :
+  | Scénario | Top-1 | Latence moyenne |
+  |---|---|---|
+  | Orthographe imla'i exacte | 99,80 % | 1,85 ms |
+  | 1 erreur de lettre / 5 mots | 98,00 % | 1,79 ms |
+  | 1 mot manquant | 98,80 % | 1,84 ms |
+  | 1 mot en trop | 99,70 % | 2,21 ms |
+
+  Cibles de la phase (≥ 99 % exact, ≥ 95 % avec 1 erreur/5 mots, < 50 ms) dépassées
+  sur les quatre scénarios. Un top-1 est compté correct si la référence est la
+  bonne OU si son texte est rigoureusement identique à la cible (versets répétés
+  mot pour mot, ex. le refrain d'Ar-Rahman, 55:13/16/18/21/23/25/28/30 ×31) : sans
+  contexte, aucun matcher ne peut départager deux versets au texte identique — la
+  désambiguïsation par contexte est le rôle du décodeur B7 (déjà testé, P9), pas
+  de ce niveau. Sans cet ajustement, ces ambiguïtés réelles faisaient chuter le
+  score exact-imla'i mesuré à 98,7 % sur un échantillon de 300.
+- **Basmala (item 4)** : `aqr.domain.quran_structure.is_basmala_only_span` détecte
+  qu'une plage de mots reconnue ne couvre que la basmala concaténée en tête du
+  verset 1 (convention Tanzil, toutes sourates sauf At-Tawbah/9) — jamais pour
+  1:1 (Al-Fatiha), où la basmala EST le verset. Utilitaire pur, prêt pour le
+  pipeline (B7/B9) qui l'utilisera pour étiqueter `NonQuranKind.BASMALA` au lieu
+  d'un verset 1 partiellement reconnu — le branchement réel attend B1-B5 (phase 4).
