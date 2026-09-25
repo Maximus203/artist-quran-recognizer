@@ -2,10 +2,14 @@
 
 Ne sert jamais au rendu : le texte rendu est le texte Mushaf brut du corpus (invariant I1).
 
-Note : les différences d'orthographe Uthmani vs imla'i (ex. ٱلصَّلَوٰة / الصلاة) ne se
-règlent pas caractère par caractère. Le matcher indexe donc le texte Tanzil
-« simple-clean » (imla'i), tandis que le rendu utilise le texte Uthmani.
-La correspondance entre les deux se fait par VerseRef et par index de mot.
+`normalize_arabic` seul ne suffit pas à faire coïncider Uthmani et imla'i (le format
+produit par un ASR) : mesuré le 2026-09-25 sur le corpus épinglé, 61,6 % des versets
+ont au moins un mot dont la forme imla'i normalisée est absente du vocabulaire
+Uthmani (~9,3 % des mots). Une règle de caractères générique (ex. « alef supérieur ->
+alef plein ») a été essayée et rejetée : elle casse des mots à graphie courte
+retenue aussi en imla'i (« الرحمن », jamais « الرحمان », y compris dans la
+basmala). La correction se fait donc par dictionnaire, appris depuis le corpus
+lui-même (`aqr.corpus.imlai_corrections`, ADR-0003) — jamais par règle générique.
 """
 
 from __future__ import annotations
