@@ -1,0 +1,16 @@
+# Vérité terrain du corpus de test audio — protocole : docs/TEST-CORPUS.md
+# Les fichiers audio ne sont PAS versionnés (tests/fixtures/audio/files/ ou $AQR_AUDIO_DIR).
+version: 1
+cases: []
+# Exemple :
+# - id: C04-mulk-gap-01
+#   file: C04/mulk_4-6_gap.wav
+#   riwaya: hafs
+#   source: "enregistrement personnel"
+#   license: "usage interne test"
+#   expected:
+#     - {t: [0.00, 6.10], ref: "67:4", words: all, status: recognized}
+#     - {t: [6.10, 11.40], ref: "67:5", words: all, status: inferred}
+#     - {t: [11.40, 17.80], ref: "67:6", words: all, status: recognized}
+#   non_quran: []
+#   tolerance_ms: 300

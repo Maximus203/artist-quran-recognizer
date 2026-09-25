@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# Données et modèles (lourds, droits)
+data/*
+!data/.gitkeep
+models/
+tests/fixtures/audio/files/
+*.wav
+*.mp3
+*.m4a
+*.mp4
+*.mkv
+*.ogg
+*.flac
+
+# Secrets
+.env

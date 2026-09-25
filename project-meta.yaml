@@ -1,0 +1,6 @@
+nom: artist-quran-recognizer
+slug: artist-quran-recognizer
+piste: projet-complet
+stack_pressentie: "Python 3.11+ (uv, pytest), ffmpeg, NVIDIA NeMo / HF transformers — à confirmer par artist-init"
+cree_le: 2026-09-24
+spec_file: docs/spec-v1.md
