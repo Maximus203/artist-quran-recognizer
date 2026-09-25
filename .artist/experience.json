@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "projet": "artist-quran-recognizer",
+  "doctrine": {
+    "brief_hash": "4931729f4c419a41f39bced506ba50dd017ded429fda85cdcaafc042dadfcc5b",
+    "signature_hash": "b9648d9376fa41d7d915d062cd604ec458273d1b48191536dc20a6e985dcbc40",
+    "injecte_le": "2026-09-25T08:47:48Z",
+    "injecte_par": "artist-init"
+  },
+  "temps": {}
+}

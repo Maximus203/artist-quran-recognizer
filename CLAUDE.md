@@ -1,8 +1,46 @@
 <!-- BEGIN artist-signature (rempli par /artist-init) -->
+Doctrine complète : voir `AGENTS.md` (même contenu, portable Claude Code / Codex / Copilot).
+
+**Spécificités Claude Code** : test navigateur via l'extension **Claude in Chrome**, skill
+`browser-validation` — projet actuellement sans interface web (CLI + bibliothèque Python) ;
+la boucle s'applique dès qu'une surface visible apparaît (dashboard, API exposée en UI...).
+Ne jamais solliciter Cherif pour valider avant d'être soi-même au vert (tests + revue).
 <!-- END artist-signature -->
 
 <!-- BEGIN artist-brief (rempli par /artist-init) -->
+<!-- snapshot du Brief Fondateur (Notion 37ba5949-b309-8142-8df6-e3f353333f0d) — généré le 2026-09-25 -->
+**Qui** : Cherif Diouf, alias « l'Artist » — Fondateur/CEO Artist Digital (artist-dev.com),
+professeur ESTM Dakar, doctorant UN-CHK, chef de projet TerangaDev. Basé à Dakar, Sénégal.
+
+**Standards non-négociables (Definition of Done, §3 du Brief)** :
+- UX/UI exigence haute — jamais l'apparence "template par défaut", mobile-first, hiérarchie
+  visuelle nette, micro-interactions soignées, accessibilité. Vitrines → niveau Awwwards 2026.
+- Performance : chargement perçu rapide, pas de jank, lazy-loading, requêtes optimisées.
+- Disponibilité : pensé pour tourner en prod (santé, logs, dégradation gracieuse).
+- Sécurité validée par défaut (entrées, authz/authn, secrets, surface d'attaque) — pas une
+  option de fin de projet.
+- Doctrine de code : TDD, design patterns, Clean Architecture — non négociables.
+
+**Préférences de livraison (§4 du Brief)** :
+- Jamais de commandes à taper manuellement pour une grosse config/séquence : un
+  `CLAUDE.md`/prompt prêt pour Claude Code, ou un script bash autonome en une seule action.
+- Aller à l'essentiel, pas de remplissage — repère le bullshit.
+- Décision structurante en jeu → 2-3 options tranchées avec arbitrages, pas de "ça dépend".
+
+Page canonique (source de vérité, à re-consulter si ce snapshot date) :
+https://app.notion.com/p/37ba5949b30981428df6e3f353333f0d
 <!-- END artist-brief -->
+
+<!-- BEGIN artist-agents (rempli par /artist-init) -->
+## Agents disponibles pour ce projet (`~/.claude/agents`)
+
+- `cherif` — orchestrateur principal, cadre la mission et route vers les spécialistes. Voir `~/.claude/agents/cherif.md`.
+- `ibrahima` — développeur senior / architecte logiciel, TDD et design patterns. Voir `~/.claude/agents/ibrahima.md`.
+- `cherif-qa` — testeur QA sceptique, exécute les playbooks et rapporte avec preuves. Voir `~/.claude/agents/cherif-qa.md`.
+
+`sofia` (direction artistique) existe dans le registre global mais n'est pas pertinente ici :
+ce projet n'a pas d'interface (CLI + bibliothèque Python). À réévaluer si une UI apparaît.
+<!-- END artist-agents -->
 
 <!-- BEGIN artist-tokens -->
 ## Sobriété de contexte (règles permanentes)
