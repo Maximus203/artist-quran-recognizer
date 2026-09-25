@@ -7,7 +7,7 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 |---|---|---|
 | 0 | Squelette, invariants, init | ✅ 2026-09-24/25 |
 | 1 | Cœur pur : corpus, matcher, décodeur, rendu | ✅ 2026-09-25 (PR #1–#4, `develop` @ 01a4f30) |
-| 2 | Robustesse de la recherche + fins de ligne | ⏭️ prochaine |
+| 2 | Robustesse de la recherche + fins de ligne | ✅ 2026-09-25 (PR #5–#6, `develop` @ voir décision-log) |
 | 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | |
 | 4 | Adapters audio : extraction, segmentation, ASR ×2, décodage contraint | |
 | 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | |
@@ -18,15 +18,19 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 
 ---
 
-## Phase 2 — Robustesse de la recherche
-- 🤖 `.gitattributes` (fins de ligne LF) + renormalisation.
-- 🤖 Matcher B6 multi-niveaux (ADR-0003) : squelette orthographique, n-grammes de
-  caractères, tests avec des transcriptions **au format réel des ASR** (orthographe
-  imla'i, erreurs d'une lettre, mots manquants), benchmark interne de robustesse
-  (taux de top-1 correct sous bruit textuel simulé).
-- 🤖 Gestion de la basmala concaténée au verset 1 de chaque sourate (convention Tanzil).
+## Phase 2 — Robustesse de la recherche ✅
+- 🤖 `.gitattributes` (fins de ligne LF) + renormalisation (PR #5).
+- 🤖 Matcher B6 multi-niveaux (ADR-0003) : dictionnaire de corrections Uthmani ↔
+  imla'i appris depuis le corpus (pas de règle générique — testé, une règle
+  naïve cassait « الرحمن »), index n-grammes de caractères (5-grammes, niveau 1,
+  tolérant) + trigrammes de mots corrigés (niveau 2), réalignement fin conservé.
+  Testé avec des transcriptions **au format réel des ASR** (orthographe imla'i,
+  erreurs d'une lettre, mots manquants/en trop), `scripts/bench_matcher.py`
+  (2000 requêtes, graine 42).
+- 🤖 Basmala : `is_basmala_only_span` (structure pure, branchement pipeline en phase 4).
 - 👤 **Intervention** : coller `prompts/phase-02.md`. Relire le rapport de robustesse.
-- 🚦 Top-1 ≥ 99 % sur les requêtes exactes, ≥ 95 % avec 1 erreur par 5 mots.
+- 🚦 **Atteint** : top-1 99,80 % exact (cible ≥ 99 %), 98,00 % avec 1 erreur/5 mots
+  (cible ≥ 95 %), 98,80/99,70 % mot manquant/en trop, < 3 ms/requête (cible < 50 ms).
 
 ## Phase 3 — Outillage de données
 - 🤖 `aqr data ingest | preannotate | import-labels | split`, `scripts/fetch_everyayah.py`

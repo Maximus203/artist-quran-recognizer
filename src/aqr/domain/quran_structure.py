@@ -19,8 +19,31 @@ AYAH_COUNTS: Final[tuple[int, ...]] = (
 SURAH_COUNT: Final[int] = 114
 TOTAL_AYAHS: Final[int] = 6236
 
+# Convention Tanzil (Hafs) : le texte du verset 1 de chaque sourate, sauf At-Tawbah
+# (9), concatène la basmala (4 mots) au début du verset lui-même. Fait structurel du
+# Mushaf, pas un seuil calibré.
+BASMALA_WORD_COUNT: Final[int] = 4
+SURAH_WITHOUT_BASMALA: Final[int] = 9
+
 
 def ayah_count(surah: int) -> int:
     if not 1 <= surah <= SURAH_COUNT:
         raise ValueError(f"sourate hors bornes : {surah}")
     return AYAH_COUNTS[surah - 1]
+
+
+def verse_one_includes_basmala(surah: int) -> bool:
+    """True si le texte du verset 1 de cette sourate commence par la basmala
+    concaténée (toutes sauf At-Tawbah, 9)."""
+    return surah != SURAH_WITHOUT_BASMALA
+
+
+def is_basmala_only_span(surah: int, ayah: int, first_word: int, last_word: int) -> bool:
+    """True si la plage de mots [first_word, last_word] du verset ne couvre QUE la
+    basmala concaténée en tête du verset 1 (convention Tanzil), jamais le contenu
+    réel du verset. Toujours False pour 1:1 (Al-Fatiha) : là, la basmala EST le
+    verset — étiqueter `NonQuranKind.BASMALA` n'a de sens que hors 1:1.
+    """
+    if ayah != 1 or surah == 1 or not verse_one_includes_basmala(surah):
+        return False
+    return last_word <= BASMALA_WORD_COUNT
