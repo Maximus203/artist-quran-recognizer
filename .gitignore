@@ -13,6 +13,9 @@ dist/
 # Données et modèles (lourds, droits)
 data/*
 !data/.gitkeep
+!data/corpus/
+data/corpus/*
+!data/corpus/LOCK.json
 models/
 tests/fixtures/audio/files/
 *.wav
