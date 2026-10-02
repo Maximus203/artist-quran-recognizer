@@ -39,10 +39,14 @@ class DecoderConfig:
     engine_version: str = "viterbi-decoder-v1"
 
 
+# Un état = les versets d'un candidat (un seul, ou plusieurs si le segment les traverse).
+_Key = tuple[VerseRef, ...]
+
+
 @dataclass
 class _Node:
     score: float
-    back_ref: VerseRef | None
+    back_ref: _Key | None
     candidate: Candidate
 
 
@@ -69,8 +73,8 @@ class ViterbiSequenceDecoder:
             )
 
         layers = self._forward(steps)
-        path_refs = self._backtrack(layers)
-        detections = self._build_detections(steps, layers, path_refs)
+        path_keys = self._backtrack(layers)
+        detections = self._build_detections(steps, layers, path_keys)
         detections = self._merge_repetitions(detections)
         detections = self._fill_single_gaps(detections)
         return Timeline(
@@ -78,30 +82,28 @@ class ViterbiSequenceDecoder:
         )
 
     # -- Viterbi forward pass -------------------------------------------------
-    def _forward(
-        self, steps: list[tuple[TimeSpan, list[Candidate]]]
-    ) -> list[dict[VerseRef, _Node]]:
-        layers: list[dict[VerseRef, _Node]] = []
+    def _forward(self, steps: list[tuple[TimeSpan, list[Candidate]]]) -> list[dict[_Key, _Node]]:
+        layers: list[dict[_Key, _Node]] = []
         _time0, first_viable = steps[0]
-        first_layer: dict[VerseRef, _Node] = {}
+        first_layer: dict[_Key, _Node] = {}
         for c in first_viable:
-            if c.span.ref not in first_layer or c.score > first_layer[c.span.ref].score:
-                first_layer[c.span.ref] = _Node(score=c.score, back_ref=None, candidate=c)
+            if c.refs not in first_layer or c.score > first_layer[c.refs].score:
+                first_layer[c.refs] = _Node(score=c.score, back_ref=None, candidate=c)
         layers.append(first_layer)
 
         for _time, viable in steps[1:]:
             prev_layer = layers[-1]
-            layer: dict[VerseRef, _Node] = {}
+            layer: dict[_Key, _Node] = {}
             for c in viable:
                 best_score = -1.0
-                best_back: VerseRef | None = None
-                for prev_ref, prev_node in prev_layer.items():
-                    weight = self._transition_weight(prev_ref, c.span.ref)
+                best_back: _Key | None = None
+                for prev_key, prev_node in prev_layer.items():
+                    weight = self._transition_weight(prev_key[-1], c.span.ref)
                     total = prev_node.score * weight * c.score
                     if total > best_score:
-                        best_score, best_back = total, prev_ref
-                if c.span.ref not in layer or best_score > layer[c.span.ref].score:
-                    layer[c.span.ref] = _Node(score=best_score, back_ref=best_back, candidate=c)
+                        best_score, best_back = total, prev_key
+                if c.refs not in layer or best_score > layer[c.refs].score:
+                    layer[c.refs] = _Node(score=best_score, back_ref=best_back, candidate=c)
             layers.append(layer)
         return layers
 
@@ -116,15 +118,15 @@ class ViterbiSequenceDecoder:
             return w.one_verse_gap
         return w.arbitrary_jump
 
-    def _backtrack(self, layers: list[dict[VerseRef, _Node]]) -> list[VerseRef]:
+    def _backtrack(self, layers: list[dict[_Key, _Node]]) -> list[_Key]:
         last_layer = layers[-1]
-        best_ref = max(last_layer, key=lambda r: last_layer[r].score)
-        path: list[VerseRef] = []
-        ref: VerseRef | None = best_ref
+        best_key = max(last_layer, key=lambda k: last_layer[k].score)
+        path: list[_Key] = []
+        key: _Key | None = best_key
         for layer in reversed(layers):
-            assert ref is not None
-            path.append(ref)
-            ref = layer[ref].back_ref
+            assert key is not None
+            path.append(key)
+            key = layer[key].back_ref
         path.reverse()
         return path
 
@@ -132,33 +134,71 @@ class ViterbiSequenceDecoder:
     def _build_detections(
         self,
         steps: list[tuple[TimeSpan, list[Candidate]]],
-        layers: list[dict[VerseRef, _Node]],
-        path_refs: list[VerseRef],
+        layers: list[dict[_Key, _Node]],
+        path_keys: list[_Key],
     ) -> list[Detection]:
         detections: list[Detection] = []
-        for (time, _viable), layer, ref in zip(steps, layers, path_refs, strict=True):
-            node = layer[ref]
+        for (time, _viable), layer, key in zip(steps, layers, path_keys, strict=True):
+            node = layer[key]
             best_score = node.score
-            rival_scores = sorted((n.score for r, n in layer.items() if r != ref), reverse=True)
+            rival_scores = sorted((n.score for k, n in layer.items() if k != key), reverse=True)
             status = Status.RECOGNIZED
             candidates: tuple[VerseRef, ...] = ()
             if rival_scores and rival_scores[0] >= best_score * self._config.uncertainty_ratio:
                 status = Status.UNCERTAIN
-                tied = {
-                    r
-                    for r, n in layer.items()
+                tied = [
+                    k
+                    for k, n in layer.items()
                     if n.score >= best_score * self._config.uncertainty_ratio
-                }
-                candidates = tuple(sorted({ref, *tied}))
-            detections.append(
+                ]
+                candidates = tuple(sorted({ref for k in (key, *tied) for ref in k}))
+            detections.extend(self._detections_of(node.candidate, time, status, candidates))
+        return detections
+
+    def _detections_of(
+        self,
+        candidate: Candidate,
+        time: TimeSpan,
+        status: Status,
+        candidates: tuple[VerseRef, ...],
+    ) -> list[Detection]:
+        """Une détection par verset touché. Le temps du segment est réparti au prorata
+        des mots expliqués dans chaque verset ; la coupure interne est estimée
+        (`time_interpolated`), le segment lui-même est mesuré."""
+        spans = candidate.spans
+        if len(spans) == 1:
+            return [
                 Detection(
-                    span=node.candidate.span,
+                    span=spans[0],
                     time=time,
                     status=status,
-                    confidence=node.candidate.score,
+                    confidence=candidate.score,
+                    candidates=candidates,
+                )
+            ]
+        weights = (
+            candidate.query_counts
+            if len(candidate.query_counts) == len(spans)
+            else tuple(s.last_word - s.first_word + 1 for s in spans)
+        )
+        total = sum(weights)
+        detections: list[Detection] = []
+        cursor = time.start_s
+        for index, (span, weight) in enumerate(zip(spans, weights, strict=True)):
+            end = (
+                time.end_s if index == len(spans) - 1 else cursor + time.duration_s * weight / total
+            )
+            detections.append(
+                Detection(
+                    span=span,
+                    time=TimeSpan(start_s=cursor, end_s=end),
+                    status=status,
+                    confidence=candidate.score,
+                    time_interpolated=True,
                     candidates=candidates,
                 )
             )
+            cursor = end
         return detections
 
     # -- Post-traitement --------------------------------------------------------

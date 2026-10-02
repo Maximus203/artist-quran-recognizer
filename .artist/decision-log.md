@@ -143,3 +143,35 @@
   1:1 (Al-Fatiha), où la basmala EST le verset. Utilitaire pur, prêt pour le
   pipeline (B7/B9) qui l'utilisera pour étiqueter `NonQuranKind.BASMALA` au lieu
   d'un verset 1 partiellement reconnu — le branchement réel attend B1-B5 (phase 4).
+
+## 2026-10-02 — Phase 2b : recherche sur le flux continu (ADR-0004)
+- **Constat de la revue externe vérifié** : le matcher notait contre le verset entier ; fenêtres
+  partielles, multi-versets et verset 1 sans basmala mal notés, faux versets ≥ 0,75 (I3).
+- **Décision** : `FlowVerseMatcher` remplace `NgramVerseMatcher` (alignement local sur le flux,
+  score = couverture de la requête × preuve, basmala du verset 1 = unité à part). Détail et
+  conséquences : `docs/adr/0004-recherche-sur-flux-continu.md`.
+- **Paramètre `evidence_words` (5)** : sans pénalité de longueur, un mot rare isolé aurait un
+  score de 1,0 (le reste du verset n'est plus pénalisé) et franchirait le seuil (F5). La preuve
+  croît linéairement jusqu'à 5 mots expliqués. Mesuré : 0 faux verset sur 12 000 fenêtres de
+  3–25 mots (graines 7 et 11) ; coût : ~35 % des fenêtres de 3–6 mots restent UNCERTAIN, ce qui
+  est voulu (formules répétées, I3).
+- **Tie-break « bornes de verset »** : à score égal, le segment qui épouse un verset entier passe
+  devant celui qui coupe un verset plus long (ex. 33:3 vs fin de 4:81). Sans lui, le banc
+  « top-1 » de la phase 2 tombait à 98,7 % sur texte exact (ordre arbitraire dans l'égalité).
+- **Basmala en tête** : détection tolérante (4 mots dans l'ordre, un parasite toléré). Sans cette
+  tolérance, « mot manquant » dans la basmala faisait tomber le banc de phase 2 à 97,25 %.
+  Requêtes de 1-2 mots : les mots entiers complètent les n-grammes (cas « basmala + الم »).
+- **Performance** : première version 25-37 ms sur 25 mots ; mot de ≤ 3 lettres = identité
+  seulement (la distance admissible est 0) + groupes de diagonales sous 30 % du meilleur non
+  raffinés -> 2-3 ms, résultats identiques.
+- **Invariant de domaine levé** : `Detection` RECOGNIZED peut avoir `time_interpolated=True`
+  (frontière entre versets d'un même segment estimée ; le segment reste mesuré). Test mis à jour.
+- **Dette de typage** : `mypy` signalait 4 erreurs (génériques `dict`, `Any` renvoyé par
+  `response.read()`), invisibles tant qu'il était bloqué sur le poste Windows ; corrigées ici.
+- **Résultats** (`scripts/bench_segments.py`, graine 7, texte exact) : 3–6 mots top-1 90,7 %
+  (65,8 % avant), 7–12 mots 98,8 % (87,0 %), 13–25 mots 99,7 % (98,0 %), verset 1 sans basmala
+  98,4 % (71,7 %) ; faux versets nommés : 0 partout (10, 5, 0, 4 avant). Banc phase 2 :
+  99,85 / 99,35 / 99,00 / 99,60 % (avant : 99,80 / 98,00 / 98,80 / 99,70 %).
+- **« Partiels »** : quelques détections RECOGNIZED recouvrent les bons versets sans les égaler
+  (un verset de plus ou de moins à une borne de fenêtre, < 1 %). Pas de faux verset, mais à
+  surveiller en phase 6 sur de vrais audios.

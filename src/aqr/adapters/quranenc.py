@@ -57,7 +57,8 @@ def fetch_url(url: str) -> bytes:  # pragma: no cover - I/O réseau
         url, headers={"User-Agent": "artist-quran-recognizer/0.1 (+QuranEncTranslationRepository)"}
     )
     with urllib.request.urlopen(request, timeout=30) as response:
-        return response.read()
+        body: bytes = response.read()
+        return body
 
 
 @dataclass(frozen=True)

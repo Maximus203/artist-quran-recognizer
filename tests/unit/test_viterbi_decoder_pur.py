@@ -118,3 +118,51 @@ def test_poids_par_defaut_sont_des_donnees_de_configuration():
         < weights.repetition
         <= weights.next_verse
     )
+
+
+# --- Candidats multi-versets (phase 2b, ADR-0004) ----------------------------
+def _multi(refs: list[VerseRef], counts: list[int], score: float = 1.0) -> Candidate:
+    spans = [WordSpan(ref=r, first_word=1, last_word=c) for r, c in zip(refs, counts, strict=True)]
+    return Candidate(
+        span=spans[0], score=score, continuation=tuple(spans[1:]), query_counts=tuple(counts)
+    )
+
+
+def test_candidat_multi_versets_donne_une_detection_par_verset():
+    refs = [VerseRef(112, 1), VerseRef(112, 2)]
+    timeline = _decoder().decode([(TimeSpan(0.0, 6.0), [_multi(refs, [2, 4])])])
+    dets = timeline.detections()
+    assert [d.span.ref for d in dets] == refs
+    assert all(d.status is Status.RECOGNIZED for d in dets)
+    assert dets[0].time == TimeSpan(0.0, 2.0)  # temps réparti au prorata des mots
+    assert dets[1].time == TimeSpan(2.0, 6.0)
+    assert all(d.time_interpolated for d in dets)
+
+
+def test_candidat_multi_versets_enchaine_avec_le_verset_suivant():
+    obs = [
+        (TimeSpan(0.0, 6.0), [_multi([VerseRef(112, 1), VerseRef(112, 2)], [4, 2])]),
+        (TimeSpan(6.0, 9.0), [_cand(VerseRef(112, 3))]),
+    ]
+    dets = _decoder().decode(obs).detections()
+    assert [d.span.ref for d in dets] == [VerseRef(112, 1), VerseRef(112, 2), VerseRef(112, 3)]
+    assert all(d.status is Status.RECOGNIZED for d in dets)
+
+
+def test_deux_moities_du_meme_verset_sont_fusionnees():  # waqf
+    ref = VerseRef(2, 255)
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(ref, first=1, last=6)]),
+        (TimeSpan(3.0, 6.0), [_cand(ref, first=7, last=12)]),
+    ]
+    dets = _decoder().decode(obs).detections()
+    assert len(dets) == 1
+    assert (dets[0].span.first_word, dets[0].span.last_word) == (1, 12)
+
+
+def test_candidats_multi_versets_proches_donnent_uncertain():
+    a = _multi([VerseRef(112, 1), VerseRef(112, 2)], [4, 2], score=0.9)
+    b = _multi([VerseRef(2, 255), VerseRef(2, 256)], [4, 2], score=0.9)
+    dets = _decoder().decode([(TimeSpan(0.0, 6.0), [a, b])]).detections()
+    assert dets and all(d.status is Status.UNCERTAIN for d in dets)
+    assert all(len(d.candidates) >= 2 for d in dets)

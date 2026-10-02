@@ -8,6 +8,7 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 | 0 | Squelette, invariants, init | ✅ 2026-09-24/25 |
 | 1 | Cœur pur : corpus, matcher, décodeur, rendu | ✅ 2026-09-25 (PR #1–#4, `develop` @ 01a4f30) |
 | 2 | Robustesse de la recherche + fins de ligne | ✅ 2026-09-25 (PR #5–#6, `develop` @ voir décision-log) |
+| 2b | Recherche sur le flux continu (segments partiels, multi-versets, 0 faux verset) | ✅ 2026-10-02 (voir ADR-0004) |
 | 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | |
 | 4 | Adapters audio : extraction, segmentation, ASR ×2, décodage contraint | |
 | 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | |
@@ -31,6 +32,15 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 - 👤 **Intervention** : coller `prompts/phase-02.md`. Relire le rapport de robustesse.
 - 🚦 **Atteint** : top-1 99,80 % exact (cible ≥ 99 %), 98,00 % avec 1 erreur/5 mots
   (cible ≥ 95 %), 98,80/99,70 % mot manquant/en trop, < 3 ms/requête (cible < 50 ms).
+
+## Phase 2b — Recherche sur le flux continu ✅
+- 🤖 `FlowVerseMatcher` (ADR-0004) : le Coran est un flux de mots, la requête est alignée
+  localement ; spans multi-versets, basmala du verset 1 traitée à part, ambiguïté renvoyée
+  au décodeur B7 (adapté aux candidats multi-versets). `scripts/bench_segments.py`.
+- 🚦 **Atteint** (graine 7, 600 fenêtres par ligne) : 0 faux verset nommé sur toutes les
+  fenêtres (3–6, 7–12, 13–25 mots, avec et sans bruit) ; top-1 98,8 % sur 7–12 mots
+  (cible 97 %) ; 98,4 % sur « verset 1 sans basmala » (cible 95 %) ; bancs de la phase 2
+  non dégradés ; ≈ 2 ms/requête (cible < 50 ms).
 
 ## Phase 3 — Outillage de données
 - 🤖 `aqr data ingest | preannotate | import-labels | split`, `scripts/fetch_everyayah.py`

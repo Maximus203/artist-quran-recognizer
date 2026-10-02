@@ -10,6 +10,7 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 class CorpusChecksumError(Exception):
@@ -42,7 +43,7 @@ class CorpusLock:
     files: dict[str, LockedFile] = field(default_factory=dict)
 
     @classmethod
-    def from_json(cls, data: dict) -> CorpusLock:
+    def from_json(cls, data: dict[str, Any]) -> CorpusLock:
         files = {key: LockedFile(**value) for key, value in data["files"].items()}
         return cls(
             riwaya=data["riwaya"],
@@ -56,7 +57,7 @@ class CorpusLock:
     def load(cls, path: Path) -> CorpusLock:
         return cls.from_json(json.loads(path.read_text(encoding="utf-8")))
 
-    def to_json(self) -> dict:
+    def to_json(self) -> dict[str, Any]:
         return {
             "riwaya": self.riwaya,
             "source": self.source,

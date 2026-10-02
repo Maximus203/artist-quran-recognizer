@@ -13,7 +13,7 @@ import pytest
 from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.domain.models import VerseRef
-from aqr.matching.ngram_matcher import NgramVerseMatcher
+from aqr.matching.flow_matcher import FlowVerseMatcher
 
 CORPUS_DIR = Path(__file__).resolve().parents[2] / "data" / "corpus"
 
@@ -29,8 +29,8 @@ def corpus() -> TanzilCorpusRepository:
 
 
 @pytest.fixture(scope="module")
-def matcher(corpus: TanzilCorpusRepository) -> NgramVerseMatcher:
-    return NgramVerseMatcher(corpus)
+def matcher(corpus: TanzilCorpusRepository) -> FlowVerseMatcher:
+    return FlowVerseMatcher(corpus)
 
 
 def _normalized_verse_text(corpus: TanzilCorpusRepository, ref: VerseRef) -> str:

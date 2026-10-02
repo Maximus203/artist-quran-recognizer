@@ -70,8 +70,13 @@ def _span(s="67:5"):
 def test_recognized_exige_un_temps_mesure():
     with pytest.raises(ValueError):
         Detection(_span(), None, Status.RECOGNIZED, 0.9)
-    with pytest.raises(ValueError):
-        Detection(_span(), TimeSpan(0, 1), Status.RECOGNIZED, 0.9, time_interpolated=True)
+
+
+def test_recognized_peut_avoir_une_frontiere_de_verset_estimee():
+    # Un segment qui traverse deux versets : le temps du segment est mesuré, la
+    # frontière entre les versets est estimée (ADR-0004).
+    d = Detection(_span(), TimeSpan(0, 1), Status.RECOGNIZED, 0.9, time_interpolated=True)
+    assert d.time_interpolated
 
 
 def test_inferred_peut_etre_sans_temps():

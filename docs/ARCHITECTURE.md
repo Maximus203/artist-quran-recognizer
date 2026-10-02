@@ -33,7 +33,7 @@
  [B5] QuranicityGate ──────── est-ce VRAIMENT du Coran ?  (cf. §4, piège n°1)
         │
  [B6] VerseMatcher ────────── texte normalisé → candidats (VerseRef, plage de mots, score)
-        │                     index n-grammes sur les 6236 versets + alignement fin
+        │                     recherche sur le flux continu (ADR-0004) : alignement local, spans multi-versets
  [B7] SequenceDecoder ─────── Viterbi sur le graphe des versets :
         │                     continuité, sauts, répétitions, trous → INFERRED
  [B8] Timeline ────────────── [ {ref, mots i..j, t_debut, t_fin, statut, confiance}, NON_QURAN… ]
@@ -55,7 +55,7 @@ que toute implémentation doit passer.
 | B3 | `LanguageGate` | segment → `lang` + confiance | Whisper LID | faux |
 | B4 | `QuranASR` | segment → `Transcript` (mots + timestamps + confiance) | FastConformer-Quran (CC-BY-4.0) ; Whisper-Tarteel en challenger | faux |
 | B5 | `QuranicityGate` | `Transcript` (+ transcript générique) → score ∈ [0,1] | double ASR + couverture d'alignement | **oui (pur)** |
-| B6 | `VerseMatcher` | texte normalisé → `list[Candidate]` | index n-grammes + Levenshtein au niveau mot | **oui (pur)** |
+| B6 | `VerseMatcher` | texte normalisé → `list[Candidate]` | flux continu + alignement local par mots (ADR-0004) | **oui (pur)** |
 | B7 | `SequenceDecoder` | `list[list[Candidate]]` → `Timeline` | Viterbi / HMM | **oui (pur)** |
 | — | `CorpusRepository` | `VerseRef` → texte Mushaf, texte normalisé | Tanzil Uthmani (CC-BY-3.0), checksum épinglé | oui |
 | — | `TranslationRepository` | `VerseRef`, `translation_id` → texte + version | QuranEnc (Hamidullah/KFC, Rachid Maach, Nûr) | oui |
