@@ -102,6 +102,9 @@ class Detection:
     status: Status
     confidence: float
     time_interpolated: bool = False
+    """True si `time` est estimé plutôt que mesuré : verset INFERRED entre deux versets
+    reconnus, ou frontière entre les versets d'un même segment (RECOGNIZED dont le
+    segment est mesuré mais la coupure interne estimée, ADR-0004)."""
     candidates: tuple[VerseRef, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
@@ -109,8 +112,6 @@ class Detection:
             raise ValueError("confidence doit être dans [0, 1]")
         if self.status is Status.RECOGNIZED and self.time is None:
             raise ValueError("une détection RECOGNIZED doit avoir un horodatage mesuré")
-        if self.status is Status.RECOGNIZED and self.time_interpolated:
-            raise ValueError("une détection RECOGNIZED ne peut pas avoir un temps interpolé")
         if self.status is Status.UNCERTAIN and len(self.candidates) < 2:
             raise ValueError("une détection UNCERTAIN doit lister au moins 2 candidats")
 

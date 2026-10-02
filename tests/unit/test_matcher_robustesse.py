@@ -15,7 +15,7 @@ import pytest
 from aqr.corpus.imlai_corrections import build_word_corrections, load_simple_clean_words
 from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
-from aqr.matching.ngram_matcher import NgramVerseMatcher
+from aqr.matching.flow_matcher import FlowVerseMatcher
 from aqr.matching.noise import drop_random_word, inject_letter_noise, insert_random_word
 
 CORPUS_DIR = Path(__file__).resolve().parents[2] / "data" / "corpus"
@@ -40,9 +40,9 @@ def simple_clean_words(corpus):
 
 
 @pytest.fixture(scope="module")
-def matcher(corpus, simple_clean_words) -> NgramVerseMatcher:
+def matcher(corpus, simple_clean_words) -> FlowVerseMatcher:
     corrections = build_word_corrections(corpus, simple_clean_words)
-    return NgramVerseMatcher(corpus, word_corrections=corrections)
+    return FlowVerseMatcher(corpus, word_corrections=corrections)
 
 
 @pytest.fixture(scope="module")
