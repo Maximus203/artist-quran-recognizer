@@ -61,7 +61,7 @@ la précision vient de la pré-annotation + correction (§5).
 ## 4. Rangement
 
 ```
-D:\01-Dev\Data\aqr-audio\          ← AQR_AUDIO_DIR (hors git, sauvegardé)
+<AQR_AUDIO_DIR>/                   ← hors git, sauvegardé
 ├── inbox\                         ← tu déposes ici (audio + .yaml)
 ├── C08\ C09\ C10\ …               ← rangé par le script d'ingestion
 └── _derived\                      ← WAV 16 kHz, pré-annotations (régénérables)

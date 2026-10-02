@@ -17,6 +17,11 @@ Lis `docs/DATA-COLLECTION.md` et `docs/TEST-CORPUS.md`. Construis en TDD :
    EveryAyah enchaînés avec sauts, répétitions, verset brouillé (→ INFERRED), segments
    de parole non coranique ; vérité terrain générée depuis les durées. Test : un mix
    généré puis ré-importé donne exactement sa vérité terrain.
+   Les mixages doivent aussi reproduire les découpages réels : versets récités en partie
+   (arrêt au waqf puis reprise), plusieurs versets courts d'un souffle, verset 1 avec et
+   sans basmala, isti'adha en ouverture, takbir et amin en contexte de prière.
+   Réutilise le banc `scripts/bench_segments.py` de la phase 2b pour vérifier que les
+   segments générés couvrent bien ces cas.
 6. `preannotate` sera branché en phase 5 (pipeline) : prévois l'interface, pas le moteur.
 
 ---
