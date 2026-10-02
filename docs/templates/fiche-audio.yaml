@@ -1,0 +1,10 @@
+# Copier à côté de l'audio, même nom, extension .yaml (voir docs/DATA-COLLECTION.md §3)
+fichier: AAAA-MM-JJ_contexte_lieu-court.m4a
+categorie: C08            # C08 prière | C09 assise FR | C10/C11 arabe non coranique | C12 dégradé | C13 voix non pro | C01-C07 récitation
+lieu: "décrire en quelques mots (mosquée, téléphone à ~5 m…)"
+recitant: imam_A          # identifiant anonyme stable, jamais le nom
+riwaya: hafs              # hafs | warsh | inconnu
+langues: [ar]             # ar, fr, wo…
+contenu_approx: |
+  00:40 repère approximatif (pas de secondes exactes requises)
+droits: "enregistré par moi, accord de la personne, usage interne test"

@@ -26,5 +26,17 @@ tests/fixtures/audio/files/
 *.ogg
 *.flac
 
-# Secrets
+# Secrets et configuration personnelle d'agents/éditeurs (jamais versionnés)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
+.claude/projects/
+.codex/
+.cursor/
+.aider*
+.vscode/
+.idea/
+.hypothesis/
