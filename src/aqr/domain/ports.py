@@ -35,8 +35,29 @@ class Transcript:
 
 @dataclass(frozen=True)
 class Candidate:
+    """Position du Coran qui explique une requête (ADR-0004).
+
+    `span` est le premier verset touché ; `continuation` porte les versets suivants
+    quand la requête traverse plusieurs versets (ex. 112:1-2 d'un souffle). Seul le
+    premier et le dernier span peuvent être partiels : ceux du milieu sont entiers.
+    """
+
     span: WordSpan
     score: float  # [0, 1]
+    continuation: tuple[WordSpan, ...] = ()
+    query_counts: tuple[int, ...] = ()
+    """Mots de la requête expliqués par chaque span (même ordre que `spans`), pour
+    répartir le temps d'un segment entre les versets qu'il traverse."""
+    coverage: float = 1.0
+    """Part de la requête expliquée par l'alignement, avant pondération par la preuve."""
+
+    @property
+    def spans(self) -> tuple[WordSpan, ...]:
+        return (self.span, *self.continuation)
+
+    @property
+    def refs(self) -> tuple[VerseRef, ...]:
+        return tuple(s.ref for s in self.spans)
 
 
 # --- B1 -----------------------------------------------------------------
