@@ -11,6 +11,7 @@ dependencies = [
 # Dépendances lourdes isolées : le cœur (domain/corpus/matching/decoding) n'en a pas besoin.
 audio = ["soundfile>=0.12", "numpy>=1.26"]
 asr = ["torch>=2.3", "transformers>=4.44", "nemo_toolkit[asr]>=2.0"]
+data = ["huggingface_hub>=0.24"]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "hypothesis>=6"]
 
 [project.scripts]

@@ -1,0 +1,115 @@
+# Lot 1 — manifeste des audios d'évaluation (contrat entre la machine locale et les agents cloud).
+# Les fichiers eux-mêmes ne sont JAMAIS dans git (droits, AGENTS.md). Ce manifeste ne contient que
+# des empreintes, des durées et des liens publics. Vérification : sha256 si copie identique,
+# sinon durée à ±2 s si le fichier a été re-téléchargé depuis `source`.
+lot: 1
+total_heures: 8.69
+fichiers:
+  - id: lot1-01
+    sha256: 28237efe42e3243b855b075c345e2a2c78d433262df3784f3b39e1843d087655
+    octets: 32399057
+    duree_s: 1576.5
+    categorie: [C09, C11]
+    recitant: orateur_C
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=RQdPEW38dQc"
+  - id: lot1-02
+    sha256: 911a279e0685d235e9b79706e8b7dbc30d5e0b40364538c1af24fa530de96c97
+    octets: 99636728
+    duree_s: 4531.4
+    categorie: [C09, C11]
+    recitant: assise_A
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=X8hbat4Jzvw"
+  - id: lot1-03
+    sha256: 06b7a5c7e87fa70811c3a0bd61db22924520b16bc092afde47d19da0038fe916
+    octets: 93227587
+    duree_s: 4010.7
+    categorie: [C09, C11]
+    recitant: orateur_D
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=tCFCDjw3zik"
+  - id: lot1-04
+    sha256: d5d13810be31daa1d7bb0c83bb03ace5a5f13fa20dac2d110c2abb25ac4ba1e8
+    octets: 171648127
+    duree_s: 8056.6
+    categorie: [C09, C11]
+    recitant: orateur_C
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=mbQix01rocI"
+  - id: lot1-05
+    sha256: 87b73af42d20cf7a7b08c13b6b61f6f1609fc8f1111913078125e17175b59735
+    octets: 43960873
+    duree_s: 1709.0
+    categorie: [C01]
+    recitant: recitant_F
+    riwaya: hafs
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=zKJP4BIV9Jk"
+  - id: lot1-06
+    sha256: 8f7090015a8adf1f545a1b073a08f3a57a7f6ff41eafa470f29b9f754309fc8a
+    octets: 96241884
+    duree_s: 3128.7
+    categorie: [C08, C12]
+    recitant: imam_E
+    riwaya: hafs
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=TpzqH47wrwE"
+  - id: lot1-07
+    sha256: ba8b12e4e54edbc10c8b1ccab921866814e66453dff5d7a63fe07c026e163749
+    octets: 27857137
+    duree_s: 1276.2
+    categorie: [C09, C11]
+    recitant: orateur_G
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=vXwi_T67zzk"
+  - id: lot1-08
+    sha256: 03022abfbf7dae7abad9051eddb752f313eede0d3aa96ce45fd59b33ac7ac0f9
+    octets: 12342807
+    duree_s: 645.9
+    categorie: [C09, C11]
+    recitant: orateur_B
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=duUGWvN6fuQ"
+  - id: lot1-09
+    sha256: 27e546fb535a99ed51bed58d131953c364cc40741f201efa0396c9553c1f7a40
+    octets: 36582983
+    duree_s: 1800.0
+    categorie: [C09, C11]
+    recitant: orateur_K
+    riwaya: inconnu
+    langues: [fr, ar]
+    source: "https://www.youtube.com/watch?v=cnkSgrSkTp8"
+  - id: lot1-10
+    sha256: e94e4a4665ae0d6e6733254c91219e259fa63bb269f4d805ab51cab8bd3e9119
+    octets: 23113433
+    duree_s: 1130.5
+    categorie: [C10, C11]
+    recitant: imam_H
+    riwaya: hafs
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=t2MxqK1JKs8"
+  - id: lot1-11
+    sha256: 139e3b10b56c65adfc61c117425a442497da60725ff2570e82e85cf12e694975
+    octets: 38750390
+    duree_s: 1578.2
+    categorie: [C10, C11]
+    recitant: imam_I
+    riwaya: hafs
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=5EFgxmt8JbQ"
+  - id: lot1-12
+    sha256: 629ebb33f9d5e6ce68b7a8e56e0728bc4544940e03af7dc92978b7847254b2a1
+    octets: 38297376
+    duree_s: 1848.1
+    categorie: [C10, C11, C08]
+    recitant: imam_J
+    riwaya: hafs
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=-1GaknMvJ4Q"

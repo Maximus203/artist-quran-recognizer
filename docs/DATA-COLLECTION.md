@@ -104,3 +104,18 @@ Prévoir **~10 Go**. Le facteur limitant est le temps d'annotation, pas le disqu
 **dizaines d'heures** (ordre de grandeur 20–50 h). Les étiquettes s'obtiennent en grande
 partie par alignement forcé sur le texte connu à partir de récitations complètes de
 sourates identifiées. Commencer dès maintenant à mettre de côté des récitations Warsh.
+
+## 7. Agents cloud : comment les audios arrivent (dépôt public → jamais d'audio dans git)
+
+Les audios vivent dans un **dataset Hugging Face privé** (`printf0cherif/aqr-audio-private`,
+dossier `lot-N/`, fichiers `lotN-NN.mp3`). Le manifeste public `docs/data-lots/lot-N.yaml`
+(sha256, durée, catégories, source) est le contrat.
+
+- **Au démarrage d'une session cloud** : `pip install -e ".[data]"` puis
+  `AQR_AUDIO_DIR=$HOME/aqr-audio python scripts/audio_lot.py fetch --lot 1`
+  (variables `HF_TOKEN` en lecture seule, `AQR_HF_DATASET` : secrets de l'environnement cloud).
+  Le script vérifie chaque sha256 et écrit les fiches `.yaml` à côté des fichiers.
+- **Nouveau lot** : ajouter les fichiers à `inbox\`, générer `docs/data-lots/lot-N.yaml`,
+  déposer `lot-N/` dans le dataset, commit du manifeste seul.
+- Interdit : `git add` d'un audio, d'un modèle ou d'un poids (`.gitignore` + `pre-push` +
+  `tests/test_audio_lot_manifest.py` le bloquent).

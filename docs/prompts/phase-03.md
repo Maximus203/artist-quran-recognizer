@@ -32,3 +32,5 @@ brique, fusionnée dans `develop` avant la suivante, SHA vérifié dans `origin/
 consigne chaque décision non triviale dans `.artist/decision-log.md` ; mets à jour
 `docs/PLAN.md` (statut de la phase). Termine par un compte rendu : SHA, sorties réelles
 des commandes, métriques, décisions, ce qui reste à trancher par Cherif.
+
+**Signature** : aucune mention de Claude/IA dans les commits et PR (ni `Co-Authored-By`, ni `Claude-Session`, ni « Generated with »), cf. AGENTS.md § Signature.

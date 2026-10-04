@@ -9,3 +9,4 @@
 - [ ] Nouveaux cas de test : must-pass ET must-fail
 - [ ] Métriques du benchmark jointes si la PR touche B2–B7
 - [ ] Aucun secret, aucun fichier audio/modèle ajouté
+- [ ] Aucune signature d'IA dans les commits/PR (`Co-Authored-By`, `Claude-Session`, « Generated with »)
