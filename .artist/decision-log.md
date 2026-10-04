@@ -247,3 +247,17 @@
   isti'adha/takbir/amin, inferred) présents et **0 faux verset** nommé. Mesure réelle sur des
   mixages EveryAyah (Alafasy, sourates 1/112–114, graine 7) : 93 segments, 0 faux verset ;
   top-1 100 % sur multi-versets (6), partiels (3), verset 1 avec (4) / sans basmala (10).
+- **CLI `aqr data`** (`aqr.cli`) : `ingest`, `export-labels`, `import-labels`, `preannotate`, `split`
+  (`--dry-run`). Chemins : `$AQR_AUDIO_DIR` (ou `--audio-dir`) ; manifeste = `--manifest`, puis
+  `$AQR_MANIFEST`, puis `tests/fixtures/audio/manifest.yaml`, puis `<audio_dir>/manifest.yaml`.
+  Codes de sortie : 0 succès · 1 erreur sur les données · 2 usage impossible (variable manquante,
+  moteur de pré-annotation indisponible). `main()` reçoit `env`/`out`/`err`/`convert` : testable sans
+  ffmpeg ni variables réelles. Vérifié en réel (ffmpeg, clip EveryAyah) : ingest idempotent
+  (2ᵉ passage 0 ajouté), WAV 16 kHz mono, split, aller-retour d'étiquettes.
+- **Lot 1 non ingéré** : `HF_TOKEN` et `AQR_HF_DATASET` absents de l'environnement de cette session
+  (vérifié aux trois niveaux Windows). Aucun audio récupéré ailleurs. À faire : `python
+  scripts/audio_lot.py fetch --lot 1` puis `aqr data ingest` et `aqr data split`.
+- **Constat hors périmètre, à trancher** : la PR #9 (phase 2b, session cloud) a fusionné dans
+  l'historique public de `develop` un message de commit contenant `Co-Authored-By`, `Claude-Session`
+  et un `Co-authored-by` — contraire à la règle de signature d'AGENTS.md (les hooks n'étaient pas
+  encore installés). Non réécrit : modifier `develop` exigerait un force-push.
