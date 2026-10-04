@@ -1,16 +1,251 @@
 # Vérité terrain du corpus de test audio — protocole : docs/TEST-CORPUS.md
 # Les fichiers audio ne sont PAS versionnés (tests/fixtures/audio/files/ ou $AQR_AUDIO_DIR).
 version: 1
-cases: []
-# Exemple :
-# - id: C04-mulk-gap-01
-#   file: C04/mulk_4-6_gap.wav
-#   riwaya: hafs
-#   source: "enregistrement personnel"
-#   license: "usage interne test"
-#   expected:
-#     - {t: [0.00, 6.10], ref: "67:4", words: all, status: recognized}
-#     - {t: [6.10, 11.40], ref: "67:5", words: all, status: inferred}
-#     - {t: [11.40, 17.80], ref: "67:6", words: all, status: recognized}
-#   non_quran: []
-#   tolerance_ms: 300
+cases:
+- id: lot1-01
+  file: C09/lot1-01.mp3
+  sha256: 28237efe42e3243b855b075c345e2a2c78d433262df3784f3b39e1843d087655
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_c
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=RQdPEW38dQc
+  duree_s: 1576.426
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-02
+  file: C09/lot1-02.mp3
+  sha256: 911a279e0685d235e9b79706e8b7dbc30d5e0b40364538c1af24fa530de96c97
+  categorie:
+  - C09
+  - C11
+  recitant: assise_a
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=X8hbat4Jzvw
+  duree_s: 4531.397
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-03
+  file: C09/lot1-03.mp3
+  sha256: 06b7a5c7e87fa70811c3a0bd61db22924520b16bc092afde47d19da0038fe916
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_d
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=tCFCDjw3zik
+  duree_s: 4010.667
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-04
+  file: C09/lot1-04.mp3
+  sha256: d5d13810be31daa1d7bb0c83bb03ace5a5f13fa20dac2d110c2abb25ac4ba1e8
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_c
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=mbQix01rocI
+  duree_s: 8056.555
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-05
+  file: C01/lot1-05.mp3
+  sha256: 87b73af42d20cf7a7b08c13b6b61f6f1609fc8f1111913078125e17175b59735
+  categorie:
+  - C01
+  recitant: recitant_f
+  riwaya: hafs
+  langues:
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=zKJP4BIV9Jk
+  duree_s: 1709.012
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-06
+  file: C08/lot1-06.mp3
+  sha256: 8f7090015a8adf1f545a1b073a08f3a57a7f6ff41eafa470f29b9f754309fc8a
+  categorie:
+  - C08
+  - C12
+  recitant: imam_e
+  riwaya: hafs
+  langues:
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=TpzqH47wrwE
+  duree_s: 3128.645
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-07
+  file: C09/lot1-07.mp3
+  sha256: ba8b12e4e54edbc10c8b1ccab921866814e66453dff5d7a63fe07c026e163749
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_g
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=vXwi_T67zzk
+  duree_s: 1276.215
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-08
+  file: C09/lot1-08.mp3
+  sha256: 03022abfbf7dae7abad9051eddb752f313eede0d3aa96ce45fd59b33ac7ac0f9
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_b
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=duUGWvN6fuQ
+  duree_s: 645.817
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-09
+  file: C09/lot1-09.mp3
+  sha256: 27e546fb535a99ed51bed58d131953c364cc40741f201efa0396c9553c1f7a40
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_k
+  riwaya: inconnu
+  langues:
+  - fr
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=cnkSgrSkTp8
+  duree_s: 1800.023
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-10
+  file: C10/lot1-10.mp3
+  sha256: e94e4a4665ae0d6e6733254c91219e259fa63bb269f4d805ab51cab8bd3e9119
+  categorie:
+  - C10
+  - C11
+  recitant: imam_h
+  riwaya: hafs
+  langues:
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=t2MxqK1JKs8
+  duree_s: 1130.498
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-11
+  file: C10/lot1-11.mp3
+  sha256: 139e3b10b56c65adfc61c117425a442497da60725ff2570e82e85cf12e694975
+  categorie:
+  - C10
+  - C11
+  recitant: imam_i
+  riwaya: hafs
+  langues:
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=5EFgxmt8JbQ
+  duree_s: 1578.133
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot1-12
+  file: C10/lot1-12.mp3
+  sha256: 629ebb33f9d5e6ce68b7a8e56e0728bc4544940e03af7dc92978b7847254b2a1
+  categorie:
+  - C10
+  - C11
+  - C08
+  recitant: imam_j
+  riwaya: hafs
+  langues:
+  - ar
+  license: usage interne d'évaluation uniquement, jamais redistribué
+  source: https://www.youtube.com/watch?v=-1GaknMvJ4Q
+  duree_s: 1848.041
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []

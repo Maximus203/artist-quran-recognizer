@@ -261,3 +261,16 @@
   l'historique public de `develop` un message de commit contenant `Co-Authored-By`, `Claude-Session`
   et un `Co-authored-by` — contraire à la règle de signature d'AGENTS.md (les hooks n'étaient pas
   encore installés). Non réécrit : modifier `develop` exigerait un force-push.
+- **Lot 1 ingéré (2026-10-04)** : les audios étaient déjà sur le poste de travail
+  (`D:\01-Dev\Data\aqr-audio`, mise en forme `lot-1-upload/lot-1/lot1-NN.mp3`) ; le dataset Hugging
+  Face privé `printf0cherif/aqr-audio-private` ne contenait que `.gitattributes` (vérifié dans le
+  navigateur connecté) — l'envoi n'avait jamais eu lieu, ce qui expliquait l'échec du `fetch`
+  côté cloud, indépendamment des variables d'environnement. `audio_lot.py import` (sans réseau,
+  sha256 vérifié, 12/12) puis `aqr data ingest` (ffmpeg réel, 37 s) : 12 cas, durées WAV = manifeste
+  (8,69 h au total), 16 kHz mono. `aqr data split` : dev 6,15 h (6 récitants) / test 2,55 h
+  (5 récitants), sans fuite. Cas `a_annoter` : l'annotation Audacity reste à faire (≈ 1 h par heure).
+- **`fetch_corpus` vérifie le lock** (PR #17) : plus de réécriture silencieuse ; `--repin` explicite.
+- **Historique** : le message de la PR #9 (signatures d'IA) a été réécrit sur `develop` (force-push
+  avec garde `--force-with-lease`, arbres identiques, 0 signature restante sur toutes les branches
+  distantes) ; la branche de PR `claude/awesome-johnson-hy80tv` supprimée. Les commits d'origine
+  restent atteignables via `refs/pull/9/head` (propre à GitHub, non supprimable).
