@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Refuse le push si un commit poussé porte une signature d'IA (filet si commit-msg contourné).
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$here/signature-pattern.sh"
+zero="0000000000000000000000000000000000000000"
+bad=0
+while read -r _ local_sha _ remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  if [ "$remote_sha" = "$zero" ]; then range="$local_sha --not --remotes"; else range="$remote_sha..$local_sha"; fi
+  # shellcheck disable=SC2086
+  for c in $(git rev-list $range); do
+    if git diff-tree --root --no-commit-id --name-only -r --diff-filter=AM "$c" | grep -qiE '\.(mp3|m4a|wav|ogg|opus|flac|mp4|mkv|webm|onnx|pt|safetensors|nemo|bin)$'; then
+      echo "pre-push : le commit $c ajoute un fichier audio/vidéo/modèle (interdit : dépôt public)." >&2
+      bad=1
+    fi
+    if git log -1 --format=%B "$c" | grep -qiE "$AI_SIGNATURE_RE"; then
+      echo "pre-push : le commit $c porte une signature d'IA. Réécris-le (git commit --amend) puis repousse." >&2
+      bad=1
+    fi
+  done
+done
+exit $bad
