@@ -196,3 +196,16 @@
   jamais modifiée** : les lots arrivent au fil de l'eau, un récitant ne doit pas migrer de dev à
   test. Un manifeste qui contiendrait déjà un récitant des deux côtés est refusé (erreur).
 - Dépendance de typage `types-pyyaml` ajoutée aux extras `dev` (mypy strict sur `aqr.data`).
+- **Étiquettes Audacity** (`aqr.data.labels`) : `début<TAB>fin<TAB>étiquette`, temps au microseconde ;
+  verset `67:4|recognized`, plage `2:255[1-9]|recognized` ou `[5]`, zone `NON_QURAN:<nature>`.
+  Aller-retour exact (propriété Hypothesis sur des temps à la milliseconde, toutes les natures
+  non coraniques). Lignes vides, `#` et sélections spectrales (`\`) ignorées ; **toutes** les
+  erreurs d'un fichier sont remontées avec leur numéro de ligne. `uncertain` refusé : une vérité
+  terrain est tranchée. Import refusé si une étiquette dépasse la durée de l'audio (+ tolérance).
+- **`export-labels` ne remplace jamais un fichier existant** (il peut contenir des corrections
+  manuelles faites dans Audacity) sans `force` explicite.
+- **`preannotate` : interface seulement** (`PreAnnotator`, `PreAnnotation`) — le moteur est
+  branché en phase 5. `PreAnnotation` entrelace librement versets et zones non coraniques : les
+  assises/prêches (C09/C11) citent un verset ou un hadith au milieu de français, les khutbas
+  (C10/C11) citent versets et hadiths en arabe ; aucune hypothèse de contenu pur. Testé avec un
+  faux annotateur (français → citation 2:255[1-9] → hadith arabe → français) relu à l'identique.
