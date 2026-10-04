@@ -2,6 +2,7 @@
 
     python scripts/audio_lot.py upload --lot 1 --src D:\\01-Dev\\Data\\aqr-audio\\inbox
     python scripts/audio_lot.py fetch  --lot 1            # écrit dans $AQR_AUDIO_DIR/inbox
+    python scripts/audio_lot.py import --lot 1 --src DIR  # idem, depuis des fichiers locaux
 
 Variables : HF_TOKEN (écriture pour upload, lecture pour fetch), AQR_HF_DATASET (« user/nom »),
 AQR_AUDIO_DIR (fetch). Dépendance : pip install -e ".[data]".
@@ -63,27 +64,42 @@ def upload(lot: int, src: Path) -> None:
         print(f"envoyé {item['id']}")
 
 
+def _stage(item: dict, source: Path, inbox: Path) -> None:
+    """Copie `source` dans l'inbox sous `<id>.mp3` + fiche, après vérification du sha256."""
+    if sha256_of(source) != item["sha256"]:
+        sys.exit(f"sha256 différent pour {item['id']} : fichier corrompu ou remplacé.")
+    inbox.mkdir(parents=True, exist_ok=True)
+    dest = inbox / f"{item['id']}.mp3"
+    dest.write_bytes(source.read_bytes())
+    sidecar = {k: item[k] for k in ("categorie", "recitant", "riwaya", "langues", "source")}
+    sidecar["fichier"] = dest.name
+    sidecar["droits"] = "usage interne d'évaluation uniquement, jamais redistribué"
+    dest.with_suffix(".yaml").write_text(
+        yaml.safe_dump(sidecar, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    print(f"ok {item['id']}")
+
+
 def fetch(lot: int) -> None:
     from huggingface_hub import hf_hub_download
 
     token, repo = _env("HF_TOKEN"), _env("AQR_HF_DATASET")
     inbox = Path(_env("AQR_AUDIO_DIR")) / "inbox"
-    inbox.mkdir(parents=True, exist_ok=True)
     for item in load_manifest(lot):
         cached = hf_hub_download(
             repo, f"lot-{lot}/{item['id']}.mp3", repo_type="dataset", token=token
         )
-        if sha256_of(Path(cached)) != item["sha256"]:
-            sys.exit(f"sha256 différent pour {item['id']} : fichier corrompu ou remplacé.")
-        dest = inbox / f"{item['id']}.mp3"
-        dest.write_bytes(Path(cached).read_bytes())
-        sidecar = {k: item[k] for k in ("categorie", "recitant", "riwaya", "langues", "source")}
-        sidecar["fichier"] = dest.name
-        sidecar["droits"] = "usage interne d'évaluation uniquement, jamais redistribué"
-        dest.with_suffix(".yaml").write_text(
-            yaml.safe_dump(sidecar, allow_unicode=True, sort_keys=False), encoding="utf-8"
-        )
-        print(f"ok {item['id']}")
+        _stage(item, Path(cached), inbox)
+
+
+def import_local(lot: int, src: Path, inbox: Path) -> None:
+    """Sans réseau : retrouve chaque fichier du manifeste dans `src` (récursif, par sha256)."""
+    by_hash = {sha256_of(p): p for p in src.rglob("*.mp3")}
+    for item in load_manifest(lot):
+        local = by_hash.get(item["sha256"])
+        if local is None:
+            sys.exit(f"Fichier introuvable pour {item['id']} (sha256 absent de {src}).")
+        _stage(item, local, inbox)
 
 
 def main() -> None:
@@ -94,9 +110,15 @@ def main() -> None:
     up.add_argument("--src", type=Path, required=True)
     fe = sub.add_parser("fetch")
     fe.add_argument("--lot", type=int, required=True)
+    im = sub.add_parser("import", help="copie locale (sans réseau) vers $AQR_AUDIO_DIR/inbox")
+    im.add_argument("--lot", type=int, required=True)
+    im.add_argument("--src", type=Path, required=True)
+    im.add_argument("--inbox", type=Path, help="défaut : $AQR_AUDIO_DIR/inbox")
     args = parser.parse_args()
     if args.cmd == "upload":
         upload(args.lot, args.src)
+    elif args.cmd == "import":
+        import_local(args.lot, args.src, args.inbox or Path(_env("AQR_AUDIO_DIR")) / "inbox")
     else:
         fetch(args.lot)
 
