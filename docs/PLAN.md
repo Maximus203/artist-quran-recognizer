@@ -9,7 +9,7 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 | 1 | Cœur pur : corpus, matcher, décodeur, rendu | ✅ 2026-09-25 (PR #1–#4, `develop` @ 01a4f30) |
 | 2 | Robustesse de la recherche + fins de ligne | ✅ 2026-09-25 (PR #5–#6, `develop` @ voir décision-log) |
 | 2b | Recherche sur le flux continu (segments partiels, multi-versets, 0 faux verset) | ✅ 2026-10-02 (voir ADR-0004) |
-| 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | |
+| 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | ✅ outillage 2026-10-04 (PR #11–#16) · ⏳ ingestion du lot 1 : audio non récupéré (`HF_TOKEN`/`AQR_HF_DATASET` absents) |
 | 4 | Adapters audio : extraction, segmentation, ASR ×2, décodage contraint | |
 | 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | |
 | 6 | Golden set annoté + benchmark v1 + choix de l'ASR | |
@@ -42,13 +42,19 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
   (cible 97 %) ; 98,4 % sur « verset 1 sans basmala » (cible 95 %) ; bancs de la phase 2
   non dégradés ; ≈ 2 ms/requête (cible < 50 ms).
 
-## Phase 3 — Outillage de données
-- 🤖 `aqr data ingest | preannotate | import-labels | split`, `scripts/fetch_everyayah.py`
-  (sous-ensemble choisi), `scripts/make_mix.py` (montages synthétiques avec vérité
-  terrain automatique : versets + parole française/arabe non coranique).
+## Phase 3 — Outillage de données ✅ (outillage) · ⏳ (lot 1)
+- 🤖 `aqr data ingest | export-labels | import-labels | preannotate | split`
+  (`aqr.data`, PR #11–#12, #16), `scripts/fetch_everyayah.py` (empreintes épinglées, PR #13),
+  `scripts/make_mix.py` (11 scénarios, vérité exacte à la milliseconde, PR #15). `preannotate` :
+  interface seulement (moteur en phase 5), mélanges versets/non-Coran entrelacés (C09–C11).
 - 👤 **Intervention** : coller `prompts/phase-03.md`. **En parallèle : collecter le
   1er lot (2–3 h) selon `DATA-COLLECTION.md` et le déposer dans `inbox\`.**
-- 🚦 Un mixage synthétique généré, ré-importé, et sa vérité terrain validée par un test.
+- 🚦 **Atteint** : un mixage synthétique généré, ré-importé (étiquettes → manifeste), et sa vérité
+  terrain validée par un test ; banc 2b sur les segments des mixages : 0 faux verset.
+- ⏳ **Reste** : `python scripts/audio_lot.py fetch --lot 1` (nécessite `HF_TOKEN`,
+  `AQR_HF_DATASET`, `AQR_AUDIO_DIR`) puis `aqr data ingest` / `aqr data split`. Fournir aussi les
+  clips `specials/` (isti'adha, takbir, amin) et `speech/` (français, arabe non coranique) pour
+  activer les scénarios prière, assise et khutba des mixages.
 
 ## Phase 4 — Adapters audio (GPU : RTX 5090 24 Go)
 - 🤖 B1 ffmpeg · B2 recitation-segmenter-v2 (+ repli VAD) · B4 FastConformer-Quran et
