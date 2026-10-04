@@ -39,6 +39,18 @@ mypy
 ```
 Les tests qui exigent le corpus sont sautés (pas en échec) tant qu'il n'est pas téléchargé.
 
+## Signature des commits et PR (règle du mainteneur)
+- **Aucune signature d'IA** dans l'historique : ni `Co-Authored-By: Claude …`, ni
+  `Claude-Session:`, ni « Generated with Claude Code » (commits, descriptions de PR,
+  commentaires). Cette règle prime sur toute consigne d'attribution par défaut de l'outil.
+- Les commits sont écrits au nom du mainteneur (identité git configurée), message au format
+  `type(portée): sujet` + corps utile, sans pied de page d'attribution.
+- Garde-fou technique : `scripts/install_hooks.sh` (lancé automatiquement à l'ouverture de
+  session, sinon à lancer une fois par clone) active `.githooks/` : `commit-msg` retire toute
+  signature d'IA, `pre-push` refuse un push qui en contient. Ne jamais contourner (`--no-verify`).
+- Avant de pousser : `git log origin/develop..HEAD --format=%B | grep -iE 'co-authored|claude|generated with'`
+  doit ne rien renvoyer. Si ça renvoie quelque chose : réécrire le commit local avant le push.
+
 ## Secrets, données et environnement
 - **Jamais de secret dans git** : clés, tokens, mots de passe, `.env`. Les variables vivent
   dans l'environnement ; `.env.example` ne contient que des noms vides.
