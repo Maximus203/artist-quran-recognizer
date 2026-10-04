@@ -175,3 +175,24 @@
 - **« Partiels »** : quelques détections RECOGNIZED recouvrent les bons versets sans les égaler
   (un verset de plus ou de moins à une borne de fenêtre, < 1 %). Pas de faux verset, mais à
   surveiller en phase 6 sur de vrais audios.
+
+## 2026-10-04 — Phase 3 : outillage de données (noyau, ingest, split)
+- **Manifeste** (`aqr.data.manifest`) : même format YAML que `docs/TEST-CORPUS.md` /
+  `tests/acceptance/test_manifest.py` (`expected` avec `t`, `ref`, `words`, `status` ; `non_quran`
+  avec `kind`), enrichi de `sha256`, `categorie`, `recitant`, `langues`, `duree_s`, `statut`
+  (`a_annoter` | `annote`), `split` (`dev` | `test`), `origine` (`reel` | `mix`) et `boundaries`
+  (`exact` | `approximate`, pour les coupures estimées d'un mix). Écriture atomique, idempotente ;
+  statuts de vérité limités à `recognized`/`inferred` côté étiquettes (pas d'`uncertain` en
+  vérité terrain). Un cas porte `words: all` ou une plage `a-b` (index de `CorpusRepository.words`).
+- **Fiche** : schéma strict, toutes les erreurs remontées d'un coup (clé inconnue = erreur, pas
+  d'oubli silencieux d'une faute de frappe). `recitant` = identifiant anonyme, normalisé en
+  minuscules (`imam_A` et `imam_a` = même groupe de découpage, sinon fuite dev/test possible).
+- **Ingest** : idempotence par SHA-256 (un contenu redéposé sous un autre nom n'est pas
+  dupliqué ; son WAV dérivé manquant est régénéré) ; un fichier en erreur n'arrête pas les
+  autres ; l'original et sa fiche sont déplacés (pas copiés) dans `<catégorie>/` seulement après
+  conversion réussie. Convertisseur injectable (tests sans ffmpeg) ; ffmpeg réel testé.
+- **Split** : récitants ordonnés par hachage salé (déterministe, indépendant de l'ordre),
+  affectation gloutonne vers `dev_ratio` pondérée par la durée. **Une affectation écrite n'est
+  jamais modifiée** : les lots arrivent au fil de l'eau, un récitant ne doit pas migrer de dev à
+  test. Un manifeste qui contiendrait déjà un récitant des deux côtés est refusé (erreur).
+- Dépendance de typage `types-pyyaml` ajoutée aux extras `dev` (mypy strict sur `aqr.data`).
