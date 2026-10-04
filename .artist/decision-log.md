@@ -220,3 +220,30 @@
   **pas** la basmala (`112001.mp3` ≈ 3 s) — elle est dans `bismillah.mp3` séparé. « Verset 1 avec
   basmala » = `bismillah.mp3` + verset 1 ; « sans basmala » = le fichier seul. Exception : 1:1
   (la basmala est le verset).
+- **Mixages synthétiques** (`aqr.data.mixer`, `scripts/make_mix.py`) : 11 scénarios reproductibles
+  (graine → même audio, même vérité) mappés aux catégories du corpus : murattal continu (C01), saut
+  de sourate (C03), verset brouillé → `inferred` (C04), répétition/i'ada (C05), arrêt au waqf puis
+  reprise (C06), plusieurs versets courts d'un souffle (C01, segments **contigus**), verset 1 avec
+  et sans basmala (C01), prière (C08 : takbir, isti'adha, Fatiha 1:1-7, amin, sourate, takbir),
+  assise FR (C09 : français → citation → hadith arabe → français), khutba (C10/C11).
+- **Vérité exacte à la milliseconde** : toutes les longueurs sont des multiples de 16 échantillons
+  (1 ms à 16 kHz) ; les temps sont calculés depuis les échantillons, jamais mesurés. Un test relit
+  l'audio et vérifie que chaque verset complet se trouve à l'endroit annoncé (fréquence du ton).
+- **Seule exception, déclarée** : la coupure *interne* d'un verset (partiel : waqf, reprise) est
+  estimée au prorata des lettres puis collée au silence le plus proche (fenêtre `snap_window_s`) ;
+  le mix porte alors `boundaries: approximate` et une tolérance de cas élargie
+  (`approximate_tolerance_ms`). Les clips EveryAyah n'ont pas d'horodatage mots.
+- **Convention de vérité du verset 1** (sourates ≠ 1, 9, dont le texte Tanzil porte la basmala en
+  tête) : avec basmala (`bismillah.mp3` + verset) = `words: all` ; sans basmala (fichier EveryAyah
+  seul, qui ne la contient pas) = `words: 5-N`. Pour 1:1, la basmala est le verset.
+- **Sources manquantes = scénario écarté avec sa raison, jamais inventé** : isti'adha, takbir, amin
+  (`specials/`) et parole non coranique FR/AR (`speech/`) ne viennent pas d'EveryAyah et sont à
+  fournir (ou à découper des audios annotés) ; sans eux, prière/assise/khutba sont écartés et
+  signalés. Un scénario qui ne peut produire qu'un seul mix distinct (peu de verses disponibles)
+  ne produit pas de doublons exacts (`variété insuffisante`).
+- **Banc 2b réutilisé** : `mix_segment_cases` transforme les mixages en `SegmentCase` (imla'i,
+  suites contiguës = multi-versets, brouillés exclus, versets à découpage mots Uthmani≠simple-clean
+  écartés). Test : tous les types (partiel, multi_versets, verset 1 avec/sans basmala, verset entier,
+  isti'adha/takbir/amin, inferred) présents et **0 faux verset** nommé. Mesure réelle sur des
+  mixages EveryAyah (Alafasy, sourates 1/112–114, graine 7) : 93 segments, 0 faux verset ;
+  top-1 100 % sur multi-versets (6), partiels (3), verset 1 avec (4) / sans basmala (10).
