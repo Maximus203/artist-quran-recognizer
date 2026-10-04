@@ -209,3 +209,14 @@
   assises/prêches (C09/C11) citent un verset ou un hadith au milieu de français, les khutbas
   (C10/C11) citent versets et hadiths en arabe ; aucune hypothèse de contenu pur. Testé avec un
   faux annotateur (français → citation 2:255[1-9] → hadith arabe → français) relu à l'identique.
+- **EveryAyah** (`aqr.data.everyayah`, `scripts/fetch_everyayah.py`) : sous-ensemble configurable
+  (récitants × sourates, défaut 3 × 10 : Alafasy, Husary, Abdul Basit ; sourates 1, 67, 97, 103,
+  108–110, 112–114). Empreintes SHA-256 **épinglées au premier téléchargement** dans
+  `everyayah/LOCK.json` : un fichier local altéré ou un contenu distant qui a changé depuis est
+  une erreur explicite (jamais une substitution silencieuse) ; une page HTML renvoyée à la place
+  d'un MP3 est rejetée ; un échec réseau sur un fichier n'arrête pas le lot ; relance idempotente
+  (0 retéléchargement). Vérifié en réel (Alafasy, sourate 112 : 5 fichiers, 2ᵉ passage 0/5).
+- **Constat utile aux mixages** : sur EveryAyah les fichiers `SSSVVV.mp3` du verset 1 ne contiennent
+  **pas** la basmala (`112001.mp3` ≈ 3 s) — elle est dans `bismillah.mp3` séparé. « Verset 1 avec
+  basmala » = `bismillah.mp3` + verset 1 ; « sans basmala » = le fichier seul. Exception : 1:1
+  (la basmala est le verset).
