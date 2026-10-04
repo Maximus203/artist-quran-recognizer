@@ -9,7 +9,7 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 | 1 | Cœur pur : corpus, matcher, décodeur, rendu | ✅ 2026-09-25 (PR #1–#4, `develop` @ 01a4f30) |
 | 2 | Robustesse de la recherche + fins de ligne | ✅ 2026-09-25 (PR #5–#6, `develop` @ voir décision-log) |
 | 2b | Recherche sur le flux continu (segments partiels, multi-versets, 0 faux verset) | ✅ 2026-10-02 (voir ADR-0004) |
-| 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | ✅ outillage 2026-10-04 (PR #11–#16) · ⏳ ingestion du lot 1 : audio non récupéré (`HF_TOKEN`/`AQR_HF_DATASET` absents) |
+| 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | ✅ 2026-10-04 (PR #11–#18) · lot 1 ingéré (12 fichiers, 8,69 h, split dev/test fait) |
 | 4 | Adapters audio : extraction, segmentation, ASR ×2, décodage contraint | |
 | 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | |
 | 6 | Golden set annoté + benchmark v1 + choix de l'ASR | |
@@ -51,10 +51,11 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
   1er lot (2–3 h) selon `DATA-COLLECTION.md` et le déposer dans `inbox\`.**
 - 🚦 **Atteint** : un mixage synthétique généré, ré-importé (étiquettes → manifeste), et sa vérité
   terrain validée par un test ; banc 2b sur les segments des mixages : 0 faux verset.
-- ⏳ **Reste** : `python scripts/audio_lot.py fetch --lot 1` (nécessite `HF_TOKEN`,
-  `AQR_HF_DATASET`, `AQR_AUDIO_DIR`) puis `aqr data ingest` / `aqr data split`. Fournir aussi les
-  clips `specials/` (isti'adha, takbir, amin) et `speech/` (français, arabe non coranique) pour
-  activer les scénarios prière, assise et khutba des mixages.
+- ✅ **Lot 1 ingéré** (8,69 h, 12 fichiers, `a_annoter`) : `audio_lot.py import` puis `aqr data ingest`
+  et `aqr data split` (6,15 h dev · 2,55 h test, aucun récitant des deux côtés). Reste côté Cherif :
+  l'**annotation** dans Audacity (`aqr data export-labels <id>`), et fournir les clips `specials/`
+  (isti'adha, takbir, amin) et `speech/` (français, arabe non coranique) pour les mixages prière,
+  assise et khutba. Dataset Hugging Face privé : encore vide (envoi nécessaire pour le cloud).
 
 ## Phase 4 — Adapters audio (GPU : RTX 5090 24 Go)
 - 🤖 B1 ffmpeg · B2 recitation-segmenter-v2 (+ repli VAD) · B4 FastConformer-Quran et
