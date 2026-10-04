@@ -17,8 +17,11 @@ from aqr.corpus.fetch import fetch_and_lock
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("data/corpus"))
+    parser.add_argument(
+        "--repin", action="store_true", help="accepter un contenu distant différent du lock"
+    )
     args = parser.parse_args()
-    lock = fetch_and_lock(args.out)
+    lock = fetch_and_lock(args.out, repin=args.repin)
     print(
         f"corpus téléchargé : {lock.verse_count} versets, "
         f"{len(lock.files)} fichier(s) épinglé(s) dans {args.out / 'LOCK.json'}"

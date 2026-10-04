@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import datetime as dt
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
-from aqr.corpus.checksums import CorpusLock, LockedFile, sha256_of
+from aqr.corpus.checksums import CorpusChecksumError, CorpusLock, LockedFile, sha256_of
 
 TANZIL_BASE = "https://tanzil.net/pub/download/index.php"
 
@@ -80,11 +81,35 @@ def fetch_url(url: str) -> bytes:  # pragma: no cover - I/O réseau
         return body
 
 
-def fetch_and_lock(out_dir: Path) -> CorpusLock:  # pragma: no cover - I/O réseau
+def fetch_and_lock(
+    out_dir: Path, *, fetch: Callable[[str], bytes] = fetch_url, repin: bool = False
+) -> CorpusLock:
+    """Télécharge le corpus ; le `LOCK.json` déjà épinglé fait foi.
+
+    Premier passage : fichiers écrits, lock créé. Passages suivants : le contenu distant est
+    comparé aux empreintes épinglées ; identique -> lock laissé tel quel (pas de `fetched_at`
+    qui bouge) ; différent -> `CorpusChecksumError`, ni lock ni fichiers modifiés. Seul
+    `repin=True` (décision explicite) accepte un nouveau contenu et réécrit le lock.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
-    raw_by_key = {key: fetch_url(source_url(key)) for key in SOURCES}
+    raw_by_key = {key: fetch(source_url(key)) for key in SOURCES}
+    lock_path = out_dir / "LOCK.json"
+    if lock_path.exists() and not repin:
+        pinned = CorpusLock.load(lock_path)
+        for key, data in raw_by_key.items():
+            expected = pinned.files[key].sha256
+            if sha256_of(data) != expected:
+                raise CorpusChecksumError(
+                    f"le contenu distant de {key} diffère de l'empreinte épinglée "
+                    f"({expected[:12]}…) : refusé. Relancer avec --repin pour l'accepter."
+                )
+        for key, data in raw_by_key.items():
+            target = out_dir / SOURCES[key]["path"]
+            if not target.exists():
+                target.write_bytes(data)
+        return pinned
     for key, data in raw_by_key.items():
         (out_dir / SOURCES[key]["path"]).write_bytes(data)
     lock = build_lock(raw_by_key)
-    lock.save(out_dir / "LOCK.json")
+    lock.save(lock_path)
     return lock
