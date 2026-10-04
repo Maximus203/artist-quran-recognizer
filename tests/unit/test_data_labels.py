@@ -131,7 +131,12 @@ def test_aller_retour_exact_propriete(items):
     expected = tuple(i for i in items if isinstance(i, ExpectedItem))
     non_quran = tuple(i for i in items if isinstance(i, NonQuranItem))
     again_expected, again_non_quran = parse_labels(format_labels(expected, non_quran))
-    key = lambda i: (i.t, str(getattr(i, "ref", "")))  # noqa: E731
+
+    # Clé de tri COMPLÈTE : deux éléments au même instant (statuts ou natures différents) ne
+    # doivent pas dépendre de l'ordre d'écriture.
+    def key(item: ExpectedItem | NonQuranItem) -> str:
+        return repr(item)
+
     assert sorted(again_expected, key=key) == sorted(expected, key=key)
     assert sorted(again_non_quran, key=key) == sorted(non_quran, key=key)
 
@@ -249,3 +254,14 @@ def test_preannotate_sans_moteur_branche_est_un_message_clair(env):
     (audio_dir / "_derived" / "cas1.wav").write_bytes(b"")
     with pytest.raises(PreannotationUnavailable, match="phase 5"):
         preannotate(manifest_path, audio_dir, "cas1", UnavailablePreAnnotator())
+
+
+def test_elements_au_meme_instant_survivent_a_l_aller_retour():
+    # Cas trouvé par la propriété : mêmes bornes, statuts/natures différents.
+    a = ExpectedItem((0.0, 0.001), VerseRef(1, 1), WordRange.all(), Status.RECOGNIZED)
+    b = ExpectedItem((0.0, 0.001), VerseRef(1, 1), WordRange.all(), Status.INFERRED)
+    n1 = NonQuranItem((0.0, 0.001), NonQuranKind.SILENCE)
+    n2 = NonQuranItem((0.0, 0.001), NonQuranKind.NOISE)
+    expected, non_quran = parse_labels(format_labels((a, b), (n1, n2)))
+    assert set(expected) == {a, b} and len(expected) == 2
+    assert set(non_quran) == {n1, n2} and len(non_quran) == 2
