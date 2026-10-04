@@ -20,7 +20,7 @@ from pathlib import Path
 from aqr.corpus.imlai_corrections import build_word_corrections, load_simple_clean_words
 from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
-from aqr.matching.ngram_matcher import NgramVerseMatcher
+from aqr.matching.flow_matcher import FlowVerseMatcher
 from aqr.matching.noise import drop_random_word, inject_letter_noise, insert_random_word
 
 SCENARIOS = {
@@ -39,7 +39,7 @@ def run(corpus_dir: Path, n: int, seed: int) -> None:
     corrections = build_word_corrections(corpus, simple_clean_words)
 
     t0 = time.perf_counter()
-    matcher = NgramVerseMatcher(corpus, word_corrections=corrections)
+    matcher = FlowVerseMatcher(corpus, word_corrections=corrections)
     build_s = time.perf_counter() - t0
 
     refs = sorted(corpus.all_refs())

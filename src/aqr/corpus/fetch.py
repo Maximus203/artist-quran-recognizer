@@ -76,8 +76,8 @@ def fetch_url(url: str) -> bytes:  # pragma: no cover - I/O réseau
         url, headers={"User-Agent": "artist-quran-recognizer/0.1 (+scripts/fetch_corpus.py)"}
     )
     with urllib.request.urlopen(request, timeout=30) as response:
-        data: bytes = response.read()
-        return data
+        body: bytes = response.read()
+        return body
 
 
 def fetch_and_lock(out_dir: Path) -> CorpusLock:  # pragma: no cover - I/O réseau
