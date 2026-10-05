@@ -16,7 +16,8 @@ data/*
 !data/corpus/
 data/corpus/*
 !data/corpus/LOCK.json
-models/
+models/*
+!models/LOCK.json
 tests/fixtures/audio/files/
 *.wav
 *.mp3
