@@ -274,3 +274,24 @@
   avec garde `--force-with-lease`, arbres identiques, 0 signature restante sur toutes les branches
   distantes) ; la branche de PR `claude/awesome-johnson-hy80tv` supprimée. Les commits d'origine
   restent atteignables via `refs/pull/9/head` (propre à GitHub, non supprimable).
+
+## 2026-10-05 — Phase 4 : adapters audio (début)
+- **Pile lourde installée et vérifiée sur le RTX 5090 Laptop (24 Go, Blackwell sm_120)** : PyTorch
+  `2.11.0+cu128` depuis l'index `https://download.pytorch.org/whl/cu128` (6 min), `transformers` 5.18,
+  `nemo_toolkit[asr]` 3.0.0 (2 min), numpy 2.4, soundfile. Vérifié : noyau CUDA réel exécuté (matmul
+  4096², `arch_list` contient `sm_120`), `import nemo.collections.asr` OK, `pip check` propre. Piège
+  documenté (README) : un GPU Blackwell exige PyTorch ≥ 2.7 en CUDA 12.8 — installer torch AVANT
+  l'extra `[asr]`, sinon pip peut tirer une roue CPU/sans sm_120.
+- **B1 `FfmpegAudioExtractor`** (`aqr.adapters.ffmpeg_extractor`) : tout format ffmpeg -> `array('f')`
+  mono 16 kHz (sans numpy), erreurs typées en français (`AudioExtractionError` : ffmpeg absent,
+  fichier illisible, piste audio absente — la vidéo muette est reconnue via ffprobe plutôt qu'en
+  parsant un message ffmpeg fragile). 28,5 min de MP3 en 3,3 s (≈ ×500 temps réel).
+- **Défaut du contrat trouvé sur de vraies données** : un MP3 du lot 1 donnait des échantillons
+  jusqu'à **1,43** (décodeurs flottants > 0 dBFS ; 0,3 % des échantillons) alors que le port promet
+  [-1, 1]. Essayé et **rejeté** : `alimiter` (n'agit pas, le rééchantillonnage suit) et le passage par
+  s16 dans la chaîne ffmpeg (corrige le pic mais **baisse le niveau de 3 dB**, RMS 0,25 -> 0,177 : le
+  mixage mono n'a pas la même loi). Retenu : signal exact + `clamp_full_scale` (écrêtage des seuls
+  dépassements, aucune normalisation, pas de copie s'il n'y a rien à écrêter ; numpy si présent).
+- **Socle des tests de contrat** : `tests/support/{audio,fakes}.py` (fichiers générés : sinus, silence,
+  MP3, vidéo avec/sans piste audio) ; `pythonpath` pytest étendu à la racine pour `tests.support`.
+  Contrat B1 rejoué contre le fake ET ffmpeg réel (rapide : pas de marqueur `slow`).
