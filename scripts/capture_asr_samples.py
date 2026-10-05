@@ -27,6 +27,7 @@ from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.decoding.viterbi_decoder import DecoderConfig
 from aqr.domain.models import TimeSpan, VerseRef
+from aqr.domain.ports import QuranASR
 from aqr.matching.flow_matcher import FlowVerseMatcher
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +40,7 @@ def has_vowels(text: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--asr", default="fastconformer", choices=["fastconformer"])
+    parser.add_argument("--asr", default="fastconformer", choices=["fastconformer", "whisper"])
     parser.add_argument("--fixture", type=int, default=80, help="taille de l'échantillon versionné")
     parser.add_argument("--corpus", type=Path, default=ROOT / "data" / "corpus")
     parser.add_argument("--seed", type=int, default=7)
@@ -51,16 +52,22 @@ def main() -> int:
     if not audio_dir or not models_dir:
         sys.exit("Variables manquantes : AQR_AUDIO_DIR et AQR_MODELS_DIR")
 
-    from aqr.adapters.fastconformer import FastConformerConfig, FastConformerQuranASR
+    lock = ROOT / "models" / "LOCK.json"
+    if args.asr == "fastconformer":
+        from aqr.adapters.fastconformer import FastConformerConfig, FastConformerQuranASR
 
-    base = FastConformerConfig(models_dir=Path(models_dir), lock_path=ROOT / "models" / "LOCK.json")
-    asr = FastConformerQuranASR(
-        replace(
-            base,
-            context_pad_s=base.context_pad_s if args.pad is None else args.pad,
-            pad_noise=args.pad_noise,
+        base = FastConformerConfig(models_dir=Path(models_dir), lock_path=lock)
+        asr: QuranASR = FastConformerQuranASR(
+            replace(
+                base,
+                context_pad_s=base.context_pad_s if args.pad is None else args.pad,
+                pad_noise=args.pad_noise,
+            )
         )
-    )
+    else:
+        from aqr.adapters.whisper_tarteel import WhisperTarteelASR, WhisperTarteelConfig
+
+        asr = WhisperTarteelASR(WhisperTarteelConfig(models_dir=Path(models_dir), lock_path=lock))
     corpus = TanzilCorpusRepository(args.corpus)
     simple = load_simple_clean_words(args.corpus)
     matcher = FlowVerseMatcher(corpus, word_corrections=build_word_corrections(corpus, simple))
@@ -68,11 +75,15 @@ def main() -> int:
     extractor = FfmpegAudioExtractor()
 
     rows: list[dict[str, object]] = []
+    skipped_long: list[str] = []
     audio_seconds = infer_seconds = 0.0
     for clip_path in sorted((Path(audio_dir) / "everyayah").glob("*/[0-9]*.mp3")):
         ref = VerseRef(int(clip_path.stem[:3]), int(clip_path.stem[3:]))
         clip = extractor.extract(clip_path)
         duration = len(clip.samples) / clip.sample_rate
+        if args.asr == "whisper" and duration > 30.0:  # fenêtre d'entrée de Whisper
+            skipped_long.append(str(ref))
+            continue
         started = time.perf_counter()
         transcript = asr.transcribe(clip, TimeSpan(0.0, duration))
         infer_seconds += time.perf_counter() - started
@@ -107,6 +118,8 @@ def main() -> int:
         )
 
     n = len(rows)
+    if skipped_long:
+        print(f"écartés (> 30 s, fenêtre de Whisper) : {skipped_long}")
     correct = sum(1 for r in rows if r["correct"])
     named = sum(1 for r in rows if r["correct"] and (r["score"] or 0) >= threshold)
     wrong_named = sum(1 for r in rows if not r["correct"] and (r["score"] or 0) >= threshold)

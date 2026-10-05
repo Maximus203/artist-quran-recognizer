@@ -348,3 +348,27 @@
 - **À corriger côté mixeur (constat EveryAyah)** : `bismillah.mp3` n'existe pas pour
   `Abdul_Basit_Murattal_192kbps` (404) ; `DiskClipProvider.bismillah` lèverait une erreur pour les
   scénarios « verset 1 avec basmala » avec ce récitant.
+- **B4 challenger `WhisperTarteelASR`** (`aqr.adapters.whisper_tarteel`) : Whisper-base fine-tuné,
+  `pytorch_model.bin` épinglé et vérifié avant chargement, chargé par `transformers` (weights_only).
+  La `generation_config` du dépôt est obsolète (pas de langue/tâche : `generate(language=…)` lève) :
+  complétée à partir du tokenizer (`<|ar|>`, `<|transcribe|>`, `<|notimestamps|>` lus, pas écrits en
+  dur). transformers 5 a supprimé `forced_decoder_ids`. Fenêtre d'entrée de 30 s : un segment plus long
+  est refusé (à découper en amont par B2).
+- **Horodatages par mot de Whisper-Tarteel : inutilisables, essayés puis écartés.** DTW des attentions
+  croisées avec 3 jeux de têtes (openai-base, dernière couche, deux dernières couches), via `generate`
+  et via le pipeline `return_timestamps="word"`, avec et sans `num_frames` : dans tous les cas les mots
+  s'entassent dans la 1ʳᵉ fraction de seconde et le dernier absorbe le reste (« أَحَدٌ » 0,18->2,9 s).
+  Le modèle, affiné sur des clips d'un verset, a perdu l'alignement. Décision : le **texte** vient de
+  Whisper, les **temps de mots sont estimés** au prorata des lettres dans le segment et déclarés
+  (`engine` ... `/times-estimated`) ; la seule mesure de temps fiable est celle du segment (B2) ou du
+  FastConformer.
+- **Comparaison sur EveryAyah (même matcher, 3 récitants)** : Whisper-Tarteel **top-1 100 %** (212
+  versets <= 30 s), **100 % de sorties vocalisées**, 84,4 % nommés justes au seuil, 0 faux verset,
+  RTF 0,084 (~x12 temps réel) ; FastConformer **97,2 %**, 85 % vocalisées, 79,2 % nommés, 0 faux, RTF
+  0,017 (~x57). **Réserve de méthode** : les deux modèles ont été entraînés sur EveryAyah
+  (`tarteel-ai/everyayah`) — ce banc est un **plafond optimiste**, pas une mesure de généralisation ;
+  le choix du moteur par défaut se fera sur du vrai audio (phase 6). Whisper est plus précis en
+  texte mais 5x plus lent, sans horodatage de mots et limité à 30 s ; le FastConformer est rapide,
+  horodate les mots et expose les logits CTC (décodage contraint).
+- Échantillons de 80 sorties réelles par moteur versionnés (`tests/fixtures/asr/*_everyayah.json`),
+  rejoués par `test_matcher_real_asr.py` (bon verset retrouvé, 0 faux verset au-dessus du seuil).

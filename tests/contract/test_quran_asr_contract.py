@@ -18,10 +18,19 @@ def _fastconformer() -> QuranASR:
     return FastConformerQuranASR(FastConformerConfig(models_dir=models_dir(), lock_path=LOCK_PATH))
 
 
+def _whisper() -> QuranASR:
+    from tests.support.real import LOCK_PATH
+
+    from aqr.adapters.whisper_tarteel import WhisperTarteelASR, WhisperTarteelConfig
+
+    return WhisperTarteelASR(WhisperTarteelConfig(models_dir=models_dir(), lock_path=LOCK_PATH))
+
+
 @pytest.fixture(
     params=[
         pytest.param(lambda: FakeQuranASR(), id="fake"),
         pytest.param(_fastconformer, id="fastconformer", marks=pytest.mark.slow),
+        pytest.param(_whisper, id="whisper-tarteel", marks=pytest.mark.slow),
     ],
     scope="module",
 )

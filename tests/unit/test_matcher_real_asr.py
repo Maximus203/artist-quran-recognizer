@@ -18,7 +18,9 @@ from aqr.matching.flow_matcher import FlowVerseMatcher
 
 ROOT = Path(__file__).resolve().parents[2]
 CORPUS_DIR = ROOT / "data" / "corpus"
-FIXTURE = ROOT / "tests" / "fixtures" / "asr" / "fastconformer_everyayah.json"
+FIXTURES = ROOT / "tests" / "fixtures" / "asr"
+# moteur -> (top-1 minimal sur l'échantillon, toutes les sorties vocalisées ?)
+ENGINES = {"fastconformer": (0.93, False), "whisper": (0.97, True)}
 
 pytestmark = pytest.mark.skipif(
     not (CORPUS_DIR / "LOCK.json").exists(),
@@ -37,9 +39,15 @@ def matcher(corpus) -> FlowVerseMatcher:
     return FlowVerseMatcher(corpus, word_corrections=build_word_corrections(corpus, simple))
 
 
+@pytest.fixture(scope="module", params=sorted(ENGINES))
+def engine(request) -> str:
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def samples() -> list[dict]:
-    return json.loads(FIXTURE.read_text(encoding="utf-8"))["samples"]
+def samples(engine) -> list[dict]:
+    path = FIXTURES / f"{engine}_everyayah.json"
+    return json.loads(path.read_text(encoding="utf-8"))["samples"]
 
 
 def _is_right(corpus, sample, candidates) -> bool:
@@ -50,15 +58,20 @@ def _is_right(corpus, sample, candidates) -> bool:
     )
 
 
-def test_echantillon_representatif(samples):
+def test_echantillon_representatif(engine, samples):
     assert len(samples) >= 60
     assert {s["reciter"] for s in samples} >= {"Alafasy_128kbps", "Husary_128kbps"}
+    assert all(
+        s["engine"].startswith(f"{'whisper-base' if engine == 'whisper' else 'fastconformer'}")
+        for s in samples
+    )
 
 
-def test_format_reel_voyelles_presentes_mais_pas_toujours(samples):
-    # Contrat observé : texte arabe brut, voyelles dans la majorité des sorties, jamais toutes.
-    with_vowels = sum(1 for s in samples if s["has_vowels"])
-    assert 0.5 < with_vowels / len(samples) < 1.0
+def test_format_reel_des_voyelles(engine, samples):
+    # Contrat observé : FastConformer = voyelles dans la majorité des sorties mais pas toutes ;
+    # Whisper-Tarteel = toujours entièrement vocalisé.
+    ratio = sum(1 for s in samples if s["has_vowels"]) / len(samples)
+    assert ratio == 1.0 if ENGINES[engine][1] else 0.5 < ratio < 1.0
 
 
 def test_la_normalisation_absorbe_les_voyelles_du_modele(samples):
@@ -68,12 +81,12 @@ def test_la_normalisation_absorbe_les_voyelles_du_modele(samples):
         assert not any(ch in normalized for ch in "ًٌٍَُِّْ")
 
 
-def test_top1_sur_sortie_reelle(corpus, matcher, samples):
+def test_top1_sur_sortie_reelle(engine, corpus, matcher, samples):
     right = sum(
         _is_right(corpus, s, matcher.match(normalize_arabic(s["raw_text"]), top_k=3))
         for s in samples
     )
-    assert right / len(samples) >= 0.93, f"top-1 réel : {right / len(samples):.1%}"
+    assert right / len(samples) >= ENGINES[engine][0], f"top-1 réel : {right / len(samples):.1%}"
 
 
 def test_aucun_faux_verset_nomme_sur_sortie_reelle(corpus, matcher, samples):
