@@ -372,3 +372,17 @@
   horodate les mots et expose les logits CTC (décodage contraint).
 - Échantillons de 80 sorties réelles par moteur versionnés (`tests/fixtures/asr/*_everyayah.json`),
   rejoués par `test_matcher_real_asr.py` (bon verset retrouvé, 0 faux verset au-dessus du seuil).
+
+## Phase 4 — B2 segmenteur (recitation-segmenter-v2 + repli Silero VAD)
+- `RecitationSegmenterV2` (principal, modèle épinglé et vérifié par `models/LOCK.json`) et
+  `SileroVadSegmenter` derrière le même port ; `FallbackSegmenter` bascule sur Silero si le principal
+  est indisponible (RuntimeError/OSError/ImportError) mais ne masque pas une `ValueError` (erreur de
+  logique). Réglages (silence/parole minimale, marge, seuil VAD) en configuration, pas en dur.
+- **Mesure sur 10 min d'audio (RTX 5090)** : recitation-segmenter-v2 ~4-4,9 s (RTF ~0,007, bf16) ;
+  Silero ~11-12 s (RTF ~0,019, CPU). Les deux retrouvent les 3 versets de test à IoU >= 0,8.
+- Vérité terrain du contrat : les spans vrais bornent la **parole** (énergie), pas la durée du MP3 —
+  la queue de silence (~1 s, RMS 0,004) du dernier verset EveryAyah n'est pas de la parole ; les deux
+  segmenteurs la rejetaient à raison.
+- Dépendances : `recitations-segmenter==1.0.0` et `silero-vad==6.2.3` dans l'extra `segmenter`, à
+  installer avec `--no-deps` après `[asr]` (leurs contraintes torch entrent en conflit avec le pin
+  Blackwell cu128).

@@ -65,3 +65,24 @@ class FakeQuranASR:
             for i, w in enumerate(self._words)
         )
         return Transcript(words=words, engine="fake-quran-asr")
+
+
+class EnergySegmenter:
+    """B2 factice : trames de 20 ms au-dessus d'un seuil d'énergie, pauses courtes comblées."""
+
+    def __init__(self, threshold: float = 0.01, min_gap_s: float = 0.5) -> None:
+        self._threshold, self._min_gap = threshold, min_gap_s
+
+    def segment(self, clip: AudioClip) -> list[TimeSpan]:
+        frame = round(0.02 * clip.sample_rate)
+        spans: list[list[float]] = []
+        for index in range(0, len(clip.samples) - frame + 1, frame):
+            chunk = clip.samples[index : index + frame]
+            if max(abs(x) for x in chunk) < self._threshold:
+                continue
+            start, end = index / clip.sample_rate, (index + frame) / clip.sample_rate
+            if spans and start - spans[-1][1] < self._min_gap:
+                spans[-1][1] = end
+            else:
+                spans.append([start, end])
+        return [TimeSpan(a, b) for a, b in spans]
