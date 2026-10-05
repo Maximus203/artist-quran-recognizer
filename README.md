@@ -32,7 +32,9 @@ python scripts/bench_matcher.py --n 2000          # banc de robustesse de la rec
 
 Les tests qui ont besoin du corpus sont sautés tant qu'il n'est pas téléchargé. Les audios,
 modèles et caches vivent hors dépôt (`AQR_AUDIO_DIR`, `AQR_MODELS_DIR`, voir `.env.example`).
-Extras optionnels : `.[audio]`, `.[asr]` (PyTorch/NeMo, GPU conseillé).
+Extras optionnels : `.[audio]`, `.[asr]` (PyTorch/NeMo, GPU conseillé). GPU NVIDIA récent (RTX 50xx,
+Blackwell) : installer PyTorch **avant** l'extra, depuis l'index CUDA 12.8 —
+`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128` — puis `pip install -e ".[asr]"`.
 
 ## Contribuer
 TDD strict, une PR par brique, invariants I1–I5 non négociables : voir [AGENTS.md](AGENTS.md).
