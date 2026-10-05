@@ -47,6 +47,10 @@ strict = true
 mypy_path = "src"
 packages = ["aqr"]
 
+[[tool.mypy.overrides]]
+module = ["nemo.*", "omegaconf.*", "torch.*", "torchaudio.*", "transformers.*", "silero_vad.*"]
+ignore_missing_imports = true
+
 [tool.coverage.run]
 source = ["aqr"]
 omit = ["src/aqr/adapters/*"]
