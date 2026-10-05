@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "models": {
+    "fastconformer-quran": {
+      "repo_id": "msyukriafifi/fastconformer-quran-ar",
+      "revision": "b33af7936f9a2d34f08b1162f8e1e4f3d851120d",
+      "license": "cc-by-4.0",
+      "files": {
+        "phase3_full/phase3_full_wer0.0014.nemo": {
+          "sha256": "dc3557eea22b25ab5c7af2d8cf01636efd415c4ed417418156e5895056c705d5",
+          "size": 459243520
+        }
+      }
+    },
+    "recitation-segmenter": {
+      "repo_id": "obadx/recitation-segmenter-v2",
+      "revision": "5ee90364e7090ea6eb9dffe80353bed06996a196",
+      "license": "mit",
+      "files": {
+        "config.json": {
+          "sha256": "cc88ecdf3b240970aea619cca599ddfbc1b1dc2f8cfe26ff9e1d0388c87734d5",
+          "size": 1940
+        },
+        "model.safetensors": {
+          "sha256": "ffcd16fde8fbfec5086a5b04c219c15d123ac841d699a22720d720279a13bc44",
+          "size": 2322082904
+        },
+        "preprocessor_config.json": {
+          "sha256": "8e6281aad64f97e40534135a59dcc5d33571efae376f2a25adf5551951897ab4",
+          "size": 275
+        }
+      }
+    },
+    "whisper-base-quran": {
+      "repo_id": "tarteel-ai/whisper-base-ar-quran",
+      "revision": "5c3c53fdf9272c4f6ee0bee09a1e5a4a615ee25c",
+      "license": "apache-2.0",
+      "files": {
+        "added_tokens.json": {
+          "sha256": "5687ef031827f4c9fa3e7cbdd7fd915de0d6c7c6416463a28c63cbe1cf99a07a",
+          "size": 2108
+        },
+        "config.json": {
+          "sha256": "31e690221f47d7505f9d14c807a241c941aef7815ba1132654f1b7feea2cdbae",
+          "size": 1000
+        },
+        "merges.txt": {
+          "sha256": "78f27f801feb4283ae969d4cadacb28fc051b655647402b1a252c7079ea11c46",
+          "size": 493864
+        },
+        "normalizer.json": {
+          "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
+          "size": 52666
+        },
+        "preprocessor_config.json": {
+          "sha256": "9b5cd03a36fbb8a627c64d98a5b5b126ead95a77720723944487311f0110b666",
+          "size": 184990
+        },
+        "pytorch_model.bin": {
+          "sha256": "ec75894993a4570a237b2b1c19fd8a448f1e8f6e083cfab699574f7be53874fa",
+          "size": 290458721
+        },
+        "special_tokens_map.json": {
+          "sha256": "87870d95726faac1641b583cbbb6d8a0c22deab726bcaeac9bb06c350bc638b1",
+          "size": 2064
+        },
+        "tokenizer_config.json": {
+          "sha256": "70e1ec9195ccd4baebf920c7e9f8cdd90f37a2b8aebcf305095c2dff074d1260",
+          "size": 827
+        },
+        "vocab.json": {
+          "sha256": "e2aa043ef015641d363d8288e7c241c85e36a5c761fb303598e0710233344387",
+          "size": 1036558
+        }
+      }
+    }
+  }
+}
