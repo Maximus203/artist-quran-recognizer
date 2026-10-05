@@ -295,3 +295,20 @@
 - **Socle des tests de contrat** : `tests/support/{audio,fakes}.py` (fichiers générés : sinus, silence,
   MP3, vidéo avec/sans piste audio) ; `pythonpath` pytest étendu à la racine pour `tests.support`.
   Contrat B1 rejoué contre le fake ET ffmpeg réel (rapide : pas de marqueur `slow`).
+- **Infrastructure des modèles** (`aqr.models`, `scripts/fetch_models.py`, `models/LOCK.json`
+  versionné) : même discipline que le corpus. Premier passage = téléchargement de la tête du dépôt
+  puis **épinglage** (révision Git + SHA-256 par fichier, recoupé avec l'empreinte LFS annoncée par
+  le serveur) ; ensuite le LOCK fait foi : contenu distant différent, fichier local altéré ou
+  téléchargement corrompu = erreur explicite ; fichier écrit dans un `.part` puis installé
+  seulement s'il est conforme ; `--repin` explicite pour accepter une nouvelle version. `.gitignore`
+  : `models/*` + exception `models/LOCK.json` (aucun poids dans git).
+- **Constats sur les dépôts réels** (vérifiés par l'API Hugging Face) : le dépôt FastConformer
+  contient **9 checkpoints** (`phase1_top3/…` à `phase3_full/…`, nommés par WER) — retenu
+  `phase3_full/phase3_full_wer0.0014.nemo` (459 Mo, le dernier de l'entraînement progressif) ; le
+  modèle Whisper-Tarteel n'a **qu'un `pytorch_model.bin`** (pickle, pas de safetensors) : épinglé par
+  empreinte, à charger avec `weights_only` ; le segmenteur est un `model.safetensors` de 2,3 Go.
+  Licences : FastConformer CC-BY-4.0, Whisper Apache-2.0, segmenteur MIT.
+- **Téléchargés et épinglés (2026-10-05)** dans `D:\01-Dev\Data\aqr-models` : fastconformer-quran
+  @ b33af7936f9a (459 Mo), whisper-base-quran @ 5c3c53fdf927 (292 Mo), recitation-segmenter
+  @ 5ee90364e709 (2322 Mo) ; 4 min 41 s ; 2ᵉ passage 3 s, rien retéléchargé. `AQR_MODELS_DIR` n'est pas
+  défini de façon persistante (passé par commande ou `--models-dir`).
