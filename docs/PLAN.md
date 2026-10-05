@@ -57,7 +57,9 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
   (isti'adha, takbir, amin) et `speech/` (français, arabe non coranique) pour les mixages prière,
   assise et khutba. Dataset Hugging Face privé : encore vide (envoi nécessaire pour le cloud).
 
-## Phase 4 — Adapters audio (GPU : RTX 5090 24 Go)
+## Phase 4 — Adapters audio (GPU : RTX 5090 24 Go) ⏳
+- ✅ fait : B1 ffmpeg (#20), épinglage des modèles (#21), B4 FastConformer (#22) et Whisper-Tarteel (#23),
+  B2 recitation-segmenter-v2 + repli Silero (PR B2). ⏳ reste : décodage contraint (ADR-0003).
 - 🤖 B1 ffmpeg · B2 recitation-segmenter-v2 (+ repli VAD) · B4 FastConformer-Quran et
   Whisper-Tarteel · décodage contraint optionnel (trie coranique + chemin poubelle).
   Tests de contrat pour chaque port, tests `slow` sur de vrais extraits EveryAyah.
