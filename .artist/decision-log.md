@@ -312,3 +312,39 @@
   @ b33af7936f9a (459 Mo), whisper-base-quran @ 5c3c53fdf927 (292 Mo), recitation-segmenter
   @ 5ee90364e709 (2322 Mo) ; 4 min 41 s ; 2ᵉ passage 3 s, rien retéléchargé. `AQR_MODELS_DIR` n'est pas
   défini de façon persistante (passé par commande ou `--models-dir`).
+- **B4 `FastConformerQuranASR`** (`aqr.adapters.fastconformer`) : NeMo hybride RNNT/CTC, checkpoint
+  `phase3_full` épinglé, vérification SHA-256 avant chargement (un `.nemo` est une archive qui
+  s'exécute), mots horodatés (résolution = trame de 80 ms), temps absolus dans le clip, texte brut
+  jamais modifié (I1), `transcribe_batch` pour regrouper les segments en un appel GPU. Contrat du
+  port rejoué contre un fake ET le vrai modèle (marqueur `slow`, ressources lues dans
+  `AQR_MODELS_DIR`/`AQR_AUDIO_DIR`, test sauté si absentes).
+- **Format RÉEL de sortie relevé (216 versets EveryAyah, 3 récitants, 40,7 min)** : texte arabe
+  brut en orthographe imla'i ; **voyelles dans 85 % des sorties seulement** (« قُلْ هُوَ اللَّهُ
+  أَحَدٌ » mais « الصمد », « بسم الله الرحمن الرحيم » nus) ; pas de ponctuation ; le **dernier mot est
+  parfois tronqué** (« النَّاسِ » -> « النَّ ») ; quelques mots inventés (« وَالْعَفْرِ » pour
+  « وَالْعَصْرِ ») ; la basmala d'Abdul Basit sort vide ou mutilée. Échantillon de 80 sorties
+  versionné (`tests/fixtures/asr/fastconformer_everyayah.json`, texte et temps seulement) et rejoué
+  par `tests/unit/test_matcher_real_asr.py` : le matcher (B6) doit y retrouver le bon verset
+  (>= 93 %) et **ne jamais nommer un faux verset** au-dessus du seuil du décodeur (I3).
+- **Mesure ASR -> matcher** (`scripts/capture_asr_samples.py`, 216 versets) : top-1 **97,2 %**
+  (Alafasy 95,8 / Husary 98,6 / Abdul Basit 97,2), nommés justes au seuil 0,75 : 79,2 % (le reste
+  est UNCERTAIN : versets très courts/ambigus, voulu), **0 faux verset nommé**, vitesse **RTF 0,017-
+  0,018 (~×57 temps réel)** sur RTX 5090, chargement du modèle 7 s.
+- **Silence numérique -> hallucination** : sur 3 s de zéros le modèle émet « الم » (une lettre
+  coranique isolée) — c'est « il voit du Coran partout » (I3/I4) à l'échelle d'un mot. Garde
+  d'énergie configurable (`silence_rms`) : un segment de silence absolu n'est jamais envoyé ; ne
+  protège PAS du bruit réel (rôle de B2 et du QuranicityGate B5, phase 7).
+- **Marge de contexte : essayée, mesurée, désactivée.** Hypothèse (troncature de fin de mot due aux
+  bords nets) confirmée sur 6 cas mais **infirmée à l'échelle** : top-1 97,2 % sans marge contre
+  96,8 % (0,3 s + bruit 1e-3), 96,3 % (0,3 s de zéros), 94,9 % (0,3 s + 3e-3), 94,0 % (0,5 s + 2e-3) —
+  la marge corrige des troncatures mais provoque d'autres hallucinations aux bords. Défaut 0, réglage
+  conservé (`context_pad_s`, `pad_noise`) pour re-mesurer avec du vrai contexte audio. Leçon : un
+  essai manuel sur quelques cas ne tranche pas, la mesure sur l'ensemble si.
+- **Confiance** : l'entropie NeMo donne 0,38-0,66 même sur une transcription parfaite (non
+  calibrée) ; `max_prob` retenu. La confiance de l'ASR n'est PAS le critère d'acceptation (c'est le
+  score du matcher, calibré, I3) ; elle reste exposée telle quelle, bornée à [0, 1], 0.0 si absente.
+- **Décodeur `ctc` par défaut** (provisoire, phase 6) : les temps de mots CTC sont contigus, ceux du
+  RNNT ont des trous et des mots d'une trame (« اللَّهُ » 1.04-1.12).
+- **À corriger côté mixeur (constat EveryAyah)** : `bismillah.mp3` n'existe pas pour
+  `Abdul_Basit_Murattal_192kbps` (404) ; `DiskClipProvider.bismillah` lèverait une erreur pour les
+  scénarios « verset 1 avec basmala » avec ce récitant.
