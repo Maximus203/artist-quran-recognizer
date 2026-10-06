@@ -10,8 +10,8 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 | 2 | Robustesse de la recherche + fins de ligne | ✅ 2026-09-25 (PR #5–#6, `develop` @ voir décision-log) |
 | 2b | Recherche sur le flux continu (segments partiels, multi-versets, 0 faux verset) | ✅ 2026-10-02 (voir ADR-0004) |
 | 3 | Outillage de données (ingestion, pré-annotation, Audacity, split, EveryAyah, mixages) | ✅ 2026-10-04 (PR #11–#18) · lot 1 ingéré (12 fichiers, 8,69 h, split dev/test fait) |
-| 4 | Adapters audio : extraction, segmentation, ASR ×2, décodage contraint | |
-| 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | |
+| 4 | Adapters audio : extraction, segmentation, ASR ×2, décodage contraint | ⏳ adapters faits (#20–#24) ; décodage contraint : algorithme seul (ADR-0005), non validé sur audio réel |
+| 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | ⏳ `aqr recognize` en PR (voir `docs/RECOGNIZE-OUTPUT.md`) ; essais sur lot 1 sans vérité terrain |
 | 6 | Golden set annoté + benchmark v1 + choix de l'ASR | |
 | 7 | Rejet du non-Coran (B3 + B5) calibré | |
 | 8 | V1 « utilisation libre » : CLI finale + interface web locale | |
