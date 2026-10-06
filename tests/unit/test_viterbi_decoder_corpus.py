@@ -74,18 +74,18 @@ def test_saut_de_sourate_1_7_puis_112_1_sans_fantome(corpus, decoder):  # P7
     assert VerseRef(2, 1) not in refs
 
 
-def test_reprise_seconde_moitie_2_255_fusionnee(corpus, decoder):  # P8
+def test_reprise_seconde_moitie_2_255_marquee_repetition(corpus, decoder):  # P8
     n = len(corpus.words(VerseRef(2, 255)))
     half = n // 2
     full = Candidate(span=WordSpan(VerseRef(2, 255), 1, n), score=1.0)
     second_half = Candidate(span=WordSpan(VerseRef(2, 255), half, n), score=0.97)
     obs = [(TimeSpan(0.0, 10.0), [full]), (TimeSpan(10.0, 14.0), [second_half])]
     dets = decoder.decode(obs).detections()
-    assert len(dets) == 1
-    assert dets[0].span.ref == VerseRef(2, 255)
-    assert dets[0].span.first_word == 1
-    assert dets[0].span.last_word == n
-    assert dets[0].time == TimeSpan(0.0, 14.0)
+    # « deux détections marquées répétition — jamais un autre verset » (playbook P8)
+    assert [d.span.ref for d in dets] == [VerseRef(2, 255), VerseRef(2, 255)]
+    assert [d.is_repetition for d in dets] == [False, True]
+    assert dets[0].time == TimeSpan(0.0, 10.0)
+    assert dets[1].time == TimeSpan(10.0, 14.0)
 
 
 def _ambiguous_candidates(corpus: TanzilCorpusRepository) -> list[Candidate]:

@@ -117,3 +117,12 @@ def test_timeline_filtre_par_statut():
     assert t.verses() == (VerseRef(67, 4), VerseRef(67, 5), VerseRef(67, 6))
     assert t.verses(Status.RECOGNIZED) == (VerseRef(67, 4), VerseRef(67, 6))
     assert t.verses(Status.INFERRED) == (VerseRef(67, 5),)
+
+
+def test_repetition_par_defaut_faux_et_seulement_pour_un_passage_reconnu():
+    assert Detection(_span(), TimeSpan(0, 1), Status.RECOGNIZED, 0.9).is_repetition is False
+    assert Detection(
+        _span(), TimeSpan(0, 1), Status.RECOGNIZED, 0.9, is_repetition=True
+    ).is_repetition
+    with pytest.raises(ValueError):
+        Detection(_span(), None, Status.INFERRED, 0.0, is_repetition=True)
