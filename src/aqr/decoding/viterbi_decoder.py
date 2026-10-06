@@ -10,7 +10,7 @@ configuration (`DecoderWeights`), jamais des constantes éparpillées dans la lo
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from aqr.domain.models import Detection, Riwaya, Status, Timeline, TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import Candidate, CorpusRepository
@@ -36,7 +36,15 @@ class DecoderConfig:
     uncertainty_ratio: float = 0.92
     """Si le 2ᵉ meilleur chemin à une étape atteint ce ratio du meilleur, l'étape est
     marquée UNCERTAIN plutôt que RECOGNIZED (I3 : la précision prime sur le rappel)."""
-    engine_version: str = "viterbi-decoder-v1"
+    merge_max_gap_s: float = 5.0
+    """Deux moitiés contiguës d'un même verset ne fusionnent que si moins de ce nombre de secondes
+    les sépare : au-delà, l'union couvrirait des passages non reconnus. Provisoire (phase 6 : à
+    calibrer sur des annotations humaines)."""
+    infer_max_gap_s: float = 180.0
+    """Un verset manquant entre deux versets reconnus n'est supposé (INFERRED) que si l'écart
+    temporel est plausible pour un verset ; au-delà (autre chose a été dit), aucune hypothèse.
+    Provisoire (phase 6)."""
+    engine_version: str = "viterbi-decoder-v2"
 
 
 # Un état = les versets d'un candidat (un seul, ou plusieurs si le segment les traverse).
@@ -203,31 +211,35 @@ class ViterbiSequenceDecoder:
 
     # -- Post-traitement --------------------------------------------------------
     def _merge_repetitions(self, detections: list[Detection]) -> list[Detection]:
+        """Moitiés contiguës proches dans le temps -> une détection ; mots redits -> deux
+        détections, la seconde marquée répétition (chacune garde son temps)."""
         merged: list[Detection] = []
         for det in detections:
+            prev = merged[-1] if merged else None
             if (
-                merged
-                and merged[-1].status is Status.RECOGNIZED
-                and det.status is Status.RECOGNIZED
-                and merged[-1].span.ref == det.span.ref
+                prev is None
+                or prev.status is not Status.RECOGNIZED
+                or det.status is not Status.RECOGNIZED
+                or prev.span.ref != det.span.ref
             ):
-                prev = merged[-1]
-                # Les deux détections sont RECOGNIZED : leur `time` est garanti non nul
-                # (invariant du domaine, cf. Detection.__post_init__).
-                assert prev.time is not None
-                assert det.time is not None
+                merged.append(det)
+                continue
+            # Les deux détections sont RECOGNIZED : leur `time` est garanti non nul (domaine).
+            assert prev.time is not None
+            assert det.time is not None
+            if det.span.first_word <= prev.span.last_word:
+                merged.append(replace(det, is_repetition=True))
+            elif det.time.start_s - prev.time.end_s <= self._config.merge_max_gap_s:
                 merged[-1] = Detection(
                     span=WordSpan(
                         ref=prev.span.ref,
-                        first_word=min(prev.span.first_word, det.span.first_word),
-                        last_word=max(prev.span.last_word, det.span.last_word),
+                        first_word=prev.span.first_word,
+                        last_word=det.span.last_word,
                     ),
-                    time=TimeSpan(
-                        start_s=min(prev.time.start_s, det.time.start_s),
-                        end_s=max(prev.time.end_s, det.time.end_s),
-                    ),
+                    time=TimeSpan(start_s=prev.time.start_s, end_s=det.time.end_s),
                     status=Status.RECOGNIZED,
                     confidence=min(prev.confidence, det.confidence),
+                    is_repetition=prev.is_repetition,
                 )
             else:
                 merged.append(det)
@@ -241,10 +253,19 @@ class ViterbiSequenceDecoder:
             prev = result[-1]
             if prev.status is Status.RECOGNIZED and det.status is Status.RECOGNIZED:
                 gap_ref = prev.span.ref.next()
-                if gap_ref is not None and gap_ref.next() == det.span.ref:
+                if (
+                    gap_ref is not None
+                    and gap_ref.next() == det.span.ref
+                    and self._gap_is_plausible(prev, det)
+                ):
                     result.append(self._inferred_gap(gap_ref, prev, det))
             result.append(det)
         return result
+
+    def _gap_is_plausible(self, prev: Detection, nxt: Detection) -> bool:
+        if prev.time is None or nxt.time is None:
+            return True
+        return nxt.time.start_s - prev.time.end_s <= self._config.infer_max_gap_s
 
     def _inferred_gap(self, gap_ref: VerseRef, prev: Detection, nxt: Detection) -> Detection:
         last_word = 1

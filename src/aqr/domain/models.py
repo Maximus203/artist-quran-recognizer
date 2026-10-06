@@ -106,12 +106,17 @@ class Detection:
     reconnus, ou frontière entre les versets d'un même segment (RECOGNIZED dont le
     segment est mesuré mais la coupure interne estimée, ADR-0004)."""
     candidates: tuple[VerseRef, ...] = field(default_factory=tuple)
+    is_repetition: bool = False
+    """True si ce passage redit des mots déjà reconnus juste avant (reprise, i'ada) : la détection
+    garde son propre temps au lieu d'être fusionnée avec la précédente (playbook P8)."""
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence doit être dans [0, 1]")
         if self.status is Status.RECOGNIZED and self.time is None:
             raise ValueError("une détection RECOGNIZED doit avoir un horodatage mesuré")
+        if self.is_repetition and self.status is not Status.RECOGNIZED:
+            raise ValueError("seule une détection RECOGNIZED peut être marquée répétition")
         if self.status is Status.UNCERTAIN and len(self.candidates) < 2:
             raise ValueError("une détection UNCERTAIN doit lister au moins 2 candidats")
 

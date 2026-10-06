@@ -8,6 +8,7 @@ modification, avec identifiant, version et attribution (invariant I2).
 
 from __future__ import annotations
 
+from aqr.corpus.normalize import normalize_arabic
 from aqr.domain.models import Detection, Status, Timeline
 from aqr.domain.ports import BatchOptions, CorpusRepository, RenderedBatch, TranslationRepository
 
@@ -56,18 +57,43 @@ class HomeRenderer:
             vtt=self._render_vtt(batch),
         )
 
+    def span_text(self, det: Detection) -> str:
+        """Texte du passage : sous-chaîne exacte du Mushaf (I1), marques de pause comprises ;
+        le verset entier si tous ses mots sont couverts. Jamais un texte venu de l'ASR."""
+        ref = det.span.ref
+        full = self._corpus.text(ref)
+        if not self._is_partial(det):
+            return full
+        first, last = det.span.first_word, det.span.last_word
+        kept: list[str] = []
+        words_seen = 0
+        for token in full.split():
+            if normalize_arabic(token):
+                words_seen += 1
+            if first <= words_seen <= last:
+                kept.append(token)
+        return " ".join(kept)
+
+    def _is_partial(self, det: Detection) -> bool:
+        total = len(self._corpus.words(det.span.ref))
+        return not (det.span.first_word == 1 and det.span.last_word >= total)
+
     def _render_item(self, det: Detection, translation_id: str) -> dict[str, object]:
         ref = det.span.ref
         translation = self._translations.get(ref, translation_id)
         return {
             "ref": str(ref),
             "status": det.status.value,
-            "text": self._corpus.text(ref),  # I1 : toujours le corpus, jamais l'ASR
+            "words": [det.span.first_word, det.span.last_word],
+            "partial": self._is_partial(det),
+            "repetition": det.is_repetition,
+            "text": self.span_text(det),
             "translation": {
                 "text": translation.text,
                 "translation_id": translation.translation_id,
                 "version": translation.version,
                 "attribution": translation.attribution,
+                "scope": "verse",  # la traduction QuranEnc couvre le verset entier
             },
             "time": (
                 {
@@ -82,6 +108,14 @@ class HomeRenderer:
             "candidates": [str(c) for c in det.candidates],
         }
 
+    def caption(self, det: Detection) -> str:
+        """Ligne de sous-titre : un verset incertain n'est jamais nommé par son texte, un verset
+        déduit est marqué comme tel — seul RECOGNIZED est présenté sans réserve."""
+        if det.status is Status.UNCERTAIN:
+            return "[incertain : " + " | ".join(str(c) for c in det.candidates) + "]"
+        text = self.span_text(det)
+        return f"[déduit] {text}" if det.status is Status.INFERRED else text
+
     def _render_srt(self, batch: tuple[Detection, ...]) -> str:
         blocks = []
         for i, det in enumerate(batch, start=1):
@@ -90,7 +124,7 @@ class HomeRenderer:
             assert det.time is not None
             blocks.append(
                 f"{i}\n{_timestamp(det.time.start_s, ',')} --> {_timestamp(det.time.end_s, ',')}\n"
-                f"{self._corpus.text(det.span.ref)}\n"
+                f"{self.caption(det)}\n"
             )
         return "\n".join(blocks)
 
@@ -102,7 +136,7 @@ class HomeRenderer:
             assert det.time is not None
             blocks.append(
                 f"{_timestamp(det.time.start_s, '.')} --> {_timestamp(det.time.end_s, '.')}\n"
-                f"{self._corpus.text(det.span.ref)}\n"
+                f"{self.caption(det)}\n"
             )
         return "\n".join(blocks)
 

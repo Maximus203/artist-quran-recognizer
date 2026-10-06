@@ -386,3 +386,23 @@
 - Dépendances : `recitations-segmenter==1.0.0` et `silero-vad==6.2.3` dans l'extra `segmenter`, à
   installer avec `--no-deps` après `[asr]` (leurs contraintes torch entrent en conflit avec le pin
   Blackwell cu128).
+
+## 2026-10-06 — Décodeur : répétitions, trous, rendu des passages partiels
+- **Défaut du décodeur (pré-existant, trouvé en relisant pour le pipeline)** : `_merge_repetitions`
+  fusionnait deux détections consécutives du même verset en prenant l'**union des temps**, même quand
+  les mêmes mots étaient redits (reprise) ou qu'un long intervalle séparait les deux passages : le
+  temps annoncé couvrait alors des passages non reconnus. Nouvelle règle : mots redits
+  (`first_word <= last_word` précédent) → **deux détections**, la seconde `is_repetition=True`, chacune
+  avec son temps (playbook P8 : « deux détections marquées répétition ») ; moitiés contiguës →
+  fusion seulement si l'écart temporel ≤ `merge_max_gap_s` (5 s, **provisoire**, à calibrer sur des
+  annotations humaines, phase 6).
+- **Hypothèse d'un verset manquant** : `INFERRED` n'est supposé que si l'écart ≤ `infer_max_gap_s`
+  (180 s, provisoire). Au-delà : aucune hypothèse (autre chose a été dit). `INFERRED` n'est jamais
+  promu en reconnu.
+- **Domaine** : `Detection.is_repetition` (RECOGNIZED seulement). `engine_version` du décodeur : v2.
+- **Rendu (B9)** : l'item JSON porte `words`, `partial`, `repetition` ; `text` = sous-chaîne EXACTE du
+  Mushaf pour les mots couverts (marques de pause comprises), le verset entier si tout est couvert ;
+  la traduction garde `scope: "verse"` (non découpable). Sous-titres : un verset `UNCERTAIN` n'est
+  jamais nommé par son texte (`[incertain : 55:13 | 55:16]`), un `INFERRED` est préfixé `[déduit]`.
+  Les tests du renderer utilisaient des spans d'un mot pour des versets entiers : corrigés (spans
+  complets), sans quoi le texte partiel rendu aurait été tronqué.
