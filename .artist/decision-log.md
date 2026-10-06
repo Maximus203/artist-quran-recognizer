@@ -406,3 +406,11 @@
   jamais nommé par son texte (`[incertain : 55:13 | 55:16]`), un `INFERRED` est préfixé `[déduit]`.
   Les tests du renderer utilisaient des spans d'un mot pour des versets entiers : corrigés (spans
   complets), sans quoi le texte partiel rendu aurait été tronqué.
+
+## 2026-10-06 — Décodage contraint (ADR-0005)
+- Vérifié d'abord : **absent** (aucun trie ni chemin poubelle dans `src/`). Implémenté sous forme de
+  preuve acoustique sur treillis CTC (`aqr.decoding.ctc_constrained`) plutôt qu'un décodeur de
+  faisceau sur trie : testable sans modèle, comparable au chemin libre (= chemin poubelle).
+- **Non validé sur audio réel** : pas de NeMo/GPU ici. Pas de seuil par défaut (porte désactivée),
+  pas de taux. Reste à faire : exposer le treillis du FastConformer + l'encodeur de symboles, puis
+  calibrer le seuil sur des annotations humaines.
