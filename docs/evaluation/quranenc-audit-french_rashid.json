@@ -1,0 +1,13 @@
+{
+ "translation": "french_rashid",
+ "source": "https://quranenc.com/api/v1/translation/sura",
+ "suras": {
+  "75": [
+   {
+    "aya": 35,
+    "type": "fin_du_verset_precedent"
+   }
+  ]
+ },
+ "verses_flagged": 1
+}
