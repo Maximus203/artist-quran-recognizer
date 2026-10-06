@@ -437,3 +437,9 @@
 - **Défauts de config** (`--asr whisper`) : provisoire, Whisper est le seul ASR exécutable sans NeMo/GPU ;
   le choix du moteur par défaut dépend de la phase 6 (vérité terrain).
 - Similarité de mots extraite de `FlowVerseMatcher` (`aqr.matching.similarity`) pour les formules.
+- **Exécutions réelles via `aqr recognize`** (lot1-05/06/09, Whisper + segmenteur de récitation, CPU) :
+  `docs/evaluation/lot1-cli-runs.md` + sorties expurgées. Sans vérité terrain : aucun taux. Constats :
+  la fusion bornée (`merge_max_gap_s`) fragmente les longues pauses de la récitation en détections
+  partielles distinctes (provisoire, à calibrer) ; l'isti'adha mal transcrite par l'ASR reste une abstention
+  (pas de reconnaissance partielle de formule, par prudence) ; 1 chevauchement légitime (verset `inferred`
+  couvrant l'abstention qu'il explique).

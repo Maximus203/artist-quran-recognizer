@@ -33,6 +33,8 @@ Trois sortes d'intervalles :
 - `inferred` : verset **supposé** entre deux versets reconnus (continuité), jamais entendu. `time_interpolated`
   vrai. Jamais une récitation reconnue.
 - `uncertain` : plusieurs versets plausibles (`candidates`) ; **ni texte ni traduction** (jamais nommé).
+- `inferred` peut recouvrir une abstention qu'il explique (le verset illisible entre deux versets reconnus) : voulu
+  (playbook P6) ; les autres intervalles ne se recouvrent pas.
 - `abstention` : aucune décision ; ce n'est pas un verset. Les passages non reconnus ne sont jamais couverts
   par le temps d'un verset voisin (une fenêtre écartée interdit la fusion de deux moitiés d'un verset).
 - `repetition` : mots redits ; chaque passage garde son propre temps.
