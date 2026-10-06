@@ -406,3 +406,12 @@
   l'`importorskip("silero_vad")` existant (extra `segmenter`).
 - Résultat : 383 passed, 4 skipped, 16 deselected ; ruff et mypy verts dans un venv neuf et mypy vert
   avec torch/transformers. Détail : `docs/REPRODUCIBILITY.md`.
+
+## 2026-10-06 — Repli Silero : limite mesurée, défauts inchangés
+- Mesure de fond (sans vérité terrain, aucun taux de précision) sur 2 extraits de 3 min : le repli
+  Silero par défaut fragmente la récitation à pauses longues (lot1-05 : 30 segments, 53 % < 1 s, contre
+  7 segments de 11 à 28 s pour recitation-segmenter-v2) ; aucun `min_silence_ms` de {100, 300, 500, 800}
+  ne convient aux deux extraits (lot1-06 : segments jusqu'à 131 s à 500/800 ms).
+- Décision : défauts NON modifiés (pas de calibrage sans vérité terrain) ; limite rendue visible
+  (docstrings, `RELIABLE_BY_DEFAULT = False` gardé par test). Propositions et chiffres :
+  `docs/evaluation/silero-fallback.md`. v2 non mesuré sur le second extrait (budget CPU).
