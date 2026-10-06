@@ -144,3 +144,15 @@ def test_vtt_meme_contenu(corpus, renderer):
     assert vtt.startswith("WEBVTT")
     assert "00:00:03.000 --> 00:00:06.000" in vtt
     assert "[incertain : 55:13 | 55:16]" in vtt
+
+
+def test_expurge_retire_texte_et_traduction_mais_garde_refs_temps_et_statuts(corpus, renderer):
+    from aqr.pipeline.output import redact_document
+
+    doc = build_json(_result(corpus), renderer, "french_hameedullah", source_sha256="00")
+    redacted = redact_document(doc)
+    for original, light in zip(doc["intervals"], redacted["intervals"], strict=True):
+        assert "text" not in light and "translation" not in light
+        assert {k: v for k, v in original.items() if k not in ("text", "translation")} == light
+    assert redacted["source"] == doc["source"] and redacted["timing"] == doc["timing"]
+    assert "text" in doc["intervals"][1]  # l'original n'est pas modifié

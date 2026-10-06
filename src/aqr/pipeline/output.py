@@ -109,3 +109,12 @@ def render_vtt(result: RecognitionResult, renderer: HomeRenderer) -> str:
         f"{format_range(time, '.')}\n{text}\n" for time, text in _captions(result, renderer)
     )
     return "\n".join(blocks)
+
+
+def redact_document(document: dict[str, object]) -> dict[str, object]:
+    """Copie versionnable : sans texte ni traduction (le Mushaf et QuranEnc se relisent dans leurs
+    sources épinglées ; une traduction n'est pas à republier), références/temps/statuts gardés."""
+    intervals = document["intervals"]
+    assert isinstance(intervals, list)
+    light = [{k: v for k, v in i.items() if k not in ("text", "translation")} for i in intervals]
+    return {**document, "intervals": light}
