@@ -4,6 +4,14 @@
 # sinon durée à ±2 s si le fichier a été re-téléchargé depuis `source`.
 lot: 1
 total_heures: 8.69
+# Copie de travail des agents cloud : dataset Hugging Face rendu PUBLIC par le mainteneur
+# (vérifié le 2026-10-06 : private=false, gated=false). Révision épinglée : on télécharge CE
+# commit, jamais « main ». Les fichiers sont à la racine : <id>.mp3.
+# ATTENTION droits : ce dataset public contredit la mention de droits ci-dessous
+# (« usage interne d'évaluation uniquement, jamais redistribué ») ; voir docs/data-lots/RIGHTS.md.
+hf_dataset:
+  repo: printf0cherif/aqr-audio-private
+  revision: f00ebced79755213c0d2050566126602454f5517
 fichiers:
   - id: lot1-01
     sha256: 28237efe42e3243b855b075c345e2a2c78d433262df3784f3b39e1843d087655
