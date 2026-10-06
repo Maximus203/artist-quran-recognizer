@@ -407,3 +407,28 @@ def test_agregation_exclut_les_limites_approximatives():
     )
     t = aggregate([approx], min_reference_verses=1)["overall"]
     assert t["n_boundary_pairs"] == 0 and t["n_boundary_excluded_approximate"] == 1
+
+
+# --- annotation partielle (fenêtres) ---------------------------------------------------------
+
+
+def test_cas_annote_par_fenetres_ne_juge_que_les_fenetres():
+    case = _case([_exp("67:4", 10, 16)], annotated_windows=((8.0, 20.0),))
+    res = _ev(
+        case,
+        [
+            _verse("67:4", [10, 16]),
+            _verse("1:2", [40, 44]),  # hors fenêtre : non annoté, ne peut pas être « faux »
+            _verse("1:3", [18, 19.5]),  # dans la fenêtre : faux verset
+            _abst([50, 60]),
+        ],
+    )
+    assert res.n_found == 1 and res.n_recognized_predictions == 2
+    assert [f.ref for f in res.false_verses] == ["1:3"]
+    assert res.n_out_of_scope_intervals == 2
+
+
+def test_reference_hors_fenetre_est_une_annotation_incoherente():
+    case = _case([_exp("67:4", 10, 16)], annotated_windows=((0.0, 5.0),))
+    with pytest.raises(EvaluationRefused, match="fenêtre"):
+        _ev(case, [])

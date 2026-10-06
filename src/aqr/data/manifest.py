@@ -133,6 +133,9 @@ class AudioCase:
     non_quran: tuple[NonQuranItem, ...] = ()
     annotation: Annotation | None = None
     """Provenance de l'annotation ; absente = manifeste ancien (cas non contrôlé)."""
+    annotated_windows: tuple[tuple[float, float], ...] = ()
+    """Fenêtres (secondes) effectivement annotées ; vide = tout le fichier. Hors fenêtre, rien
+    n'est vérité terrain : les métriques ne jugent que l'intérieur des fenêtres."""
     extra: Mapping[str, Any] = field(default_factory=dict)
 
 
@@ -140,6 +143,14 @@ class _Flow(dict[str, Any]):
     """Dictionnaire écrit en style « flow » ({t: [..], ref: ..}), une ligne par élément."""
 
 
+class _FlowList(list[float]):
+    """Liste écrite en style « flow » ([a, b])."""
+
+
+yaml.SafeDumper.add_representer(
+    _FlowList,
+    lambda dumper, data: dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True),
+)
 yaml.SafeDumper.add_representer(
     _Flow,
     lambda dumper, data: dumper.represent_mapping("tag:yaml.org,2002:map", data, flow_style=True),
@@ -148,7 +159,7 @@ yaml.SafeDumper.add_representer(
 _KNOWN = {
     "id", "file", "sha256", "categorie", "recitant", "riwaya", "langues", "license", "duree_s",
     "statut", "split", "source", "tolerance_ms", "origine", "boundaries", "expected", "non_quran",
-    "annotation",
+    "annotation", "annotated_windows",
 }  # fmt: skip
 
 
@@ -156,6 +167,23 @@ def _span(raw: object, where: str) -> tuple[float, float]:
     if not (isinstance(raw, list) and len(raw) == 2):
         raise ManifestError(f"{where} : t doit être [début, fin]")
     return float(raw[0]), float(raw[1])
+
+
+def _windows_from_raw(raw: object, where: str) -> tuple[tuple[float, float], ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise ManifestError(f"{where} : annotated_windows doit être une liste de [début, fin]")
+    windows = []
+    for item in raw:
+        try:
+            start, end = _span(item, where)
+        except ManifestError as exc:
+            raise ManifestError(f"{where} : annotated_windows : {exc}") from exc
+        if start < 0 or end <= start:
+            raise ManifestError(f"{where} : annotated_windows : fenêtre invalide {start} -> {end}")
+        windows.append((start, end))
+    return tuple(windows)
 
 
 def _annotation_from_dict(raw: object, where: str, statut: str) -> Annotation | None:
@@ -197,6 +225,7 @@ def _case_from_dict(raw: Mapping[str, Any]) -> AudioCase:
         )
     except (KeyError, ValueError) as exc:
         raise ManifestError(f"{where} : {exc}") from exc
+    windows = _windows_from_raw(raw.get("annotated_windows"), where)
     statut = str(raw.get("statut", "a_annoter"))
     annotation = _annotation_from_dict(raw.get("annotation"), where, statut)
     return AudioCase(
@@ -218,6 +247,7 @@ def _case_from_dict(raw: Mapping[str, Any]) -> AudioCase:
         expected=expected,
         non_quran=non_quran,
         annotation=annotation,
+        annotated_windows=windows,
         extra={k: v for k, v in raw.items() if k not in _KNOWN},
     )
 
@@ -281,6 +311,11 @@ def _case_to_dict(case: AudioCase) -> dict[str, Any]:
         boundaries=case.boundaries,
         tolerance_ms=case.tolerance_ms,
         **({"annotation": _annotation_to_dict(case.annotation)} if case.annotation else {}),
+        **(
+            {"annotated_windows": [_FlowList(w) for w in case.annotated_windows]}
+            if case.annotated_windows
+            else {}
+        ),
         expected=[
             _Flow(t=list(i.t), ref=str(i.ref), words=str(i.words), status=i.status.value)
             for i in case.expected

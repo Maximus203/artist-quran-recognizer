@@ -71,6 +71,14 @@ référence), divisée par la durée de cette union (`abstention_share`, agrég�
 `realtime_factor = timing.total_s / durée audio` (durée du manifeste, sinon de la source). Agrégé :
 somme des temps / somme des durées, sur les cas qui ont un timing.
 
+## Annotation partielle (fenêtres)
+
+Un cas peut n'être annoté que sur des extraits : champ de manifeste `annotated_windows: [[a, b], ...]`
+(vide = tout le fichier). Seules les prédictions dont le **milieu** tombe dans une fenêtre sont jugées ;
+les autres sont comptées dans `n_out_of_scope_intervals` (hors fenêtre il n'existe pas de vérité : un
+verset reconnu là n'est ni juste ni faux). Une étiquette de référence hors de toute fenêtre est une
+erreur d'annotation (`EvaluationRefused`). Les taux portent alors sur les extraits, pas sur le fichier.
+
 ## Agrégation
 
 Toujours par **sommes** (comptes et secondes), jamais de moyenne de ratios. Intervalles de Wilson à
