@@ -88,7 +88,7 @@ class RecitationSegmenterV2:
         )
         self._device = torch.device(device)
         self._dtype = getattr(torch, cfg.dtype) if device != "cpu" else torch.float32
-        self._processor = AutoFeatureExtractor.from_pretrained(directory, local_files_only=True)  # type: ignore[no-untyped-call]
+        self._processor = AutoFeatureExtractor.from_pretrained(directory, local_files_only=True)
         model = AutoModelForAudioFrameClassification.from_pretrained(
             directory, local_files_only=True
         )

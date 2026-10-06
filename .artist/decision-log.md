@@ -386,3 +386,23 @@
 - Dépendances : `recitations-segmenter==1.0.0` et `silero-vad==6.2.3` dans l'extra `segmenter`, à
   installer avec `--no-deps` après `[asr]` (leurs contraintes torch entrent en conflit avec le pin
   Blackwell cu128).
+
+## 2026-10-06 — Environnement de test reproductible
+
+- **Constat** (venv neuf, `pip install -e ".[dev]"`, base d9795b2) : 28 échecs/erreurs pytest et 2
+  erreurs mypy. Chaque cas diagnostiqué, aucune régression de code :
+  - 17 `test_fastconformer_adapter` + 8 `test_whisper_adapter` + 3 `test_speech_segmenter_contract[fake]`
+    : `ModuleNotFoundError: numpy`. **Dépendance d'environnement non déclarée** (numpy seulement dans
+    l'extra `audio`, alors que les tests exercent du code qui l'importe). Corrigé : `numpy` dans `dev`.
+  - mypy `huggingface_hub` introuvable (`hf_hub.py:17`) : **dépendance d'environnement** (paquet
+    absent de `dev`, importé paresseusement).
+  - mypy « Unused type: ignore » (`segmenters.py:91`) : **défaut préexistant de configuration** — le
+    `ignore` n'est utile que si transformers est installé ; l'ancienne config est verte avec les
+    lourdes dépendances et rouge sans (vérifié des deux côtés).
+- **Décision** : overrides mypy par module (`follow_imports = "skip"`, `ignore_missing_imports`) pour
+  huggingface_hub, torch, transformers, silero_vad, recitations_segmenter, nemo, et suppression du
+  `type: ignore`. Résultat identique installés ou non. `soundfile` et `huggingface_hub` non ajoutés à
+  `dev` (non importés par les tests). Aucun skip/exclusion ajouté ; les 4 skips restants sont
+  l'`importorskip("silero_vad")` existant (extra `segmenter`).
+- Résultat : 383 passed, 4 skipped, 16 deselected ; ruff et mypy verts dans un venv neuf et mypy vert
+  avec torch/transformers. Détail : `docs/REPRODUCIBILITY.md`.
