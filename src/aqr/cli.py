@@ -1,20 +1,23 @@
-"""Point d'entrée CLI : `aqr data ...` (outillage de données). La reconnaissance de bout en bout
-(`aqr recognize`) arrive en phase 5 — voir docs/PLAN.md.
+"""Point d'entrée CLI : `aqr data ...` (outillage de données) et `aqr recognize FICHIER`
+(reconnaissance de bout en bout : JSON `aqr.recognition/1` puis SRT/VTT).
 
 Chemins : `$AQR_AUDIO_DIR` (obligatoire, ou `--audio-dir`) ; le manifeste est, par ordre de
 priorité, `--manifest`, `$AQR_MANIFEST`, `tests/fixtures/audio/manifest.yaml` (depuis la racine du
 dépôt) puis `<audio_dir>/manifest.yaml`.
 
-Codes de sortie : 0 succès · 1 erreur sur les données (fiche, étiquettes, cas inconnu) ·
-2 utilisation impossible (variable manquante, moteur indisponible).
+Codes de sortie : 0 succès · 1 erreur sur les données (fiche, étiquettes, cas inconnu, fichier
+absent ou déjà écrit) · 2 utilisation impossible (variable manquante, moteur ou option
+indisponible).
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import TextIO
@@ -31,8 +34,18 @@ from aqr.data.labels import (
 )
 from aqr.data.manifest import Manifest, ManifestError
 from aqr.data.split import assign_splits
+from aqr.pipeline.factory import (
+    CONSTRAINED_UNAVAILABLE,
+    RecognizeOptions,
+    Recognizer,
+    RecognizerUnavailable,
+    build_recognizer,
+)
+from aqr.pipeline.output import build_json, render_srt, render_vtt
 
 _DEFAULT_MANIFEST = Path("tests/fixtures/audio/manifest.yaml")
+_FORMATS = ("json", "srt", "vtt")
+RecognizerFactory = Callable[[RecognizeOptions, Mapping[str, str]], Recognizer]
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -60,6 +73,30 @@ def _build_parser() -> argparse.ArgumentParser:
         "split", help="dev/test 70/30 par récitant (affectations existantes figées)"
     )
     spl.add_argument("--dry-run", action="store_true")
+
+    rec = commands.add_parser(
+        "recognize", help="audio/vidéo -> versets horodatés (JSON puis SRT/VTT)"
+    )
+    rec.add_argument("file", type=Path)
+    rec.add_argument("--out-dir", type=Path, default=Path("aqr-out"))
+    rec.add_argument("--format", default="json,srt", help="liste parmi json,srt,vtt")
+    rec.add_argument("--force", action="store_true", help="écraser des sorties existantes")
+    rec.add_argument("--translation", default="french_hameedullah", help="identifiant ou « none »")
+    rec.add_argument("--asr", default="whisper", choices=("whisper", "fastconformer"))
+    rec.add_argument("--segmenter", default="recitation", choices=("recitation", "silero"))
+    rec.add_argument(
+        "--allow-fallback-segmenter",
+        action="store_true",
+        help="repli Silero si le segmenteur principal échoue (non fiable, signalé dans la sortie)",
+    )
+    rec.add_argument("--models-dir", type=Path, help="défaut : $AQR_MODELS_DIR")
+    rec.add_argument("--lock", type=Path, default=Path("models/LOCK.json"))
+    rec.add_argument("--corpus-dir", type=Path, default=Path("data/corpus"))
+    rec.add_argument("--device", default="auto", help="auto | cpu | cuda")
+    rec.add_argument("--batch-size", type=int, default=8)
+    rec.add_argument(
+        "--constrained", action="store_true", help="preuve acoustique CTC (ADR-0005, indisponible)"
+    )
     return parser
 
 
@@ -97,6 +134,85 @@ def _split(manifest_path: Path, config: DataConfig, dry_run: bool, out: TextIO) 
     return 0
 
 
+def _sha256_of(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _recognize(
+    args: argparse.Namespace,
+    env: Mapping[str, str],
+    out: TextIO,
+    err: TextIO,
+    factory: RecognizerFactory,
+) -> int:
+    formats = [f.strip() for f in args.format.split(",") if f.strip()]
+    unknown = [f for f in formats if f not in _FORMATS]
+    if unknown or not formats:
+        print(f"format inconnu : {unknown or args.format!r} (json, srt, vtt)", file=err)
+        return 2
+    if not args.file.is_file():
+        print(f"ERREUR fichier introuvable : {args.file}", file=err)
+        return 1
+    names = {"json": ".recognition.json", "srt": ".srt", "vtt": ".vtt"}
+    targets = {f: args.out_dir / f"{args.file.stem}{names[f]}" for f in formats}
+    existing = [p for p in targets.values() if p.exists()]
+    if existing and not args.force:
+        print(f"ERREUR sortie déjà présente : {existing[0]} (--force pour écraser)", file=err)
+        return 1
+    if args.constrained:  # aucun ASR n'expose encore son treillis CTC (ADR-0005)
+        print(CONSTRAINED_UNAVAILABLE, file=err)
+        return 2
+    translation = None if args.translation == "none" else args.translation
+    options = RecognizeOptions(
+        asr=args.asr,
+        segmenter=args.segmenter,
+        allow_fallback_segmenter=args.allow_fallback_segmenter,
+        models_dir=args.models_dir,
+        lock_path=args.lock,
+        corpus_dir=args.corpus_dir,
+        translation_id=translation,
+        device=args.device,
+        batch_size=args.batch_size,
+        constrained=args.constrained,
+    )
+    try:
+        recognizer = factory(options, env)
+        result = recognizer.pipeline.run(args.file)
+    except RecognizerUnavailable as exc:
+        print(str(exc), file=err)
+        return 2
+    except (OSError, ValueError, RuntimeError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    renderer = recognizer.renderer
+    if "json" in targets:
+        document = build_json(result, renderer, translation, _sha256_of(args.file))
+        targets["json"].write_text(
+            json.dumps(document, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
+        )
+    if "srt" in targets:
+        targets["srt"].write_text(render_srt(result, renderer), encoding="utf-8")
+    if "vtt" in targets:
+        targets["vtt"].write_text(render_vtt(result, renderer), encoding="utf-8")
+    for warning in result.warnings:
+        print(f"AVERTISSEMENT {warning}", file=err)
+    verses = result.detections()
+    print(
+        f"{len(verses)} détection(s) · {result.windows} fenêtre(s) · "
+        f"{result.timing.get('total_s', 0.0):.1f} s de calcul pour "
+        f"{result.duration_s:.1f} s d'audio",
+        file=out,
+    )
+    for path in targets.values():
+        print(f"écrit : {path}", file=out)
+    return 0
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
@@ -104,11 +220,14 @@ def main(
     out: TextIO | None = None,
     err: TextIO | None = None,
     convert: Converter = ffmpeg_converter,
+    recognizer_factory: RecognizerFactory = build_recognizer,
 ) -> int:
     out, err = out or sys.stdout, err or sys.stderr
     env = os.environ if env is None else env
     parser = _build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
+    if args.command == "recognize":
+        return _recognize(args, env, out, err, recognizer_factory)
     if args.command != "data":
         parser.print_help(out)
         return 0

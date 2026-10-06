@@ -9,7 +9,7 @@ modification, avec identifiant, version et attribution (invariant I2).
 from __future__ import annotations
 
 from aqr.corpus.normalize import normalize_arabic
-from aqr.domain.models import Detection, Status, Timeline
+from aqr.domain.models import Detection, Status, Timeline, TimeSpan
 from aqr.domain.ports import BatchOptions, CorpusRepository, RenderedBatch, TranslationRepository
 
 
@@ -42,7 +42,7 @@ class HomeRenderer:
     def _render_batch(
         self, index: int, batch: tuple[Detection, ...], timeline: Timeline, translation_id: str
     ) -> RenderedBatch:
-        items = [self._render_item(det, translation_id) for det in batch]
+        items = [self.render_item(det, translation_id) for det in batch]
         json_doc: dict[str, object] = {
             "riwaya": timeline.riwaya.value,
             "engine_version": timeline.engine_version,
@@ -78,23 +78,32 @@ class HomeRenderer:
         total = len(self._corpus.words(det.span.ref))
         return not (det.span.first_word == 1 and det.span.last_word >= total)
 
-    def _render_item(self, det: Detection, translation_id: str) -> dict[str, object]:
+    def render_item(self, det: Detection, translation_id: str | None) -> dict[str, object]:
+        """Item JSON d'une détection. Un verset `UNCERTAIN` n'est jamais nommé par son texte ni sa
+        traduction (seulement ses candidats) ; `translation_id=None` : pas de traduction."""
         ref = det.span.ref
-        translation = self._translations.get(ref, translation_id)
+        named = det.status is not Status.UNCERTAIN
+        translation = (
+            self._translations.get(ref, translation_id) if named and translation_id else None
+        )
         return {
             "ref": str(ref),
             "status": det.status.value,
             "words": [det.span.first_word, det.span.last_word],
             "partial": self._is_partial(det),
             "repetition": det.is_repetition,
-            "text": self.span_text(det),
-            "translation": {
-                "text": translation.text,
-                "translation_id": translation.translation_id,
-                "version": translation.version,
-                "attribution": translation.attribution,
-                "scope": "verse",  # la traduction QuranEnc couvre le verset entier
-            },
+            "text": self.span_text(det) if named else None,
+            "translation": (
+                {
+                    "text": translation.text,
+                    "translation_id": translation.translation_id,
+                    "version": translation.version,
+                    "attribution": translation.attribution,
+                    "scope": "verse",  # la traduction QuranEnc couvre le verset entier
+                }
+                if translation is not None
+                else None
+            ),
             "time": (
                 {
                     "start_s": det.time.start_s,
@@ -122,10 +131,7 @@ class HomeRenderer:
             if det.status is Status.INFERRED and det.time is None:
                 continue
             assert det.time is not None
-            blocks.append(
-                f"{i}\n{_timestamp(det.time.start_s, ',')} --> {_timestamp(det.time.end_s, ',')}\n"
-                f"{self.caption(det)}\n"
-            )
+            blocks.append(f"{i}\n{format_range(det.time, ',')}\n{self.caption(det)}\n")
         return "\n".join(blocks)
 
     def _render_vtt(self, batch: tuple[Detection, ...]) -> str:
@@ -134,14 +140,16 @@ class HomeRenderer:
             if det.status is Status.INFERRED and det.time is None:
                 continue
             assert det.time is not None
-            blocks.append(
-                f"{_timestamp(det.time.start_s, '.')} --> {_timestamp(det.time.end_s, '.')}\n"
-                f"{self.caption(det)}\n"
-            )
+            blocks.append(f"{format_range(det.time, '.')}\n{self.caption(det)}\n")
         return "\n".join(blocks)
 
 
-def _timestamp(seconds: float, decimal_sep: str) -> str:
+def format_range(time: TimeSpan, decimal_sep: str) -> str:
+    start = format_timestamp(time.start_s, decimal_sep)
+    return f"{start} --> {format_timestamp(time.end_s, decimal_sep)}"
+
+
+def format_timestamp(seconds: float, decimal_sep: str) -> str:
     total_ms = round(seconds * 1000)
     hours, total_ms = divmod(total_ms, 3_600_000)
     minutes, total_ms = divmod(total_ms, 60_000)
