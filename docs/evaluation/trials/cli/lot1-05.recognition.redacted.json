@@ -1,0 +1,1103 @@
+{
+ "schema": "aqr.recognition/1",
+ "source": {
+  "file": "lot1-05.mp3",
+  "sha256": "87b73af42d20cf7a7b08c13b6b61f6f1609fc8f1111913078125e17175b59735",
+  "duration_s": 1709.011875
+ },
+ "engine": {
+  "asr": "whisper-base-quran@5c3c53fdf927/times-estimated",
+  "segmenter": "recitation-segmenter-v2@5ee90364e709",
+  "matcher": "flow-matcher (ADR-0004)",
+  "decoder": "viterbi-decoder-v2",
+  "constrained": false,
+  "corpus": "tanzil.net hafs (2026-09-25T09:01:58.990153+00:00)"
+ },
+ "decoder": {
+  "min_recognized_score": 0.75,
+  "uncertainty_ratio": 0.92,
+  "merge_max_gap_s": 5.0,
+  "infer_max_gap_s": 180.0
+ },
+ "timing": {
+  "extract_s": 7.527,
+  "segment_s": 430.731,
+  "asr_s": 320.653,
+  "match_s": 0.247,
+  "total_s": 759.189
+ },
+ "windows": 89,
+ "warnings": [],
+ "intervals": [
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    0.85,
+    6.03
+   ],
+   "best_score": 0.5776
+  },
+  {
+   "kind": "non_quran",
+   "label": "basmala",
+   "t": [
+    8.69,
+    13.87
+   ]
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    22.365,
+    36.765
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "verse",
+   "ref": "42:3",
+   "words": [
+    1,
+    10
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    42.68,
+    59.96
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:4",
+   "words": [
+    1,
+    10
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    65.115,
+    79.735
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:5",
+   "words": [
+    1,
+    13
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    88.97,
+    115.745
+   ],
+   "time_interpolated": false,
+   "confidence": 0.875,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:5",
+   "words": [
+    14,
+    19
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    121.0,
+    132.56
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:6",
+   "words": [
+    1,
+    12
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    138.52,
+    162.75
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:7",
+   "words": [
+    1,
+    16
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    172.23,
+    199.965
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8571,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:7",
+   "words": [
+    17,
+    22
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    206.12,
+    217.32
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:8",
+   "words": [
+    1,
+    12
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    222.515,
+    245.57
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:8",
+   "words": [
+    13,
+    19
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    253.13,
+    264.785
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:9",
+   "words": [
+    1,
+    16
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    275.205,
+    300.955
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8571,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:10",
+   "words": [
+    1,
+    15
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    310.435,
+    341.245
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:11",
+   "words": [
+    1,
+    13
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    347.925,
+    373.94
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    381.375,
+    386.475
+   ],
+   "best_score": 0.6
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    388.835,
+    395.315
+   ],
+   "best_score": 0.6
+  },
+  {
+   "kind": "verse",
+   "ref": "42:12",
+   "words": [
+    1,
+    13
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    399.85,
+    430.605
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    437.305,
+    453.18
+   ],
+   "best_score": 0.7273
+  },
+  {
+   "kind": "verse",
+   "ref": "42:13",
+   "words": [
+    12,
+    17
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    453.18,
+    465.355
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:13",
+   "words": [
+    12,
+    23
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    477.895,
+    499.73
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": true
+  },
+  {
+   "kind": "verse",
+   "ref": "42:13",
+   "words": [
+    24,
+    38
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    507.465,
+    537.18
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:14",
+   "words": [
+    1,
+    20
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    545.295,
+    584.265
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:14",
+   "words": [
+    21,
+    30
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    589.705,
+    607.34
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    615.92,
+    619.68
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "verse",
+   "ref": "42:15",
+   "words": [
+    5,
+    18
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    619.795,
+    649.87
+   ],
+   "time_interpolated": false,
+   "confidence": 0.75,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    662.965,
+    668.785
+   ],
+   "best_score": 0.6
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    672.005,
+    680.42
+   ],
+   "best_score": 0.722
+  },
+  {
+   "kind": "verse",
+   "ref": "42:15",
+   "words": [
+    26,
+    34
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    683.2,
+    701.575
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:16",
+   "words": [
+    1,
+    15
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    708.955,
+    734.39
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8571,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:16",
+   "words": [
+    14,
+    18
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    736.61,
+    748.045
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": true
+  },
+  {
+   "kind": "verse",
+   "ref": "42:17",
+   "words": [
+    1,
+    11
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    754.465,
+    779.855
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:18",
+   "words": [
+    1,
+    22
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    781.795,
+    824.085
+   ],
+   "time_interpolated": false,
+   "confidence": 0.9815,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:19",
+   "words": [
+    1,
+    9
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    825.865,
+    844.02
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:19",
+   "words": [
+    1,
+    9
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    845.94,
+    865.035
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": true
+  },
+  {
+   "kind": "verse",
+   "ref": "42:20",
+   "words": [
+    1,
+    22
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    876.895,
+    914.625
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:21",
+   "words": [
+    1,
+    22
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    923.42,
+    968.35
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:22",
+   "words": [
+    1,
+    20
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    976.17,
+    1019.22
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:22",
+   "words": [
+    21,
+    24
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1025.215,
+    1032.555
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:23",
+   "words": [
+    1,
+    29
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1036.935,
+    1100.855
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:24",
+   "words": [
+    1,
+    6
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1107.575,
+    1115.995
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1119.79,
+    1128.39
+   ],
+   "best_score": 0.2571
+  },
+  {
+   "kind": "verse",
+   "ref": "42:24",
+   "words": [
+    1,
+    11
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1133.05,
+    1151.465
+   ],
+   "time_interpolated": false,
+   "confidence": 0.9167,
+   "candidates": [],
+   "repetition": true
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1155.245,
+    1167.48
+   ],
+   "best_score": 0.5915
+  },
+  {
+   "kind": "verse",
+   "ref": "42:24",
+   "words": [
+    19,
+    22
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1170.8,
+    1181.415
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:25",
+   "words": [
+    1,
+    12
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1188.695,
+    1210.97
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:26",
+   "words": [
+    1,
+    12
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1216.45,
+    1248.9
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:27",
+   "words": [
+    1,
+    13
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1253.94,
+    1276.335
+   ],
+   "time_interpolated": false,
+   "confidence": 0.9846,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:27",
+   "words": [
+    14,
+    17
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1283.87,
+    1296.63
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:28",
+   "words": [
+    1,
+    13
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1307.985,
+    1329.84
+   ],
+   "time_interpolated": false,
+   "confidence": 0.9231,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:29",
+   "words": [
+    1,
+    16
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1339.815,
+    1377.81
+   ],
+   "time_interpolated": false,
+   "confidence": 0.98,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:30",
+   "words": [
+    1,
+    10
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1390.465,
+    1410.72
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:31",
+   "words": [
+    1,
+    14
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1416.18,
+    1442.93
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:32",
+   "words": [
+    1,
+    6
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1453.75,
+    1464.256
+   ],
+   "time_interpolated": true,
+   "confidence": 0.9911,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:33",
+   "words": [
+    1,
+    8
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1464.256,
+    1478.265
+   ],
+   "time_interpolated": true,
+   "confidence": 0.9911,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:33",
+   "words": [
+    9,
+    15
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1485.84,
+    1501.695
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:34",
+   "words": [
+    1,
+    7
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1507.275,
+    1519.67
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:35",
+   "words": [
+    1,
+    9
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1524.43,
+    1542.525
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:36",
+   "words": [
+    1,
+    7
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1551.385,
+    1565.88
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:36",
+   "words": [
+    8,
+    17
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1571.56,
+    1594.355
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:37",
+   "words": [
+    1,
+    10
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1598.495,
+    1619.07
+   ],
+   "time_interpolated": false,
+   "confidence": 0.98,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:38",
+   "words": [
+    1,
+    6
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1624.645,
+    1640.487
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8393,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1640.487,
+    1652.28
+   ],
+   "best_score": 0.681
+  },
+  {
+   "kind": "verse",
+   "ref": "42:39",
+   "words": [
+    1,
+    6
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1658.36,
+    1671.055
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:40",
+   "words": [
+    1,
+    14
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1672.535,
+    1702.485
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1703.285,
+    1708.465
+   ],
+   "best_score": 0.2667
+  }
+ ]
+}
