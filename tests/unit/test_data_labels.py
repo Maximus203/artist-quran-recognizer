@@ -265,3 +265,47 @@ def test_elements_au_meme_instant_survivent_a_l_aller_retour():
     expected, non_quran = parse_labels(format_labels((a, b), (n1, n2)))
     assert set(expected) == {a, b} and len(expected) == 2
     assert set(non_quran) == {n1, n2} and len(non_quran) == 2
+
+
+def test_import_avec_relecteur_enregistre_la_provenance_humaine(env):
+    from aqr.data.manifest import has_trusted_truth
+
+    audio_dir, manifest_path = env
+    (audio_dir / "labels").mkdir(parents=True)
+    (audio_dir / "labels" / "cas1.txt").write_text(SPEC_EXAMPLE, encoding="utf-8")
+    import_labels(
+        manifest_path,
+        audio_dir,
+        "cas1",
+        config=DataConfig(),
+        reviewed_by="rel-01",
+        date="2026-10-06",
+    )
+    case = Manifest.load(manifest_path).get("cas1")
+    assert case.annotation is not None and case.annotation.by == "human"
+    assert case.annotation.reviewed_by == "rel-01" and has_trusted_truth(case)
+
+
+def test_import_sans_relecteur_ne_donne_pas_une_verite_controlee(env):
+    from aqr.data.manifest import has_trusted_truth
+
+    audio_dir, manifest_path = env
+    (audio_dir / "labels").mkdir(parents=True)
+    (audio_dir / "labels" / "cas1.txt").write_text(SPEC_EXAMPLE, encoding="utf-8")
+    import_labels(manifest_path, audio_dir, "cas1", config=DataConfig())
+    assert not has_trusted_truth(Manifest.load(manifest_path).get("cas1"))
+
+
+def test_import_ecarte_une_preannotation_modele_restee_sur_le_cas(env):
+    from dataclasses import replace
+
+    from aqr.data.manifest import Annotation
+
+    audio_dir, manifest_path = env
+    manifest = Manifest.load(manifest_path)
+    manifest.upsert(replace(_case(), annotation=Annotation("model_preannotation")))
+    manifest.save(manifest_path)
+    (audio_dir / "labels").mkdir(parents=True)
+    (audio_dir / "labels" / "cas1.txt").write_text(SPEC_EXAMPLE, encoding="utf-8")
+    import_labels(manifest_path, audio_dir, "cas1", config=DataConfig())
+    assert Manifest.load(manifest_path).get("cas1").annotation is None  # relisible, non trompeur

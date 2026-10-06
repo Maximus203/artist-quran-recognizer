@@ -17,6 +17,7 @@ from typing import Protocol
 
 from aqr.data.config import DataConfig
 from aqr.data.manifest import (
+    Annotation,
     AudioCase,
     ExpectedItem,
     Manifest,
@@ -137,8 +138,18 @@ def export_labels(
 
 
 def import_labels(
-    manifest_path: Path, audio_dir: Path, case_id: str, *, config: DataConfig
+    manifest_path: Path,
+    audio_dir: Path,
+    case_id: str,
+    *,
+    config: DataConfig,
+    reviewed_by: str | None = None,
+    date: str | None = None,
+    note: str | None = None,
 ) -> AudioCase:
+    """Importe les étiquettes relues. Avec `reviewed_by` (identifiant anonyme), enregistre la
+    provenance `annotation.by: human` ; sans, le cas passe `annote` mais n'est PAS évaluable
+    (`has_trusted_truth` faux) : aucune métrique sur des étiquettes de provenance inconnue."""
     manifest = Manifest.load(manifest_path)
     case = manifest.get(case_id)
     path = labels_path(audio_dir, case_id)
@@ -156,7 +167,16 @@ def import_labels(
                     for end in late
                 ]
             )
-    updated = replace(case, expected=expected, non_quran=non_quran, statut=config.statut_annote)
+    previous = case.annotation
+    kept = previous if previous is not None and previous.by == "human" else None
+    annotation = Annotation("human", reviewed_by, date, note) if reviewed_by else kept
+    updated = replace(
+        case,
+        expected=expected,
+        non_quran=non_quran,
+        statut=config.statut_annote,
+        annotation=annotation,
+    )
     manifest.upsert(updated)
     manifest.save(manifest_path)
     return updated
