@@ -36,6 +36,19 @@ Extras optionnels : `.[audio]`, `.[asr]` (PyTorch/NeMo, GPU conseillé). GPU NVI
 Blackwell) : installer PyTorch **avant** l'extra, depuis l'index CUDA 12.8 —
 `pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128` — puis `pip install -e ".[asr]"`.
 
+## Reconnaître un fichier
+
+```bash
+pip install -e ".[asr,data]" && pip install --no-deps -e ".[segmenter]"   # voir pyproject.toml
+python scripts/fetch_models.py                    # modèles épinglés -> $AQR_MODELS_DIR
+aqr recognize cours.mp3 --out-dir sortie          # -> sortie/cours.recognition.json puis cours.srt
+```
+
+Options : `--format json,srt,vtt`, `--translation french_hameedullah|none`, `--asr whisper|fastconformer`,
+`--device cpu|cuda`. Contrat de la sortie : [docs/RECOGNIZE-OUTPUT.md](docs/RECOGNIZE-OUTPUT.md). Un passage
+non reconnu est une **abstention**, jamais un verset par défaut ; le repli Silero n'est pas fiable par défaut
+([docs/evaluation/silero-fallback.md](docs/evaluation/silero-fallback.md)). Limites connues : [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
+
 ## Contribuer
 TDD strict, une PR par brique, invariants I1–I5 non négociables : voir [AGENTS.md](AGENTS.md).
 Aucun secret, aucun enregistrement audio de personne, aucun poids de modèle dans git.

@@ -414,3 +414,26 @@
 - **Non validé sur audio réel** : pas de NeMo/GPU ici. Pas de seuil par défaut (porte désactivée),
   pas de taux. Reste à faire : exposer le treillis du FastConformer + l'encodeur de symboles, puis
   calibrer le seuil sur des annotations humaines.
+
+## 2026-10-06 — `aqr recognize` (pipeline B1→B2→fenêtres→B4→B6→B7→B9)
+- **Vérifié d'abord** : aucun pipeline ni commande `recognize` n'existait (`cli.py` = `aqr data`).
+- **Principes** (AGENTS I3/I4/I5) : une fenêtre n'est jamais un verset par défaut → **abstention** avec
+  raison (`silence`, `empty_transcript`, `no_candidate`, `below_threshold`) ; formules (takbir, isti'adha,
+  amin) et basmala d'ouverture → `non_quran` ; un verset manquant reste `INFERRED` (décodeur) ; l'ambigu
+  reste `UNCERTAIN` et n'est jamais nommé dans la sortie (ni texte ni traduction).
+- **Fenêtres** : les segments > 25 s (Whisper : 30 s) sont coupés au creux d'énergie le plus proche de la
+  coupe idéale, pas à intervalle fixe (essai v0 : découpe dure) ; morceaux contigus.
+- **Temps = ceux des passages** : chaque détection porte le temps de ses fenêtres. Défaut corrigé dans le
+  décodeur : une observation écartée entre deux moitiés d'un même verset interdit leur fusion (sinon le
+  temps annoncé couvrirait un passage non reconnu).
+- **Basmala** : « 1:1 non suivi de 1:2 » ou plage de mots ne couvrant que la basmala d'un verset 1 →
+  `non_quran/basmala` (la basmala d'ouverture d'une sourate n'est pas la récitation d'un verset).
+- **Limite assumée de rappel** : les versets de 1-2 mots (1:3, 112:2…) isolés passent sous le seuil
+  (`evidence_words`) → abstention. Préféré à un faux verset ; une acceptation guidée par le contexte est
+  à mesurer sur des annotations (phase 6).
+- **Segmenteur** : défaut = segmenteur de récitation, **sans repli silencieux** ; Silero seulement sur
+  demande (`--segmenter silero` ou `--allow-fallback-segmenter`) et toujours signalé dans `warnings`.
+- **`--constrained`** refusé (code 2) : voir ADR-0005.
+- **Défauts de config** (`--asr whisper`) : provisoire, Whisper est le seul ASR exécutable sans NeMo/GPU ;
+  le choix du moteur par défaut dépend de la phase 6 (vérité terrain).
+- Similarité de mots extraite de `FlowVerseMatcher` (`aqr.matching.similarity`) pour les formules.
