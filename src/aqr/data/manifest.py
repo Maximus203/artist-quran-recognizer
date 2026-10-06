@@ -86,6 +86,30 @@ class NonQuranItem:
     kind: NonQuranKind
 
 
+ANNOTATION_BY = ("human", "model_preannotation")
+
+
+@dataclass(frozen=True)
+class Annotation:
+    """Provenance de l'annotation d'un cas (docs/ANNOTATION-DEV-SET.md).
+
+    `human` : étiquettes tranchées par une personne qui a écouté. `model_preannotation` :
+    proposition d'un modèle, jamais une vérité terrain (le cas reste `a_annoter`).
+    `reviewed_by` : identifiant anonyme du relecteur (jamais un nom), None tant que non relu.
+    """
+
+    by: str
+    reviewed_by: str | None = None
+    date: str | None = None
+    note: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.by not in ANNOTATION_BY:
+            raise ValueError(
+                f"annotation.by {self.by!r} inconnu (attendu {', '.join(ANNOTATION_BY)})"
+            )
+
+
 @dataclass(frozen=True)
 class AudioCase:
     id: str
@@ -107,6 +131,8 @@ class AudioCase:
     """`approximate` quand une frontière interne est estimée (ex. coupure au milieu d'un verset)."""
     expected: tuple[ExpectedItem, ...] = ()
     non_quran: tuple[NonQuranItem, ...] = ()
+    annotation: Annotation | None = None
+    """Provenance de l'annotation ; absente = manifeste ancien (cas non contrôlé)."""
     extra: Mapping[str, Any] = field(default_factory=dict)
 
 
@@ -122,6 +148,7 @@ yaml.SafeDumper.add_representer(
 _KNOWN = {
     "id", "file", "sha256", "categorie", "recitant", "riwaya", "langues", "license", "duree_s",
     "statut", "split", "source", "tolerance_ms", "origine", "boundaries", "expected", "non_quran",
+    "annotation",
 }  # fmt: skip
 
 
@@ -129,6 +156,27 @@ def _span(raw: object, where: str) -> tuple[float, float]:
     if not (isinstance(raw, list) and len(raw) == 2):
         raise ManifestError(f"{where} : t doit être [début, fin]")
     return float(raw[0]), float(raw[1])
+
+
+def _annotation_from_dict(raw: object, where: str, statut: str) -> Annotation | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise ManifestError(f"{where} : annotation doit être un dictionnaire")
+    try:
+        annotation = Annotation(
+            by=str(raw.get("by")),
+            reviewed_by=str(raw["reviewed_by"]) if raw.get("reviewed_by") is not None else None,
+            date=str(raw["date"]) if raw.get("date") is not None else None,
+            note=str(raw["note"]) if raw.get("note") is not None else None,
+        )
+    except ValueError as exc:
+        raise ManifestError(f"{where} : annotation : {exc}") from exc
+    if annotation.by == "model_preannotation" and statut == "annote":
+        raise ManifestError(
+            f"{where} : une préannotation modèle ne peut pas être `annote` (rester `a_annoter`)"
+        )
+    return annotation
 
 
 def _case_from_dict(raw: Mapping[str, Any]) -> AudioCase:
@@ -149,6 +197,8 @@ def _case_from_dict(raw: Mapping[str, Any]) -> AudioCase:
         )
     except (KeyError, ValueError) as exc:
         raise ManifestError(f"{where} : {exc}") from exc
+    statut = str(raw.get("statut", "a_annoter"))
+    annotation = _annotation_from_dict(raw.get("annotation"), where, statut)
     return AudioCase(
         id=str(raw["id"]),
         file=str(raw["file"]),
@@ -159,7 +209,7 @@ def _case_from_dict(raw: Mapping[str, Any]) -> AudioCase:
         langues=tuple(raw.get("langues") or ()),
         license=str(raw.get("license", "")),
         duree_s=float(raw["duree_s"]) if raw.get("duree_s") is not None else None,
-        statut=str(raw.get("statut", "a_annoter")),
+        statut=statut,
         split=raw.get("split"),
         source=raw.get("source"),
         tolerance_ms=int(raw.get("tolerance_ms", 300)),
@@ -167,8 +217,47 @@ def _case_from_dict(raw: Mapping[str, Any]) -> AudioCase:
         boundaries=str(raw.get("boundaries", "exact")),
         expected=expected,
         non_quran=non_quran,
+        annotation=annotation,
         extra={k: v for k, v in raw.items() if k not in _KNOWN},
     )
+
+
+def _annotation_to_dict(annotation: Annotation) -> dict[str, Any]:
+    return {
+        "by": annotation.by,
+        "reviewed_by": annotation.reviewed_by,
+        "date": annotation.date,
+        "note": annotation.note,
+    }
+
+
+def provenance_problems(case: AudioCase) -> list[str]:
+    """Raisons pour lesquelles un cas n'a pas une vérité contrôlée humainement.
+
+    Règle : `statut: annote` exige `annotation.by == human` ET `reviewed_by` non vide. Un cas
+    `origine: mix` (vérité exacte générée par construction, jamais par un modèle) est exempté.
+    Liste vide = règle satisfaite ; un cas non `annote` n'a pas de vérité terrain.
+    """
+    if case.statut != "annote":
+        return [f"statut {case.statut!r} : seul un cas `annote` porte une vérité terrain"]
+    if case.origine == "mix":
+        return []
+    annotation = case.annotation
+    if annotation is None:
+        return ["annotation absente : provenance inconnue (annotation.by: human requis)"]
+    problems: list[str] = []
+    if annotation.by != "human":
+        problems.append(
+            f"annotation.by {annotation.by!r} : une préannotation modèle n'est pas une vérité"
+        )
+    if not (annotation.reviewed_by or "").strip():
+        problems.append("annotation.reviewed_by vide : relecteur humain requis")
+    return problems
+
+
+def has_trusted_truth(case: AudioCase) -> bool:
+    """Vrai si l'on peut calculer des métriques contre ce cas (voir `provenance_problems`)."""
+    return not provenance_problems(case)
 
 
 def _case_to_dict(case: AudioCase) -> dict[str, Any]:
@@ -191,6 +280,7 @@ def _case_to_dict(case: AudioCase) -> dict[str, Any]:
         origine=case.origine,
         boundaries=case.boundaries,
         tolerance_ms=case.tolerance_ms,
+        **({"annotation": _annotation_to_dict(case.annotation)} if case.annotation else {}),
         expected=[
             _Flow(t=list(i.t), ref=str(i.ref), words=str(i.words), status=i.status.value)
             for i in case.expected

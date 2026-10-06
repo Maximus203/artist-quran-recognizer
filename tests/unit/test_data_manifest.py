@@ -100,3 +100,100 @@ def test_plage_de_mots_invalide():
     assert WordRange.parse("3-7") == WordRange(3, 7)
     assert WordRange.parse("4") == WordRange(4, 4)
     assert WordRange.parse("all").is_all
+
+
+# --- provenance des annotations (docs/ANNOTATION-DEV-SET.md) -------------------------------
+
+
+def _annotated(**annotation_kwargs) -> AudioCase:
+    from dataclasses import replace
+
+    from aqr.data.manifest import Annotation
+
+    return replace(_case(), annotation=Annotation(**annotation_kwargs))
+
+
+def test_annotation_aller_retour_fichier(tmp_path: Path):
+    from aqr.data.manifest import Annotation
+
+    path = tmp_path / "m.yaml"
+    case = _annotated(by="human", reviewed_by="rel-01", date="2026-10-06", note="deux passes")
+    Manifest(cases=[case]).save(path)
+    loaded = Manifest.load(path).cases[0]
+    assert loaded == case
+    assert loaded.annotation == Annotation("human", "rel-01", "2026-10-06", "deux passes")
+    # relu puis réécrit : octet pour octet identique
+    first = path.read_text(encoding="utf-8")
+    Manifest.load(path).save(path)
+    assert path.read_text(encoding="utf-8") == first
+
+
+def test_ancien_manifeste_sans_annotation_reste_identique(tmp_path: Path):
+    path = tmp_path / "m.yaml"
+    Manifest(cases=[_case()]).save(path)
+    text = path.read_text(encoding="utf-8")
+    assert "annotation" not in text
+    assert Manifest.load(path).cases[0].annotation is None
+    Manifest.load(path).save(path)
+    assert path.read_text(encoding="utf-8") == text
+
+
+def test_annotation_provenance_inconnue_refusee(tmp_path: Path):
+    path = tmp_path / "m.yaml"
+    path.write_text(
+        "version: 1\ncases:\n  - {id: a, file: x, sha256: aa, annotation: {by: robot}}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ManifestError, match="annotation"):
+        Manifest.load(path)
+
+
+def test_annote_par_un_modele_refuse_au_chargement(tmp_path: Path):
+    path = tmp_path / "m.yaml"
+    path.write_text(
+        "version: 1\ncases:\n  - {id: a, file: x, sha256: aa, statut: annote,"
+        " annotation: {by: model_preannotation}}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ManifestError, match="préannotation"):
+        Manifest.load(path)
+
+
+def test_preannotation_modele_garde_a_annoter(tmp_path: Path):
+    from dataclasses import replace
+
+    from aqr.data.manifest import Annotation
+
+    path = tmp_path / "m.yaml"
+    case = replace(
+        _case(), statut="a_annoter", annotation=Annotation("model_preannotation", None, None, None)
+    )
+    Manifest(cases=[case]).save(path)
+    assert Manifest.load(path).cases[0] == case
+
+
+def test_controle_humain_exige_human_et_relecteur():
+    from dataclasses import replace
+
+    from aqr.data.manifest import has_trusted_truth, provenance_problems
+
+    ok = _annotated(by="human", reviewed_by="rel-01")
+    assert provenance_problems(ok) == [] and has_trusted_truth(ok)
+    assert has_trusted_truth(_case()) is False  # annote mais sans provenance
+    assert "annotation" in " ".join(provenance_problems(_case()))
+    no_reviewer = _annotated(by="human", reviewed_by="  ")
+    assert not has_trusted_truth(no_reviewer) and "reviewed_by" in " ".join(
+        provenance_problems(no_reviewer)
+    )
+    model = _annotated(by="model_preannotation", reviewed_by="rel-01")
+    assert not has_trusted_truth(model)
+    todo = replace(ok, statut="a_annoter")
+    assert not has_trusted_truth(todo)
+
+
+def test_cas_mix_synthetique_exempte_car_verite_construite():
+    from dataclasses import replace
+
+    from aqr.data.manifest import has_trusted_truth
+
+    assert has_trusted_truth(replace(_case(), origine="mix"))
