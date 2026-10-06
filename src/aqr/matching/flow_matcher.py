@@ -37,6 +37,7 @@ from aqr.corpus.normalize import normalize_arabic
 from aqr.domain.models import VerseRef, WordSpan
 from aqr.domain.ports import Candidate, CorpusRepository
 from aqr.domain.quran_structure import BASMALA_WORD_COUNT, verse_one_includes_basmala
+from aqr.matching.similarity import word_similarity
 
 _CHAR_NGRAM_SIZE = 5
 
@@ -141,24 +142,7 @@ class FlowVerseMatcher:
 
     # -- Similarité de mots ---------------------------------------------------
     def _word_similarity(self, a: str, b: str) -> float:
-        if a == b:
-            return 1.0
-        longest = max(len(a), len(b))
-        # Distance d admissible : 1 - d/longest >= seuil. À 0, seul le mot identique compte
-        # (les mots de 1 à 3 lettres), ce qui évite la plupart des calculs.
-        allowed = int((1 - self._config.word_match_threshold) * longest + 1e-9)
-        if not allowed or abs(len(a) - len(b)) > allowed:
-            return 0.0
-        previous = list(range(len(b) + 1))
-        for i, ca in enumerate(a, 1):
-            current = [i]
-            for j, cb in enumerate(b, 1):
-                current.append(
-                    min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (ca != cb))
-                )
-            previous = current
-        similarity = 1 - previous[-1] / longest
-        return similarity if similarity >= self._config.word_match_threshold else 0.0
+        return word_similarity(a, b, self._config.word_match_threshold)
 
     # -- Recherche ---------------------------------------------------------------
     def match(self, normalized_text: str, top_k: int = 5) -> list[Candidate]:
