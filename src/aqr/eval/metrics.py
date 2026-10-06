@@ -40,6 +40,10 @@ Plusieurs prédictions peuvent se rattacher au même `e` (verset coupé en deux 
 (e) TEMPS DE CALCUL : facteur temps réel = timing.total_s / durée audio (cas.duree_s, sinon la
   durée de la source) ; < 1 = plus rapide que le temps réel.
 
+Annotation par fenêtres (`annotated_windows`) : seules les prédictions dont le milieu tombe dans
+une fenêtre sont jugées (`n_out_of_scope_intervals` compte les autres) ; une étiquette de référence
+hors fenêtre est une erreur d'annotation (`EvaluationRefused`).
+
 Les intervalles sans `t` (verse inferred/uncertain non localisés) sont comptés dans
 `n_unlocated_intervals` et ignorés partout ailleurs. Aucune valeur n'est tirée d'un modèle :
 tout vient du cas annoté et de la sortie.
@@ -148,6 +152,7 @@ class CaseResult:
     n_found: int
     n_recognized_predictions: int
     n_unlocated_intervals: int
+    n_out_of_scope_intervals: int
     false_verses: tuple[FalseVerse, ...]
     omissions: tuple[Omission, ...]
     boundaries: tuple[BoundaryError, ...]
@@ -171,6 +176,7 @@ class CaseResult:
             "n_found": self.n_found,
             "n_recognized_predictions": self.n_recognized_predictions,
             "n_unlocated_intervals": self.n_unlocated_intervals,
+            "n_out_of_scope_intervals": self.n_out_of_scope_intervals,
             "false_verses": [
                 {"ref": f.ref, "words": list(f.words), "t": list(f.t), "reason": f.reason}
                 for f in self.false_verses
@@ -278,6 +284,7 @@ def evaluate_case(
     """Évalue les `intervals` (JSON brut ou objets de `aqr.eval.recognition`) contre `case`."""
     _refuse_unless_trusted(case)
     parsed = tuple(parse_intervals([i])[0] if isinstance(i, Mapping) else i for i in intervals)
+    parsed, out_of_scope = _restrict_to_windows(case, parsed)
     verses = [i for i in parsed if isinstance(i, VerseInterval)]
     unlocated = sum(1 for v in verses if v.t is None)
     recognized = [v for v in verses if v.status is Status.RECOGNIZED and v.t is not None]
@@ -342,6 +349,7 @@ def evaluate_case(
         n_found=sum(1 for k in assigned if assigned[k]),
         n_recognized_predictions=len(recognized),
         n_unlocated_intervals=unlocated,
+        n_out_of_scope_intervals=out_of_scope,
         false_verses=tuple(false_verses),
         omissions=tuple(omissions),
         boundaries=tuple(boundaries),
@@ -350,6 +358,35 @@ def evaluate_case(
         duration_s=float(duration) if duration is not None else None,
         total_s=float(total) if total is not None else None,
     )
+
+
+def _restrict_to_windows(
+    case: AudioCase, intervals: Sequence[Interval]
+) -> tuple[tuple[Interval, ...], int]:
+    """Cas annoté par fenêtres : seules les prédictions dont le milieu tombe dans une fenêtre
+    sont jugées (hors fenêtre il n'y a pas de vérité) ; les intervalles sans `t` sont conservés
+    (comptés « non localisés »). Une référence hors fenêtre rend l'annotation incohérente."""
+    if not case.annotated_windows:
+        return tuple(intervals), 0
+    windows = case.annotated_windows
+    for ref_t in [e.t for e in case.expected] + [z.t for z in case.non_quran]:
+        if not any(w[0] - 1e-6 <= ref_t[0] and ref_t[1] <= w[1] + 1e-6 for w in windows):
+            raise EvaluationRefused(
+                f"cas {case.id} : étiquette {ref_t} hors de toute fenêtre annotée {list(windows)}"
+            )
+    kept: list[Interval] = []
+    dropped = 0
+    for interval in intervals:
+        t = interval.t
+        if t is None:
+            kept.append(interval)
+            continue
+        middle = (t[0] + t[1]) / 2
+        if any(w[0] <= middle <= w[1] for w in windows):
+            kept.append(interval)
+        else:
+            dropped += 1
+    return tuple(kept), dropped
 
 
 def _classify_false_verse(
@@ -472,6 +509,7 @@ def _summarize(results: Sequence[CaseResult], min_reference_verses: int) -> dict
         "n_found": sum(r.n_found for r in results),
         "n_recognized_predictions": n_pred,
         "n_unlocated_intervals": sum(r.n_unlocated_intervals for r in results),
+        "n_out_of_scope_intervals": sum(r.n_out_of_scope_intervals for r in results),
         "n_false_verses": n_false,
         "false_verses_by_reason": {
             reason: sum(1 for r in results for f in r.false_verses if f.reason == reason)

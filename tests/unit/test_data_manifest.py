@@ -197,3 +197,31 @@ def test_cas_mix_synthetique_exempte_car_verite_construite():
     from aqr.data.manifest import has_trusted_truth
 
     assert has_trusted_truth(replace(_case(), origine="mix"))
+
+
+# --- annotation par fenêtres (extraits) ----------------------------------------------------
+
+
+def test_fenetres_annotees_aller_retour_et_absentes_par_defaut(tmp_path: Path):
+    from dataclasses import replace
+
+    path = tmp_path / "m.yaml"
+    Manifest(cases=[_case()]).save(path)
+    assert "annotated_windows" not in path.read_text(encoding="utf-8")
+    case = replace(_case(), annotated_windows=((0.0, 12.0), (30.0, 60.5)))
+    Manifest(cases=[case]).save(path)
+    loaded = Manifest.load(path).cases[0]
+    assert loaded.annotated_windows == ((0.0, 12.0), (30.0, 60.5))
+    first = path.read_text(encoding="utf-8")
+    Manifest.load(path).save(path)
+    assert path.read_text(encoding="utf-8") == first
+
+
+def test_fenetres_invalides_refusees(tmp_path: Path):
+    path = tmp_path / "m.yaml"
+    path.write_text(
+        "version: 1\ncases:\n  - {id: a, file: x, sha256: aa, annotated_windows: [[5, 1]]}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ManifestError, match="annotated_windows"):
+        Manifest.load(path)
