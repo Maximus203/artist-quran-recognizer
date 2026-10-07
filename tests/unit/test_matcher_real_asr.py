@@ -67,6 +67,13 @@ def test_echantillon_representatif(engine, samples):
     )
 
 
+def test_aucun_jeton_de_controle_dans_les_textes_captures(samples):
+    # Les jetons Whisper `<|...|>` ne sont conservés que dans `raw_model_output` (documentation).
+    for s in samples:
+        assert "<|" not in s["raw_text"]
+        assert all("<|" not in w["text"] for w in s["words"])
+
+
 def test_format_reel_des_voyelles(engine, samples):
     # Contrat observé : FastConformer = voyelles dans la majorité des sorties mais pas toutes ;
     # Whisper-Tarteel = toujours entièrement vocalisé.

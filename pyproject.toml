@@ -13,7 +13,11 @@ audio = ["soundfile>=0.12", "numpy>=1.26"]
 asr = ["torch>=2.7", "torchaudio>=2.7", "transformers>=4.44", "nemo_toolkit[asr]>=2.0", "huggingface_hub>=0.24"]
 data = ["huggingface_hub>=0.24"]
 segmenter = ["recitations-segmenter==1.0.0", "silero-vad==6.2.3"]  # installer avec --no-deps après [asr]
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "hypothesis>=6", "types-pyyaml>=6"]
+# `numpy` : requis par les tests des adapters (le code testé l'importe paresseusement) et par
+# tests/support/real.py ; absent, 28 tests échouent sur une installation propre. `soundfile` et
+# `huggingface_hub` ne sont PAS ajoutés : aucun test ni module testé ne les importe (mypy les traite
+# via les overrides ci-dessous).
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "hypothesis>=6", "types-pyyaml>=6", "numpy>=1.26"]
 
 [project.scripts]
 aqr = "aqr.cli:main"
@@ -47,6 +51,27 @@ ignore = ["RUF001", "RUF002", "RUF003"]  # caractères arabes/français ambigus 
 strict = true
 mypy_path = "src"
 packages = ["aqr"]
+
+# Dépendances lourdes ou optionnelles, importées paresseusement : mypy les traite comme `Any`
+# qu'elles soient installées ou non (skip + ignore_missing_imports), pour un résultat identique
+# partout. Remplace tout `# type: ignore` dépendant de l'environnement.
+[[tool.mypy.overrides]]
+module = [
+  "huggingface_hub",
+  "huggingface_hub.*",
+  "torch",
+  "torch.*",
+  "transformers",
+  "transformers.*",
+  "silero_vad",
+  "silero_vad.*",
+  "recitations_segmenter",
+  "recitations_segmenter.*",
+  "nemo",
+  "nemo.*",
+]
+follow_imports = "skip"
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["nemo.*", "omegaconf.*", "torch.*", "torchaudio.*", "transformers.*", "silero_vad.*", "recitations_segmenter.*"]

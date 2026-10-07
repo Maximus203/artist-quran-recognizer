@@ -88,7 +88,7 @@ class RecitationSegmenterV2:
         )
         self._device = torch.device(device)
         self._dtype = getattr(torch, cfg.dtype) if device != "cpu" else torch.float32
-        self._processor = AutoFeatureExtractor.from_pretrained(directory, local_files_only=True)  # type: ignore[no-untyped-call]
+        self._processor = AutoFeatureExtractor.from_pretrained(directory, local_files_only=True)
         model = AutoModelForAudioFrameClassification.from_pretrained(
             directory, local_files_only=True
         )
@@ -143,6 +143,20 @@ class SileroVadConfig:
 
 
 class SileroVadSegmenter:
+    """Détection de voix Silero. **Repli non fiable par défaut pour la récitation.**
+
+    Mesuré (docs/evaluation/silero-fallback.md) : sur un extrait de 3 min de récitation à pauses
+    longues, la config par défaut (`min_silence_ms=100`) découpe en 30 fragments dont 53 % durent
+    moins d'une seconde (quasi un mot chacun), contre 7 segments de 11 à 28 s pour
+    recitation-segmenter-v2. Aucune valeur de `min_silence_ms` testée ne convient aux deux
+    extraits mesurés. Le comportement par défaut n'est pas modifié : sans vérité terrain, aucun
+    réglage n'est calibré. Voir le document avant de s'appuyer sur ce segmenteur.
+    """
+
+    RELIABLE_BY_DEFAULT = False
+    """Garde-fou documentaire, vérifié par test : ne passe à True qu'après mesure avec vérité
+    terrain consignée dans docs/evaluation/silero-fallback.md."""
+
     def __init__(self, config: SileroVadConfig | None = None) -> None:
         self._config = config or SileroVadConfig()
         self._vad: Any = None
@@ -172,7 +186,16 @@ class SileroVadSegmenter:
 
 
 class FallbackSegmenter:
-    """Essaie `primary` ; si indisponible (RuntimeError, OSError, ImportError), bascule."""
+    """Essaie `primary` ; si indisponible (RuntimeError, OSError, ImportError), bascule.
+
+    **Avertissement** : le repli par défaut (`SileroVadSegmenter`) fragmente la récitation à pauses
+    longues en segments d'environ un mot (limite mesurée, docs/evaluation/silero-fallback.md).
+    Une bascule dégrade donc fortement la détection en aval : inspecter `last_used` et ne pas
+    présenter ses résultats comme équivalents à ceux du segmenteur principal.
+    """
+
+    FALLBACK_RELIABLE_BY_DEFAULT = False
+    """Reflet de `SileroVadSegmenter.RELIABLE_BY_DEFAULT` pour le repli par défaut."""
 
     def __init__(self, primary: SpeechSegmenter, fallback: SpeechSegmenter) -> None:
         self._primary = primary
