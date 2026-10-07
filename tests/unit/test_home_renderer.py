@@ -42,9 +42,16 @@ def renderer(corpus: TanzilCorpusRepository) -> HomeRenderer:
     return HomeRenderer(corpus=corpus, translations=_FakeTranslations())
 
 
+def _full_span(ref: VerseRef) -> WordSpan:
+    return WordSpan(ref=ref, first_word=1, last_word=len(_CORPUS.words(ref)))
+
+
+_CORPUS = TanzilCorpusRepository(CORPUS_DIR) if (CORPUS_DIR / "LOCK.json").exists() else None
+
+
 def _detection(ref: VerseRef, t0: float) -> Detection:
     return Detection(
-        span=WordSpan(ref=ref, first_word=1, last_word=1),
+        span=_full_span(ref),
         time=TimeSpan(t0, t0 + 3.0),
         status=Status.RECOGNIZED,
         confidence=0.98,
@@ -105,3 +112,59 @@ def test_srt_et_vtt_contiennent_le_texte_arabe(corpus, renderer):
     assert text in batches[0].vtt
     assert batches[0].vtt.startswith("WEBVTT")
     assert "-->" in batches[0].srt
+
+
+# --- Passages partiels, répétitions, statuts dans les sous-titres (phase 5) --------------------
+def _item(renderer: HomeRenderer, det: Detection) -> dict:
+    timeline = Timeline(items=(det,), riwaya=Riwaya.HAFS, engine_version="t")
+    return renderer.render(timeline, "french_hameedullah", BatchOptions())[0].json["items"][0]
+
+
+def test_passage_partiel_rend_les_seuls_mots_recites_depuis_le_corpus(corpus, renderer):  # I1
+    ref = VerseRef(2, 255)
+    det = Detection(
+        span=WordSpan(ref, 1, 6),
+        time=TimeSpan(0.0, 3.0),
+        status=Status.RECOGNIZED,
+        confidence=1.0,
+    )
+    item = _item(renderer, det)
+    assert item["words"] == [1, 6]
+    assert item["partial"] is True
+    assert item["text"] == " ".join(corpus.text(ref).split()[:6])  # les 6 premiers mots du Mushaf
+    assert item["text"] in corpus.text(ref)  # sous-chaîne exacte du Mushaf, jamais reconstruite
+    assert item["translation"]["scope"] == "verse"  # la traduction n'est pas découpable
+
+
+def test_verset_entier_non_partiel_texte_integral(corpus, renderer):
+    ref = VerseRef(112, 1)
+    item = _item(renderer, Detection(_full_span(ref), TimeSpan(0, 3), Status.RECOGNIZED, 1.0))
+    assert item["partial"] is False
+    assert item["text"] == corpus.text(ref)
+
+
+def test_repetition_exposee(renderer):
+    det = Detection(
+        _full_span(VerseRef(112, 1)), TimeSpan(0, 3), Status.RECOGNIZED, 1.0, is_repetition=True
+    )
+    assert _item(renderer, det)["repetition"] is True
+
+
+def test_srt_ne_presente_jamais_un_verset_incertain_ou_deduit_comme_reconnu(corpus, renderer):
+    inferred = Detection(
+        _full_span(VerseRef(67, 5)), TimeSpan(3, 6), Status.INFERRED, 0.0, time_interpolated=True
+    )
+    uncertain = Detection(
+        _full_span(VerseRef(55, 13)),
+        TimeSpan(6, 9),
+        Status.UNCERTAIN,
+        0.9,
+        candidates=(VerseRef(55, 13), VerseRef(55, 16)),
+    )
+    recognized = _detection(VerseRef(67, 4), 0.0)
+    timeline = Timeline((recognized, inferred, uncertain), Riwaya.HAFS, "t")
+    srt = renderer.render(timeline, "french_hameedullah", BatchOptions())[0].srt
+    assert "[déduit] " + corpus.text(VerseRef(67, 5)) in srt
+    assert "[incertain : 55:13 | 55:16]" in srt
+    assert corpus.text(VerseRef(55, 13)) not in srt  # aucun texte pour un verset incertain
+    assert corpus.text(VerseRef(67, 4)) in srt and "[" not in srt.split("\n\n")[0]

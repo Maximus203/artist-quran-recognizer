@@ -67,17 +67,52 @@ def test_saut_arbitraire_pas_de_comblement():
     assert refs == [VerseRef(1, 1), VerseRef(2, 50)]
 
 
-def test_repetitions_consecutives_fusionnees():
+def test_reprise_des_memes_mots_donne_deux_detections_la_seconde_marquee_repetition():
     obs = [
         (TimeSpan(0.0, 5.0), [_cand(VerseRef(2, 255), first=1, last=58)]),
         (TimeSpan(5.0, 8.0), [_cand(VerseRef(2, 255), score=0.9, first=30, last=58)]),
     ]
-    timeline = _decoder().decode(obs)
-    dets = timeline.detections()
+    dets = _decoder().decode(obs).detections()
+    assert [d.span.ref for d in dets] == [VerseRef(2, 255), VerseRef(2, 255)]
+    assert [d.is_repetition for d in dets] == [False, True]
+    # Chaque passage garde SON temps : jamais l'union qui couvrirait le silence entre deux passages.
+    assert dets[0].time == TimeSpan(0.0, 5.0)
+    assert dets[1].time == TimeSpan(5.0, 8.0)
+    assert (dets[1].span.first_word, dets[1].span.last_word) == (30, 58)
+
+
+def test_deux_moities_contigues_proches_dans_le_temps_sont_fusionnees():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(VerseRef(2, 255), first=1, last=6)]),
+        (TimeSpan(3.5, 6.0), [_cand(VerseRef(2, 255), first=7, last=12)]),
+    ]
+    dets = _decoder().decode(obs).detections()
     assert len(dets) == 1
-    assert dets[0].span.first_word == 1
-    assert dets[0].span.last_word == 58
-    assert dets[0].time == TimeSpan(0.0, 8.0)
+    assert (dets[0].span.first_word, dets[0].span.last_word) == (1, 12)
+    assert dets[0].time == TimeSpan(0.0, 6.0)
+    assert dets[0].is_repetition is False
+
+
+def test_deux_moities_separees_par_un_long_intervalle_ne_sont_pas_fusionnees():
+    # 5 minutes d'autre chose entre les deux : l'union couvrirait des passages non reconnus.
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(VerseRef(2, 255), first=1, last=6)]),
+        (TimeSpan(300.0, 303.0), [_cand(VerseRef(2, 255), first=7, last=12)]),
+    ]
+    dets = _decoder(merge_max_gap_s=5.0).decode(obs).detections()
+    assert len(dets) == 2
+    assert [d.time for d in dets] == [TimeSpan(0.0, 3.0), TimeSpan(300.0, 303.0)]
+    assert [d.is_repetition for d in dets] == [False, False]
+
+
+def test_trou_d_un_verset_non_infere_apres_un_long_intervalle():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(VerseRef(67, 4))]),
+        (TimeSpan(900.0, 903.0), [_cand(VerseRef(67, 6))]),
+    ]
+    dets = _decoder(infer_max_gap_s=180.0).decode(obs).detections()
+    assert [d.span.ref for d in dets] == [VerseRef(67, 4), VerseRef(67, 6)]
+    assert all(d.status is Status.RECOGNIZED for d in dets)
 
 
 def test_ambiguite_marque_uncertain_avec_candidats():
