@@ -14,6 +14,7 @@ chargé par `transformers` avec `weights_only`.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,6 +24,18 @@ from aqr.corpus.normalize import normalize_arabic
 from aqr.domain.models import Riwaya, TimeSpan
 from aqr.domain.ports import AudioClip, TranscribedWord, Transcript
 from aqr.models.lock import ModelsLock, verify_model_files
+
+_CONTROL_TOKEN = re.compile(r"<\|[^<>|]*\|>")
+
+
+def strip_control_tokens(text: str) -> str:
+    """Retire tout jeton de contrôle Whisper de la forme `<|...|>`.
+
+    Avec ce checkpoint, `batch_decode(skip_special_tokens=True)` laisse passer
+    `<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>` (jetons ajoutés non « spéciaux »).
+    Fonction pure : seul ce motif est supprimé, le texte arabe n'est jamais modifié (I1).
+    """
+    return _CONTROL_TOKEN.sub("", text)
 
 
 @dataclass(frozen=True)
@@ -181,7 +194,7 @@ class WhisperTarteelASR:
         return [results.get(i, Transcript(words=(), engine=self.engine)) for i in range(len(spans))]
 
     def _to_transcript(self, text: str, confidence: float, span: TimeSpan) -> Transcript:
-        tokens = text.split()
+        tokens = strip_control_tokens(text).split()
         if not tokens:
             return Transcript(words=(), engine=self.engine)
         weights = [max(1, len(normalize_arabic(t))) for t in tokens]
