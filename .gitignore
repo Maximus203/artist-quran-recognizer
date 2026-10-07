@@ -41,3 +41,9 @@ tests/fixtures/audio/files/
 .vscode/
 .idea/
 .hypothesis/
+
+# Application locale Next.js
+web/node_modules/
+web/.next/
+web/.turbo/
+web/*.tsbuildinfo
