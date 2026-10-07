@@ -6,7 +6,11 @@ from array import array
 
 import pytest
 
-from aqr.adapters.whisper_tarteel import WhisperTarteelASR, WhisperTarteelConfig
+from aqr.adapters.whisper_tarteel import (
+    WhisperTarteelASR,
+    WhisperTarteelConfig,
+    strip_control_tokens,
+)
 from aqr.corpus.normalize import normalize_arabic
 from aqr.domain.models import Riwaya, TimeSpan
 from aqr.domain.ports import AudioClip
@@ -100,3 +104,42 @@ def test_riwaya_hafs_et_configuration_sans_chemin_en_dur():
     cfg = WhisperTarteelConfig()
     assert asr(FakeBackend([])).riwaya is Riwaya.HAFS
     assert cfg.max_segment_s == 30.0 and cfg.batch_size >= 1 and cfg.max_new_tokens > 0
+
+
+PREFIX = "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>"
+
+
+def test_jetons_de_controle_en_tete_retires_des_mots():
+    # Défaut relevé sur le vrai checkpoint : skip_special_tokens=True ne les retire pas.
+    backend = FakeBackend([(PREFIX + "فَصَلِّ لِرَبِّكَ وَانْحَرْ", 0.9)])
+    words = asr(backend).transcribe(clip(4.0), TimeSpan(0.0, 4.0)).words
+    assert [w.text for w in words] == ["فَصَلِّ", "لِرَبِّكَ", "وَانْحَرْ"]
+    assert not any("<|" in w.text or "|>" in w.text for w in words)
+
+
+def test_jeton_au_milieu_et_a_la_fin_retire_sans_toucher_au_texte():
+    backend = FakeBackend([("قُلْ <|endoftext|> هُوَ<|notimestamps|> اللَّهُ <|endoftext|>", 0.9)])
+    words = asr(backend).transcribe(clip(4.0), TimeSpan(0.0, 4.0)).words
+    assert [w.text for w in words] == ["قُلْ", "هُوَ", "اللَّهُ"]
+
+
+def test_texte_reduit_aux_seuls_jetons_donne_un_transcript_vide():
+    backend = FakeBackend([(PREFIX + "<|endoftext|>", 0.9)])
+    assert asr(backend).transcribe(clip(2.0), TimeSpan(0.0, 2.0)).words == ()
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("", ""),
+        ("<|ar|>", ""),
+        (PREFIX + "قُلْ", "قُلْ"),
+        ("أ<|x|>ب", "أب"),  # jeton collé : pas d'espace inventé
+        ("أ <|x|> ب", "أ  ب"),
+        ("a < | b", "a < | b"),  # pas un jeton : inchangé
+        ("<|", "<|"),
+        ("قُلْ هُوَ اللَّهُ أَحَدٌ", "قُلْ هُوَ اللَّهُ أَحَدٌ"),  # arabe vocalisé intact
+    ],
+)
+def test_strip_control_tokens_fonction_pure(raw, expected):
+    assert strip_control_tokens(raw) == expected

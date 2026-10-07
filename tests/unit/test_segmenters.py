@@ -10,6 +10,7 @@ from aqr.adapters.segmenters import (
     FallbackSegmenter,
     RecitationSegmenterConfig,
     SileroVadConfig,
+    SileroVadSegmenter,
     intervals_to_spans,
 )
 from aqr.domain.models import TimeSpan
@@ -90,3 +91,17 @@ def test_frequence_non_seize_kilohertz_refusee():
 
     with pytest.raises(ValueError, match="16000"):
         SileroVadSegmenter().segment(clip(rate=8000))
+
+
+def test_repli_silero_declare_publiquement_qu_il_n_est_pas_fiable_par_defaut():
+    # Limite mesurée (docs/evaluation/silero-fallback.md) : à ne retirer qu'avec une nouvelle
+    # mesure documentée, jamais pour faire passer un test.
+    assert SileroVadSegmenter.RELIABLE_BY_DEFAULT is False
+    assert FallbackSegmenter.FALLBACK_RELIABLE_BY_DEFAULT is False
+    for cls in (SileroVadSegmenter, FallbackSegmenter):
+        assert "silero-fallback.md" in (cls.__doc__ or "")
+
+
+def test_defauts_silero_inchanges_tant_que_non_calibres_sur_verite_terrain():
+    config = SileroVadConfig()
+    assert (config.min_silence_ms, config.min_speech_ms) == (100, 250)
