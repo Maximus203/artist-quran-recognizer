@@ -1,0 +1,17 @@
+{
+ "translation": "french_hameedullah",
+ "source": "https://quranenc.com/api/v1/translation/sura",
+ "suras": {
+  "42": [
+   {
+    "aya": 3,
+    "type": "repetition_exacte"
+   },
+   {
+    "aya": 4,
+    "type": "fin_du_verset_precedent"
+   }
+  ]
+ },
+ "verses_flagged": 2
+}
