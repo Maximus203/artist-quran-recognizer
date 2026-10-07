@@ -14,7 +14,7 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 | 5 | Pipeline bout-en-bout + CLI → **1ʳᵉ inférence sur tes audios** | ⏳ `aqr recognize` fusionné (#30, voir `docs/RECOGNIZE-OUTPUT.md`) ; essais sur lot 1 sans vérité terrain |
 | 6 | Golden set annoté + benchmark v1 + choix de l'ASR | |
 | 7 | Rejet du non-Coran (B3 + B5) calibré | |
-| 8 | V1 « utilisation libre » : CLI finale + interface web locale | |
+| 8 | V1 « utilisation libre » : CLI finale + interface web locale | ⏳ atelier Next.js en cours ; validation sur les audios de Cherif et feu vert V1 encore nécessaires |
 | V1.1 / V2 | Warsh · anglais · sous-titrage vidéo | |
 
 ---
@@ -88,9 +88,10 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 - 🚦 0 faux positif sur C09/C10 (test), rappel ≥ 90 % sur C11.
 
 ## Phase 8 — V1 « utilisation libre »
-- 🤖 Mode dossier (traiter un répertoire entier), interface web locale (FastAPI +
-  page unique : dépôt d'un fichier, lecteur audio synchronisé avec la timeline, texte
-  Mushaf + traduction par lots), export JSON/SRT/VTT, README utilisateur.
+- 🤖 Mode dossier (traiter un répertoire entier). Pour l'atelier de revue local, la demande du
+  7 octobre 2026 retient Next.js/TypeScript et la CLI Python existante plutôt que FastAPI :
+  dépôt audio, lecteur synchronisé, texte Mushaf, signalements et export JSON. Les exports
+  SRT/VTT restent disponibles dans la CLI.
 - 👤 **Intervention** : coller `prompts/phase-08.md`. **Utilisation réelle pendant une
   semaine** ; chaque erreur → cas de test.
 - 🚦 **Feu vert V1 par Cherif** → tag `v1.0.0` sur `main`.
