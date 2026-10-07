@@ -1,0 +1,200 @@
+# File d'annotation du petit ensemble DEV — protocole : docs/ANNOTATION-DEV-SET.md
+#
+# CE FICHIER N'EST PAS UNE VÉRITÉ TERRAIN. Il liste des fenêtres à écouter et annoter par un
+# humain. Aucune étiquette de verset n'est écrite ici : `reason` dit pourquoi la fenêtre a été
+# choisie, `model_hint` (le cas échéant) rapporte une observation d'une préannotation modèle,
+# « à vérifier à l'oreille », jamais à recopier.
+#
+# Périmètre : fichiers DEV uniquement (lot1-01, 03, 04, 05, 06, 09, 12). Le jeu test
+# (lot1-02, 07, 08, 10, 11) est réservé : aucune fenêtre ne s'y trouve et rien n'en a servi
+# à choisir ces fenêtres. Garde-fou : tests/unit/test_annotation_queue.py.
+#
+# selection_basis : pourquoi CETTE fenêtre.
+#   model_preannotation   fenêtre repérée sur la sortie brute d'un modèle (trou, reprise,
+#                         citation supposée) : l'indice peut être faux.
+#   structure_du_fichier  fenêtre choisie sans modèle (début, milieu ou fin du fichier,
+#                         plage de contrôle) : le contenu n'a pas été écouté.
+# Temps en secondes dans le fichier source ; marges incluses (commencer un peu avant, finir un
+# peu après). status : todo -> annotating -> annotated (l'enregistrement humain se fait
+# dans le manifeste, annotation.by: human + reviewed_by).
+version: 1
+budget:
+  max_extracts: 20
+  max_total_minutes: 60
+extracts:
+  # --- lot1-05 : récitation continue, arrêts, répétitions (C01) --------------------------
+  - id: dev05-open
+    file: lot1-05
+    start_s: 0
+    end_s: 100
+    category: C01
+    reason: "Début de fichier : formules d'ouverture avant la récitation, silence, premier verset"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé du non-coranique puis un verset incertain avant ~42 s (non vérifié)"
+    status: todo
+  - id: dev05-continuous
+    file: lot1-05
+    start_s: 150
+    end_s: 300
+    category: C01
+    reason: "Récitation continue de contrôle : fixe la base de rappel et de limites sans cas piège"
+    selection_basis: structure_du_fichier
+    status: todo
+  - id: dev05-gap-partial
+    file: lot1-05
+    start_s: 360
+    end_s: 470
+    category: C06
+    reason: "Trou de plusieurs secondes entre deux versets et reprise possible au milieu d'un verset (plage de mots partielle)"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a laissé un trou vers 374-400 s puis un verset commencé au milieu vers 437 s (non vérifié)"
+    status: todo
+  - id: dev05-repeat-a
+    file: lot1-05
+    start_s: 810
+    end_s: 880
+    category: C05
+    reason: "Reprise (i'ada) possible : deux propositions successives sur les mêmes mots"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé la même plage de mots deux fois de suite vers 826-865 s (non vérifié)"
+    status: todo
+  - id: dev05-repeat-b
+    file: lot1-05
+    start_s: 1095
+    end_s: 1165
+    category: C05
+    reason: "Reprise possible d'un début de verset après une fin de verset"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé un retour en arrière sur les mots vers 1119-1151 s (non vérifié)"
+    status: todo
+  - id: dev05-end
+    file: lot1-05
+    start_s: 1640
+    end_s: 1709
+    category: C01
+    reason: "Fin de fichier : dernier verset et fin de récitation (coupure ou formule de clôture)"
+    selection_basis: structure_du_fichier
+    status: todo
+  # --- lot1-06 : prière (C08, conditions dégradées C12) ----------------------------------
+  - id: dev06-prayer-open
+    file: lot1-06
+    start_s: 0
+    end_s: 140
+    category: C08
+    reason: "Ouverture de prière : takbir, isti'adha, Fatiha, amin éventuel, début de la sourate"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a entendu un takbir au début, la Fatiha vers 12-43 s puis une autre sourate dès ~47 s (non vérifié ; l'amin n'est pas détecté)"
+    status: todo
+  - id: dev06-gap-inferred
+    file: lot1-06
+    start_s: 640
+    end_s: 700
+    category: C08
+    reason: "Verset non reconnu entre deux versets reconnus (trou) : cas INFERRED"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a déduit sans l'entendre un verset vers 663-670 s (non vérifié)"
+    status: todo
+  - id: dev06-surah-change-a
+    file: lot1-06
+    start_s: 715
+    end_s: 765
+    category: C08
+    reason: "Possible changement de sourate : début de la suivante peut manquer (basmala, takbir, mots d'ouverture)"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé le début de la sourate suivante au 5e mot vers 733 s (non vérifié)"
+    status: todo
+  - id: dev06-surah-change-b
+    file: lot1-06
+    start_s: 2060
+    end_s: 2110
+    category: C08
+    reason: "Second changement de sourate possible : même risque de début manquant"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé le début de la sourate suivante au 5e mot vers 2079 s (non vérifié)"
+    status: todo
+  # --- lot1-09 : assise en français avec citations (C09/C11) -----------------------------
+  - id: dev09-quote-a
+    file: lot1-09
+    start_s: 630
+    end_s: 710
+    category: C11
+    reason: "Citations coraniques possibles insérées dans l'intervention : seule la citation est un verset"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé trois versets proches entre ~654 et ~688 s (non vérifié ; peut être un faux positif)"
+    status: todo
+  - id: dev09-quote-b
+    file: lot1-09
+    start_s: 1450
+    end_s: 1495
+    category: C11
+    reason: "Citation coranique possible courte dans du français"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé un verset vers 1469-1476 s (non vérifié)"
+    status: todo
+  - id: dev09-closing
+    file: lot1-09
+    start_s: 1750
+    end_s: 1800
+    category: C09
+    reason: "Fin du fichier : formule de clôture (distinguer formule de louange et verset)"
+    selection_basis: model_preannotation
+    model_hint: "Le modèle a proposé un verset incertain vers 1794 s (non vérifié ; probablement une formule, à trancher)"
+    status: todo
+  - id: dev09-french-control
+    file: lot1-09
+    start_s: 200
+    end_s: 320
+    category: C09
+    reason: "Plage de contrôle sans détection modèle : français courant, 0 verset attendu a priori (à confirmer)"
+    selection_basis: structure_du_fichier
+    status: todo
+  # --- lot1-01 / 03 / 04 : assises en français (C09/C11) ---------------------------------
+  - id: dev01-open
+    file: lot1-01
+    start_s: 0
+    end_s: 120
+    category: C09
+    reason: "Ouverture d'une assise : formules d'ouverture possibles (basmala, louange), puis français"
+    selection_basis: structure_du_fichier
+    status: todo
+  - id: dev03-middle
+    file: lot1-03
+    start_s: 1900
+    end_s: 2020
+    category: C09
+    reason: "Milieu d'une longue assise : français courant, citations éventuelles"
+    selection_basis: structure_du_fichier
+    status: todo
+  - id: dev04-middle
+    file: lot1-04
+    start_s: 4000
+    end_s: 4120
+    category: C09
+    reason: "Milieu d'une très longue assise : français courant, citations éventuelles"
+    selection_basis: structure_du_fichier
+    status: todo
+  # --- lot1-12 : arabe non coranique, khutba et prière (C10/C11/C08) ---------------------
+  - id: dev12-open
+    file: lot1-12
+    start_s: 0
+    end_s: 150
+    category: C10
+    reason: "Début de khutba : louange, témoignage de foi, hadiths ; piège n°1 (0 faux positif)"
+    selection_basis: structure_du_fichier
+    status: todo
+  - id: dev12-middle
+    file: lot1-12
+    start_s: 800
+    end_s: 920
+    category: C11
+    reason: "Milieu de khutba : arabe non coranique avec citations coraniques ou hadiths possibles"
+    selection_basis: structure_du_fichier
+    status: todo
+  - id: dev12-end
+    file: lot1-12
+    start_s: 1700
+    end_s: 1848
+    category: C08
+    reason: "Fin du fichier : dou'a de clôture, possible début de prière (takbir, récitation)"
+    selection_basis: structure_du_fichier
+    status: todo
