@@ -5,11 +5,11 @@
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "108:2",
    "duration_s": 3.736,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَصَلِّ لِرَبِّكَ وَانْحَرْ",
+   "raw_text": "فَصَلِّ لِرَبِّكَ وَانْحَرْ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَصَلِّ",
+     "text": "فَصَلِّ",
      "t": [
       0.0,
       0.934
@@ -37,17 +37,18 @@
    "top1": "108:2",
    "score": 0.6,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَصَلِّ لِرَبِّكَ وَانْحَرْ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "109:1",
    "duration_s": 5.825,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ يَا أَيُّهَا الْكَافِرُونَ",
+   "raw_text": "قُلْ يَا أَيُّهَا الْكَافِرُونَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.728
@@ -83,17 +84,18 @@
    "top1": "109:1",
    "score": 0.392,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ يَا أَيُّهَا الْكَافِرُونَ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "109:5",
    "duration_s": 7.732,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَا أَنْتُمْ عَابِدُونَ مَا أَعْبُدُ",
+   "raw_text": "وَلَا أَنْتُمْ عَابِدُونَ مَا أَعْبُدُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَا",
+     "text": "وَلَا",
      "t": [
       0.0,
       1.221
@@ -137,17 +139,18 @@
    "top1": "109:3",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَا أَنْتُمْ عَابِدُونَ مَا أَعْبُدُ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "110:1",
    "duration_s": 5.878,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ",
+   "raw_text": "إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِذَا",
+     "text": "إِذَا",
      "t": [
       0.0,
       0.928
@@ -191,17 +194,18 @@
    "top1": "110:1",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "110:3",
    "duration_s": 9.587,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ إِنَّهُ كَانَ تَوَّابًا",
+   "raw_text": "فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ إِنَّهُ كَانَ تَوَّابًا",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَسَبِّحْ",
+     "text": "فَسَبِّحْ",
      "t": [
       0.0,
       1.278
@@ -261,17 +265,18 @@
    "top1": "110:3",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ إِنَّهُ كَانَ تَوَّابًا"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "112:1",
    "duration_s": 3.161,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ اللَّهُ أَحَدٌ",
+   "raw_text": "قُلْ هُوَ اللَّهُ أَحَدٌ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.575
@@ -307,17 +312,18 @@
    "top1": "112:1",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ اللَّهُ أَحَدٌ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "113:1",
    "duration_s": 4.206,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
+   "raw_text": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.601
@@ -353,17 +359,18 @@
    "top1": "113:1",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "113:2",
    "duration_s": 3.709,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ مَا خَلَقَ",
+   "raw_text": "مِنْ شَرِّ مَا خَلَقَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ",
+     "text": "مِنْ",
      "t": [
       0.0,
       0.824
@@ -399,17 +406,18 @@
    "top1": "113:2",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ مَا خَلَقَ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "113:3",
    "duration_s": 5.251,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ",
+   "raw_text": "وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ",
+     "text": "وَمِنْ",
      "t": [
       0.0,
       1.05
@@ -453,17 +461,18 @@
    "top1": "113:3",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:10",
    "duration_s": 13.636,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَقَالُوا لَوْ كُنَّا نَسْمَعُ أَوْ نَعْقِلُ مَا كُنَّا فِي أَصْحَابِ السَّعِيرِ",
+   "raw_text": "وَقَالُوا لَوْ كُنَّا نَسْمَعُ أَوْ نَعْقِلُ مَا كُنَّا فِي أَصْحَابِ السَّعِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَقَالُوا",
+     "text": "وَقَالُوا",
      "t": [
       0.0,
       2.098
@@ -555,17 +564,18 @@
    "top1": "67:10",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَقَالُوا لَوْ كُنَّا نَسْمَعُ أَوْ نَعْقِلُ مَا كُنَّا فِي أَصْحَابِ السَّعِيرِ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:11",
    "duration_s": 10.24,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَاعْتَرَفُوا بِذَنْبِهِمْ فَسُحْقًا لِأَصْحَابِ السَّعِيرِ",
+   "raw_text": "فَاعْتَرَفُوا بِذَنْبِهِمْ فَسُحْقًا لِأَصْحَابِ السَّعِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَاعْتَرَفُوا",
+     "text": "فَاعْتَرَفُوا",
      "t": [
       0.0,
       2.643
@@ -609,17 +619,18 @@
    "top1": "67:11",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>فَاعْتَرَفُوا بِذَنْبِهِمْ فَسُحْقًا لِأَصْحَابِ السَّعِيرِ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:12",
    "duration_s": 14.785,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ الَّذِينَ يَخْشَوْنَ رَبَّهُمْ بِالْغَيْبِ لَهُمْ مَغْفِرَةٌ وَأَجْرٌ كَبِيرٌ",
+   "raw_text": "إِنَّ الَّذِينَ يَخْشَوْنَ رَبَّهُمْ بِالْغَيْبِ لَهُمْ مَغْفِرَةٌ وَأَجْرٌ كَبِيرٌ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ",
+     "text": "إِنَّ",
      "t": [
       0.0,
       0.778
@@ -695,17 +706,18 @@
    "top1": "67:12",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ الَّذِينَ يَخْشَوْنَ رَبَّهُمْ بِالْغَيْبِ لَهُمْ مَغْفِرَةٌ وَأَجْرٌ كَبِيرٌ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:14",
    "duration_s": 7.393,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
+   "raw_text": "أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا",
+     "text": "أَلَا",
      "t": [
       0.0,
       0.821
@@ -765,17 +777,18 @@
    "top1": "67:14",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:16",
    "duration_s": 14.733,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَأَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يَخْسِفَ بِكُمُ الْأَرْضَ فَإِذَا هِيَ تَمُورُ",
+   "raw_text": "أَأَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يَخْسِفَ بِكُمُ الْأَرْضَ فَإِذَا هِيَ تَمُورُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَأَمِنْتُمْ",
+     "text": "أَأَمِنْتُمْ",
      "t": [
       0.0,
       2.21
@@ -867,17 +880,18 @@
    "top1": "67:16",
    "score": 0.985,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَأَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يَخْسِفَ بِكُمُ الْأَرْضَ فَإِذَا هِيَ تَمُورُ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:17",
    "duration_s": 18.26,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ",
+   "raw_text": "أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمْ",
+     "text": "أَمْ",
      "t": [
       0.0,
       0.761
@@ -977,17 +991,18 @@
    "top1": "67:17",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:18",
    "duration_s": 10.109,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ كَذَّبَ الَّذِينَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيرِ",
+   "raw_text": "وَلَقَدْ كَذَّبَ الَّذِينَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ",
+     "text": "وَلَقَدْ",
      "t": [
       0.0,
       1.348
@@ -1055,17 +1070,18 @@
    "top1": "67:18",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ كَذَّبَ الَّذِينَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيرِ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:20",
    "duration_s": 20.167,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمَّنْ هَذَا الَّذِي هُوَ جُنْدٌ لَكُمْ يَنْصُرُكُمْ مِنْ دُونِ الرَّحْمَنِ إِنِ الْكَافِرُونَ إِلَّا فِي غُرُورٍ",
+   "raw_text": "أَمَّنْ هَذَا الَّذِي هُوَ جُنْدٌ لَكُمْ يَنْصُرُكُمْ مِنْ دُونِ الرَّحْمَنِ إِنِ الْكَافِرُونَ إِلَّا فِي غُرُورٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمَّنْ",
+     "text": "أَمَّنْ",
      "t": [
       0.0,
       1.12
@@ -1189,17 +1205,18 @@
    "top1": "67:20",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمَّنْ هَذَا الَّذِي هُوَ جُنْدٌ لَكُمْ يَنْصُرُكُمْ مِنْ دُونِ الرَّحْمَنِ إِنِ الْكَافِرُونَ إِلَّا فِي غُرُورٍ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:24",
    "duration_s": 9.143,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الَّذِي ذَرَأَكُمْ فِي الْأَرْضِ وَإِلَيْهِ تُحْشَرُونَ",
+   "raw_text": "قُلْ هُوَ الَّذِي ذَرَأَكُمْ فِي الْأَرْضِ وَإِلَيْهِ تُحْشَرُونَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.59
@@ -1267,17 +1284,18 @@
    "top1": "67:24",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الَّذِي ذَرَأَكُمْ فِي الْأَرْضِ وَإِلَيْهِ تُحْشَرُونَ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:25",
    "duration_s": 10.345,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَيَقُولُونَ مَتَى هَذَا الْوَعْدُ إِنْ كُنْتُمْ صَادِقِينَ",
+   "raw_text": "وَيَقُولُونَ مَتَى هَذَا الْوَعْدُ إِنْ كُنْتُمْ صَادِقِينَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَيَقُولُونَ",
+     "text": "وَيَقُولُونَ",
      "t": [
       0.0,
       2.414
@@ -1337,17 +1355,18 @@
    "top1": "10:48",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": false
+   "top3_has_ref": false,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَيَقُولُونَ مَتَى هَذَا الْوَعْدُ إِنْ كُنْتُمْ صَادِقِينَ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:28",
    "duration_s": 18.547,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَرَأَيْتُمْ إِنْ أَهْلَكَنِيَ اللَّهُ وَمَنْ مَعِيَ أَوْ رَحِمَنَا فَمَنْ يُجِيرُ الْكَافِرِينَ مِنْ عَذَابٍ أَلِيمٍ",
+   "raw_text": "قُلْ أَرَأَيْتُمْ إِنْ أَهْلَكَنِيَ اللَّهُ وَمَنْ مَعِيَ أَوْ رَحِمَنَا فَمَنْ يُجِيرُ الْكَافِرِينَ مِنْ عَذَابٍ أَلِيمٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.64
@@ -1471,17 +1490,18 @@
    "top1": "67:28",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَرَأَيْتُمْ إِنْ أَهْلَكَنِيَ اللَّهُ وَمَنْ مَعِيَ أَوْ رَحِمَنَا فَمَنْ يُجِيرُ الْكَافِرِينَ مِنْ عَذَابٍ أَلِيمٍ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:3",
    "duration_s": 23.745,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي خَلَقَ سَبْعَ سَمَاوَاتٍ طِبَاقًا مَا تَرَى فِي خَلْقِ الرَّحْمَنِ مِنْ تَفَاوُتٍ فَارْجِعِ الْبَصَرَ هَلْ تَرَى مِنْ فُطُورٍ",
+   "raw_text": "الَّذِي خَلَقَ سَبْعَ سَمَاوَاتٍ طِبَاقًا مَا تَرَى فِي خَلْقِ الرَّحْمَنِ مِنْ تَفَاوُتٍ فَارْجِعِ الْبَصَرَ هَلْ تَرَى مِنْ فُطُورٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي",
+     "text": "الَّذِي",
      "t": [
       0.0,
       1.461
@@ -1629,17 +1649,18 @@
    "top1": "67:3",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي خَلَقَ سَبْعَ سَمَاوَاتٍ طِبَاقًا مَا تَرَى فِي خَلْقِ الرَّحْمَنِ مِنْ تَفَاوُتٍ فَارْجِعِ الْبَصَرَ هَلْ تَرَى مِنْ فُطُورٍ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:30",
    "duration_s": 18.129,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ",
+   "raw_text": "قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.906
@@ -1723,17 +1744,18 @@
    "top1": "67:30",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:5",
    "duration_s": 22.544,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ زَيَّنَّا السَّمَاءَ الدُّنْيَا بِمَصَابِيحَ وَجَعَلْنَاهَا رُجُومًا لِلشَّيَاطِينِ وَأَعْتَدْنَا لَهُمْ عَذَابَ السَّعِيرِ",
+   "raw_text": "وَلَقَدْ زَيَّنَّا السَّمَاءَ الدُّنْيَا بِمَصَابِيحَ وَجَعَلْنَاهَا رُجُومًا لِلشَّيَاطِينِ وَأَعْتَدْنَا لَهُمْ عَذَابَ السَّعِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ",
+     "text": "وَلَقَدْ",
      "t": [
       0.0,
       1.326
@@ -1833,17 +1855,18 @@
    "top1": "67:5",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ زَيَّنَّا السَّمَاءَ الدُّنْيَا بِمَصَابِيحَ وَجَعَلْنَاهَا رُجُومًا لِلشَّيَاطِينِ وَأَعْتَدْنَا لَهُمْ عَذَابَ السَّعِيرِ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:6",
    "duration_s": 12.565,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلِلَّذِينَ كَفَرُوا بِرَبِّهِمْ عَذَابُ جَهَنَّمَ وَبِئْسَ الْمَصِيرُ",
+   "raw_text": "وَلِلَّذِينَ كَفَرُوا بِرَبِّهِمْ عَذَابُ جَهَنَّمَ وَبِئْسَ الْمَصِيرُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلِلَّذِينَ",
+     "text": "وَلِلَّذِينَ",
      "t": [
       0.0,
       2.217
@@ -1903,17 +1926,18 @@
    "top1": "67:6",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلِلَّذِينَ كَفَرُوا بِرَبِّهِمْ عَذَابُ جَهَنَّمَ وَبِئْسَ الْمَصِيرُ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:8",
    "duration_s": 20.402,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>تَكَادُ تَمَيَّزُ مِنَ الْغَيْظِ كُلَّمَا أُلْقِيَ فِيهَا فَوْجٌ سَأَلَهُمْ خَزَنَتُهَا أَلَمْ يَأْتِكُمْ نَذِيرٌ",
+   "raw_text": "تَكَادُ تَمَيَّزُ مِنَ الْغَيْظِ كُلَّمَا أُلْقِيَ فِيهَا فَوْجٌ سَأَلَهُمْ خَزَنَتُهَا أَلَمْ يَأْتِكُمْ نَذِيرٌ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>تَكَادُ",
+     "text": "تَكَادُ",
      "t": [
       0.0,
       1.54
@@ -2021,17 +2045,18 @@
    "top1": "67:8",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>تَكَادُ تَمَيَّزُ مِنَ الْغَيْظِ كُلَّمَا أُلْقِيَ فِيهَا فَوْجٌ سَأَلَهُمْ خَزَنَتُهَا أَلَمْ يَأْتِكُمْ نَذِيرٌ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "67:9",
    "duration_s": 24.242,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ",
+   "raw_text": "قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قَالُوا",
+     "text": "قَالُوا",
      "t": [
       0.0,
       1.924
@@ -2179,17 +2204,18 @@
    "top1": "67:9",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ"
   },
   {
    "reciter": "Abdul_Basit_Murattal_192kbps",
    "ref": "97:2",
    "duration_s": 5.851,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ",
+   "raw_text": "وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمَا",
+     "text": "وَمَا",
      "t": [
       0.0,
       0.924
@@ -2233,17 +2259,18 @@
    "top1": "97:2",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "103:1",
    "duration_s": 1.73,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَالْعَصْرِ",
+   "raw_text": "وَالْعَصْرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَالْعَصْرِ",
+     "text": "وَالْعَصْرِ",
      "t": [
       0.0,
       1.73
@@ -2255,17 +2282,18 @@
    "top1": "103:1",
    "score": 0.2,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَالْعَصْرِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "103:3",
    "duration_s": 12.494,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
+   "raw_text": "إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِلَّا",
+     "text": "إِلَّا",
      "t": [
       0.0,
       0.721
@@ -2341,17 +2369,18 @@
    "top1": "103:3",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "108:3",
    "duration_s": 5.192,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",
+   "raw_text": "إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ",
+     "text": "إِنَّ",
      "t": [
       0.0,
       0.692
@@ -2387,17 +2416,18 @@
    "top1": "108:3",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "110:1",
    "duration_s": 6.877,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ",
+   "raw_text": "إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِذَا",
+     "text": "إِذَا",
      "t": [
       0.0,
       1.086
@@ -2441,17 +2471,18 @@
    "top1": "110:1",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "110:2",
    "duration_s": 8.134,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
+   "raw_text": "وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَرَأَيْتَ",
+     "text": "وَرَأَيْتَ",
      "t": [
       0.0,
       1.312
@@ -2511,17 +2542,18 @@
    "top1": "110:2",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "112:1",
    "duration_s": 2.917,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ اللَّهُ أَحَدٌ",
+   "raw_text": "قُلْ هُوَ اللَّهُ أَحَدٌ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.53
@@ -2557,17 +2589,18 @@
    "top1": "112:1",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ اللَّهُ أَحَدٌ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "112:3",
    "duration_s": 2.917,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَمْ يَلِدْ وَلَمْ يُولَدْ",
+   "raw_text": "لَمْ يَلِدْ وَلَمْ يُولَدْ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَمْ",
+     "text": "لَمْ",
      "t": [
       0.0,
       0.486
@@ -2603,17 +2636,18 @@
    "top1": "112:3",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَمْ يَلِدْ وَلَمْ يُولَدْ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "113:2",
    "duration_s": 3.592,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ مَا خَلَقَ",
+   "raw_text": "مِنْ شَرِّ مَا خَلَقَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ",
+     "text": "مِنْ",
      "t": [
       0.0,
       0.798
@@ -2649,17 +2683,18 @@
    "top1": "113:2",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ مَا خَلَقَ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "113:4",
    "duration_s": 5.964,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
+   "raw_text": "وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ",
+     "text": "وَمِنْ",
      "t": [
       0.0,
       0.895
@@ -2703,17 +2738,18 @@
    "top1": "113:4",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "113:5",
    "duration_s": 5.604,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+   "raw_text": "وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ",
+     "text": "وَمِنْ",
      "t": [
       0.0,
       1.121
@@ -2757,17 +2793,18 @@
    "top1": "113:5",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "114:1",
    "duration_s": 6.071,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
+   "raw_text": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.867
@@ -2803,17 +2840,18 @@
    "top1": "114:1",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَعُوذُ بِرَبِّ النَّاسِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "114:3",
    "duration_s": 5.292,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِلَهِ النَّاسِ",
+   "raw_text": "إِلَهِ النَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِلَهِ",
+     "text": "إِلَهِ",
      "t": [
       0.0,
       1.985
@@ -2833,17 +2871,18 @@
    "top1": "114:3",
    "score": 0.4,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِلَهِ النَّاسِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "114:4",
    "duration_s": 7.944,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
+   "raw_text": "مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ",
+     "text": "مِنْ",
      "t": [
       0.0,
       0.935
@@ -2879,17 +2918,18 @@
    "top1": "114:4",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "114:5",
    "duration_s": 7.852,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ",
+   "raw_text": "الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي",
+     "text": "الَّذِي",
      "t": [
       0.0,
       1.57
@@ -2933,17 +2973,18 @@
    "top1": "114:5",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "114:6",
    "duration_s": 8.192,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنَ الْجِنَّةِ وَالنَّاسِ",
+   "raw_text": "مِنَ الْجِنَّةِ وَالنَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنَ",
+     "text": "مِنَ",
      "t": [
       0.0,
       1.26
@@ -2971,17 +3012,18 @@
    "top1": "114:6",
    "score": 0.6,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنَ الْجِنَّةِ وَالنَّاسِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "1:2",
    "duration_s": 5.534,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+   "raw_text": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الْحَمْدُ",
+     "text": "الْحَمْدُ",
      "t": [
       0.0,
       1.537
@@ -3017,17 +3059,18 @@
    "top1": "1:2",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "1:3",
    "duration_s": 4.572,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الرَّحْمَنِ الرَّحِيمِ",
+   "raw_text": "الرَّحْمَنِ الرَّحِيمِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الرَّحْمَنِ",
+     "text": "الرَّحْمَنِ",
      "t": [
       0.0,
       2.286
@@ -3047,17 +3090,18 @@
    "top1": "1:3",
    "score": 0.4,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الرَّحْمَنِ الرَّحِيمِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "1:5",
    "duration_s": 6.652,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+   "raw_text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِيَّاكَ",
+     "text": "إِيَّاكَ",
      "t": [
       0.0,
       1.4
@@ -3093,17 +3137,18 @@
    "top1": "1:5",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "1:7",
    "duration_s": 13.188,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
+   "raw_text": "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>صِرَاطَ",
+     "text": "صِرَاطَ",
      "t": [
       0.0,
       1.199
@@ -3179,17 +3224,18 @@
    "top1": "1:7",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:14",
    "duration_s": 7.214,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
+   "raw_text": "أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا",
+     "text": "أَلَا",
      "t": [
       0.0,
       0.802
@@ -3249,17 +3295,18 @@
    "top1": "67:14",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:15",
    "duration_s": 15.302,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُورُ",
+   "raw_text": "هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُورُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>هُوَ",
+     "text": "هُوَ",
      "t": [
       0.0,
       0.519
@@ -3375,17 +3422,18 @@
    "top1": "67:15",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُورُ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:17",
    "duration_s": 16.262,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ",
+   "raw_text": "أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمْ",
+     "text": "أَمْ",
      "t": [
       0.0,
       0.678
@@ -3485,17 +3533,18 @@
    "top1": "67:17",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:2",
    "duration_s": 13.847,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا وَهُوَ الْعَزِيزُ الْغَفُورُ",
+   "raw_text": "الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا وَهُوَ الْعَزِيزُ الْغَفُورُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي",
+     "text": "الَّذِي",
      "t": [
       0.0,
       1.045
@@ -3587,17 +3636,18 @@
    "top1": "67:2",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا وَهُوَ الْعَزِيزُ الْغَفُورُ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:23",
    "duration_s": 14.982,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ",
+   "raw_text": "قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.545
@@ -3697,17 +3747,18 @@
    "top1": "67:23",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:29",
    "duration_s": 15.571,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الرَّحْمَنُ آمَنَّا بِهِ وَعَلَيْهِ تَوَكَّلْنَا فَسَتَعْلَمُونَ مَنْ هُوَ فِي ضَلَالٍ مُبِينٍ",
+   "raw_text": "قُلْ هُوَ الرَّحْمَنُ آمَنَّا بِهِ وَعَلَيْهِ تَوَكَّلْنَا فَسَتَعْلَمُونَ مَنْ هُوَ فِي ضَلَالٍ مُبِينٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.636
@@ -3815,17 +3866,18 @@
    "top1": "67:29",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الرَّحْمَنُ آمَنَّا بِهِ وَعَلَيْهِ تَوَكَّلْنَا فَسَتَعْلَمُونَ مَنْ هُوَ فِي ضَلَالٍ مُبِينٍ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:30",
    "duration_s": 18.405,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ",
+   "raw_text": "قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.92
@@ -3909,17 +3961,18 @@
    "top1": "67:30",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:4",
    "duration_s": 12.858,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ يَنْقَلِبْ إِلَيْكَ الْبَصَرُ خَاسِئًا وَهُوَ حَسِيرٌ",
+   "raw_text": "ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ يَنْقَلِبْ إِلَيْكَ الْبَصَرُ خَاسِئًا وَهُوَ حَسِيرٌ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>ثُمَّ",
+     "text": "ثُمَّ",
      "t": [
       0.0,
       0.612
@@ -4003,17 +4056,18 @@
    "top1": "67:4",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ يَنْقَلِبْ إِلَيْكَ الْبَصَرُ خَاسِئًا وَهُوَ حَسِيرٌ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "67:9",
    "duration_s": 20.422,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ",
+   "raw_text": "قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قَالُوا",
+     "text": "قَالُوا",
      "t": [
       0.0,
       1.621
@@ -4161,17 +4215,18 @@
    "top1": "67:9",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "97:1",
    "duration_s": 7.91,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّا أَنْزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ",
+   "raw_text": "إِنَّا أَنْزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّا",
+     "text": "إِنَّا",
      "t": [
       0.0,
       1.13
@@ -4215,17 +4270,18 @@
    "top1": "97:1",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّا أَنْزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ"
   },
   {
    "reciter": "Alafasy_128kbps",
    "ref": "97:3",
    "duration_s": 5.484,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ",
+   "raw_text": "لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَيْلَةُ",
+     "text": "لَيْلَةُ",
      "t": [
       0.0,
       1.097
@@ -4277,17 +4333,18 @@
    "top1": "97:3",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "103:1",
    "duration_s": 2.769,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَالْعَصْرِ",
+   "raw_text": "وَالْعَصْرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَالْعَصْرِ",
+     "text": "وَالْعَصْرِ",
      "t": [
       0.0,
       2.769
@@ -4299,17 +4356,18 @@
    "top1": "103:1",
    "score": 0.2,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَالْعَصْرِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "103:2",
    "duration_s": 7.079,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ",
+   "raw_text": "إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ",
+     "text": "إِنَّ",
      "t": [
       0.0,
       0.944
@@ -4345,17 +4403,18 @@
    "top1": "103:2",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "109:1",
    "duration_s": 9.691,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ يَا أَيُّهَا الْكَافِرُونَ",
+   "raw_text": "قُلْ يَا أَيُّهَا الْكَافِرُونَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       1.211
@@ -4391,17 +4450,18 @@
    "top1": "109:1",
    "score": 0.392,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ يَا أَيُّهَا الْكَافِرُونَ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "109:2",
    "duration_s": 7.602,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَا أَعْبُدُ مَا تَعْبُدُونَ",
+   "raw_text": "لَا أَعْبُدُ مَا تَعْبُدُونَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَا",
+     "text": "لَا",
      "t": [
       0.0,
       1.086
@@ -4437,17 +4497,18 @@
    "top1": "109:2",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>لَا أَعْبُدُ مَا تَعْبُدُونَ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "110:2",
    "duration_s": 12.878,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
+   "raw_text": "وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَرَأَيْتَ",
+     "text": "وَرَأَيْتَ",
      "t": [
       0.0,
       2.077
@@ -4507,17 +4568,18 @@
    "top1": "110:2",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "113:2",
    "duration_s": 5.46,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ مَا خَلَقَ",
+   "raw_text": "مِنْ شَرِّ مَا خَلَقَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ",
+     "text": "مِنْ",
      "t": [
       0.0,
       1.213
@@ -4553,17 +4615,18 @@
    "top1": "113:2",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ مَا خَلَقَ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "113:4",
    "duration_s": 9.221,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
+   "raw_text": "وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ",
+     "text": "وَمِنْ",
      "t": [
       0.0,
       1.383
@@ -4607,17 +4670,18 @@
    "top1": "113:4",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "114:1",
    "duration_s": 7.915,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
+   "raw_text": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       1.131
@@ -4653,17 +4717,18 @@
    "top1": "114:1",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ أَعُوذُ بِرَبِّ النَّاسِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "114:2",
    "duration_s": 4.702,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مَلِكِ النَّاسِ",
+   "raw_text": "مَلِكِ النَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مَلِكِ",
+     "text": "مَلِكِ",
      "t": [
       0.0,
       1.763
@@ -4683,17 +4748,18 @@
    "top1": "114:2",
    "score": 0.4,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مَلِكِ النَّاسِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "114:4",
    "duration_s": 9.43,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
+   "raw_text": "مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ",
+     "text": "مِنْ",
      "t": [
       0.0,
       1.109
@@ -4729,17 +4795,18 @@
    "top1": "114:4",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "1:1",
    "duration_s": 5.12,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+   "raw_text": "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>بِسْمِ",
+     "text": "بِسْمِ",
      "t": [
       0.0,
       0.808
@@ -4775,17 +4842,18 @@
    "top1": "1:1",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "1:3",
    "duration_s": 4.493,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الرَّحْمَنِ الرَّحِيمِ",
+   "raw_text": "الرَّحْمَنِ الرَّحِيمِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الرَّحْمَنِ",
+     "text": "الرَّحْمَنِ",
      "t": [
       0.0,
       2.247
@@ -4805,17 +4873,18 @@
    "top1": "1:3",
    "score": 0.4,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>الرَّحْمَنِ الرَّحِيمِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "1:4",
    "duration_s": 4.624,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مَالِكِ يَوْمِ الدِّينِ",
+   "raw_text": "مَالِكِ يَوْمِ الدِّينِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مَالِكِ",
+     "text": "مَالِكِ",
      "t": [
       0.0,
       1.541
@@ -4843,17 +4912,18 @@
    "top1": "1:4",
    "score": 0.504,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>مَالِكِ يَوْمِ الدِّينِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "1:5",
    "duration_s": 6.844,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+   "raw_text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِيَّاكَ",
+     "text": "إِيَّاكَ",
      "t": [
       0.0,
       1.441
@@ -4889,17 +4959,18 @@
    "top1": "1:5",
    "score": 0.8,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "1:6",
    "duration_s": 5.355,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+   "raw_text": "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>اهْدِنَا",
+     "text": "اهْدِنَا",
      "t": [
       0.0,
       1.409
@@ -4927,17 +4998,18 @@
    "top1": "1:6",
    "score": 0.6,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:13",
    "duration_s": 18.573,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَأَسِرُّوا قَوْلَكُمْ أَوِ اجْهَرُوا بِهِ إِنَّهُ عَلِيمٌ بِذَاتِ الصُّدُورِ",
+   "raw_text": "وَأَسِرُّوا قَوْلَكُمْ أَوِ اجْهَرُوا بِهِ إِنَّهُ عَلِيمٌ بِذَاتِ الصُّدُورِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَأَسِرُّوا",
+     "text": "وَأَسِرُّوا",
      "t": [
       0.0,
       2.933
@@ -5013,17 +5085,18 @@
    "top1": "67:13",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَأَسِرُّوا قَوْلَكُمْ أَوِ اجْهَرُوا بِهِ إِنَّهُ عَلِيمٌ بِذَاتِ الصُّدُورِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:14",
    "duration_s": 12.095,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
+   "raw_text": "أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا",
+     "text": "أَلَا",
      "t": [
       0.0,
       1.344
@@ -5083,17 +5156,18 @@
    "top1": "67:14",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:15",
    "duration_s": 25.966,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُورُ",
+   "raw_text": "هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُورُ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>هُوَ",
+     "text": "هُوَ",
      "t": [
       0.0,
       0.88
@@ -5209,17 +5283,18 @@
    "top1": "67:15",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُورُ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:18",
    "duration_s": 14.916,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ كَذَّبَ الَّذِينَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيرِ",
+   "raw_text": "وَلَقَدْ كَذَّبَ الَّذِينَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيرِ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ",
+     "text": "وَلَقَدْ",
      "t": [
       0.0,
       1.989
@@ -5287,17 +5362,18 @@
    "top1": "67:18",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>وَلَقَدْ كَذَّبَ الَّذِينَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيرِ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:20",
    "duration_s": 28.055,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمَّنْ هَذَا الَّذِي هُوَ جُنْدٌ لَكُمْ يَنْصُرُكُمْ مِنْ دُونِ الرَّحْمَنِ إِنِ الْكَافِرُونَ إِلَّا فِي غُرُورٍ",
+   "raw_text": "أَمَّنْ هَذَا الَّذِي هُوَ جُنْدٌ لَكُمْ يَنْصُرُكُمْ مِنْ دُونِ الرَّحْمَنِ إِنِ الْكَافِرُونَ إِلَّا فِي غُرُورٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمَّنْ",
+     "text": "أَمَّنْ",
      "t": [
       0.0,
       1.559
@@ -5421,17 +5497,18 @@
    "top1": "67:20",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَمَّنْ هَذَا الَّذِي هُوَ جُنْدٌ لَكُمْ يَنْصُرُكُمْ مِنْ دُونِ الرَّحْمَنِ إِنِ الْكَافِرُونَ إِلَّا فِي غُرُورٍ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:22",
    "duration_s": 26.436,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَفَمَنْ يَمْشِي مُكِبًّا عَلَى وَجْهِهِ أَهْدَى أَمَّنْ يَمْشِي سَوِيًّا عَلَى صِرَاطٍ مُسْتَقِيمٍ",
+   "raw_text": "أَفَمَنْ يَمْشِي مُكِبًّا عَلَى وَجْهِهِ أَهْدَى أَمَّنْ يَمْشِي سَوِيًّا عَلَى صِرَاطٍ مُسْتَقِيمٍ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَفَمَنْ",
+     "text": "أَفَمَنْ",
      "t": [
       0.0,
       2.25
@@ -5531,17 +5608,18 @@
    "top1": "67:22",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>أَفَمَنْ يَمْشِي مُكِبًّا عَلَى وَجْهِهِ أَهْدَى أَمَّنْ يَمْشِي سَوِيًّا عَلَى صِرَاطٍ مُسْتَقِيمٍ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:23",
    "duration_s": 26.122,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ",
+   "raw_text": "قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       0.95
@@ -5641,17 +5719,18 @@
    "top1": "67:23",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ"
   },
   {
    "reciter": "Husary_128kbps",
    "ref": "67:26",
    "duration_s": 17.45,
-   "raw_text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ إِنَّمَا الْعِلْمُ عِنْدَ اللَّهِ وَإِنَّمَا أَنَا نَذِيرٌ مُبِينٌ",
+   "raw_text": "قُلْ إِنَّمَا الْعِلْمُ عِنْدَ اللَّهِ وَإِنَّمَا أَنَا نَذِيرٌ مُبِينٌ",
    "has_vowels": true,
    "words": [
     {
-     "text": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ",
+     "text": "قُلْ",
      "t": [
       0.0,
       1.026
@@ -5727,7 +5806,8 @@
    "top1": "67:26",
    "score": 1.0,
    "correct": true,
-   "top3_has_ref": true
+   "top3_has_ref": true,
+   "raw_model_output": "<|startoftranscript|><|ar|><|transcribe|><|notimestamps|>قُلْ إِنَّمَا الْعِلْمُ عِنْدَ اللَّهِ وَإِنَّمَا أَنَا نَذِيرٌ مُبِينٌ"
   }
  ]
 }
