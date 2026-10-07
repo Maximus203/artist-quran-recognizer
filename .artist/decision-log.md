@@ -387,6 +387,28 @@
   installer avec `--no-deps` après `[asr]` (leurs contraintes torch entrent en conflit avec le pin
   Blackwell cu128).
 
+## 2026-10-06 — Reprise : état vérifié, essais reproductibles, défauts documentés
+- **Incohérence de mon rapport précédent, résolue** : la dernière PR fusionnée est la **#24**
+  (`d9795b2`, 2026-10-05), pas la #9. La #9 est `c877d9b` sur `develop` (son message a été réécrit
+  après coup, cf. entrée du 2026-10-04 ; le SHA `67f4797` renvoyé à la fusion n'existe plus). Les
+  PR #10 à #24 sont toutes fusionnées dans `develop` (liste GitHub vérifiée) ; aucune n'est ouverte.
+  Ma branche locale d'origine (`3673360`, pré-squash) est conservée localement sous
+  `archive/pr9-pre-squash` ; son contenu est celui de la #9.
+- **Lot 1 : empreintes vérifiées sur le dataset public** (`scripts/fetch_public_lot.py`, nouveau,
+  sans jeton, révision épinglée `f00ebced79755213c0d2050566126602454f5517`) : 12/12 conformes. Le bloc
+  `hf_dataset` de `docs/data-lots/lot-1.yaml` épingle dépôt et révision. `scripts/audio_lot.py fetch`
+  reste pour un dataset privé (jeton, disposition `lot-1/<id>.mp3`) ; le dataset actuel est à plat.
+- **Droits** : le dataset public contredit « usage interne, jamais redistribué » ; consigné dans
+  `docs/data-lots/RIGHTS.md` (décision de Cherif). Visibilité inchangée, aucun jeton créé, aucune
+  republication.
+- **Essais v0** (lot1-05/06/09, Whisper-Tarteel + recitation-segmenter-v2, CPU) : script et sorties
+  retrouvés et versionnés (`scripts/repro/`, `docs/evaluation/trials/`, rapport
+  `docs/evaluation/lot1-trials.md`). Sorties **expurgées** : aucune transcription brute. Pas de
+  vérité terrain : aucun taux.
+- **QuranEnc** : anomalie documentée (`docs/KNOWN-ISSUES.md` KI-1, audit rejouable
+  `scripts/audit_quranenc.py`) : `french_hameedullah` 42:3 dupliqué et 42:4 contaminé ; rien n'est
+  réécrit (I2). Le 75:35 de `french_rashid` signalé par l'heuristique est un faux positif vérifié.
+
 ## 2026-10-06 — Environnement de test reproductible
 
 - **Constat** (venv neuf, `pip install -e ".[dev]"`, base d9795b2) : 28 échecs/erreurs pytest et 2
