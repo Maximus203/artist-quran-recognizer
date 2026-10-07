@@ -18,7 +18,9 @@ par lots paramétrables.
 
 ## Hors périmètre V1
 Warsh (V1.1), anglais (V2), incrustation de sous-titres dans la vidéo (V2+), temps réel,
-correction du tajwid, interface web ou mobile.
+correction du tajwid, interface mobile. L'atelier web local de revue est ajouté par la demande
+« Artist Quran Review » du 7 octobre 2026 ; il réutilise la CLI sans changer le contrat de
+reconnaissance ni constituer une validation de précision.
 
 ## Exigences fonctionnelles
 | ID | Exigence |

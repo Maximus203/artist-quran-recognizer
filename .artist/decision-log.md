@@ -494,3 +494,8 @@
   partielles distinctes (provisoire, à calibrer) ; l'isti'adha mal transcrite par l'ASR reste une abstention
   (pas de reconnaissance partielle de formule, par prudence) ; 1 chevauchement légitime (verset `inferred`
   couvrant l'abstention qu'il explique).
+## 2026-10-07 — Atelier local Artist Quran Review
+- La demande actuelle choisit Next.js/React/TypeScript, GSAP et wavesurfer.js à la place de la page FastAPI envisagée dans l'ancien plan phase 8. Le serveur Next.js tourne sur `127.0.0.1` et appelle `aqr.cli recognize` comme processus Python réel ; il n'implémente aucun second moteur.
+- Chaque import crée un identifiant aléatoire et conserve l'audio hors Git (`AQR_REVIEW_DIR`). L'import d'une prédiction exige le SHA-256 exact de l'audio ; les octets JSON initiaux sont conservés. Les révisions de revue sont séparées et ne changent pas la sortie du moteur.
+- Un signalement point/plage, même confirmé, reste une observation partielle. L'export indique explicitement que les métriques sont indisponibles. Un transfert cloud n'est pas automatique : les droits des audios et la destination admissible doivent être vérifiés ; aucun audio n'entre dans Git.
+- L'interface affiche les statuts existants sans transformer une abstention en « non-Coran », ni présenter un verset `inferred` comme entendu. Un résultat expurgé indique que le texte n'est pas inclus.
