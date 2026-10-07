@@ -201,3 +201,25 @@ def test_candidats_multi_versets_proches_donnent_uncertain():
     dets = _decoder().decode([(TimeSpan(0.0, 6.0), [a, b])]).detections()
     assert dets and all(d.status is Status.UNCERTAIN for d in dets)
     assert all(len(d.candidates) >= 2 for d in dets)
+
+
+def test_deux_moities_separees_par_une_observation_ecartee_ne_fusionnent_pas():
+    # Une fenêtre sans candidat viable (parole non reconnue) entre les deux moitiés : l'union des
+    # temps la couvrirait. Elle fait barrière, même si l'écart est inférieur à merge_max_gap_s.
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(VerseRef(2, 255), first=1, last=6)]),
+        (TimeSpan(3.0, 4.0), []),
+        (TimeSpan(4.0, 7.0), [_cand(VerseRef(2, 255), first=7, last=12)]),
+    ]
+    dets = _decoder(merge_max_gap_s=5.0).decode(obs).detections()
+    assert [d.time for d in dets] == [TimeSpan(0.0, 3.0), TimeSpan(4.0, 7.0)]
+    assert [d.is_repetition for d in dets] == [False, False]
+
+
+def test_observation_ecartee_hors_de_l_intervalle_ne_bloque_pas_la_fusion():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(VerseRef(2, 255), first=1, last=6)]),
+        (TimeSpan(3.2, 6.0), [_cand(VerseRef(2, 255), first=7, last=12)]),
+        (TimeSpan(20.0, 22.0), []),
+    ]
+    assert len(_decoder().decode(obs).detections()) == 1

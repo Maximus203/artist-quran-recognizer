@@ -1,0 +1,9900 @@
+{
+ "schema": "aqr.recognition/1",
+ "source": {
+  "file": "lot1-09.mp3",
+  "sha256": "27e546fb535a99ed51bed58d131953c364cc40741f201efa0396c9553c1f7a40",
+  "duration_s": 1800.0225
+ },
+ "engine": {
+  "asr": "whisper-base-quran@5c3c53fdf927/times-estimated",
+  "segmenter": "recitation-segmenter-v2@5ee90364e709",
+  "matcher": "flow-matcher (ADR-0004)",
+  "decoder": "viterbi-decoder-v2",
+  "constrained": false,
+  "corpus": "tanzil.net hafs (2026-09-25T09:01:58.990153+00:00)"
+ },
+ "decoder": {
+  "min_recognized_score": 0.75,
+  "uncertainty_ratio": 0.92,
+  "merge_max_gap_s": 5.0,
+  "infer_max_gap_s": 180.0
+ },
+ "timing": {
+  "extract_s": 7.383,
+  "segment_s": 356.696,
+  "asr_s": 1248.238,
+  "match_s": 0.644,
+  "total_s": 1612.96
+ },
+ "windows": 1092,
+ "warnings": [],
+ "intervals": [
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    0.11,
+    1.27
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    2.21,
+    4.67
+   ],
+   "best_score": 0.051
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    5.27,
+    9.73
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    10.61,
+    12.87
+   ],
+   "best_score": 0.3025
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    13.19,
+    15.03
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    15.29,
+    19.33
+   ],
+   "best_score": 0.2801
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    19.945,
+    22.985
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    23.445,
+    27.085
+   ],
+   "best_score": 0.2161
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    27.545,
+    28.365
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    29.645,
+    31.125
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    31.245,
+    34.605
+   ],
+   "best_score": 0.1891
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    35.105,
+    37.025
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    37.205,
+    39.325
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    39.525,
+    41.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    41.88,
+    43.16
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    43.38,
+    47.68
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    48.3,
+    50.58
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    50.84,
+    53.02
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    53.26,
+    55.18
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    55.48,
+    57.02
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    57.24,
+    59.34
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    59.64,
+    61.075
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    61.175,
+    63.255
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    63.375,
+    64.955
+   ],
+   "best_score": 0.2507
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    65.175,
+    68.215
+   ],
+   "best_score": 0.36
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    68.535,
+    69.775
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    69.955,
+    72.295
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    72.515,
+    76.415
+   ],
+   "best_score": 0.0889
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    76.675,
+    78.615
+   ],
+   "best_score": 0.2042
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    78.835,
+    81.03
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    81.19,
+    82.51
+   ],
+   "best_score": 0.1469
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    82.71,
+    84.15
+   ],
+   "best_score": 0.324
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    84.27,
+    86.51
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    86.75,
+    90.37
+   ],
+   "best_score": 0.04
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    90.59,
+    92.59
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    92.77,
+    95.11
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    95.27,
+    96.55
+   ],
+   "best_score": 0.1469
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    96.99,
+    98.79
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    100.005,
+    101.725
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    101.945,
+    103.305
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    103.505,
+    104.425
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    104.645,
+    105.265
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    105.625,
+    109.305
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    109.585,
+    110.845
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    110.985,
+    112.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    112.625,
+    115.085
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    115.265,
+    116.745
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    117.025,
+    119.465
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    119.865,
+    122.96
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    123.2,
+    124.34
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    124.48,
+    126.56
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    126.92,
+    128.5
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    128.78,
+    130.42
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    130.62,
+    132.56
+   ],
+   "best_score": 0.0427
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    132.86,
+    134.74
+   ],
+   "best_score": 0.0463
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    135.12,
+    136.06
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    136.36,
+    137.3
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    137.56,
+    138.98
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    139.2,
+    139.98
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    140.415,
+    141.915
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    142.195,
+    144.995
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    145.235,
+    146.675
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    146.835,
+    148.595
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    148.755,
+    150.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    151.035,
+    152.415
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    152.755,
+    154.635
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    154.835,
+    157.195
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    157.435,
+    158.295
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    158.675,
+    159.735
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    160.01,
+    161.97
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    162.21,
+    165.23
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    165.55,
+    167.45
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    167.61,
+    168.49
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    168.67,
+    170.45
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    170.67,
+    171.55
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    171.67,
+    173.11
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    173.35,
+    174.31
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    174.45,
+    175.27
+   ],
+   "best_score": 0.1125
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    175.45,
+    176.83
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    176.97,
+    177.89
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    178.75,
+    179.57
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    179.905,
+    181.585
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    181.985,
+    182.785
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    183.065,
+    184.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    184.545,
+    185.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    186.045,
+    187.385
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    187.665,
+    189.345
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    189.625,
+    191.565
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    191.785,
+    192.885
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    193.085,
+    194.085
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    194.285,
+    195.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    195.605,
+    196.765
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    197.005,
+    198.385
+   ],
+   "best_score": 0.2042
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    198.885,
+    199.645
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    200.34,
+    201.62
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    202.08,
+    203.86
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    204.14,
+    206.02
+   ],
+   "best_score": 0.216
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    206.26,
+    207.7
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    207.88,
+    209.44
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    209.66,
+    210.5
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    210.78,
+    212.22
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    212.4,
+    214.0
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    214.24,
+    215.3
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    215.56,
+    216.9
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    217.16,
+    219.42
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    219.8,
+    223.255
+   ],
+   "best_score": 0.0286
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    223.475,
+    224.595
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    224.755,
+    225.815
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    225.995,
+    227.215
+   ],
+   "best_score": 0.0562
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    227.395,
+    229.655
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    230.035,
+    231.195
+   ],
+   "best_score": 0.2042
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    231.415,
+    232.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    232.675,
+    234.595
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    234.875,
+    236.735
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    237.015,
+    238.315
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    238.515,
+    240.87
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    241.09,
+    242.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    242.61,
+    243.85
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    244.23,
+    245.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    245.51,
+    247.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    247.81,
+    248.93
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    249.15,
+    251.13
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    251.37,
+    252.59
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    252.73,
+    253.89
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    254.07,
+    255.75
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    255.99,
+    256.73
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    257.17,
+    258.37
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    258.63,
+    261.185
+   ],
+   "best_score": 0.1333
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    261.505,
+    263.085
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    263.285,
+    264.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    264.425,
+    265.825
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    266.105,
+    267.565
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    267.825,
+    269.325
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    269.545,
+    271.965
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    272.265,
+    273.385
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    273.605,
+    275.305
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    275.485,
+    277.005
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    277.165,
+    278.765
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    278.985,
+    280.1
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    280.36,
+    281.42
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    281.6,
+    283.12
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    283.28,
+    284.54
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    285.06,
+    286.56
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    286.88,
+    288.0
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    288.16,
+    289.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    289.76,
+    290.7
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    290.88,
+    292.22
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    292.48,
+    294.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    295.1,
+    297.36
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    297.56,
+    298.74
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    299.0,
+    299.995
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    300.195,
+    301.695
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    301.915,
+    303.435
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    303.575,
+    304.995
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    305.175,
+    307.135
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    307.255,
+    308.875
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    309.135,
+    310.275
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    310.515,
+    311.595
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    311.795,
+    312.535
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    312.675,
+    313.875
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    314.015,
+    315.115
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    315.275,
+    316.275
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    316.535,
+    318.035
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    318.135,
+    319.715
+   ],
+   "best_score": 0.3125
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    319.89,
+    321.25
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    321.39,
+    323.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    323.39,
+    324.39
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    324.53,
+    325.43
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    325.53,
+    328.43
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    328.63,
+    329.83
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    330.07,
+    331.29
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    331.55,
+    333.53
+   ],
+   "best_score": 0.0367
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    333.71,
+    335.17
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    335.51,
+    336.57
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    336.81,
+    338.17
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    338.35,
+    340.285
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    340.745,
+    341.585
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    341.825,
+    342.765
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    342.925,
+    344.485
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    344.685,
+    345.865
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    346.025,
+    348.045
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    348.185,
+    349.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    350.205,
+    351.845
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    351.965,
+    353.105
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    353.325,
+    354.125
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    354.225,
+    355.345
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    355.465,
+    356.145
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    356.265,
+    358.345
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    358.605,
+    359.825
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    360.06,
+    361.14
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    361.36,
+    362.36
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    362.62,
+    363.92
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    364.2,
+    365.1
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    365.28,
+    366.64
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    367.0,
+    368.02
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    368.28,
+    369.64
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    369.86,
+    371.76
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    371.98,
+    373.1
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    373.36,
+    375.06
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    375.3,
+    376.9
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    377.02,
+    378.92
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    379.26,
+    380.495
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    380.675,
+    382.775
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    382.995,
+    383.695
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    383.815,
+    384.895
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    385.115,
+    385.955
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    386.175,
+    387.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    387.635,
+    389.075
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    389.235,
+    390.415
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    390.595,
+    391.495
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    391.675,
+    392.695
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    392.795,
+    394.515
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    394.715,
+    395.615
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    395.815,
+    397.295
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    397.495,
+    398.435
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    398.695,
+    400.25
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    400.59,
+    401.59
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    401.79,
+    403.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    403.43,
+    405.17
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    405.41,
+    407.21
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    407.49,
+    408.23
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    408.45,
+    409.89
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    410.07,
+    412.25
+   ],
+   "best_score": 0.1296
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    412.51,
+    414.01
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    414.23,
+    414.95
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    415.11,
+    417.33
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    417.53,
+    418.51
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    418.63,
+    421.285
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    421.405,
+    422.125
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    422.265,
+    423.625
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    423.885,
+    424.885
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    425.065,
+    428.605
+   ],
+   "best_score": 0.1143
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    428.945,
+    430.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    430.485,
+    431.585
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    431.805,
+    432.885
+   ],
+   "best_score": 0.1469
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    433.065,
+    433.705
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    433.845,
+    434.985
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    435.145,
+    436.065
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    436.205,
+    438.165
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    438.325,
+    439.405
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    439.645,
+    441.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    441.84,
+    442.92
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    443.92,
+    444.72
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    445.34,
+    446.52
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    446.68,
+    447.52
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    447.76,
+    448.64
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    448.76,
+    449.64
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    449.92,
+    450.56
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    450.82,
+    452.18
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    452.34,
+    453.62
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    453.82,
+    454.64
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    454.76,
+    456.14
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    456.34,
+    457.46
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    457.58,
+    458.88
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    459.12,
+    460.135
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    460.295,
+    461.115
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    461.255,
+    463.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    463.675,
+    465.935
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    466.215,
+    467.575
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    467.855,
+    468.915
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    469.075,
+    469.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    469.995,
+    470.875
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    471.015,
+    472.095
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    472.195,
+    473.835
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    473.975,
+    475.255
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    475.455,
+    476.415
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    476.575,
+    477.375
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    477.595,
+    479.255
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    479.415,
+    480.87
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    481.11,
+    482.77
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    482.99,
+    484.21
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    484.47,
+    485.85
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    486.19,
+    487.17
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    487.29,
+    488.31
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    488.61,
+    489.47
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    489.67,
+    491.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    491.71,
+    493.67
+   ],
+   "best_score": 0.0562
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    494.07,
+    494.77
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    494.99,
+    496.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    496.43,
+    496.95
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    497.17,
+    498.99
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    499.21,
+    500.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    500.525,
+    501.665
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    501.805,
+    503.645
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    503.805,
+    505.325
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    505.465,
+    506.425
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    506.585,
+    507.945
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    508.085,
+    509.125
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    509.305,
+    510.665
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    510.765,
+    511.485
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    511.605,
+    512.845
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    513.225,
+    514.785
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    515.045,
+    516.305
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    516.525,
+    518.025
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    518.165,
+    519.245
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    519.485,
+    520.2
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    520.38,
+    521.76
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    521.94,
+    523.12
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    523.28,
+    525.1
+   ],
+   "best_score": 0.1724
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    525.32,
+    526.78
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    526.94,
+    528.62
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    528.82,
+    530.6
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    530.86,
+    533.44
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    533.56,
+    535.0
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    535.18,
+    536.2
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    536.48,
+    537.56
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    537.74,
+    539.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    539.6,
+    540.535
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    540.695,
+    542.975
+   ],
+   "best_score": 0.36
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    543.135,
+    544.255
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    544.355,
+    545.615
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    545.855,
+    546.535
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    547.275,
+    549.335
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    549.515,
+    551.075
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    551.355,
+    553.415
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    553.635,
+    555.715
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    555.975,
+    557.515
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    557.695,
+    558.715
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    558.915,
+    560.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    560.35,
+    561.05
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    561.19,
+    563.31
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    563.57,
+    564.53
+   ],
+   "best_score": 0.1125
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    564.79,
+    565.83
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    566.05,
+    567.57
+   ],
+   "best_score": 0.0375
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    567.75,
+    569.69
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    569.91,
+    570.63
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    570.73,
+    573.39
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    573.59,
+    574.81
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    574.93,
+    575.61
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    575.83,
+    576.73
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    576.91,
+    577.91
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    578.07,
+    579.27
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    579.53,
+    581.185
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    581.445,
+    582.805
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    583.045,
+    585.465
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    585.625,
+    586.605
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    586.805,
+    587.705
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    587.805,
+    589.065
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    589.225,
+    591.525
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    591.705,
+    592.945
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    593.145,
+    595.105
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    595.325,
+    596.065
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    596.205,
+    597.665
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    597.945,
+    598.925
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    599.165,
+    600.28
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    600.46,
+    601.24
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    601.44,
+    603.18
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    603.34,
+    604.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    604.96,
+    606.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    606.62,
+    607.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    607.64,
+    608.54
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    608.64,
+    611.02
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    611.22,
+    611.9
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    612.08,
+    612.84
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    613.02,
+    614.04
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    614.16,
+    615.06
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    615.24,
+    616.34
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    616.52,
+    617.4
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    617.58,
+    619.32
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    619.46,
+    621.555
+   ],
+   "best_score": 0.0281
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    621.875,
+    622.775
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    622.975,
+    624.055
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    624.215,
+    625.175
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    625.335,
+    626.515
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    626.655,
+    627.715
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    627.835,
+    628.615
+   ],
+   "best_score": 0.128
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    628.755,
+    629.895
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    630.095,
+    631.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    631.695,
+    632.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    632.635,
+    633.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    633.975,
+    635.295
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    635.575,
+    637.115
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    637.315,
+    638.155
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    638.355,
+    639.775
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    640.07,
+    641.67
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    641.79,
+    643.05
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    643.23,
+    644.27
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    644.37,
+    645.95
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    646.59,
+    648.53
+   ],
+   "best_score": 0.4912
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    648.75,
+    649.67
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    649.85,
+    652.17
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    652.49,
+    654.15
+   ],
+   "best_score": 0.4507
+  },
+  {
+   "kind": "verse",
+   "ref": "11:106",
+   "words": [
+    4,
+    9
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    654.33,
+    657.45
+   ],
+   "time_interpolated": false,
+   "confidence": 0.925,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    657.81,
+    658.97
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    659.23,
+    660.365
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    660.565,
+    661.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    662.105,
+    663.065
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    663.305,
+    664.925
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "verse",
+   "ref": "11:107",
+   "words": [
+    4,
+    10
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    665.065,
+    669.585
+   ],
+   "time_interpolated": false,
+   "confidence": 0.9714,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    669.925,
+    671.645
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    671.885,
+    673.005
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    673.105,
+    674.425
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    674.625,
+    676.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    677.205,
+    679.745
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    679.88,
+    680.9
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    681.08,
+    682.58
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    683.44,
+    685.24
+   ],
+   "best_score": 0.6
+  },
+  {
+   "kind": "verse",
+   "ref": "11:108",
+   "words": [
+    4,
+    7
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    685.38,
+    687.94
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    688.1,
+    690.7
+   ],
+   "best_score": 0.477
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    690.84,
+    692.9
+   ],
+   "best_score": 0.3781
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    693.22,
+    695.78
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    696.16,
+    697.46
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    697.74,
+    699.16
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    699.38,
+    700.955
+   ],
+   "best_score": 0.162
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    701.235,
+    703.355
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    703.595,
+    706.115
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    706.395,
+    707.075
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    707.255,
+    709.075
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    709.295,
+    710.115
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    710.335,
+    711.615
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    711.855,
+    712.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    713.155,
+    713.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    714.055,
+    714.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    715.115,
+    715.955
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    716.155,
+    718.355
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    718.575,
+    719.655
+   ],
+   "best_score": 0.064
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    719.85,
+    720.95
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    721.31,
+    723.69
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    723.93,
+    725.47
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    725.67,
+    726.99
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    727.09,
+    729.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    729.29,
+    731.31
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    731.57,
+    732.73
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    732.97,
+    735.71
+   ],
+   "best_score": 0.108
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    735.93,
+    737.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    737.39,
+    738.83
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    739.13,
+    739.945
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    740.185,
+    741.325
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    741.545,
+    742.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    743.125,
+    744.145
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    744.365,
+    745.265
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    745.445,
+    746.945
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    747.085,
+    748.325
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    748.565,
+    750.045
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    750.225,
+    752.365
+   ],
+   "best_score": 0.09
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    752.545,
+    754.005
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    754.285,
+    755.525
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    755.625,
+    757.565
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    757.685,
+    758.805
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    758.965,
+    760.38
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    760.54,
+    763.8
+   ],
+   "best_score": 0.1333
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    764.0,
+    764.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    764.96,
+    765.9
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    766.0,
+    768.94
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    769.12,
+    770.06
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    770.24,
+    772.5
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    773.76,
+    775.14
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    775.3,
+    777.08
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    777.3,
+    779.12
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    779.28,
+    781.635
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    781.895,
+    782.875
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    783.015,
+    784.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    784.995,
+    786.095
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    786.315,
+    787.175
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    787.315,
+    788.535
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    788.715,
+    790.615
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    790.815,
+    792.035
+   ],
+   "best_score": 0.0694
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    792.255,
+    793.015
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    793.195,
+    794.635
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    794.895,
+    796.675
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    796.895,
+    799.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    799.675,
+    801.15
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    801.41,
+    803.37
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    803.63,
+    805.79
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    805.91,
+    808.15
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    808.43,
+    809.63
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    809.91,
+    810.79
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    811.03,
+    813.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    813.45,
+    813.97
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    814.33,
+    815.15
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    815.39,
+    816.33
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    816.57,
+    819.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    819.41,
+    820.725
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    820.845,
+    822.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    822.585,
+    823.605
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    823.785,
+    824.665
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    824.805,
+    825.945
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    826.205,
+    826.945
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    827.125,
+    828.785
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    828.985,
+    830.845
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    831.085,
+    832.305
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    832.405,
+    833.245
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    833.425,
+    834.305
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    834.565,
+    836.085
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    836.245,
+    837.765
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    838.025,
+    840.04
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    840.26,
+    842.66
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    842.9,
+    843.84
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    844.02,
+    846.34
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    846.52,
+    848.28
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    848.46,
+    849.58
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    849.72,
+    851.24
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    851.48,
+    852.9
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    853.12,
+    854.9
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    855.3,
+    856.38
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    856.66,
+    860.335
+   ],
+   "best_score": 0.025
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    860.575,
+    862.955
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    863.175,
+    865.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    866.055,
+    866.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    867.135,
+    870.255
+   ],
+   "best_score": 0.1143
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    870.475,
+    872.155
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    872.475,
+    873.355
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    873.595,
+    874.515
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    874.815,
+    876.835
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    877.035,
+    878.135
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    878.415,
+    879.695
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    879.87,
+    881.45
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    881.61,
+    883.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    883.61,
+    884.85
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    885.09,
+    886.47
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    886.93,
+    888.55
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    888.75,
+    890.69
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    891.03,
+    894.03
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    894.39,
+    896.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    896.47,
+    898.01
+   ],
+   "best_score": 0.0766
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    898.13,
+    899.45
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    899.67,
+    900.765
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    901.005,
+    902.445
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    902.625,
+    904.205
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    904.445,
+    905.865
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    906.165,
+    906.745
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    906.885,
+    908.145
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    908.305,
+    911.405
+   ],
+   "best_score": 0.025
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    911.605,
+    912.545
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    912.705,
+    914.945
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    915.165,
+    915.845
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    916.045,
+    917.445
+   ],
+   "best_score": 0.0735
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    917.645,
+    920.42
+   ],
+   "best_score": 0.0333
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    920.92,
+    922.78
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    923.06,
+    923.88
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    924.12,
+    925.14
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    925.36,
+    926.24
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    926.38,
+    928.6
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    928.74,
+    930.1
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    930.38,
+    932.26
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    932.5,
+    934.42
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    934.72,
+    936.7
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    936.98,
+    937.88
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    938.04,
+    939.1
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    939.3,
+    940.515
+   ],
+   "best_score": 0.2042
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    940.655,
+    942.135
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    942.255,
+    944.415
+   ],
+   "best_score": 0.0347
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    944.555,
+    946.055
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    946.215,
+    947.815
+   ],
+   "best_score": 0.1296
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    948.095,
+    949.255
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    949.635,
+    952.095
+   ],
+   "best_score": 0.1021
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    952.395,
+    953.735
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    953.935,
+    955.555
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    955.755,
+    958.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    959.115,
+    960.95
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    961.13,
+    962.03
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    962.17,
+    963.93
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    964.13,
+    964.99
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    965.23,
+    965.93
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    966.15,
+    967.89
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    968.05,
+    969.73
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    969.99,
+    971.83
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    971.97,
+    974.29
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    974.49,
+    975.73
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    975.93,
+    978.03
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    978.27,
+    979.45
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    979.65,
+    981.625
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    981.825,
+    982.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    983.145,
+    984.485
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    984.645,
+    985.585
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    985.805,
+    986.565
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    986.785,
+    987.445
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    987.625,
+    988.625
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    988.765,
+    991.285
+   ],
+   "best_score": 0.1681
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    991.405,
+    992.565
+   ],
+   "best_score": 0.064
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    992.685,
+    993.545
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    993.745,
+    996.385
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    996.585,
+    998.025
+   ],
+   "best_score": 0.0694
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    998.185,
+    999.165
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    999.285,
+    1000.9
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1001.08,
+    1002.46
+   ],
+   "best_score": 0.1779
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1002.62,
+    1003.5
+   ],
+   "best_score": 0.128
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1004.3,
+    1006.3
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1006.6,
+    1008.9
+   ],
+   "best_score": 0.04
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1009.12,
+    1011.2
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1011.44,
+    1012.76
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1012.94,
+    1014.44
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1014.62,
+    1015.86
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1015.96,
+    1017.32
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1017.54,
+    1019.4
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1019.755,
+    1021.795
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1021.995,
+    1023.115
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1023.335,
+    1025.535
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1025.695,
+    1026.755
+   ],
+   "best_score": 0.3062
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1026.875,
+    1028.415
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1028.615,
+    1029.715
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1029.935,
+    1031.475
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1031.615,
+    1032.395
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1032.555,
+    1033.915
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1034.075,
+    1036.255
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1036.395,
+    1037.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1037.955,
+    1039.035
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1039.175,
+    1040.55
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1040.79,
+    1042.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1042.31,
+    1042.97
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1043.11,
+    1044.23
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1044.45,
+    1045.65
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1045.87,
+    1046.97
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1047.15,
+    1049.09
+   ],
+   "best_score": 0.04
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1049.29,
+    1050.37
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1050.53,
+    1051.59
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1051.93,
+    1052.63
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1052.95,
+    1054.59
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1054.81,
+    1055.47
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1055.67,
+    1058.33
+   ],
+   "best_score": 0.2521
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1058.69,
+    1059.57
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1059.785,
+    1062.285
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1062.505,
+    1063.425
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1063.565,
+    1064.745
+   ],
+   "best_score": 0.051
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1064.865,
+    1066.445
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1066.565,
+    1067.485
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1068.025,
+    1070.385
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1070.545,
+    1071.465
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1071.625,
+    1072.865
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1073.085,
+    1073.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1074.005,
+    1074.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1075.065,
+    1077.505
+   ],
+   "best_score": 0.0333
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1077.685,
+    1079.305
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1079.68,
+    1080.12
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1080.32,
+    1081.24
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1081.4,
+    1082.62
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1082.88,
+    1083.34
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1083.54,
+    1084.52
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1085.98,
+    1086.76
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1087.36,
+    1088.54
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1088.76,
+    1089.84
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1090.16,
+    1091.02
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1091.38,
+    1092.48
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1092.64,
+    1093.6
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1093.82,
+    1094.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1094.92,
+    1097.24
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1097.4,
+    1099.06
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1099.28,
+    1101.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1101.735,
+    1102.335
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1102.435,
+    1104.075
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1104.315,
+    1105.395
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1105.755,
+    1106.535
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1106.795,
+    1108.515
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1108.795,
+    1109.635
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1109.915,
+    1111.335
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1111.575,
+    1112.575
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1112.735,
+    1114.135
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1114.315,
+    1115.455
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1115.655,
+    1116.515
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1116.755,
+    1118.715
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1118.915,
+    1119.99
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1120.21,
+    1121.01
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1121.21,
+    1123.39
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1123.63,
+    1125.05
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1125.29,
+    1127.85
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1128.11,
+    1130.33
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1130.65,
+    1132.51
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1132.65,
+    1133.49
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1133.69,
+    1135.11
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1135.39,
+    1136.23
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1136.57,
+    1138.47
+   ],
+   "best_score": 0.1296
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1138.79,
+    1139.69
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1139.945,
+    1141.285
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1141.445,
+    1143.205
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1143.385,
+    1144.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1145.105,
+    1146.405
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1146.705,
+    1147.985
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1148.345,
+    1149.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1149.625,
+    1150.825
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1151.005,
+    1152.025
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1152.225,
+    1154.405
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1154.805,
+    1155.645
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1155.845,
+    1157.285
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1157.445,
+    1158.585
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1158.825,
+    1160.06
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1160.18,
+    1161.44
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1161.6,
+    1163.16
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1163.38,
+    1164.2
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1164.4,
+    1165.52
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1165.76,
+    1166.7
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1166.96,
+    1168.12
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1168.26,
+    1169.68
+   ],
+   "best_score": 0.051
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1169.84,
+    1170.58
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1170.8,
+    1172.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1173.06,
+    1173.86
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1174.1,
+    1175.7
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1176.0,
+    1177.2
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1177.36,
+    1179.08
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1179.28,
+    1180.055
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1180.155,
+    1181.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1181.675,
+    1183.315
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1183.475,
+    1184.415
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1184.615,
+    1185.675
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1185.955,
+    1186.795
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1186.975,
+    1188.675
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1188.835,
+    1190.435
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1190.635,
+    1191.615
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1191.775,
+    1193.535
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1193.755,
+    1195.315
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1195.555,
+    1196.635
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1197.015,
+    1198.035
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1198.395,
+    1199.255
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1199.475,
+    1201.05
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1201.25,
+    1202.11
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1202.23,
+    1203.77
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1203.93,
+    1205.23
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1205.39,
+    1206.05
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1206.27,
+    1207.05
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1207.23,
+    1208.35
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1208.51,
+    1209.71
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1209.91,
+    1210.85
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1211.17,
+    1211.93
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1212.87,
+    1214.53
+   ],
+   "best_score": 0.04
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1214.83,
+    1215.71
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1216.07,
+    1217.99
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1218.15,
+    1219.25
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1219.49,
+    1220.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1220.425,
+    1221.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1221.505,
+    1222.785
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1222.965,
+    1223.845
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1224.085,
+    1226.725
+   ],
+   "best_score": 0.0286
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1226.905,
+    1227.965
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1228.185,
+    1228.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1229.145,
+    1230.045
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1230.685,
+    1232.065
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1232.205,
+    1235.125
+   ],
+   "best_score": 0.4912
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1235.605,
+    1236.745
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1237.185,
+    1237.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1238.185,
+    1239.125
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1239.565,
+    1240.36
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1240.5,
+    1241.96
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1242.28,
+    1244.28
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1244.64,
+    1245.4
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1245.64,
+    1247.08
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1247.7,
+    1248.46
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1248.64,
+    1249.62
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1249.8,
+    1251.58
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1251.72,
+    1252.56
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1252.78,
+    1254.0
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1254.18,
+    1255.52
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1255.74,
+    1256.74
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1256.88,
+    1257.76
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1257.9,
+    1258.6
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1258.8,
+    1259.52
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1259.735,
+    1260.395
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1260.515,
+    1262.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1262.575,
+    1264.075
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1264.275,
+    1266.215
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1266.415,
+    1267.335
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1267.555,
+    1268.595
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1268.855,
+    1269.695
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1269.955,
+    1271.255
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1271.455,
+    1273.175
+   ],
+   "best_score": 0.0427
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1273.335,
+    1275.075
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1275.335,
+    1276.595
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1276.715,
+    1278.955
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1279.175,
+    1280.43
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1280.59,
+    1281.67
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1281.81,
+    1282.89
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1283.09,
+    1284.39
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1286.59,
+    1287.39
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1288.29,
+    1290.03
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1290.39,
+    1291.25
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1291.63,
+    1293.23
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1293.45,
+    1294.91
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1295.15,
+    1295.97
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1296.15,
+    1297.29
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1297.55,
+    1298.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1298.49,
+    1300.325
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1300.545,
+    1301.825
+   ],
+   "best_score": 0.0562
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1302.065,
+    1303.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1303.625,
+    1304.605
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1304.725,
+    1306.945
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1307.145,
+    1308.385
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1308.525,
+    1309.645
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1309.785,
+    1310.685
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1310.865,
+    1312.325
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1312.545,
+    1313.645
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1313.805,
+    1315.105
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1315.325,
+    1316.025
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1316.265,
+    1317.045
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1317.245,
+    1318.685
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1318.925,
+    1320.46
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1320.68,
+    1322.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1322.72,
+    1324.36
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1324.64,
+    1325.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1325.76,
+    1326.74
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1327.08,
+    1328.16
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1328.34,
+    1329.94
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1330.18,
+    1331.88
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1332.12,
+    1333.12
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1333.28,
+    1334.36
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1334.64,
+    1335.82
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1336.08,
+    1337.4
+   ],
+   "best_score": 0.0562
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1337.64,
+    1339.56
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1339.795,
+    1341.175
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1341.335,
+    1342.035
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1342.175,
+    1344.575
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1344.715,
+    1345.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1346.035,
+    1346.895
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1347.095,
+    1348.915
+   ],
+   "best_score": 0.049
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1349.195,
+    1350.735
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1351.015,
+    1352.915
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1353.155,
+    1355.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1355.675,
+    1356.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1356.915,
+    1357.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1357.915,
+    1359.83
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1360.03,
+    1361.01
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1361.11,
+    1361.93
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1362.53,
+    1363.91
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1364.13,
+    1366.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1366.51,
+    1367.79
+   ],
+   "best_score": 0.0694
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1368.13,
+    1369.23
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1369.47,
+    1370.51
+   ],
+   "best_score": 0.102
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1370.75,
+    1372.15
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1372.37,
+    1372.97
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1373.13,
+    1374.27
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1374.59,
+    1376.07
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1376.33,
+    1378.03
+   ],
+   "best_score": 0.0375
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1378.13,
+    1379.845
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1380.025,
+    1380.665
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1380.825,
+    1381.805
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1382.005,
+    1382.945
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1383.105,
+    1384.665
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1384.805,
+    1385.545
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1385.665,
+    1387.265
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1387.505,
+    1389.545
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1389.745,
+    1390.785
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1390.945,
+    1392.485
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1392.645,
+    1393.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1393.505,
+    1394.965
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1395.145,
+    1395.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1396.225,
+    1396.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1397.105,
+    1398.045
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1398.245,
+    1399.325
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1399.465,
+    1401.0
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1401.14,
+    1402.02
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1402.14,
+    1403.32
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1403.46,
+    1404.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1404.64,
+    1405.84
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1406.0,
+    1406.86
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1407.0,
+    1408.72
+   ],
+   "best_score": 0.0375
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1408.86,
+    1409.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1409.96,
+    1410.94
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1411.08,
+    1413.38
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1413.54,
+    1415.02
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1415.48,
+    1416.28
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1416.46,
+    1418.18
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1418.4,
+    1419.08
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1419.935,
+    1420.875
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1421.135,
+    1422.875
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1423.035,
+    1424.295
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1424.595,
+    1425.375
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1425.515,
+    1427.115
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1427.215,
+    1428.435
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1428.575,
+    1430.555
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1430.715,
+    1432.035
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1432.155,
+    1433.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1433.715,
+    1435.295
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1435.395,
+    1436.555
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1436.695,
+    1438.055
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1438.195,
+    1439.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1439.63,
+    1440.69
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1440.83,
+    1442.27
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1442.47,
+    1445.85
+   ],
+   "best_score": 0.0333
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1445.99,
+    1447.09
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1447.25,
+    1448.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1448.21,
+    1449.39
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1449.55,
+    1451.81
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1452.03,
+    1453.17
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1453.33,
+    1454.35
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1454.55,
+    1455.85
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1456.07,
+    1457.95
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1458.19,
+    1459.47
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1459.665,
+    1461.085
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1461.205,
+    1462.105
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1462.205,
+    1463.345
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1463.525,
+    1465.105
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1465.245,
+    1466.425
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1466.545,
+    1469.305
+   ],
+   "best_score": 0.0347
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1469.465,
+    1471.365
+   ],
+   "best_score": 0.6
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1471.665,
+    1472.585
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1472.765,
+    1474.165
+   ],
+   "best_score": 0.6
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1474.265,
+    1476.545
+   ],
+   "best_score": 0.7347
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1476.665,
+    1478.065
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1478.325,
+    1479.545
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1479.72,
+    1480.78
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1480.94,
+    1481.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1481.72,
+    1484.0
+   ],
+   "best_score": 0.0281
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1484.2,
+    1485.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1485.74,
+    1487.0
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1487.24,
+    1488.46
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1488.68,
+    1489.56
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1489.78,
+    1490.48
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1490.62,
+    1491.42
+   ],
+   "best_score": 0.1389
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1491.68,
+    1493.76
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1493.96,
+    1494.88
+   ],
+   "best_score": 0.4
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1495.04,
+    1497.1
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1497.24,
+    1498.6
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1498.7,
+    1499.58
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1499.715,
+    1500.515
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1500.715,
+    1502.595
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1502.755,
+    1503.735
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1503.835,
+    1505.075
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1505.195,
+    1506.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1507.455,
+    1508.215
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1508.355,
+    1509.375
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1509.515,
+    1511.475
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1511.635,
+    1512.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1513.035,
+    1514.455
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1514.715,
+    1516.355
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1516.555,
+    1518.375
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1518.575,
+    1520.03
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1520.15,
+    1522.31
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1522.59,
+    1523.25
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1523.47,
+    1524.27
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1524.55,
+    1525.77
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1525.97,
+    1527.69
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1527.85,
+    1530.59
+   ],
+   "best_score": 0.04
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1530.79,
+    1533.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1533.37,
+    1534.99
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1535.29,
+    1536.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1536.37,
+    1537.67
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1537.87,
+    1539.49
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1539.665,
+    1542.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1542.365,
+    1543.725
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1543.845,
+    1544.865
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1545.185,
+    1545.825
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1545.965,
+    1547.765
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1547.945,
+    1548.685
+   ],
+   "best_score": 0.2667
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1548.865,
+    1550.425
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1550.585,
+    1551.845
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1552.005,
+    1554.305
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1554.525,
+    1557.085
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1557.185,
+    1558.665
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1558.885,
+    1559.585
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1559.76,
+    1560.78
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1561.04,
+    1562.18
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1562.46,
+    1564.12
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1564.26,
+    1565.28
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1565.84,
+    1567.1
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1567.24,
+    1572.14
+   ],
+   "best_score": 0.0174
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1572.4,
+    1573.46
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1573.66,
+    1576.1
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1576.34,
+    1577.74
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1577.86,
+    1579.38
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1579.555,
+    1580.795
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1580.955,
+    1583.035
+   ],
+   "best_score": 0.04
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1583.295,
+    1584.875
+   ],
+   "best_score": 0.1779
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1585.135,
+    1585.955
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1586.155,
+    1588.135
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1588.315,
+    1589.175
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1589.435,
+    1590.315
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1590.495,
+    1591.675
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1591.875,
+    1593.915
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1594.095,
+    1595.355
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1595.495,
+    1596.595
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1596.815,
+    1598.175
+   ],
+   "best_score": 0.216
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1598.475,
+    1599.275
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1599.55,
+    1600.73
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1600.91,
+    1602.01
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1602.27,
+    1604.21
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1604.45,
+    1606.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1606.33,
+    1607.37
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1607.69,
+    1608.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1608.67,
+    1609.39
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1609.61,
+    1610.39
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1610.53,
+    1612.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1612.53,
+    1613.31
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1613.57,
+    1614.63
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1614.77,
+    1615.75
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1615.93,
+    1618.13
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1618.29,
+    1619.925
+   ],
+   "best_score": 0.0694
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1620.045,
+    1621.605
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1621.745,
+    1622.705
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1622.865,
+    1624.005
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1624.325,
+    1625.125
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1626.085,
+    1627.705
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1627.925,
+    1628.785
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1629.185,
+    1630.105
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1630.265,
+    1630.985
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1631.125,
+    1632.485
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1632.625,
+    1633.405
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1633.625,
+    1634.365
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1634.465,
+    1635.625
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1635.805,
+    1637.185
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1637.445,
+    1638.585
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1638.765,
+    1639.94
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1640.08,
+    1640.9
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1641.1,
+    1642.44
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1642.66,
+    1644.2
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1644.38,
+    1646.3
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1646.52,
+    1647.94
+   ],
+   "best_score": 0.064
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1648.16,
+    1649.16
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1649.38,
+    1651.18
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1651.34,
+    1652.9
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1653.04,
+    1654.6
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1654.76,
+    1656.18
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1656.48,
+    1657.34
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1657.7,
+    1658.48
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1658.64,
+    1660.295
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1660.455,
+    1661.735
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1661.935,
+    1663.735
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1663.975,
+    1664.535
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1664.675,
+    1665.335
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1665.555,
+    1666.715
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1666.955,
+    1667.895
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1668.055,
+    1669.815
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1670.015,
+    1671.175
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1671.295,
+    1673.015
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1673.195,
+    1674.275
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1674.455,
+    1675.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1675.635,
+    1678.675
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1678.975,
+    1680.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1680.37,
+    1681.81
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1681.99,
+    1683.23
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1683.37,
+    1684.47
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1684.65,
+    1685.71
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1685.95,
+    1686.97
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1687.21,
+    1689.05
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1689.21,
+    1690.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1690.27,
+    1692.27
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1692.45,
+    1694.13
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1694.31,
+    1695.85
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1696.03,
+    1697.41
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1697.67,
+    1699.23
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1699.39,
+    1700.605
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1700.865,
+    1701.705
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1701.925,
+    1702.805
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1703.025,
+    1703.885
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1704.085,
+    1705.845
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1705.985,
+    1706.825
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1707.045,
+    1707.905
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1708.105,
+    1709.605
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1709.805,
+    1710.545
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1710.765,
+    1712.005
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1712.165,
+    1713.725
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1713.905,
+    1715.145
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1715.285,
+    1716.445
+   ],
+   "best_score": 0.064
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1716.625,
+    1717.745
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1717.945,
+    1719.425
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1719.72,
+    1721.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1721.72,
+    1722.8
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1723.04,
+    1724.04
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1724.28,
+    1725.38
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1725.5,
+    1726.44
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1726.6,
+    1728.9
+   ],
+   "best_score": 0.16
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1729.1,
+    1730.5
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1730.7,
+    1731.76
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1732.16,
+    1732.62
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1732.86,
+    1734.8
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1735.02,
+    1735.6
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1735.84,
+    1737.2
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1737.4,
+    1738.5
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1738.66,
+    1740.355
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1740.655,
+    1741.655
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1741.835,
+    1742.855
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1743.035,
+    1744.075
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1744.275,
+    1745.115
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1745.295,
+    1746.255
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1746.415,
+    1747.195
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1747.335,
+    1748.195
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1748.375,
+    1749.495
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1749.655,
+    1750.855
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1751.015,
+    1752.675
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1752.895,
+    1754.135
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1754.355,
+    1756.255
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1756.475,
+    1757.515
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1757.635,
+    1758.375
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1758.575,
+    1759.395
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1759.55,
+    1760.59
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1760.73,
+    1761.75
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1761.85,
+    1763.07
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1763.23,
+    1765.35
+   ],
+   "best_score": 0.0667
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1765.55,
+    1769.19
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1769.33,
+    1771.47
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1771.63,
+    1773.49
+   ],
+   "best_score": 0.0427
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1773.65,
+    1774.37
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1774.49,
+    1775.75
+   ],
+   "best_score": 0.1
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1775.93,
+    1777.11
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1777.33,
+    1778.39
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1778.55,
+    1780.645
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1780.805,
+    1782.765
+   ],
+   "best_score": 0.05
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1782.905,
+    1783.665
+   ],
+   "best_score": 0.2
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1783.805,
+    1785.065
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1785.185,
+    1786.265
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1786.445,
+    1787.685
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1787.885,
+    1789.745
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1789.945,
+    1793.785
+   ],
+   "best_score": 0.1143
+  },
+  {
+   "kind": "verse",
+   "ref": "37:182",
+   "words": [
+    1,
+    4
+   ],
+   "partial": false,
+   "status": "uncertain",
+   "t": [
+    1794.105,
+    1796.285
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [
+    "6:45",
+    "37:182"
+   ],
+   "repetition": false
+  },
+  {
+   "kind": "abstention",
+   "reason": "no_candidate",
+   "t": [
+    1796.485,
+    1798.225
+   ],
+   "best_score": null
+  },
+  {
+   "kind": "abstention",
+   "reason": "below_threshold",
+   "t": [
+    1798.405,
+    1799.6
+   ],
+   "best_score": 0.324
+  }
+ ]
+}

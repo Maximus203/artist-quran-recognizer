@@ -70,6 +70,11 @@ class ViterbiSequenceDecoder:
         self._riwaya = riwaya
 
     def decode(self, observations: Sequence[tuple[TimeSpan, list[Candidate]]]) -> Timeline:
+        barriers = [
+            time
+            for time, candidates in observations
+            if not any(c.score >= self._config.min_recognized_score for c in candidates)
+        ]
         steps = [
             (time, viable)
             for time, candidates in observations
@@ -83,7 +88,7 @@ class ViterbiSequenceDecoder:
         layers = self._forward(steps)
         path_keys = self._backtrack(layers)
         detections = self._build_detections(steps, layers, path_keys)
-        detections = self._merge_repetitions(detections)
+        detections = self._merge_repetitions(detections, barriers)
         detections = self._fill_single_gaps(detections)
         return Timeline(
             items=tuple(detections), riwaya=self._riwaya, engine_version=self._config.engine_version
@@ -210,9 +215,12 @@ class ViterbiSequenceDecoder:
         return detections
 
     # -- Post-traitement --------------------------------------------------------
-    def _merge_repetitions(self, detections: list[Detection]) -> list[Detection]:
+    def _merge_repetitions(
+        self, detections: list[Detection], barriers: list[TimeSpan]
+    ) -> list[Detection]:
         """Moitiés contiguës proches dans le temps -> une détection ; mots redits -> deux
-        détections, la seconde marquée répétition (chacune garde son temps)."""
+        détections, la seconde marquée répétition (chacune garde son temps). Une observation
+        écartée (`barriers`) entre deux moitiés interdit la fusion : l'union la couvrirait."""
         merged: list[Detection] = []
         for det in detections:
             prev = merged[-1] if merged else None
@@ -229,7 +237,10 @@ class ViterbiSequenceDecoder:
             assert det.time is not None
             if det.span.first_word <= prev.span.last_word:
                 merged.append(replace(det, is_repetition=True))
-            elif det.time.start_s - prev.time.end_s <= self._config.merge_max_gap_s:
+            elif det.time.start_s - prev.time.end_s <= self._config.merge_max_gap_s and not any(
+                b.start_s >= prev.time.end_s - 1e-9 and b.end_s <= det.time.start_s + 1e-9
+                for b in barriers
+            ):
                 merged[-1] = Detection(
                     span=WordSpan(
                         ref=prev.span.ref,
