@@ -408,3 +408,32 @@
 - **QuranEnc** : anomalie documentée (`docs/KNOWN-ISSUES.md` KI-1, audit rejouable
   `scripts/audit_quranenc.py`) : `french_hameedullah` 42:3 dupliqué et 42:4 contaminé ; rien n'est
   réécrit (I2). Le 75:35 de `french_rashid` signalé par l'heuristique est un faux positif vérifié.
+
+## 2026-10-06 — Environnement de test reproductible
+
+- **Constat** (venv neuf, `pip install -e ".[dev]"`, base d9795b2) : 28 échecs/erreurs pytest et 2
+  erreurs mypy. Chaque cas diagnostiqué, aucune régression de code :
+  - 17 `test_fastconformer_adapter` + 8 `test_whisper_adapter` + 3 `test_speech_segmenter_contract[fake]`
+    : `ModuleNotFoundError: numpy`. **Dépendance d'environnement non déclarée** (numpy seulement dans
+    l'extra `audio`, alors que les tests exercent du code qui l'importe). Corrigé : `numpy` dans `dev`.
+  - mypy `huggingface_hub` introuvable (`hf_hub.py:17`) : **dépendance d'environnement** (paquet
+    absent de `dev`, importé paresseusement).
+  - mypy « Unused type: ignore » (`segmenters.py:91`) : **défaut préexistant de configuration** — le
+    `ignore` n'est utile que si transformers est installé ; l'ancienne config est verte avec les
+    lourdes dépendances et rouge sans (vérifié des deux côtés).
+- **Décision** : overrides mypy par module (`follow_imports = "skip"`, `ignore_missing_imports`) pour
+  huggingface_hub, torch, transformers, silero_vad, recitations_segmenter, nemo, et suppression du
+  `type: ignore`. Résultat identique installés ou non. `soundfile` et `huggingface_hub` non ajoutés à
+  `dev` (non importés par les tests). Aucun skip/exclusion ajouté ; les 4 skips restants sont
+  l'`importorskip("silero_vad")` existant (extra `segmenter`).
+- Résultat : 383 passed, 4 skipped, 16 deselected ; ruff et mypy verts dans un venv neuf et mypy vert
+  avec torch/transformers. Détail : `docs/REPRODUCIBILITY.md`.
+
+## 2026-10-06 — Repli Silero : limite mesurée, défauts inchangés
+- Mesure de fond (sans vérité terrain, aucun taux de précision) sur 2 extraits de 3 min : le repli
+  Silero par défaut fragmente la récitation à pauses longues (lot1-05 : 30 segments, 53 % < 1 s, contre
+  7 segments de 11 à 28 s pour recitation-segmenter-v2) ; aucun `min_silence_ms` de {100, 300, 500, 800}
+  ne convient aux deux extraits (lot1-06 : segments jusqu'à 131 s à 500/800 ms).
+- Décision : défauts NON modifiés (pas de calibrage sans vérité terrain) ; limite rendue visible
+  (docstrings, `RELIABLE_BY_DEFAULT = False` gardé par test). Propositions et chiffres :
+  `docs/evaluation/silero-fallback.md`. v2 non mesuré sur le second extrait (budget CPU).
