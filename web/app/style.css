@@ -107,10 +107,13 @@ a {
 }
 .intro {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  gap: 50px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(24px, 3vw, 50px);
   padding: 55px 0 45px;
-  align-items: end;
+  align-items: center;
+}
+.intro > * {
+  min-width: 0;
 }
 .intro h2 {
   font: 700 clamp(30px, 3.3vw, 52px) / 1.13 Manrope;
@@ -129,6 +132,7 @@ a {
   margin-bottom: 0;
 }
 .upload {
+  min-width: 0;
   background: #1a2d2b;
   border: 1px solid #3d5a53;
   border-radius: 14px;
@@ -174,7 +178,22 @@ a {
   line-height: 1.5;
   color: #a5b9af;
 }
+.upload-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: clamp(13px, 4vw, 16px);
+}
+.upload-submit span {
+  float: none;
+  flex: 0 0 auto;
+}
 .recorder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   min-width: 0;
   margin-top: 6px;
   padding: 17px;
@@ -206,7 +225,7 @@ a {
   gap: 12px;
 }
 .recorder-heading {
-  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 .recorder-heading > div {
   display: grid;
@@ -220,7 +239,7 @@ a {
   color: var(--mint);
   font-size: 15px;
 }
-.recorder-recording .recorder-symbol {
+.recorder.is-recording .recorder-symbol {
   color: var(--red);
   animation: record-pulse 1.6s ease-in-out infinite;
 }
@@ -236,11 +255,14 @@ a {
 }
 .recorder-actions {
   justify-content: space-between;
-  margin-top: 12px;
+  min-width: 0;
 }
 .recorder-actions .primary,
 .recorder-actions .outline {
   min-height: 44px;
+}
+.recorder-actions .primary {
+  white-space: nowrap;
 }
 .recorder-live {
   color: var(--red);
@@ -251,13 +273,15 @@ a {
 .recorder-error {
   font-size: 11px;
   line-height: 1.5;
-  margin: 10px 0 0 !important;
+  margin: 0 !important;
 }
 .recorder-error {
   color: var(--red) !important;
 }
 .recorder-preview {
   min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
   padding: 10px 12px;
   border: 1px solid #3e5a4c;
   border-radius: 8px;
@@ -278,6 +302,8 @@ a {
 .recorder-preview-track > div {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
+  white-space: nowrap;
   color: #d8e3d5;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -361,6 +387,15 @@ a {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 18px;
+}
+.center > .section-head > span:first-child {
+  flex: 0 0 auto;
+}
+.center > .section-head .muted {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .muted {
   color: var(--muted);
@@ -979,8 +1014,14 @@ footer {
     border-left: 0;
     border-top: 1px solid var(--line);
   }
+}
+@media (max-width: 1180px) {
   .intro {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .upload {
+    width: 100%;
+    max-width: 780px;
   }
 }
 @media (max-width: 700px) {

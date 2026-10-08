@@ -173,7 +173,7 @@ export default function Recorder({
   }
 
   return (
-    <div className={`recorder recorder-${phase}`}>
+    <div className={`recorder is-${phase}`}>
       <div className="recorder-heading">
         <span className="recorder-symbol" aria-hidden="true">
           ●
@@ -300,9 +300,7 @@ export default function Recorder({
               disabled={uploading}
               onClick={() => void analyze()}
             >
-              {uploading
-                ? "Import et lancement…"
-                : "Analyser cette récitation ↗"}
+              {uploading ? "Import et lancement…" : "Analyser l’audio ↗"}
             </button>
           </div>
         </>
