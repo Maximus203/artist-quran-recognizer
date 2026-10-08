@@ -499,3 +499,8 @@
 - Chaque import crée un identifiant aléatoire et conserve l'audio hors Git (`AQR_REVIEW_DIR`). L'import d'une prédiction exige le SHA-256 exact de l'audio ; les octets JSON initiaux sont conservés. Les révisions de revue sont séparées et ne changent pas la sortie du moteur.
 - Un signalement point/plage, même confirmé, reste une observation partielle. L'export indique explicitement que les métriques sont indisponibles. Un transfert cloud n'est pas automatique : les droits des audios et la destination admissible doivent être vérifiés ; aucun audio n'entre dans Git.
 - L'interface affiche les statuts existants sans transformer une abstention en « non-Coran », ni présenter un verset `inferred` comme entendu. Un résultat expurgé indique que le texte n'est pas inclus.
+
+## 2026-10-08 — Dépôt audio global et lecteur personnalisé
+- Un fichier audio déposé sur n'importe quelle zone de la page démarre un import de session. Le dépôt choisit le premier fichier dont l'extension est acceptée par l'API ; un JSON éventuellement présent dans le sélecteur reste réservé à l'import manuel, pour éviter de l'associer implicitement à un autre audio.
+- Le lecteur personnalisé pilote le même élément `<audio>` que wavesurfer.js et les pistes. La durée du média est mise en état React dès que les métadonnées sont disponibles, y compris lorsqu'elles précèdent l'installation des écouteurs.
+- En développement, Next.js peut reconstruire l'URL de requête en `localhost` alors que l'origine de la page reste `127.0.0.1`. La mutation accepte ces deux alias seulement si protocole et port coïncident ; les origines tierces et les ports différents restent refusés.

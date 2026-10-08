@@ -13,18 +13,9 @@ import {
 } from "@/lib/store";
 import { parseRecognition } from "@/lib/recognition";
 import { isLocalRequest } from "@/lib/local-request";
+import { acceptedAudioExtensions } from "@/lib/audio-upload";
 
 export const runtime = "nodejs";
-const allowed = new Set([
-  ".mp3",
-  ".m4a",
-  ".wav",
-  ".ogg",
-  ".opus",
-  ".flac",
-  ".aac",
-  ".webm",
-]);
 const maxBytes = Number(process.env.AQR_MAX_UPLOAD_BYTES || 300 * 1024 * 1024);
 export async function GET(request: NextRequest) {
   if (!isLocalRequest(request))
@@ -40,7 +31,11 @@ export async function POST(request: NextRequest) {
     if (!(file instanceof File))
       return NextResponse.json({ error: "Choisis un audio." }, { status: 400 });
     const extension = path.extname(file.name).toLowerCase();
-    if (!allowed.has(extension) || file.size === 0 || file.size > maxBytes)
+    if (
+      !acceptedAudioExtensions.has(extension) ||
+      file.size === 0 ||
+      file.size > maxBytes
+    )
       return NextResponse.json(
         { error: "Format ou taille non accepté (maximum 300 Mo par défaut)." },
         { status: 400 },
