@@ -12,6 +12,12 @@ import {
 } from "./store";
 
 const jobs = new Map<string, ChildProcess>();
+const ASR_ENGINES = ["fastconformer", "whisper"];
+/** Moteur ASR de l'atelier : FastConformer par défaut, `AQR_ASR=whisper` pour l'autre. */
+export const ASR_ENGINE = ASR_ENGINES.includes(process.env.AQR_ASR ?? "")
+  ? (process.env.AQR_ASR as string)
+  : "fastconformer";
+
 export async function launch(id: string): Promise<void> {
   const session = await readSession(id);
   if (session.state === "running") throw new Error("Traitement déjà en cours");
@@ -32,6 +38,8 @@ export async function launch(id: string): Promise<void> {
     source,
     "--out-dir",
     output,
+    "--asr",
+    ASR_ENGINE,
     "--format",
     "json",
     "--models-dir",
