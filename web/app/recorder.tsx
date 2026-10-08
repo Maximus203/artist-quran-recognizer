@@ -90,7 +90,6 @@ export default function Recorder({
         MediaRecorder.isTypeSupported(type),
       );
       if (!mimeType) throw new Error("UnsupportedFormat");
-      clearPreview();
       const capture = new MediaRecorder(input, { mimeType });
       const chunks: Blob[] = [];
       let failed = false;
@@ -131,6 +130,7 @@ export default function Recorder({
         setPhase("preview");
       };
       capture.start(1000);
+      clearPreview();
       recorder.current = capture;
       started.current = performance.now();
       setSeconds(0);
