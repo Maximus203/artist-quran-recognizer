@@ -107,10 +107,13 @@ a {
 }
 .intro {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  gap: 50px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(24px, 3vw, 50px);
   padding: 55px 0 45px;
-  align-items: end;
+  align-items: center;
+}
+.intro > * {
+  min-width: 0;
 }
 .intro h2 {
   font: 700 clamp(30px, 3.3vw, 52px) / 1.13 Manrope;
@@ -129,6 +132,7 @@ a {
   margin-bottom: 0;
 }
 .upload {
+  min-width: 0;
   background: #1a2d2b;
   border: 1px solid #3d5a53;
   border-radius: 14px;
@@ -173,6 +177,153 @@ a {
   font-size: 11px;
   line-height: 1.5;
   color: #a5b9af;
+}
+.upload-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: clamp(13px, 4vw, 16px);
+}
+.upload-submit span {
+  float: none;
+  flex: 0 0 auto;
+}
+.recorder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+.upload-divider::before,
+.upload-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.recorder-heading,
+.recorder-actions,
+.recorder-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.recorder-heading {
+  flex-wrap: wrap;
+}
+.recorder-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.recorder-heading strong {
+  font-size: 13px;
+}
+.recorder-symbol {
+  color: var(--mint);
+  font-size: 15px;
+}
+.recorder.is-recording .recorder-symbol {
+  color: var(--red);
+  animation: record-pulse 1.6s ease-in-out infinite;
+}
+.recorder-timer {
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--red);
+  font-size: 14px;
+}
+.recorder-start {
+  width: 100%;
+}
+.recorder-actions {
+  justify-content: space-between;
+  min-width: 0;
+}
+.recorder-actions .primary,
+.recorder-actions .outline {
+  min-height: 44px;
+}
+.recorder-actions .primary {
+  white-space: nowrap;
+}
+.recorder-live {
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+}
+.recorder-note,
+.recorder-error {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0 !important;
+}
+.recorder-error {
+  color: var(--red) !important;
+}
+.recorder-preview {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  padding: 10px 12px;
+  border: 1px solid #3e5a4c;
+  border-radius: 8px;
+  background: #10201f;
+}
+.recorder-play {
+  flex: 0 0 38px;
+  height: 38px;
+  border: 1px solid var(--mint);
+  border-radius: 50%;
+  color: #122723;
+  background: var(--mint);
+}
+.recorder-preview-track {
+  flex: 1;
+  min-width: 0;
+}
+.recorder-preview-track > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  white-space: nowrap;
+  color: #d8e3d5;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.recorder-preview-track input {
+  display: block;
+  width: 100%;
+  margin: 5px 0 0;
+  accent-color: var(--mint);
+  cursor: pointer;
+}
+.recorder-retry {
+  padding: 10px 0;
+  font-size: 12px;
+  text-decoration: underline;
+}
+@keyframes record-pulse {
+  50% {
+    opacity: 0.35;
+  }
 }
 .primary,
 .outline {
@@ -236,6 +387,15 @@ a {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 18px;
+}
+.center > .section-head > span:first-child {
+  flex: 0 0 auto;
+}
+.center > .section-head .muted {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .muted {
   color: var(--muted);
@@ -854,8 +1014,14 @@ footer {
     border-left: 0;
     border-top: 1px solid var(--line);
   }
+}
+@media (max-width: 1180px) {
   .intro {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .upload {
+    width: 100%;
+    max-width: 780px;
   }
 }
 @media (max-width: 700px) {
@@ -919,6 +1085,16 @@ footer {
   }
   .intro h2 {
     font-size: 31px;
+  }
+}
+@media (max-width: 560px) {
+  .recorder-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .recorder-actions button {
+    width: 100%;
+    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

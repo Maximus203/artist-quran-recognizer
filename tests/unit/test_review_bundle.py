@@ -13,7 +13,12 @@ def test_bundle_keeps_original_bytes_and_revisions(tmp_path: Path) -> None:
     session = tmp_path / "session"
     session.mkdir()
     audio = b"audio original"
-    prediction = b'{"schema":"aqr.recognition/1"}\n'
+    prediction = json.dumps(
+        {
+            "schema": "aqr.recognition/1",
+            "engine": {"asr": "whisper@pin", "segmenter": "segmenter@pin"},
+        }
+    ).encode()
     (session / "source.mp3").write_bytes(audio)
     (session / "prediction.recognition.json").write_bytes(prediction)
     (session / "review.json").write_text('{"schema":"aqr.review/1"}', encoding="utf-8")
@@ -28,6 +33,7 @@ def test_bundle_keeps_original_bytes_and_revisions(tmp_path: Path) -> None:
                 "extension": ".mp3",
                 "audio_sha256": hashlib.sha256(audio).hexdigest(),
                 "prediction_sha256": hashlib.sha256(prediction).hexdigest(),
+                "source_kind": "microphone",
             }
         ),
         encoding="utf-8",
@@ -40,6 +46,12 @@ def test_bundle_keeps_original_bytes_and_revisions(tmp_path: Path) -> None:
         assert archive.read("reviews/r0001.review.json") == b"{}"
         manifest = json.loads(archive.read("manifest.json"))
         assert manifest["files"]["audio/source.mp3"] == hashlib.sha256(audio).hexdigest()
+        assert manifest["source_kind"] == "microphone"
+        assert manifest["engine"]["asr"] == "whisper@pin"
+        assert (
+            manifest["files"]["reviews/current.review.json"]
+            == hashlib.sha256(b'{"schema":"aqr.review/1"}').hexdigest()
+        )
 
 
 def test_bundle_refuses_changed_audio(tmp_path: Path) -> None:

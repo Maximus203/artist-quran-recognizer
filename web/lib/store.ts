@@ -22,6 +22,7 @@ export type Session = {
   extension: string;
   audio_sha256: string;
   size: number;
+  source_kind?: "file" | "microphone";
   created_at: string;
   state: "ready" | "running" | "done" | "failed" | "cancelled";
   error: string | null;
