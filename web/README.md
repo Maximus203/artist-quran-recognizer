@@ -17,7 +17,7 @@ cd web
 npm run dev
 ```
 
-Ouvrir l'URL affichée par Next.js. La CLI choisit actuellement Whisper et le segmenteur de récitation ; ce choix est provisoire. La première analyse peut durer plusieurs minutes. Le temps affiché est réel, sans pourcentage simulé. Un échec de modèle, de corpus ou d'extraction apparaît dans la session.
+Ouvrir l'URL affichée par Next.js. L'atelier lance FastConformer et le segmenteur de récitation par défaut ; `AQR_ASR=whisper` choisit Whisper. Ce choix reste provisoire (décision en phase 6). La première analyse peut durer plusieurs minutes. Le temps affiché est réel, sans pourcentage simulé. Un échec de modèle, de corpus ou d'extraction apparaît dans la session.
 
 ## Tester un audio
 
