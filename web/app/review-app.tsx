@@ -8,6 +8,7 @@ import {
   type Interval,
 } from "@/lib/recognition";
 import type { Annotation, Review } from "@/lib/review";
+import { audioAccept, bindAudioDrop } from "@/lib/audio-upload";
 
 type Session = {
   id: string;
@@ -76,7 +77,11 @@ export default function ReviewApp() {
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [time, setTime] = useState(0),
+    [mediaDuration, setMediaDuration] = useState(0),
     [playing, setPlaying] = useState(false),
+    [volume, setVolume] = useState(1),
+    [speed, setSpeed] = useState(1),
+    [dragActive, setDragActive] = useState(false),
     [selected, setSelected] = useState<number | null>(null),
     [filter, setFilter] = useState("all"),
     [follow, setFollow] = useState(true),
@@ -94,6 +99,7 @@ export default function ReviewApp() {
     file = useRef<HTMLInputElement>(null),
     resultFile = useRef<HTMLInputElement>(null),
     raf = useRef<number>(0),
+    uploading = useRef(false),
     saved = useRef<string>("");
   const refreshList = useCallback(async () => {
     const r = await fetch("/api/sessions", { cache: "no-store" });
@@ -107,6 +113,7 @@ export default function ReviewApp() {
     setDraft(null);
     setSelected(null);
     setTime(0);
+    setMediaDuration(0);
     setPlaying(false);
     setSaveState("");
     saved.current = JSON.stringify(value.review?.annotations || []);
@@ -186,6 +193,11 @@ export default function ReviewApp() {
     };
   }, [detail?.session.id]);
   useEffect(() => {
+    if (!audio.current) return;
+    audio.current.volume = volume;
+    audio.current.playbackRate = speed;
+  }, [detail?.session.id, volume, speed]);
+  useEffect(() => {
     const node = audio.current;
     if (!node) return;
     const tick = () => {
@@ -203,17 +215,25 @@ export default function ReviewApp() {
       setTime(node.currentTime);
     };
     const onSeek = () => setTime(node.currentTime);
+    const onDuration = () =>
+      setMediaDuration(Number.isFinite(node.duration) ? node.duration : 0);
     node.addEventListener("play", onPlay);
     node.addEventListener("pause", onPause);
     node.addEventListener("seeked", onSeek);
     node.addEventListener("ended", onPause);
+    node.addEventListener("loadedmetadata", onDuration);
+    node.addEventListener("durationchange", onDuration);
     document.addEventListener("visibilitychange", onSeek);
+    onDuration();
+    onSeek();
     return () => {
       cancelAnimationFrame(raf.current);
       node.removeEventListener("play", onPlay);
       node.removeEventListener("pause", onPause);
       node.removeEventListener("seeked", onSeek);
       node.removeEventListener("ended", onPause);
+      node.removeEventListener("loadedmetadata", onDuration);
+      node.removeEventListener("durationchange", onDuration);
       document.removeEventListener("visibilitychange", onSeek);
     };
   }, [detail?.session.id]);
@@ -297,27 +317,38 @@ export default function ReviewApp() {
     }, 500);
     return () => clearTimeout(timer);
   }, [draft, detail?.session.id, detail?.session.prediction_sha256]);
-  async function upload() {
-    if (!file.current?.files?.[0]) return;
-    setBusy(true);
-    setMessage("");
-    try {
-      const form = new FormData();
-      form.append("audio", file.current.files[0]);
-      if (resultFile.current?.files?.[0])
-        form.append("result", resultFile.current.files[0]);
-      const r = await fetch("/api/sessions", { method: "POST", body: form });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      await refreshList();
-      await open(data.id);
-      history.replaceState(null, "", `?session=${data.id}`);
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Import impossible");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const uploadFiles = useCallback(
+    async (selectedAudio?: File, selectedResult?: File) => {
+      if (!selectedAudio || uploading.current) return;
+      uploading.current = true;
+      setBusy(true);
+      setMessage("");
+      try {
+        const form = new FormData();
+        form.append("audio", selectedAudio);
+        if (selectedResult) form.append("result", selectedResult);
+        const r = await fetch("/api/sessions", { method: "POST", body: form });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error);
+        await refreshList();
+        await open(data.id);
+        history.replaceState(null, "", `?session=${data.id}`);
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : "Import impossible");
+      } finally {
+        uploading.current = false;
+        setBusy(false);
+      }
+    },
+    [open, refreshList],
+  );
+  useEffect(() => {
+    return bindAudioDrop(window, {
+      onActive: setDragActive,
+      onAudio: (selectedAudio) => void uploadFiles(selectedAudio),
+      onError: setMessage,
+    });
+  }, [uploadFiles]);
   async function action(method: "POST" | "DELETE") {
     if (!detail) return;
     setBusy(true);
@@ -340,6 +371,17 @@ export default function ReviewApp() {
     setSelected(index);
     if (item?.t && audio.current) audio.current.currentTime = item.t[0];
     setFollow(false);
+  }
+  function togglePlayback() {
+    const node = audio.current;
+    if (!node) return;
+    if (node.paused)
+      void node
+        .play()
+        .catch(() =>
+          setMessage("Lecture impossible pour cet audio dans ce navigateur."),
+        );
+    else node.pause();
   }
   function patchDraft(patch: Partial<Annotation>) {
     if (draft)
@@ -390,8 +432,7 @@ export default function ReviewApp() {
       ),
     );
   }
-  const duration =
-    detail?.result?.source.duration_s || audio.current?.duration || 0;
+  const duration = mediaDuration || detail?.result?.source.duration_s || 0;
   const visible = intervals
     .map((item, index) => ({ item, index }))
     .filter(
@@ -405,6 +446,15 @@ export default function ReviewApp() {
     );
   return (
     <main className="shell">
+      {dragActive && (
+        <div className="drop-overlay" role="status" aria-live="polite">
+          <div className="drop-overlay-card">
+            <span aria-hidden="true">↧</span>
+            <strong>Dépose ton audio ici</strong>
+            <small>L’import commence dès que tu lâches le fichier</small>
+          </div>
+        </div>
+      )}
       <header className="top">
         <div className="brand">
           <span className="mark">۞</span>
@@ -432,8 +482,7 @@ export default function ReviewApp() {
         </div>
         <div className="upload">
           <label>
-            Fichier audio{" "}
-            <input ref={file} type="file" accept="audio/*,.opus,.flac" />
+            Fichier audio <input ref={file} type="file" accept={audioAccept} />
           </label>
           <label>
             Résultat existant <span className="optional">facultatif</span>
@@ -443,9 +492,21 @@ export default function ReviewApp() {
               accept=".json,application/json"
             />
           </label>
-          <button className="primary" onClick={upload} disabled={busy}>
+          <button
+            className="primary"
+            onClick={() =>
+              void uploadFiles(
+                file.current?.files?.[0],
+                resultFile.current?.files?.[0],
+              )
+            }
+            disabled={busy}
+          >
             Importer dans l’atelier <span>↗</span>
           </button>
+          <small>
+            Tu peux aussi déposer un audio n’importe où sur la page.
+          </small>
           <small>
             Fichiers conservés localement hors Git. L’import JSON exige le même
             audio, vérifié par SHA-256.
@@ -529,50 +590,89 @@ export default function ReviewApp() {
                   ref={audio}
                   src={`/api/sessions/${detail.session.id}/audio`}
                   preload="metadata"
-                  controls
                   aria-label="Lecteur audio"
+                  className="media-source"
+                  onError={() =>
+                    setMessage(
+                      "Lecture impossible pour cet audio dans ce navigateur.",
+                    )
+                  }
                 />
-                <div ref={wave} className="wave" aria-label="Forme d’onde" />
-                <div className="transport-row">
-                  <span>
-                    {formatTime(time)} / {formatTime(duration)}
-                  </span>
+                <div className="player-heading">
                   <div>
-                    <button
-                      onClick={() => {
-                        if (audio.current)
-                          audio.current.currentTime = Math.max(0, time - 5);
-                      }}
-                    >
-                      − 5 s
-                    </button>
-                    <button
-                      onClick={() =>
-                        playing ? audio.current?.pause() : audio.current?.play()
-                      }
-                    >
-                      {playing ? "Pause" : "Lecture"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (audio.current)
-                          audio.current.currentTime = Math.min(
-                            duration,
-                            time + 5,
-                          );
-                      }}
-                    >
-                      + 5 s
-                    </button>
+                    <span className="player-eyebrow">ÉCOUTE DE LA SOURCE</span>
+                    <strong title={detail.session.name}>
+                      {detail.session.name}
+                    </strong>
                   </div>
-                  <label>
-                    Vitesse{" "}
-                    <select
-                      defaultValue="1"
+                  <span className="player-badge">AUDIO LOCAL</span>
+                </div>
+                <div className="player-main">
+                  <button
+                    className="play-toggle"
+                    onClick={togglePlayback}
+                    aria-label={
+                      playing ? "Mettre en pause" : "Lancer la lecture"
+                    }
+                  >
+                    {playing ? (
+                      <span className="pause-icon" aria-hidden="true" />
+                    ) : (
+                      <span className="play-icon" aria-hidden="true" />
+                    )}
+                  </button>
+                  <button
+                    className="seek-button"
+                    onClick={() => {
+                      if (audio.current)
+                        audio.current.currentTime = Math.max(
+                          0,
+                          audio.current.currentTime - 5,
+                        );
+                    }}
+                    aria-label="Reculer de 5 secondes"
+                  >
+                    −5<span>s</span>
+                  </button>
+                  <div className="player-progress">
+                    <div className="player-times">
+                      <span>{formatTime(time)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 1}
+                      step="0.01"
+                      value={Math.min(time, duration || 1)}
+                      aria-label="Position de lecture"
+                      style={{
+                        background: `linear-gradient(to right, #d4e8bb 0%, #d4e8bb ${duration ? (time / duration) * 100 : 0}%, #4a6257 ${duration ? (time / duration) * 100 : 0}%, #4a6257 100%)`,
+                      }}
                       onChange={(e) => {
                         if (audio.current)
-                          audio.current.playbackRate = Number(e.target.value);
+                          audio.current.currentTime = Number(e.target.value);
                       }}
+                    />
+                  </div>
+                  <button
+                    className="seek-button"
+                    onClick={() => {
+                      if (audio.current)
+                        audio.current.currentTime = Math.min(
+                          duration,
+                          audio.current.currentTime + 5,
+                        );
+                    }}
+                    aria-label="Avancer de 5 secondes"
+                  >
+                    +5<span>s</span>
+                  </button>
+                  <label className="player-speed">
+                    Vitesse{" "}
+                    <select
+                      value={speed}
+                      onChange={(e) => setSpeed(Number(e.target.value))}
                     >
                       <option value="0.5">0,5×</option>
                       <option value="0.75">0,75×</option>
@@ -582,7 +682,12 @@ export default function ReviewApp() {
                     </select>
                   </label>
                 </div>
-                <div className="transport-row">
+                <div
+                  ref={wave}
+                  className="wave"
+                  aria-label="Forme d’onde ; cliquer pour se déplacer dans l’audio"
+                />
+                <div className="transport-row player-tools">
                   <label>
                     Zoom{" "}
                     <input
@@ -604,6 +709,21 @@ export default function ReviewApp() {
                   <span className="muted">
                     {follow ? "Lecture suivie" : "Exploration libre"}
                   </span>
+                  <label className="player-volume">
+                    Volume{" "}
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={volume}
+                      aria-label="Volume"
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        setVolume(value);
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
               {detail.session.state === "ready" ||

@@ -11,6 +11,15 @@ describe("frontière locale", () => {
         true,
       ),
     ).toBe(true);
+    expect(
+      isLocalRequest(
+        new Request("http://localhost:3098/api/sessions", {
+          method: "POST",
+          headers: { origin: "http://127.0.0.1:3098" },
+        }),
+        true,
+      ),
+    ).toBe(true);
   });
   it("refuse une page tierce et un hôte rebinding", () => {
     expect(
@@ -18,6 +27,15 @@ describe("frontière locale", () => {
         new Request("http://127.0.0.1:3097/api/sessions", {
           method: "POST",
           headers: { origin: "https://example.org" },
+        }),
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      isLocalRequest(
+        new Request("http://localhost:3098/api/sessions", {
+          method: "POST",
+          headers: { origin: "http://127.0.0.1:3099" },
         }),
         true,
       ),
