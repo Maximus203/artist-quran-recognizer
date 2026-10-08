@@ -504,3 +504,13 @@
 - Un fichier audio déposé sur n'importe quelle zone de la page démarre un import de session. Le dépôt choisit le premier fichier dont l'extension est acceptée par l'API ; un JSON éventuellement présent dans le sélecteur reste réservé à l'import manuel, pour éviter de l'associer implicitement à un autre audio.
 - Le lecteur personnalisé pilote le même élément `<audio>` que wavesurfer.js et les pistes. La durée du média est mise en état React dès que les métadonnées sont disponibles, y compris lorsqu'elles précèdent l'installation des écouteurs.
 - En développement, Next.js peut reconstruire l'URL de requête en `localhost` alors que l'origine de la page reste `127.0.0.1`. La mutation accepte ces deux alias seulement si protocole et port coïncident ; les origines tierces et les ports différents restent refusés.
+
+## 2026-10-08 — Capture micro pour la revue
+- La capture reste temporaire dans le navigateur jusqu'au choix explicite « Analyser cette récitation ». Arrêter ouvre une préécoute ; recommencer remplace cette prise. Les pistes micro sont fermées à l'arrêt, en cas d'erreur et lors du démontage du composant.
+- La prise choisie suit l'import de session existant avec `source_kind: microphone`, puis le même endpoint `/run` que les fichiers importés. Le moteur ne reçoit aucune hypothèse de verset issue de l'interface. Si le lancement échoue, l'audio reste dans la session et le bouton de relance existant reste disponible.
+- Selon le choix du mainteneur, les octets de l'audio, le résultat du moteur et les corrections restent dans le corpus privé hors Git. Le pack ZIP exporte les empreintes et les versions déclarées par le moteur ; seul un manifeste expurgé rejoint Git après qualification des droits et des catégories. Aucun nouvel enregistrement n'est envoyé automatiquement vers un dataset cloud.
+
+## 2026-10-08 — Réparation responsive de l'atelier
+
+- L'état `preview` appliquait la classe `recorder-preview` au conteneur micro, déjà utilisée par le lecteur interne : la règle flex comprimait tous les enfants en une seule rangée. Les états du conteneur utilisent désormais `is-*` et le conteneur une grille à une colonne.
+- L'introduction donne plus de largeur à l'import sur grand écran et s'empile sous 1180 px. Les largeurs des colonnes sont bornées avec `minmax(0, ...)` pour éviter la croissance par contenu. Les noms longs de session se tronquent dans l'en-tête ; les commandes conservent leur accès et leur libellé complet dans les attributs du lecteur.
