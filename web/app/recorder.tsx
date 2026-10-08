@@ -93,10 +93,12 @@ export default function Recorder({
       clearPreview();
       const capture = new MediaRecorder(input, { mimeType });
       const chunks: Blob[] = [];
+      let failed = false;
       capture.ondataavailable = (event) => {
         if (event.data.size) chunks.push(event.data);
       };
       capture.onerror = () => {
+        failed = true;
         releaseStream();
         if (mounted.current) {
           setError(
@@ -108,7 +110,7 @@ export default function Recorder({
       capture.onstop = () => {
         releaseStream();
         recorder.current = null;
-        if (!mounted.current) return;
+        if (!mounted.current || failed) return;
         const actualType = capture.mimeType || mimeType;
         const extension = recordingExtension(actualType);
         const blob = new Blob(chunks, { type: actualType });
