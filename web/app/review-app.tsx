@@ -9,6 +9,7 @@ import {
 } from "@/lib/recognition";
 import type { Annotation, Review } from "@/lib/review";
 import { audioAccept, bindAudioDrop } from "@/lib/audio-upload";
+import Recorder from "./recorder";
 
 type Session = {
   id: string;
@@ -317,6 +318,26 @@ export default function ReviewApp() {
     }, 500);
     return () => clearTimeout(timer);
   }, [draft, detail?.session.id, detail?.session.prediction_sha256]);
+  const createSession = useCallback(
+    async (
+      selectedAudio: File,
+      selectedResult?: File,
+      sourceKind: "file" | "microphone" = "file",
+    ) => {
+      const form = new FormData();
+      form.append("audio", selectedAudio);
+      form.append("source_kind", sourceKind);
+      if (selectedResult) form.append("result", selectedResult);
+      const r = await fetch("/api/sessions", { method: "POST", body: form });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      await refreshList();
+      await open(data.id);
+      history.replaceState(null, "", `?session=${data.id}`);
+      return data.id as string;
+    },
+    [open, refreshList],
+  );
   const uploadFiles = useCallback(
     async (selectedAudio?: File, selectedResult?: File) => {
       if (!selectedAudio || uploading.current) return;
@@ -324,15 +345,7 @@ export default function ReviewApp() {
       setBusy(true);
       setMessage("");
       try {
-        const form = new FormData();
-        form.append("audio", selectedAudio);
-        if (selectedResult) form.append("result", selectedResult);
-        const r = await fetch("/api/sessions", { method: "POST", body: form });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error);
-        await refreshList();
-        await open(data.id);
-        history.replaceState(null, "", `?session=${data.id}`);
+        await createSession(selectedAudio, selectedResult);
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Import impossible");
       } finally {
@@ -340,7 +353,33 @@ export default function ReviewApp() {
         setBusy(false);
       }
     },
-    [open, refreshList],
+    [createSession],
+  );
+  const analyzeRecording = useCallback(
+    async (selectedAudio: File) => {
+      if (uploading.current) throw new Error("Un import est déjà en cours.");
+      uploading.current = true;
+      setBusy(true);
+      setMessage("");
+      try {
+        const id = await createSession(selectedAudio, undefined, "microphone");
+        try {
+          const r = await fetch(`/api/sessions/${id}/run`, { method: "POST" });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error);
+          await open(id);
+          await refreshList();
+        } catch (error) {
+          setMessage(
+            `Audio conservé dans la session. L’analyse n’a pas démarré : ${error instanceof Error ? error.message : "erreur inconnue"}`,
+          );
+        }
+      } finally {
+        uploading.current = false;
+        setBusy(false);
+      }
+    },
+    [createSession, open, refreshList],
   );
   useEffect(() => {
     return bindAudioDrop(window, {
@@ -476,11 +515,14 @@ export default function ReviewApp() {
             <em>une écoute attentive.</em>
           </h2>
           <p>
-            Importe un audio, lance le moteur existant ou ouvre son JSON. Les
-            hypothèses et les abstentions restent visibles comme telles.
+            Enregistre une récitation ou importe un audio, puis lance le moteur
+            existant. Les hypothèses et les abstentions restent visibles comme
+            telles.
           </p>
         </div>
         <div className="upload">
+          <Recorder onAnalyze={analyzeRecording} />
+          <span className="upload-divider">OU IMPORTER UN FICHIER</span>
           <label>
             Fichier audio <input ref={file} type="file" accept={audioAccept} />
           </label>

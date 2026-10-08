@@ -174,6 +174,131 @@ a {
   line-height: 1.5;
   color: #a5b9af;
 }
+.recorder {
+  min-width: 0;
+  margin-top: 6px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+.upload-divider::before,
+.upload-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.recorder-heading,
+.recorder-actions,
+.recorder-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.recorder-heading {
+  margin-bottom: 14px;
+}
+.recorder-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.recorder-heading strong {
+  font-size: 13px;
+}
+.recorder-symbol {
+  color: var(--mint);
+  font-size: 15px;
+}
+.recorder-recording .recorder-symbol {
+  color: var(--red);
+  animation: record-pulse 1.6s ease-in-out infinite;
+}
+.recorder-timer {
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--red);
+  font-size: 14px;
+}
+.recorder-start {
+  width: 100%;
+}
+.recorder-actions {
+  justify-content: space-between;
+  margin-top: 12px;
+}
+.recorder-actions .primary,
+.recorder-actions .outline {
+  min-height: 44px;
+}
+.recorder-live {
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+}
+.recorder-note,
+.recorder-error {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 10px 0 0 !important;
+}
+.recorder-error {
+  color: var(--red) !important;
+}
+.recorder-preview {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #3e5a4c;
+  border-radius: 8px;
+  background: #10201f;
+}
+.recorder-play {
+  flex: 0 0 38px;
+  height: 38px;
+  border: 1px solid var(--mint);
+  border-radius: 50%;
+  color: #122723;
+  background: var(--mint);
+}
+.recorder-preview-track {
+  flex: 1;
+  min-width: 0;
+}
+.recorder-preview-track > div {
+  display: flex;
+  justify-content: space-between;
+  color: #d8e3d5;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.recorder-preview-track input {
+  display: block;
+  width: 100%;
+  margin: 5px 0 0;
+  accent-color: var(--mint);
+  cursor: pointer;
+}
+.recorder-retry {
+  padding: 10px 0;
+  font-size: 12px;
+  text-decoration: underline;
+}
+@keyframes record-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
 .primary,
 .outline {
   border: 1px solid var(--mint);
@@ -919,6 +1044,16 @@ footer {
   }
   .intro h2 {
     font-size: 31px;
+  }
+}
+@media (max-width: 560px) {
+  .recorder-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .recorder-actions button {
+    width: 100%;
+    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

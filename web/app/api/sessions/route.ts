@@ -42,6 +42,16 @@ export async function POST(request: NextRequest) {
       );
     const bytes = Buffer.from(await file.arrayBuffer());
     const audio_sha256 = sha(bytes);
+    const source_kind = form.get("source_kind");
+    if (
+      source_kind !== null &&
+      source_kind !== "file" &&
+      source_kind !== "microphone"
+    )
+      return NextResponse.json(
+        { error: "Origine audio invalide." },
+        { status: 400 },
+      );
     const imported = form.get("result");
     let prediction: Buffer | null = null;
     if (imported instanceof File && imported.size) {
@@ -68,6 +78,7 @@ export async function POST(request: NextRequest) {
       extension,
       audio_sha256,
       size: file.size,
+      source_kind: source_kind === "microphone" ? "microphone" : "file",
       created_at: new Date().toISOString(),
       state: prediction ? "done" : "ready",
       error: null,
