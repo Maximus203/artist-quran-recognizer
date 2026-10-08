@@ -46,12 +46,18 @@ def build_bundle(session_dir: Path, target: Path) -> None:
             (item, f"reviews/{item.name}") for item in sorted(revisions.glob("*.review.json"))
         )
     hashes = {name: _sha256(source) for source, name in files}
+    engine = None
+    if prediction.exists():
+        parsed = json.loads(prediction.read_text(encoding="utf-8"))
+        engine = parsed.get("engine")
     manifest = {
         "schema": "aqr.review-bundle/1",
         "session_id": session["id"],
         "source_name": session.get("name"),
         "audio_sha256": session["audio_sha256"],
+        "source_kind": session.get("source_kind", "file"),
         "prediction_sha256": session.get("prediction_sha256"),
+        "engine": engine,
         "files": hashes,
         "evaluation": "unavailable: partial review is not complete human ground truth",
     }
