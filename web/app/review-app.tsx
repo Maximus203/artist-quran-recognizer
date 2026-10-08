@@ -535,7 +535,7 @@ export default function ReviewApp() {
             />
           </label>
           <button
-            className="primary"
+            className="primary upload-submit"
             onClick={() =>
               void uploadFiles(
                 file.current?.files?.[0],
