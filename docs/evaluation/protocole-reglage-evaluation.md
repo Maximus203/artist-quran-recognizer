@@ -14,6 +14,11 @@ Références : `docs/DATA-COLLECTION.md` §5, `src/aqr/data/split.py`, `scripts/
 `--split` vaut `dev` par défaut. `scripts/evaluate.py --split test` sans `--final` est refusé
 (code de sortie 2) : « le jeu test est réservé aux mesures finales ».
 
+Un troisième état, `quarantaine` (`DataConfig.quarantine_split`), n'est **pas un jeu** : il
+accueille les récitants dont le jeu `test` a été exposé (règle 3). Il n'est ni évalué (`--split
+quarantaine` est refusé, même avec `--final`), ni utilisé au réglage, ni compté dans le ratio
+`dev`/`test`. Aucun chemin n'en sort.
+
 ## Découpage : récitants disjoints
 
 - L'unité de découpage est le **récitant**, jamais le fichier ni le verset : un même récitant n'est
@@ -21,10 +26,11 @@ Références : `docs/DATA-COLLECTION.md` §5, `src/aqr/data/split.py`, `scripts/
 - `assign_splits` (`src/aqr/data/split.py`) trie les récitants par hachage salé
   (`DataConfig.split_seed`, défaut `aqr-split-v1`) et vise une part de durée `dev` de
   `DataConfig.dev_ratio` (défaut 0,7).
-- Une affectation déjà écrite dans un manifeste n'est jamais modifiée ; un récitant présent dans les
-  deux jeux est une erreur (`ValueError`) à corriger à la main, pas à contourner.
-- Les variantes d'un même contenu (même récitant ré-encodé, dégradé ou mixé) héritent du jeu du
-  récitant : une dégradation ne crée pas un nouveau récitant.
+- Une affectation déjà écrite dans un manifeste n'est jamais modifiée, sauf la mise en quarantaine
+  (règle 3, à sens unique) ; un récitant présent dans les deux jeux, ou en quarantaine et ailleurs,
+  est une erreur (`ValueError`) à corriger à la main, pas à contourner.
+- Les variantes d'un même contenu (même récitant ré-encodé, dégradé ou mixé, identifiant dérivé
+  `<parent>--<label>`) héritent du jeu du récitant : une dégradation ne crée pas un nouveau récitant.
 - Pour un mixage, le jeu est celui du récitant des versets ; la parole non coranique de remplissage
   ne compte pas comme récitant.
 
@@ -34,8 +40,14 @@ Références : `docs/DATA-COLLECTION.md` §5, `src/aqr/data/split.py`, `scripts/
    dur (AGENTS.md).
 2. Une correction de bug vu sur un audio du jeu `test` n'est pas appliquée telle quelle : on
    reproduit le défaut sur un cas `dev` (ou on ajoute un cas `dev`), puis on corrige.
-3. Un cas `test` observé pendant le développement (écoute, transcription lue) est signalé et sorti
-   du jeu `test` pour la prochaine version : il a cessé d'être aveugle.
+3. Un cas `test` observé pendant le développement (écoute, transcription lue, sortie du moteur
+   inspectée) a cessé d'être aveugle. On le signale, puis **tout le groupe du récitant** (parents,
+   mixes, dérivés `<parent>--<label>`) passe en split `quarantaine`
+   (`quarantine_recitant`, `src/aqr/data/split.py`), jamais en `dev` : cette sortie à sens unique
+   est la seule modification d'affectation admise (voir « Découpage »), et choisir après coup quels
+   cas rejoignent le jeu de réglage d'après ce qu'on a vu du test serait une sélection a posteriori.
+   Le motif (date, récitant anonymisé, cause de l'exposition, cas touchés) est consigné dans
+   `.artist/decision-log.md`. La mesure finale suivante se fait sur de **nouveaux récitants**.
 4. Aucun chiffre `dev` n'est présenté comme performance de généralisation ; le rapport porte le
    champ `split`.
 
@@ -59,5 +71,8 @@ Références : `docs/DATA-COLLECTION.md` §5, `src/aqr/data/split.py`, `scripts/
   optimiste**, pas une estimation de la performance en conditions réelles.
 - Les mixages synthétiques ont une vérité exacte mais des transitions artificielles ; les
   dégradations (bruit, bande téléphonique, réverbération, MP3) sont simulées, non enregistrées.
-- Le réel (lot 1, annoté à la main) reste la référence de généralisation ; le corpus synthétique
-  sert à la régression, aux cas limites et à la robustesse.
+- Seul du réel hors EveryAyah, annoté à la main, peut estimer la généralisation ; le corpus
+  synthétique sert à la régression, aux cas limites et à la robustesse. Le lot 1 en est le
+  candidat, **pas une référence acquise** : ses droits et son statut de dataset public sont des
+  décisions ouvertes (`docs/data-lots/RIGHTS.md`, `docs/data-lots/ref-corpus-provenance.md`
+  section « Décision d'usage »). Tout rapport qui s'appuie dessus le dit.

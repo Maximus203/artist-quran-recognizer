@@ -2,9 +2,12 @@
 
 Date de relevé : 2026-10-09. Méthode : lecture des pages publiques (outil de lecture web) et de
 l'API Hugging Face (`private`, `gated`, tags). Ce sont les termes **littéraux** trouvés ; la
-lecture a pu être tronquée (voir « Limites »). **Règle : ce qui n'est pas clairement autorisé est
-traité comme non autorisé.** Cela ne tranche pas le droit ; la décision d'usage appartient au
-mainteneur (voir `docs/data-lots/RIGHTS.md` pour le précédent du lot 1).
+lecture a pu être tronquée (voir « Limites »).
+
+**Règle : ce qui n'est pas clairement autorisé est traité comme non autorisé**, à la seule exception
+de la « Décision d'usage » ci-dessous (mainteneur, provisoire). Ce relevé ne tranche pas le droit, et
+cette exception ne crée aucun droit. Le lot 1 n'est **pas un précédent** : ses décisions sont
+ouvertes (voir `docs/data-lots/RIGHTS.md`).
 
 ## Constats par source
 
@@ -16,7 +19,9 @@ mainteneur (voir `docs/data-lots/RIGHTS.md` pour le précédent du lot 1).
 - `recitations_ayat.html` (HTTP 200) : aucune occurrence de licence, copyright, permission, terms
   ou « free ».
 - Conclusion : **droits non établis**. Le téléchargement par script
-  (`scripts/fetch_everyayah.py`) est un accès technique, pas une autorisation.
+  (`scripts/fetch_everyayah.py`) est un accès technique, pas une autorisation ; ce que le script
+  fait par défaut est décrit dans « Décision d'usage », section « Le téléchargement n'est pas une
+  autorisation ».
 
 ### Hugging Face `Buraaq/quran-md-ayahs`
 - API : `private: false`, `gated: false`, révision `669e9c4b78716d4558cebab98e1072564801fbb0`
@@ -73,12 +78,13 @@ mainteneur (voir `docs/data-lots/RIGHTS.md` pour le précédent du lot 1).
 1. **Rien n'est présumé autorisé.** Aucun audio de ces sources n'est versionné ni republié
    (AGENTS.md). Le manifeste du corpus de référence (`tests/fixtures/ref-corpus/manifest.yaml`)
    ne contient que des empreintes, des métadonnées et la mention de licence `non établie`.
-2. Les audios construits localement vivent hors dépôt (`~/aqr-ref`, `AQR_AUDIO_DIR`) pour un usage
-   interne d'évaluation uniquement ; ni dataset public, ni partage.
+2. Les audios construits localement vivent hors dépôt (`~/aqr-ref`, `AQR_AUDIO_DIR`), dans les
+   seules limites de la « Décision d'usage » ci-dessous ; ni dataset public, ni partage.
 3. `RetaSy/quranic_audio_dataset` n'est pas utilisé pour constituer le corpus de référence tant que
    le consentement et la licence ne sont pas établis.
-4. Toute utilisation au-delà de l'évaluation interne (publication, redistribution, entraînement)
-   demande une décision explicite du mainteneur après clarification auprès des ayants droit.
+4. Toute utilisation au-delà de la « Décision d'usage » (publication, redistribution,
+   entraînement) demande une nouvelle décision écrite du mainteneur, après clarification auprès des
+   ayants droit.
 
 ## Biais d'évaluation : EveryAyah est probablement dans l'entraînement des modèles
 Les modèles de reconnaissance de récitation courants (dont les dérivés Whisper « tarteel ») ont
@@ -91,5 +97,91 @@ vérifiée ici modèle par modèle ; elle suffit à imposer la prudence :
 - Le jeu `test` du corpus de référence est disjoint par **récitant** de `dev`, mais n'est pas
   disjoint de l'entraînement des modèles : la disjonction protège le réglage de notre système, pas
   l'évaluation d'un modèle déjà vu.
-- Pour une estimation de généralisation, il faut des enregistrements hors EveryAyah (lot 1, annoté
-  à la main).
+- Pour une estimation de généralisation, il faut des enregistrements hors EveryAyah, annotés à la
+  main. Le lot 1 en est le candidat, sous réserve de ses décisions de droits ouvertes
+  (`docs/data-lots/RIGHTS.md`) : ce n'est pas une référence acquise.
+
+## Décision d'usage
+
+**Statut : provisoire — en attente de confirmation écrite du mainteneur.** Rédigée le 2026-10-09
+(entrée correspondante dans `.artist/decision-log.md`). Elle fixe une règle de travail pour les
+audios dont les droits ne sont pas établis, **y compris pour l'évaluation interne** ; elle
+n'établit aucun droit et ne remplace pas l'accord des ayants droit. Elle lève la contradiction entre
+la règle du début du document (« traité comme non autorisé ») et l'évaluation interne : celle-ci
+n'est pas présumée permise, elle n'est permise **que par cette décision**, tant qu'elle tient.
+
+### Qui décide
+Le mainteneur (Cherif), seul. Ni un agent ni un contributeur ne la confirme, ne l'élargit ni ne la
+présume confirmée. Tant que la confirmation écrite manque (réponse sur la PR, ou ligne du mainteneur
+dans `.artist/decision-log.md`), tout rapport chiffré obtenu sur ces audios le mentionne.
+
+### Permis provisoirement
+- **Évaluation interne locale** : lancer le moteur sur ces audios et en calculer des métriques à
+  usage interne (jeux `dev` et `test` du protocole `docs/evaluation/protocole-reglage-evaluation.md`).
+- **Audio hors dépôt** : `AQR_AUDIO_DIR` (par exemple `~/aqr-ref`), jamais dans git. Le dépôt ne porte
+  que des empreintes sha256, des métadonnées et le libellé de licence canonique (voir plus bas).
+- **Aucune redistribution** : pas de publication, de partage, de dataset public ni de transfert
+  automatique vers un service tiers.
+- **Réglage de la configuration** (seuils du gate, paramètres du décodeur) sur le jeu `dev`, comme le
+  prévoit le protocole. Hypothèse tranchée faute de précision : « régler » vise ici la
+  configuration de notre système, non les poids d'un modèle (voir « Interdit »). À confirmer
+  explicitement par le mainteneur.
+
+### Interdit
+Sans nouvelle décision écrite du mainteneur :
+- **Versionner** ces audios ou leurs dérivés (extraits, mixages, dégradations) : git, LFS, artefacts
+  de CI.
+- **Republier ou redistribuer** sous quelque forme que ce soit : dataset (en particulier public),
+  archive, pièce jointe. `scripts/audio_lot.py upload` est la seule commande qui sorte des audios de
+  la machine ; elle n'est permise que vers un dataset **privé** (elle s'arrête sinon).
+- **Entraîner, affiner ou adapter un modèle** (fine-tuning, LoRA, distillation) sur ces audios, ou
+  s'en servir comme données d'apprentissage ou d'augmentation.
+- **Utiliser `RetaSy/quranic_audio_dataset`** pour quoi que ce soit, évaluation interne comprise :
+  voix de personnes privées, consentement non documenté.
+- Les présenter comme libres de droits ou sous licence.
+
+### Portée
+| Source | Constat | Usage couvert par cette décision |
+|---|---|---|
+| EveryAyah (`everyayah.com`, `scripts/fetch_everyayah.py`) | droits non établis | oui : évaluation interne locale |
+| Lots Hugging Face lus pour le corpus de référence (`Buraaq/quran-md-ayahs`, `tarteel-ai/everyayah`, `MohamedRashad/Quran-Recitations`) | aucune licence déclarée ou droits explicitement non documentés | oui : évaluation interne locale |
+| `RetaSy/quranic_audio_dataset` | aucune licence, consentement non documenté | **non** : exclu |
+| Lot 1 (`docs/data-lots/lot-1.yaml`, enregistrements de tiers sur YouTube) | **décisions ouvertes** (`docs/data-lots/RIGHTS.md`) | partiellement, voir ci-dessous |
+
+Le lot 1 n'est **pas un précédent**. Son dataset Hugging Face est public : c'est une redistribution
+déjà constatée, que cette décision ne légitime ni ne condamne. Les trois décisions de `RIGHTS.md`
+(visibilité du dataset, retrait des voix de tiers, mention de droits) restent au mainteneur et
+priment. En attendant, la présente décision couvre pour le lot 1 la seule évaluation interne locale
+d'une copie hors dépôt, sans nouvelle publication. Le téléchargement de la copie publique par
+`scripts/fetch_public_lot.py` vers un autre environnement que la machine du mainteneur relève de ces
+décisions ouvertes et n'est pas couvert ici. Réciproquement, rien de ce qui est décidé pour les
+sources ci-dessus ne vaut autorisation pour le lot 1.
+
+### Le téléchargement n'est pas une autorisation
+`scripts/fetch_everyayah.py` **télécharge par défaut** (sans confirmation) 3 récitants × 10 sourates
+(`DEFAULT_SUBSET`, `src/aqr/data/everyayah.py`) vers `$AQR_AUDIO_DIR/everyayah`, hors dépôt. Ce
+comportement est conservé tel quel : ce qui rend l'usage acceptable n'est pas le script, c'est la
+décision ci-dessus, provisoire. Lancer ce script (ou `scripts/fetch_public_lot.py`) revient donc à
+exercer la permission provisoire : sur la machine du mainteneur, vers un dossier hors dépôt, jamais
+automatisé en CI ni vers un dossier suivi par git. `--dry-run` liste le plan sans rien télécharger.
+
+## Libellé de licence canonique
+Champ `license` d'un manifeste (corpus de référence et tout nouveau cas dont les droits ne sont pas
+établis) :
+
+`droits non établis : usage interne d'évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)`
+
+Il dit deux choses : le statut des droits (**non établis**) et la limite d'usage (la « Décision
+d'usage » ci-dessus, par le chemin qu'il cite).
+
+Libellé hérité du lot 1 (`license` de `tests/fixtures/audio/manifest.yaml`, 12 cas ; champ `droits`
+des fiches écrites par `scripts/audio_lot.py`) :
+
+`usage interne d'évaluation uniquement, jamais redistribué`
+
+C'est une consigne d'usage, pas une preuve de droits : il se lit comme le libellé canonique privé de
+son préfixe « droits non établis ». Il n'est pas réécrit ici, car les décisions du lot 1 sont
+ouvertes (`docs/data-lots/RIGHTS.md`, décision 3) et le changer toucherait les 12 cas du manifeste et
+`scripts/audio_lot.py` ; on l'alignera quand le mainteneur aura tranché. Aucun autre libellé n'est
+admis : `tests/unit/test_docs_links.py` vérifie que chaque libellé du manifeste du lot 1 figure dans
+ce document.
