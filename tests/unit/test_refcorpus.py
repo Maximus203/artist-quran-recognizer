@@ -18,6 +18,7 @@ from aqr.data.refcorpus import (
     RefMeta,
     assign_ref_splits,
     degraded_case,
+    frozen_splits,
     ref_meta,
     validate_ref_manifest,
     with_ref_meta,
@@ -238,6 +239,28 @@ def test_split_deterministe_et_affectation_existante_jamais_modifiee() -> None:
     pinned = [replace(c, split="test") if c.recitant == "Reciter0_128kbps" else c for c in cases]
     again = assign_ref_splits(pinned, DataConfig())
     assert {c.split for c in again if c.recitant == "Reciter0_128kbps"} == {"test"}
+
+
+def test_affectation_figee_prime_sur_le_hachage() -> None:
+    cases = _recitants(4)
+    free = {c.recitant: c.split for c in assign_ref_splits(cases, DataConfig())}
+    opposite = {r: ("test" if side == "dev" else "dev") for r, side in free.items()}
+    forced = assign_ref_splits(cases, DataConfig(), frozen=opposite)
+    assert {c.recitant: c.split for c in forced} == opposite
+    # une affectation écrite sur les cas eux-mêmes prime sur le dictionnaire figé
+    first = cases[0].recitant
+    pinned = [replace(c, split="dev") if c.recitant == first else c for c in cases]
+    kept = assign_ref_splits(pinned, DataConfig(), frozen={first: "test"})
+    assert {c.split for c in kept if c.recitant == first} == {"dev"}
+
+
+def test_frozen_splits_releve_les_affectations_et_refuse_la_fuite() -> None:
+    a = replace(clean_case("a", "R1_128kbps"), split="dev")
+    b = replace(clean_case("b", "R2_128kbps"), split="test")
+    c = clean_case("c", "R3_128kbps")  # pas encore affecté
+    assert frozen_splits([a, b, c]) == {"R1_128kbps": "dev", "R2_128kbps": "test"}
+    with pytest.raises(RefCorpusError, match="R1_128kbps"):
+        frozen_splits([a, replace(clean_case("a2", "R1_128kbps"), split="test")])
 
 
 def test_fuite_dev_test_detectee() -> None:

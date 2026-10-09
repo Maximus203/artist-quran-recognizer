@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 import shutil
 from array import array
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -229,3 +230,102 @@ def test_decalage_non_quran_bout_en_bout(tmp_path: Path) -> None:
     assert (
         read_wav(tmp_path / child.file, rate)[7 * rate : 9 * rate] == samples[4 * rate : 6 * rate]
     )
+
+
+SCENARIOS = ("murattal_continu", "assise_fr", "priere")
+
+
+def build(
+    out: Path,
+    manifest: Path,
+    *,
+    per_scenario: int = 2,
+    degradations: tuple[Degradation, ...] = DEGRADATIONS,
+    provider: type[SyntheticProvider] = FourReciters,
+    seed: int = 3,
+) -> BuildReport:
+    corpus = TanzilCorpusRepository(CORPUS_DIR)
+    return build_ref_corpus(
+        provider(corpus),
+        corpus,
+        out,
+        manifest,
+        seed=seed,
+        per_scenario=per_scenario,
+        scenarios=SCENARIOS,
+        degradations=degradations,
+    )
+
+
+def splits_by_recitant(cases: list[AudioCase]) -> dict[str, str | None]:
+    found: dict[str, set[str | None]] = {}
+    for case in cases:
+        found.setdefault(case.recitant, set()).add(case.split)
+    assert all(len(v) == 1 for v in found.values())
+    return {recitant: next(iter(v)) for recitant, v in found.items()}
+
+
+def test_reconstruction_conserve_les_affectations(tmp_path: Path) -> None:
+    """Une affectation dev/test écrite n'est jamais recalculée : on inverse le manifeste écrit
+    (toutes les affectations), on reconstruit avec d'autres paramètres, l'inversion subsiste."""
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    first = build(out, manifest)
+    original = splits_by_recitant(first.manifest.cases)
+    assert set(original.values()) == {"dev", "test"}
+
+    flip = {"dev": "test", "test": "dev"}
+    Manifest(
+        cases=[replace(c, split=flip[c.split or ""]) for c in Manifest.load(manifest).cases]
+    ).save(manifest)
+
+    newer = (
+        Degradation("noise", {"snr_db": 10, "seed": 1}),
+        Degradation("silence_pad", {"pad_s": 2}, shift_s=2.0),
+        Degradation("mp3_low", {"kbps": 32}),
+    )
+    again = build(out, manifest, per_scenario=3, degradations=newer)
+
+    assert again.problems == []
+    after = splits_by_recitant(again.manifest.cases)
+    assert set(after) >= set(original)
+    for recitant, side in original.items():
+        assert after[recitant] == flip[side or ""], recitant  # type: ignore[index]
+    assert Manifest.load(manifest).cases == again.manifest.cases
+    assert validate_ref_manifest(again.manifest) == []
+
+
+def test_reconstruction_retire_les_derives_dont_la_degradation_a_disparu(tmp_path: Path) -> None:
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    first = build(out, manifest)
+    gone = {
+        c.id for c in first.manifest.cases if ref_meta(c).condition in ("telephone", "silence_pad")
+    }
+    assert gone
+    newer = (Degradation("noise", {"snr_db": 10, "seed": 1}),)
+    again = build(out, manifest, degradations=newer)
+    ids = {c.id for c in again.manifest.cases}
+    assert not gone & ids  # aucun ancien sha conservé en silence
+    assert {name for name, _ in again.removed} == gone
+    assert all("absente de ce lancement" in reason for _, reason in again.removed)
+    assert {ref_meta(c).condition for c in again.manifest.cases if ref_meta(c).parent} == {"noise"}
+    assert validate_ref_manifest(again.manifest) == []
+
+
+def test_reconstruction_avec_un_recitant_de_plus_ne_reaffecte_rien(tmp_path: Path) -> None:
+    """Mêmes identifiants, un récitant de plus : sans affectation figée, recit_b passait de test
+    à dev (le hachage et les poids sont recalculés sur un autre ensemble)."""
+
+    class TwoReciters(FourReciters):
+        def reciters(self) -> tuple[str, ...]:
+            return ("recit_a", "recit_b")
+
+    class ThreeReciters(FourReciters):
+        def reciters(self) -> tuple[str, ...]:
+            return ("recit_a", "recit_b", "recit_c")
+
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    before = splits_by_recitant(build(out, manifest, provider=TwoReciters).manifest.cases)
+    after = splits_by_recitant(build(out, manifest, provider=ThreeReciters).manifest.cases)
+    common = before.keys() & after.keys()
+    assert {"recit_a", "recit_b"} <= common
+    assert {r: after[r] for r in common} == {r: before[r] for r in common}

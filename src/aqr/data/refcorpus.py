@@ -229,13 +229,38 @@ def degraded_case(
     )
 
 
-def assign_ref_splits(cases: Sequence[AudioCase], config: DataConfig) -> list[AudioCase]:
+def frozen_splits(cases: Sequence[AudioCase]) -> dict[str, str]:
+    """{récitant: split} déjà écrits dans un manifeste : une reconstruction ne les réaffecte jamais.
+
+    Un récitant présent des deux côtés est une fuite à corriger à la main : on refuse de
+    continuer plutôt que de choisir un côté.
+    """
+    frozen: dict[str, str] = {}
+    for case in cases:
+        if case.split is None:
+            continue
+        previous = frozen.setdefault(case.recitant, case.split)
+        if previous != case.split:
+            raise RefCorpusError(
+                f"récitant {case.recitant!r} présent en {previous} et en {case.split} dans le "
+                "manifeste existant : fuite dev/test à corriger à la main"
+            )
+    return frozen
+
+
+def assign_ref_splits(
+    cases: Sequence[AudioCase], config: DataConfig, frozen: Mapping[str, str] | None = None
+) -> list[AudioCase]:
     """Affecte `split` à chaque cas par récitant (`assign_splits`).
 
-    Un dérivé a le récitant de son parent, donc son jeu ; une affectation déjà écrite est gardée.
+    Un dérivé a le récitant de son parent, donc son jeu. Une affectation déjà écrite sur un cas est
+    gardée ; `frozen` ({récitant: split}, voir `frozen_splits`) fixe celle des récitants dont les
+    anciens cas sont régénérés : le hachage et les poids ne sont consultés que pour les nouveaux.
     """
-    mapping = assign_splits(cases, config)
-    return [replace(case, split=case.split or mapping[case.recitant]) for case in cases]
+    known = frozen or {}
+    pinned = [replace(c, split=c.split or known.get(c.recitant)) for c in cases]
+    mapping = assign_splits(pinned, config)
+    return [replace(case, split=case.split or mapping[case.recitant]) for case in pinned]
 
 
 def _derived_problems(
