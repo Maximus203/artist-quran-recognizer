@@ -5,8 +5,15 @@ une ressource absente est un ÉCHEC avec sa raison, jamais un skip qui laisse `p
 Seul `AQR_SMOKE_STRICT=0` (explicite) autorise le skip avec la raison, repris par le résumé
 « NON EXÉCUTÉ » de `tests/e2e/conftest.py`.
 
+Moteur du smoke CLI : `AQR_SMOKE_ASR` = `whisper` (défaut) | `fastconformer`. Le contrôle porte sur
+les modèles de CE moteur (`MODEL_KEYS`) et sur l'interpréteur qui le fait tourner (`AQR_PYTHON`,
+sinon celui de pytest) : FastConformer exige le venv NeMo. Une valeur inconnue est une ressource
+manquante nommée « asr » (échec en strict), jamais un repli silencieux sur Whisper. Le smoke
+navigateur lit `AQR_SMOKE_ASR` puis, à défaut, son ancien nom `AQR_ASR`.
+
 Le smoke navigateur (`web/e2e/browser-smoke.mjs`) réutilise ces contrôles sans les recopier :
     python -m tests.support.smoke_env --needs audio,ffmpeg,models,corpus   # JSON des manques
+Ce module n'importe pas pytest au chargement (l'interpréteur du moteur n'en a pas forcément).
 """
 
 from __future__ import annotations
@@ -15,6 +22,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -30,11 +38,23 @@ RECITER = "Alafasy_128kbps"
 SURAH = 112
 VERSES = 4
 NEEDS = ("audio", "ffmpeg", "models", "corpus")
+ENGINE_NEED = "engine"  # interpréteur du moteur choisi : demandé explicitement, pas par défaut
+ASR_ENV = "AQR_SMOKE_ASR"
+DEFAULT_ASR = "whisper"
+MODELS_LOCK = ROOT / "models" / "LOCK.json"
 # `aqr recognize --asr <asr>` charge ce modèle ASR et le segmenteur de récitation par défaut.
 MODEL_KEYS = {
     "whisper": ("whisper-base-quran", "recitation-segmenter"),
     "fastconformer": ("fastconformer-quran", "recitation-segmenter"),
 }
+
+
+# Module qui prouve que l'interpréteur sait faire tourner le moteur.
+ENGINE_MODULE = {"whisper": "transformers", "fastconformer": "nemo"}
+
+
+class UnknownAsr(ValueError):
+    """`AQR_SMOKE_ASR` ne désigne aucun moteur connu."""
 
 
 @dataclass(frozen=True)
@@ -52,6 +72,36 @@ def strict(env: Mapping[str, str] | None = None) -> bool:
     return value.strip().lower() not in _NOT_STRICT
 
 
+def selected_asr(env: Mapping[str, str]) -> str:
+    """Moteur du smoke : `AQR_SMOKE_ASR` (insensible à la casse), `whisper` si absent ou vide."""
+    value = env.get(ASR_ENV, "").strip().lower() or DEFAULT_ASR
+    if value not in MODEL_KEYS:
+        raise UnknownAsr(f"{ASR_ENV}={env.get(ASR_ENV)!r} inconnu ({' | '.join(MODEL_KEYS)})")
+    return value
+
+
+def engine_python(env: Mapping[str, str]) -> str:
+    """Interpréteur qui fait tourner le moteur : `AQR_PYTHON`, sinon celui qui exécute pytest."""
+    return env.get("AQR_PYTHON") or sys.executable
+
+
+def module_problem(python: str, module: str) -> str | None:
+    """Pourquoi `python` ne peut pas servir à `module` (sans l'importer), sinon `None`."""
+    code = "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec(sys.argv[1]) else 1)"
+    try:
+        done = subprocess.run(
+            [python, "-c", code, module], capture_output=True, timeout=60, check=False
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return f"interpréteur inexécutable : {exc}"
+    if done.returncode != 0:
+        return f"module {module!r} introuvable"
+    return None
+
+
+_DEFAULT_MODULE_CHECK = module_problem  # `find_missing(module_problem=...)` masque le nom
+
+
 def corpus_dir(env: Mapping[str, str]) -> Path:
     return Path(env.get("AQR_CORPUS_DIR") or ROOT / "data" / "corpus")
 
@@ -65,24 +115,57 @@ def find_missing(
     needs: Sequence[str] = NEEDS,
     *,
     which: Callable[[str], str | None] | None = None,
-    models_lock: Path = ROOT / "models" / "LOCK.json",
-    asr: str = "whisper",
+    models_lock: Path | None = None,
+    asr: str | None = None,
+    module_problem: Callable[[str, str], str | None] | None = None,
 ) -> list[Missing]:
-    """Toutes les ressources manquantes parmi `needs`, avec la raison de chacune."""
-    if asr not in MODEL_KEYS:
+    """Toutes les ressources manquantes parmi `needs`, avec la raison de chacune.
+
+    `asr` : moteur explicite (inconnu : `ValueError`) ; sinon celui de `AQR_SMOKE_ASR` dans `env`
+    (inconnu : ressource « asr » manquante, les contrôles propres au moteur sont alors omis)."""
+    unknown_asr: Missing | None = None
+    if asr is None:
+        try:
+            asr = selected_asr(env)
+        except UnknownAsr as exc:
+            unknown_asr = Missing("asr", str(exc))
+            asr = DEFAULT_ASR  # seulement pour les contrôles indépendants du moteur
+    elif asr not in MODEL_KEYS:
         raise ValueError(f"asr inconnu : {asr!r} ({' | '.join(MODEL_KEYS)})")
+    engine_asr = asr
     find_executable = which or shutil.which
+    check_module = module_problem or _DEFAULT_MODULE_CHECK
+    lock_path = models_lock or MODELS_LOCK
     checks: dict[str, Callable[[], str | None]] = {
         "audio": lambda: _audio_problem(env),
         "ffmpeg": lambda: None if find_executable("ffmpeg") else "ffmpeg absent du PATH",
-        "models": lambda: _models_problem(env, models_lock, MODEL_KEYS[asr]),
+        "models": lambda: _models_problem(env, lock_path, MODEL_KEYS[engine_asr]),
         "corpus": lambda: _corpus_problem(env),
+        ENGINE_NEED: lambda: _engine_problem(env, engine_asr, check_module),
     }
     unknown = set(needs) - checks.keys()
     if unknown:
         raise ValueError(f"ressource inconnue : {sorted(unknown)}")
-    problems = ((name, checks[name]()) for name in needs)
-    return [Missing(name, reason) for name, reason in problems if reason]
+    engine_specific = {"models", ENGINE_NEED}
+    wanted = [n for n in needs if not (unknown_asr and n in engine_specific)]
+    problems = ((name, checks[name]()) for name in wanted)
+    found = [Missing(name, reason) for name, reason in problems if reason]
+    return [unknown_asr, *found] if unknown_asr else found
+
+
+def _engine_problem(
+    env: Mapping[str, str], asr: str, check_module: Callable[[str, str], str | None]
+) -> str | None:
+    python = engine_python(env)
+    problem = check_module(python, ENGINE_MODULE[asr])
+    if problem is None:
+        return None
+    hint = (
+        "FastConformer exige le venv NeMo : AQR_PYTHON=<venv>/bin/python"
+        if asr == "fastconformer"
+        else "AQR_PYTHON=<interpréteur du moteur>"
+    )
+    return f"{asr} : {problem} pour l'interpréteur {python} ({hint})"
 
 
 def _audio_problem(env: Mapping[str, str]) -> str | None:
@@ -154,7 +237,11 @@ def unavailable(missing: Sequence[Missing]) -> NoReturn:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Lister les ressources de smoke manquantes")
     parser.add_argument("--needs", default=",".join(NEEDS))
-    parser.add_argument("--asr", default="whisper", choices=tuple(MODEL_KEYS))
+    parser.add_argument(
+        "--asr",
+        choices=tuple(MODEL_KEYS),
+        help=f"défaut : ${ASR_ENV}, sinon {DEFAULT_ASR}",
+    )
     args = parser.parse_args(argv)
     missing = find_missing(os.environ, tuple(n for n in args.needs.split(",") if n), asr=args.asr)
     print(json.dumps([asdict(m) for m in missing], ensure_ascii=False))

@@ -101,12 +101,33 @@ qui a produit les sorties, sinon le facteur temps réel n'est pas lisible.
 **Bloc `exactitude`** : `localisation` (= `aggregate` ci-dessus, même objet), `identification`,
 `transcription`.
 
-**Provenance** (haut du rapport) : `git` (SHA + arbre modifié), `models` (révision et SHA-256 de chaque
+**Provenance** (haut du rapport) : `git` (SHA + arbre modifié du checkout qui LANCE `evaluate.py`), `models` (révision et SHA-256 de chaque
 fichier de `models/LOCK.json` + empreinte du LOCK), `manifest` (empreinte du fichier + des cas
 évalués), `split`, `final`, `thresholds` (rattachement, décodeur lu dans les sorties, seuil
 d'effectif), `normalization` (versions `aqr.normalize/N` et `aqr.normalize-strict/N`, empreinte de ces
-versions + dictionnaire imla'i),
-`warnings`.
+versions + dictionnaire imla'i), `engine` (le bloc `engine` des sorties : un seul moteur par
+rapport), `run` (voir ci-dessous : son `git` est le code qui a PRODUIT les prédictions, à ne pas
+confondre avec `git`), `warnings`.
+
+**Entrée : un lot, pas un dossier quelconque.** `scripts/recognize_batch.py` écrit `run.json`
+(`aqr.recognition-run/1` : `status` `running` → `complete` / `partial` / `interrupted`, moteur,
+options, SHA git, empreinte du manifeste, `planned`, `done` = cas → sha256 du fichier écrit,
+`failed` = cas → message). `evaluate.py` ne lit un cas que s'il est dans `done` avec la même
+empreinte ; il refuse (code 2, rien d'écrit) un lot absent ou non `complete`, et un dossier dont les
+sorties mêlent deux moteurs. Un cas évaluable sans prédiction (hors lot, en échec, fichier modifié)
+est listé (`missing_predictions` / `refused`) et le code de sortie est 1. `--allow-unverified-run`
+lit d'anciennes prédictions d'un dossier SANS `run.json` (un `run.json` existant non complet,
+illisible ou incohérent reste refusé, flag ou non) : le rapport porte alors
+`run: {verified: false, reason}` et un avertissement. Un `run.json` doit être cohérent : `done` et
+`failed` ne contiennent que des cas planifiés, sans cas commun ; `complete` = tous les cas planifiés
+dans `done`, aucun dans `failed`. `--transcripts` : le `engine` déclaré par chaque transcription doit
+concorder (champ par champ, un bloc partiel suffit, un bloc vide est refusé) avec le moteur du lot,
+sinon code 2. `--baseline` liste dans `context_changes` le moteur, `git` (checkout d'évaluation),
+`git du lot` (`run.git`) et `options du lot` (`run.options`). Un lot prend un verrou `flock` non
+bloquant sur `<out-dir>/.lock` (un seul lot à la fois par dossier ; le fichier reste en place).
+Code : `src/aqr/eval/run.py` · tests : `test_eval_run.py`, `test_recognize_batch.py`.
+**Plate-forme** : `aqr.eval.run` importe `fcntl` (verrou de dossier) ; `scripts/evaluate.py` et
+`scripts/recognize_batch.py` sont donc réservés à Unix (Linux, macOS), comme `resource` déjà utilisé par le lot.
 
 ### Identification (sans horodatage)
 

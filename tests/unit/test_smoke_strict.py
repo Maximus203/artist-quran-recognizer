@@ -132,3 +132,47 @@ def test_the_summary_names_the_e2e_skip_even_with_other_skips(
     banner = out.split("smoke e2e : NON EXÉCUTÉ")[1].split("short test summary")[0]
     assert "test_cli_smoke.py" in banner
     assert "skip hors e2e" not in banner
+
+
+# --- moteur du smoke CLI : AQR_SMOKE_ASR (whisper par défaut | fastconformer) -----------------
+
+
+def test_an_unknown_asr_fails_in_strict_mode_and_names_the_accepted_values(
+    tmp_path: Path, empty_audio_dir: str
+) -> None:
+    done = _run_smoke(tmp_path, AQR_AUDIO_DIR=empty_audio_dir, AQR_SMOKE_ASR="vosk")
+    out = done.stdout + done.stderr
+    assert done.returncode != 0, out
+    assert "AQR_SMOKE_ASR" in out and "vosk" in out
+    assert "whisper | fastconformer" in out
+    assert "skipped" not in out
+
+
+def test_an_unknown_asr_only_skips_with_the_explicit_zero_and_says_so(
+    tmp_path: Path, empty_audio_dir: str
+) -> None:
+    done = _run_smoke(
+        tmp_path, AQR_AUDIO_DIR=empty_audio_dir, AQR_SMOKE_ASR="vosk", AQR_SMOKE_STRICT="0"
+    )
+    out = done.stdout + done.stderr
+    assert done.returncode == 0, out
+    assert "NON EXÉCUTÉ" in out and "vosk" in out
+
+
+def test_fastconformer_without_the_nemo_interpreter_fails_with_a_clear_message(
+    tmp_path: Path, empty_audio_dir: str
+) -> None:
+    stub = tmp_path / "python-sans-nemo"  # un interpréteur qui ne trouve aucun module
+    stub.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    stub.chmod(0o755)
+    done = _run_smoke(
+        tmp_path,
+        AQR_AUDIO_DIR=empty_audio_dir,
+        AQR_SMOKE_ASR="fastconformer",
+        AQR_PYTHON=str(stub),
+    )
+    out = done.stdout + done.stderr
+    assert done.returncode != 0, out
+    assert "engine" in out and "nemo" in out and str(stub) in out
+    assert "AQR_PYTHON" in out  # dit quel interpréteur fournir
+    assert "skipped" not in out

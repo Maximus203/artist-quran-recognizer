@@ -4,9 +4,14 @@
     python scripts/evaluate.py --predictions sorties/ --split dev --min-reference-verses 50 \
         [--transcripts transcriptions/] [--baseline rapport-precedent.json] --out rapport-dev.json
 
-`sorties/` contient un JSON par cas, nommé `<id>.json`. Seuls les cas `annote` avec
-`annotation.by: human` et `reviewed_by` sont évalués ; les autres sont listés avec leur raison,
-jamais comptés. Aucun cas annoté : « aucune métrique », code de sortie non nul, rien d'inventé.
+`sorties/` contient un JSON par cas, nommé `<id>.json`, et le `run.json` du lot qui les a écrits
+(`scripts/recognize_batch.py`). Un cas n'est lu que s'il figure dans `run.json.done` avec la même
+empreinte sha256 ; un lot absent, non `complete` ou mêlant deux moteurs est REFUSÉ (code 2, rien
+n'est écrit). `--allow-unverified-run` lit d'anciennes prédictions d'un dossier SANS run.json (un
+run.json existant non complet ou illisible reste refusé, flag ou non) : c'est alors écrit dans le
+rapport (`run: {verified: false, reason}`) et dans ses avertissements.
+Seuls les cas `annote` avec `annotation.by: human` et `reviewed_by` sont évalués ; les autres sont
+listés avec leur raison, jamais comptés. Aucun cas annoté : « aucune métrique », code non nul.
 Le jeu `test` est réservé : `--split test` exige `--final` (mesure finale, pas de réglage).
 
 Le rapport (`aqr.evaluation/2`) a deux blocs : `vitesse` (temps mur, facteur temps réel, pic de RAM,
@@ -16,11 +21,13 @@ faux positifs sur silence et hors cible, WER/CER en deux variantes nommées), pl
 git, empreintes des modèles, manifeste, split, seuils, version de normalisation) et des
 avertissements.
 `--transcripts DIR` (un `<id>.transcript.json` par cas, sortie brute de l'ASR) active le WER/CER ;
+le moteur déclaré par chaque transcription doit concorder avec celui du lot (code 2 sinon) ;
 `--baseline rapport.json` compare à un rapport précédent et REFUSE si les manifestes diffèrent.
 Définitions : docs/EVALUATION-METRICS.md.
 
-Codes de sortie : 0 ok ; 1 rien d'évalué ou un cas refusé ; 2 usage / jeu test sans --final /
-comparaison refusée.
+Codes de sortie : 0 ok ; 1 rien d'évalué, un cas refusé ou une prédiction manquante pour un cas
+évaluable ; 2 usage / jeu test sans --final / comparaison refusée / run.json absent (sans le flag),
+illisible ou non complet / dossier mêlant plusieurs moteurs / transcription d'un autre moteur.
 """
 
 from __future__ import annotations
@@ -32,7 +39,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, TextIO
 
-from aqr.corpus.checksums import CorpusChecksumError
+from aqr.corpus.checksums import CorpusChecksumError, sha256_of
 from aqr.corpus.imlai_corrections import build_word_corrections, load_simple_clean_words
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.data.config import DataConfig
@@ -49,7 +56,12 @@ from aqr.eval.metrics import (
     aggregate,
     evaluate_recognition,
 )
-from aqr.eval.recognition import RecognitionError, load_recognition
+from aqr.eval.recognition import (
+    Recognition,
+    RecognitionError,
+    load_recognition,
+    parse_recognition_text,
+)
 from aqr.eval.report import (
     BaselineRefused,
     compare_reports,
@@ -59,6 +71,7 @@ from aqr.eval.report import (
     models_state,
     speed_block,
 )
+from aqr.eval.run import RunError, RunMissing, RunRecord, load_complete_run, prediction_file
 from aqr.eval.transcription import (
     NORMALIZATION_VERSION,
     STRICT_NORMALIZATION_VERSION,
@@ -79,6 +92,10 @@ REPORT_SCHEMA = "aqr.evaluation/2"
 NO_METRIC = "aucun cas annoté par un humain : aucune métrique"
 WARNING_TAJWID = "identification de verset != validation du tajwid"
 WARNING_EVERYAYAH = "plafond optimiste si audio EveryAyah"
+WARNING_UNVERIFIED_RUN = (
+    "lot de prédictions non vérifié (--allow-unverified-run) : origine, moteur et intégrité "
+    "des fichiers non garantis"
+)
 DATA = DataConfig()
 
 
@@ -134,6 +151,12 @@ def _parser() -> argparse.ArgumentParser:
         help="empreintes des modèles écrites dans le rapport",
     )
     parser.add_argument(
+        "--allow-unverified-run",
+        action="store_true",
+        help="lit un dossier SANS run.json (anciennes prédictions) ; ne s'applique pas à un "
+        "run.json existant ; tracé dans le rapport",
+    )
+    parser.add_argument(
         "--baseline",
         type=Path,
         help="rapport précédent à comparer ; refusé si le manifeste, le split ou la normalisation "
@@ -164,6 +187,48 @@ def _decoder_thresholds(decoders: Mapping[str, Mapping[str, Any]]) -> dict[str, 
     return {"heterogeneous": True, "by_case": {k: dict(v) for k, v in decoders.items()}}
 
 
+def _read_recognition(path: Path, listed_sha: str | None) -> Recognition:
+    """Lit une prédiction. Avec `listed_sha` (empreinte de `run.json.done`), ce sont les octets
+    lus ICI qui sont vérifiés puis analysés : un fichier remplacé depuis le lot est refusé."""
+    if listed_sha is None:
+        return load_recognition(path)
+    try:
+        data = path.read_bytes()
+        actual = sha256_of(data)
+        if actual != listed_sha:
+            raise RecognitionError(
+                f"sha256 du fichier ({actual[:12]}…) différent de celui de run.json "
+                f"({listed_sha[:12]}…) : fichier modifié ou remplacé depuis le lot"
+            )
+        return parse_recognition_text(data.decode("utf-8"), str(path))
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RecognitionError(f"{path} : {exc}") from exc
+
+
+def _mixed_engines(engines: Mapping[str, Mapping[str, Any]], run: RunRecord | None) -> str | None:
+    """Les moteurs distincts du dossier (seuls les champs qui diffèrent, avec les cas concernés)
+    s'il y en a plusieurs, sinon `None`."""
+    groups: dict[str, tuple[Mapping[str, Any], list[str]]] = {}
+    sources = [(case_id, engine) for case_id, engine in engines.items()]
+    if run is not None and run.engine is not None:
+        sources.append(("run.json", run.engine))
+    for source, engine in sources:
+        key = json.dumps(engine, sort_keys=True, ensure_ascii=False)
+        groups.setdefault(key, (engine, []))[1].append(source)
+    if len(groups) < 2:
+        return None
+    members = [engine for engine, _ in groups.values()]
+    varying = sorted(
+        {k for engine in members for k in engine}
+        - {k for k in members[0] if all(e.get(k) == members[0][k] for e in members)}
+    )
+    return " ; ".join(
+        f"{', '.join(f'{k}={engine.get(k)}' for k in varying)} "
+        f"({', '.join(ids[:3])}{', …' if len(ids) > 3 else ''})"
+        for engine, ids in groups.values()
+    )
+
+
 def _load_reference(
     args: argparse.Namespace,
     corpus: WordSource | None,
@@ -179,16 +244,41 @@ def _load_reference(
     return corpus, corrections if corrections is not None else {}
 
 
+class TranscriptEngineMismatch(Exception):
+    """Des transcriptions viennent d'un autre moteur que celui du lot : mesure refusée (code 2)."""
+
+
+def _engine_disagreement(
+    declared: Mapping[str, Any], lot_engine: Mapping[str, Any] | None
+) -> str | None:
+    """Pourquoi le moteur déclaré par une transcription n'est pas celui du lot, sinon `None`.
+
+    Le bloc `engine` d'une transcription (ASR seul, p. ex.) peut être un sous-ensemble de celui du
+    lot : chaque champ déclaré doit être égal. Un bloc vide ne prouve rien : refusé."""
+    if lot_engine is None:
+        return None
+    if not declared:
+        return "transcription sans moteur déclaré (engine vide) : non vérifiable"
+    differing = sorted(k for k, v in declared.items() if lot_engine.get(k) != v)
+    if not differing:
+        return None
+    return ", ".join(
+        f"{k} : {declared[k]!r} (transcription) ≠ {lot_engine.get(k)!r} (lot)" for k in differing
+    )
+
+
 def _score_transcripts(
     cases: list[AudioCase],
     directory: Path,
     corpus: WordSource,
     corrections: Mapping[str, str],
+    lot_engine: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, float]]:
     per_variant: dict[str, list[TranscriptScore]] = {v: [] for v in VARIANTS}
     per_case: list[dict[str, Any]] = []
     missing: list[str] = []
     refused: list[dict[str, str]] = []
+    foreign: list[str] = []
     peaks: dict[str, float] = {}
     for case in cases:
         if not case.expected:
@@ -208,12 +298,18 @@ def _score_transcripts(
         except (TranscriptError, ValueError) as exc:
             refused.append({"id": case.id, "reason": str(exc)})
             continue
+        disagreement = _engine_disagreement(transcript.engine, lot_engine)
+        if disagreement is not None:
+            foreign.append(f"{case.id} ({disagreement})")
+            continue
         scores = {v: score_transcript(reference, transcript.text, corrections, v) for v in VARIANTS}
         for variant, score in scores.items():
             per_variant[variant].append(score)
         if transcript.peak_rss_mb is not None:
             peaks[case.id] = transcript.peak_rss_mb
         per_case.append({"case_id": case.id, **{v: s.to_dict() for v, s in scores.items()}})
+    if foreign:
+        raise TranscriptEngineMismatch("; ".join(foreign))
     n_scored = len(per_case)
     block: dict[str, Any] = {
         "measured": n_scored > 0,
@@ -319,6 +415,29 @@ def main(
         except (OSError, ValueError) as exc:
             print(f"Refusé : baseline illisible {args.baseline} : {exc}", file=stderr)
             return 2
+    run: RunRecord | None = None
+    unverified_reason: str | None = None
+    try:
+        run = load_complete_run(args.predictions)
+    except RunMissing as exc:
+        if not args.allow_unverified_run:
+            print(
+                f"Refusé : {exc}. Pour lire d'anciennes prédictions SANS run.json, relancer avec "
+                "--allow-unverified-run (tracé dans le rapport).",
+                file=stderr,
+            )
+            return 2
+        unverified_reason = str(exc)
+    except (
+        RunError
+    ) as exc:  # run.json existant : le flag ne s'applique qu'à un dossier SANS run.json
+        note = (
+            " --allow-unverified-run ne s'applique qu'à un dossier SANS run.json."
+            if (args.allow_unverified_run)
+            else ""
+        )
+        print(f"Refusé : {exc}.{note}", file=stderr)
+        return 2
     reference: tuple[WordSource, Mapping[str, str]] | None = None
     if args.transcripts is not None:
         try:
@@ -337,6 +456,7 @@ def main(
     engines: dict[str, Any] = {}
     decoders: dict[str, Mapping[str, Any]] = {}
     missing: list[str] = []
+    unlisted: list[str] = []
     refused: list[dict[str, str]] = []
     for case in in_split:
         if not has_trusted_truth(case):
@@ -347,12 +467,20 @@ def main(
                 }
             )
             continue
-        path = args.predictions / f"{case.id}.json"
-        if not path.exists():
+        path = prediction_file(args.predictions, case.id)
+        listed_sha: str | None = None
+        if run is not None:
+            listed_sha = run.done.get(case.id)
+            if listed_sha is None:  # pas écrit par CE lot : un fichier éventuel n'est jamais lu
+                if path.exists():
+                    unlisted.append(case.id)
+                missing.append(case.id)
+                continue
+        elif not path.exists():
             missing.append(case.id)
             continue
         try:
-            recognition = load_recognition(path)
+            recognition = _read_recognition(path, listed_sha)
             result = evaluate_recognition(case, recognition, policy=policy)
             identification = evaluate_identification(case, recognition.intervals)
         except (RecognitionError, EvaluationRefused) as exc:
@@ -363,6 +491,15 @@ def main(
         evaluated.append(case)
         engines[case.id] = dict(recognition.engine)
         decoders[case.id] = dict(recognition.decoder)
+
+    mixed = _mixed_engines(engines, run)
+    if mixed is not None:
+        print(
+            f"Refusé : le dossier de prédictions mêle plusieurs moteurs : {mixed}. Une "
+            "évaluation porte sur un seul moteur ; séparer les sorties par moteur.",
+            file=stderr,
+        )
+        return 2
 
     transcription: dict[str, Any] = {
         "measured": False,
@@ -375,13 +512,47 @@ def main(
     }
     peaks: dict[str, float] = {}
     if args.transcripts is not None and reference is not None:
-        transcription, peaks = _score_transcripts(
-            evaluated, args.transcripts, reference[0], reference[1]
-        )
+        try:
+            transcription, peaks = _score_transcripts(
+                evaluated,
+                args.transcripts,
+                reference[0],
+                reference[1],
+                next(iter(engines.values()), None),
+            )
+        except TranscriptEngineMismatch as exc:
+            print(
+                f"Refusé : transcription(s) d'un autre moteur que celui du lot : {exc}. Les "
+                "transcriptions doivent venir du même moteur que les prédictions.",
+                file=stderr,
+            )
+            return 2
 
     agg = aggregate(results, min_reference_verses=args.min_reference_verses) if results else None
     studio = [c.id for c in evaluated if _is_studio_case(c)]
     warnings = [WARNING_TAJWID, WARNING_EVERYAYAH]
+    manifest_info = manifest_identity(args.manifest, [(c.id, c.sha256, c.split) for c in evaluated])
+    run_block: dict[str, Any]
+    if run is not None:
+        run_block = {
+            "verified": True,
+            "status": run.status.value,
+            "asr": run.asr,
+            "git": dict(run.git),
+            "manifest_sha256": run.manifest_sha256,
+            "n_planned": len(run.planned),
+            "n_done": len(run.done),
+            "options": dict(run.options),
+            "unlisted": unlisted,
+        }
+        if run.manifest_sha256 and run.manifest_sha256 != manifest_info["sha256"]:
+            warnings.append(
+                "manifeste modifié depuis le lot (empreinte différente de run.json) : chaque "
+                "prédiction reste vérifiée par le sha256 de son audio"
+            )
+    else:
+        run_block = {"verified": False, "reason": unverified_reason}
+        warnings.append(f"{WARNING_UNVERIFIED_RUN} : {unverified_reason}")
     if studio:
         warnings.append(
             f"{len(studio)} cas sur {len(evaluated)} sont de l'audio EveryAyah / mixé (studio) : "
@@ -395,9 +566,9 @@ def main(
         "min_reference_verses": args.min_reference_verses,
         "git": git_state(ROOT),
         "models": models_state(args.models_lock),
-        "manifest": manifest_identity(
-            args.manifest, [(c.id, c.sha256, c.split) for c in evaluated]
-        ),
+        "manifest": manifest_info,
+        "engine": next(iter(engines.values()), None),
+        "run": run_block,
         "thresholds": {
             "match": {"min_overlap": policy.min_overlap},
             "decoder": _decoder_thresholds(decoders),
@@ -444,6 +615,12 @@ def main(
         print(f"Refusé : transcription {item['id']} : {item['reason']}", file=stderr)
     if missing:
         print(f"Prédictions manquantes (cas non évalués) : {', '.join(missing)}", file=stderr)
+    if unlisted:
+        print(
+            "Fichiers ignorés (absents de run.json, laissés par un autre run ?) : "
+            + ", ".join(unlisted),
+            file=stderr,
+        )
     if transcription["missing_transcripts"]:
         print(
             "Transcriptions manquantes (WER/CER non calculé) : "
@@ -454,7 +631,7 @@ def main(
         print(report["message"], file=stderr)
         return 1
     _summary(report, len(skipped), stdout)
-    return 1 if refused or transcription["refused"] else 0
+    return 1 if refused or missing or transcription["refused"] else 0
 
 
 if __name__ == "__main__":

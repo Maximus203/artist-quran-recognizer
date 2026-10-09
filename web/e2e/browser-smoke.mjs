@@ -18,7 +18,10 @@
  *   AQR_SMOKE_URL       serveur déjà lancé ; sinon `next start` est lancé (npm run build requis)
  *   AQR_SMOKE_TOKEN     jeton d'accès si le serveur est en mode test distant
  *   AQR_SMOKE_TIMEOUT_S délai max du moteur (défaut 900) ; une session `failed` échoue aussitôt
- * Le moteur lit AQR_PYTHON, AQR_MODELS_DIR, AQR_CORPUS_DIR et AQR_ASR (défaut ici : whisper).
+ * Le moteur lit AQR_PYTHON (interpréteur du moteur : le venv NeMo pour fastconformer),
+ * AQR_MODELS_DIR, AQR_CORPUS_DIR et AQR_ASR. Choix du moteur : AQR_SMOKE_ASR (même nom que le smoke
+ * CLI), sinon AQR_ASR (nom historique, inchangé), sinon whisper ; scripts/smoke_e2e.sh pose les deux
+ * au même moteur.
  */
 import { spawn } from "node:child_process";
 import { accessSync, constants, existsSync } from "node:fs";
@@ -39,7 +42,7 @@ import {
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = path.resolve(WEB, "..");
 const python = process.env.AQR_PYTHON || "python";
-const asr = process.env.AQR_ASR || "whisper";
+const asr = process.env.AQR_SMOKE_ASR || process.env.AQR_ASR || "whisper";
 const pythonEnv = { ...process.env, PYTHONPATH: path.join(ROOT, "src") };
 
 /** Lance Python depuis la racine du dépôt (modules tests.support.* et scripts.*). */
