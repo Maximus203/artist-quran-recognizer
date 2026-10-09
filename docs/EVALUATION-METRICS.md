@@ -126,6 +126,8 @@ sinon code 2. `--baseline` liste dans `context_changes` le moteur, `git` (checko
 `git du lot` (`run.git`) et `options du lot` (`run.options`). Un lot prend un verrou `flock` non
 bloquant sur `<out-dir>/.lock` (un seul lot à la fois par dossier ; le fichier reste en place).
 Code : `src/aqr/eval/run.py` · tests : `test_eval_run.py`, `test_recognize_batch.py`.
+**Plate-forme** : `aqr.eval.run` importe `fcntl` (verrou de dossier) ; `scripts/evaluate.py` et
+`scripts/recognize_batch.py` sont donc réservés à Unix (Linux, macOS), comme `resource` déjà utilisé par le lot.
 
 ### Identification (sans horodatage)
 

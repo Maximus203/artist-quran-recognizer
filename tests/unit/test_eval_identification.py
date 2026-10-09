@@ -203,8 +203,9 @@ def test_inferred_et_uncertain_ne_comptent_dans_aucun_indicateur_d_identificatio
 
 
 def test_le_denominateur_fusionne_les_versets_attendus_consecutifs_identiques():
-    # un verset récité deux fois de suite (scénario « répétition ») compte une fois ici, alors que
-    # `n_reference_verses` du bloc de localisation compte chaque récitation : 232 contre 216 au dev
+    # deux entrées consécutives du MÊME verset comptent une fois ici (waqf : un verset annoté en
+    # deux plages de mots ; répétition : un verset puis la reprise de ses derniers mots), alors
+    # que `n_reference_verses` du bloc de localisation compte chaque entrée : 232 contre 216 au dev
     case = _case([_exp("67:1", 0, 5), _exp("67:1", 6, 11), _exp("67:2", 12, 17)])
     result = evaluate_identification(case, [_verse("67:1", 0, 5)])
     assert result.n_expected == 2 and result.expected_refs == (
