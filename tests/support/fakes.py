@@ -6,7 +6,8 @@ import wave
 from array import array
 from pathlib import Path
 
-from aqr.domain.models import Riwaya, TimeSpan
+from aqr.corpus.normalize import normalize_arabic
+from aqr.domain.models import Riwaya, TimeSpan, VerseRef
 from aqr.domain.ports import AudioClip, TranscribedWord, Transcript
 
 SAMPLE_RATE = 16000
@@ -86,3 +87,33 @@ class EnergySegmenter:
             else:
                 spans.append([start, end])
         return [TimeSpan(a, b) for a, b in spans]
+
+
+# Texte synthétique (noms de lettres), PAS du Coran : le corpus Tanzil n'est pas redistribué dans
+# ce dépôt. Même forme que le Mushaf : mots vocalisés, marque de pause isolée (ۖ) entre deux mots.
+_FAKE_VERSES: dict[VerseRef, str] = {
+    VerseRef(112, 1): "أَلِفٌ بَاءٌ جِيمٌ دَالٌ",
+    VerseRef(112, 2): "هَاءٌ وَاوٌ ۖ زَايٌ",
+    VerseRef(112, 3): "حَاءٌ",
+    VerseRef(112, 4): "طَاءٌ يَاءٌ",
+}
+
+
+class FakeCorpus:
+    """Port `CorpusRepository` factice : mêmes règles de tokenisation que `TanzilCorpusRepository`
+    (`words()` exclut les marques de pause, `text()` les garde), sans fichier ni checksum."""
+
+    riwaya = Riwaya.HAFS
+    version = "fake-corpus"
+
+    def __init__(self, texts: dict[VerseRef, str] | None = None) -> None:
+        self._texts = dict(_FAKE_VERSES if texts is None else texts)
+
+    def text(self, ref: VerseRef) -> str:
+        return self._texts[ref]
+
+    def words(self, ref: VerseRef) -> tuple[str, ...]:
+        return tuple(w for w in self._texts[ref].split() if normalize_arabic(w))
+
+    def all_refs(self) -> tuple[VerseRef, ...]:
+        return tuple(sorted(self._texts))
