@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import aqr.eval.transcription as transcription_module
 from aqr.corpus.checksums import CorpusChecksumError
 from aqr.corpus.imlai_corrections import build_word_corrections, load_simple_clean_words
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
@@ -86,15 +87,78 @@ def test_variantes_se_distinguent_sur_la_graphie_imlai():
     assert strict.word_total == tolerante.word_total == 3
 
 
-def test_tolerante_ignore_les_espaces_pour_le_cer_pas_strict():
+@pytest.mark.parametrize("variant", VARIANTS)
+def test_cer_ignore_les_espaces_dans_les_deux_variantes(variant):
+    # Décision (B3, correctif strict-lettres) : le CER compte les lettres SANS espaces dans les deux
+    # variantes, pour que l'écart tolérante/stricte ne vienne que des replis de lettres. Une coupure
+    # de mots différente coûte au WER, jamais au CER.
     ref = reference_words([_exp("112:2")], _Corpus())
     hyp = "الله الصمد"
     glued = "اللهالصمد"
-    assert score_transcript(ref, glued, CORRECTIONS, "tolerante").letter_errors == 0
-    assert score_transcript(ref, glued, CORRECTIONS, "strict-lettres").letter_errors == 1
+    assert score_transcript(ref, glued, CORRECTIONS, variant).letter_errors == 0
+    assert score_transcript(ref, glued, CORRECTIONS, variant).letter_total == 9
     # le WER, lui, voit un mot de moins et une substitution
-    assert score_transcript(ref, glued, CORRECTIONS, "tolerante").word_errors == 2
-    assert score_transcript(ref, hyp, CORRECTIONS, "tolerante").word_errors == 0
+    assert score_transcript(ref, glued, CORRECTIONS, variant).word_errors == 2
+    assert score_transcript(ref, hyp, CORRECTIONS, variant).word_errors == 0
+
+
+def test_strict_ne_tolere_pas_ta_marbuta_contre_ha():
+    ref = ("ٱلْجَنَّةَ",)  # 2:35 « الجنة » (ة)
+    for hyp in ("الجنة", "ٱلْجَنَّةَ"):
+        for variant in VARIANTS:
+            assert score_transcript(ref, hyp, CORRECTIONS, variant).word_errors == 0
+    tolerante = score_transcript(ref, "الجنه", CORRECTIONS, "tolerante")
+    strict = score_transcript(ref, "الجنه", CORRECTIONS, "strict-lettres")
+    assert tolerante.word_errors == 0 and tolerante.letter_errors == 0
+    assert strict.word_errors == 1 and strict.letter_errors == 1
+    assert strict.word_total == tolerante.word_total == 1
+    assert strict.letter_total == tolerante.letter_total == 5  # ة et ه comptent chacune une lettre
+
+
+@pytest.mark.parametrize(
+    "reference,hypothesis",
+    [
+        ("أَحَدٌ", "احد"),  # hamza sur alef
+        ("إِيَّاكَ", "اياك"),  # hamza sous alef
+        ("آمَنُوا", "امنوا"),  # alef madda
+        ("مُؤْمِنٌ", "مومن"),  # hamza sur waw
+        ("سُئِلَ", "سيل"),  # hamza sur ya
+        ("هُدًى", "هدي"),  # alef maqsura / ya
+    ],
+)
+def test_strict_compte_chaque_repli_interdit_que_la_tolerante_absorbe(reference, hypothesis):
+    ref = (reference,)
+    tolerante = score_transcript(ref, hypothesis, {}, "tolerante")
+    strict = score_transcript(ref, hypothesis, {}, "strict-lettres")
+    assert tolerante.word_errors == 0 and tolerante.letter_errors == 0
+    assert strict.word_errors == 1 and strict.letter_errors == 1
+
+
+def test_chaque_variante_a_son_normaliseur_son_tokenizer_et_sa_description():
+    table = transcription_module.VARIANT_NORMALIZERS
+    assert set(table) == set(VARIANTS) == set(transcription_module.VARIANT_DESCRIPTIONS)
+    tolerante, strict = table["tolerante"], table["strict-lettres"]
+    assert tolerante.normalize("أَحَدٌ") == "احد" and strict.normalize("أَحَدٌ") == "أحد"
+    assert tolerante.tokenize("ٱللَّهُ أَحَدٌ") == ["الله", "احد"]
+    assert strict.tokenize("ٱللَّهُ أَحَدٌ") == ["الله", "أحد"]
+    for description in transcription_module.VARIANT_DESCRIPTIONS.values():
+        assert "sans espaces" in description  # le CER compte les mêmes lettres dans les deux
+
+
+def test_strict_alef_wasla_de_l_hypothese_vaut_alef():
+    ref = reference_words([_exp("112:2")], _Corpus())  # « ٱللَّهُ ٱلصَّمَدُ »
+    for hyp in ("ٱللَّهُ ٱلصَّمَدُ", "الله الصمد"):
+        for variant in VARIANTS:
+            score = score_transcript(ref, hyp, CORRECTIONS, variant)
+            assert score.word_errors == 0 and score.letter_errors == 0
+
+
+def test_strict_est_un_plancher_madda_et_hamza_de_la_graphie_uthmani_comptent():
+    # Uthmani : « ءَامَنَ » (hamza + alef) ; imla'i : « آمن ». Aucun des deux repli n'est permis.
+    ref = ("ءَامَنَ",)
+    assert score_transcript(ref, "آمن", {}, "strict-lettres").word_errors == 1
+    assert score_transcript(ref, "امن", {}, "strict-lettres").word_errors == 1
+    assert score_transcript(ref, "ءامن", {}, "strict-lettres").word_errors == 0
 
 
 def test_erreurs_comptees_et_taux():
@@ -194,3 +258,25 @@ def test_corpus_reel_une_transcription_imlai_coute_moins_en_tolerante_qu_en_stri
     strict = score_transcript(ref, hypothesis, corrections, "strict-lettres")
     assert tolerante.word_errors == 0
     assert strict.word_errors > tolerante.word_errors  # سموت vs سماوات…
+
+
+def test_corpus_reel_la_stricte_est_un_plancher_le_mushaf_recopie_vaut_zero():
+    try:
+        corpus = TanzilCorpusRepository(CORPUS_DIR)
+    except (CorpusChecksumError, OSError):
+        pytest.skip("corpus non téléchargé : lancer `python scripts/fetch_corpus.py` d'abord")
+    simple = load_simple_clean_words(CORPUS_DIR)
+    corrections = build_word_corrections(corpus, simple)
+    for ref_text in ("2:285", "2:29", "1:4"):  # 2:285 porte « ءَامَنَ » (hamza + alef)
+        ref = reference_words([_exp(ref_text)], corpus)
+        mushaf = " ".join(corpus.words(VerseRef.parse(ref_text)))
+        imlai = " ".join(simple[VerseRef.parse(ref_text)])
+        copied = score_transcript(ref, mushaf, corrections, "strict-lettres")
+        assert copied.word_errors == 0 and copied.letter_errors == 0
+        tolerante = score_transcript(ref, imlai, corrections, "tolerante")
+        strict = score_transcript(ref, imlai, corrections, "strict-lettres")
+        assert strict.word_errors >= tolerante.word_errors
+        assert strict.letter_errors >= tolerante.letter_errors
+    ref = reference_words([_exp("2:285")], corpus)
+    imlai = " ".join(simple[VerseRef(2, 285)])
+    assert score_transcript(ref, imlai, corrections, "strict-lettres").letter_errors > 0

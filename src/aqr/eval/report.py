@@ -166,8 +166,10 @@ def compare_reports(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> 
     norm_now, norm_then = current.get("normalization") or {}, baseline.get("normalization") or {}
     if norm_now != norm_then:
         raise BaselineRefused(
-            "normalisation différente (version ou dictionnaire imla'i) : "
-            f"{norm_then.get('version')} ≠ {norm_now.get('version')} ; WER/CER non comparables"
+            "normalisation différente (version tolérante, version stricte ou dictionnaire "
+            f"imla'i) : tolérante {norm_then.get('version')} ≠ {norm_now.get('version')} ou "
+            f"stricte {norm_then.get('strict_version')} ≠ {norm_now.get('strict_version')} ou "
+            "dictionnaire ; WER/CER non comparables"
         )
 
     now = {

@@ -243,6 +243,8 @@ def test_rapport_en_deux_blocs_avec_provenance_et_avertissements(world, capsys):
     assert report["thresholds"]["match"] == {"min_overlap": 0.5}
     assert report["thresholds"]["min_reference_verses"] == 5
     assert report["normalization"]["version"].startswith("aqr.normalize/")
+    # version de la normalisation stricte écrite à part : un rapport d'avant le correctif en manque
+    assert report["normalization"]["strict_version"].startswith("aqr.normalize-strict/")
     assert report["split"] == "dev" and report["manifest"]["sha256"]
     lines = report["warnings"]
     assert "identification de verset != validation du tajwid" in lines
