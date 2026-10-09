@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
+  lstat,
   mkdir,
   readFile,
   rename,
@@ -150,11 +151,12 @@ export async function readReview(id: string): Promise<Review | null> {
     throw e;
   }
 }
+const REVISION_SUFFIX = ".review.json";
 export async function readReviewHistory(id: string): Promise<Review[]> {
   try {
     const dir = path.join(sessionDir(id), "revisions");
     const files = (await readdir(dir))
-      .filter((name) => name.endsWith(".review.json"))
+      .filter((name) => name.endsWith(REVISION_SUFFIX))
       .sort();
     return Promise.all(
       files.map(async (file) =>
@@ -194,18 +196,111 @@ export async function audioPath(id: string): Promise<string> {
   await stat(p);
   return p;
 }
-/** Supprime une session (audio, résultat, revue, exports). Refuse si elle tourne. */
-export async function deleteSession(id: string): Promise<void> {
+/** Refus de supprimer une session qui porte un travail de revue (sans `force`). */
+export class ReviewWorkError extends Error {
+  constructor() {
+    super(
+      "Cette session contient un travail de revue (annotations ou révisions) : ajoute ?force=1 pour la supprimer quand même.",
+    );
+    this.name = "ReviewWorkError";
+  }
+}
+/** Au moins une annotation ou une révision ; une revue illisible compte comme travail. */
+async function hasReviewWork(dir: string): Promise<boolean> {
+  try {
+    const revisions = await readdir(path.join(dir, "revisions"));
+    if (revisions.some((name) => name.endsWith(REVISION_SUFFIX))) return true;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+  }
+  let raw: string;
+  try {
+    raw = await readFile(path.join(dir, "review.json"), "utf8");
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw e;
+  }
+  try {
+    return reviewSchema.parse(JSON.parse(raw)).annotations.length > 0;
+  } catch {
+    return true;
+  }
+}
+/**
+ * Supprime une session (audio, résultat, revue, exports). Refuse si elle tourne,
+ * et refuse si elle porte un travail de revue sauf `force`.
+ */
+export async function deleteSession(
+  id: string,
+  { force = false }: { force?: boolean } = {},
+): Promise<void> {
   const dir = sessionDir(id);
   const session = await readSession(id);
   if (session.state === "running")
     throw new Error("Traitement en cours : annule-le avant de supprimer.");
+  if (!force && (await hasReviewWork(dir))) throw new ReviewWorkError();
   await rm(dir, { recursive: true, force: true });
 }
+/** Plus grand mtime sous `dir` (dossiers compris). Ne suit pas les liens symboliques. */
+async function newestMtimeMs(dir: string): Promise<number> {
+  let newest = (await lstat(dir)).mtimeMs;
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    try {
+      newest = Math.max(
+        newest,
+        entry.isDirectory()
+          ? await newestMtimeMs(full)
+          : (await lstat(full)).mtimeMs,
+      );
+    } catch (e) {
+      // Fichier renommé ou supprimé pendant le parcours (écriture atomique) : ignoré.
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+    }
+  }
+  return newest;
+}
+/** Date interne exploitable : valide et pas dans le futur (horloge fausse, import). */
+function pastTimestampMs(value: unknown, now: number): number {
+  const ms = typeof value === "string" ? Date.parse(value) : Number.NaN;
+  return Number.isFinite(ms) && ms <= now ? ms : 0;
+}
 /**
- * Supprime les sessions inactives depuis plus de `maxAgeSeconds` (dernière
- * écriture de `session.json`). `0` = désactivé. Les sessions en cours sont gardées.
- * Renvoie les identifiants supprimés.
+ * Dernière activité d'une session, en ms : le plus récent entre le mtime de tout
+ * fichier ou dossier du dossier de session (session.json, revue, révisions,
+ * exports, écritures `.tmp`…), `review.updated_at` et `finished_at`. Seul
+ * `session.json` suffisait avant, alors qu'une revue n'écrit que `review.json`.
+ * Les dates internes situées après `now` sont ignorées (le mtime reste compté).
+ * Une lecture impossible ou un JSON corrompu lève : l'appelant ne doit rien supprimer.
+ */
+export async function lastActivityMs(
+  dir: string,
+  now = Date.now(),
+): Promise<number> {
+  const newest = await newestMtimeMs(dir);
+  const session = JSON.parse(
+    await readFile(path.join(dir, "session.json"), "utf8"),
+  ) as Partial<Session>;
+  let reviewedAt = 0;
+  try {
+    const review = reviewSchema.parse(
+      JSON.parse(await readFile(path.join(dir, "review.json"), "utf8")),
+    );
+    reviewedAt = pastTimestampMs(review.updated_at, now);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+  }
+  return Math.max(
+    newest,
+    reviewedAt,
+    pastTimestampMs(session.finished_at, now),
+  );
+}
+/**
+ * Supprime les sessions inactives depuis plus de `maxAgeSeconds` (voir
+ * `lastActivityMs` : une revue récente garde la session ET son historique, qui est
+ * dans le même dossier). `0` = désactivé. Les sessions en cours sont gardées, tout
+ * comme celles dont la lecture échoue. Renvoie les identifiants supprimés.
  */
 export async function cleanupSessions(
   maxAgeSeconds: number,
@@ -223,9 +318,12 @@ export async function cleanupSessions(
   for (const id of ids) {
     try {
       const dir = sessionDir(id);
-      const { mtimeMs } = await stat(path.join(dir, "session.json"));
-      if (now - mtimeMs < maxAgeSeconds * 1000) continue;
+      const active = async () =>
+        now - (await lastActivityMs(dir, now)) < maxAgeSeconds * 1000;
+      if (await active()) continue;
       if ((await readSession(id)).state === "running") continue;
+      // Un PUT de revue a pu écrire depuis la première lecture : relecture juste avant rm.
+      if (await active()) continue;
       await rm(dir, { recursive: true, force: true });
       removed.push(id);
     } catch {
