@@ -43,7 +43,11 @@ _CHUNK_BYTES = 1 << 20
 
 
 def verify_bundle(
-    bundle: Path, source: Path | None = None, *, require_prediction: bool = True
+    bundle: Path,
+    source: Path | None = None,
+    *,
+    require_prediction: bool = True,
+    session_id: str | None = None,
 ) -> dict[str, Any]:
     """Vérifie `bundle` ; renvoie un résumé (session, empreintes, entrées) ou lève ValueError.
 
@@ -52,7 +56,7 @@ def verify_bundle(
     limite ; l'audio est haché par blocs. Une archive hostile ou corrompue donne une ValueError,
     jamais une MemoryError ni une erreur zlib."""
     try:
-        return _verify(bundle, source, require_prediction)
+        return _verify(bundle, source, require_prediction, session_id)
     except (MemoryError, NotImplementedError, zlib.error, zipfile.BadZipFile, RuntimeError) as exc:
         raise ValueError(
             f"pack illisible ou corrompu : {bundle} ({type(exc).__name__}: {exc})"
@@ -74,7 +78,9 @@ def _read_json_entry(archive: zipfile.ZipFile, name: str, limit: int) -> bytes:
     return b"".join(_chunks(archive, name, limit))
 
 
-def _verify(bundle: Path, source: Path | None, require_prediction: bool) -> dict[str, Any]:
+def _verify(
+    bundle: Path, source: Path | None, require_prediction: bool, session_id: str | None
+) -> dict[str, Any]:
     try:
         archive = zipfile.ZipFile(bundle)
     except (zipfile.BadZipFile, OSError) as exc:
@@ -88,6 +94,11 @@ def _verify(bundle: Path, source: Path | None, require_prediction: bool) -> dict
             raise ValueError(f"{MANIFEST_ENTRY} absent du pack")
         _check_declared_size(archive, MANIFEST_ENTRY, MAX_MANIFEST_BYTES)
         manifest = _manifest(_read_json_entry(archive, MANIFEST_ENTRY, MAX_MANIFEST_BYTES))
+        if session_id is not None and manifest["session_id"] != session_id:
+            raise ValueError(
+                f"session_id du manifeste ({manifest['session_id']}) != session attendue "
+                f"({session_id})"
+            )
         entries = [name for name in names if name != MANIFEST_ENTRY]
         listed: dict[str, str] = manifest["files"]
         for name in entries:
@@ -220,13 +231,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Vérifier un pack de revue ZIP")
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--source", type=Path, help="audio de référence indépendant du pack")
+    parser.add_argument("--session-id", help="identifiant de session que le manifeste doit porter")
     parser.add_argument(
         "--allow-no-prediction", action="store_true", help="accepter un pack sans prédiction"
     )
     args = parser.parse_args(argv)
     try:
         summary = verify_bundle(
-            args.bundle, args.source, require_prediction=not args.allow_no_prediction
+            args.bundle,
+            args.source,
+            require_prediction=not args.allow_no_prediction,
+            session_id=args.session_id,
         )
     except ValueError as exc:
         print(f"ÉCHEC pack : {exc}", file=sys.stderr)

@@ -31,6 +31,8 @@ from aqr.domain.models import VerseRef
 from aqr.domain.ports import CorpusRepository
 from aqr.pipeline.output import SCHEMA
 
+# Tanzil place la basmala (4 mots) au début du verset 1 des sourates qui en portent une.
+BASMALA_WORDS = 4
 DEFAULT_CORPUS_DIR = Path(__file__).resolve().parents[2] / "data" / "corpus"
 _STATUSES = {"recognized", "inferred", "uncertain"}
 
@@ -67,9 +69,12 @@ def assert_matches_corpus(
     *,
     surah: int | None = None,
     min_recognized: int = 1,
+    complete: bool = False,
 ) -> CorpusReport:
     """Lève `CorpusMismatch` au premier écart ; `surah` limite les versets nommés (I3) ;
-    `min_recognized` = nombre minimal de versets RECOGNIZED (0 : ne pas exiger de succès)."""
+    `min_recognized` = nombre minimal de versets RECOGNIZED (0 : ne pas exiger de succès) ;
+    `complete` : l'audio récite des versets entiers, donc chaque verset nommé va jusqu'à son
+    dernier mot et commence au mot 1 (le verset 1 peut ne pas porter la basmala de Tanzil)."""
     if doc.get("schema") != SCHEMA:
         raise CorpusMismatch(f"schéma inattendu : {doc.get('schema')!r} (attendu {SCHEMA})")
     intervals = doc.get("intervals")
@@ -92,12 +97,15 @@ def assert_matches_corpus(
                 )
             continue
         ref = _named_ref(item.get("ref"), where, known, surah)
-        first, last = _word_range(item.get("words"), ref, len(repo.words(ref)), where)
-        is_partial = not (first == 1 and last == len(repo.words(ref)))
+        total = len(repo.words(ref))
+        first, last = _word_range(item.get("words"), ref, total, where)
+        if complete:
+            _check_complete(ref, first, last, total)
+        is_partial = not (first == 1 and last == total)
         if item.get("partial") is not is_partial:
             raise CorpusMismatch(
                 f"{ref} : partial={item.get('partial')!r} incohérent avec la plage de mots "
-                f"{first}..{last} sur {len(repo.words(ref))}"
+                f"{first}..{last} sur {total}"
             )
         _check_text(item.get("text"), repo, ref, first, last, is_partial)
         checked += 1
@@ -110,6 +118,19 @@ def assert_matches_corpus(
             f"({checked} nommé(s) au total ; un INFERRED ne prouve rien)"
         )
     return CorpusReport(checked=checked, recognized=tuple(recognized), partial=partial_count)
+
+
+def _check_complete(ref: VerseRef, first: int, last: int, total: int) -> None:
+    if last != total:
+        raise CorpusMismatch(
+            f"{ref} : le passage s'arrête au mot {last} sur {total} alors que le verset est "
+            "récité en entier"
+        )
+    starts = (1, BASMALA_WORDS + 1) if ref.ayah == 1 else (1,)
+    if first not in starts:
+        raise CorpusMismatch(
+            f"{ref} : le passage commence au mot {first}, attendu {' ou '.join(map(str, starts))}"
+        )
 
 
 def _named_ref(raw: object, where: str, known: set[VerseRef], surah: int | None) -> VerseRef:
@@ -179,6 +200,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--surah", type=int, default=None, help="sourate attendue (I3)")
     parser.add_argument("--min-recognized", type=int, default=1)
+    parser.add_argument(
+        "--complete",
+        action="store_true",
+        help="l'audio récite des versets entiers (plage complète)",
+    )
     args = parser.parse_args(argv)
     raw = sys.stdin.read() if args.result == "-" else Path(args.result).read_text(encoding="utf-8")
     try:
@@ -187,6 +213,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             load_repository(args.corpus_dir),
             surah=args.surah,
             min_recognized=args.min_recognized,
+            complete=args.complete,
         )
     except (CorpusMismatch, CorpusChecksumError) as exc:
         print(f"ÉCHEC corpus : {exc}", file=sys.stderr)

@@ -13,6 +13,7 @@
  *   AQR_SMOKE_STRICT    défaut strict (ressource absente => exit 2) ; 0 explicite : skip autorisé
  *   AQR_SMOKE_AUDIO     audio à importer
  *   AQR_SMOKE_SURAH     sourate attendue (défaut 112)
+ *   AQR_SMOKE_COMPLETE  0 : l'audio fourni n'est pas fait de versets entiers (plage non exigée)
  *   AQR_SMOKE_CHROMIUM  exécutable Chromium (défaut /opt/pw-browsers/chromium)
  *   AQR_SMOKE_URL       serveur déjà lancé ; sinon `next start` est lancé (npm run build requis)
  *   AQR_SMOKE_TOKEN     jeton d'accès si le serveur est en mode test distant
@@ -240,6 +241,8 @@ try {
       surah,
       "--min-recognized",
       "1",
+      // audio de versets entiers (celui de smoke_e2e.sh) : plage jusqu'au dernier mot
+      ...(process.env.AQR_SMOKE_COMPLETE === "0" ? [] : ["--complete"]),
       "-",
     ],
     { input: JSON.stringify(result) },
@@ -309,6 +312,8 @@ try {
     zipPath,
     "--source",
     audio,
+    "--session-id",
+    sessionId,
   ]);
   assert(
     verified.code === 0,

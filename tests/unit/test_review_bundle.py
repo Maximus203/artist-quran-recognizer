@@ -231,6 +231,12 @@ def test_an_unreadable_reference_is_a_clear_error(pack: Pack, tmp_path: Path) ->
         verify_bundle(pack.zip, source=tmp_path)  # un dossier
 
 
+def test_the_manifest_session_must_be_the_expected_one(pack: Pack) -> None:
+    assert verify_bundle(pack.zip, session_id="case-id")["session_id"] == "case-id"
+    with pytest.raises(ValueError, match=r"session_id.*case-id.*autre-session"):
+        verify_bundle(pack.zip, session_id="autre-session")
+
+
 def test_the_prediction_must_describe_the_bundled_audio(tmp_path: Path) -> None:
     session = _make_session(tmp_path, prediction=_prediction("a" * 64))
     target = tmp_path / "pack.zip"
@@ -273,6 +279,9 @@ def test_cli_exit_codes_and_messages(
     altered = pack.rewrite(drop=(PREDICTION_PATH,))
     assert verify_review_bundle.main([str(altered), "--source", str(pack.reference)]) == 1
     assert "manquante" in capsys.readouterr().err
+    assert verify_review_bundle.main([str(pack.zip), "--session-id", "case-id"]) == 0
+    assert verify_review_bundle.main([str(pack.zip), "--session-id", "autre"]) == 1
+    assert "session_id" in capsys.readouterr().err
 
 
 # --- archives hostiles : jamais de MemoryError, toujours une ValueError ------------------------
