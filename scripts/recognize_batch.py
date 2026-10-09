@@ -3,7 +3,8 @@
 
 Écrit `<id>.json` (aqr.recognition/1) par cas du manifeste + `timings.json` (temps mur,
 RTF, pic RSS du processus). Usage :
-    python scripts/recognize_batch.py --manifest M --audio-dir D --split dev --asr fastconformer --out-dir OUT
+    python scripts/recognize_batch.py --manifest M --audio-dir D --split dev \
+        --asr fastconformer --out-dir OUT
 Aucun audio n'est écrit dans le dépôt ; `--split test` exige `--final` (ensemble réservé).
 """
 
@@ -42,7 +43,9 @@ def main(argv: list[str] | None = None) -> int:
     manifest = Manifest.load(args.manifest)
     cases = [c for c in manifest.cases if c.split == args.split]
     if args.only_condition:
-        cases = [c for c in cases if (c.extra.get("ref") or {}).get("condition") in args.only_condition]
+        cases = [
+            c for c in cases if (c.extra.get("ref") or {}).get("condition") in args.only_condition
+        ]
     if args.limit:
         cases = cases[: args.limit]
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -70,11 +73,20 @@ def main(argv: list[str] | None = None) -> int:
         (args.out_dir / f"{case.id}.json").write_text(
             json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
         )
-        rows.append({"id": case.id, "wall_s": round(wall, 3), "audio_s": round(result.duration_s, 3),
-                     "peak_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024})
+        rows.append(
+            {
+                "id": case.id,
+                "wall_s": round(wall, 3),
+                "audio_s": round(result.duration_s, 3),
+                "peak_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024,
+            }
+        )
         print(f"{case.id} {wall:.1f}s/{result.duration_s:.1f}s", flush=True)
     (args.out_dir / "timings.json").write_text(
-        json.dumps({"asr": args.asr, "split": args.split, "model_load_s": round(load_s, 2), "cases": rows}, indent=1)
+        json.dumps(
+            {"asr": args.asr, "split": args.split, "model_load_s": round(load_s, 2), "cases": rows},
+            indent=1,
+        )
     )
     return 0
 
