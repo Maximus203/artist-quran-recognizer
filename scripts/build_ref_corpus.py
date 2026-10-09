@@ -117,22 +117,25 @@ def main(argv: list[str] | None = None) -> int:
     config = DataConfig()
     corpus = TanzilCorpusRepository(args.corpus)
     provider = ReferenceClipProvider(out_dir, sample_rate=config.sample_rate)
-    report = build_ref_corpus(
-        provider,
-        corpus,
-        out_dir,
-        args.manifest,
-        seed=args.seed,
-        per_scenario=args.per_scenario,
-        scenarios=args.scenarios.split(",") if args.scenarios else None,
-        degradations=DEFAULT_DEGRADATIONS,
-        config=config,
-        environment={
-            "command": command_line(args, ROOT, Path.home()),
-            "git": git_state(),
-            "tanzil_lock_sha256": lock_sha256(args.corpus),
-        },
-    )
+    try:
+        report = build_ref_corpus(
+            provider,
+            corpus,
+            out_dir,
+            args.manifest,
+            seed=args.seed,
+            per_scenario=args.per_scenario,
+            scenarios=args.scenarios.split(",") if args.scenarios else None,
+            degradations=DEFAULT_DEGRADATIONS,
+            config=config,
+            environment={
+                "command": command_line(args, ROOT, Path.home()),
+                "git": git_state(),
+                "tanzil_lock_sha256": lock_sha256(args.corpus),
+            },
+        )
+    except RefCorpusError as exc:  # ex. récitant déjà en dev ET en test dans le manifeste
+        sys.exit(f"ABANDON {exc}")
     for name, reason in report.skipped:
         print(f"ÉCARTÉ {name} : {reason}", file=sys.stderr)
     for name, reason in report.removed:
