@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  ReviewWorkError,
   deleteSession,
   readResult,
   readReview,
@@ -34,9 +35,12 @@ export async function DELETE(
   if (!isLocalRequest(request, true))
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
   try {
-    await deleteSession((await params).id);
+    const force = new URL(request.url).searchParams.get("force") === "1";
+    await deleteSession((await params).id, { force });
     return new Response(null, { status: 204 });
   } catch (e) {
+    if (e instanceof ReviewWorkError)
+      return NextResponse.json({ error: e.message }, { status: 409 });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Suppression impossible" },
       { status: 400 },

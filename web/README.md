@@ -42,7 +42,7 @@ Par défaut l'atelier n'accepte que la boucle locale (`127.0.0.1`, `localhost`, 
 | `AQR_ACCESS_TOKEN` | jeton d'accès, **obligatoire** pour qu'un hôte supplémentaire soit accepté ; une fois défini il protège aussi le loopback. Choisir ≥ 24 caractères aléatoires | absent |
 | `AQR_ACCESS_TTL_S` | durée de vie (s) du cookie d'accès délivré par `/access` (1 à 604800) | 3600 |
 | `AQR_MAX_UPLOAD_BYTES` | plafond d'upload (refus `413` dès l'en-tête `Content-Length`, `400` sinon) | 300 Mo |
-| `AQR_SESSION_TTL_S` | supprime à chaque import les sessions inactives depuis plus de N secondes (jamais celles en cours) | `0` = désactivé |
+| `AQR_SESSION_TTL_S` | supprime à chaque import les sessions **inactives** depuis plus de N secondes (jamais celles en cours) ; voir « Règle d'activité » ci-dessous | `0` = désactivé |
 
 Le jeton se présente par l'en-tête `x-aqr-token`, `Authorization: Bearer …` (scripts, tests) ou par un cookie `HttpOnly` signé (HMAC, expiration incluse) obtenu en saisissant le jeton sur `/access` ; la comparaison est à temps constant. Sans jeton valide, l'API répond `403` et la page redirige vers `/access`. Les mutations (`POST`/`DELETE`) exigent en plus une origine identique ou un hôte autorisé de même protocole et port.
 
@@ -52,7 +52,18 @@ AQR_ACCESS_TTL_S=1800 AQR_SESSION_TTL_S=86400 \
 npx next start --hostname 0.0.0.0 --port 3097
 ```
 
-À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : pas de limitation de débit intégrée, et les audios déposés restent des données privées. `DELETE /api/sessions/<id>` supprime une session (refusé si elle tourne). Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
+À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : pas de limitation de débit intégrée, et les audios déposés restent des données privées. Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
+
+### Règle d'activité et suppression
+
+Avec `AQR_SESSION_TTL_S`, une session n'est supprimée que si **aucune activité** n'a eu lieu depuis plus de N secondes. L'activité est le plus récent de :
+
+- la date de modification de n'importe quel fichier ou dossier de la session, sous-dossiers compris (audio, résultat, `review.json`, `revisions/`, `exports/`, écritures `.tmp`) ;
+- `updated_at` de la revue et `finished_at` de la session (une date postérieure à l'instant présent est ignorée).
+
+Une revue enregistrée récemment (« Enregistré localement ») garde donc la session **et tout son historique de révisions**, même si l'audio a été importé il y a des semaines ; elle expire seulement après N secondes sans nouvelle activité. L'activité est relue juste avant la suppression, pour qu'un enregistrement concurrent sauve la session. Une session en cours, un dossier étranger ou un JSON corrompu ne sont jamais supprimés par cette purge.
+
+`DELETE /api/sessions/<id>` supprime une session : `400` si elle tourne, `409` si elle porte un travail de revue (au moins une annotation, une révision, ou une `review.json` illisible), `204` sinon. `DELETE /api/sessions/<id>?force=1` supprime malgré le travail de revue (jamais une session en cours). L'interface n'appelle pas cette route (« Arrêter le traitement » cible `/run`) : elle sert aux scripts et aux tests distants.
 
 ## Smoke de bout en bout (CLI + navigateur)
 
