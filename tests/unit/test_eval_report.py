@@ -289,3 +289,22 @@ def test_empreinte_de_normalisation_change_avec_la_version_tolerante(monkeypatch
 def test_comparaison_ne_suppose_rien_quand_le_rapport_est_incomplet():
     with pytest.raises(BaselineRefused, match="manifeste"):
         compare_reports(_report(), {"schema": "aqr.evaluation/2", "split": "dev"})
+
+
+def test_le_moteur_apparait_dans_les_changements_de_contexte():
+    fast = {"asr": "fastconformer", "segmenter": "recitation"}
+    whisper = {"asr": "whisper", "segmenter": "recitation"}
+    comparison = compare_reports(_report(engine=whisper), _report(engine=fast))
+    assert any(
+        change.startswith("moteur") and "fastconformer" in change and "whisper" in change
+        for change in comparison["context_changes"]
+    )
+    # même moteur : aucun changement signalé
+    same = compare_reports(_report(engine=fast), _report(engine=fast))
+    assert not any(change.startswith("moteur") for change in same["context_changes"])
+
+
+def test_une_base_sans_moteur_est_signalee_plutot_que_supposee_identique():
+    # rapport écrit avant que le moteur y figure : on ne suppose pas qu'il s'agissait du même
+    comparison = compare_reports(_report(engine={"asr": "whisper"}), _report())
+    assert any(change.startswith("moteur") for change in comparison["context_changes"])
