@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from aqr.data.config import DataConfig
 from aqr.data.labels import _write_labels, format_labels, labels_path
 from aqr.data.manifest import ExpectedItem, Manifest, NonQuranItem, WordRange
 from aqr.domain.models import NonQuranKind, Status, VerseRef
@@ -165,6 +166,10 @@ def write_preannotation(
     if case.split == "test":
         raise PreannotationRefused(
             f"cas {cid} : jeu test réservé, aucune préannotation modèle dessus (mesures finales)"
+        )
+    if case.split == DataConfig().quarantine_split:
+        raise PreannotationRefused(
+            f"cas {cid} : récitant en quarantaine, aucune préannotation modèle dessus"
         )
     sha = recognition.source.get("sha256")
     if sha and str(sha) != case.sha256:
