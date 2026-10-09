@@ -8,6 +8,10 @@
 # Mode strict PAR DÉFAUT (variable absente ou vide) : une ressource absente est un ÉCHEC avec sa
 # raison. Seul AQR_SMOKE_STRICT=0, explicite, saute les étapes impossibles, et le résumé final le
 # dit clairement (« NON EXÉCUTÉ ») : un smoke sauté n'est jamais présenté comme un succès.
+# Moteur : AQR_SMOKE_ASR=whisper (défaut) | fastconformer, transmis au smoke CLI ET au navigateur
+# (qui le lit aussi sous son ancien nom AQR_ASR ; les deux noms ne doivent pas se contredire).
+# AQR_PYTHON = interpréteur du MOTEUR (fastconformer : le venv NeMo, qui n'a pas forcément pytest) ;
+# pytest tourne sous AQR_PYTEST_PYTHON, sinon AQR_PYTHON s'il sait importer pytest, sinon `python`.
 set -euo pipefail
 usage() { echo "usage : scripts/smoke_e2e.sh [all|cli|browser]   (défaut : all)"; }
 if [ "$#" -gt 1 ]; then usage >&2; exit 2; fi
@@ -21,12 +25,43 @@ export AQR_SMOKE_STRICT="${AQR_SMOKE_STRICT:-1}"
 : "${AQR_AUDIO_DIR:?AQR_AUDIO_DIR est requis (dossier hors dépôt)}"
 : "${AQR_MODELS_DIR:?AQR_MODELS_DIR est requis}"
 python="${AQR_PYTHON:-python}"
+export AQR_PYTHON="$python"
 clips="$AQR_AUDIO_DIR/everyayah/Alafasy_128kbps"
 logs="$(mktemp -d)"
 trap 'rm -rf "$logs"' EXIT
 
 # Strict sauf refus explicite (0|false|no|off) : une valeur inconnue ne désarme pas le contrôle.
 is_strict() { case "$(printf '%s' "$AQR_SMOKE_STRICT" | tr '[:upper:]' '[:lower:]')" in 0 | false | no | off) return 1 ;; *) return 0 ;; esac; }
+
+# Moteur : AQR_SMOKE_ASR, sinon l'ancien nom AQR_ASR (smoke navigateur), sinon whisper.
+asr="${AQR_SMOKE_ASR:-${AQR_ASR:-whisper}}"
+if [ -n "${AQR_SMOKE_ASR:-}" ] && [ -n "${AQR_ASR:-}" ] && [ "$AQR_SMOKE_ASR" != "$AQR_ASR" ]; then
+  echo "FAIL smoke_e2e : AQR_SMOKE_ASR='$AQR_SMOKE_ASR' et AQR_ASR='$AQR_ASR' se contredisent (un seul moteur par exécution ; AQR_ASR est l'ancien nom de AQR_SMOKE_ASR)" >&2
+  exit 2
+fi
+asr="$(printf '%s' "$asr" | tr '[:upper:]' '[:lower:]')"
+case "$asr" in
+  whisper | fastconformer) ;;
+  *)
+    if is_strict; then
+      echo "FAIL smoke_e2e (mode strict, défaut ; AQR_SMOKE_STRICT=0 pour autoriser le skip) : moteur AQR_SMOKE_ASR='$asr' inconnu (whisper | fastconformer)" >&2
+      exit 2
+    fi
+    echo "SKIP smoke_e2e : NON EXÉCUTÉ, moteur AQR_SMOKE_ASR='$asr' inconnu (whisper | fastconformer ; AQR_SMOKE_STRICT=0 explicite : skip autorisé)"
+    echo "== Résumé smoke e2e : NON EXÉCUTÉ (moteur inconnu) =="
+    exit 0
+    ;;
+esac
+export AQR_SMOKE_ASR="$asr" AQR_ASR="$asr"
+
+# pytest sous un interpréteur qui l'a : le venv du moteur (NeMo) n'en a pas forcément.
+if [ -n "${AQR_PYTEST_PYTHON:-}" ]; then
+  pytest_python="$AQR_PYTEST_PYTHON"
+elif "$python" -c 'import pytest' > /dev/null 2>&1; then
+  pytest_python="$python"
+else
+  pytest_python=python
+fi
 
 # Ressource d'outillage absente : échec en strict, étape sautée sinon.
 cli_status="non demandé"
@@ -78,7 +113,7 @@ run_step() {
 
 if [ "$step" = all ] || [ "$step" = cli ]; then
   run_step cli "$logs/cli.log" "smoke e2e : NON EXÉCUTÉ" \
-    bash -c 'cd "$1" && exec "$2" -m pytest -m slow tests/e2e -v -rs' _ "$root" "$python"
+    bash -c 'cd "$1" && exec "$2" -m pytest -m slow tests/e2e -v -rs' _ "$root" "$pytest_python"
 fi
 
 if [ "$step" = all ] || [ "$step" = browser ]; then
@@ -89,6 +124,7 @@ fi
 
 echo
 echo "== Résumé smoke e2e (AQR_SMOKE_STRICT=$AQR_SMOKE_STRICT) =="
+echo "Moteur : $asr (AQR_PYTHON=$python)"
 echo "CLI        : $cli_status"
 echo "Navigateur : $browser_status"
 exit "$worst"

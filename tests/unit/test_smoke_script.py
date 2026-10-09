@@ -99,3 +99,85 @@ def test_missing_ffmpeg_skips_loudly_only_with_an_explicit_zero(
     done = _run(tmp_path, "cli", path=path_without_ffmpeg, AQR_SMOKE_STRICT="0")
     assert done.returncode == 0, done.stdout + done.stderr
     assert "NON EXÉCUTÉ" in done.stdout
+
+
+@pytest.fixture()
+def recording_python(tmp_path: Path) -> str:
+    """Faux interpréteur : consigne ce qu'il reçoit au lieu de lancer pytest ou un moteur."""
+    stub = tmp_path / "stub-python"
+    stub.write_text(
+        '#!/bin/sh\necho "STUB smoke=$AQR_SMOKE_ASR legacy=$AQR_ASR python=$AQR_PYTHON args=$*"\n',
+        encoding="utf-8",
+    )
+    stub.chmod(0o755)
+    return str(stub)
+
+
+@pytest.mark.parametrize(
+    ("env", "expected"),
+    [
+        ({}, "whisper"),  # défaut inchangé
+        ({"AQR_SMOKE_ASR": "fastconformer"}, "fastconformer"),
+        ({"AQR_ASR": "fastconformer"}, "fastconformer"),  # nom historique du smoke navigateur
+        ({"AQR_SMOKE_ASR": "whisper", "AQR_ASR": "whisper"}, "whisper"),
+    ],
+)
+def test_the_chosen_asr_reaches_the_cli_and_the_browser_under_both_names(
+    tmp_path: Path, recording_python: str, env: dict[str, str], expected: str
+) -> None:
+    done = _run(tmp_path, "cli", AQR_PYTHON=recording_python, **env)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert f"STUB smoke={expected} legacy={expected} python={recording_python}" in done.stdout
+    assert f"Moteur : {expected}" in done.stdout  # le résumé dit quel moteur a été exercé
+
+
+def test_conflicting_asr_names_are_refused_rather_than_guessed(
+    tmp_path: Path, recording_python: str
+) -> None:
+    done = _run(
+        tmp_path,
+        "cli",
+        AQR_PYTHON=recording_python,
+        AQR_SMOKE_ASR="fastconformer",
+        AQR_ASR="whisper",
+    )
+    assert done.returncode == 2, done.stdout + done.stderr
+    assert "AQR_SMOKE_ASR" in done.stderr and "AQR_ASR" in done.stderr
+    assert "STUB" not in done.stdout
+
+
+def test_an_unknown_asr_fails_by_default_and_skips_loudly_only_with_an_explicit_zero(
+    tmp_path: Path, recording_python: str
+) -> None:
+    done = _run(tmp_path, "cli", AQR_PYTHON=recording_python, AQR_SMOKE_ASR="vosk")
+    assert done.returncode == 2, done.stdout + done.stderr
+    assert "vosk" in done.stderr and "whisper | fastconformer" in done.stderr
+    assert "STUB" not in done.stdout
+    skipped = _run(
+        tmp_path, "cli", AQR_PYTHON=recording_python, AQR_SMOKE_ASR="vosk", AQR_SMOKE_STRICT="0"
+    )
+    assert skipped.returncode == 0, skipped.stdout + skipped.stderr
+    assert "NON EXÉCUTÉ" in skipped.stdout and "STUB" not in skipped.stdout
+
+
+def test_pytest_falls_back_to_the_path_python_when_the_engine_interpreter_has_none(
+    tmp_path: Path,
+) -> None:
+    # venv du moteur (NeMo) sans pytest : pytest tourne sous le `python` du PATH, le moteur sous
+    # AQR_PYTHON (le test CLI lance `AQR_PYTHON -m aqr.cli`)
+    engine = tmp_path / "engine-python"
+    engine.write_text('#!/bin/sh\n[ "$1" = "-c" ] && exit 1\necho "ENGINE $*"\n', encoding="utf-8")
+    engine.chmod(0o755)
+    bin_dir = tmp_path / "pathbin"
+    bin_dir.mkdir()
+    runner = bin_dir / "python"
+    runner.write_text(
+        '#!/bin/sh\n[ "$1" = "-c" ] && exit 0\necho "RUNNER $* pyexe=$AQR_PYTHON"\n',
+        encoding="utf-8",
+    )
+    runner.chmod(0o755)
+    path = f"{bin_dir}:{os.environ.get('PATH', '')}"
+    done = _run(tmp_path, "cli", path=path, AQR_PYTHON=str(engine), AQR_SMOKE_ASR="fastconformer")
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "RUNNER -m pytest" in done.stdout and f"pyexe={engine}" in done.stdout
+    assert "ENGINE" not in done.stdout
