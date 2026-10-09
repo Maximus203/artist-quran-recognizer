@@ -180,3 +180,37 @@ def test_refuse_une_verite_non_controlee():
     case = _case([_exp("67:1", 0, 5)], annotation=None)
     with pytest.raises(EvaluationRefused):
         evaluate_identification(case, [])
+
+
+@pytest.mark.parametrize("status", ["inferred", "uncertain"])
+def test_inferred_et_uncertain_ne_comptent_dans_aucun_indicateur_d_identification(status):
+    # Même verset, même sourate, bon temps : si le statut n'est pas `recognized`, aucun point.
+    case = _case([_exp("67:1", 0, 5), _exp("67:2", 6, 11)])
+    result = evaluate_identification(case, [_verse("67:1", 0, 5, status), _verse("67:2", 6, 11)])
+    assert result.predicted_refs == (VerseRef.parse("67:2"),)  # seul le recognized est une réponse
+    assert (
+        result.exact_hits == 1 and result.surah_hits == 2
+    )  # 67:2 nomme la sourate 67 pour les deux
+    none = evaluate_identification(
+        case, [_verse("67:1", 0, 5, status), _verse("67:2", 6, 11, status)]
+    )
+    assert (none.surah_hits, none.exact_hits, none.range_exact) == (0, 0, False)
+    assert none.unrecognized is True and none.n_recognized == 0
+    agg = aggregate_identification([none])
+    assert agg["surah"]["hits"] == 0 and agg["surah"]["total"] == 2
+    assert agg["verse_exact"]["hits"] == 0 and agg["range_exact"]["hits"] == 0
+    assert agg["unrecognized"]["n_cases"] == 1
+
+
+def test_le_denominateur_fusionne_les_versets_attendus_consecutifs_identiques():
+    # un verset récité deux fois de suite (scénario « répétition ») compte une fois ici, alors que
+    # `n_reference_verses` du bloc de localisation compte chaque récitation : 232 contre 216 au dev
+    case = _case([_exp("67:1", 0, 5), _exp("67:1", 6, 11), _exp("67:2", 12, 17)])
+    result = evaluate_identification(case, [_verse("67:1", 0, 5)])
+    assert result.n_expected == 2 and result.expected_refs == (
+        VerseRef.parse("67:1"),
+        VerseRef.parse("67:2"),
+    )
+    agg = aggregate_identification([result])
+    assert agg["n_expected_verses"] == 2 and agg["surah"]["total"] == 2
+    assert len(case.expected) == 3  # le cas, lui, porte trois versets de référence
