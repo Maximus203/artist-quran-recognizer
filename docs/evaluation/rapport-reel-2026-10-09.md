@@ -27,13 +27,22 @@ touchent ni `src/` ni les scripts de reconnaissance et d'évaluation : `git diff
 `src/aqr/pipeline src/aqr/matching src/aqr/decoding src/aqr/adapters` est vide. Le SHA de tête publié
 figure dans la description de la PR #41.
 
-**Le pipeline de reconnaissance est identique à `develop` @ `1a79e20`** (code du premier rapport) :
+**Le code de reconnaissance est identique à `develop` @ `1a79e20`** (code du premier rapport), à une
+exception près, neutralisée ci-dessous :
 ```
 $ git diff 1a79e20 HEAD --stat -- src/aqr/pipeline src/aqr/matching src/aqr/decoding src/aqr/adapters
 (sortie vide)
+$ git diff 1a79e20 HEAD --stat -- src/aqr/corpus
+ src/aqr/corpus/normalize.py | 54 ++++++++++++++++++++++++++++++++++++++-----
 ```
-Ce qui a changé depuis `1a79e20` concerne l'évaluation (`src/aqr/eval`, `scripts/evaluate.py`), le lot
-(`scripts/recognize_batch.py`), la normalisation et la construction du corpus, pas la reconnaissance.
+Le pipeline et le matcher importent `normalize_arabic` depuis `src/aqr/corpus/normalize.py` : ce fichier a
+changé (ajout de `normalize_strict_letters`, des constantes de version et d'un `_normalize` partagé), donc
+quatre répertoires ne suffisaient pas. **Mesure refaite pour ce rapport** : l'ancienne (`1a79e20`) et la
+nouvelle `normalize_arabic`, ainsi que `tokenize`, donnent **0 écart** sur les deux textes Tanzil du corpus
+(uthmani et simple-clean : 12 532 lignes et 165 226 mots). Une mesure indépendante du relecteur a trouvé
+le même résultat. Autre preuve de comportement : les intervalles des 82 cas × 2 moteurs sont identiques à
+ceux de l'ancien run (§ 3.7). Le reste des changements depuis `1a79e20` concerne l'évaluation
+(`src/aqr/eval`, `scripts/evaluate.py`), le lot (`scripts/recognize_batch.py`) et la construction du corpus.
 
 | | FastConformer | Whisper |
 |---|---|---|
@@ -101,9 +110,11 @@ for t in fc wh; do $SP/venv/bin/python scripts/evaluate.py \
 | sha256 de chaque `<id>.json` = `run.json.done[id]` | 82 / 82 | 82 / 82 |
 | sha256 audio de la prédiction = manifeste | 82 / 82 | 82 / 82 |
 | Aucun cas échoué | `failed: {}` | `failed: {}` |
-| `run.verified: true` dans le rapport, sans `--allow-unverified-run` | oui | oui |
+| `run.verified: true` dans le rapport | oui | oui |
 
-Aucun moteur n'a échoué : aucune reprise n'a été nécessaire.
+`run.verified: true` ne prouve pas à lui seul l'absence de `--allow-unverified-run` : sur un `run.json`
+complet, le flag est sans effet et le rapport dit aussi `true`. **Seule la commande citée plus haut**
+(sans le flag) l'atteste. Aucun moteur n'a échoué : aucune reprise n'a été nécessaire.
 
 ## 2. Reproduction
 
@@ -159,15 +170,25 @@ vérifiée. Le split `test` n'est évalué qu'avec `--final` (§ 4).
   (déduction de contexte, non vérifiée modèle par modèle) → **plafond optimiste**.
 - **Non qualifié (aucun essai)** : autres récitants, voix de femme ou d'enfant, microphone, salle réelle,
   parole non coranique parlée (français, hadith, dou'a, khutba : scénarios `assise_fr`, `khutba_citation`,
-  `priere`, hors cible français/arabe ignorés faute de clips), riwayas autres que Hafs, audio long.
+  `priere`, hors cible français/arabe ignorés faute de clips), riwayas autres que Hafs, audio long,
+  **autres sourates et versets longs** (voir « Effectif réel » ci-dessous).
+- **Effectif réel et indépendance** (relevé dans le manifeste) : les 232 « versets de référence » du dev sont
+  des **entrées** d'annotation. Elles viennent de **10 clips** d'un seul récitant (Alafasy), soit
+  **29 entrées**, chacune présente dans **8 copies** du même clip (propre, bruit 20 / 10 / 0 dB, téléphone,
+  réverbération, MP3 32 kbps, silence ajouté) : 29 × 8 = 232. Ces entrées couvrent **20 versets distincts de
+  5 sourates courtes** (1, 108, 110, 111, 114). Les copies d'un même clip ne sont pas indépendantes :
+  **n indépendant ≈ 29** entrées (10 clips), pas 232. Le test historique n'a que 6 clips (20 entrées × 8 =
+  160) et 17 versets distincts (sourates 1, 108, 109, 110, 112), récitant Husary.
 
 ### 3.2 Effectifs (identiques pour les deux moteurs)
 
 | Dev | |
 |---|---|
 | Cas | 82 (80 cas à versets + 2 cas de silence sans verset) |
-| Versets de référence | 232 (chaque récitation compte, répétitions comprises) |
-| dont versets de référence au statut `inferred` dans la vérité | 8 |
+| « Versets de référence » (`n_reference_verses`) = **entrées** d'annotation | 232 = 29 entrées × 8 copies de 10 clips |
+| dont entrées de référence au statut `inferred` dans la vérité | 8 (toutes 111:4, scénario « verset brouillé » : audio du verset remplacé par du bruit) |
+| Versets distincts / sourates | 20 / 5 (1, 108, 110, 111, 114) |
+| n indépendant approximatif | ≈ 29 entrées (10 clips ; les 8 copies d'un clip sont corrélées) |
 | Durée audio | 1 752,3 s (29,2 min) |
 | Durée de Coran de référence | 1 653,5 s |
 
@@ -183,13 +204,18 @@ tests : `test_eval_identification.py`, dont un qui échoue si le filtre de statu
 - **Versets reconnus** : nombre d'intervalles `recognized`. **Faux verset** : un reconnu rattaché à aucun
   verset de référence (recouvrement ≥ 0,5, même verset) ; taux = faux / reconnus.
 - **Omission** : verset de référence sans reconnu rattaché ; **rappel** = 1 − omissions / versets de
-  référence. Causes : `abstention`, `inferred`, `uncertain`, `merged` (verset répété déjà rattaché),
-  `non_quran` (le moteur a dit « pas du Coran »), `no_output`, `wrong_verse`.
-- **Sourate x / N** : N = 216 = versets attendus des 80 cas à versets, **après fusion des versets attendus
-  consécutifs identiques** (un verset récité deux fois de suite compte une fois) ; x = nombre de ces
-  versets dont **la sourate** a été nommée par au moins un `recognized` du même cas (n'importe quel verset de
-  la sourate). C'est pourquoi N (216) ≠ 232 versets de référence : −16 répétitions consécutives, et les 2 cas
-  de silence n'ont aucun verset attendu.
+  référence. Causes : `abstention`, `inferred`, `uncertain`, `merged` (une prédiction du bon verset déjà
+  rattachée à une autre entrée : ici une prédiction qui couvre les deux plages de mots d'un verset de
+  l'arrêt au waqf, 3 cas `arret_waqf` par moteur : bruit 10 dB, bruit 0 dB, réverbération), `non_quran` (le
+  moteur a dit « pas du Coran »), `no_output`, `wrong_verse`.
+- **Sourate x / N** : N = 216 = entrées attendues des 80 cas à versets, **après fusion des entrées
+  consécutives du même verset** ; x = nombre de ces entrées dont **la sourate** a été nommée par au moins
+  un `recognized` du même cas (n'importe quel verset de la sourate). N (216) ≠ 232 entrées parce que deux
+  scénarios produisent deux entrées consécutives du même verset, fusionnées en une : les **8 cas
+  `arret_waqf`** (un verset, 110:2, récité UNE fois, annoté en deux plages de mots 1-3 et 4-7) et les **8
+  cas `repetition`** (1:7 entier, puis la reprise de ses mots 5-9) : 8 + 8 = 16, d'où 232 − 16 = 216. Les 2
+  cas de silence n'ont aucune entrée (ils sont hors de N). Les 232 sont des entrées, pas des versets
+  distincts (20).
 - **Verset exact x / N** : même N ; x = versets attendus nommés exactement (sourate:verset) par un `recognized`.
 - **Plage exacte x / 80** : cas dont la suite des versets `recognized` (doublons consécutifs fusionnés) est
   identique à la suite attendue, sans verset en trop ni en moins.
@@ -205,8 +231,8 @@ tests : `test_eval_identification.py`, dont un qui échoue si le filtre de statu
 | **Versets reconnus** (`recognized`, / 232 de référence) | **122** | **117** |
 | Versets inférés (`inferred`, intervalles) | 8 | 7 |
 | Versets incertains (`uncertain`, intervalles) | 3 | 8 |
-| **Faux versets** (/ reconnus ; IC95 Wilson) | **0 / 122** (0 – 3,05 %) | **0 / 117** (0 – 3,18 %) |
-| Omissions (/ 232 ; IC95) | 110 (47,4 % ; 41,1 – 53,8 %) | 115 (49,6 % ; 43,2 – 56,0 %) |
+| **Faux versets** (/ reconnus ; borne de Wilson **indicative, non indépendante**) | **0 / 122** (0 – 3,05 %) | **0 / 117** (0 – 3,18 %) |
+| Omissions (/ 232 entrées ; borne de Wilson indicative, non indépendante) | 110 (47,4 % ; 41,1 – 53,8 %) | 115 (49,6 % ; 43,2 – 56,0 %) |
 | Rappel (reconnus corrects / 232) | 52,6 % | 50,4 % |
 | Omissions par cause : abstention | 93 | 96 |
 | inferred / uncertain | 8 / 3 | 7 / 8 |
@@ -219,20 +245,37 @@ tests : `test_eval_identification.py`, dont un qui échoue si le filtre de statu
 | Faux positifs hors cible | non qualifié (0 cas) | non qualifié (0 cas) |
 | Intervalles d'abstention : below_threshold / no_candidate / empty_transcript | 107 / 2 / 1 | 105 / 2 / 0 |
 | Intervalles `non_quran` (tous `basmala`) | 21 | 24 |
-| Durée abstenue / Coran de référence | 539,6 s / 1 653,5 s (32,6 %) | 546,8 s / 1 653,5 s (33,1 %) |
+| Durée « abstenue » = (abstention ∪ incertain) ∩ Coran de référence | 539,6 s / 1 653,5 s (32,6 %) | 546,8 s / 1 653,5 s (33,1 %) |
+| dont abstentions seules ∩ Coran de référence | 522,5 s (31,6 %) | 500,4 s (30,3 %) |
 | Cas échoués | 0 | 0 |
 
 **Bonnes identifications** : 122 (FastConformer) et 117 (Whisper) versets reconnus, tous rattachés à un
 verset de référence. **Fausses identifications** : aucune sur les deux moteurs (0 faux verset : 0 `wrong_verse`,
 0 `misplaced`, 0 `non_quran_zone`, 0 `unreferenced`). Le moteur préfère s'abstenir (I3) : l'essentiel de
-l'écart au rappel est de l'abstention sous le seuil. « 0 faux verset » est borné par l'effectif : l'IC95
-monte à ≈ 3 %. Les versets très courts et répétitifs (Fatiha 1:3–1:6) restent sous le seuil sur audio propre.
+l'écart au rappel est de l'abstention sous le seuil. Le rappel `recognized` plafonne à **224 / 232 =
+96,6 %** : les 8 entrées `inferred` de la vérité (toutes 111:4, audio remplacé par du bruit,
+`src/aqr/data/mixer.py`) ne sont pas reconnaissables par construction.
+
+**« 0 faux verset » n'est qu'un 0 observé sur ce jeu** : les bornes de Wilson (≈ 3 % au plus haut) supposent
+des observations indépendantes, or les 122 / 117 reconnus viennent de copies dégradées de 10 clips (n
+indépendant ≈ 29) : ces bornes sont trop optimistes, à lire comme indicatives. **Autres sourates et versets
+longs : non qualifié** (20 versets distincts, 5 sourates courtes).
+
+**Ce qui s'abstient sur audio propre** (les 10 clips non dégradés, sorties réelles) : les deux moteurs
+s'abstiennent sur 108:1 et 108:2 (`verset1_sans_basmala`). `repetition` (1:7 puis ses mots 5-9) : les deux
+reconnaissent une entrée et s'abstiennent sur l'autre. `arret_waqf` (110:2 en deux plages) : FastConformer en
+reconnaît une, Whisper aucune. En murattal continu de la Fatiha, FastConformer s'abstient sur 1:3, 1:4, 1:5
+et 1:6 ; Whisper reconnaît 1:5 et s'abstient sur 1:3, 1:4 et 1:6. Dans `saut_de_sourate`, FastConformer
+s'abstient sur 1:4 et 1:5, Whisper sur 1:4 seulement. Le comportement diffère donc selon le moteur et le
+scénario : on ne peut pas le résumer par « les versets courts de la Fatiha restent sous le seuil ».
 
 **Localisation temporelle** (paires des cas à bornes exactes seulement ; tolérance de 300 ou 500 ms selon
 le cas ; les paires des cas à bornes approximatives sont exclues : 18 pour FastConformer, 11 pour Whisper) :
 début dans la tolérance 81 / 104 (FastConformer) et 85 / 106 (Whisper) ; fin 10 / 104 et 20 / 106 ; écart
 médian de début 17,5 ms et 10,0 ms, de fin 803 ms et 741 ms. La fin des versets est mal bornée par les
-deux moteurs.
+deux moteurs. **Prudence avant de comparer la localisation entre moteurs** : le moteur Whisper est
+`…/times-estimated`, ses temps de mots sont estimés au prorata des lettres du segment
+(`src/aqr/adapters/whisper_tarteel.py`), pas mesurés.
 
 ### 3.5 Par condition audio (versets reconnus / versets de référence)
 
@@ -248,7 +291,8 @@ deux moteurs.
 | Silence ajouté 2 s | 10 | 29 | 14 | 16 |
 | Silence pur | 2 | 0 | 0 faux positif | 0 faux positif |
 
-Chaque cellule repose sur 29 versets : des écarts de 1 ou 2 versets ne sont pas significatifs. Le décrochage
+Chaque cellule reprend les 29 entrées des mêmes 10 clips sous une condition : des écarts de 1 ou 2 entrées
+ne sont pas significatifs. Le décrochage
 de Whisper à 0 dB (3 / 29) est le seul écart net entre moteurs par condition ; le bruit n'a pas d'effet net
 visible sur le FastConformer sur ce jeu. Non qualifié au-delà de ce bruit synthétique.
 
@@ -299,7 +343,7 @@ servi ni à régler ni à choisir un seuil ; aucun seuil n'a été réglé sur l
 
 | Test (historique, 48 cas, récitant Husary) | FastConformer | Whisper |
 |---|---|---|
-| Versets de référence | 160 | 160 |
+| « Versets de référence » = entrées (6 clips × 8 copies ; 17 versets distincts) | 160 | 160 |
 | Versets reconnus / inférés / incertains (intervalles) | 97 / 0 / 9 | 90 / 0 / 8 |
 | Faux versets | 0 / 97 | 0 / 90 |
 | Omissions (abstention / uncertain / merged / no_output) | 63 (43 / 9 / 3 / 8) | 70 (51 / 8 / 3 / 8) |
@@ -310,7 +354,9 @@ servi ni à régler ni à choisir un seuil ; aucun seuil n'a été réglé sur l
 | Cas sans aucun reconnu | 0 / 48 | 2 / 48 |
 | Facteur temps réel (champs `timing` des sorties) | 0,308 | 0,496 |
 
-N = 144 : 160 versets de référence moins 16 répétitions consécutives, même règle qu'au § 3.3.
+N = 144 : 160 entrées de référence (6 clips × 8 copies) moins 16 entrées consécutives du même verset
+fusionnées (8 cas `arret_waqf` sur 1:7 annoté en plages 1-4 / 5-9, 8 cas `repetition` sur 110:2 puis ses
+mots 4-7), même règle qu'au § 3.3.
 
 **Ancien libellé corrigé.** Le premier rapport intitulait la ligne « sourate correcte (versets nommés +
 incertains) ». C'était faux : le code n'a jamais compté `inferred` ni `uncertain` dans l'identification (ses
@@ -338,7 +384,11 @@ suite complète : voir la description de la PR #41.
   silence pur est testé pour I4) ; **pas d'enregistrement micro réel** ; autres riwayas : non qualifié.
 - Vérité terrain construite, bornes de fin approximatives sur une partie des cas (exclues des taux de
   bornes) ; mesures de vitesse uniques (une exécution par moteur), sans intervalle de confiance.
-- Effectif modeste : 232 versets de référence, 29 par condition ; les IC95 sont larges.
+- Effectif réel : 232 entrées = 29 entrées de 10 clips d'un seul récitant × 8 copies dégradées ; **n
+  indépendant ≈ 29**, 20 versets distincts de 5 sourates courtes. Les bornes de Wilson ne tiennent pas
+  compte de cette dépendance et sont trop optimistes : indicatives seulement. **Autres sourates et versets
+  longs : non qualifié.**
+- Rappel plafonné à 224 / 232 (96,6 %) par les 8 entrées `inferred` (111:4, audio remplacé par du bruit).
 - L'identification d'un verset n'est **pas** une validation du tajwid ni de la qualité de récitation.
 - Seuils provisoires, non calibrés par benchmark ; décision d'usage des audios provisoire (§ 3.1).
 - Les anciens chiffres de test sont historiques (§ 4) ; le test n'a pas été relu par les moteurs.
