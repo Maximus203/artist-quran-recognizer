@@ -187,6 +187,52 @@ exercer la permission provisoire, par les personnes de « Qui lance quoi » : ve
 dépôt, jamais automatisé en CI ni vers un dossier suivi par git. `--dry-run` liste le plan sans rien
 télécharger.
 
+## Reproduire
+Le corpus de référence se reconstruit à partir de ses sources, **dans les limites de la « Décision
+d'usage » ci-dessus** (audio hors dépôt, rien de redistribué). Le manifeste
+(`tests/fixtures/ref-corpus/manifest.yaml`) dit ce que contient le corpus ; la trace
+`tests/fixtures/ref-corpus/manifest.build.json`, écrite à côté par `scripts/build_ref_corpus.py`,
+dit comment le refaire : graine, sel du découpage, scénarios, dégradations, récitants retenus et
+écartés avec leur raison, SHA-256 des `LOCK.json`, fichiers `speech/` et `specials/` utilisés,
+versions d'outils, SHA git du code et commande exacte. Elle ne contient aucun chemin local, hôte ou
+secret (chemins relatifs au dépôt ou à `~`).
+
+**Limite : la trace ne décrit que le dernier lancement.** Un build incrémental (même manifeste, autre
+graine ou autres scénarios) conserve les anciens cas ; le champ `carried_over` de la trace les
+compte (`cases`, `seeds`, `scenarios`) et un scénario écarté dont des cas restent est marqué
+« conservés d'un lancement précédent » dans `skipped`. **Le rejeu n'est exact que si
+`carried_over.cases` vaut 0.** Sinon, reconstruire dans un dossier de sortie et un manifeste vierges
+(`--manifest` vers un fichier qui n'existe pas), puis comparer.
+
+1. **Sources, hors dépôt** : `python scripts/fetch_everyayah.py --dest ~/aqr-ref/everyayah`
+   (téléchargement : voir « Le téléchargement n'est pas une autorisation »). Facultatif, pour les
+   scénarios `assise_fr`, `khutba_citation`, `priere` et la parole hors cible :
+   `~/aqr-ref/speech/{french,arabic_speech,other_language}_*` et
+   `~/aqr-ref/specials/{takbir,istiadha,amin}.*`. Corpus du texte : `python scripts/fetch_corpus.py`.
+2. **Comparer l'environnement à la trace** : `sha256sum ~/aqr-ref/everyayah/LOCK.json` doit valoir
+   `sources.everyayah_lock_sha256` (`d1c306a8…` pour la construction de référence),
+   `sha256sum data/corpus/LOCK.json` doit valoir `environment.tanzil_lock_sha256` (`d3f44344…`) et
+   `ffmpeg -version` doit donner `toolchain.ffmpeg` (6.1.1-3ubuntu5) avec libmp3lame
+   (`toolchain.libmp3lame`, 3.100). Un autre ffmpeg ou un autre encodeur MP3 change les octets des
+   audios dégradés, donc leurs SHA-256 : la trace sert d'abord à détecter cette dérive.
+3. **Lancer la commande de la trace** (`environment.command`) :
+   `python scripts/build_ref_corpus.py --seed 7 --per-scenario 2`.
+4. **Contrôler** : `carried_over.cases` vaut 0 dans la nouvelle trace (sinon le rejeu n'est pas
+   exact, voir la limite ci-dessus) ; `git diff tests/fixtures/ref-corpus/manifest.yaml` est vide
+   (130 cas : dev 82, test 48 ; sha256 du manifeste `da8d638d…`) ; les 130 audios de
+   `~/aqr-ref/{mix,degraded,generated}` gardent leurs SHA-256. Seul `manifest.build.json` peut
+   changer d'un rejeu à l'autre, par son champ `environment.git` (SHA du code). Vérifié par un rejeu
+   sur les sources réelles : manifeste et audios identiques à l'octet.
+
+Règles que la reconstruction respecte (détail : docstring de `scripts/build_ref_corpus.py`) :
+- Les affectations `dev`/`test`/`quarantaine` du manifeste existant sont **reprises telles quelles**,
+  même si les paramètres changent ; un récitant en quarantaine, et sa voix `mix-<récitant>`, ne
+  reviennent jamais en jeu (`docs/evaluation/protocole-reglage-evaluation.md`).
+- Un même enregistrement source (fichier de `speech/` ou de `specials/`) ne sert qu'à un seul jeu :
+  un mixage dont une source est déjà dans l'autre jeu est écarté, avec sa raison. Avec un seul clip
+  par special, la prière n'existe donc que d'un côté.
+- Un récitant EveryAyah sans basmala (`Abdul_Basit_Murattal_192kbps`) est écarté, avec sa raison.
+
 ## Libellé de licence canonique
 Champ `license` d'un manifeste (corpus de référence et tout nouveau cas dont les droits ne sont pas
 établis) :
