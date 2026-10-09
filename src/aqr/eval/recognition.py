@@ -139,11 +139,20 @@ def parse_recognition(data: Mapping[str, Any]) -> Recognition:
     )
 
 
+def parse_recognition_text(text: str, origin: str) -> Recognition:
+    """Lit un document déjà en mémoire (l'évaluation vérifie l'empreinte de CES octets-là)."""
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RecognitionError(f"{origin} : {exc}") from exc
+    if not isinstance(data, dict):
+        raise RecognitionError(f"{origin} : objet JSON attendu")
+    return parse_recognition(data)
+
+
 def load_recognition(path: Path) -> Recognition:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
         raise RecognitionError(f"{path} : {exc}") from exc
-    if not isinstance(data, dict):
-        raise RecognitionError(f"{path} : objet JSON attendu")
-    return parse_recognition(data)
+    return parse_recognition_text(text, str(path))

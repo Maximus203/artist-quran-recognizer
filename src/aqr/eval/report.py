@@ -208,6 +208,7 @@ def compare_reports(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> 
     changes = [
         f"{label} : {then_v} -> {now_v}"
         for label, now_v, then_v in (
+            ("moteur", current.get("engine"), baseline.get("engine")),
             ("git", current.get("git"), baseline.get("git")),
             ("modèles", current.get("models"), baseline.get("models")),
             ("seuils", current.get("thresholds"), baseline.get("thresholds")),

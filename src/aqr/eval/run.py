@@ -1,0 +1,177 @@
+"""Protocole d'un lot de reconnaissance : `run.json` dit CE QUE le lot a écrit, et dans quel état.
+
+Un dossier de prédictions n'est évaluable que si l'on sait de quel run viennent ses fichiers. Le
+lot (`scripts/recognize_batch.py`) écrit donc `run.json` (`aqr.recognition-run/1`) au départ
+(`running`) puis après chaque cas, et fixe le statut final : `complete` (tous les cas
+réussis), `partial` (au moins un cas en échec) ou `interrupted` (arrêt : Ctrl-C, exception, modèle
+non chargé). `done` associe chaque cas réussi à l'empreinte sha256 du fichier écrit : l'évaluation
+(`scripts/evaluate.py`) ne lit un cas que s'il y figure avec la même empreinte, jamais un fichier
+laissé par un autre run (autre moteur, autre code). Un `running` retrouvé après coup signe un
+processus tué sans pouvoir conclure : il est refusé comme les autres statuts non `complete`.
+
+Module sans modèle ni réseau : lecture stricte du fichier et écriture atomique.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import tempfile
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from enum import StrEnum
+from pathlib import Path
+from typing import Any
+
+RUN_SCHEMA = "aqr.recognition-run/1"
+RUN_FILE = "run.json"
+TIMINGS_FILE = "timings.json"
+
+
+class RunStatus(StrEnum):
+    RUNNING = "running"  # lot en cours, ou processus tué avant la conclusion
+    COMPLETE = "complete"  # tous les cas du lot ont réussi
+    PARTIAL = "partial"  # le lot est allé au bout mais au moins un cas a échoué
+    INTERRUPTED = "interrupted"  # le lot s'est arrêté avant la fin (Ctrl-C, exception, modèle)
+
+
+class RunError(ValueError):
+    """`run.json` absent, illisible ou hors schéma ; ou lot non `complete`."""
+
+
+def prediction_file(directory: Path, case_id: str) -> Path:
+    """Sortie `aqr.recognition/1` d'un cas : `<dossier>/<id>.json` (une seule définition)."""
+    return directory / f"{case_id}.json"
+
+
+def write_text_atomic(path: Path, text: str) -> None:
+    """Écrit `text` dans `path` sans jamais exposer un fichier partiel ni laisser de `.tmp`.
+
+    Fichier temporaire dans le MÊME dossier puis `os.replace` (atomique) ; si l'écriture ou le
+    remplacement échoue, le temporaire est supprimé et l'éventuel ancien fichier reste intact.
+    """
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f"{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+@dataclass(frozen=True)
+class RunRecord:
+    """Contenu de `run.json` (immuable : le lot en dérive une nouvelle version à chaque cas)."""
+
+    status: RunStatus
+    asr: str
+    planned: tuple[str, ...]
+    options: Mapping[str, Any] = field(default_factory=dict)
+    git: Mapping[str, Any] = field(default_factory=dict)
+    manifest: Mapping[str, Any] = field(default_factory=dict)
+    engine: Mapping[str, Any] | None = None
+    """Bloc `engine` des sorties du lot ; inconnu (`None`) tant qu'aucun cas n'a réussi."""
+    done: Mapping[str, str] = field(default_factory=dict)
+    """cas réussi -> sha256 du fichier `<id>.json` écrit."""
+    failed: Mapping[str, str] = field(default_factory=dict)
+    timing: Mapping[str, Any] = field(default_factory=dict)
+    error: str | None = None
+
+    @property
+    def manifest_sha256(self) -> str | None:
+        sha = self.manifest.get("sha256")
+        return str(sha) if sha else None
+
+    def to_document(self) -> dict[str, Any]:
+        return {
+            "schema": RUN_SCHEMA,
+            "status": self.status.value,
+            "asr": self.asr,
+            "engine": None if self.engine is None else dict(self.engine),
+            "options": dict(self.options),
+            "git": dict(self.git),
+            "manifest": dict(self.manifest),
+            "planned": list(self.planned),
+            "done": dict(self.done),
+            "failed": dict(self.failed),
+            "timing": dict(self.timing),
+            "error": self.error,
+        }
+
+
+def save_run(directory: Path, record: RunRecord) -> None:
+    write_text_atomic(
+        directory / RUN_FILE,
+        json.dumps(record.to_document(), ensure_ascii=False, indent=1) + "\n",
+    )
+
+
+def _mapping_of_text(raw: object, key: str) -> dict[str, str]:
+    if not isinstance(raw, dict) or not all(
+        isinstance(k, str) and isinstance(v, str) for k, v in raw.items()
+    ):
+        raise RunError(f"{RUN_FILE} : {key} doit associer des identifiants de cas à du texte")
+    return dict(raw)
+
+
+def _object(raw: object, key: str) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise RunError(f"{RUN_FILE} : {key} doit être un objet")
+    return dict(raw)
+
+
+def parse_run(data: object) -> RunRecord:
+    if not isinstance(data, dict):
+        raise RunError(f"{RUN_FILE} : objet JSON attendu")
+    if data.get("schema") != RUN_SCHEMA:
+        raise RunError(
+            f"{RUN_FILE} : schéma {data.get('schema')!r} non géré (attendu {RUN_SCHEMA})"
+        )
+    try:
+        status = RunStatus(str(data.get("status")))
+    except ValueError as exc:
+        raise RunError(f"{RUN_FILE} : statut {data.get('status')!r} inconnu") from exc
+    planned = data.get("planned")
+    if not isinstance(planned, list) or not all(isinstance(i, str) for i in planned):
+        raise RunError(f"{RUN_FILE} : planned doit être une liste d'identifiants de cas")
+    engine = data.get("engine")
+    error = data.get("error")
+    return RunRecord(
+        status=status,
+        asr=str(data.get("asr", "")),
+        planned=tuple(planned),
+        options=_object(data.get("options", {}), "options"),
+        git=_object(data.get("git", {}), "git"),
+        manifest=_object(data.get("manifest", {}), "manifest"),
+        engine=None if engine is None else _object(engine, "engine"),
+        done=_mapping_of_text(data.get("done", {}), "done"),
+        failed=_mapping_of_text(data.get("failed", {}), "failed"),
+        timing=_object(data.get("timing", {}), "timing"),
+        error=None if error is None else str(error),
+    )
+
+
+def load_run(directory: Path) -> RunRecord:
+    path = directory / RUN_FILE
+    if not path.is_file():
+        raise RunError(
+            f"{RUN_FILE} absent de {directory} : origine des prédictions inconnue "
+            "(dossier non produit par scripts/recognize_batch.py)"
+        )
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RunError(f"{RUN_FILE} illisible : {exc}") from exc
+    return parse_run(data)
+
+
+def load_complete_run(directory: Path) -> RunRecord:
+    """`run.json` d'un lot `complete` ; sinon `RunError` (un lot non terminé n'est pas évalué)."""
+    record = load_run(directory)
+    if record.status is not RunStatus.COMPLETE:
+        raise RunError(
+            f"{RUN_FILE} : lot « {record.status.value} » (seul un lot « complete » est évalué ; "
+            "relancer scripts/recognize_batch.py)"
+        )
+    return record
