@@ -58,8 +58,10 @@ npx next start --hostname 0.0.0.0 --port 3097
 
 `scripts/smoke_e2e.sh` récupère (si besoin) les 4 versets de la sourate 112 via `scripts/fetch_everyayah.py` dans `$AQR_AUDIO_DIR` (hors dépôt), puis lance :
 
-1. `pytest -m slow tests/e2e` : `aqr recognize` réel (Whisper, CPU) ; vérifie le schéma, que tout verset nommé appartient à la sourate 112 (I3), que le texte vient du corpus (I1) et qu'au moins un verset est RECOGNIZED. Sauté si audio, ffmpeg, modèles ou corpus manquent.
-2. `npm run smoke:browser` (`web/e2e/browser-smoke.mjs`, `playwright-core`) : import de l'audio, moteur réel, affichage « 112:n » + texte arabe, téléchargement du pack ZIP. Il lance `next start` (après `npm run build`) ou vise `AQR_SMOKE_URL` ; Chromium vient de `AQR_SMOKE_CHROMIUM` (défaut `/opt/pw-browsers/chromium`, aucun `playwright install`). Sans `AQR_SMOKE_AUDIO`, il s'affiche `SKIP` et sort en code 0.
+1. `pytest -m slow tests/e2e` : `aqr recognize` réel (Whisper, CPU). `tests/support/corpus_check.py` (`assert_matches_corpus`, même sémantique que `HomeRenderer.span_text`) contrôle chaque verset nommé : texte égal au corpus (verset entier) ou sous-chaîne exacte des mots `first..last` (verset partiel), plage de mots dans le verset, drapeau `partial` cohérent, sourate 112 uniquement (I3), `UNCERTAIN` sans texte, au moins un verset RECOGNIZED.
+2. `npm run smoke:browser` (`web/e2e/browser-smoke.mjs`, `playwright-core`) : import de l'audio, moteur réel, puis lecture de `GET /api/sessions/<id>` (une session `failed` fait échouer immédiatement avec son erreur) ; le résultat passe par le même `corpus_check`, chaque segment RECOGNIZED cliqué affiche le badge « Reconnu » et un texte arabe strictement égal à `interval.text`. Le pack ZIP téléchargé est ouvert et vérifié par `scripts/verify_review_bundle.py` (entrées attendues, SHA-256 recalculés, audio = manifeste = prédiction = fichier source de référence). Il lance `next start` (après `npm run build`) ou vise `AQR_SMOKE_URL` ; Chromium vient de `AQR_SMOKE_CHROMIUM` (défaut `/opt/pw-browsers/chromium`, aucun `playwright install`).
+
+**Ressource absente (audio, ffmpeg, modèles, corpus vérifié par `LOCK.json`, Chromium, build, Python)** : avec `AQR_SMOKE_STRICT=1`, exporté par défaut par `scripts/smoke_e2e.sh`, c'est un échec explicite avec la raison (pytest : erreur ; navigateur : code 2). Sans mode strict, le test est sauté avec la raison et un résumé « NON EXÉCUTÉ » le dit en toutes lettres : un smoke sauté n'est jamais un succès. `node e2e/browser-smoke.mjs --check` ne vérifie que les ressources.
 
 Ces smokes appellent les vrais modèles : plusieurs minutes sur CPU.
 
@@ -69,5 +71,6 @@ Ces smokes appellent les vrais modèles : plusieurs minutes sur CPU.
 cd web
 npm test
 npm run typecheck
+npm run format:check
 npm run build
 ```
