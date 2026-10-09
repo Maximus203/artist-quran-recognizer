@@ -134,6 +134,7 @@ def test_degradation_garde_la_verite_terrain() -> None:
             parent.license,
         )
         assert child.sha256 == SHA_B != parent.sha256
+        assert child.categorie == (*parent.categorie, "C12")
         meta = ref_meta(child)
         assert (meta.parent, meta.condition) == (parent.id, degradation.kind)
 
