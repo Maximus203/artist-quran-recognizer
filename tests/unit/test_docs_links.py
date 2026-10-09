@@ -7,6 +7,8 @@ document de pointer vers une page disparue, et la décision d'usage de dériver 
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -19,6 +21,8 @@ PROVENANCE = "docs/data-lots/ref-corpus-provenance.md"
 RIGHTS = "docs/data-lots/RIGHTS.md"
 LOT1_MANIFEST = "tests/fixtures/audio/manifest.yaml"
 DECISION_LOG = ".artist/decision-log.md"
+REF_MANIFEST = "tests/fixtures/ref-corpus/manifest.yaml"
+REF_TRACE = "tests/fixtures/ref-corpus/manifest.build.json"
 
 DOCS = (PROTOCOLE, PROVENANCE, RIGHTS, "docs/evaluation/normalisation.md")
 STATUT = "provisoire — en attente de confirmation écrite du mainteneur"
@@ -127,3 +131,42 @@ def test_le_lot_1_dans_la_portee_sans_etre_un_precedent() -> None:
     portee = _flat(_section(_read(PROVENANCE), "### Portée"))
     assert "partiellement" not in portee
     assert "Pas un précédent signifie" in portee
+
+
+def test_la_section_reproduire_existe_et_colle_a_la_trace_versionnee() -> None:
+    """Les chiffres de la procédure sont ceux du manifeste et de la trace livrés avec elle."""
+    provenance = _read(PROVENANCE)
+    assert "\n## Reproduire\n" in provenance
+    section = _flat(_section(provenance, "## Reproduire"))
+    trace = json.loads(_read(REF_TRACE))
+    params = trace["parameters"]
+    manifest = yaml.safe_load(_read(REF_MANIFEST))["cases"]
+    manifest_sha = hashlib.sha256((ROOT / REF_MANIFEST).read_bytes()).hexdigest()
+    by_split = {side: sum(c["split"] == side for c in manifest) for side in ("dev", "test")}
+    facts = (
+        manifest_sha[:8],
+        trace["sources"]["everyayah_lock_sha256"][:8],
+        trace["environment"]["tanzil_lock_sha256"][:8],
+        trace["toolchain"]["ffmpeg"],
+        trace["toolchain"]["libmp3lame"],
+        f"{len(manifest)} cas : dev {by_split['dev']}, test {by_split['test']}",
+        f"--seed {params['seed']} --per-scenario {params['per_scenario']}",
+    )
+    for fact in facts:
+        assert fact in section, f"la section Reproduire ne cite pas : {fact}"
+    assert trace["environment"]["command"].startswith("python scripts/build_ref_corpus.py ")
+    for needle in (
+        "git diff tests/fixtures/ref-corpus/manifest.yaml",
+        "manifest.build.json",
+        "environment.git",
+        "quarantaine",
+        "Abdul_Basit_Murattal_192kbps",
+    ):
+        assert needle in section, needle
+    assert not trace["environment"]["git"]["dirty"], "la trace doit venir d'un code validé"
+
+
+@pytest.mark.parametrize("source", ["src/aqr/data/reftrace.py", "scripts/build_ref_corpus.py"])
+def test_la_trace_et_le_script_renvoient_a_la_section_reproduire(source: str) -> None:
+    text = _flat(_read(source))
+    assert PROVENANCE in text and "Reproduire" in text
