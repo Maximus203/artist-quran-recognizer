@@ -1,9 +1,14 @@
 {
+  "carried_over": {
+    "cases": 0,
+    "scenarios": [],
+    "seeds": []
+  },
   "environment": {
     "command": "python scripts/build_ref_corpus.py --out-dir ~/aqr-ref --manifest tests/fixtures/ref-corpus/manifest.yaml --corpus data/corpus --seed 7 --per-scenario 2",
     "git": {
       "dirty": false,
-      "sha": "31538c80ff868813571b0d249591055e63587475"
+      "sha": "3702b575be222ce32b615a7156126210d8ec7d50"
     },
     "tanzil_lock_sha256": "d3f44344d06ecc20df33d99dc27b99d48e57d670cbf66655277ca4505bbc2028"
   },
