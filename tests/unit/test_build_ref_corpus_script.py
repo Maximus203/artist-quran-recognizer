@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import shutil
+from dataclasses import replace
 from pathlib import Path
 
-from scripts.build_ref_corpus import command_line
+import pytest
+from scripts.build_ref_corpus import command_line, main
+from tests.unit.test_refcorpus import clean_case
 
+from aqr.data.manifest import Manifest
 from aqr.data.reftrace import portable_path
 
 ROOT = Path("/work/repo")
@@ -38,3 +43,23 @@ def test_commande_exacte_et_portable() -> None:
     )
     args.scenarios = "priere,assise_fr"
     assert command_line(args, ROOT, HOME).endswith("--per-scenario 2 --scenarios priere,assise_fr")
+
+
+CORPUS = Path(__file__).resolve().parents[2] / "data" / "corpus"
+
+
+@pytest.mark.skipif(
+    not (CORPUS / "LOCK.json").exists() or shutil.which("ffmpeg") is None,
+    reason="corpus Tanzil et ffmpeg requis",
+)
+def test_manifeste_existant_en_fuite_arrete_le_build_sans_rien_ecrire(tmp_path: Path) -> None:
+    manifest = tmp_path / "manifest.yaml"
+    leaky = [replace(clean_case(f"c{n}"), split=side) for n, side in enumerate(("dev", "test"))]
+    Manifest(cases=leaky).save(
+        manifest
+    )  # même récitant des deux côtés : fuite à corriger à la main
+    before = manifest.read_bytes()
+    with pytest.raises(SystemExit, match="fuite"):
+        main(["--out-dir", str(tmp_path / "aqr-ref"), "--manifest", str(manifest)])
+    assert manifest.read_bytes() == before
+    assert not (tmp_path / "manifest.build.json").exists()
