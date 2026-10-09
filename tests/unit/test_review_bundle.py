@@ -222,6 +222,13 @@ def test_the_audio_must_match_the_independent_reference(pack: Pack) -> None:
         verify_bundle(pack.zip, source=pack.reference)
 
 
+def test_an_unreadable_reference_is_a_clear_error(pack: Pack, tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="référence illisible"):
+        verify_bundle(pack.zip, source=tmp_path / "absent.wav")
+    with pytest.raises(ValueError, match="référence illisible"):
+        verify_bundle(pack.zip, source=tmp_path)  # un dossier
+
+
 def test_the_prediction_must_describe_the_bundled_audio(tmp_path: Path) -> None:
     session = _make_session(tmp_path, prediction=_prediction("a" * 64))
     target = tmp_path / "pack.zip"
