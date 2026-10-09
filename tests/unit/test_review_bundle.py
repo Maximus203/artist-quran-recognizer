@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tracemalloc
 import zipfile
+import zlib
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -271,3 +273,112 @@ def test_cli_exit_codes_and_messages(
     altered = pack.rewrite(drop=(PREDICTION_PATH,))
     assert verify_review_bundle.main([str(altered), "--source", str(pack.reference)]) == 1
     assert "manquante" in capsys.readouterr().err
+
+
+# --- archives hostiles : jamais de MemoryError, toujours une ValueError ------------------------
+
+MIB = 1 << 20
+
+
+def _stream_zero_entry(archive: zipfile.ZipFile, name: str, size: int) -> str:
+    """Écrit `size` octets nuls en flux (le ZIP reste petit) ; renvoie leur SHA-256."""
+    digest = hashlib.sha256()
+    block = bytes(MIB)
+    with archive.open(name, "w", force_zip64=True) as stream:
+        for _ in range(size // MIB):
+            stream.write(block)
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _with_streamed_entry(
+    pack: Pack, name: str, size: int, target: Path, *, replace_audio: bool = False
+) -> Path:
+    """Copie le pack valide et y ajoute `name` (octets nuls, en flux) listé dans le manifeste.
+    `replace_audio` : cette entrée devient l'audio du pack (prédiction retirée)."""
+    with (
+        zipfile.ZipFile(pack.zip) as original,
+        zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out,
+    ):
+        manifest = json.loads(original.read("manifest.json"))
+        for info in original.infolist():
+            dropped = replace_audio and info.filename.startswith(("audio/", "predictions/"))
+            if dropped:
+                manifest["files"].pop(info.filename)
+            elif info.filename != "manifest.json":
+                out.writestr(info.filename, original.read(info.filename))
+        sha = _stream_zero_entry(out, name, size)
+        manifest["files"][name] = sha
+        if replace_audio:
+            manifest.update(audio_sha256=sha, prediction_sha256=None)
+        out.writestr("manifest.json", json.dumps(manifest))
+    return target
+
+
+def test_a_huge_declared_json_entry_is_refused_without_being_read(
+    pack: Pack, tmp_path: Path
+) -> None:
+    # Un ZIP de quelques centaines de Ko qui annonce 600 Mo décompressés (bombe de compression).
+    bomb = _with_streamed_entry(pack, "reviews/bomb.review.json", 600 * MIB, tmp_path / "bomb.zip")
+    assert bomb.stat().st_size < 5 * MIB
+    tracemalloc.start()
+    try:
+        with pytest.raises(ValueError, match=r"trop volumineu.*reviews/bomb\.review\.json"):
+            verify_bundle(bomb, source=pack.reference)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert peak < 50 * MIB, f"{peak / MIB:.0f} Mio alloués pour refuser l'entrée"
+
+
+def test_the_manifest_size_is_capped(pack: Pack, tmp_path: Path) -> None:
+    padded = (json.dumps({"schema": "aqr.review-bundle/1"}) + " " * (2 * MIB)).encode()
+    with pytest.raises(ValueError, match=r"trop volumineuse.*manifest\.json"):
+        verify_bundle(pack.rewrite(replace={"manifest.json": padded}))
+
+
+def test_a_large_audio_entry_is_hashed_as_a_stream(pack: Pack, tmp_path: Path) -> None:
+    # 200 Mio d'audio : plus que n'importe quelle limite JSON, mais haché par blocs.
+    big = _with_streamed_entry(
+        pack, "audio/source.bin", 200 * MIB, tmp_path / "big.zip", replace_audio=True
+    )
+    tracemalloc.start()
+    try:
+        summary = verify_bundle(big, require_prediction=False)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert summary["audio_sha256"] == hashlib.sha256(bytes(200 * MIB)).hexdigest()
+    assert peak < 50 * MIB, f"{peak / MIB:.0f} Mio alloués pour hacher l'audio"
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        MemoryError(),
+        NotImplementedError("That compression method is not supported"),
+        zlib.error("Error -3 while decompressing data"),
+        zipfile.BadZipFile("Bad CRC-32 for file"),
+        RuntimeError("File is encrypted, password required for extraction"),
+    ],
+    ids=lambda e: type(e).__name__,
+)
+def test_low_level_zip_errors_become_value_errors(
+    pack: Pack, monkeypatch: pytest.MonkeyPatch, error: Exception
+) -> None:
+    def broken(self: zipfile.ZipFile, *args: object, **kwargs: object) -> None:
+        raise error
+
+    monkeypatch.setattr(zipfile.ZipFile, "open", broken)
+    with pytest.raises(ValueError, match=r"illisible|corrompu"):
+        verify_bundle(pack.zip, source=pack.reference)
+
+
+def test_a_flipped_byte_in_a_stored_entry_is_a_value_error(pack: Pack, tmp_path: Path) -> None:
+    raw = bytearray(pack.zip.read_bytes())
+    at = bytes(raw).index(AUDIO)  # l'audio est ZIP_STORED : ses octets sont lisibles tels quels
+    raw[at] ^= 0x01
+    corrupted = tmp_path / "flipped.zip"
+    corrupted.write_bytes(bytes(raw))
+    with pytest.raises(ValueError, match=r"CRC|corrompu|empreinte"):
+        verify_bundle(corrupted, source=pack.reference)

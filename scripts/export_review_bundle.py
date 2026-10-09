@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -26,12 +27,16 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def sha256_file(path: Path) -> str:
+def sha256_chunks(chunks: Iterable[bytes]) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
+    for block in chunks:
+        digest.update(block)
     return digest.hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    with path.open("rb") as stream:
+        return sha256_chunks(iter(lambda: stream.read(1024 * 1024), b""))
 
 
 def build_bundle(session_dir: Path, target: Path) -> None:
