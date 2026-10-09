@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from aqr.data.config import DataConfig
 from aqr.data.manifest import (
     Annotation,
     AudioCase,
@@ -132,6 +134,40 @@ def test_le_jeu_test_est_refuse_sans_final(world, capsys):
     assert "réservé" in capsys.readouterr().err
     assert _run(manifest, preds, out, "--split", "test", "--final") == 0
     assert json.loads(out.read_text(encoding="utf-8"))["final"] is True
+
+
+def test_la_quarantaine_n_est_jamais_evaluee_meme_avec_final(world, capsys):
+    tmp, manifest, preds = world
+    quarantaine = DataConfig().quarantine_split
+    saved = Manifest.load(manifest)
+    saved.upsert(replace(_case("quaA", quarantaine, human=True)))
+    saved.save(manifest)
+    (preds / "quaA.json").write_text(
+        json.dumps(_prediction(_case("quaA", "x", human=True), [])), "utf-8"
+    )
+    out = tmp / "report.json"
+    for extra in ((), ("--final",)):
+        with pytest.raises(SystemExit) as exc:
+            _run(manifest, preds, out, "--split", quarantaine, *extra)
+        assert exc.value.code == 2
+        assert "jamais évaluée" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_un_cas_en_quarantaine_est_absent_des_rapports_dev_et_test(world):
+    tmp, manifest, preds = world
+    saved = Manifest.load(manifest)
+    saved.upsert(_case("quaA", DataConfig().quarantine_split, human=True))
+    saved.save(manifest)
+    (preds / "quaA.json").write_text(
+        json.dumps(_prediction(_case("quaA", "x", human=True), [VERSE_OK])), "utf-8"
+    )
+    for extra in (("--split", "dev"), ("--split", "test", "--final")):
+        out = tmp / "report.json"
+        assert _run(manifest, preds, out, *extra) == 0
+        text = out.read_text(encoding="utf-8")
+        assert "quaA" not in text
+        assert json.loads(text)["aggregate"]["overall"]["n_cases"] == 1  # devA / tesA seuls
 
 
 def test_aucun_cas_annote_ne_donne_aucune_metrique_et_code_non_nul(tmp_path: Path, capsys):

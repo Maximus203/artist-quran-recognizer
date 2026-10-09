@@ -290,6 +290,17 @@ def test_materialiser_deux_fois_ne_duplique_pas(provider, corpus, tmp_path: Path
     assert len(Manifest.load(manifest_path).cases) == 1
 
 
+def test_rematerialiser_un_mix_conserve_son_affectation(provider, corpus, tmp_path: Path):
+    audio_dir, manifest_path = tmp_path / "audio", tmp_path / "manifest.yaml"
+    mix = generate_mixes(provider, corpus, seed=3, per_scenario=1, config=CFG).mixes[0]
+    first = materialize(mix, audio_dir, manifest_path, DataConfig())
+    manifest = Manifest.load(manifest_path)
+    manifest.upsert(replace(first, split="quarantaine"))
+    manifest.save(manifest_path)
+    materialize(mix, audio_dir, manifest_path, DataConfig())
+    assert Manifest.load(manifest_path).get(mix.id).split == "quarantaine"
+
+
 def test_les_segments_generes_couvrent_les_cas_reels_et_n_induisent_aucun_faux_verset(
     provider, corpus
 ):

@@ -9,6 +9,8 @@ total_heures: 8.69
 # commit, jamais « main ». Les fichiers sont à la racine : <id>.mp3.
 # ATTENTION droits : ce dataset public contredit la mention de droits ci-dessous
 # (« usage interne d'évaluation uniquement, jamais redistribué ») ; voir docs/data-lots/RIGHTS.md.
+# Le lot 1 n'est PAS un précédent : ses décisions sont ouvertes. Règle d'usage provisoire des audios
+# aux droits non établis : docs/data-lots/ref-corpus-provenance.md, section « Décision d'usage ».
 hf_dataset:
   repo: printf0cherif/aqr-audio-private
   revision: f00ebced79755213c0d2050566126602454f5517
