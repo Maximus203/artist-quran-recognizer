@@ -111,9 +111,30 @@ la règle du début du document (« traité comme non autorisé ») et l'évalua
 n'est pas présumée permise, elle n'est permise **que par cette décision**, tant qu'elle tient.
 
 ### Qui décide
-Le mainteneur (Cherif), seul. Ni un agent ni un contributeur ne la confirme, ne l'élargit ni ne la
-présume confirmée. Tant que la confirmation écrite manque (réponse sur la PR, ou ligne du mainteneur
-dans `.artist/decision-log.md`), tout rapport chiffré obtenu sur ces audios le mentionne.
+Le mainteneur (Cherif), seul, y compris pour la lever ou l'élargir. La décision est **provisoire** :
+elle s'applique en attendant, donc ce qui est « Permis » ci-dessous l'est bien tant qu'elle n'est pas
+retirée, mais elle n'est **pas confirmée**. Seule une confirmation écrite du mainteneur (réponse sur
+la PR, ou ligne de sa main dans `.artist/decision-log.md`) lui ôte son caractère provisoire. **La
+fusion de la PR qui la contient ne vaut PAS confirmation** : elle publie le texte, non l'accord. Ni
+un agent ni un contributeur ne la déclare confirmée, ne l'élargit, ni ne s'en prévaut comme d'un
+droit.
+
+### Qui lance quoi
+- Sans audio ni téléchargement (`--dry-run`, lecture des manifestes, tests, relecture de ce
+  document) : n'importe qui, agent compris.
+- Télécharger ou lire ces audios (`scripts/fetch_everyayah.py`, `scripts/fetch_public_lot.py`,
+  construction du corpus de référence, évaluation) : le mainteneur, ou un contributeur ou agent
+  travaillant **sur la machine du mainteneur ou dans un environnement qu'il maîtrise, à sa demande
+  dans la session en cours**.
+- Un **agent cloud** (environnement distant) n'est couvert que si le mainteneur le demande
+  explicitement pour ce lancement : les audios y restent hors dépôt et n'en sortent pas. Sans
+  demande, il ne télécharge ni n'évalue rien sur ces audios (voir aussi `docs/data-lots/RIGHTS.md`,
+  décision 1, pour le lot 1).
+- `scripts/audio_lot.py upload` : le mainteneur seul, vers un dataset privé.
+- Tout rapport chiffré obtenu sur ces audios mentionne le caractère provisoire de la décision
+  (`docs/evaluation/protocole-reglage-evaluation.md`, « Biais à écrire dans tout rapport »).
+  `scripts/evaluate.py` n'affiche pas encore cette mention : à ce jour, c'est à l'auteur du rapport
+  de l'ajouter.
 
 ### Permis provisoirement
 - **Évaluation interne locale** : lancer le moteur sur ces audios et en calculer des métriques à
@@ -146,24 +167,25 @@ Sans nouvelle décision écrite du mainteneur :
 | EveryAyah (`everyayah.com`, `scripts/fetch_everyayah.py`) | droits non établis | oui : évaluation interne locale |
 | Lots Hugging Face lus pour le corpus de référence (`Buraaq/quran-md-ayahs`, `tarteel-ai/everyayah`, `MohamedRashad/Quran-Recitations`) | aucune licence déclarée ou droits explicitement non documentés | oui : évaluation interne locale |
 | `RetaSy/quranic_audio_dataset` | aucune licence, consentement non documenté | **non** : exclu |
-| Lot 1 (`docs/data-lots/lot-1.yaml`, enregistrements de tiers sur YouTube) | **décisions ouvertes** (`docs/data-lots/RIGHTS.md`) | partiellement, voir ci-dessous |
+| Lot 1 (`docs/data-lots/lot-1.yaml`, enregistrements de tiers sur YouTube) | **décisions ouvertes** (`docs/data-lots/RIGHTS.md`) | oui, limité : évaluation interne locale d'une copie hors dépôt ; publication et copie cloud non couvertes |
 
-Le lot 1 n'est **pas un précédent**. Son dataset Hugging Face est public : c'est une redistribution
-déjà constatée, que cette décision ne légitime ni ne condamne. Les trois décisions de `RIGHTS.md`
-(visibilité du dataset, retrait des voix de tiers, mention de droits) restent au mainteneur et
-priment. En attendant, la présente décision couvre pour le lot 1 la seule évaluation interne locale
-d'une copie hors dépôt, sans nouvelle publication. Le téléchargement de la copie publique par
-`scripts/fetch_public_lot.py` vers un autre environnement que la machine du mainteneur relève de ces
-décisions ouvertes et n'est pas couvert ici. Réciproquement, rien de ce qui est décidé pour les
-sources ci-dessus ne vaut autorisation pour le lot 1.
+Pas un précédent signifie : rien de ce qui est fait ou décidé pour le lot 1 (dont sa publication) ne
+sert de base aux autres sources, ni l'inverse, et la présente décision ne tranche aucune des trois
+décisions ouvertes de `RIGHTS.md` (visibilité du dataset, retrait des voix de tiers, mention de
+droits), qui restent au mainteneur et priment. Cela n'empêche pas le lot 1 de recevoir, pour la seule
+évaluation interne locale d'une copie hors dépôt, le même régime provisoire que les autres sources.
+Son dataset Hugging Face est public : c'est une redistribution déjà constatée, que cette décision ne
+légitime ni ne condamne. Le téléchargement de la copie publique par `scripts/fetch_public_lot.py`
+vers un autre environnement que ceux de « Qui lance quoi » n'est pas couvert.
 
 ### Le téléchargement n'est pas une autorisation
 `scripts/fetch_everyayah.py` **télécharge par défaut** (sans confirmation) 3 récitants × 10 sourates
 (`DEFAULT_SUBSET`, `src/aqr/data/everyayah.py`) vers `$AQR_AUDIO_DIR/everyayah`, hors dépôt. Ce
 comportement est conservé tel quel : ce qui rend l'usage acceptable n'est pas le script, c'est la
 décision ci-dessus, provisoire. Lancer ce script (ou `scripts/fetch_public_lot.py`) revient donc à
-exercer la permission provisoire : sur la machine du mainteneur, vers un dossier hors dépôt, jamais
-automatisé en CI ni vers un dossier suivi par git. `--dry-run` liste le plan sans rien télécharger.
+exercer la permission provisoire, par les personnes de « Qui lance quoi » : vers un dossier hors
+dépôt, jamais automatisé en CI ni vers un dossier suivi par git. `--dry-run` liste le plan sans rien
+télécharger.
 
 ## Libellé de licence canonique
 Champ `license` d'un manifeste (corpus de référence et tout nouveau cas dont les droits ne sont pas
@@ -174,14 +196,19 @@ Champ `license` d'un manifeste (corpus de référence et tout nouveau cas dont l
 Il dit deux choses : le statut des droits (**non établis**) et la limite d'usage (la « Décision
 d'usage » ci-dessus, par le chemin qu'il cite).
 
-Libellé hérité du lot 1 (`license` de `tests/fixtures/audio/manifest.yaml`, 12 cas ; champ `droits`
-des fiches écrites par `scripts/audio_lot.py`) :
+Libellés hérités (non réécrits ici) :
 
-`usage interne d'évaluation uniquement, jamais redistribué`
+- Lot 1 : `usage interne d'évaluation uniquement, jamais redistribué` (`license` des 12 cas de
+  `tests/fixtures/audio/manifest.yaml`, champ `droits` des fiches écrites par
+  `scripts/audio_lot.py`). C'est une consigne d'usage, pas une preuve de droits : il se lit comme le
+  libellé canonique privé de son préfixe « droits non établis ». Les décisions du lot 1 sont ouvertes
+  (`docs/data-lots/RIGHTS.md`, décision 3) et le changer toucherait les 12 cas et `audio_lot.py` : on
+  l'alignera quand le mainteneur aura tranché.
+- Mixages locaux (`mixer.materialize`, `src/aqr/data/mixer.py`) :
+  `synthétique : récitations EveryAyah et clips fournis, usage interne de test`. Les clips sources
+  ont des droits non établis (EveryAyah) : même statut que le canonique, que ce libellé ne dit pas.
+  À aligner avec le canonique à la prochaine modification du mixeur.
 
-C'est une consigne d'usage, pas une preuve de droits : il se lit comme le libellé canonique privé de
-son préfixe « droits non établis ». Il n'est pas réécrit ici, car les décisions du lot 1 sont
-ouvertes (`docs/data-lots/RIGHTS.md`, décision 3) et le changer toucherait les 12 cas du manifeste et
-`scripts/audio_lot.py` ; on l'alignera quand le mainteneur aura tranché. Aucun autre libellé n'est
-admis : `tests/unit/test_docs_links.py` vérifie que chaque libellé du manifeste du lot 1 figure dans
-ce document.
+Tout **nouveau** cas dont les droits ne sont pas établis porte le libellé canonique. Les libellés
+hérités ci-dessus sont les seuls tolérés en plus : `tests/unit/test_docs_links.py` échoue si un
+libellé du manifeste du lot 1 ou de `src/aqr/data/*.py` n'est pas documenté ici.

@@ -524,8 +524,8 @@
   `quarantaine`, jamais en `dev`. C'est un état, pas un jeu : `DataConfig.quarantine_split`, volontairement absent
   de `DataConfig.splits`. Sens unique, définitif ; la mesure finale suivante se fait sur de nouveaux récitants.
 - **Code** : `quarantine_recitant(cases, recitant)` (`src/aqr/data/split.py`, `dataclasses.replace`) : idempotent,
-  refuse un récitant inconnu, sans affectation ou en `dev` (un mélange dev/test reste une fuite à corriger à la
-  main). `assign_splits` exclut la quarantaine du ratio et ne lève pas ; elle reste une erreur si un récitant est
+  refuse un récitant inconnu, sans affectation ou en `dev` (un mélange dev/test reste une fuite à corriger dans le
+  manifeste). `assign_splits` exclut la quarantaine du ratio et ne lève pas ; elle reste une erreur si un récitant est
   en quarantaine ET ailleurs. `scripts/evaluate.py --split quarantaine` est refusé (code 2), `--final` compris.
 - **Aucun récitant n'est mis en quarantaine par ce changement** : le motif (date, récitant anonymisé, cause de
   l'exposition, cas touchés) se consigne ici au premier cas réel.
@@ -533,8 +533,14 @@
   `validate_ref_manifest` n'accepte que `cfg.splits` ; il doit accepter aussi `cfg.quarantine_split` et signaler
   un récitant en quarantaine ET en dev/test (son contrôle de fuite ne regarde que dev/test). Sa règle « un dérivé
   a le récitant et le split de son parent » couvre déjà le groupe entier.
-- **Non traité** : le résumé de `aqr data split` ne liste que `dev` et `test` ; `preannotate` ne refuse que `test`
-  (une préannotation n'est pas du réglage, mais à revoir si la quarantaine doit être strictement inerte).
+- **Suite de revue** : `aqr data quarantine <récitant> [--dry-run]` écrit le manifeste ; `aqr data split`
+  affiche la quarantaine et y remplit les cas sans split ; `preannotate` refuse aussi la quarantaine.
+  **La quarantaine suit la voix** : `mixer.materialize` écrit `mix-<reciter>` (minuscules), autre nom pour la
+  même voix ; on a préféré l'accepter dans le code (`voice_key`, `DataConfig.mix_recitant_prefix`) plutôt que
+  nuancer la doc, car un mix de la voix exposée restant en `dev` aurait été une fuite. Contrepartie : nommer
+  `<reciter>` met aussi en quarantaine ses `mix-<reciter>` déjà en `dev`, et le résumé de la commande liste les
+  récitants touchés. `Manifest.upsert` garde le split existant quand le nouveau cas n'en a pas (une
+  re-matérialisation ne défait pas une quarantaine) ; un split explicite s'applique toujours.
 
 ## 2026-10-09 — Décision d'usage des audios aux droits non établis (provisoire)
 - **Statut : provisoire — en attente de confirmation écrite du mainteneur.** Confirmation reçue : non. Texte et
@@ -549,6 +555,11 @@
   n'est pas une autorisation ; (c) le lot 1 n'est pas un précédent (`RIGHTS.md`, `lot-1.yaml`, protocole) ; (d)
   libellé de licence canonique `droits non établis : usage interne d'évaluation uniquement, jamais redistribué
   (docs/data-lots/ref-corpus-provenance.md)`, l'ancien libellé du lot 1 étant documenté comme hérité.
+- **Précisions de revue** : la fusion de la PR ne vaut PAS confirmation du mainteneur ; « Qui lance quoi » (le
+  mainteneur, ou un contributeur/agent dans un environnement qu'il maîtrise et à sa demande ; un agent cloud
+  seulement sur demande explicite pour le lancement) ; tout rapport chiffré mentionne le caractère provisoire
+  (`protocole`, « Biais à écrire dans tout rapport ») alors que `scripts/evaluate.py` ne l'affiche pas encore.
+  Libellés hérités documentés : lot 1 et mixer (`synthétique : …`), non réécrits.
 - **Hypothèse à confirmer** : « régler un modèle » interdit = toucher aux poids d'un modèle ; le calibrage de nos
   seuils sur `dev` (protocole) est classé évaluation interne.
 - **Ouvert pour le mainteneur** : confirmer par écrit ; trancher les trois décisions de `RIGHTS.md` ; dire si le

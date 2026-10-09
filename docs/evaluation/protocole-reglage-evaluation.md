@@ -27,23 +27,27 @@ quarantaine` est refusé, même avec `--final`), ni utilisé au réglage, ni com
   (`DataConfig.split_seed`, défaut `aqr-split-v1`) et vise une part de durée `dev` de
   `DataConfig.dev_ratio` (défaut 0,7).
 - Une affectation déjà écrite dans un manifeste n'est jamais modifiée, sauf la mise en quarantaine
-  (règle 3, à sens unique) ; un récitant présent dans les deux jeux, ou en quarantaine et ailleurs,
-  est une erreur (`ValueError`) à corriger à la main, pas à contourner.
+  (règle 3, à sens unique). Un récitant présent dans les deux jeux est une erreur (`ValueError`) :
+  fuite à corriger dans le manifeste, jamais à contourner. En quarantaine ET en `test`, c'est une
+  mise en quarantaine inachevée : `aqr data quarantine <récitant>` la termine.
 - Les variantes d'un même contenu (même récitant ré-encodé, dégradé ou mixé, identifiant dérivé
   `<parent>--<label>`) héritent du jeu du récitant : une dégradation ne crée pas un nouveau récitant.
 - Pour un mixage, le jeu est celui du récitant des versets ; la parole non coranique de remplissage
-  ne compte pas comme récitant.
+  ne compte pas comme récitant. `mixer.materialize` écrit `mix-<reciter>` (minuscules) : même voix
+  que `<reciter>`, la quarantaine les prend ensemble (`voice_key`, `src/aqr/data/split.py`).
 
 ## Règles de réglage
 
 1. Tout réglage se fait sur `dev` seulement. Les paramètres calibrés vivent en configuration, pas en
    dur (AGENTS.md).
-2. Une correction de bug vu sur un audio du jeu `test` n'est pas appliquée telle quelle : on
-   reproduit le défaut sur un cas `dev` (ou on ajoute un cas `dev`), puis on corrige.
+2. Voir un bug sur un audio du jeu `test`, c'est l'exposer : la règle 3 s'applique d'abord (le
+   récitant passe en quarantaine). La correction n'est pas appliquée telle quelle : on reproduit le
+   défaut sur un cas `dev` (ou on ajoute un cas `dev`), puis on corrige.
 3. Un cas `test` observé pendant le développement (écoute, transcription lue, sortie du moteur
    inspectée) a cessé d'être aveugle. On le signale, puis **tout le groupe du récitant** (parents,
    mixes, dérivés `<parent>--<label>`) passe en split `quarantaine`
-   (`quarantine_recitant`, `src/aqr/data/split.py`), jamais en `dev` : cette sortie à sens unique
+   (`aqr data quarantine <récitant> [--dry-run]`, ou `quarantine_recitant` dans
+   `src/aqr/data/split.py`), jamais en `dev` : cette sortie à sens unique
    est la seule modification d'affectation admise (voir « Découpage »), et choisir après coup quels
    cas rejoignent le jeu de réglage d'après ce qu'on a vu du test serait une sélection a posteriori.
    Le motif (date, récitant anonymisé, cause de l'exposition, cas touchés) est consigné dans
@@ -56,8 +60,8 @@ quarantaine` est refusé, même avec `--final`), ni utilisé au réglage, ni com
 - Commande : `python scripts/evaluate.py ... --split test --final`. Le rapport enregistre
   `"final": true`.
 - Une seule fois par version candidate. Si le résultat déçoit, on ne règle pas d'après lui : on
-  revient à `dev`, et la version suivante aura sa propre mesure finale sur un jeu `test` renouvelé
-  ou élargi à de nouveaux récitants.
+  revient à `dev`, et la version suivante aura sa propre mesure finale sur un jeu `test` renouvelé :
+  de nouveaux récitants, jamais un récitant déjà vu.
 - Avant la mesure : manifeste figé, audios épinglés (sha256), variante de normalisation nommée
   (`docs/evaluation/normalisation.md`), `min_overlap` et tolérances écrits.
 - Les effectifs sont rapportés ; sous `min_reference_verses`, le résultat est marqué non défendable
@@ -76,3 +80,8 @@ quarantaine` est refusé, même avec `--final`), ni utilisé au réglage, ni com
   candidat, **pas une référence acquise** : ses droits et son statut de dataset public sont des
   décisions ouvertes (`docs/data-lots/RIGHTS.md`, `docs/data-lots/ref-corpus-provenance.md`
   section « Décision d'usage »). Tout rapport qui s'appuie dessus le dit.
+- Les audios aux droits non établis ne sont utilisés que sous la décision d'usage de
+  `docs/data-lots/ref-corpus-provenance.md` (section « Décision d'usage »), **provisoire — en
+  attente de confirmation écrite du mainteneur**. Tout rapport chiffré obtenu sur ces audios le dit.
+  `scripts/evaluate.py` n'écrit pas encore cette mention dans son rapport : l'auteur du rapport
+  l'ajoute.

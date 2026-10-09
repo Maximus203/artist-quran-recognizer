@@ -85,10 +85,45 @@ def test_le_protocole_decrit_la_quarantaine_et_sa_trace() -> None:
     assert "Quarantaine" in _read(DECISION_LOG)
 
 
-def test_chaque_libelle_de_licence_du_lot_est_documente() -> None:
-    provenance = _read(PROVENANCE)
-    assert LIBELLE_CANONIQUE in _section(provenance, "## Libellé de licence canonique")
+def test_chaque_libelle_de_licence_herite_est_documente_a_part_du_canonique() -> None:
+    section = _section(_read(PROVENANCE), "## Libellé de licence canonique")
+    assert LIBELLE_CANONIQUE in section
+    # le libellé du lot 1 est contenu dans le canonique : on le cherche hors de celui-ci
+    heritage = section.replace(LIBELLE_CANONIQUE, "")
     manifest = yaml.safe_load(_read(LOT1_MANIFEST))
     labels = {case["license"] for case in manifest["cases"]}
-    undocumented = sorted(label for label in labels if label not in provenance)
-    assert not undocumented, f"libellés de licence non documentés : {undocumented}"
+    for source in sorted((ROOT / "src/aqr/data").glob("*.py")):
+        labels |= set(re.findall(r'license="([^"]+)"', source.read_text(encoding="utf-8")))
+    assert len(labels) >= 2, "le contrôle ne voit plus les libellés (lot 1 et mixer)"
+    assert LIBELLE_CANONIQUE not in labels
+    undocumented = sorted(label for label in labels if label not in heritage)
+    assert not undocumented, f"libellés de licence hérités non documentés : {undocumented}"
+
+
+def test_la_decision_precise_qui_lance_quoi_et_que_la_fusion_ne_confirme_rien() -> None:
+    section = _flat(_section(_read(PROVENANCE), "## Décision d'usage"))
+    assert "### Qui lance quoi" in section
+    assert "agent cloud" in section
+    assert "ne vaut PAS confirmation" in section and "fusion" in section
+    assert "scripts/evaluate.py" in section and "n'affiche pas encore" in section
+
+
+def test_les_rapports_doivent_mentionner_la_decision_provisoire() -> None:
+    biais = _flat(_section(_read(PROTOCOLE), "## Biais à écrire dans tout rapport"))
+    assert "Décision d'usage" in biais and "provisoire" in biais
+
+
+def test_le_protocole_est_coherent_sur_exposition_et_renouvellement() -> None:
+    protocole = _read(PROTOCOLE)
+    regles = _flat(_section(protocole, "## Règles de réglage"))
+    regle_2 = regles.split("2.", 1)[1].split("3.", 1)[0]
+    assert "règle 3" in regle_2 and "exposer" in regle_2
+    assert "ou élargi" not in protocole
+    assert "à corriger à la main" not in protocole
+    assert "aqr data quarantine" in protocole
+
+
+def test_le_lot_1_dans_la_portee_sans_etre_un_precedent() -> None:
+    portee = _flat(_section(_read(PROVENANCE), "### Portée"))
+    assert "partiellement" not in portee
+    assert "Pas un précédent signifie" in portee
