@@ -1,6 +1,6 @@
 # Artist Quran Review — démarrage local
 
-L'interface Next.js appelle **`aqr recognize`**, le moteur Python existant. Elle reste sur `127.0.0.1`. Un essai conserve son audio, sa prédiction originale et les révisions de revue dans `AQR_REVIEW_DIR` (par défaut `%LOCALAPPDATA%\aqr-review`), hors Git. Aucun envoi cloud automatique.
+L'interface Next.js appelle **`aqr recognize`**, le moteur Python existant. Elle reste sur `127.0.0.1`. Un essai conserve son audio, sa prédiction originale et les révisions de revue dans `AQR_REVIEW_DIR` (par défaut `%LOCALAPPDATA%\aqr-review` sous Windows, `$XDG_DATA_HOME/aqr-review` ou `~/.local/share/aqr-review` ailleurs), hors Git. Aucun envoi cloud automatique.
 
 ## Préparer
 
@@ -31,6 +31,28 @@ Ouvrir l'URL affichée par Next.js. L'atelier lance FastConformer et le segmente
 Les sessions micro sont marquées `source_kind: microphone` dans `session.json`. Le manifeste du pack (`aqr.review-bundle/1`) indique l’empreinte audio, celle de chaque résultat et correction, ainsi que les versions déclarées par le moteur. Les fichiers restent dans `AQR_REVIEW_DIR/sessions/<id>` hors Git et ne sont pas supprimés automatiquement. Pour les réutiliser sur le cloud, conserver le ZIP dans un stockage privé puis ajouter au manifeste versionné `docs/data-lots/lot-N.yaml` uniquement les métadonnées vérifiées (empreinte, durée, catégorie, droits et emplacement privé). Aucun enregistrement micro n’est publié automatiquement.
 
 Le serveur est réservé à un usage local de confiance. Le pack de revue ne modifie jamais la prédiction. Les signalements partiels ne sont pas évalués comme vérité terrain. Les données conservées ne sont pas supprimées automatiquement.
+
+## Mode test distant (optionnel, protégé)
+
+Par défaut l'atelier n'accepte que la boucle locale (`127.0.0.1`, `localhost`, `[::1]`). Pour un test depuis une autre machine (VM, tunnel, proxy), activer explicitement :
+
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `AQR_ALLOWED_HOSTS` | noms d'hôte supplémentaires acceptés, séparés par des virgules (sans port) | vide |
+| `AQR_ACCESS_TOKEN` | jeton d'accès, **obligatoire** pour qu'un hôte supplémentaire soit accepté ; une fois défini il protège aussi le loopback. Choisir ≥ 24 caractères aléatoires | absent |
+| `AQR_ACCESS_TTL_S` | durée de vie (s) du cookie d'accès délivré par `/access` (1 à 604800) | 3600 |
+| `AQR_MAX_UPLOAD_BYTES` | plafond d'upload (refus `413` dès l'en-tête `Content-Length`, `400` sinon) | 300 Mo |
+| `AQR_SESSION_TTL_S` | supprime à chaque import les sessions inactives depuis plus de N secondes (jamais celles en cours) | `0` = désactivé |
+
+Le jeton se présente par l'en-tête `x-aqr-token`, `Authorization: Bearer …` (scripts, tests) ou par un cookie `HttpOnly` signé (HMAC, expiration incluse) obtenu en saisissant le jeton sur `/access` ; la comparaison est à temps constant. Sans jeton valide, l'API répond `403` et la page redirige vers `/access`. Les mutations (`POST`/`DELETE`) exigent en plus une origine identique ou un hôte autorisé de même protocole et port.
+
+```bash
+AQR_ALLOWED_HOSTS=atelier.exemple.test AQR_ACCESS_TOKEN="$(openssl rand -hex 16)" \
+AQR_ACCESS_TTL_S=1800 AQR_SESSION_TTL_S=86400 \
+npx next start --hostname 0.0.0.0 --port 3097
+```
+
+À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : pas de limitation de débit intégrée, et les audios déposés restent des données privées. `DELETE /api/sessions/<id>` supprime une session (refusé si elle tourne). Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
 
 ## Vérification
 
