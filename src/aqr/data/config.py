@@ -13,6 +13,9 @@ class DataConfig:
     """Tolérance de frontière par défaut d'un cas (docs/ARCHITECTURE.md §7)."""
     dev_ratio: float = 0.7
     """Part de la durée affectée à `dev` (le reste en `test`), par récitant."""
+    derived_duration_tolerance_s: float = 0.25
+    """Écart toléré entre la durée d'un cas dégradé et celle de son parent (+ décalage) : queue
+    de réverbération (0,18 s avec les réglages par défaut) et remplissage MP3."""
     split_seed: str = "aqr-split-v1"
     """Sel du hachage qui ordonne les récitants : change l'affectation, jamais le principe."""
     audio_extensions: tuple[str, ...] = (

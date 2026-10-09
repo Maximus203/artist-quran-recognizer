@@ -24,7 +24,9 @@ Règles garanties par `validate_ref_manifest` :
   y compris les mixages et les dégradations : c'est l'unité du découpage dev/test ;
 - les récitants de `dev` et de `test` sont disjoints ; un cas dérivé a le jeu de son parent ;
 - une dégradation ne change jamais la vérité terrain, sauf un décalage temporel déclaré
-  (`shift_s`), appliqué à `expected`, `non_quran` et `annotated_windows` ;
+  (`shift_s`), appliqué à `expected`, `non_quran` et `annotated_windows` ; `shift_s` vaut
+  `params.pad_s` pour `silence_pad` et 0 pour toute autre dégradation, et le validateur compare
+  chaque dérivé à son parent décalé (vérité, statut, durée) ;
 - `license` est renseignée (valeur par défaut : droits non établis, voir
   `docs/data-lots/ref-corpus-provenance.md`) ; aucun audio n'est versionné, seulement son SHA-256.
 """
@@ -56,6 +58,8 @@ LICENSE_UNESTABLISHED = (
 )
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+_MS_EPSILON = 1e-6
+"""Écart toléré (en ms) entre `pad_s` et sa valeur arrondie : `adelay` travaille à la ms."""
 Param = float | int | str
 
 
@@ -76,6 +80,26 @@ class Degradation:
             )
         if self.shift_s < 0:
             raise RefCorpusError("shift_s négatif : un décalage ne peut qu'ajouter du silence")
+        if self.kind == "silence_pad":
+            pad = self.params.get("pad_s")
+            if (
+                isinstance(pad, bool)
+                or not isinstance(pad, int | float)
+                or pad <= 0
+                or abs(pad * 1000 - round(pad * 1000)) > _MS_EPSILON
+            ):
+                raise RefCorpusError(
+                    f"silence_pad exige params.pad_s > 0, en secondes, à la milliseconde : {pad!r}"
+                )
+            if self.shift_s != pad:
+                raise RefCorpusError(
+                    f"shift_s ({self.shift_s:g}) doit égaler params.pad_s ({pad:g}) : le silence "
+                    "ajouté est exactement le décalage de la vérité"
+                )
+        elif self.shift_s != 0:
+            raise RefCorpusError(
+                f"shift_s doit valoir 0 pour {self.kind} (seul silence_pad décale le temps)"
+            )
 
     @property
     def label(self) -> str:
@@ -159,6 +183,17 @@ def _shift(span: tuple[float, float], by: float) -> tuple[float, float]:
     return (round(span[0] + by, 3), round(span[1] + by, 3))
 
 
+def shifted_truth(
+    parent: AudioCase, shift: float
+) -> tuple[tuple[ExpectedItem, ...], tuple[NonQuranItem, ...], tuple[tuple[float, float], ...]]:
+    """Vérité du parent décalée de `shift` secondes : (expected, non_quran, annotated_windows)."""
+    return (
+        tuple(ExpectedItem(_shift(i.t, shift), i.ref, i.words, i.status) for i in parent.expected),
+        tuple(NonQuranItem(_shift(i.t, shift), i.kind) for i in parent.non_quran),
+        tuple(_shift(w, shift) for w in parent.annotated_windows),
+    )
+
+
 def degraded_id(parent_id: str, degradation: Degradation) -> str:
     return f"{parent_id}--{degradation.label}"
 
@@ -170,7 +205,7 @@ def degraded_case(
     parent_meta = ref_meta(parent)
     if parent_meta.parent is not None:
         raise RefCorpusError(f"cas {parent.id} : on ne dégrade pas une dégradation")
-    shift = degradation.shift_s
+    expected, non_quran, windows = shifted_truth(parent, degradation.shift_s)
     case_id = degraded_id(parent.id, degradation)
     derived = replace(
         parent,
@@ -179,11 +214,9 @@ def degraded_case(
         sha256=sha256,
         duree_s=duree_s,
         categorie=tuple(dict.fromkeys((*parent.categorie, DEGRADED_CATEGORY))),
-        expected=tuple(
-            ExpectedItem(_shift(i.t, shift), i.ref, i.words, i.status) for i in parent.expected
-        ),
-        non_quran=tuple(NonQuranItem(_shift(i.t, shift), i.kind) for i in parent.non_quran),
-        annotated_windows=tuple(_shift(w, shift) for w in parent.annotated_windows),
+        expected=expected,
+        non_quran=non_quran,
+        annotated_windows=windows,
     )
     return with_ref_meta(
         derived,
@@ -203,6 +236,41 @@ def assign_ref_splits(cases: Sequence[AudioCase], config: DataConfig) -> list[Au
     """
     mapping = assign_splits(cases, config)
     return [replace(case, split=case.split or mapping[case.recitant]) for case in cases]
+
+
+def _derived_problems(
+    child: AudioCase, meta: RefMeta, parent: AudioCase, cfg: DataConfig
+) -> list[str]:
+    """Écarts entre un dérivé et son parent décalé de `shift_s` (vérité, statut, durée)."""
+    where = f"cas {child.id}"
+    problems: list[str] = []
+    try:
+        parent_meta = ref_meta(parent)
+    except RefCorpusError:
+        return problems  # déjà signalé au titre du parent
+    if parent_meta.parent is not None:
+        problems.append(f"{where} : dégradation d'une dégradation ({parent.id} est déjà dérivé)")
+    if meta.non_quran != parent_meta.non_quran:
+        problems.append(f"{where} : ref.non_quran diffère de celui du parent {parent.id}")
+    shift = meta.degradation.shift_s if meta.degradation else 0.0
+    expected, non_quran, windows = shifted_truth(parent, shift)
+    for name, got, want in (
+        ("expected", child.expected, expected),
+        ("non_quran", child.non_quran, non_quran),
+        ("annotated_windows", child.annotated_windows, windows),
+    ):
+        if got != want:
+            problems.append(
+                f"{where} : {name} diffère de celui du parent {parent.id} décalé de {shift:g} s"
+            )
+    if child.duree_s is None or parent.duree_s is None:
+        problems.append(f"{where} : durée absente, impossible de la comparer à {parent.id}")
+    elif abs(child.duree_s - (parent.duree_s + shift)) > cfg.derived_duration_tolerance_s:
+        problems.append(
+            f"{where} : durée {child.duree_s:g} s != parent {parent.duree_s:g} s + "
+            f"décalage {shift:g} s (tolérance {cfg.derived_duration_tolerance_s:g} s)"
+        )
+    return problems
 
 
 def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) -> list[str]:
@@ -236,8 +304,10 @@ def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) 
             parent = by_id.get(meta.parent)
             if parent is None:
                 problems.append(f"{where} : parent {meta.parent!r} absent")
-            elif parent.split != case.split or parent.recitant != case.recitant:
-                problems.append(f"{where} : doit avoir le récitant et le split de {parent.id}")
+            else:
+                if parent.split != case.split or parent.recitant != case.recitant:
+                    problems.append(f"{where} : doit avoir le récitant et le split de {parent.id}")
+                problems.extend(_derived_problems(case, meta, parent, cfg))
     for recitant, found in sorted(sides.items()):
         if len(found) > 1:
             problems.append(f"récitant {recitant!r} présent en dev et en test (fuite)")

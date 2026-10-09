@@ -8,20 +8,31 @@ from array import array
 from pathlib import Path
 
 import pytest
-from tests.unit.test_data_mixer import CORPUS_DIR, SyntheticProvider
+from tests.unit.test_data_mixer import CORPUS_DIR, SyntheticProvider, freq_of, tone
 
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
+from aqr.data.config import DataConfig
 from aqr.data.degrade import read_samples, rms
 from aqr.data.ingest import sha256_file
-from aqr.data.manifest import Manifest
+from aqr.data.manifest import AudioCase, ExpectedItem, Manifest, NonQuranItem, WordRange
+from aqr.data.mixer import read_wav, write_wav
 from aqr.data.refbuild import (
     BuildReport,
     ReferenceClipProvider,
     build_ref_corpus,
+    degrade_cases,
     ensure_outside_repo,
 )
-from aqr.data.refcorpus import Degradation, RefCorpusError, ref_meta, validate_ref_manifest
-from aqr.domain.models import NonQuranKind
+from aqr.data.refcorpus import (
+    LICENSE_UNESTABLISHED,
+    Degradation,
+    RefCorpusError,
+    RefMeta,
+    ref_meta,
+    validate_ref_manifest,
+    with_ref_meta,
+)
+from aqr.domain.models import NonQuranKind, Status, VerseRef
 
 pytestmark = [
     pytest.mark.skipif(not (CORPUS_DIR / "LOCK.json").exists(), reason="corpus non téléchargé"),
@@ -152,3 +163,69 @@ def test_recitant_sans_basmala_ecarte(tmp_path: Path) -> None:
         (root / reciter).mkdir(parents=True)
     (root / "Complet_128kbps" / "bismillah.mp3").write_bytes(b"x")
     assert ReferenceClipProvider(tmp_path).reciters() == ("Complet_128kbps",)
+
+
+def test_decalage_des_zones_non_coraniques_de_la_construction(
+    built: tuple[BuildReport, Path, Path],
+) -> None:
+    """Dans le corpus construit, l'audio sous chaque zone décalée est celui de la zone du parent."""
+    report, out, _ = built
+    by_id = {c.id: c for c in report.manifest.cases}
+    pads = [c for c in report.manifest.cases if ref_meta(c).condition == "silence_pad"]
+    with_zone = [c for c in pads if c.non_quran]
+    assert with_zone, "aucun parent à zone non coranique dans le corpus de test"
+    for child in with_zone:
+        parent = by_id[ref_meta(child).parent or ""]
+        pad = ref_meta(child).degradation.params["pad_s"]  # type: ignore[union-attr]
+        got, rate = read_samples(out / child.file)
+        want, _ = read_samples(out / parent.file)
+        for c_zone, p_zone in zip(child.non_quran, parent.non_quran, strict=True):
+            assert c_zone.t == pytest.approx((p_zone.t[0] + pad, p_zone.t[1] + pad))
+            assert c_zone.kind is p_zone.kind
+            a, b = (round(t * rate) for t in c_zone.t)
+            pa, pb = (round(t * rate) for t in p_zone.t)
+            assert got[a:b] == want[pa:pb]  # bit à bit : le silence n'a fait que translater
+
+
+def test_decalage_non_quran_bout_en_bout(tmp_path: Path) -> None:
+    """Parent à zone non coranique ET fenêtre annotée, dégradé en silence_pad par le constructeur :
+    verset, zone et fenêtre sont décalés de pad_s, et l'audio correspondant s'y trouve vraiment."""
+    rate, pad = 16000, 3.0
+    samples = array("h", tone(500.0, 3.0))  # verset 0-3 s
+    samples.extend([0] * rate)  # pause 3-4 s
+    samples.extend(tone(2500.0, 2.0))  # zone non coranique 4-6 s
+    write_wav(tmp_path / "mix" / "parent.wav", samples, rate)
+    parent = AudioCase(
+        id="parent",
+        file="mix/parent.wav",
+        sha256=sha256_file(tmp_path / "mix" / "parent.wav"),
+        categorie=("C09",),
+        recitant="recit_a",
+        riwaya="hafs",
+        langues=("ar",),
+        license=LICENSE_UNESTABLISHED,
+        duree_s=6.0,
+        statut="annote",
+        split="dev",
+        origine="mix",
+        expected=(ExpectedItem((0.0, 3.0), VerseRef(112, 1), WordRange.all(), Status.RECOGNIZED),),
+        non_quran=(NonQuranItem((4.0, 6.0), NonQuranKind.FRENCH),),
+        annotated_windows=((0.0, 6.0),),
+    )
+    parent = with_ref_meta(parent, RefMeta(condition="clean"))
+    degradation = Degradation("silence_pad", {"pad_s": pad}, shift_s=pad)
+    (child,) = degrade_cases([parent], tmp_path, [degradation], DataConfig())
+
+    assert [i.t for i in child.expected] == [(3.0, 6.0)]
+    assert [(i.t, i.kind) for i in child.non_quran] == [((7.0, 9.0), NonQuranKind.FRENCH)]
+    assert child.annotated_windows == ((3.0, 9.0),)
+    assert child.duree_s == pytest.approx(9.0, abs=0.01)
+    assert validate_ref_manifest(Manifest(cases=[parent, child])) == []
+
+    audio, _ = read_samples(tmp_path / child.file)
+    assert rms(audio[: 3 * rate]) == 0  # le silence ajouté
+    assert freq_of(audio[3 * rate : 6 * rate]) == pytest.approx(500.0, rel=0.02)  # le verset
+    assert freq_of(audio[7 * rate : 9 * rate]) == pytest.approx(2500.0, rel=0.02)  # la zone
+    assert (
+        read_wav(tmp_path / child.file, rate)[7 * rate : 9 * rate] == samples[4 * rate : 6 * rate]
+    )
