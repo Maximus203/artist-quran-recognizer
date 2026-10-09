@@ -16,6 +16,7 @@ from aqr.data.ingest import sha256_file
 from aqr.data.manifest import Manifest
 from aqr.data.refbuild import (
     BuildReport,
+    ReferenceClipProvider,
     build_ref_corpus,
     ensure_outside_repo,
 )
@@ -143,3 +144,11 @@ def test_sortie_dans_le_depot_refusee(tmp_path: Path) -> None:
     with pytest.raises(RefCorpusError):
         ensure_outside_repo(repo / "data", repo)
     ensure_outside_repo(tmp_path / "aqr-ref", repo)
+
+
+def test_recitant_sans_basmala_ecarte(tmp_path: Path) -> None:
+    root = tmp_path / "everyayah"
+    for reciter in ("Complet_128kbps", "SansBasmala_128kbps"):
+        (root / reciter).mkdir(parents=True)
+    (root / "Complet_128kbps" / "bismillah.mp3").write_bytes(b"x")
+    assert ReferenceClipProvider(tmp_path).reciters() == ("Complet_128kbps",)

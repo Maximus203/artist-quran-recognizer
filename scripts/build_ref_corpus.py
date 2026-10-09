@@ -20,8 +20,13 @@ from pathlib import Path
 
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.data.config import DataConfig
-from aqr.data.mixer import SCENARIOS, DiskClipProvider
-from aqr.data.refbuild import DEFAULT_DEGRADATIONS, build_ref_corpus, ensure_outside_repo
+from aqr.data.mixer import SCENARIOS
+from aqr.data.refbuild import (
+    DEFAULT_DEGRADATIONS,
+    ReferenceClipProvider,
+    build_ref_corpus,
+    ensure_outside_repo,
+)
 from aqr.data.refcorpus import RefCorpusError
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.exit(str(exc))
     config = DataConfig()
     corpus = TanzilCorpusRepository(args.corpus)
-    provider = DiskClipProvider(out_dir, sample_rate=config.sample_rate)
+    provider = ReferenceClipProvider(out_dir, sample_rate=config.sample_rate)
     report = build_ref_corpus(
         provider,
         corpus,

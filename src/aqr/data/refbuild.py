@@ -16,9 +16,17 @@ from pathlib import Path
 
 from aqr.data.config import DataConfig
 from aqr.data.degrade import degrade, make_silence
+from aqr.data.everyayah import bismillah_clip_path
 from aqr.data.ingest import sha256_file
 from aqr.data.manifest import AudioCase, Manifest, NonQuranItem
-from aqr.data.mixer import ClipProvider, Mix, MixConfig, generate_mixes, write_wav
+from aqr.data.mixer import (
+    ClipProvider,
+    DiskClipProvider,
+    Mix,
+    MixConfig,
+    generate_mixes,
+    write_wav,
+)
 from aqr.data.refcorpus import (
     LICENSE_UNESTABLISHED,
     Degradation,
@@ -58,6 +66,16 @@ class BuildReport:
     manifest: Manifest = field(default_factory=Manifest)
     skipped: list[tuple[str, str]] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
+
+
+class ReferenceClipProvider(DiskClipProvider):
+    """Sources disque, sans les récitants dont la basmala manque (EveryAyah n'en publie pas pour
+    tous) : le mixeur en a besoin pour les versets 1, et mieux vaut un récitant de moins qu'un
+    mixage sans vérité."""
+
+    def reciters(self) -> tuple[str, ...]:
+        root = self._dir / "everyayah"
+        return tuple(r for r in super().reciters() if bismillah_clip_path(root, r).exists())
 
 
 def ensure_outside_repo(out_dir: Path, repo_root: Path) -> None:
