@@ -35,6 +35,8 @@ from aqr.data.refcorpus import (
     assign_ref_splits,
     degraded_case,
     degraded_id,
+    frozen_splits,
+    ref_meta,
     validate_ref_manifest,
     with_ref_meta,
 )
@@ -65,6 +67,8 @@ SILENCE_RECITANT = "synthetic-silence"
 class BuildReport:
     manifest: Manifest = field(default_factory=Manifest)
     skipped: list[tuple[str, str]] = field(default_factory=list)
+    removed: list[tuple[str, str]] = field(default_factory=list)
+    """(id, raison) : cas de l'ancien manifeste qui n'ont pas été conservés."""
     problems: list[str] = field(default_factory=list)
 
 
@@ -239,6 +243,43 @@ def degrade_cases(
     return children
 
 
+def _parent_id(case: AudioCase) -> str | None:
+    try:
+        return ref_meta(case).parent
+    except RefCorpusError:
+        return None  # bloc ref illisible : conservé tel quel, la validation finale le signalera
+
+
+def _kept_cases(
+    existing: Manifest,
+    bases: Sequence[AudioCase],
+    degradations: Sequence[Degradation],
+    removed: list[tuple[str, str]],
+) -> list[AudioCase]:
+    """Cas de l'ancien manifeste que cette construction ne régénère pas.
+
+    Un dérivé dont le parent est régénéré n'est jamais gardé : son audio vient de l'ancien parent.
+    Si sa dégradation est encore demandée il est régénéré ; sinon il est retiré et signalé.
+    """
+    base_ids = {c.id for c in bases}
+    regenerated = base_ids | {
+        degraded_id(c.id, d) for c in bases if c.expected for d in degradations
+    }
+    kept = []
+    for case in existing.cases:
+        if case.id in regenerated:
+            continue
+        parent = _parent_id(case)
+        if parent in base_ids:
+            label = case.id.removeprefix(f"{parent}--")
+            removed.append(
+                (case.id, f"dégradation {label} absente de ce lancement : parent {parent} régénéré")
+            )
+            continue
+        kept.append(case)
+    return kept
+
+
 def build_ref_corpus(
     provider: ClipProvider,
     corpus: CorpusRepository,
@@ -267,11 +308,10 @@ def build_ref_corpus(
     )
 
     existing = Manifest.load(manifest_path)
-    replaced = {c.id for c in bases} | {
-        degraded_id(c.id, d) for c in bases if c.expected for d in degradations
-    }
-    kept = [c for c in existing.cases if c.id not in replaced]
-    split_bases = assign_ref_splits([*kept, *bases], cfg)[len(kept) :]
+    kept = _kept_cases(existing, bases, degradations, report.removed)
+    split_bases = assign_ref_splits([*kept, *bases], cfg, frozen=frozen_splits(existing.cases))[
+        len(kept) :
+    ]
 
     children = degrade_cases(split_bases, out_dir, degradations, cfg)
     final = Manifest(cases=[*kept, *split_bases, *children])
