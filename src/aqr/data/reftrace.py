@@ -4,8 +4,13 @@ Le manifeste dit CE QUE contient le corpus ; la trace dit COMMENT le reproduire 
 découpage dev/test, scénarios, dégradations, récitants retenus et écartés (avec la raison), état
 de la source EveryAyah (SHA-256 de son `LOCK.json`), fichiers `speech/` et `specials/` réellement
 utilisés (nom relatif + SHA-256), versions de ffmpeg et de libmp3lame, SHA git du code et commande
-exacte. Rejouer la commande sur les mêmes sources redonne le même manifeste, octet pour octet
-(procédure : docs/data-lots/ref-corpus-provenance.md, section « Reproduire »).
+exacte. Rejouer la commande sur les mêmes sources, dans un dossier vierge, redonne le même
+manifeste, octet pour octet (procédure : docs/data-lots/ref-corpus-provenance.md, section
+« Reproduire »).
+
+Un build incrémental (même manifeste, autre graine ou autres scénarios) conserve les anciens cas :
+`carried_over` les compte. Le rejeu n'est exact que si `carried_over.cases` vaut 0 ; sinon,
+reconstruire dans un dossier et un manifeste vierges.
 
 La trace est versionnable : aucun chemin local, hôte ou secret. Les chemins sont relatifs au
 dépôt ou à `~` (`portable_path`), jamais absolus.
@@ -88,6 +93,19 @@ def _source_files(manifest: Manifest) -> list[dict[str, Any]]:
     return [seen[key] for key in sorted(seen)]
 
 
+def carried_over(kept: Sequence[AudioCase]) -> dict[str, Any]:
+    """Cas d'un lancement précédent que ce lancement n'a pas régénérés (build incrémental).
+
+    Ils sont dans le manifeste mais pas dans les paramètres de la trace (graine, scénarios) : tant
+    que `cases` n'est pas 0, rejouer la commande ne redonne pas ce manifeste.
+    """
+    return {
+        "cases": len(kept),
+        "seeds": sorted({c.extra["seed"] for c in kept if isinstance(c.extra.get("seed"), int)}),
+        "scenarios": sorted({str(c.extra["scenario"]) for c in kept if "scenario" in c.extra}),
+    }
+
+
 def _splits(cases: Sequence[AudioCase]) -> dict[str, str | None]:
     return dict(sorted({case.recitant: case.split for case in cases}.items()))
 
@@ -106,6 +124,7 @@ def build_trace(
     excluded: Sequence[tuple[str, str]],
     skipped: Sequence[tuple[str, str]],
     removed: Sequence[tuple[str, str]],
+    kept: Sequence[AudioCase] = (),
     environment: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     lock = out_dir / "everyayah" / "LOCK.json"
@@ -129,6 +148,7 @@ def build_trace(
         "splits": _splits(manifest.cases),
         "skipped": [{"name": n, "reason": r} for n, r in skipped],
         "removed": [{"name": n, "reason": r} for n, r in removed],
+        "carried_over": carried_over(kept),
         "sources": {
             "everyayah_lock_sha256": sha256_file(lock) if lock.exists() else None,
             "files": _source_files(manifest),

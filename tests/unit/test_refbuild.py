@@ -581,3 +581,78 @@ def test_voix_mix_d_un_recitant_en_quarantaine_suit_la_quarantaine(tmp_path: Pat
     mixes = [c for c in again.manifest.cases if c.recitant == f"mix-{target}"]
     assert mixes and {c.split for c in mixes} == {quarantine}
     assert not {c.split for c in again.manifest.cases if c.recitant == target} - {quarantine}
+
+
+class NoSpecials(FourReciters):
+    def special(self, kind: NonQuranKind) -> array[int] | None:
+        return None
+
+
+def test_trace_incrementale_declare_les_cas_conserves(tmp_path: Path) -> None:
+    """Graine 3 puis 4 dans le même manifeste : il contient les deux lots, la trace doit le dire
+    (sinon « rejouer la commande » promettrait un manifeste qu'elle ne redonne pas)."""
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    build(out, manifest, seed=3)
+    assert read_trace(manifest)["carried_over"] == {"cases": 0, "seeds": [], "scenarios": []}
+
+    second = build(out, manifest, seed=4)
+    trace = read_trace(manifest)
+    assert trace["parameters"]["seed"] == 4  # type: ignore[index]
+    carried = trace["carried_over"]
+    assert isinstance(carried, dict)
+    old = [c for c in second.manifest.cases if c.extra.get("seed") == 3]
+    assert old and carried["cases"] == len(old)
+    assert carried["seeds"] == [3]
+    assert carried["scenarios"] == sorted({c.extra["scenario"] for c in old})
+    alone_manifest = tmp_path / "alone" / "manifest.yaml"
+    alone = build(tmp_path / "alone" / "aqr-ref", alone_manifest, seed=4)  # la graine 4 seule
+    assert len(alone.manifest.cases) + carried["cases"] == len(second.manifest.cases)
+    assert read_trace(alone_manifest)["carried_over"]["cases"] == 0  # type: ignore[index]
+
+
+def test_scenario_ecarte_mais_conserve_est_marque_comme_tel(tmp_path: Path) -> None:
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    first = build(out, manifest)
+    prayers = [c for c in first.manifest.cases if c.extra.get("scenario") == "priere"]
+    assert prayers
+    again = build(out, manifest, provider=NoSpecials)  # plus de specials/ : « priere » écartée
+    skipped = dict(again.skipped)
+    assert "clips absents" in skipped["priere"]
+    assert f"{len(prayers)} cas conservés d'un lancement précédent" in skipped["priere"]
+    assert {c.id for c in prayers} <= {c.id for c in again.manifest.cases}
+    trace = read_trace(manifest)
+    assert "priere" in trace["carried_over"]["scenarios"]  # type: ignore[index]
+    assert {i["name"]: i["reason"] for i in trace["skipped"]}["priere"] == skipped["priere"]  # type: ignore[attr-defined]
+
+
+def test_scenarios_dupliques_dedoublonnes(tmp_path: Path) -> None:
+    """`--scenarios a,a` écrivait deux fois les mêmes identifiants : manifeste illisible ensuite."""
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    corpus = TanzilCorpusRepository(CORPUS_DIR)
+    report = build_ref_corpus(
+        FourReciters(corpus),
+        corpus,
+        out,
+        manifest,
+        seed=3,
+        per_scenario=1,
+        scenarios=("murattal_continu", "murattal_continu"),
+        degradations=DEGRADATIONS[:1],
+    )
+    ids = [c.id for c in report.manifest.cases]
+    assert report.problems == [] and len(ids) == len(set(ids))
+    assert Manifest.load(manifest).cases == report.manifest.cases  # relisible
+    assert read_trace(manifest)["parameters"]["scenarios"] == ["murattal_continu"]  # type: ignore[index]
+
+
+def test_degradations_de_meme_identifiant_refusees_avant_toute_ecriture(tmp_path: Path) -> None:
+    clash = (
+        Degradation("noise", {"snr_db": 20, "seed": 1}),
+        Degradation("noise", {"snr_db": 20.0, "seed": 1}),
+    )
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    with pytest.raises(RefCorpusError, match="noise-seed1-snr_db20"):
+        build(out, manifest, degradations=clash)
+    assert not out.exists() and not manifest.exists()
+    with pytest.raises(RefCorpusError, match="noise-seed1-snr_db20"):
+        degrade_cases([], out, clash, DataConfig())

@@ -95,3 +95,48 @@ def _strings(node: object) -> list[str]:
     if isinstance(node, list):
         return [t for v in node for t in _strings(v)]
     return []
+
+
+@pytest.mark.skipif(
+    not (CORPUS / "LOCK.json").exists() or shutil.which("ffmpeg") is None,
+    reason="corpus Tanzil et ffmpeg requis",
+)
+def test_manifeste_existant_illisible_abandonne_sans_traceback(tmp_path: Path) -> None:
+    unreadable = tmp_path / "unreadable.yaml"
+    unreadable.write_text("version: 1\ncases: [unclosed\n", encoding="utf-8")
+    duplicated = tmp_path / "duplicated.yaml"
+    twin = replace(clean_case("a"), split="dev")
+    Manifest(cases=[twin, twin]).save(duplicated)  # même identifiant deux fois
+    for manifest in (unreadable, duplicated):
+        before = manifest.read_bytes()
+        with pytest.raises(SystemExit, match="ABANDON"):
+            main(["--out-dir", str(tmp_path / "aqr-ref"), "--manifest", str(manifest)])
+        assert manifest.read_bytes() == before
+        assert not (tmp_path / f"{manifest.stem}.build.json").exists()
+
+
+@pytest.mark.skipif(
+    not (CORPUS / "LOCK.json").exists() or shutil.which("ffmpeg") is None,
+    reason="corpus Tanzil et ffmpeg requis",
+)
+def test_decalage_non_numerique_du_manifeste_existant_ne_plante_pas_et_n_ecrit_rien(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "manifest.yaml"
+    parent = clean_case("p", "R_128kbps")
+    broken = replace(
+        parent,
+        id="p--x",
+        extra={
+            "ref": {
+                **parent.extra["ref"],
+                "parent": "p",
+                "degradation": {"kind": "silence_pad", "params": {"pad_s": 2}, "shift_s": "deux"},
+            }
+        },
+    )
+    Manifest(cases=[replace(parent, split="dev"), replace(broken, split="dev")]).save(manifest)
+    before = manifest.read_bytes()
+    assert main(["--out-dir", str(tmp_path / "aqr-ref"), "--manifest", str(manifest)]) == 1
+    assert manifest.read_bytes() == before  # le PROBLÈME est affiché, rien n'est écrit
+    assert not (tmp_path / "manifest.build.json").exists()

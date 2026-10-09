@@ -27,6 +27,9 @@ Reproduire
 - Rejouer cette commande sur les mêmes sources (même LOCK.json, même ffmpeg) redonne le manifeste
   octet pour octet : `git diff tests/fixtures/ref-corpus/manifest.yaml` doit être vide.
 - Seule `manifest.build.json` peut changer d'un rejeu à l'autre (SHA git du code).
+- La trace ne décrit que le dernier lancement. Un build incrémental (même manifeste, autre graine ou
+  autres scénarios) garde les anciens cas : `carried_over` les compte et le rejeu n'est exact que si
+  `carried_over.cases` vaut 0. Sinon, reconstruire avec un manifeste et un dossier de sortie vierges.
 """
 
 from __future__ import annotations
@@ -37,9 +40,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.data.config import DataConfig
 from aqr.data.ingest import sha256_file
+from aqr.data.manifest import ManifestError
 from aqr.data.mixer import SCENARIOS
 from aqr.data.refbuild import (
     DEFAULT_DEGRADATIONS,
@@ -134,7 +140,9 @@ def main(argv: list[str] | None = None) -> int:
                 "tanzil_lock_sha256": lock_sha256(args.corpus),
             },
         )
-    except RefCorpusError as exc:  # ex. récitant déjà en dev ET en test dans le manifeste
+    except (RefCorpusError, ManifestError, yaml.YAMLError) as exc:
+        # manifeste existant illisible ou en fuite (ex. récitant en dev ET en test), dégradations
+        # incohérentes : rien n'est écrit (manifeste, trace) et pas de traceback
         sys.exit(f"ABANDON {exc}")
     for name, reason in report.skipped:
         print(f"ÉCARTÉ {name} : {reason}", file=sys.stderr)
@@ -143,9 +151,15 @@ def main(argv: list[str] | None = None) -> int:
     for problem in report.problems:
         print(f"PROBLÈME {problem}", file=sys.stderr)
     cases = report.manifest.cases
+    carried = report.trace["carried_over"]["cases"]
     print(
         f"{len(cases)} cas · dev {sum(c.split == 'dev' for c in cases)} · "
         f"test {sum(c.split == 'test' for c in cases)} · {len(report.skipped)} écarté(s)"
+        + (
+            f" · {carried} conservé(s) d'un lancement précédent (rejeu non exact)"
+            if carried
+            else ""
+        )
     )
     if report.problems:
         print("manifeste NON écrit (voir PROBLÈME)", file=sys.stderr)

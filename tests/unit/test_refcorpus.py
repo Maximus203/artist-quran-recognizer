@@ -20,6 +20,7 @@ from aqr.data.refcorpus import (
     assign_ref_splits,
     claim_sources,
     degraded_case,
+    ensure_unique_degradations,
     frozen_splits,
     ref_meta,
     validate_ref_manifest,
@@ -130,6 +131,9 @@ def test_degradation_inconnue_ou_decalage_negatif() -> None:
         ("telephone", {}, 0.5),
         ("reverb", {"decay": 0.4}, 1.0),
         ("mp3_low", {"kbps": 32}, 0.1),
+        ("silence_pad", {"pad_s": float("inf")}, float("inf")),  # round(inf) planterait adelay
+        ("silence_pad", {"pad_s": float("nan")}, float("nan")),
+        ("noise", {"snr_db": 10, "seed": 1}, float("nan")),
     ],
 )
 def test_shift_doit_egaler_pad(kind: str, params: dict[str, object], shift: float) -> None:
@@ -474,6 +478,13 @@ def _drop_shift(child: AudioCase) -> AudioCase:
             "expected",
         ),  # la dégradation ne change pas le statut de preuve
         (NOISE, lambda c: replace(c, duree_s=20.0), "durée"),
+        (NOISE, lambda c: replace(c, statut="a_annoter"), "statut"),
+        (
+            NOISE,
+            lambda c: replace(c, boundaries="exact"),
+            "boundaries",
+        ),  # le parent est approximatif
+        (NOISE, lambda c: replace(c, tolerance_ms=999), "tolerance_ms"),
     ],
 )
 def test_enfant_verite_non_decalee_signalee(
@@ -528,3 +539,36 @@ def test_everyayah_par_recitant_jamais_partage_entre_jeux() -> None:
     assert {len(v) for v in sha_splits.values()} == {1}
     sides = {s for v in reciter_splits.values() for s in v}
     assert sides == {"dev", "test"}
+
+
+def test_decalage_non_numerique_est_une_erreur_de_schema_pas_un_plantage() -> None:
+    raw = {"kind": "silence_pad", "params": {"pad_s": 2}, "shift_s": "deux"}
+    with pytest.raises(RefCorpusError, match="shift_s"):
+        Degradation.from_dict(raw)
+    case = clean_case("p")
+    broken = replace(case, extra={"ref": {**case.extra["ref"], "parent": "x", "degradation": raw}})
+    with pytest.raises(RefCorpusError, match="cas p"):
+        ref_meta(broken)
+    assert any("cas p" in p for p in validate_ref_manifest(Manifest(cases=[broken])))
+
+
+def test_identifiants_et_fichiers_dupliques_signales() -> None:
+    a = replace(clean_case("a"), split="dev")
+    twin = replace(a, recitant="Autre_128kbps", sha256=sha_of("twin"))  # même id, même fichier
+    same_file = replace(clean_case("b"), split="dev", file=a.file)
+    problems = validate_ref_manifest(Manifest(cases=[a, twin, same_file]))
+    assert any("identifiant" in p and "'a'" in p and "2" in p for p in problems), problems
+    assert any("fichier" in p and a.file in p for p in problems), problems
+    assert validate_ref_manifest(Manifest(cases=[a])) == []
+
+
+def test_degradations_de_meme_etiquette_refusees() -> None:
+    """20 et 20.0 donnent la même étiquette, donc le même identifiant de cas dérivé."""
+    one = Degradation("noise", {"snr_db": 20, "seed": 1})
+    other = Degradation("noise", {"snr_db": 20.0, "seed": 1})
+    assert one.label == other.label
+    with pytest.raises(RefCorpusError, match="noise-seed1-snr_db20"):
+        ensure_unique_degradations([one, other])
+    with pytest.raises(RefCorpusError):
+        ensure_unique_degradations([one, one])
+    ensure_unique_degradations([one, Degradation("noise", {"snr_db": 10, "seed": 1})])
