@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { readResult, readReview, readSession } from "@/lib/store";
+import {
+  ReviewWorkError,
+  deleteSession,
+  readResult,
+  readReview,
+  readSession,
+} from "@/lib/store";
 import { isLocalRequest } from "@/lib/local-request";
 export const runtime = "nodejs";
 export async function GET(
@@ -20,5 +26,24 @@ export async function GET(
     });
   } catch {
     return NextResponse.json({ error: "Session introuvable" }, { status: 404 });
+  }
+}
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!isLocalRequest(request, true))
+    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  try {
+    const force = new URL(request.url).searchParams.get("force") === "1";
+    await deleteSession((await params).id, { force });
+    return new Response(null, { status: 204 });
+  } catch (e) {
+    if (e instanceof ReviewWorkError)
+      return NextResponse.json({ error: e.message }, { status: 409 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Suppression impossible" },
+      { status: 400 },
+    );
   }
 }

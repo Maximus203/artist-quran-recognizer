@@ -592,3 +592,65 @@
 - Hypothèses tranchées : (1) le manifeste peut changer après le lot (annotation humaine = flux normal) : sa nouvelle empreinte est signalée en avertissement, pas refusée, l'audio restant verrouillé par son sha256 ; (2) un lot vide (aucun cas) est refusé (code 2, rien de purgé) plutôt que déclaré `complete` ; (3) un identifiant de cas réservé (`run`, `timings`) ou contenant un chemin est refusé avant toute purge ; (4) un `running` retrouvé après coup (processus tué, SIGKILL) est traité comme non terminé ; (5) `peak_rss_mb` devient `process_peak_rss_mb` et la docstring dit « pic cumulé du processus, non attribuable à un cas » plutôt que de mesurer par cas (impossible proprement dans un processus unique).
 - Droits : `mkstemp` crée en 0600 ; `write_text_atomic` ramène les fichiers à `0666 & ~umask` pour que les sorties restent lisibles comme avant (sinon régression silencieuse pour un volume partagé). Limite connue : un SIGKILL entre `mkstemp` et `os.replace` peut laisser un `<id>.json.*.tmp`, que le lot suivant ne supprime pas (« jamais d'autres fichiers ») mais qui n'est jamais lu (`.tmp` ≠ `<id>.json`).
 - Phase B (hors de cette PR) : relancer la reconnaissance réelle avec ce protocole et actualiser le rapport chiffré de `docs/evaluation/rapport-reel-2026-10-09.md` ; ses chiffres actuels viennent de dossiers sans `run.json`.
+
+## 2026-10-09 — Corpus de référence (#40) : reconstruction figée, une source un jeu, trace
+- **Reconstruction** : les affectations du manifeste existant (`dev`, `test`, `quarantaine`) sont reprises avant tout
+  calcul (`frozen_splits`, `assign_ref_splits(frozen=...)`) ; la voix `mix-<récitant>` suit la quarantaine
+  (`voice_key`) même quand tous les anciens cas du récitant sont régénérés. Un dérivé dont le parent est régénéré
+  n'est jamais conservé (régénéré, ou retiré et signalé). Le « À reporter sur #40 » de l'entrée Quarantaine est fait :
+  `validate_ref_manifest` accepte la quarantaine et signale une voix en quarantaine ET en dev/test.
+- **Parole hors cible et sources** : pseudo-récitant dérivé du contenu (`speech-<nature>-<sha256[:12]>`), un cas par
+  enregistrement distinct ; un enregistrement source (`speech/`, `specials/`) ne sert qu'à un seul jeu (premier arrivé,
+  premier servi). **Conséquence assumée** : avec un seul clip par special, la prière n'existe que d'un côté. Choix fait
+  de préférence à des fuites silencieuses ; le remède est de fournir un clip distinct par jeu.
+- **Décalage** : `shift_s == pad_s` pour `silence_pad`, 0 sinon ; la validation compare chaque dérivé à son parent
+  décalé (vérité, statut, durée à `DataConfig.derived_duration_tolerance_s`).
+- **Trace** : `manifest.build.json` à côté du manifeste (aucun chemin local), procédure « Reproduire » dans
+  `docs/data-lots/ref-corpus-provenance.md`. Rejeu du constructeur réel (graine 7, 2 par scénario) : manifeste et 130
+  audios identiques à l'octet, donc les chiffres calculés sur ce manifeste restent valides.
+
+## 2026-10-09 — Corpus de référence (#40) : relecture indépendante, correctifs et limites connues
+- **Corrigé** : (a) la trace ne décrivait que le dernier lancement alors qu'un build incrémental garde les anciens cas
+  (`_kept_cases`) : elle porte maintenant `carried_over` (cas, graines, scénarios conservés), un scénario écarté dont des
+  cas restent est marqué « conservés d'un lancement précédent » dans `skipped`, et la doc dit que le rejeu n'est exact
+  que si `carried_over.cases` vaut 0 (sinon reconstruire dans un dossier et un manifeste vierges) ; (b) identifiants
+  dupliqués : `scenarios` dédoublonnés, `validate_ref_manifest` signale id et fichier dupliqués, deux dégradations de même
+  étiquette (`snr_db` 20 et 20.0) sont refusées avant toute écriture (`ensure_unique_degradations`) ; (c) `pad_s`
+  NaN/infini et `shift_s` non numérique sont des erreurs de schéma, pas des plantages ; (d) le script abandonne
+  proprement (« ABANDON », rien d'écrit) sur YAML illisible, `ManifestError` ou `RefCorpusError` ; (e) un dérivé doit aussi
+  garder `statut`, `boundaries` et `tolerance_ms` de son parent.
+- **Limites connues, non traitées** (assumées, à reprendre si elles gênent) :
+  1. Pas de dossier d'attente : l'audio est écrit dans `out_dir` avant la validation finale ; si elle échoue, manifeste et
+     trace ne sont pas écrits mais les audios déjà générés restent.
+  2. L'audio d'un mixage écarté pour source partagée est effacé sans autre trace que sa ligne dans `skipped` ; l'audio des
+     cas retirés (`removed`) n'est pas effacé.
+  3. Les réclamations de sources (`claims`) sont indexées par le sha256 du fichier source (à défaut, des échantillons),
+     pas par celui des échantillons : deux fichiers distincts qui décodent à l'identique ne sont pas reconnus comme la
+     même source (la dédup de la parole hors cible, elle, compare les échantillons).
+  4. Les noms de fichiers de `speech/` et `specials/` sont versionnés (`extra.sources[].file`, `manifest.build.json`) : un
+     nom qui désignerait une personne serait publié. Nommer ces fichiers de façon anonyme.
+
+## 2026-10-09 — Mode test distant protégé de l'atelier (optionnel)
+- Le défaut ne change pas : boucle locale uniquement. `AQR_ALLOWED_HOSTS` (vide par défaut) ajoute des hôtes ; fail-closed : un hôte ajouté n'est accepté que si `AQR_ACCESS_TOKEN` est défini. Dès qu'un jeton est défini il protège aussi le loopback (un tunnel local ne contourne pas la protection).
+- Jeton par en-tête (`x-aqr-token`, `Bearer`) ou cookie `HttpOnly`/`SameSite=Strict` signé HMAC `<expiration>.<sig>` obtenu via `/access` ; sans état serveur, TTL `AQR_ACCESS_TTL_S` (3600 s par défaut). Comparaison à temps constant (HMAC des deux côtés puis `timingSafeEqual`, donc sans fuite de longueur). Pas de limitation de débit : jeton long exigé par la doc, reverse proxy pour l'exposition réelle.
+- `AQR_REVIEW_DIR` par défaut : `AppData\Local` seulement sous Windows, XDG sinon (jusqu'ici un chemin Windows était créé sous `$HOME` sur Linux). La racine est lue à chaque appel (testable) ; les identifiants de session sont des UUID stricts (l'ancien motif `[a-f0-9-]{36}` laissait passer des chaînes non UUID).
+- Plafond d'upload : rejet `413` dès `Content-Length` avant de lire le corps multipart. Nettoyage : `AQR_SESSION_TTL_S` (0 = désactivé, comportement historique « rien n'est supprimé automatiquement ») appliqué à l'import, plus `DELETE /api/sessions/<id>` ; une session en cours n'est jamais supprimée.
+- `lib/jobs.ts`, `lib/store.ts` et `lib/local-request.ts` n'avaient aucun test : tests vitest ajoutés (jobs via un faux interpréteur exécutable, store dans un dossier temporaire). Les tests de `jobs` caractérisent le comportement existant (verts d'emblée).
+
+## 2026-10-09 — Expiration des sessions de l'atelier : la revue compte comme activité
+- Constat (vérifié sur cdc5103 puis avec `next start`) : `cleanupSessions` ne lisait que le mtime de `session.json`, or `PUT /api/sessions/<id>/review` n'écrit que `review.json` et `revisions/`. Avec `AQR_SESSION_TTL_S`, une session ancienne mais revue à l'instant était supprimée, historique de révisions compris, au prochain import.
+- **Hypothèse énoncée** : une session revue n'expire qu'après un TTL d'**inactivité** compté depuis la dernière activité de revue, pas depuis l'import ou la fin du traitement. Le TTL est un réglage explicite de l'opérateur : une revue elle-même inactive depuis plus de N secondes expire donc aussi (annotations comprises) ; `DELETE` manuel est plus prudent que la purge (voir plus bas).
+- Règle (`lastActivityMs`) : maximum du mtime de tous les fichiers et dossiers de la session (récursif, sans suivre les liens), de `review.updated_at` et de `finished_at`. Les dates internes situées dans le futur sont ignorées (horloge fausse ou restauration : sinon une session serait immortelle) ; le mtime, lui, reste celui du système de fichiers. Les `exports/*.zip` comptent : télécharger un pack est une activité. La suppression étant celle du dossier entier, une revue récente protège aussi `revisions/`.
+- Sécurité des suppressions : toute erreur de lecture, JSON corrompu ou dossier sans `session.json` laisse la session intacte (comportement existant conservé). L'activité est relue juste avant `rm` (course avec un PUT) ; une fenêtre de quelques ms subsiste faute de verrou, acceptée pour un serveur local mono-utilisateur. Un fichier renommé pendant le parcours (`.tmp` d'une écriture atomique) est ignoré.
+- `deleteSession(id, {force})` refuse (409 côté route, `?force=1` pour passer outre) une session qui porte un travail de revue : au moins une annotation, une révision, ou une `review.json` illisible (on ne peut pas prouver qu'elle est vide). Une session en cours reste refusée même avec `force`. L'interface n'appelle pas cette route. Défaut inchangé : `AQR_SESSION_TTL_S=0` désactive toute purge automatique.
+
+## 2026-10-09 — Fin de traitement : un seul rédacteur de l'issue pour les jobs de ce serveur
+- Constat (reproduit : 2 échecs sur 30 exécutions de `jobs.test.ts`, 11 sur 30 sous charge CPU ; test déterministe avec un petit-enfant qui garde stdout ouvert) : entre la mort du processus (`exit`) et le gestionnaire `close` de `jobs.ts`, tout `readSession` (poll de l'interface, test) sondait `process.kill(pid, 0)`, voyait le processus mort et consignait `failed` avec le message générique « s'est arrêté avant de produire un résultat ». Le gestionnaire `close` écrasait ensuite le message, mais le lecteur avait déjà vu le générique et perdu le dernier message du moteur (modèle ou corpus introuvable). Défaut de code existant (sonde de `store.ts` et `jobs.ts` hérités de #32), pas introduit par #37 ; seul `jobs.test.ts` est nouveau.
+- Décision : la table des jobs vit dans `store.ts` (`jobs`) et `readSession` ne sonde plus un processus que ce serveur possède ; le gestionnaire `close` consigne l'issue, puis libère le job (`finally`, avec contrôle d'identité du processus) et résout `settled`. La sonde reste pour les sessions orphelines (redémarrage du serveur). `cancel` laisse le gestionnaire `close` libérer le job.
+- Limite acceptée : si un petit-enfant garde les tubes ouverts après la mort du moteur, `close` tarde et la session reste `running` jusqu'à sa fin (annulation possible), au lieu d'un `failed` générique immédiat.
+- Tests : `jobSettled(id)` remplace l'attente par sondage ; `afterEach` attend le gestionnaire `close` (auparavant il pouvait écrire après la suppression du dossier temporaire, dans l'environnement rétabli ou dans la session du test suivant, qui partage le même identifiant).
+
+## 2026-10-09 — Table des jobs : cycle de vie complet (lancement, annulation, suppression)
+- Les écouteurs `error`/`close`/`data` du processus sont posés avant tout `await` de `launch` : un interpréteur introuvable (`AQR_PYTHON`) émettait `error` sans écouteur, d'où une exception non interceptée, une session figée en `running` et un job jamais libéré. `close` attend l'écriture initiale « running » pour ne jamais être écrasé par elle. Si cette écriture échoue : processus tué, session `failed` avec le message, job libéré, `settled` résolue, erreur relancée.
+- Un job de la table protège sa session : `launch` refuse (synchrone, avant `spawn`) un second lancement ou une relance d'une session annulée dont `close` n'est pas passé ; `deleteSession` attend `settled` avant de supprimer ; `cleanupSessions` saute la session. Le `catch` du gestionnaire `close` est lui-même protégé (session supprimée entre-temps : rien à consigner, pas de rejet non géré). Limite : si un petit-enfant garde les tubes ouverts, `deleteSession` d'une session annulée attend sa fin.
+- Hors périmètre, assumé : lire une session n'est pas une activité (seule une écriture retarde la purge) ; un dossier sans `session.json` n'est jamais purgé, et un mtime futur garde la session tant que l'horloge ne l'a pas rattrapé.
