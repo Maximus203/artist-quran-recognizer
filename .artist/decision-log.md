@@ -565,3 +565,19 @@
 - **Ouvert pour le mainteneur** : confirmer par écrit ; trancher les trois décisions de `RIGHTS.md` ; dire si le
   téléchargement de la copie publique du lot 1 par un agent cloud (`fetch_public_lot.py`) est admis ; aligner le
   libellé hérité (12 cas de `tests/fixtures/audio/manifest.yaml`, `scripts/audio_lot.py`) une fois la décision 3 prise.
+
+## 2026-10-09 — Corpus de référence (#40) : reconstruction figée, une source un jeu, trace
+- **Reconstruction** : les affectations du manifeste existant (`dev`, `test`, `quarantaine`) sont reprises avant tout
+  calcul (`frozen_splits`, `assign_ref_splits(frozen=...)`) ; la voix `mix-<récitant>` suit la quarantaine
+  (`voice_key`) même quand tous les anciens cas du récitant sont régénérés. Un dérivé dont le parent est régénéré
+  n'est jamais conservé (régénéré, ou retiré et signalé). Le « À reporter sur #40 » de l'entrée Quarantaine est fait :
+  `validate_ref_manifest` accepte la quarantaine et signale une voix en quarantaine ET en dev/test.
+- **Parole hors cible et sources** : pseudo-récitant dérivé du contenu (`speech-<nature>-<sha256[:12]>`), un cas par
+  enregistrement distinct ; un enregistrement source (`speech/`, `specials/`) ne sert qu'à un seul jeu (premier arrivé,
+  premier servi). **Conséquence assumée** : avec un seul clip par special, la prière n'existe que d'un côté. Choix fait
+  de préférence à des fuites silencieuses ; le remède est de fournir un clip distinct par jeu.
+- **Décalage** : `shift_s == pad_s` pour `silence_pad`, 0 sinon ; la validation compare chaque dérivé à son parent
+  décalé (vérité, statut, durée à `DataConfig.derived_duration_tolerance_s`).
+- **Trace** : `manifest.build.json` à côté du manifeste (aucun chemin local), procédure « Reproduire » dans
+  `docs/data-lots/ref-corpus-provenance.md`. Rejeu du constructeur réel (graine 7, 2 par scénario) : manifeste et 130
+  audios identiques à l'octet, donc les chiffres calculés sur ce manifeste restent valides.
