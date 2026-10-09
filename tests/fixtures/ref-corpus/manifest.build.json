@@ -1,0 +1,142 @@
+{
+  "environment": {
+    "command": "python scripts/build_ref_corpus.py --out-dir ~/aqr-ref --manifest tests/fixtures/ref-corpus/manifest.yaml --corpus data/corpus --seed 7 --per-scenario 2",
+    "git": {
+      "dirty": false,
+      "sha": "622e7d2ef63161d3227917f11f46d95e705b54d6"
+    },
+    "tanzil_lock_sha256": "d3f44344d06ecc20df33d99dc27b99d48e57d670cbf66655277ca4505bbc2028"
+  },
+  "manifest": "manifest.yaml",
+  "parameters": {
+    "degradations": [
+      {
+        "kind": "noise",
+        "params": {
+          "seed": 1,
+          "snr_db": 20
+        },
+        "shift_s": 0.0
+      },
+      {
+        "kind": "noise",
+        "params": {
+          "seed": 1,
+          "snr_db": 10
+        },
+        "shift_s": 0.0
+      },
+      {
+        "kind": "noise",
+        "params": {
+          "seed": 1,
+          "snr_db": 0
+        },
+        "shift_s": 0.0
+      },
+      {
+        "kind": "telephone",
+        "params": {},
+        "shift_s": 0.0
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "decay": 0.4,
+          "delay_ms": 60
+        },
+        "shift_s": 0.0
+      },
+      {
+        "kind": "mp3_low",
+        "params": {
+          "kbps": 32
+        },
+        "shift_s": 0.0
+      },
+      {
+        "kind": "silence_pad",
+        "params": {
+          "pad_s": 2
+        },
+        "shift_s": 2.0
+      }
+    ],
+    "dev_ratio": 0.7,
+    "per_scenario": 2,
+    "sample_rate": 16000,
+    "scenarios": [
+      "arret_waqf",
+      "assise_fr",
+      "khutba_citation",
+      "murattal_continu",
+      "priere",
+      "repetition",
+      "saut_de_sourate",
+      "verset1_avec_basmala",
+      "verset1_sans_basmala",
+      "verset_brouille",
+      "versets_courts_souffle"
+    ],
+    "seed": 7,
+    "split_seed": "aqr-split-v1",
+    "tolerance_ms": 300
+  },
+  "reciters": {
+    "excluded": [
+      {
+        "name": "Abdul_Basit_Murattal_192kbps",
+        "reason": "bismillah.mp3 absent : EveryAyah ne publie pas la basmala de ce récitant"
+      }
+    ],
+    "retained": [
+      "Alafasy_128kbps",
+      "Husary_128kbps"
+    ]
+  },
+  "removed": [],
+  "schema": 1,
+  "skipped": [
+    {
+      "name": "reciter:Abdul_Basit_Murattal_192kbps",
+      "reason": "bismillah.mp3 absent : EveryAyah ne publie pas la basmala de ce récitant"
+    },
+    {
+      "name": "assise_fr",
+      "reason": "clips absents dans speech/ : french_*, arabic_speech_*"
+    },
+    {
+      "name": "khutba_citation",
+      "reason": "clips absents dans speech/ : arabic_speech_*"
+    },
+    {
+      "name": "priere",
+      "reason": "clips absents dans specials/ : takbir, istiadha, amin"
+    },
+    {
+      "name": "off_target:french",
+      "reason": "aucun clip speech/french_*"
+    },
+    {
+      "name": "off_target:arabic_speech",
+      "reason": "aucun clip speech/arabic_speech_*"
+    },
+    {
+      "name": "off_target:other_language",
+      "reason": "aucun clip speech/other_language_*"
+    }
+  ],
+  "sources": {
+    "everyayah_lock_sha256": "d1c306a8953bdc90749cc0e903de35f0f0e74bb4c243be5312ed52e05159e0e8",
+    "files": []
+  },
+  "splits": {
+    "Alafasy_128kbps": "dev",
+    "Husary_128kbps": "test",
+    "synthetic-silence": "dev"
+  },
+  "toolchain": {
+    "ffmpeg": "6.1.1-3ubuntu5",
+    "libmp3lame": "3.100"
+  }
+}

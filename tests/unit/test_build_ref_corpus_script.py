@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 from dataclasses import replace
 from pathlib import Path
@@ -63,3 +64,34 @@ def test_manifeste_existant_en_fuite_arrete_le_build_sans_rien_ecrire(tmp_path: 
         main(["--out-dir", str(tmp_path / "aqr-ref"), "--manifest", str(manifest)])
     assert manifest.read_bytes() == before
     assert not (tmp_path / "manifest.build.json").exists()
+
+
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "ref-corpus"
+
+
+def test_trace_versionnee_coherente_et_sans_chemin_local() -> None:
+    """La trace livrée avec le manifeste décrit bien ce manifeste et ne fuit aucun chemin."""
+    raw = (FIXTURES / "manifest.build.json").read_text(encoding="utf-8")
+    trace = json.loads(raw)
+    manifest = Manifest.load(FIXTURES / "manifest.yaml")
+    assert trace["manifest"] == "manifest.yaml"
+    assert trace["splits"] == dict(sorted({c.recitant: c.split for c in manifest.cases}.items()))
+    assert set(trace["reciters"]["retained"]) <= set(trace["splits"])
+    excluded = {e["name"]: e["reason"] for e in trace["reciters"]["excluded"]}
+    assert "bismillah" in excluded["Abdul_Basit_Murattal_192kbps"]
+    assert trace["parameters"]["seed"] == 7 and trace["parameters"]["per_scenario"] == 2
+    assert trace["environment"]["command"].startswith("python scripts/build_ref_corpus.py ")
+    assert len(trace["sources"]["everyayah_lock_sha256"]) == 64
+    for local in ("/root", "/home", "/tmp", "/Users", "C:\\"):
+        assert local not in raw
+    assert all(not text.startswith("/") for text in _strings(trace))
+
+
+def _strings(node: object) -> list[str]:
+    if isinstance(node, str):
+        return [node]
+    if isinstance(node, dict):
+        return [t for v in node.values() for t in _strings(v)]
+    if isinstance(node, list):
+        return [t for v in node for t in _strings(v)]
+    return []
