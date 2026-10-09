@@ -1,39 +1,124 @@
 #!/usr/bin/env node
 /**
- * Smoke navigateur de l'atelier : import d'un audio -> moteur réel -> sourate + verset
- * affichés -> export du pack ZIP. Aucun audio dans Git : le fichier vient de
- * AQR_SMOKE_AUDIO (par ex. produit par scripts/smoke_e2e.sh). Absent => SKIP (code 0).
+ * Smoke navigateur de l'atelier : import d'un audio -> moteur réel -> versets RECOGNIZED affichés
+ * avec le texte exact du corpus -> export du pack ZIP vérifié. Aucun audio dans Git : le fichier
+ * vient de AQR_SMOKE_AUDIO (par ex. produit par scripts/smoke_e2e.sh).
+ *
+ * Une ressource absente (audio, Chromium, build, Python, ffmpeg, modèles, corpus vérifié par
+ * LOCK.json) est un ÉCHEC code 2 avec AQR_SMOKE_STRICT=1 (défaut de smoke_e2e.sh) ; sinon un
+ * « SKIP ... NON EXÉCUTÉ » explicite (code 0) : jamais un succès muet. `--check` vérifie seulement
+ * les ressources (utilisé par smoke_e2e.sh avant les étapes longues).
  *
  * Variables :
- *   AQR_SMOKE_AUDIO     audio à importer (obligatoire, sinon SKIP)
+ *   AQR_SMOKE_STRICT    1 : toute ressource absente fait échouer (exit 2)
+ *   AQR_SMOKE_AUDIO     audio à importer
  *   AQR_SMOKE_SURAH     sourate attendue (défaut 112)
- *   AQR_SMOKE_CHROMIUM  exécutable Chromium (défaut /opt/pw-browsers/chromium s'il existe)
+ *   AQR_SMOKE_CHROMIUM  exécutable Chromium (défaut /opt/pw-browsers/chromium)
  *   AQR_SMOKE_URL       serveur déjà lancé ; sinon `next start` est lancé (npm run build requis)
  *   AQR_SMOKE_TOKEN     jeton d'accès si le serveur est en mode test distant
- *   AQR_SMOKE_TIMEOUT_S délai max du moteur (défaut 900)
+ *   AQR_SMOKE_TIMEOUT_S délai max du moteur (défaut 900) ; une session `failed` échoue aussitôt
  * Le moteur lit AQR_PYTHON, AQR_MODELS_DIR, AQR_CORPUS_DIR et AQR_ASR (défaut ici : whisper).
  */
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { accessSync, constants, existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+import {
+  DEFAULT_CHROMIUM,
+  decide,
+  findMissingResources,
+  isStrict,
+  recognizedSegments,
+  waitForSession,
+} from "./smoke-support.mjs";
 
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const audio = process.env.AQR_SMOKE_AUDIO;
-if (!audio || !existsSync(audio)) {
-  console.log("SKIP browser-smoke : AQR_SMOKE_AUDIO absent ou introuvable.");
+const ROOT = path.resolve(WEB, "..");
+const python = process.env.AQR_PYTHON || "python";
+const asr = process.env.AQR_ASR || "whisper";
+const pythonEnv = { ...process.env, PYTHONPATH: path.join(ROOT, "src") };
+
+/** Lance Python depuis la racine du dépôt (modules tests.support.* et scripts.*). */
+function runPython(args, { input = "", timeoutMs = 120_000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(python, args, {
+      cwd: ROOT,
+      env: pythonEnv,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`délai dépassé : ${args.join(" ")}`));
+    }, timeoutMs);
+    child.stdout.on("data", (c) => (stdout += c));
+    child.stderr.on("data", (c) => (stderr += c));
+    child.stdin.on("error", () => {});
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ code, stdout, stderr });
+    });
+    child.stdin.end(input);
+  });
+}
+
+async function preflight(needs) {
+  const done = await runPython([
+    "-m",
+    "tests.support.smoke_env",
+    "--needs",
+    needs.join(","),
+    "--asr",
+    asr,
+  ]);
+  if (done.code !== 0)
+    throw new Error(
+      done.stderr.trim().split("\n").pop() || `code ${done.code}`,
+    );
+  return JSON.parse(done.stdout);
+}
+
+const canExecute = (file) => {
+  try {
+    accessSync(file, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const decision = decide({
+  strict: isStrict(process.env),
+  missing: await findMissingResources({
+    env: process.env,
+    webDir: WEB,
+    exists: existsSync,
+    canExecute,
+    preflight,
+  }),
+});
+if (decision.action !== "run") {
+  (decision.action === "fail" ? console.error : console.log)(decision.message);
+  process.exit(decision.exitCode);
+}
+if (process.argv.includes("--check")) {
+  console.log("OK browser-smoke : toutes les ressources sont présentes");
   process.exit(0);
 }
+
+const { chromium } = await import("playwright-core");
+const audio = process.env.AQR_SMOKE_AUDIO;
 const surah = process.env.AQR_SMOKE_SURAH || "112";
 const timeoutMs = Number(process.env.AQR_SMOKE_TIMEOUT_S || 900) * 1000;
-const defaultChromium = "/opt/pw-browsers/chromium";
-const executablePath =
-  process.env.AQR_SMOKE_CHROMIUM ||
-  (existsSync(defaultChromium) ? defaultChromium : undefined);
+const executablePath = process.env.AQR_SMOKE_CHROMIUM || DEFAULT_CHROMIUM;
 
 const freePort = () =>
   new Promise((resolve, reject) => {
@@ -60,11 +145,7 @@ async function startServer(reviewDir) {
     ],
     {
       cwd: WEB,
-      env: {
-        ...process.env,
-        AQR_REVIEW_DIR: reviewDir,
-        AQR_ASR: process.env.AQR_ASR || "whisper",
-      },
+      env: { ...process.env, AQR_REVIEW_DIR: reviewDir, AQR_ASR: asr },
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -120,46 +201,121 @@ try {
   ok("page chargée");
 
   await page.locator('input[type="file"]').first().setInputFiles(audio);
+  const created = page.waitForResponse(
+    (r) =>
+      new URL(r.url()).pathname === "/api/sessions" &&
+      r.request().method() === "POST",
+  );
   await page.getByRole("button", { name: /Importer dans l’atelier/ }).click();
+  const creation = await created;
+  assert(creation.status() === 201, `import refusé (${creation.status()})`);
+  const sessionId = (await creation.json()).id;
   const run = page.getByRole("button", {
     name: /Lancer le vrai moteur Python/,
   });
   await run.waitFor({ timeout: 60_000 });
-  ok("audio importé (session créée)");
+  ok(`audio importé (session ${sessionId})`);
 
   await run.click();
-  await page
-    .getByRole("button", { name: /Arrêter le traitement/ })
-    .waitFor({ timeout: 30_000 });
-  ok("moteur lancé");
+  const detail = await waitForSession({
+    timeoutMs,
+    fetchDetail: async () => {
+      const res = await context.request.get(
+        `${base}/api/sessions/${sessionId}`,
+      );
+      assert(res.ok(), `GET session : ${res.status()}`);
+      return res.json();
+    },
+  });
+  const result = detail.result;
+  ok("moteur terminé (session done)");
 
-  const segment = page.locator(`button.segment:has-text("${surah}:")`).first();
-  await segment.waitFor({ timeout: timeoutMs });
-  await segment.click();
-  ok("résultat du moteur affiché");
-
-  const ref = (
-    await page.locator(".verse-card .ref").first().innerText()
-  ).trim();
-  assert(
-    new RegExp(`^${surah}:[1-9]\\d*`).test(ref),
-    `référence inattendue : « ${ref} » (sourate ${surah} attendue)`,
+  // I1 : texte et plage de mots de TOUS les versets nommés = corpus (fonction partagée avec
+  // le smoke CLI) ; I3 : uniquement la sourate attendue ; au moins un RECOGNIZED.
+  const corpus = await runPython(
+    [
+      "-m",
+      "tests.support.corpus_check",
+      "--surah",
+      surah,
+      "--min-recognized",
+      "1",
+      "-",
+    ],
+    { input: JSON.stringify(result) },
   );
-  const arabic = await page.locator(".verse-card .arabic").first().innerText();
-  assert(/[؀-ۿ]{3,}/.test(arabic), "texte arabe absent de la carte");
-  ok(`sourate ${surah} + verset affichés (${ref})`);
+  assert(
+    corpus.code === 0,
+    `résultat différent du corpus : ${corpus.stderr.trim() || corpus.stdout.trim()}`,
+  );
+  ok(corpus.stdout.trim());
+
+  // Chaque verset RECOGNIZED de la sourate : le segment cliqué affiche le statut « Reconnu » et
+  // un texte arabe strictement égal à interval.text (donc au corpus, vérifié ci-dessus).
+  const recognized = recognizedSegments(result, surah);
+  assert(
+    recognized.length > 0,
+    `aucun verset RECOGNIZED de la sourate ${surah} à afficher`,
+  );
+  for (const { index, interval } of recognized) {
+    await page.locator(`button.segment[data-index="${index}"]`).click();
+    const card = page.locator(".verse-card");
+    // La carte suit l'événement « seeked » du lecteur : on attend la bonne référence au lieu de
+    // lire aussitôt le passage précédent.
+    const prefix = `${interval.ref} ·`;
+    await page
+      .waitForFunction(
+        (expected) =>
+          document
+            .querySelector(".verse-card .ref")
+            ?.textContent?.trim()
+            .startsWith(expected),
+        prefix,
+        { timeout: 15_000 },
+      )
+      .catch(async () => {
+        const shownRef = (await card.locator(".ref").innerText()).trim();
+        throw new Error(
+          `référence affichée « ${shownRef} » au lieu de ${interval.ref}`,
+        );
+      });
+    const badges = await card.locator(".badges").innerText();
+    assert(
+      /Reconnu/.test(badges),
+      `${interval.ref} : badge « ${badges} » sans « Reconnu »`,
+    );
+    assert(
+      !interval.partial || /Passage partiel/.test(badges),
+      `${interval.ref} : verset partiel sans badge « Passage partiel » (${badges})`,
+    );
+    const arabic = (await card.locator(".arabic").textContent())?.trim();
+    assert(
+      arabic === interval.text.trim(),
+      `${interval.ref} : texte affiché « ${arabic} » ≠ interval.text « ${interval.text} »`,
+    );
+  }
+  ok(
+    `${recognized.length} verset(s) RECOGNIZED de la sourate ${surah} affichés = interval.text`,
+  );
 
   const download = page.waitForEvent("download", { timeout: 120_000 });
   await page.locator("a.export").click();
   const file = await download;
   const zipPath = path.join(work, "bundle.zip");
   await file.saveAs(zipPath);
-  const zip = await readFile(zipPath);
-  assert(zip.subarray(0, 2).toString() === "PK", "le pack n'est pas un ZIP");
-  const names = zip.toString("latin1");
-  for (const needle of ["manifest", "prediction", "source"])
-    assert(names.includes(needle), `entrée « ${needle} » absente du ZIP`);
-  ok(`pack ZIP exporté (${zip.length} octets, manifeste + prédiction + audio)`);
+  const verified = await runPython([
+    "-m",
+    "scripts.verify_review_bundle",
+    zipPath,
+    "--source",
+    audio,
+  ]);
+  assert(
+    verified.code === 0,
+    `pack ZIP invalide : ${verified.stderr.trim() || verified.stdout.trim()}`,
+  );
+  const packed = (await readFile(zipPath)).length;
+  ok(`pack ZIP vérifié (${packed} octets) : ${verified.stdout.trim()}`);
 
   assert(
     consoleErrors.length === 0,
