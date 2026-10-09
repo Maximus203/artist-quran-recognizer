@@ -159,11 +159,15 @@ def test_la_section_reproduire_existe_et_colle_a_la_trace_versionnee() -> None:
         "git diff tests/fixtures/ref-corpus/manifest.yaml",
         "manifest.build.json",
         "environment.git",
+        "carried_over",
         "quarantaine",
         "Abdul_Basit_Murattal_192kbps",
     ):
         assert needle in section, needle
     assert not trace["environment"]["git"]["dirty"], "la trace doit venir d'un code validé"
+    # la procédure promet un rejeu exact : vrai pour la trace livrée seulement si rien n'est conservé
+    assert trace["carried_over"] == {"cases": 0, "seeds": [], "scenarios": []}
+    assert "n'est exact que si `carried_over.cases` vaut 0" in provenance
 
 
 @pytest.mark.parametrize("source", ["src/aqr/data/reftrace.py", "scripts/build_ref_corpus.py"])
