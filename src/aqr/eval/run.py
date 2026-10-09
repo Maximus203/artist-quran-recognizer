@@ -44,16 +44,24 @@ def prediction_file(directory: Path, case_id: str) -> Path:
     return directory / f"{case_id}.json"
 
 
+def _current_umask() -> int:
+    current = os.umask(0)  # lecture seule : `os.umask` ne sait que remplacer
+    os.umask(current)
+    return current
+
+
 def write_text_atomic(path: Path, text: str) -> None:
     """Écrit `text` dans `path` sans jamais exposer un fichier partiel ni laisser de `.tmp`.
 
     Fichier temporaire dans le MÊME dossier puis `os.replace` (atomique) ; si l'écriture ou le
     remplacement échoue, le temporaire est supprimé et l'éventuel ancien fichier reste intact.
+    `mkstemp` crée en 0600 : les droits sont ramenés à ceux d'un fichier ordinaire (umask).
     """
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f"{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(text)
+        os.chmod(tmp, 0o666 & ~_current_umask())
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
