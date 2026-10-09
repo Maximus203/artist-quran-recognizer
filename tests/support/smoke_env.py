@@ -20,8 +20,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NoReturn
 
-import pytest
-
 from aqr.corpus.checksums import CorpusChecksumError, CorpusLock
 from aqr.models.lock import ModelLockError, ModelsLock
 
@@ -136,6 +134,8 @@ def _corpus_problem(env: Mapping[str, str]) -> str | None:
 
 def unavailable(missing: Sequence[Missing]) -> NoReturn:
     """Échec explicite en mode strict, skip net sinon."""
+    import pytest  # paresseux : la ligne de commande tourne aussi sous l'interpréteur du moteur
+
     detail = " ; ".join(f"{m.resource} : {m.reason}" for m in missing)
     if strict():
         pytest.fail(f"{STRICT_ENV}=1 : ressource(s) absente(s) — {detail}", pytrace=False)
