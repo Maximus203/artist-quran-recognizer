@@ -262,7 +262,7 @@ def _matches(expected: ExpectedItem, p: VerseInterval, policy: MatchPolicy) -> b
     )
 
 
-def _refuse_unless_trusted(case: AudioCase) -> None:
+def refuse_unless_trusted(case: AudioCase) -> None:
     problems = provenance_problems(case)
     if problems:
         raise EvaluationRefused(
@@ -282,9 +282,9 @@ def evaluate_case(
     audio_duration_s: float | None = None,
 ) -> CaseResult:
     """Évalue les `intervals` (JSON brut ou objets de `aqr.eval.recognition`) contre `case`."""
-    _refuse_unless_trusted(case)
+    refuse_unless_trusted(case)
     parsed = tuple(parse_intervals([i])[0] if isinstance(i, Mapping) else i for i in intervals)
-    parsed, out_of_scope = _restrict_to_windows(case, parsed)
+    parsed, out_of_scope = restrict_to_windows(case, parsed)
     verses = [i for i in parsed if isinstance(i, VerseInterval)]
     unlocated = sum(1 for v in verses if v.t is None)
     recognized = [v for v in verses if v.status is Status.RECOGNIZED and v.t is not None]
@@ -360,7 +360,7 @@ def evaluate_case(
     )
 
 
-def _restrict_to_windows(
+def restrict_to_windows(
     case: AudioCase, intervals: Sequence[Interval]
 ) -> tuple[tuple[Interval, ...], int]:
     """Cas annoté par fenêtres : seules les prédictions dont le milieu tombe dans une fenêtre

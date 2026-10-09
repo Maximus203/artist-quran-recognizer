@@ -85,6 +85,72 @@ Toujours par **sommes** (comptes et secondes), jamais de moyenne de ratios. Inte
 95 % fournis pour le taux de faux versets et le taux d'omission. Par catégorie du manifeste : un cas
 à plusieurs catégories compte dans chacune (les totaux par catégorie se recouvrent).
 
+## Rapport `aqr.evaluation/2` : deux blocs
+
+`scripts/evaluate.py` écrit un rapport en deux blocs, plus une provenance commune. Code :
+`src/aqr/eval/identification.py`, `transcription.py`, `report.py` · tests :
+`tests/unit/test_eval_identification.py`, `test_eval_transcription.py`, `test_eval_report.py`,
+`test_evaluate_script.py`.
+
+**Bloc `vitesse`** : `wall_s` (somme des `timing.total_s`), `audio_s`, `realtime_factor`
+(somme/somme), `peak_ram_mb` (maximum des `run.peak_rss_mb` des fichiers de transcription ; `null`
++ `peak_ram_note` « non mesuré » sinon, jamais inventé), `machine` (modèle de CPU, cœurs, plateforme,
+Python ; pas de nom d'hôte). La machine est celle qui lance `evaluate.py` : la lancer sur la machine
+qui a produit les sorties, sinon le facteur temps réel n'est pas lisible.
+
+**Bloc `exactitude`** : `localisation` (= `aggregate` ci-dessus, même objet), `identification`,
+`transcription`.
+
+**Provenance** (haut du rapport) : `git` (SHA + arbre modifié), `models` (révision et SHA-256 de chaque
+fichier de `models/LOCK.json` + empreinte du LOCK), `manifest` (empreinte du fichier + des cas
+évalués), `split`, `final`, `thresholds` (rattachement, décodeur lu dans les sorties, seuil
+d'effectif), `normalization` (version `aqr.normalize/N`, empreinte du dictionnaire imla'i),
+`warnings`.
+
+### Identification (sans horodatage)
+
+Séquences : attendu = refs de `expected` triées par temps ; prédit = refs des versets `recognized`
+(dans la fenêtre annotée) triées par temps ; doublons consécutifs fusionnés. Par verset attendu :
+`surah` (une sourate identique a été nommée), `verse_exact` (ce verset exact a été nommé) ; par cas :
+`range_exact` (suite prédite identique à la suite attendue : mêmes versets, même ordre, rien en
+plus ni en moins). `unrecognized` : cas à versets attendus sans aucun verset `recognized`
+(`inferred`/`uncertain`/abstention ne comptent pas). `n_extra_refs` : versets nommés absents de
+l'attendu. Cas sans verset attendu : `silence` (zones silence/bruit seulement) ou `off_target` (tout
+autre `non_quran` : français, arabe non coranique, autre langue, formules) ; tout verset `recognized`
+y est un faux positif (I3, I4), compté en cas et en versets. Aucun taux quand le dénominateur est nul.
+
+### Transcription : WER et CER (`--transcripts`)
+
+Entrée : un `<id>.transcript.json` par cas (`aqr.transcript/1` : `source.sha256` du manifeste,
+`engine`, `text` = sortie BRUTE de l'ASR, `run.peak_rss_mb` optionnel). Référence = mots Uthmani du
+corpus Tanzil des versets attendus (plages de mots respectées), jamais un modèle (I1). Deux
+variantes, toujours nommées :
+
+| variante | normalisation | CER |
+|---|---|---|
+| `tolerante` | `normalize_arabic` + dictionnaire imla'i (`imlai_corrections`) sur la référence | lettres sans espaces |
+| `strict-lettres` | `normalize_arabic` seul, sans dictionnaire | lettres, espaces comptés |
+
+WER = distance de Levenshtein sur les mots / mots de référence ; CER idem sur les lettres. Somme des
+erreurs sur somme des longueurs. Transcription vide = WER 1. Sans `--transcripts`, le bloc dit
+« non mesuré ». Une transcription dont le `sha256` ne correspond pas au manifeste est refusée.
+
+### Avertissements écrits dans chaque rapport
+
+- « identification de verset != validation du tajwid » : retrouver quel verset est récité ne dit rien
+  de la justesse de la récitation.
+- « plafond optimiste si audio EveryAyah » : l'audio de studio verset par verset est le cas facile ;
+  une ligne supplémentaire compte les cas EveryAyah / mixés (heuristique : `origine: mix` ou
+  « everyayah » dans `source`, `file` ou `recitant`).
+
+### Comparaison `--baseline rapport.json`
+
+Ajoute un bloc `comparison` (écart courant − base de chaque valeur numérique commune de `vitesse` et
+`exactitude`, et `context_changes` : git, modèles, seuils, machine). **Refus (code 2, rien n'est
+écrit)** si le manifeste (fichier ou cas évalués), le split, le schéma ou la normalisation (version +
+dictionnaire) diffèrent, ou si la base est illisible : on ne compare que ce qui est comparable. `--split
+test` exige toujours `--final`, avec ou sans base.
+
 ## Limites connues
 
 - Les plages de mots partielles ne sont comparées qu'en recouvrement (pas de couverture de mots,
@@ -94,4 +160,10 @@ Toujours par **sommes** (comptes et secondes), jamais de moyenne de ratios. Inte
   qu'une occurrence (la seconde est une omission `merged`).
 - Les métriques parole non coranique (précision de la détection `NON_QURAN` par durée) ne sont pas
   mesurées ici : seule son effet sur les versets l'est (faux versets en zone non coranique,
-  omissions `non_quran`).
+  omissions `non_quran`, faux positifs des cas silence / hors cible).
+- Ni `aqr recognize` ni les adapters n'écrivent encore la transcription brute ni le pic de RAM :
+  `--transcripts` attend des fichiers produits à part (brique à venir) ; sans eux, WER/CER et RAM
+  restent « non mesuré ».
+- Le WER/CER juge la transcription d'un cas entier contre la concaténation des versets attendus ; il
+  ne dit rien de la justesse du tajwid, ni des cas à parole non coranique mêlée (la référence ne
+  couvre alors que les versets).
