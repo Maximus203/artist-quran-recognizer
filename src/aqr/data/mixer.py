@@ -622,7 +622,7 @@ def materialize(
         file=f"mix/{mix.id}.wav",
         sha256=sha256_file(target),
         categorie=mix.categorie,
-        recitant=f"mix-{mix.reciter}".lower(),
+        recitant=f"{config.mix_recitant_prefix}{mix.reciter}".lower(),
         riwaya="hafs",
         langues=mix.langues,
         license="synthétique : récitations EveryAyah et clips fournis, usage interne de test",

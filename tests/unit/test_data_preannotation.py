@@ -194,3 +194,10 @@ def test_script_ecrit_les_fichiers_et_refuse_l_ecrasement(tmp_path: Path, capsys
     assert script.main(argv) == 1  # existe déjà : refus, code non nul
     assert "force" in capsys.readouterr().err
     assert script.main([*argv, "--force"]) == 0
+
+
+def test_la_quarantaine_est_refusee_comme_le_jeu_test(tmp_path: Path):
+    audio_dir, manifest_path, rec = _setup(tmp_path, split="quarantaine")
+    with pytest.raises(PreannotationRefused, match="quarantaine"):
+        write_preannotation(manifest_path, audio_dir, rec)
+    assert not labels_path(audio_dir, "lot1-05").exists()
