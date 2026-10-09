@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { cancel, launch } from "./jobs";
+import { cancel, jobSettled, launch } from "./jobs";
 import { readSession, saveSession, sessionDir, type Session } from "./store";
 
 // Faux interpréteur Python : un script node exécutable qui imite `aqr recognize`.
@@ -12,6 +12,12 @@ const a = process.argv.slice(2);
 const source = a[3], out = a[a.indexOf("--out-dir") + 1];
 const mode = process.env.FAKE_MODE || "ok";
 fs.writeFileSync(path.join(out, "args.json"), JSON.stringify(a));
+if (mode === "linger") {
+  // Le processus meurt, mais un petit-enfant garde stdout/stderr ouverts : « exit » précède « close » d'~1 s.
+  require("child_process").spawn(process.execPath, ["-e", "setTimeout(() => {}, 1000)"],
+    { stdio: ["ignore", "inherit", "inherit"], detached: true }).unref();
+  console.error("boom: modèle introuvable"); process.exit(3);
+}
 if (mode === "fail") { console.error("boom: modèle introuvable"); process.exit(3); }
 if (mode === "sleep") { setTimeout(() => {}, 60000); }
 else {
@@ -41,6 +47,9 @@ beforeEach(async () => {
   vi.stubEnv("AQR_MODELS_DIR", path.join(tmp, "models"));
 });
 afterEach(async () => {
+  // Aucun gestionnaire `close` ne doit survivre au test (écritures dans un dossier supprimé
+  // ou dans la session du test suivant, qui partage le même identifiant).
+  await jobSettled(ID);
   vi.unstubAllEnvs();
   await rm(tmp, { recursive: true, force: true });
 });
@@ -66,13 +75,10 @@ async function seed(over: Partial<Session> = {}, hash = HASH): Promise<void> {
   });
   await writeFile(path.join(sessionDir(ID), "source.mp3"), BYTES);
 }
+/** Attend que le gestionnaire `close` ait consigné l'issue, sans sonder la session. */
 async function settle(): Promise<Session> {
-  for (let i = 0; i < 100; i++) {
-    const s = await readSession(ID);
-    if (s.state !== "running") return s;
-    await new Promise((r) => setTimeout(r, 50));
-  }
-  throw new Error("le job ne s'est pas terminé");
+  await jobSettled(ID);
+  return readSession(ID);
 }
 
 describe("lancement du moteur", () => {
@@ -142,6 +148,45 @@ describe("lancement du moteur", () => {
   });
 });
 
+describe("lecture concurrente pendant la fin du traitement", () => {
+  const GENERIC = /s’est arrêté avant de produire/;
+  async function untilProcessGone(pid: number): Promise<void> {
+    for (let i = 0; i < 500; i++) {
+      try {
+        process.kill(pid, 0);
+      } catch {
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    throw new Error("le processus du faux moteur ne s'est pas arrêté");
+  }
+  it("un lecteur ne déclare pas failed un traitement que ce serveur n'a pas fini de consigner", async () => {
+    vi.stubEnv("FAKE_MODE", "linger");
+    await seed();
+    await launch(ID);
+    const { pid } = JSON.parse(
+      await readFile(path.join(sessionDir(ID), "session.json"), "utf8"),
+    ) as Session;
+    expect(pid).not.toBeNull();
+    await untilProcessGone(pid as number);
+    // Processus mort, « close » pas encore arrivé : ni échec générique, ni écriture.
+    const during = await readSession(ID);
+    expect(during.state).toBe("running");
+    expect(during.error ?? "").not.toMatch(GENERIC);
+    const final = await settle();
+    expect(final.state).toBe("failed");
+    expect(final.error).toContain("boom: modèle introuvable");
+    expect(final.error).not.toMatch(GENERIC);
+  });
+});
+
+describe("jobSettled", () => {
+  it("se résout aussitôt quand aucun traitement n'est en cours", async () => {
+    await expect(jobSettled(ID)).resolves.toBeUndefined();
+  });
+});
+
 describe("annulation", () => {
   it("échoue s'il n'y a aucun traitement actif dans ce serveur", async () => {
     await seed();
@@ -156,7 +201,8 @@ describe("annulation", () => {
     const out = await readSession(ID);
     expect(out.state).toBe("cancelled");
     expect(out.pid).toBeNull();
-    await new Promise((r) => setTimeout(r, 200));
+    // Le gestionnaire `close` ne doit pas écraser l'annulation.
+    await jobSettled(ID);
     expect((await readSession(ID)).state).toBe("cancelled");
   });
 });

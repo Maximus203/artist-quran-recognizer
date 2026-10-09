@@ -1,3 +1,4 @@
+import type { ChildProcess } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import {
   lstat,
@@ -57,6 +58,13 @@ export function sessionTtlSeconds(
   return Number.isInteger(value) && value > 0 ? value : 0;
 }
 export const REPO = path.resolve(process.cwd(), "..");
+/** Traitement lancé par ce serveur ; `settled` se résout quand `close` a consigné l'issue. */
+export type Job = { child: ChildProcess; settled: Promise<void> };
+/**
+ * Traitements en cours dans ce serveur. Tant qu'un id y figure, seul le gestionnaire
+ * `close` de `jobs.ts` consigne l'issue : `readSession` ne sonde pas le processus.
+ */
+export const jobs = new Map<string, Job>();
 export type Session = {
   id: string;
   name: string;
@@ -110,7 +118,7 @@ export async function readSession(id: string): Promise<Session> {
   } catch {
     /* sortie non encore disponible */
   }
-  if (value.pid) {
+  if (value.pid && !jobs.has(id)) {
     try {
       process.kill(value.pid, 0);
     } catch {
