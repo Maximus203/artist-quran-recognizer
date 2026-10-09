@@ -21,9 +21,11 @@ microphone ou la parole non coranique parlée.
 
 **SHA testé : `cf3196f120f58ac43c37fb2b8e723f537cccda86`** (`run.json.git` : `dirty: false`, arbre propre) =
 branche `feat/recognize-batch-report` après fusion de `develop` @ `e8c8c74` (contient #36, #37, #38, #39,
-#40). Les commits postérieurs de la branche (tests, ce rapport) ne touchent ni `src/` ni `scripts/` :
-`git diff cf3196f <tête publiée> --stat -- src scripts` est vide. Le SHA de tête publié figure dans la
-description de la PR #41.
+#40). Les commits postérieurs de la branche (tests, ce rapport, choix du moteur du smoke e2e) ne
+touchent ni `src/` ni les scripts de reconnaissance et d'évaluation : `git diff cf3196f <tête publiée>
+--stat -- src scripts` ne liste que `scripts/smoke_e2e.sh` (outillage du smoke), et le même diff limité à
+`src/aqr/pipeline src/aqr/matching src/aqr/decoding src/aqr/adapters` est vide. Le SHA de tête publié
+figure dans la description de la PR #41.
 
 **Le pipeline de reconnaissance est identique à `develop` @ `1a79e20`** (code du premier rapport) :
 ```
