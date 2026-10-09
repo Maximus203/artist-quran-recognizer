@@ -1,7 +1,8 @@
 # Normalisation de comparaison — règles exactes et variantes de notation
 
-Code de référence : `src/aqr/corpus/normalize.py` (`normalize_arabic`, `tokenize`) et
-`src/aqr/corpus/imlai_corrections.py` (ADR-0003). Ce document décrit ce que le code fait
+Code de référence : `src/aqr/corpus/normalize.py` (`normalize_arabic`, `tokenize`,
+`normalize_strict_letters`, `tokenize_strict_letters`) et `src/aqr/corpus/imlai_corrections.py`
+(ADR-0003). Ce document décrit ce que le code fait
 aujourd'hui ; si le code change, ce document change dans la même PR. Les exemples ci-dessous
 ont été exécutés contre le code le 2026-10-09.
 
@@ -63,7 +64,7 @@ rapport sans ce champ est invalide.
 une sortie imla'i, les `imlai_corrections` du §2 appliquées au côté Uthmani. Elle est tolérante
 sur : voyelles, formes de l'alef, alef maqsura/ya, ta marbuta/ha, hamza porté (waw/ya).
 
-### `strict-lettres` (plus stricte ; **spécification, pas encore implémentée**)
+### `strict-lettres` (plus stricte ; implémentée par `normalize_strict_letters` et `tokenize_strict_letters`, versionnée par `STRICT_NORMALIZATION_VERSION`)
 
 Existe pour mesurer ce que la tolérance cache. Règles : les étapes 1, 2, 3, 5 et 6 (NFC,
 diacritiques, tatweel, non-arabe, espaces) comme ci-dessus ; **aucun repli de lettres** (étape 4
@@ -71,8 +72,19 @@ supprimée) sauf `ٱ` -> `ا` (l'alef wasla est un signe de liaison, non une let
 d'`imlai_corrections`. Un système n'est alors compté juste que s'il écrit `ة`, `ى`, `ؤ`, `ئ`,
 `أ/إ/آ` comme le texte de référence.
 
-Implémentation attendue (hors de cette PR) : une fonction distincte dans `aqr.corpus` avec ses
-tests, jamais un drapeau caché dans `normalize_arabic`, dont le contrat actuel reste inchangé.
+Implémentation : fonctions distinctes dans `aqr.corpus.normalize`, jamais un drapeau caché dans
+`normalize_arabic`, dont le contrat reste inchangé. NFC précède la suppression des signes, donc
+`ا` + U+0654 (hamza combinant) devient `أ` et reste `أ`. Le repli `ٱ` -> `ا` s'applique avant le
+filtre non arabe (U+0671 est hors des plages conservées). Exemples exécutés le 2026-10-09 :
+`سُؤَال` -> `سؤال` ; `ٱلرَّحْمَٰنِ` -> `الرحمن` ; `كتـاب` -> `كتاب` ; `ءَ` -> `ء` ;
+`بِسْمِ ٱللَّهِ ۝` -> `بسم الله` ; `ﷲ`, `ﻻ`, `کی` et `١٢ abc` -> chaîne vide.
+`STRICT_NORMALIZATION_VERSION` (`aqr.normalize-strict/N`) est écrite dans le bloc `normalization`
+des rapports et incluse dans leur empreinte : une base d'avant l'implémentation est refusée.
+
+La référence est le texte Uthmani du corpus, non converti en imla'i : `strict-lettres` est donc un
+plancher, qui compte aussi les conventions du Mushaf (madda écrite `ءَا`, hamza combinant, alef
+suscrit, `ى` pour `ي`) et ne mesure pas à elle seule l'erreur d'un ASR. Le CER est calculé sur les
+lettres sans espaces, dans les deux variantes.
 
 ### Règle de lecture
 
