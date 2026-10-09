@@ -158,3 +158,56 @@ def test_quarantaine_melangee_a_un_autre_split_est_signalee():
         cases = [_case("a", "x", 10.0, "quarantaine"), _case("b", "x", 10.0, other)]
         with pytest.raises(ValueError, match="x"):
             assign_splits(cases, DataConfig())
+
+
+def test_la_quarantaine_prend_aussi_les_mixes_de_la_meme_voix():
+    # mixer.materialize écrit recitant = "mix-<reciter>" en minuscules : même voix, autre nom
+    cases = [
+        _case("p", "Husary_128kbps", 100.0, "test"),
+        _case("m1", "mix-husary_128kbps", 60.0, "dev"),
+        _case("m2", "mix-husary_128kbps", 60.0, None),
+        _case("d", "Alafasy_128kbps", 80.0, "dev"),
+    ]
+    config = DataConfig()
+    moved = {c.id: c.split for c in quarantine_recitant(cases, "Husary_128kbps", config)}
+    assert moved == {"p": "quarantaine", "m1": "quarantaine", "m2": "quarantaine", "d": "dev"}
+    # l'exposition peut venir du mix : le nom donné la porte, la voix entière suit
+    via_mix = [
+        _case("m", "mix-husary_128kbps", 60.0, "test"),
+        _case("p", "Husary_128kbps", 9.0, "dev"),
+    ]
+    assert {c.split for c in quarantine_recitant(via_mix, "mix-husary_128kbps", config)} == {
+        "quarantaine"
+    }
+    # un alias qui n'est que en dev n'a pas été exposé : refus ; un nom absent : inconnu
+    with pytest.raises(ValueError, match="dev"):
+        quarantine_recitant(cases, "mix-husary_128kbps", config)
+    with pytest.raises(ValueError, match="inconnu"):
+        quarantine_recitant(cases, "husary_128kbps", config)
+
+
+def test_un_nouveau_mix_d_une_voix_en_quarantaine_naît_en_quarantaine():
+    config = DataConfig()
+    cases = [
+        _case("p", "Husary_128kbps", 10_000.0, config.quarantine_split),
+        _case("m", "mix-husary_128kbps", 10_000.0, None),
+        _case("a", "r1", 1000.0, "dev"),
+        _case("n", "n", 500.0, None),
+    ]
+    # le mix est quarantiné et n'entre pas dans le ratio : `n` est rééquilibré vers test
+    assert assign_splits(cases, config) == {
+        "Husary_128kbps": "quarantaine",
+        "mix-husary_128kbps": "quarantaine",
+        "r1": "dev",
+        "n": "test",
+    }
+
+
+def test_quarantaine_et_test_melanges_suggerent_la_commande():
+    cases = [_case("a", "x", 10.0, "quarantaine"), _case("b", "x", 10.0, "test")]
+    with pytest.raises(ValueError, match="aqr data quarantine x"):
+        assign_splits(cases, DataConfig())
+    # dev + test reste une fuite sans remède automatique : pas de commande suggérée
+    with pytest.raises(ValueError) as err:
+        assign_splits([_case("a", "x", 10.0, "dev"), _case("b", "x", 10.0, "test")], DataConfig())
+    assert "quarantine" not in str(err.value)
