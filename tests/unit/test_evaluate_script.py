@@ -154,6 +154,22 @@ def test_la_quarantaine_n_est_jamais_evaluee_meme_avec_final(world, capsys):
     assert not out.exists()
 
 
+def test_un_cas_en_quarantaine_est_absent_des_rapports_dev_et_test(world):
+    tmp, manifest, preds = world
+    saved = Manifest.load(manifest)
+    saved.upsert(_case("quaA", DataConfig().quarantine_split, human=True))
+    saved.save(manifest)
+    (preds / "quaA.json").write_text(
+        json.dumps(_prediction(_case("quaA", "x", human=True), [VERSE_OK])), "utf-8"
+    )
+    for extra in (("--split", "dev"), ("--split", "test", "--final")):
+        out = tmp / "report.json"
+        assert _run(manifest, preds, out, *extra) == 0
+        text = out.read_text(encoding="utf-8")
+        assert "quaA" not in text
+        assert json.loads(text)["aggregate"]["overall"]["n_cases"] == 1  # devA / tesA seuls
+
+
 def test_aucun_cas_annote_ne_donne_aucune_metrique_et_code_non_nul(tmp_path: Path, capsys):
     manifest = tmp_path / "m.yaml"
     Manifest(cases=[_case("devB", "dev", human=False)]).save(manifest)
