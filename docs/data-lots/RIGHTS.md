@@ -1,5 +1,12 @@
 # Droits du lot 1 — contradiction à clarifier par le mainteneur
 
+**Le lot 1 n'est pas un précédent.** Ses trois décisions ci-dessous sont ouvertes : rien de ce qui
+est fait pour lui ne vaut autorisation pour d'autres sources, ni l'inverse. La règle d'usage
+provisoire des audios aux droits non établis (évaluation interne locale, hors dépôt, sans
+redistribution) est la section « Décision d'usage » de
+`docs/data-lots/ref-corpus-provenance.md` ; elle ne tranche aucun des points qui suivent. Libellés
+de licence : section « Libellé de licence canonique » du même document.
+
 ## Constat (vérifié le 2026-10-06)
 - Le dataset `https://huggingface.co/datasets/printf0cherif/aqr-audio-private` est **public**
   (API Hugging Face : `private: false`, `gated: false`), révision `f00ebced79755213c0d2050566126602454f5517`,
