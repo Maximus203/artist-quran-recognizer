@@ -17,6 +17,10 @@ from __future__ import annotations
 import re
 import unicodedata
 
+# Version de la normalisation : à incrémenter dès que `normalize_arabic` change de comportement
+# (elle est écrite dans les rapports d'évaluation pour refuser de comparer deux versions).
+NORMALIZATION_VERSION = "aqr.normalize/1"
+
 # Harakat, tanwin, shadda, sukun, madda de combinaison, etc.
 _TASHKEEL = re.compile(r"[ؐ-ًؚ-ٰٟۖ-ۭ]")
 _TATWEEL = "ـ"
