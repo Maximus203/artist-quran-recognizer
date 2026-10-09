@@ -79,10 +79,15 @@ def verify_bundle(
     audio_sha = digests[audio_entries[0]]
     if manifest["audio_sha256"] != audio_sha:
         raise ValueError(f"audio_sha256 du manifeste ({manifest['audio_sha256']}) != {audio_sha}")
-    if source is not None and sha256_file(source) != audio_sha:
-        raise ValueError(
-            f"l'audio du pack ({audio_sha}) diffère du fichier de référence {source.name}"
-        )
+    if source is not None:
+        try:
+            reference_sha = sha256_file(source)
+        except OSError as exc:
+            raise ValueError(f"fichier de référence illisible : {source} ({exc})") from exc
+        if reference_sha != audio_sha:
+            raise ValueError(
+                f"l'audio du pack ({audio_sha}) diffère du fichier de référence {source.name}"
+            )
     prediction_sha = _check_prediction(manifest, contents, digests, audio_sha, require_prediction)
     return {
         "session_id": manifest["session_id"],
