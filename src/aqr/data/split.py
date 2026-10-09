@@ -41,7 +41,7 @@ def assign_splits(cases: Sequence[AudioCase], config: DataConfig) -> dict[str, s
         if case.split is not None:
             previous = pinned.setdefault(case.recitant, case.split)
             if previous != case.split:
-                raise ValueError(_conflict_message(case.recitant, previous, case.split, config))
+                raise ValueError(conflict_message(case.recitant, previous, case.split, config))
 
     dev = sum(weight[r] for r, side in pinned.items() if side == "dev")
     total = sum(weight[r] for r, side in pinned.items() if side != config.quarantine_split)
@@ -69,7 +69,7 @@ def assign_splits(cases: Sequence[AudioCase], config: DataConfig) -> dict[str, s
     return mapping
 
 
-def _conflict_message(recitant: str, one: str, other: str, config: DataConfig) -> str:
+def conflict_message(recitant: str, one: str, other: str, config: DataConfig) -> str:
     message = f"récitant {recitant!r} présent à la fois en {one} et en {other} dans le manifeste"
     if {one, other} == {"test", config.quarantine_split}:
         return f"{message} : quarantaine inachevée, `aqr data quarantine {recitant}` la termine"
