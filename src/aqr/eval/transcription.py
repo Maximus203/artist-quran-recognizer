@@ -12,12 +12,13 @@ appliqué à la référence ET à l'hypothèse) :
 - `strict-lettres` : `normalize_strict_letters` (docs/evaluation/normalisation.md §3) : mêmes
   étapes, AUCUN repli de lettres sauf `ٱ -> ا`, pas de dictionnaire. Un système n'est juste que
   s'il écrit `ة ى ؤ ئ أ إ آ ء` comme la référence. La référence reste le texte Uthmani : la variante
-  est un PLANCHER, elle compte aussi les conventions du Mushaf qu'une orthographe imla'i n'a pas
-  (madda écrite `ءَا`, hamza combinant, `ى`). Elle diagnostique, elle ne règle aucun seuil.
+  est un PLANCHER d'orthographe du Mushaf, PAS un taux d'erreur de l'ASR : elle compte aussi les
+  conventions du Mushaf qu'une orthographe imla'i n'a pas (madda écrite `ءَا`, hamza combinant,
+  alef suscrit, `ى`). Elle diagnostique, elle ne règle aucun seuil.
 
 Le CER est calculé, dans les deux variantes, sur les lettres SANS espaces : une coupure de mots
-différente ne coûte rien au CER (elle coûte au WER), et l'écart tolérante/stricte ne vient que des
-replis de lettres.
+différente ne coûte rien au CER (elle coûte au WER), et l'écart tolérante/stricte ne vient que de
+la normalisation (replis de lettres, dictionnaire imla'i), jamais des espaces.
 
 WER = erreurs de mots / mots de référence ; CER = erreurs de lettres / lettres de référence
 (Levenshtein : substitution, insertion, suppression à coût 1). Agrégation par SOMMES d'erreurs et
@@ -53,7 +54,8 @@ VARIANT_DESCRIPTIONS = {
     ),
     STRICT_LETTRES: (
         "normalize_strict_letters (aucun repli de lettres sauf alef wasla, sans dictionnaire "
-        "imla'i, référence Uthmani : plancher) ; CER sur les lettres sans espaces"
+        "imla'i) contre la référence Uthmani : plancher d'orthographe du Mushaf, pas un taux "
+        "d'erreur de l'ASR ; CER sur les lettres sans espaces"
     ),
 }
 

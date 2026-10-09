@@ -142,6 +142,29 @@ def _require_same(label: str, current: Any, baseline: Any, what: str) -> None:
         raise BaselineRefused(f"{label} différent : {what}")
 
 
+# Parties du bloc `normalization` d'un rapport, dans l'ordre où on les nomme.
+_NORMALIZATION_PARTS = (
+    ("version", "version tolérante"),
+    ("strict_version", "version stricte"),
+    ("corrections", "dictionnaire imla'i (entrées)"),
+)
+
+
+def _normalization_differences(now: Mapping[str, Any], then: Mapping[str, Any]) -> str:
+    """Seules les parties qui diffèrent ; une valeur manquante (vieille base) = « absente »."""
+
+    def shown(value: Any) -> str:
+        return "absente" if value is None else str(value)
+
+    parts = [
+        f"{label} : {shown(then.get(key))} (base) ≠ {shown(now.get(key))}"
+        for key, label in _NORMALIZATION_PARTS
+        if now.get(key) != then.get(key)
+    ]
+    # versions et effectif égaux, empreinte différente : le contenu du dictionnaire a changé
+    return "; ".join(parts) or "empreinte différente (contenu du dictionnaire imla'i)"
+
+
 def compare_reports(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> dict[str, Any]:
     """Écarts (courant − base) des valeurs numériques communes ; refuse un couple non comparable."""
     _require_same(
@@ -166,10 +189,8 @@ def compare_reports(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> 
     norm_now, norm_then = current.get("normalization") or {}, baseline.get("normalization") or {}
     if norm_now != norm_then:
         raise BaselineRefused(
-            "normalisation différente (version tolérante, version stricte ou dictionnaire "
-            f"imla'i) : tolérante {norm_then.get('version')} ≠ {norm_now.get('version')} ou "
-            f"stricte {norm_then.get('strict_version')} ≠ {norm_now.get('strict_version')} ou "
-            "dictionnaire ; WER/CER non comparables"
+            f"normalisation différente ({_normalization_differences(norm_now, norm_then)}) : "
+            "WER/CER non comparables"
         )
 
     now = {

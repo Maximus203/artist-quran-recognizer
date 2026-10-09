@@ -121,6 +121,26 @@ def test_strict_ponctuation_chiffres_marque_de_verset_et_latin_deviennent_espace
 
 
 @pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("\ufdf2", ""),  # ﷲ (forme de présentation U+FDF2) : supprimée, non convertie (pas de NFKC)
+        ("\ufefb", ""),  # ﻻ (U+FEFB) : idem
+        ("\u06a9\u06cc", ""),  # کی : lettres persanes, supprimées
+        ("\u067e", ""),  # پ
+        ("١٢ abc", ""),
+        ("سُؤَال", "سؤال"),  # le ؤ est conservé (la tolérante donne « سوال »)
+        ("كتـاب", "كتاب"),
+        ("بِسْمِ ٱللَّهِ ۝", "بسم الله"),
+        ("ءَ", "ء"),
+    ],
+)
+def test_strict_exemples_de_la_spec(text, expected):
+    # exemples de docs/evaluation/normalisation.md §1, rejoués avec la variante stricte
+    assert normalize_strict_letters(text) == expected
+    assert tokenize_strict_letters(text) == (expected.split(" ") if expected else [])
+
+
+@pytest.mark.parametrize(
     "text",
     [BASMALA_UTHMANI, "أإآةىؤئءٱ", "ءَامَنَ ٱلرَّسُولُ", "ٱلْحَمْدُ لِلَّهِ ۝ ٢ ، (abc)", "Au nom", ""],
 )

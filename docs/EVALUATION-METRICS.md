@@ -136,15 +136,20 @@ Chaque variante a son normaliseur (table `VARIANT_NORMALIZERS`), appliqué à la
 l'hypothèse. La variante stricte est une fonction distincte (`normalize_strict_letters`,
 `tokenize_strict_letters`), jamais un drapeau de `normalize_arabic`. Le CER compte les lettres SANS
 espaces dans les deux variantes : une coupure de mots différente coûte au WER, jamais au CER, et
-l'écart tolérante/stricte ne vient que des replis de lettres.
+l'écart tolérante/stricte ne vient que de la normalisation (replis de lettres, dictionnaire imla'i),
+jamais de la façon de compter les espaces.
 
-**`strict-lettres` est un plancher.** La référence est le texte Uthmani du corpus, pas une
-orthographe imla'i : la variante compte donc aussi les conventions du Mushaf qu'une transcription
-imla'i n'a pas (madda écrite `ءَا` contre `آ`, hamza combinant, alef suscrit supprimé contre alef plein,
-`ى` contre `ي`). Mesure du 2026-10-09 sur le corpus épinglé (6 236 versets), avec pour hypothèse le
-texte imla'i du corpus lui-même (un ASR parfait en imla'i) : `tolerante` WER 1,55 % / CER 0,27 % ;
-`strict-lettres` WER 18,79 % / CER 5,07 %. Avec le texte Uthmani recopié : `strict-lettres` 0 %,
-`tolerante` WER 9,24 % (elle suppose une hypothèse imla'i). La stricte sert à diagnostiquer ce que la
+**`strict-lettres` est un plancher d'orthographe du Mushaf, pas une erreur d'ASR.** La référence est
+le texte Uthmani du corpus, pas une orthographe imla'i : la variante compte donc aussi les
+conventions du Mushaf qu'une transcription imla'i n'a pas (madda écrite `ءَا` contre `آ`, hamza
+combinant, alef suscrit supprimé contre alef plein, `ى` contre `ي`). Le rapport le dit dans le champ
+`description` de la variante. Mesure du 2026-10-09 sur le corpus épinglé (6 236 versets), avec pour
+hypothèse le texte imla'i du corpus lui-même (un ASR parfait en imla'i) : `tolerante` WER 1,55 % /
+CER 0,27 % ; `strict-lettres` WER 18,79 % / CER 5,07 %. Avec le texte Uthmani recopié :
+`strict-lettres` 0 %, `tolerante` WER 9,24 % (elle suppose une hypothèse imla'i). Origine de l'écart,
+sur les 70 798 mots des 5 873 versets dont les nombres de mots Uthmani et imla'i coïncident :
+12 658 mots diffèrent en stricte, dont 5 933 sont absorbés par les seuls replis de lettres, 6 542
+par le dictionnaire imla'i et 183 par aucun des deux. La stricte sert à diagnostiquer ce que la
 tolérance cache ; ne pas la lire comme un taux d'erreur de l'ASR, et ne régler aucun seuil dessus.
 
 Versions : `STRICT_NORMALIZATION_VERSION` (`aqr.normalize-strict/N`) est écrite dans le bloc
@@ -169,8 +174,10 @@ erreurs sur somme des longueurs. Transcription vide = WER 1. Sans `--transcripts
 Ajoute un bloc `comparison` (écart courant − base de chaque valeur numérique commune de `vitesse` et
 `exactitude`, et `context_changes` : git, modèles, seuils, machine). **Refus (code 2, rien n'est
 écrit)** si le manifeste (fichier ou cas évalués), le split, le schéma ou la normalisation (versions
-tolérante et stricte + dictionnaire) diffèrent, ou si la base est illisible : on ne compare que ce qui est comparable. `--split
-test` exige toujours `--final`, avec ou sans base.
+tolérante et stricte + dictionnaire) diffèrent, ou si la base est illisible : on ne compare que ce
+qui est comparable. Le message de refus ne liste que les parties qui diffèrent (par exemple « version
+stricte : absente (base) ≠ aqr.normalize-strict/1 » pour un rapport d'avant le correctif
+`strict-lettres`). `--split test` exige toujours `--final`, avec ou sans base.
 
 ## Limites connues
 
