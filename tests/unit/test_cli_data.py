@@ -12,7 +12,7 @@ import pytest
 import yaml
 
 from aqr.cli import main
-from aqr.data.manifest import Manifest
+from aqr.data.manifest import AudioCase, Manifest
 
 
 def fake_convert(src: Path, dest: Path, sample_rate: int) -> None:
@@ -154,3 +154,58 @@ def test_sans_commande_affiche_l_aide(run: Run):
     out = io.StringIO()
     assert main([], env={}, out=out, err=io.StringIO()) == 0
     assert "data" in out.getvalue()
+
+
+def _case(cid: str, recitant: str, split: str | None) -> AudioCase:
+    return AudioCase(
+        id=cid, file=f"C01/{cid}.wav", sha256=cid.ljust(64, "0"), categorie=("C01",),
+        recitant=recitant, riwaya="hafs", langues=("ar",), license="x", duree_s=60.0,
+        statut="annote", split=split,
+    )  # fmt: skip
+
+
+def _manifest(run: Run, *cases: AudioCase) -> None:
+    Manifest(cases=list(cases)).save(run.manifest)
+
+
+def test_quarantine_met_tout_le_groupe_en_quarantaine_et_ecrit_le_manifeste(run: Run):
+    _manifest(
+        run,
+        _case("p", "expose", "test"),
+        _case("p--noise-snr10", "expose", "test"),
+        _case("d", "voisin", "dev"),
+    )
+    assert run("quarantine", "expose") == 0
+    cases = {c.id: c.split for c in Manifest.load(run.manifest).cases}
+    assert cases == {"p": "quarantaine", "p--noise-snr10": "quarantaine", "d": "dev"}
+    assert "2 cas" in run.out.getvalue() and "expose" in run.out.getvalue()
+
+
+def test_quarantine_dry_run_n_ecrit_rien(run: Run):
+    _manifest(run, _case("p", "expose", "test"))
+    assert run("quarantine", "expose", "--dry-run") == 0
+    assert Manifest.load(run.manifest).get("p").split == "test"
+    assert "simulation" in run.out.getvalue()
+
+
+def test_quarantine_refuse_un_recitant_inconnu_ou_en_dev(run: Run):
+    _manifest(run, _case("d", "voisin", "dev"))
+    assert run("quarantine", "personne") == 1
+    assert "inconnu" in run.err.getvalue()
+    assert run("quarantine", "voisin") == 1
+    assert Manifest.load(run.manifest).get("d").split == "dev"
+
+
+def test_split_affiche_la_quarantaine_et_y_remplit_les_cas_sans_split(run: Run):
+    _manifest(
+        run,
+        _case("p", "expose", "quarantaine"),
+        _case("p--mp3-64k", "expose", None),
+        _case("n", "nouveau", None),
+    )
+    assert run("split") == 0
+    cases = {c.id: c.split for c in Manifest.load(run.manifest).cases}
+    assert cases["p--mp3-64k"] == "quarantaine"
+    assert cases["n"] in ("dev", "test")
+    printed = run.out.getvalue()
+    assert "quarantaine" in printed and "expose" in printed
