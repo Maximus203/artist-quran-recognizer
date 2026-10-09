@@ -16,7 +16,7 @@ from aqr.data.config import DataConfig
 from aqr.data.degrade import read_samples, rms
 from aqr.data.ingest import sha256_file
 from aqr.data.manifest import AudioCase, ExpectedItem, Manifest, NonQuranItem, WordRange
-from aqr.data.mixer import read_wav, write_wav
+from aqr.data.mixer import DiskClipProvider, clip_digest, read_wav, write_wav
 from aqr.data.refbuild import (
     BuildReport,
     ReferenceClipProvider,
@@ -48,13 +48,45 @@ DEGRADATIONS = (
 
 
 class FourReciters(SyntheticProvider):
+    """Quatre récitants ; huit enregistrements de parole par nature (le tirage choisit)."""
+
     def reciters(self) -> tuple[str, ...]:
         return ("recit_a", "recit_b", "recit_c", "recit_d")
 
     def speech(self, kind: NonQuranKind, rng: random.Random) -> array[int] | None:
         if kind is NonQuranKind.OTHER_LANGUAGE:
             return None
-        return super().speech(kind, rng)
+        base = {NonQuranKind.FRENCH: 3100.0, NonQuranKind.ARABIC_SPEECH: 4100.0}[kind]
+        return tone(base + 100.0 * rng.randint(0, 7), 3.0)
+
+
+class OneClip(FourReciters):
+    """Un seul enregistrement par nature (le cas du dossier speech/ presque vide)."""
+
+    def speech(self, kind: NonQuranKind, rng: random.Random) -> array[int] | None:
+        if kind is NonQuranKind.OTHER_LANGUAGE:
+            return None
+        return SyntheticProvider.speech(self, kind, rng)
+
+
+class TwoClips(FourReciters):
+    """Deux enregistrements par nature : le tirage décide lequel sort."""
+
+    def speech(self, kind: NonQuranKind, rng: random.Random) -> array[int] | None:
+        if kind is NonQuranKind.OTHER_LANGUAGE:
+            return None
+        base = {NonQuranKind.FRENCH: 3100.0, NonQuranKind.ARABIC_SPEECH: 3300.0}[kind]
+        return tone(base + 500.0 * rng.randint(0, 1), 3.0)
+
+
+class ThreeReciters(OneClip):
+    def reciters(self) -> tuple[str, ...]:
+        return ("recit_a", "recit_b", "recit_c")
+
+
+class TwoReciters(FourReciters):
+    def reciters(self) -> tuple[str, ...]:
+        return ("recit_a", "recit_b")
 
 
 @pytest.fixture(scope="module")
@@ -315,17 +347,114 @@ def test_reconstruction_avec_un_recitant_de_plus_ne_reaffecte_rien(tmp_path: Pat
     """Mêmes identifiants, un récitant de plus : sans affectation figée, recit_b passait de test
     à dev (le hachage et les poids sont recalculés sur un autre ensemble)."""
 
-    class TwoReciters(FourReciters):
-        def reciters(self) -> tuple[str, ...]:
-            return ("recit_a", "recit_b")
-
-    class ThreeReciters(FourReciters):
-        def reciters(self) -> tuple[str, ...]:
-            return ("recit_a", "recit_b", "recit_c")
-
     out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
-    before = splits_by_recitant(build(out, manifest, provider=TwoReciters).manifest.cases)
-    after = splits_by_recitant(build(out, manifest, provider=ThreeReciters).manifest.cases)
+    before = splits_by_recitant(build(out, manifest, provider=TwoReciters, seed=7).manifest.cases)
+    after = splits_by_recitant(build(out, manifest, provider=ThreeReciters, seed=7).manifest.cases)
     common = before.keys() & after.keys()
     assert {"recit_a", "recit_b"} <= common
     assert {r: after[r] for r in common} == {r: before[r] for r in common}
+
+
+def off_target(report: BuildReport) -> list[AudioCase]:
+    return [c for c in report.manifest.cases if ref_meta(c).condition == "off_target"]
+
+
+def test_hors_cible_meme_audio_meme_jeu(tmp_path: Path) -> None:
+    """Un seul clip par nature : avant, `per_scenario` cas de même sha256 (pseudo-récitants
+    `speech-<nature>-<n>` indépendants) étaient répartis au hasard entre dev et test."""
+    report = build(tmp_path / "aqr-ref", tmp_path / "manifest.yaml", provider=ThreeReciters)
+    cases = off_target(report)
+    assert {c.non_quran[0].kind for c in cases} == {NonQuranKind.FRENCH, NonQuranKind.ARABIC_SPEECH}
+    assert len(cases) == 2  # dédupliqué : un enregistrement, un cas
+    skipped = dict(report.skipped)
+    assert "distinct" in skipped["off_target:french"]
+    provider = ThreeReciters(TanzilCorpusRepository(CORPUS_DIR))
+    for case in cases:
+        kind = case.non_quran[0].kind
+        digest = clip_digest(provider.speech(kind, random.Random(0)))  # type: ignore[arg-type]
+        assert case.recitant == f"speech-{kind.value}-{digest[:12]}"
+        assert case.extra["sources"] == [{"kind": kind.value, "sha256": digest}]
+    sides: dict[str, set[str | None]] = {}
+    for case in report.manifest.cases:
+        sides.setdefault(case.sha256, set()).add(case.split)
+    assert {len(v) for v in sides.values()} == {1}
+    assert report.problems == [] and validate_ref_manifest(report.manifest) == []
+
+
+def test_hors_cible_tire_des_clips_distincts_au_recitant_stable(tmp_path: Path) -> None:
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    report = build(out, manifest, provider=TwoClips)
+    cases = off_target(report)
+    assert len(cases) == 4  # 2 natures x 2 clips distincts
+    assert len({c.sha256 for c in cases}) == 4 and len({c.recitant for c in cases}) == 4
+    assert all(c.recitant.rsplit("-", 1)[1] in c.extra["sources"][0]["sha256"] for c in cases)
+    again = build(out, manifest, provider=TwoClips)  # le pseudo-récitant suit le contenu
+    assert {c.id: (c.recitant, c.split) for c in off_target(again)} == {
+        c.id: (c.recitant, c.split) for c in cases
+    }
+
+
+def test_sources_des_mixages_consignees_et_jamais_dans_deux_jeux(
+    built: tuple[BuildReport, Path, Path],
+) -> None:
+    report, _out, _ = built
+    mixes = [c for c in report.manifest.cases if ref_meta(c).condition == "clean"]
+    zones = {NonQuranKind.FRENCH, NonQuranKind.ARABIC_SPEECH, NonQuranKind.TAKBIR}
+    with_zones = [c for c in mixes if {z.kind for z in c.non_quran} & zones]
+    assert with_zones
+    for case in with_zones:  # chaque clip réellement collé est consigné
+        used = {z.kind.value for z in case.non_quran}
+        assert {s["kind"] for s in case.extra["sources"]} == used, case.id
+    by_source: dict[str, set[str | None]] = {}
+    for case in report.manifest.cases:
+        for source in case.extra.get("sources", []):
+            by_source.setdefault(source["sha256"], set()).add(case.split)
+    assert by_source and {len(v) for v in by_source.values()} == {1}
+    assert validate_ref_manifest(report.manifest) == []
+
+
+def test_source_disque_nom_et_sha256_du_fichier(tmp_path: Path) -> None:
+    speech = tone(3100.0, 1.0)
+    write_wav(tmp_path / "speech" / "french_01.wav", speech, 16000)
+    write_wav(tmp_path / "speech" / "french_02.wav", tone(3200.0, 1.0), 16000)
+    write_wav(tmp_path / "specials" / "takbir.wav", tone(2300.0, 1.0), 16000)
+    disk = DiskClipProvider(tmp_path)
+    chosen = disk.speech(NonQuranKind.FRENCH, random.Random(5))
+    origin = disk.origin(clip_digest(chosen))  # type: ignore[arg-type]
+    assert origin is not None and origin.name in ("speech/french_01.wav", "speech/french_02.wav")
+    assert origin.sha256 == sha256_file(tmp_path / origin.name)
+    special = disk.special(NonQuranKind.TAKBIR)
+    assert disk.origin(clip_digest(special)).name == "specials/takbir.wav"  # type: ignore[arg-type, union-attr]
+    assert disk.origin("0" * 64) is None
+
+
+def test_priere_un_seul_enregistrement_special_un_seul_jeu(tmp_path: Path) -> None:
+    """Les specials/ n'ont qu'un clip par nature : la prière ne peut exister que d'un côté. Les
+    mixages du récitant de l'autre jeu sont écartés (signalés, audio effacé), pas dupliqués."""
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    corpus = TanzilCorpusRepository(CORPUS_DIR)
+    report = build_ref_corpus(
+        FourReciters(corpus),
+        corpus,
+        out,
+        manifest,
+        seed=5,
+        per_scenario=6,
+        scenarios=("murattal_continu", "priere"),
+        degradations=(Degradation("telephone"),),
+    )
+    prayers = [c for c in report.manifest.cases if c.extra.get("scenario") == "priere"]
+    assert prayers
+    assert len({c.split for c in prayers}) == 1
+    dropped = [(n, r) for n, r in report.skipped if n.startswith("ref-mix-priere")]
+    assert dropped, "aucun mixage de prière n'est tombé dans l'autre jeu : changer de graine"
+    assert all("déjà utilisée dans le jeu" in reason for _, reason in dropped)
+    for name, _ in dropped:
+        assert not (out / "mix" / f"{name}.wav").exists()
+        assert name not in {c.id for c in report.manifest.cases}
+    assert {s["kind"] for c in prayers for s in c.extra["sources"]} == {
+        "takbir",
+        "istiadha",
+        "amin",
+    }
+    assert report.problems == [] and validate_ref_manifest(report.manifest) == []

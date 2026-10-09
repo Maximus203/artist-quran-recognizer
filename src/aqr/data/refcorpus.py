@@ -27,6 +27,8 @@ Règles garanties par `validate_ref_manifest` :
   (`shift_s`), appliqué à `expected`, `non_quran` et `annotated_windows` ; `shift_s` vaut
   `params.pad_s` pour `silence_pad` et 0 pour toute autre dégradation, et le validateur compare
   chaque dérivé à son parent décalé (vérité, statut, durée) ;
+- un même audio (`sha256` d'un cas) ou un même enregistrement source (`extra.sources[].sha256`)
+  n'apparaît jamais dans les deux jeux ;
 - `license` est renseignée (valeur par défaut : droits non établis, voir
   `docs/data-lots/ref-corpus-provenance.md`) ; aucun audio n'est versionné, seulement son SHA-256.
 """
@@ -34,7 +36,7 @@ Règles garanties par `validate_ref_manifest` :
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -44,6 +46,10 @@ from aqr.data.split import assign_splits
 
 REF_SCHEMA_VERSION = 1
 REF_KEY = "ref"
+SOURCES_KEY = "sources"
+"""Clé d'`extra` (hors bloc `ref`, schéma inchangé) : enregistrements non récités collés dans le
+cas, `[{kind, file?, sha256}]`. `sha256` est celui du fichier `speech/` ou `specials/` (à défaut de
+fichier, celui des échantillons) : un même enregistrement ne doit servir qu'à un seul jeu."""
 DEGRADED_CATEGORY = "C12"
 """Conditions dégradées (docs/TEST-CORPUS.md)."""
 
@@ -263,6 +269,69 @@ def assign_ref_splits(
     return [replace(case, split=case.split or mapping[case.recitant]) for case in pinned]
 
 
+def case_sources(case: AudioCase) -> list[Mapping[str, Any]]:
+    """Enregistrements source consignés dans `extra.sources` (liste vide si aucun)."""
+    raw = case.extra.get(SOURCES_KEY)
+    if raw is None:
+        return []
+    if not isinstance(raw, Sequence) or isinstance(raw, str):
+        raise RefCorpusError(f"cas {case.id} : sources doit être une liste")
+    for item in raw:
+        if not isinstance(item, Mapping) or not _SHA256.fullmatch(str(item.get("sha256"))):
+            raise RefCorpusError(f"cas {case.id} : sources[] sans sha256 valide : {item!r}")
+    return list(raw)
+
+
+def claim_sources(
+    cases: Sequence[AudioCase], claims: dict[str, str]
+) -> tuple[list[AudioCase], list[tuple[AudioCase, str]]]:
+    """Garde les cas dont les sources ne sont pas déjà dans l'autre jeu ; met `claims` à jour.
+
+    `claims` = {sha256 de la source: split}. Premier arrivé, premier servi : un enregistrement
+    appartient au jeu qui l'a réclamé en premier. Renvoie (gardés, [(écarté, raison)]).
+    """
+    kept: list[AudioCase] = []
+    dropped: list[tuple[AudioCase, str]] = []
+    for case in cases:
+        sources = case_sources(case)
+        clash = next(
+            (
+                s
+                for s in sources
+                if case.split and claims.get(s["sha256"], case.split) != case.split
+            ),
+            None,
+        )
+        if clash is not None:
+            name = clash.get("file") or str(clash["sha256"])[:12]
+            dropped.append(
+                (case, f"source {name} déjà utilisée dans le jeu {claims[clash['sha256']]}")
+            )
+            continue
+        for source in sources:
+            if case.split:
+                claims.setdefault(source["sha256"], case.split)
+        kept.append(case)
+    return kept, dropped
+
+
+def _shared_between_splits(
+    manifest: Manifest, keys: Callable[[AudioCase], Sequence[tuple[str, str]]]
+) -> list[str]:
+    """Problèmes « même clé dans les deux jeux » ; `keys(case)` = [(clé, libellé)]."""
+    found: dict[str, tuple[str, dict[str, list[str]]]] = {}
+    for case in manifest.cases:
+        for key, label in keys(case):
+            sides = found.setdefault(key, (label, {}))[1]
+            sides.setdefault(case.split or "?", []).append(case.id)
+    return [
+        f"{label} partagé entre les jeux {' et '.join(sorted(sides))} (fuite) : "
+        + "; ".join(f"{side}: {', '.join(ids[:3])}" for side, ids in sorted(sides.items()))
+        for label, sides in found.values()
+        if len(sides) > 1
+    ]
+
+
 def _derived_problems(
     child: AudioCase, meta: RefMeta, parent: AudioCase, cfg: DataConfig
 ) -> list[str]:
@@ -321,6 +390,10 @@ def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) 
             problems.append(f"{where} : split {case.split!r} (attendu {', '.join(cfg.splits)})")
         else:
             sides.setdefault(case.recitant, set()).add(case.split)
+        try:
+            case_sources(case)
+        except RefCorpusError as exc:
+            problems.append(str(exc))
         if meta.non_quran and case.expected:
             problems.append(f"{where} : non_quran mais des versets sont attendus")
         if not meta.non_quran and not case.expected:
@@ -336,4 +409,16 @@ def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) 
     for recitant, found in sorted(sides.items()):
         if len(found) > 1:
             problems.append(f"récitant {recitant!r} présent en dev et en test (fuite)")
+    problems.extend(
+        _shared_between_splits(manifest, lambda c: [(c.sha256, f"audio sha256 {c.sha256[:12]}")])
+    )
+    problems.extend(_shared_between_splits(manifest, _source_keys))
     return problems
+
+
+def _source_keys(case: AudioCase) -> list[tuple[str, str]]:
+    try:
+        sources = case_sources(case)
+    except RefCorpusError:
+        return []  # signalé par validate_ref_manifest au titre du cas
+    return [(s["sha256"], f"source {s.get('file') or s['sha256'][:12]} (sha256)") for s in sources]
