@@ -32,7 +32,7 @@ packages = ["src/aqr"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
-addopts = "-q --strict-markers -m 'not slow and not acceptance'"
+addopts = "-q -rs --strict-markers -m 'not slow and not acceptance'"
 markers = [
   "slow: vrais modèles ASR (GPU conseillé)",
   "acceptance: audios du manifeste (AQR_AUDIO_DIR requis)",

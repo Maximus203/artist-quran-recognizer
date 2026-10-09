@@ -11,16 +11,32 @@ import hashlib
 import json
 import os
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+BUNDLE_SCHEMA = "aqr.review-bundle/1"
+MANIFEST_ENTRY = "manifest.json"
+AUDIO_ENTRY_STEM = "audio/source"  # + l'extension du média (".mp3", ".wav", ...)
+PREDICTION_ENTRY = "predictions/original.recognition.json"
+CURRENT_REVIEW_ENTRY = "reviews/current.review.json"
+REVIEW_ENTRY_DIR = "reviews"  # reviews/<révision>.review.json
 
-def _sha256(path: Path) -> str:
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256_chunks(chunks: Iterable[bytes]) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
+    for block in chunks:
+        digest.update(block)
     return digest.hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    with path.open("rb") as stream:
+        return sha256_chunks(iter(lambda: stream.read(1024 * 1024), b""))
 
 
 def build_bundle(session_dir: Path, target: Path) -> None:
@@ -29,29 +45,30 @@ def build_bundle(session_dir: Path, target: Path) -> None:
     if not isinstance(extension, str) or not extension.startswith(".") or "/" in extension:
         raise ValueError("extension audio invalide")
     audio = session_dir / f"source{extension}"
-    if _sha256(audio) != session["audio_sha256"]:
+    if sha256_file(audio) != session["audio_sha256"]:
         raise ValueError("empreinte audio incorrecte")
-    files: list[tuple[Path, str]] = [(audio, f"audio/source{extension}")]
+    files: list[tuple[Path, str]] = [(audio, f"{AUDIO_ENTRY_STEM}{extension}")]
     prediction = session_dir / "prediction.recognition.json"
     if prediction.exists():
-        if _sha256(prediction) != session["prediction_sha256"]:
+        if sha256_file(prediction) != session["prediction_sha256"]:
             raise ValueError("empreinte prédiction incorrecte")
-        files.append((prediction, "predictions/original.recognition.json"))
+        files.append((prediction, PREDICTION_ENTRY))
     review = session_dir / "review.json"
     if review.exists():
-        files.append((review, "reviews/current.review.json"))
+        files.append((review, CURRENT_REVIEW_ENTRY))
     revisions = session_dir / "revisions"
     if revisions.exists():
         files.extend(
-            (item, f"reviews/{item.name}") for item in sorted(revisions.glob("*.review.json"))
+            (item, f"{REVIEW_ENTRY_DIR}/{item.name}")
+            for item in sorted(revisions.glob("*.review.json"))
         )
-    hashes = {name: _sha256(source) for source, name in files}
+    hashes = {name: sha256_file(source) for source, name in files}
     engine = None
     if prediction.exists():
         parsed = json.loads(prediction.read_text(encoding="utf-8"))
         engine = parsed.get("engine")
     manifest = {
-        "schema": "aqr.review-bundle/1",
+        "schema": BUNDLE_SCHEMA,
         "session_id": session["id"],
         "source_name": session.get("name"),
         "audio_sha256": session["audio_sha256"],
@@ -66,7 +83,7 @@ def build_bundle(session_dir: Path, target: Path) -> None:
     try:
         with zipfile.ZipFile(temporary, "w") as archive:
             archive.writestr(
-                "manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+                MANIFEST_ENTRY, json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
             )
             for source, name in files:
                 compression = zipfile.ZIP_STORED if source == audio else zipfile.ZIP_DEFLATED

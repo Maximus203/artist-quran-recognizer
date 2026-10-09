@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
+    "smoke:browser": "node e2e/browser-smoke.mjs",
     "test": "vitest run",
-    "format:check": "prettier --check app lib next.config.ts tsconfig.json package.json",
-    "format": "prettier --write app lib next.config.ts tsconfig.json package.json"
+    "format:check": "prettier --check app lib e2e next.config.ts tsconfig.json package.json",
+    "format": "prettier --write app lib e2e next.config.ts tsconfig.json package.json"
   },
   "dependencies": {
     "gsap": "^3.13.0",
@@ -23,6 +24,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "playwright-core": "1.56.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.0",
     "vitest": "^5.0.3"
