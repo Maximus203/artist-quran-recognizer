@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 from tests.support import smoke_env
-from tests.support.smoke_env import find_missing, strict, unavailable
+from tests.support.smoke_env import ROOT, find_missing, strict, unavailable
 
 
 def _models_lock(path: Path, sizes: dict[str, dict[str, int]]) -> None:
@@ -183,3 +186,21 @@ def test_the_required_models_follow_the_chosen_asr(setup: Setup) -> None:
     assert "whisper-base-quran" in whisper[0].reason
     with pytest.raises(ValueError, match="asr inconnu"):
         find_missing(setup.env, ("models",), asr="vosk")
+
+
+def test_the_command_line_needs_no_pytest(tmp_path: Path) -> None:
+    # AQR_PYTHON est l'interpréteur du moteur (ex. venv FastConformer), pas forcément celui de dev.
+    code = (
+        "import sys; sys.modules['pytest'] = None; "
+        "from tests.support import smoke_env, corpus_check; print('ok')"
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=ROOT,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr
+    assert done.stdout.strip() == "ok"
