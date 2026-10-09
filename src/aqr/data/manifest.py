@@ -10,7 +10,7 @@ import os
 import re
 import tempfile
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -374,8 +374,12 @@ class Manifest:
         return next((c for c in self.cases if c.sha256 == sha256), None)
 
     def upsert(self, case: AudioCase) -> None:
+        """Ajoute ou remplace par id. Un cas sans `split` garde l'affectation déjà écrite (une
+        re-matérialisation ne défait pas une quarantaine) ; un `split` explicite s'applique."""
         for index, existing in enumerate(self.cases):
             if existing.id == case.id:
+                if case.split is None and existing.split is not None:
+                    case = replace(case, split=existing.split)
                 self.cases[index] = case
                 return
         self.cases.append(case)
