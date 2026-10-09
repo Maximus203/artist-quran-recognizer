@@ -34,6 +34,7 @@ from aqr.data.refcorpus import (
     validate_ref_manifest,
     with_ref_meta,
 )
+from aqr.data.split import quarantine_recitant
 from aqr.domain.models import NonQuranKind, Status, VerseRef
 
 pytestmark = [
@@ -535,3 +536,48 @@ def test_trace_deterministe_et_environnement_transmis(tmp_path: Path) -> None:
     assert trace["sources"]["everyayah_lock_sha256"] == sha256_file(lock)
     build_ref_corpus(FourReciters(corpus), corpus, out, manifest, environment=env, **kwargs)  # type: ignore[arg-type]
     assert (tmp_path / TRACE_NAME).read_text(encoding="utf-8") == first  # rejeu : octet pour octet
+
+
+def quarantined_build(tmp_path: Path) -> tuple[Path, Path, str]:
+    """Construit (graine 6 : recit_b et recit_c en test), met un récitant en quarantaine."""
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    build(out, manifest, seed=6)
+    old = Manifest.load(manifest)
+    assert "test" in {c.split for c in old.cases if c.recitant.startswith("recit_")}
+    target = next(c.recitant for c in old.cases if c.split == "test" and c.recitant[:6] == "recit_")
+    Manifest(cases=quarantine_recitant(old.cases, target, DataConfig())).save(manifest)
+    return out, manifest, target
+
+
+def test_reconstruction_garde_un_recitant_en_quarantaine(tmp_path: Path) -> None:
+    """Un récitant mis en quarantaine (jeu test exposé au réglage) ne revient jamais en dev/test :
+    ni lui, ni ses parents régénérés, ni ses dérivés."""
+    quarantine = DataConfig().quarantine_split
+    out, manifest, target = quarantined_build(tmp_path)
+    newer = (Degradation("noise", {"snr_db": 10, "seed": 1}), Degradation("mp3_low", {"kbps": 32}))
+    again = build(out, manifest, seed=6, per_scenario=3, degradations=newer)
+
+    assert again.problems == []
+    ours = [c for c in again.manifest.cases if c.recitant == target]
+    assert ours and {c.split for c in ours} == {quarantine}
+    assert any(ref_meta(c).parent for c in ours)  # les dérivés régénérés y sont aussi
+    assert {c.split for c in again.manifest.cases if c.recitant != target} <= {"dev", "test"}
+    assert validate_ref_manifest(again.manifest) == []
+    assert read_trace(manifest)["splits"][target] == quarantine  # type: ignore[index]
+
+
+def test_voix_mix_d_un_recitant_en_quarantaine_suit_la_quarantaine(tmp_path: Path) -> None:
+    """Tout est régénéré sous le nom `mix-<récitant>` (le mixeur local) : aucun cas du récitant en
+    quarantaine ne reste dans le manifeste, mais sa voix ne repart pas en dev/test."""
+    quarantine = DataConfig().quarantine_split
+    out, manifest, target = quarantined_build(tmp_path)
+
+    class SameVoice(FourReciters):
+        def reciters(self) -> tuple[str, ...]:
+            return (f"mix-{target}",)
+
+    again = build(out, manifest, seed=6, provider=SameVoice)
+    assert again.problems == []
+    mixes = [c for c in again.manifest.cases if c.recitant == f"mix-{target}"]
+    assert mixes and {c.split for c in mixes} == {quarantine}
+    assert not {c.split for c in again.manifest.cases if c.recitant == target} - {quarantine}

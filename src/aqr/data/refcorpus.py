@@ -42,7 +42,7 @@ from typing import Any
 
 from aqr.data.config import DataConfig
 from aqr.data.manifest import AudioCase, ExpectedItem, Manifest, NonQuranItem
-from aqr.data.split import assign_splits
+from aqr.data.split import assign_splits, conflict_message, voice_key
 
 REF_SCHEMA_VERSION = 1
 REF_KEY = "ref"
@@ -235,22 +235,47 @@ def degraded_case(
     )
 
 
-def frozen_splits(cases: Sequence[AudioCase]) -> dict[str, str]:
+def quarantine_leaks(cases: Sequence[AudioCase], config: DataConfig) -> list[str]:
+    """Voix présentes en quarantaine ET en dev/test (`mix-<reciter>` et `<reciter>` : même voix).
+
+    La quarantaine retire un récitant dont le jeu test a été exposé : en garder une trace dans un
+    jeu évalué ou réglé serait la fuite que la quarantaine veut éviter.
+    """
+    voices: dict[str, dict[str, set[str]]] = {}
+    for case in cases:
+        if case.split:
+            by_split = voices.setdefault(voice_key(case.recitant, config), {})
+            by_split.setdefault(case.split, set()).add(case.recitant)
+    leaks = []
+    for voice, by_split in sorted(voices.items()):
+        evaluated = sorted(set(by_split) & set(config.splits))
+        if config.quarantine_split in by_split and evaluated:
+            names = sorted({r for side in evaluated for r in by_split[side]})
+            leaks.append(
+                f"voix {voice!r} en {config.quarantine_split} ET en {' et '.join(evaluated)} "
+                f"(fuite) : {', '.join(names)}"
+            )
+    return leaks
+
+
+def frozen_splits(cases: Sequence[AudioCase], config: DataConfig | None = None) -> dict[str, str]:
     """{récitant: split} déjà écrits dans un manifeste : une reconstruction ne les réaffecte jamais.
 
-    Un récitant présent des deux côtés est une fuite à corriger à la main : on refuse de
-    continuer plutôt que de choisir un côté.
+    La quarantaine (`config.quarantine_split`) est une affectation comme une autre, définitive. Un
+    récitant présent des deux côtés, ou une voix en quarantaine ET en dev/test, est une fuite à
+    corriger à la main : on refuse de continuer plutôt que de choisir un côté.
     """
+    cfg = config or DataConfig()
     frozen: dict[str, str] = {}
     for case in cases:
         if case.split is None:
             continue
         previous = frozen.setdefault(case.recitant, case.split)
         if previous != case.split:
-            raise RefCorpusError(
-                f"récitant {case.recitant!r} présent en {previous} et en {case.split} dans le "
-                "manifeste existant : fuite dev/test à corriger à la main"
-            )
+            raise RefCorpusError(conflict_message(case.recitant, previous, case.split, cfg))
+    leaks = quarantine_leaks(cases, cfg)
+    if leaks:
+        raise RefCorpusError(f"manifeste existant : {leaks[0]}")
     return frozen
 
 
@@ -262,9 +287,23 @@ def assign_ref_splits(
     Un dérivé a le récitant de son parent, donc son jeu. Une affectation déjà écrite sur un cas est
     gardée ; `frozen` ({récitant: split}, voir `frozen_splits`) fixe celle des récitants dont les
     anciens cas sont régénérés : le hachage et les poids ne sont consultés que pour les nouveaux.
+    Un récitant en quarantaine ne revient jamais en jeu, ni sous le nom de sa voix (`mix-<...>`).
     """
     known = frozen or {}
-    pinned = [replace(c, split=c.split or known.get(c.recitant)) for c in cases]
+    quarantined = {
+        voice_key(recitant, config)
+        for recitant, side in known.items()
+        if side == config.quarantine_split
+    }
+
+    def fixed(case: AudioCase) -> str | None:
+        if case.split:
+            return case.split
+        if case.recitant in known:
+            return known[case.recitant]
+        return config.quarantine_split if voice_key(case.recitant, config) in quarantined else None
+
+    pinned = [replace(case, split=fixed(case)) for case in cases]
     mapping = assign_splits(pinned, config)
     return [replace(case, split=case.split or mapping[case.recitant]) for case in pinned]
 
@@ -386,10 +425,13 @@ def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) 
             problems.append(f"{where} : license vide")
         if not case.recitant.strip():
             problems.append(f"{where} : recitant vide")
-        if case.split not in cfg.splits:
-            problems.append(f"{where} : split {case.split!r} (attendu {', '.join(cfg.splits)})")
-        else:
+        if case.split in cfg.splits:
             sides.setdefault(case.recitant, set()).add(case.split)
+        elif case.split != cfg.quarantine_split:
+            problems.append(
+                f"{where} : split {case.split!r} "
+                f"(attendu {', '.join(cfg.splits)} ou {cfg.quarantine_split})"
+            )
         try:
             case_sources(case)
         except RefCorpusError as exc:
@@ -409,6 +451,7 @@ def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) 
     for recitant, found in sorted(sides.items()):
         if len(found) > 1:
             problems.append(f"récitant {recitant!r} présent en dev et en test (fuite)")
+    problems.extend(quarantine_leaks(manifest.cases, cfg))
     problems.extend(
         _shared_between_splits(manifest, lambda c: [(c.sha256, f"audio sha256 {c.sha256[:12]}")])
     )

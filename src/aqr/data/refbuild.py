@@ -402,7 +402,8 @@ def build_ref_corpus(
     mix_config = MixConfig(sample_rate=cfg.sample_rate)
     report = BuildReport()
     existing = Manifest.load(manifest_path)
-    frozen = frozen_splits(existing.cases)  # avant d'écrire quoi que ce soit : refuse une fuite
+    # avant d'écrire quoi que ce soit : une fuite du manifeste existant arrête le build
+    frozen = frozen_splits(existing.cases, cfg)
     excluded = provider.excluded_reciters() if isinstance(provider, ExclusionReporter) else ()
     report.skipped.extend((f"reciter:{name}", reason) for name, reason in excluded)
     mixes = generate_mixes(
