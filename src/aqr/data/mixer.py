@@ -14,6 +14,7 @@ tête : avec basmala = `words: all` ; sans basmala (fichier EveryAyah seul) = `w
 
 from __future__ import annotations
 
+import hashlib
 import random
 import shutil
 import wave
@@ -21,7 +22,7 @@ from array import array
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from aqr.corpus.normalize import normalize_arabic
 from aqr.data.config import DataConfig
@@ -91,6 +92,35 @@ class ClipProvider(Protocol):
     def speech(self, kind: NonQuranKind, rng: random.Random) -> array[int] | None: ...
 
 
+def clip_digest(clip: array[int]) -> str:
+    """SHA-256 des échantillons d'un clip : l'identité d'un enregistrement, quel que soit son
+    fichier (deux fichiers qui décodent pareil sont le même enregistrement)."""
+    return hashlib.sha256(clip.tobytes()).hexdigest()
+
+
+@dataclass(frozen=True)
+class ClipUse:
+    """Un clip non récité (parole, isti'adha, takbir, amin) collé dans un mixage."""
+
+    kind: NonQuranKind
+    digest: str
+
+
+@dataclass(frozen=True)
+class SourceFile:
+    """Fichier d'origine d'un clip : nom relatif au dossier audio et SHA-256 de ses octets."""
+
+    name: str
+    sha256: str
+
+
+@runtime_checkable
+class OriginProvider(Protocol):
+    """Fournisseur capable de dire de quel fichier vient un clip (`clip_digest`)."""
+
+    def origin(self, digest: str) -> SourceFile | None: ...
+
+
 @dataclass(frozen=True)
 class Mix:
     id: str
@@ -103,6 +133,8 @@ class Mix:
     expected: tuple[ExpectedItem, ...]
     non_quran: tuple[NonQuranItem, ...]
     boundaries: str = "exact"
+    clips: tuple[ClipUse, ...] = ()
+    """Clips non récités utilisés (sans doublon, dans l'ordre) : la provenance du mixage."""
 
 
 @dataclass
@@ -154,6 +186,7 @@ class DiskClipProvider:
         self._dir = audio_dir
         self._rate = sample_rate
         self._convert = convert
+        self._origins: dict[str, Path] = {}
 
     def _wav(self, source: Path) -> array[int]:
         if source.suffix.lower() == ".wav":
@@ -192,13 +225,25 @@ class DiskClipProvider:
             return []
         return sorted(p for p in folder.glob(stem_glob) if p.suffix.lower() in self._EXTENSIONS)
 
+    def _remember(self, source: Path) -> array[int]:
+        samples = self._wav(source)
+        self._origins[clip_digest(samples)] = source
+        return samples
+
     def special(self, kind: NonQuranKind) -> array[int] | None:
         found = self._find(self._dir / "specials", f"{kind.value}.*")
-        return self._wav(found[0]) if found else None
+        return self._remember(found[0]) if found else None
 
     def speech(self, kind: NonQuranKind, rng: random.Random) -> array[int] | None:
         found = self._find(self._dir / "speech", f"{kind.value}_*.*")
-        return self._wav(rng.choice(found)) if found else None
+        return self._remember(rng.choice(found)) if found else None
+
+    def origin(self, digest: str) -> SourceFile | None:
+        """Fichier d'où vient un clip déjà lu par `special`/`speech` (None si inconnu)."""
+        source = self._origins.get(digest)
+        if source is None:
+            return None
+        return SourceFile(source.relative_to(self._dir).as_posix(), sha256_file(source))
 
 
 # --- construction d'un mix -------------------------------------------------------------------
@@ -222,6 +267,7 @@ class _Builder:
         self.samples: array[int] = array("h")
         self.expected: list[ExpectedItem] = []
         self.non_quran: list[NonQuranItem] = []
+        self.clips: list[ClipUse] = []
         self.approximate = False
 
     # temps ---------------------------------------------------------------------------------
@@ -329,6 +375,7 @@ class _Builder:
     def zone(self, kind: NonQuranKind, clip: array[int]) -> None:
         start, end = self._append(clip, contiguous=False)
         self.non_quran.append(NonQuranItem((start, end), kind))
+        self.clips.append(ClipUse(kind, clip_digest(clip)))
 
 
 def _short_runs(
@@ -560,6 +607,7 @@ def _build(
         expected=tuple(builder.expected),
         non_quran=tuple(builder.non_quran),
         boundaries="approximate" if builder.approximate else "exact",
+        clips=tuple(dict.fromkeys(builder.clips)),
     )
 
 

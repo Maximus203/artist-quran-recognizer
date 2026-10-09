@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -17,6 +18,7 @@ from aqr.data.refcorpus import (
     RefCorpusError,
     RefMeta,
     assign_ref_splits,
+    claim_sources,
     degraded_case,
     frozen_splits,
     ref_meta,
@@ -25,15 +27,18 @@ from aqr.data.refcorpus import (
 )
 from aqr.domain.models import NonQuranKind, Status, VerseRef
 
-SHA_A = "a" * 64
 SHA_B = "b" * 64
+
+
+def sha_of(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
 
 
 def clean_case(case_id: str = "mix-a-1", recitant: str = "Alafasy_128kbps") -> AudioCase:
     case = AudioCase(
         id=case_id,
         file=f"mix/{case_id}.wav",
-        sha256=SHA_A,
+        sha256=sha_of(case_id),
         categorie=("C01",),
         recitant=recitant,
         riwaya="hafs",
@@ -221,7 +226,10 @@ def _recitants(count: int) -> list[AudioCase]:
 
 def test_split_recitants_disjoints_et_degradations_heritent() -> None:
     cases = _recitants(4)
-    cases += [degraded_case(c, Degradation("telephone"), sha256=SHA_B, duree_s=12.5) for c in cases]
+    cases += [
+        degraded_case(c, Degradation("telephone"), sha256=sha_of(f"{c.id}-tel"), duree_s=12.5)
+        for c in cases
+    ]
     assigned = assign_ref_splits(cases, DataConfig())
     sides: dict[str, set[str | None]] = {}
     for case in assigned:
@@ -268,6 +276,64 @@ def test_fuite_dev_test_detectee() -> None:
     b = replace(clean_case("b"), split="test")  # même récitant
     problems = validate_ref_manifest(Manifest(cases=[a, b]))
     assert any("fuite" in p for p in problems)
+
+
+def _off_target(case_id: str, recitant: str, split: str, sha: str, **extra: object) -> AudioCase:
+    case = replace(
+        clean_case(case_id, recitant),
+        split=split,
+        sha256=sha,
+        expected=(),
+        non_quran=(NonQuranItem((0.0, 5.0), NonQuranKind.FRENCH),),
+        annotated_windows=(),
+        extra=dict(extra),
+    )
+    return with_ref_meta(case, RefMeta(condition="off_target", non_quran=True))
+
+
+def test_meme_sha_deux_jeux_signale() -> None:
+    """Même audio sous deux pseudo-récitants : test reverrait ce qu'on a vu en dev."""
+    shared = sha_of("french-clip")
+    dev = _off_target("off-0", "speech-french-a", "dev", shared)
+    test = _off_target("off-1", "speech-french-b", "test", shared)
+    problems = validate_ref_manifest(Manifest(cases=[dev, test]))
+    assert any("sha256" in p and "dev" in p and "test" in p and "off-0" in p for p in problems)
+    # même jeu : pas de fuite (deux cas peuvent partager un audio du même côté)
+    twin = _off_target("off-1", "speech-french-b", "dev", shared)
+    assert validate_ref_manifest(Manifest(cases=[dev, twin])) == []
+
+
+def test_meme_source_deux_jeux_signale() -> None:
+    """Un enregistrement source (speech/ ou specials/) réutilisé dans des mixages dev ET test."""
+    source = [{"kind": "takbir", "file": "specials/takbir.wav", "sha256": sha_of("takbir")}]
+    other = [{"kind": "takbir", "file": "specials/takbir_2.wav", "sha256": sha_of("takbir 2")}]
+    dev = _off_target("a", "Reciter1_128kbps", "dev", sha_of("a"), sources=source)
+    test = _off_target("b", "Reciter2_128kbps", "test", sha_of("b"), sources=source)
+    problems = validate_ref_manifest(Manifest(cases=[dev, test]))
+    assert any("source" in p and "specials/takbir.wav" in p and "fuite" in p for p in problems)
+    apart = _off_target("b", "Reciter2_128kbps", "test", sha_of("b"), sources=other)
+    assert validate_ref_manifest(Manifest(cases=[dev, apart])) == []
+    broken = _off_target("c", "Reciter3_128kbps", "test", sha_of("c"), sources="takbir")
+    assert any("sources" in p for p in validate_ref_manifest(Manifest(cases=[broken])))
+
+
+def test_cas_a_source_deja_dans_l_autre_jeu_ecarte() -> None:
+    """Premier arrivé, premier servi : le jeu qui réclame un enregistrement le garde."""
+    takbir = [{"kind": "takbir", "file": "specials/takbir.wav", "sha256": sha_of("takbir")}]
+    amin = [{"kind": "amin", "sha256": sha_of("amin")}]
+    first = _off_target("a", "Reciter1_128kbps", "dev", sha_of("a"), sources=takbir)
+    second = _off_target("b", "Reciter2_128kbps", "test", sha_of("b"), sources=takbir)
+    third = _off_target("c", "Reciter2_128kbps", "test", sha_of("c"), sources=amin)
+    bare = _off_target("d", "Reciter2_128kbps", "test", sha_of("d"))
+    claims: dict[str, str] = {}
+    kept, dropped = claim_sources([first, second, third, bare], claims)
+    assert [c.id for c in kept] == ["a", "c", "d"]
+    assert [c.id for c, _ in dropped] == ["b"]
+    assert "specials/takbir.wav" in dropped[0][1] and "dev" in dropped[0][1]
+    assert claims == {sha_of("takbir"): "dev", sha_of("amin"): "test"}
+    # une réclamation déjà connue (cas conservés d'un ancien manifeste) vaut aussi
+    assert claim_sources([second], {sha_of("takbir"): "dev"})[0] == []
+    assert claim_sources([first], {sha_of("takbir"): "dev"})[0] == [first]
 
 
 def test_validation_signale_les_defauts() -> None:

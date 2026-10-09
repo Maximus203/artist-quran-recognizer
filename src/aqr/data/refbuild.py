@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import random
 import wave
-from collections.abc import Sequence
+from array import array
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -21,18 +22,24 @@ from aqr.data.ingest import sha256_file
 from aqr.data.manifest import AudioCase, Manifest, NonQuranItem
 from aqr.data.mixer import (
     ClipProvider,
+    ClipUse,
     DiskClipProvider,
     Mix,
     MixConfig,
+    OriginProvider,
+    clip_digest,
     generate_mixes,
     write_wav,
 )
 from aqr.data.refcorpus import (
     LICENSE_UNESTABLISHED,
+    SOURCES_KEY,
     Degradation,
     RefCorpusError,
     RefMeta,
     assign_ref_splits,
+    case_sources,
+    claim_sources,
     degraded_case,
     degraded_id,
     frozen_splits,
@@ -61,6 +68,8 @@ _CATEGORY = {
     NonQuranKind.SILENCE: "C12",
 }
 SILENCE_RECITANT = "synthetic-silence"
+OFF_TARGET_MAX_DRAWS = 50
+"""Tirages tentés pour trouver un clip encore inutilisé avant de conclure qu'il n'y en a plus."""
 
 
 @dataclass
@@ -94,7 +103,29 @@ def _wav_duration(path: Path) -> float:
         return round(handle.getnframes() / handle.getframerate(), 3)
 
 
-def mix_to_case(mix: Mix, out_dir: Path, config: DataConfig, mix_config: MixConfig) -> AudioCase:
+def source_entries(provider: ClipProvider, clips: Iterable[ClipUse]) -> list[dict[str, str]]:
+    """Provenance des clips non récités : `kind`, `file` (si le fournisseur a des fichiers) et
+    `sha256` (du fichier, à défaut des échantillons)."""
+    entries = []
+    for clip in clips:
+        origin = provider.origin(clip.digest) if isinstance(provider, OriginProvider) else None
+        entries.append(
+            {
+                "kind": clip.kind.value,
+                **({"file": origin.name} if origin else {}),
+                "sha256": origin.sha256 if origin else clip.digest,
+            }
+        )
+    return entries
+
+
+def mix_to_case(
+    mix: Mix,
+    out_dir: Path,
+    config: DataConfig,
+    mix_config: MixConfig,
+    sources: Sequence[dict[str, str]] = (),
+) -> AudioCase:
     case_id = f"ref-{mix.id}"
     target = out_dir / "mix" / f"{case_id}.wav"
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -120,7 +151,11 @@ def mix_to_case(mix: Mix, out_dir: Path, config: DataConfig, mix_config: MixConf
         boundaries=mix.boundaries,
         expected=mix.expected,
         non_quran=mix.non_quran,
-        extra={"scenario": mix.scenario, "seed": mix.seed},
+        extra={
+            "scenario": mix.scenario,
+            "seed": mix.seed,
+            **({SOURCES_KEY: list(sources)} if sources else {}),
+        },
     )
     return with_ref_meta(case, RefMeta(condition="clean", non_quran=not mix.expected))
 
@@ -136,6 +171,7 @@ def _non_quran_case(
     source: str,
     langues: tuple[str, ...],
     config: DataConfig,
+    sources: Sequence[dict[str, str]] = (),
 ) -> AudioCase:
     duration = _wav_duration(path)
     case = AudioCase(
@@ -153,6 +189,7 @@ def _non_quran_case(
         tolerance_ms=config.tolerance_ms,
         origine="mix",
         non_quran=(NonQuranItem((0.0, duration), kind),),
+        extra={SOURCES_KEY: list(sources)} if sources else {},
     )
     return with_ref_meta(case, RefMeta(condition=condition, non_quran=True))
 
@@ -179,6 +216,20 @@ def silence_cases(out_dir: Path, config: DataConfig) -> list[AudioCase]:
     return cases
 
 
+def _draw_speech(
+    provider: ClipProvider, kind: NonQuranKind, seed: int, index: int, seen: set[str]
+) -> array[int] | None:
+    """Premier clip de `kind` pas encore utilisé, tiré de façon reproductible (None : aucun)."""
+    for attempt in range(OFF_TARGET_MAX_DRAWS):
+        tag = f"{seed}:offtarget:{kind.value}:{index}" + (f":{attempt}" if attempt else "")
+        samples = provider.speech(kind, random.Random(tag))
+        if samples is None:
+            return None
+        if clip_digest(samples) not in seen:
+            return samples
+    return None
+
+
 def off_target_cases(
     provider: ClipProvider,
     out_dir: Path,
@@ -188,6 +239,11 @@ def off_target_cases(
     per_kind: int,
     skipped: list[tuple[str, str]],
 ) -> list[AudioCase]:
+    """Un cas par enregistrement distinct (jamais deux fois le même audio), `per_kind` au plus.
+
+    Le pseudo-récitant est dérivé du contenu (`speech-<nature>-<sha256 des échantillons>`) : le
+    même enregistrement donne toujours le même récitant, donc le même jeu.
+    """
     cases = []
     lang = {
         NonQuranKind.FRENCH: ("fr",),
@@ -195,11 +251,20 @@ def off_target_cases(
         NonQuranKind.OTHER_LANGUAGE: (),
     }
     for kind in OFF_TARGET_KINDS:
+        seen: set[str] = set()
         for index in range(per_kind):
-            samples = provider.speech(kind, random.Random(f"{seed}:offtarget:{kind.value}:{index}"))
+            samples = _draw_speech(provider, kind, seed, index, seen)
             if samples is None:
-                skipped.append((f"off_target:{kind.value}", f"aucun clip speech/{kind.value}_*"))
+                reason = (
+                    f"aucun clip speech/{kind.value}_*"
+                    if not seen
+                    else f"{len(seen)} clip(s) distinct(s) seulement, {per_kind} demandé(s)"
+                )
+                skipped.append((f"off_target:{kind.value}", reason))
                 break
+            digest = clip_digest(samples)
+            seen.add(digest)
+            (entry,) = source_entries(provider, [ClipUse(kind, digest)])
             case_id = f"ref-offtarget-{kind.value}-{index}"
             path = out_dir / "generated" / f"{case_id}.wav"
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -210,11 +275,12 @@ def off_target_cases(
                     path,
                     out_dir,
                     kind,
-                    recitant=f"speech-{kind.value}-{index}",
+                    recitant=f"speech-{kind.value}-{digest[:12]}",
                     condition="off_target",
-                    source=f"speech/{kind.value}_* (clip choisi par graine {seed})",
+                    source=f"parole hors cible {entry.get('file', f'speech/{kind.value}_*')}",
                     langues=lang[kind],
                     config=config,
+                    sources=[entry],
                 )
             )
     return cases
@@ -280,6 +346,20 @@ def _kept_cases(
     return kept
 
 
+def _claim_or_drop(
+    cases: Sequence[AudioCase],
+    claims: dict[str, str],
+    out_dir: Path,
+    skipped: list[tuple[str, str]],
+) -> list[AudioCase]:
+    """Écarte (et signale) les cas dont une source est déjà dans l'autre jeu ; efface leur audio."""
+    kept, dropped = claim_sources(cases, claims)
+    for case, reason in dropped:
+        skipped.append((case.id, reason))
+        (out_dir / case.file).unlink(missing_ok=True)
+    return kept
+
+
 def build_ref_corpus(
     provider: ClipProvider,
     corpus: CorpusRepository,
@@ -301,17 +381,35 @@ def build_ref_corpus(
         config=mix_config,
     )  # fmt: skip
     report.skipped.extend(mixes.skipped)
-    bases = [mix_to_case(m, out_dir, cfg, mix_config) for m in mixes.mixes]
-    bases += silence_cases(out_dir, cfg)
-    bases += off_target_cases(
+    mix_bases = [
+        mix_to_case(m, out_dir, cfg, mix_config, source_entries(provider, m.clips))
+        for m in mixes.mixes
+    ]
+    mix_bases += silence_cases(out_dir, cfg)
+    off_bases = off_target_cases(
         provider, out_dir, cfg, seed=seed, per_kind=per_scenario, skipped=report.skipped
     )
 
     existing = Manifest.load(manifest_path)
-    kept = _kept_cases(existing, bases, degradations, report.removed)
-    split_bases = assign_ref_splits([*kept, *bases], cfg, frozen=frozen_splits(existing.cases))[
-        len(kept) :
+    frozen = frozen_splits(existing.cases)
+    kept = _kept_cases(existing, [*mix_bases, *off_bases], degradations, report.removed)
+    claims: dict[str, str] = {}
+    claim_sources(kept, claims)  # enregistrements déjà réclamés par les cas conservés
+    # 1) mixages et silence : jeu du récitant ; un enregistrement source ne sert qu'à un jeu
+    mix_bases = assign_ref_splits([*kept, *mix_bases], cfg, frozen=frozen)[len(kept) :]
+    mix_bases = _claim_or_drop(mix_bases, claims, out_dir, report.skipped)
+    # 2) parole hors cible : un pseudo-récitant par enregistrement, du côté qui le réclame déjà
+    pins = {
+        c.recitant: claims[s["sha256"]]
+        for c in off_bases
+        for s in case_sources(c)
+        if s["sha256"] in claims
+    }
+    off_bases = assign_ref_splits([*kept, *mix_bases, *off_bases], cfg, frozen={**pins, **frozen})[
+        len(kept) + len(mix_bases) :
     ]
+    off_bases = _claim_or_drop(off_bases, claims, out_dir, report.skipped)
+    split_bases = [*mix_bases, *off_bases]
 
     children = degrade_cases(split_bases, out_dir, degradations, cfg)
     final = Manifest(cases=[*kept, *split_bases, *children])
