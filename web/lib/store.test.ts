@@ -445,7 +445,9 @@ describe("nettoyage des sessions", () => {
   });
 
   describe("lastActivityMs", () => {
-    const at = (days: number) => Math.round(ago(days).getTime() / 1000) * 1000;
+    // Base figée : deux appels à `at` doivent rendre la même valeur même si une seconde s'écoule.
+    const base = Math.floor(Date.now() / 1000) * 1000;
+    const at = (days: number) => base - days * DAY;
     it("prend le plus récent des mtime, sous-dossiers compris", async () => {
       await saveSession(done());
       await ageTree(ID, 9);
