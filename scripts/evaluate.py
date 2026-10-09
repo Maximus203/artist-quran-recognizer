@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 from typing import Any, TextIO
 
+from aqr.data.config import DataConfig
 from aqr.data.manifest import Manifest, has_trusted_truth, provenance_problems
 from aqr.eval.metrics import (
     CaseResult,
@@ -34,6 +35,16 @@ from aqr.eval.recognition import RecognitionError, load_recognition
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_SCHEMA = "aqr.evaluation/1"
 NO_METRIC = "aucun cas annoté par un humain : aucune métrique"
+DATA = DataConfig()
+
+
+def _evaluable_split(value: str) -> str:
+    if value == DATA.quarantine_split:
+        raise argparse.ArgumentTypeError(
+            "la quarantaine n'est jamais évaluée ni utilisée au réglage "
+            "(docs/evaluation/protocole-reglage-evaluation.md)"
+        )
+    return value
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -44,7 +55,7 @@ def _parser() -> argparse.ArgumentParser:
         "--manifest", type=Path, default=ROOT / "tests/fixtures/audio/manifest.yaml"
     )
     parser.add_argument("--predictions", type=Path, required=True, help="dossier des <id>.json")
-    parser.add_argument("--split", choices=("dev", "test"), default="dev")
+    parser.add_argument("--split", type=_evaluable_split, choices=DATA.splits, default="dev")
     parser.add_argument(
         "--final", action="store_true", help="autorise le jeu test (mesure finale uniquement)"
     )
