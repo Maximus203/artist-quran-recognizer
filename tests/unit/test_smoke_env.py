@@ -12,7 +12,16 @@ from pathlib import Path
 
 import pytest
 from tests.support import smoke_env
-from tests.support.smoke_env import ROOT, find_missing, strict, unavailable
+from tests.support.smoke_env import (
+    ROOT,
+    UnknownAsr,
+    engine_python,
+    find_missing,
+    module_problem,
+    selected_asr,
+    strict,
+    unavailable,
+)
 
 
 def _models_lock(path: Path, sizes: dict[str, dict[str, int]]) -> None:
@@ -219,3 +228,97 @@ def test_the_command_line_needs_no_pytest(tmp_path: Path) -> None:
     )
     assert done.returncode == 0, done.stderr
     assert done.stdout.strip() == "ok"
+
+
+# --- choix explicite du moteur du smoke CLI : AQR_SMOKE_ASR -----------------------------------
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, "whisper"),  # variable absente : Whisper, comme avant
+        ("", "whisper"),
+        ("whisper", "whisper"),
+        ("fastconformer", "fastconformer"),
+        (" FastConformer ", "fastconformer"),
+    ],
+)
+def test_the_asr_defaults_to_whisper_and_is_chosen_by_aqr_smoke_asr(
+    value: str | None, expected: str
+) -> None:
+    env = {} if value is None else {"AQR_SMOKE_ASR": value}
+    assert selected_asr(env) == expected
+
+
+def test_an_unknown_asr_is_refused_by_name_never_guessed() -> None:
+    with pytest.raises(UnknownAsr, match=r"AQR_SMOKE_ASR.*vosk.*whisper \| fastconformer"):
+        selected_asr({"AQR_SMOKE_ASR": "vosk"})
+
+
+def test_the_models_checked_are_those_of_the_asr_in_the_environment(setup: Setup) -> None:
+    (setup.models / "fastconformer-quran").mkdir()
+    (setup.models / "fastconformer-quran" / "f.nemo").write_bytes(b"12345")
+    both = {"whisper-base-quran": {"w.bin": 5}, "recitation-segmenter": {"s.bin": 5}}
+    _models_lock(setup.lock, {**both, "fastconformer-quran": {"f.nemo": 5}})
+    env = {**setup.env, "AQR_SMOKE_ASR": "fastconformer"}
+    assert find_missing(env, ("models",), models_lock=setup.lock) == []
+    (setup.models / "fastconformer-quran" / "f.nemo").unlink()  # modèle du moteur choisi manquant
+    found = find_missing(env, ("models",), models_lock=setup.lock)
+    assert [m.resource for m in found] == ["models"]
+    assert "fastconformer-quran/f.nemo" in found[0].reason
+    # le même dossier reste valide pour Whisper : seul le moteur choisi compte
+    assert find_missing(setup.env, ("models",), models_lock=setup.lock) == []
+
+
+def test_an_unknown_asr_in_the_environment_is_a_missing_resource_not_a_crash(
+    setup: Setup,
+) -> None:
+    env = {**setup.env, "AQR_SMOKE_ASR": "vosk"}
+    found = {m.resource: m.reason for m in find_missing(env, which=lambda _n: None)}
+    assert "AQR_SMOKE_ASR" in found["asr"] and "vosk" in found["asr"]
+    assert "ffmpeg" in found  # le reste est quand même rapporté, d'un coup
+    assert "models" not in found  # sans moteur valide, on ne devine pas quels modèles
+
+
+def test_the_engine_interpreter_follows_aqr_python_then_the_running_one() -> None:
+    assert engine_python({"AQR_PYTHON": "/opt/nemo/bin/python"}) == "/opt/nemo/bin/python"
+    assert engine_python({}) == sys.executable
+    assert engine_python({"AQR_PYTHON": ""}) == sys.executable
+
+
+def test_a_fastconformer_interpreter_without_nemo_is_named(setup: Setup) -> None:
+    asked: list[tuple[str, str]] = []
+
+    def absent(python: str, module: str) -> str | None:
+        asked.append((python, module))
+        return f"module {module!r} introuvable"
+
+    env = {**setup.env, "AQR_SMOKE_ASR": "fastconformer", "AQR_PYTHON": "/usr/bin/python3"}
+    found = find_missing(env, ("engine",), module_problem=absent)
+    assert asked == [("/usr/bin/python3", "nemo")]
+    assert [m.resource for m in found] == ["engine"]
+    reason = found[0].reason
+    assert "nemo" in reason and "/usr/bin/python3" in reason
+    assert "AQR_PYTHON" in reason and "venv" in reason  # dit quoi faire
+    whisper = find_missing(setup.env, ("engine",), module_problem=absent)
+    assert asked[-1][1] == "transformers" and "AQR_PYTHON" in whisper[0].reason
+    assert find_missing(env, ("engine",), module_problem=lambda _p, _m: None) == []
+
+
+def test_module_problem_looks_in_the_given_interpreter() -> None:
+    assert module_problem(sys.executable, "json") is None
+    assert "introuvable" in (module_problem(sys.executable, "module_qui_nexiste_pas") or "")
+    assert "inexécutable" in (module_problem("/nonexistent/python", "json") or "")
+
+
+def test_the_command_line_defaults_to_the_asr_of_the_environment(
+    setup: Setup, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for key, value in setup.env.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("AQR_SMOKE_ASR", "fastconformer")
+    monkeypatch.setattr(smoke_env, "MODELS_LOCK", setup.lock)
+    assert smoke_env.main(["--needs", "models"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert [item["resource"] for item in printed] == ["models"]
+    assert "fastconformer-quran" in printed[0]["reason"]
