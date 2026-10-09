@@ -4,6 +4,7 @@ sont contrôlés contre le corpus, avec la sémantique de `HomeRenderer.span_tex
 from __future__ import annotations
 
 import json
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -88,6 +89,36 @@ def test_a_full_verse_must_equal_the_corpus_text_not_just_be_inside_it(repo: Fak
         assert_matches_corpus(doc, repo)
 
 
+FATHA, KASRA = "\u064e", "\u0650"
+
+
+def test_a_single_changed_vowel_is_rejected(repo: FakeCorpus) -> None:
+    # fatha -> kasra : même squelette consonantique, texte différent (la comparaison est exacte,
+    # jamais sur une forme normalisée pour la correspondance : I1)
+    good = repo.text(VerseRef(112, 1))
+    assert FATHA in good
+    altered = good.replace(FATHA, KASRA, 1)
+    assert altered != good
+    with pytest.raises(CorpusMismatch, match="texte différent"):
+        assert_matches_corpus(_doc(_verse(VerseRef(112, 1), repo, text=altered)), repo)
+    partial = _expected(repo, REF, 2, 3)
+    assert FATHA in partial
+    with pytest.raises(CorpusMismatch, match="sous-chaîne"):
+        assert_matches_corpus(
+            _doc(_verse(REF, repo, words=(2, 3), text=partial.replace(FATHA, KASRA, 1))), repo
+        )
+
+
+@pytest.mark.parametrize("form", ["NFD", "NFKD"])
+def test_a_unicode_renormalised_text_is_not_the_corpus_text(repo: FakeCorpus, form: str) -> None:
+    good = repo.text(VerseRef(112, 1))
+    renormalised = unicodedata.normalize(form, good)
+    if renormalised == good:
+        pytest.skip(f"{form} ne change pas ce texte")
+    with pytest.raises(CorpusMismatch, match="texte différent"):
+        assert_matches_corpus(_doc(_verse(VerseRef(112, 1), repo, text=renormalised)), repo)
+
+
 @pytest.mark.parametrize("words", [(0, 2), (3, 2), (1, 4), (2, 9)])
 def test_a_word_range_outside_the_verse_is_rejected(
     repo: FakeCorpus, words: tuple[int, int]
@@ -119,6 +150,36 @@ def test_the_partial_flag_must_agree_with_the_word_range(repo: FakeCorpus) -> No
     doc = _doc(_verse(REF, repo, partial=True))
     with pytest.raises(CorpusMismatch, match="partial"):
         assert_matches_corpus(doc, repo)
+
+
+def test_complete_recitation_requires_every_verse_to_run_to_its_last_word(
+    repo: FakeCorpus,
+) -> None:
+    short = _doc(_verse(REF, repo, words=(1, 2)))  # 2 mots sur 3
+    assert assert_matches_corpus(short, repo).partial == 1  # accepté sans l'exigence
+    with pytest.raises(CorpusMismatch, match=r"112:2.*s'arrête au mot 2 sur 3"):
+        assert_matches_corpus(short, repo, complete=True)
+
+
+def test_complete_recitation_requires_verses_to_start_at_word_one(repo: FakeCorpus) -> None:
+    late = _doc(_verse(REF, repo, words=(2, 3)))
+    assert assert_matches_corpus(late, repo).partial == 1
+    with pytest.raises(CorpusMismatch, match=r"112:2.*commence au mot 2"):
+        assert_matches_corpus(late, repo, complete=True)
+
+
+def test_complete_recitation_tolerates_a_missing_basmala_on_the_first_verse_only() -> None:
+    # Tanzil place la basmala (4 mots) au début du verset 1 : l'audio d'une sourate n'en a pas
+    # forcément. Mesuré sur 112:1 : mots 5..8 sur 8.
+    first = VerseRef(112, 1)
+    eight = FakeCorpus({first: "أَلِفٌ بَاءٌ جِيمٌ دَالٌ هَاءٌ وَاوٌ زَايٌ حَاءٌ"})
+    assert len(eight.words(first)) == 8
+    for words in ((1, 8), (5, 8)):
+        entry = _verse(first, eight, words=words)
+        assert assert_matches_corpus(_doc(entry), eight, complete=True).checked == 1
+    for words in ((3, 8), (6, 8), (5, 7)):
+        with pytest.raises(CorpusMismatch, match="112:1"):
+            assert_matches_corpus(_doc(_verse(first, eight, words=words)), eight, complete=True)
 
 
 def test_a_verse_from_another_surah_is_rejected(repo: FakeCorpus) -> None:
@@ -212,3 +273,8 @@ def test_cli_returns_one_and_names_the_problem(
     assert "OK" in capsys.readouterr().out
     assert corpus_check.main([*argv, str(bad)]) == 1
     assert "texte" in capsys.readouterr().err
+    short = tmp_path / "short.json"
+    short.write_text(json.dumps(_doc(_verse(REF, repo, words=(1, 2)))), encoding="utf-8")
+    assert corpus_check.main([*argv, str(short)]) == 0
+    assert corpus_check.main([*argv, "--complete", str(short)]) == 1
+    assert "s'arrête" in capsys.readouterr().err

@@ -90,8 +90,14 @@ def test_recognize_short_audio_names_the_right_surah(
     result = json.loads((out / f"sourate{SURAH}.recognition.json").read_text(encoding="utf-8"))
     assert result["source"]["duration_s"] > 5
     # I1 : le texte (entier ou plage de mots) vient du corpus ; I3 : tout verset nommé est de la
-    # sourate récitée ; succès = au moins un verset RECOGNIZED (un INFERRED ne prouve rien).
+    # sourate récitée ; succès = au moins un verset RECOGNIZED (un INFERRED ne prouve rien). L'audio
+    # récite 112:1 à 112:4 en entier : chaque verset nommé va jusqu'à son dernier mot (112:1 sans
+    # la basmala de Tanzil : mots 5..8 sur 8, mesuré) et les versets 2 à 4 commencent au mot 1.
     report = assert_matches_corpus(
-        result, load_repository(corpus_dir(os.environ)), surah=SURAH, min_recognized=1
+        result,
+        load_repository(corpus_dir(os.environ)),
+        surah=SURAH,
+        min_recognized=1,
+        complete=True,
     )
     assert report.recognized, "aucun verset RECOGNIZED sur un audio propre de 4 versets"
