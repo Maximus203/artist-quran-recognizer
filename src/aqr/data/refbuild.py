@@ -401,6 +401,8 @@ def build_ref_corpus(
     cfg = config or DataConfig()
     mix_config = MixConfig(sample_rate=cfg.sample_rate)
     report = BuildReport()
+    existing = Manifest.load(manifest_path)
+    frozen = frozen_splits(existing.cases)  # avant d'écrire quoi que ce soit : refuse une fuite
     excluded = provider.excluded_reciters() if isinstance(provider, ExclusionReporter) else ()
     report.skipped.extend((f"reciter:{name}", reason) for name, reason in excluded)
     mixes = generate_mixes(
@@ -417,8 +419,6 @@ def build_ref_corpus(
         provider, out_dir, cfg, seed=seed, per_kind=per_scenario, skipped=report.skipped
     )
 
-    existing = Manifest.load(manifest_path)
-    frozen = frozen_splits(existing.cases)
     kept = _kept_cases(existing, [*mix_bases, *off_bases], degradations, report.removed)
     claims: dict[str, str] = {}
     claim_sources(kept, claims)  # enregistrements déjà réclamés par les cas conservés
