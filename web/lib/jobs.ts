@@ -1,17 +1,17 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseRecognition } from "./recognition";
 import {
   REPO,
   audioPath,
+  jobs,
   readSession,
   saveSession,
   sessionDir,
   sha,
 } from "./store";
 
-const jobs = new Map<string, ChildProcess>();
 const ASR_ENGINES = ["fastconformer", "whisper"];
 /** Moteur ASR de l'atelier : FastConformer par défaut, `AQR_ASR=whisper` pour l'autre. */
 export const ASR_ENGINE = ASR_ENGINES.includes(process.env.AQR_ASR ?? "")
@@ -55,7 +55,9 @@ export async function launch(id: string): Promise<void> {
     windowsHide: true,
     env: { ...process.env, PYTHONPATH: path.join(REPO, "src") },
   });
-  jobs.set(id, child);
+  let settle!: () => void;
+  const settled = new Promise<void>((resolve) => (settle = resolve));
+  jobs.set(id, { child, settled });
   session.state = "running";
   session.error = null;
   session.started_at = new Date().toISOString();
@@ -72,7 +74,6 @@ export async function launch(id: string): Promise<void> {
     outputText = error.message;
   });
   child.on("close", async (code) => {
-    jobs.delete(id);
     try {
       const current = await readSession(id);
       if (current.state === "cancelled") return;
@@ -105,17 +106,24 @@ export async function launch(id: string): Promise<void> {
         error instanceof Error ? error.message : "Résultat invalide";
       current.pid = null;
       await saveSession(current);
+    } finally {
+      // Libère le job seulement maintenant : jusque-là, aucun lecteur ne sonde le processus.
+      if (jobs.get(id)?.child === child) jobs.delete(id);
+      settle();
     }
   });
 }
+/** Se résout quand le gestionnaire `close` du traitement de `id` a fini (immédiat sans traitement). */
+export function jobSettled(id: string): Promise<void> {
+  return jobs.get(id)?.settled ?? Promise.resolve();
+}
 export async function cancel(id: string): Promise<void> {
-  const child = jobs.get(id);
-  if (!child) throw new Error("Aucun traitement actif dans ce serveur");
+  const job = jobs.get(id);
+  if (!job) throw new Error("Aucun traitement actif dans ce serveur");
   const session = await readSession(id);
   session.state = "cancelled";
   session.pid = null;
   session.finished_at = new Date().toISOString();
   await saveSession(session);
-  child.kill();
-  jobs.delete(id);
+  job.child.kill();
 }
