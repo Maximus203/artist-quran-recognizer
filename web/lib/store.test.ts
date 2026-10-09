@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
   rm,
   stat,
@@ -10,11 +11,14 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { reviewSchema } from "./review";
 import {
+  ReviewWorkError,
   atomicJson,
   cleanupSessions,
   defaultReviewDir,
   exceedsUploadLimit,
+  lastActivityMs,
   sessionTtlSeconds,
   deleteSession,
   listSessions,
@@ -28,6 +32,13 @@ import {
   uploadLimitBytes,
   type Session,
 } from "./store";
+
+// Enveloppe transparente de readFile : permet de provoquer une écriture « entre
+// deux lectures » pour tester la course entre la purge et un PUT de revue.
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, readFile: vi.fn(actual.readFile) };
+});
 
 let tmp: string;
 beforeEach(async () => {
@@ -213,11 +224,64 @@ describe("garde-fous de requête", () => {
 });
 
 describe("nettoyage des sessions", () => {
+  const DAY = 86400_000;
+  const ago = (days: number) => new Date(Date.now() - days * DAY);
   const age = async (id: string, days: number) => {
-    const when = new Date(Date.now() - days * 86400_000);
+    const when = ago(days);
     await utimes(path.join(sessionDir(id), "session.json"), when, when);
     await utimes(sessionDir(id), when, when);
   };
+  /** Vieillit récursivement tous les fichiers et dossiers de la session. */
+  const ageTree = async (id: string, days: number) => {
+    const when = ago(days);
+    const walk = async (dir: string) => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) await walk(full);
+        await utimes(full, when, when);
+      }
+    };
+    await walk(sessionDir(id));
+    await utimes(sessionDir(id), when, when);
+  };
+  const touch = async (file: string, days: number) => {
+    const when = ago(days);
+    await utimes(file, when, when);
+  };
+  const annotation = (over: Record<string, unknown> = {}) => ({
+    id: "33333333-4444-4555-8666-777777777777",
+    mode: "point",
+    start_s: 1,
+    end_s: null,
+    type: "other",
+    description: "à vérifier",
+    expected_ref: null,
+    target_index: null,
+    status: "draft",
+    updated_at: new Date().toISOString(),
+    ...over,
+  });
+  /** Revue valide d'après `reviewSchema` (le fixture est rejeté s'il dérive). */
+  const review = (over: Record<string, unknown> = {}, id = ID) =>
+    reviewSchema.parse({
+      schema: "aqr.review/1",
+      session_id: id,
+      audio_sha256: "a".repeat(64),
+      prediction_sha256: "b".repeat(64),
+      annotations: [],
+      updated_at: new Date().toISOString(),
+      ...over,
+    });
+  const done = (over: Partial<Session> = {}) =>
+    session({
+      state: "done",
+      finished_at: ago(3).toISOString(),
+      prediction_sha256: "b".repeat(64),
+      ...over,
+    });
+  const reviewFile = (id = ID) => path.join(sessionDir(id), "review.json");
+  const exists = (id = ID) => stat(sessionDir(id));
+
   it("supprime explicitement une session (hors running)", async () => {
     await saveSession(session());
     await writeFile(path.join(sessionDir(ID), "source.mp3"), "abc");
@@ -251,5 +315,224 @@ describe("nettoyage des sessions", () => {
     expect(removed).toEqual([ID]);
     await expect(stat(sessionDir(OTHER))).resolves.toBeTruthy();
     await expect(stat(sessionDir(RUN))).resolves.toBeTruthy();
+  });
+
+  describe("activité de revue", () => {
+    it("une session done ancienne mais revue à l'instant est conservée", async () => {
+      await saveSession(done());
+      await age(ID, 3);
+      await atomicJson(reviewFile(), review());
+      expect(await cleanupSessions(86400)).toEqual([]);
+      await expect(exists()).resolves.toBeTruthy();
+      await expect(stat(reviewFile())).resolves.toBeTruthy();
+    });
+    it("le mtime récent de review.json suffit (date interne et dossier anciens)", async () => {
+      await saveSession(done());
+      await atomicJson(
+        reviewFile(),
+        review({ updated_at: ago(3).toISOString() }),
+      );
+      await age(ID, 3);
+      await touch(reviewFile(), 0);
+      expect(await cleanupSessions(86400)).toEqual([]);
+    });
+    it("review.updated_at récent suffit (mtime restauré à l'ancien)", async () => {
+      await saveSession(done());
+      await atomicJson(reviewFile(), review());
+      await ageTree(ID, 3);
+      expect(await cleanupSessions(86400)).toEqual([]);
+    });
+    it("une révision récente seule suffit, tout le reste étant ancien", async () => {
+      await saveSession(done());
+      await atomicJson(
+        reviewFile(),
+        review({ updated_at: ago(3).toISOString() }),
+      );
+      const revision = path.join(
+        sessionDir(ID),
+        "revisions",
+        "2026-10-09T10-00-00-000Z-x.review.json",
+      );
+      await atomicJson(revision, review({ updated_at: ago(3).toISOString() }));
+      await ageTree(ID, 3);
+      await touch(revision, 0);
+      expect(await cleanupSessions(86400)).toEqual([]);
+      await expect(stat(revision)).resolves.toBeTruthy();
+    });
+    it("un export ZIP ou une écriture .tmp récents comptent comme activité", async () => {
+      for (const recent of ["exports/x.zip", "session.json.x.tmp"]) {
+        await saveSession(done());
+        await mkdir(path.join(sessionDir(ID), "exports"), { recursive: true });
+        await writeFile(path.join(sessionDir(ID), recent), "z");
+        await ageTree(ID, 3);
+        await touch(path.join(sessionDir(ID), recent), 0);
+        expect(await cleanupSessions(86400), recent).toEqual([]);
+        await rm(sessionDir(ID), { recursive: true });
+      }
+    });
+    it("une revue elle aussi inactive depuis plus que le TTL expire (annotations comprises)", async () => {
+      await saveSession(done());
+      await atomicJson(
+        reviewFile(),
+        review({
+          annotations: [annotation({ updated_at: ago(3).toISOString() })],
+          updated_at: ago(3).toISOString(),
+        }),
+      );
+      await ageTree(ID, 3);
+      expect(await cleanupSessions(86400)).toEqual([ID]);
+      await expect(exists()).rejects.toThrow();
+    });
+    it("une session ancienne sans aucune revue est supprimée (non-régression)", async () => {
+      await saveSession(done());
+      await writeFile(path.join(sessionDir(ID), "source.mp3"), "abc");
+      await age(ID, 3);
+      await touch(path.join(sessionDir(ID), "source.mp3"), 3);
+      expect(await cleanupSessions(86400)).toEqual([ID]);
+      await expect(exists()).rejects.toThrow();
+    });
+    it("une session running n'est jamais supprimée, même sans activité", async () => {
+      await saveSession(
+        session({ state: "running", pid: process.pid, started_at: null }),
+      );
+      await ageTree(ID, 30);
+      expect(await cleanupSessions(86400)).toEqual([]);
+      await expect(exists()).resolves.toBeTruthy();
+    });
+    it("relit l'activité juste avant de supprimer : un PUT arrivé entre-temps sauve la session", async () => {
+      await saveSession(done());
+      await ageTree(ID, 3);
+      const reads = vi.mocked(readFile);
+      const actual =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      let sessionReads = 0;
+      reads.mockImplementation((async (
+        ...args: Parameters<typeof readFile>
+      ) => {
+        if (String(args[0]).endsWith("session.json") && ++sessionReads === 2)
+          // 1re lecture = activité, 2e = état (readSession) : le PUT tombe ici.
+          await atomicJson(reviewFile(), review());
+        return actual.readFile(...args);
+      }) as typeof readFile);
+      try {
+        expect(await cleanupSessions(86400)).toEqual([]);
+        expect(sessionReads).toBeGreaterThanOrEqual(2);
+      } finally {
+        reads.mockImplementation(actual.readFile as typeof readFile);
+      }
+      await expect(stat(reviewFile())).resolves.toBeTruthy();
+    });
+    it("un JSON corrompu ou un dossier étranger laisse la session intacte", async () => {
+      await saveSession(done());
+      await atomicJson(reviewFile(), review());
+      await writeFile(reviewFile(), "{pas du json");
+      await ageTree(ID, 3);
+      await mkdir(path.join(reviewRoot(), "sessions", OTHER), {
+        recursive: true,
+      });
+      await writeFile(path.join(reviewRoot(), "sessions", OTHER, "x.bin"), "x");
+      await ageTree(OTHER, 3);
+      const BROKEN = "44444444-5555-4666-8777-888888888888";
+      await mkdir(sessionDir(BROKEN), { recursive: true });
+      await writeFile(path.join(sessionDir(BROKEN), "session.json"), "{oops");
+      await ageTree(BROKEN, 3);
+      expect(await cleanupSessions(86400)).toEqual([]);
+      for (const id of [ID, OTHER, BROKEN])
+        await expect(exists(id)).resolves.toBeTruthy();
+    });
+  });
+
+  describe("lastActivityMs", () => {
+    const at = (days: number) => Math.round(ago(days).getTime() / 1000) * 1000;
+    it("prend le plus récent des mtime, sous-dossiers compris", async () => {
+      await saveSession(done());
+      await ageTree(ID, 9);
+      const nested = path.join(sessionDir(ID), "revisions", "r.review.json");
+      await atomicJson(nested, review({ updated_at: ago(9).toISOString() }));
+      const when = new Date(at(2));
+      await utimes(nested, when, when);
+      await utimes(path.dirname(nested), ago(9), ago(9));
+      await utimes(sessionDir(ID), ago(9), ago(9));
+      const sessionFile = path.join(sessionDir(ID), "session.json");
+      await utimes(sessionFile, ago(9), ago(9));
+      expect(await lastActivityMs(sessionDir(ID))).toBe(at(2));
+    });
+    it("tient compte de review.updated_at et de finished_at s'ils sont plus récents", async () => {
+      await saveSession(done({ finished_at: new Date(at(5)).toISOString() }));
+      await ageTree(ID, 9);
+      expect(await lastActivityMs(sessionDir(ID))).toBe(at(5));
+      await atomicJson(
+        reviewFile(),
+        review({ updated_at: new Date(at(1)).toISOString() }),
+      );
+      await ageTree(ID, 9);
+      expect(await lastActivityMs(sessionDir(ID))).toBe(at(1));
+    });
+    it("ignore une date interne située dans le futur (horloge fausse)", async () => {
+      await saveSession(done());
+      await atomicJson(
+        reviewFile(),
+        review({ updated_at: "2099-01-01T00:00:00.000Z" }),
+      );
+      await ageTree(ID, 3);
+      const activity = await lastActivityMs(sessionDir(ID));
+      expect(activity).toBeLessThan(Date.now() - 2 * DAY);
+      expect(await cleanupSessions(86400)).toEqual([ID]);
+    });
+  });
+
+  describe("suppression explicite d'une session revue", () => {
+    it("refuse (/revue/) une session portant une annotation, même si tout est ancien ; force la supprime", async () => {
+      await saveSession(done());
+      await atomicJson(
+        reviewFile(),
+        review({
+          annotations: [annotation()],
+          updated_at: ago(3).toISOString(),
+        }),
+      );
+      await ageTree(ID, 3);
+      await expect(deleteSession(ID)).rejects.toThrow(/revue/);
+      await expect(deleteSession(ID, { force: false })).rejects.toBeInstanceOf(
+        ReviewWorkError,
+      );
+      await expect(exists()).resolves.toBeTruthy();
+      await expect(stat(reviewFile())).resolves.toBeTruthy();
+      await deleteSession(ID, { force: true });
+      await expect(exists()).rejects.toThrow();
+    });
+    it("refuse aussi quand il ne reste que des révisions", async () => {
+      await saveSession(done());
+      await atomicJson(
+        path.join(sessionDir(ID), "revisions", "r.review.json"),
+        review({ annotations: [annotation()] }),
+      );
+      await expect(deleteSession(ID)).rejects.toThrow(/revue/);
+      await deleteSession(ID, { force: true });
+      await expect(exists()).rejects.toThrow();
+    });
+    it("refuse par prudence si review.json est illisible", async () => {
+      await saveSession(done());
+      await writeFile(reviewFile(), "{pas du json");
+      await expect(deleteSession(ID)).rejects.toThrow(/revue/);
+    });
+    it("supprime sans force une session sans travail de revue (revue vide ou absente)", async () => {
+      await saveSession(done());
+      await atomicJson(reviewFile(), review());
+      await deleteSession(ID);
+      await expect(exists()).rejects.toThrow();
+      await saveSession(done());
+      await deleteSession(ID);
+      await expect(exists()).rejects.toThrow();
+    });
+    it("force ne contourne pas une session en cours", async () => {
+      await saveSession(session({ state: "running", pid: process.pid }));
+      await expect(deleteSession(ID, { force: true })).rejects.toThrow(
+        /en cours/,
+      );
+      await expect(exists()).resolves.toBeTruthy();
+    });
   });
 });
