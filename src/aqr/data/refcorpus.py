@@ -35,7 +35,9 @@ Règles garanties par `validate_ref_manifest` :
 
 from __future__ import annotations
 
+import math
 import re
+from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -91,6 +93,7 @@ class Degradation:
             if (
                 isinstance(pad, bool)
                 or not isinstance(pad, int | float)
+                or not math.isfinite(pad)
                 or pad <= 0
                 or abs(pad * 1000 - round(pad * 1000)) > _MS_EPSILON
             ):
@@ -123,11 +126,30 @@ class Degradation:
         params = raw.get("params") or {}
         if not isinstance(params, Mapping):
             raise RefCorpusError("ref.degradation.params doit être un dictionnaire")
-        return cls(str(raw.get("kind")), dict(params), float(raw.get("shift_s", 0.0)))
+        try:
+            shift = float(raw.get("shift_s", 0.0))
+        except (TypeError, ValueError) as exc:
+            raise RefCorpusError(
+                f"ref.degradation.shift_s non numérique : {raw.get('shift_s')!r}"
+            ) from exc
+        return cls(str(raw.get("kind")), dict(params), shift)
 
 
 def _fmt(value: Param) -> str:
     return f"{value:g}" if isinstance(value, float) else str(value)
+
+
+def ensure_unique_degradations(degradations: Sequence[Degradation]) -> None:
+    """Deux dégradations de même étiquette donneraient le même identifiant de cas dérivé (et le
+    même fichier) : `snr_db` 20 et 20.0, ou une dégradation listée deux fois."""
+    seen: dict[str, Degradation] = {}
+    for degradation in degradations:
+        if degradation.label in seen:
+            raise RefCorpusError(
+                f"dégradations de même identifiant {degradation.label!r} : "
+                f"{seen[degradation.label].to_dict()} et {degradation.to_dict()}"
+            )
+        seen[degradation.label] = degradation
 
 
 @dataclass(frozen=True)
@@ -385,6 +407,9 @@ def _derived_problems(
         problems.append(f"{where} : dégradation d'une dégradation ({parent.id} est déjà dérivé)")
     if meta.non_quran != parent_meta.non_quran:
         problems.append(f"{where} : ref.non_quran diffère de celui du parent {parent.id}")
+    for name in ("statut", "boundaries", "tolerance_ms"):  # la dégradation n'y touche pas
+        if getattr(child, name) != getattr(parent, name):
+            problems.append(f"{where} : {name} diffère de celui du parent {parent.id}")
     shift = meta.degradation.shift_s if meta.degradation else 0.0
     expected, non_quran, windows = shifted_truth(parent, shift)
     for name, got, want in (
@@ -410,6 +435,13 @@ def validate_ref_manifest(manifest: Manifest, config: DataConfig | None = None) 
     """Problèmes du manifeste (liste vide = conforme au schéma figé)."""
     cfg = config or DataConfig()
     problems: list[str] = []
+    for field_name, label in (("id", "identifiant"), ("file", "fichier")):
+        counts = Counter(getattr(c, field_name) for c in manifest.cases)
+        problems.extend(
+            f"{label} dupliqué : {value!r} ({n} cas)"
+            for value, n in sorted(counts.items())
+            if n > 1
+        )
     by_id = {c.id: c for c in manifest.cases}
     sides: dict[str, set[str]] = {}
     for case in manifest.cases:

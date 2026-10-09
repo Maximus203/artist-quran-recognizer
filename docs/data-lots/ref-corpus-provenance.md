@@ -197,6 +197,13 @@ dit comment le refaire : graine, sel du découpage, scénarios, dégradations, r
 versions d'outils, SHA git du code et commande exacte. Elle ne contient aucun chemin local, hôte ou
 secret (chemins relatifs au dépôt ou à `~`).
 
+**Limite : la trace ne décrit que le dernier lancement.** Un build incrémental (même manifeste, autre
+graine ou autres scénarios) conserve les anciens cas ; le champ `carried_over` de la trace les
+compte (`cases`, `seeds`, `scenarios`) et un scénario écarté dont des cas restent est marqué
+« conservés d'un lancement précédent » dans `skipped`. **Le rejeu n'est exact que si
+`carried_over.cases` vaut 0.** Sinon, reconstruire dans un dossier de sortie et un manifeste vierges
+(`--manifest` vers un fichier qui n'existe pas), puis comparer.
+
 1. **Sources, hors dépôt** : `python scripts/fetch_everyayah.py --dest ~/aqr-ref/everyayah`
    (téléchargement : voir « Le téléchargement n'est pas une autorisation »). Facultatif, pour les
    scénarios `assise_fr`, `khutba_citation`, `priere` et la parole hors cible :
@@ -210,8 +217,9 @@ secret (chemins relatifs au dépôt ou à `~`).
    audios dégradés, donc leurs SHA-256 : la trace sert d'abord à détecter cette dérive.
 3. **Lancer la commande de la trace** (`environment.command`) :
    `python scripts/build_ref_corpus.py --seed 7 --per-scenario 2`.
-4. **Contrôler** : `git diff tests/fixtures/ref-corpus/manifest.yaml` doit être vide
-   (130 cas : dev 82, test 48 ; sha256 du manifeste `da8d638d…`), et les 130 audios de
+4. **Contrôler** : `carried_over.cases` vaut 0 dans la nouvelle trace (sinon le rejeu n'est pas
+   exact, voir la limite ci-dessus) ; `git diff tests/fixtures/ref-corpus/manifest.yaml` est vide
+   (130 cas : dev 82, test 48 ; sha256 du manifeste `da8d638d…`) ; les 130 audios de
    `~/aqr-ref/{mix,degraded,generated}` gardent leurs SHA-256. Seul `manifest.build.json` peut
    changer d'un rejeu à l'autre, par son champ `environment.git` (SHA du code). Vérifié par un rejeu
    sur les sources réelles : manifeste et audios identiques à l'octet.

@@ -44,6 +44,7 @@ from aqr.data.refcorpus import (
     claim_sources,
     degraded_case,
     degraded_id,
+    ensure_unique_degradations,
     frozen_splits,
     ref_meta,
     validate_ref_manifest,
@@ -316,6 +317,7 @@ def degrade_cases(
 ) -> list[AudioCase]:
     """Dégrade chaque cas récité (audio dans `out_dir/degraded/`) : un dérivé par dégradation,
     avec la vérité du parent décalée de `shift_s` et le split du parent."""
+    ensure_unique_degradations(degradations)
     children: list[AudioCase] = []
     for parent in parents:
         if not parent.expected:  # on ne dégrade que les cas récités
@@ -368,6 +370,32 @@ def _kept_cases(
     return kept
 
 
+def _carried_count(name: str, kept: Sequence[AudioCase]) -> int:
+    """Cas conservés d'un lancement précédent qui relèvent d'un scénario ou d'une parole écartés."""
+    if name in SCENARIOS:
+        return sum(c.extra.get("scenario") == name for c in kept)
+    kind = name.removeprefix("off_target:") if name.startswith("off_target:") else None
+    if kind is None:
+        return 0
+    return sum(
+        c.extra.get("ref", {}).get("condition") == "off_target"
+        and any(item.kind.value == kind for item in c.non_quran)
+        for c in kept
+    )
+
+
+def _note_carried(
+    skipped: list[tuple[str, str]], kept: Sequence[AudioCase]
+) -> list[tuple[str, str]]:
+    """Un scénario écarté ce coup-ci mais dont des cas restent dans le manifeste le dit."""
+    noted = []
+    for name, reason in skipped:
+        count = _carried_count(name, kept)
+        suffix = f" ; {count} cas conservés d'un lancement précédent" if count else ""
+        noted.append((name, reason + suffix))
+    return noted
+
+
 def _claim_or_drop(
     cases: Sequence[AudioCase],
     claims: dict[str, str],
@@ -399,6 +427,8 @@ def build_ref_corpus(
     construction `manifest.build.json` (idempotent). `environment` (commande, SHA git...) est
     recopié tel quel dans la trace : seul l'appelant le connaît."""
     cfg = config or DataConfig()
+    ensure_unique_degradations(degradations)  # avant d'écrire quoi que ce soit
+    scenarios = list(dict.fromkeys(scenarios)) if scenarios else None
     mix_config = MixConfig(sample_rate=cfg.sample_rate)
     report = BuildReport()
     existing = Manifest.load(manifest_path)
@@ -421,6 +451,7 @@ def build_ref_corpus(
     )
 
     kept = _kept_cases(existing, [*mix_bases, *off_bases], degradations, report.removed)
+    report.skipped[:] = _note_carried(report.skipped, kept)
     claims: dict[str, str] = {}
     claim_sources(kept, claims)  # enregistrements déjà réclamés par les cas conservés
     # 1) mixages et silence : jeu du récitant ; un enregistrement source ne sert qu'à un jeu
@@ -456,6 +487,7 @@ def build_ref_corpus(
         excluded=excluded,
         skipped=report.skipped,
         removed=report.removed,
+        kept=kept,
         environment=environment,
     )
     if not report.problems:
