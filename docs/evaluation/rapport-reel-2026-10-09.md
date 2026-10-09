@@ -24,8 +24,10 @@ manifeste, `planned` / `done` avec le sha256 de chaque fichier écrit / `failed`
 supprime `run.json`, `timings.json` et les `<id>.json` des cas du lot. `evaluate.py` ne lit que les
 cas listés dans `done` avec la même empreinte, et refuse (code 2) un lot absent, `running`,
 `partial`, `interrupted` ou mêlant deux moteurs ; il rend 1 s'il manque un cas évaluable.
-`--allow-unverified-run` est réservé aux anciennes prédictions écrites sans `run.json` : il est
-tracé dans le rapport (`run: {verified: false, reason}`) et ne doit pas servir à un chiffre publié.
+`--allow-unverified-run` est réservé aux dossiers d'anciennes prédictions SANS `run.json` (il ne
+contourne jamais un `run.json` existant non complet) : il est tracé dans le rapport
+(`run: {verified: false, reason}`) et ne doit pas servir à un chiffre publié. Un seul lot à la fois
+par dossier de sortie (verrou `OUT/.lock`, code 2 si pris) ; SIGTERM conclut le lot `interrupted`.
 `timings.json` donne `process_peak_rss_mb` : pic CUMULÉ du processus, pas celui d'un cas.
 **Les chiffres de la section suivante datent d'avant ce protocole** (dossiers sans `run.json`, donc
 sans garantie d'origine des fichiers) : ils sont à refaire avec un lot vérifié avant toute

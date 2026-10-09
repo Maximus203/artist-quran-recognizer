@@ -233,12 +233,19 @@ class _FakeCorpus:
         return ("ثُمَّ", "ٱرْجِعِ", "ٱلْبَصَرَ")
 
 
-def _transcript(case: AudioCase, text: str, *, sha: str | None = None, peak: float | None = None):
+def _transcript(
+    case: AudioCase,
+    text: str,
+    *,
+    sha: str | None = None,
+    peak: float | None = None,
+    engine: dict | None = None,
+):
     run = {} if peak is None else {"peak_rss_mb": peak}
     return {
         "schema": "aqr.transcript/1",
         "source": {"sha256": sha or case.sha256},
-        "engine": {"asr": "synthetic"},
+        "engine": {"asr": "synthetic"} if engine is None else engine,
         "text": text,
         "run": run,
     }
@@ -503,7 +510,7 @@ def _write_run(preds: Path, **over) -> dict:
     return document
 
 
-def _strict(manifest, preds, out, *extra):
+def _strict(manifest, preds, out, *extra, **kwargs):
     """Appel SANS --allow-unverified-run : le défaut sûr."""
     return _script().main(
         [
@@ -513,7 +520,8 @@ def _strict(manifest, preds, out, *extra):
             "--min-reference-verses", "5",
             "--models-lock", str(ROOT / "models" / "LOCK.json"),
             *extra,
-        ]
+        ],
+        **kwargs,
     )  # fmt: skip
 
 
@@ -558,7 +566,8 @@ def test_lot_complet_est_evalue_et_le_rapport_porte_le_moteur_et_le_run(world):
     run = report["run"]
     assert run["verified"] is True and run["status"] == "complete" and run["asr"] == "synthetic"
     assert run["git"] == {"sha": "a" * 40, "dirty": False}
-    assert run["failed"] == {} and run["unlisted"] == []
+    assert run["options"] == {"split": "dev"} and run["unlisted"] == []
+    assert "failed" not in run  # un lot complete n'a, par construction, aucun cas en échec
     assert report["aggregate"]["overall"]["n_cases"] == 1
 
 
@@ -569,11 +578,28 @@ def test_allow_unverified_run_passe_et_le_dit_dans_le_rapport(world, capsys):
     run = _report(out)["run"]
     assert run["verified"] is False and "run.json absent" in run["reason"]
     assert "non vérifié" in capsys.readouterr().out
-    # même option, run.json partiel : la raison dit pourquoi
-    _write_run(preds, status="partial")
-    assert _strict(manifest, preds, out, "--allow-unverified-run") == 0
-    reason = _report(out)["run"]["reason"]
-    assert "partial" in reason
+
+
+@pytest.mark.parametrize("status", ["running", "partial", "interrupted"])
+def test_allow_unverified_run_ne_contourne_pas_un_run_json_existant_non_complet(
+    world, capsys, status
+):
+    # Le flag est pour les dossiers SANS run.json ; un run.json qui dit « pas fini » reste un refus.
+    tmp, manifest, preds = world
+    _write_run(preds, status=status)
+    out = tmp / "report.json"
+    assert _strict(manifest, preds, out, "--allow-unverified-run") == 2
+    assert not out.exists()
+    err = capsys.readouterr().err
+    assert status in err and "SANS run.json" in err
+
+
+def test_allow_unverified_run_ne_contourne_pas_un_run_json_illisible(world, capsys):
+    tmp, manifest, preds = world
+    (preds / "run.json").write_text("{ pas du json", encoding="utf-8")
+    out = tmp / "report.json"
+    assert _strict(manifest, preds, out, "--allow-unverified-run") == 2
+    assert not out.exists() and "illisible" in capsys.readouterr().err
 
 
 def test_un_fichier_modifie_depuis_le_lot_est_refuse_et_pas_lu(world):
@@ -604,15 +630,13 @@ def test_un_fichier_absent_de_done_n_est_jamais_lu(world, capsys):
     assert "devA" in capsys.readouterr().err
 
 
-def test_un_cas_en_echec_dans_le_lot_est_manquant_avec_son_message(world):
+def test_un_run_json_complete_mais_avec_un_cas_en_echec_est_refuse(world, capsys):
     tmp, manifest, preds = world
     (preds / "devA.json").unlink()
     _write_run(preds, planned=["devA"], done={}, failed={"devA": "RuntimeError: modèle en panne"})
     out = tmp / "report.json"
-    assert _strict(manifest, preds, out) == 1
-    report = _report(out)
-    assert report["missing_predictions"] == ["devA"]
-    assert report["run"]["failed"] == {"devA": "RuntimeError: modèle en panne"}
+    assert _strict(manifest, preds, out) == 2  # « complete » ne peut pas coexister avec un échec
+    assert not out.exists() and "incohérent" in capsys.readouterr().err
 
 
 def test_deux_moteurs_dans_un_dossier_sont_refuses(world, capsys):
@@ -680,3 +704,60 @@ def test_un_manifeste_modifie_depuis_le_lot_est_signale_sans_etre_refuse(world):
     _write_run(preds, manifest={"name": "manifest.yaml", "sha256": "0" * 64})
     assert _strict(manifest, preds, out) == 0
     assert any("manifeste modifié" in w for w in _report(out)["warnings"])
+
+
+def _transcripts_dir(world, **kwargs) -> Path:
+    tmp, _, _ = world
+    directory = tmp / "tr"
+    directory.mkdir()
+    case = _case("devA", "dev", human=True)
+    (directory / "devA.transcript.json").write_text(
+        json.dumps(_transcript(case, "ثم ارجع", **kwargs)), encoding="utf-8"
+    )
+    return directory
+
+
+@pytest.mark.parametrize("run_json", [False, True], ids=["mode-explicite", "run-verifie"])
+def test_une_transcription_d_un_autre_moteur_est_refusee(world, capsys, run_json):
+    tmp, manifest, preds = world
+    directory = _transcripts_dir(world, engine={"asr": "autre-moteur"})
+    if run_json:
+        _write_run(preds)
+    flags = () if run_json else ("--allow-unverified-run",)
+    out = tmp / "report.json"
+    code = _strict(
+        manifest, preds, out, "--transcripts", str(directory), *flags,
+        corpus=_FakeCorpus(), corrections={},
+    )  # fmt: skip
+    assert code == 2 and not out.exists()
+    err = capsys.readouterr().err
+    assert "devA" in err and "autre-moteur" in err and "synthetic" in err
+
+
+def test_une_transcription_sans_moteur_n_est_pas_verifiable_donc_refusee(world, capsys):
+    tmp, manifest, preds = world
+    directory = _transcripts_dir(world, engine={})
+    out = tmp / "report.json"
+    code = _strict(
+        manifest, preds, out, "--transcripts", str(directory), "--allow-unverified-run",
+        corpus=_FakeCorpus(), corrections={},
+    )  # fmt: skip
+    assert code == 2 and not out.exists()
+    assert "sans moteur" in capsys.readouterr().err
+
+
+def test_une_transcription_au_moteur_partiel_mais_concordant_est_acceptee(world):
+    # le bloc engine d'une transcription (ASR seul) est un sous-ensemble de celui du lot
+    tmp, manifest, preds = world
+    full = {"asr": "synthetic", "segmenter": "seg", "matcher": "m"}
+    document = json.loads((preds / "devA.json").read_text(encoding="utf-8"))
+    (preds / "devA.json").write_text(json.dumps({**document, "engine": full}), encoding="utf-8")
+    _write_run(preds, engine=full)
+    directory = _transcripts_dir(world, engine={"asr": "synthetic"})
+    out = tmp / "report.json"
+    code = _strict(
+        manifest, preds, out, "--transcripts", str(directory),
+        corpus=_FakeCorpus(), corrections={},
+    )  # fmt: skip
+    assert code == 0
+    assert _report(out)["exactitude"]["transcription"]["measured"] is True

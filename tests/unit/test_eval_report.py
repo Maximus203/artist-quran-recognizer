@@ -308,3 +308,38 @@ def test_une_base_sans_moteur_est_signalee_plutot_que_supposee_identique():
     # rapport écrit avant que le moteur y figure : on ne suppose pas qu'il s'agissait du même
     comparison = compare_reports(_report(engine={"asr": "whisper"}), _report())
     assert any(change.startswith("moteur") for change in comparison["context_changes"])
+
+
+def test_le_git_du_lot_est_distinct_du_git_de_l_evaluation_dans_les_changements():
+    # `git` = checkout qui a lancé evaluate ; `run.git` = code qui a PRODUIT les prédictions
+    def lot(sha: str, **options):
+        return {
+            "verified": True,
+            "git": {"sha": sha * 40, "dirty": False},
+            "options": {"split": "dev", "limit": 0, **options},
+        }
+
+    changes = compare_reports(_report(run=lot("b")), _report(run=lot("a")))["context_changes"]
+    assert any(c.startswith("git du lot") and "a" * 40 in c and "b" * 40 in c for c in changes)
+    assert not any(c.startswith("git :") for c in changes)  # même checkout d'évaluation
+    assert not any(c.startswith("options du lot") for c in changes)
+    # seul le checkout d'évaluation change : « git », jamais « git du lot »
+    evaluation = _report(git={"sha": "c" * 40, "dirty": False}, run=lot("a"))
+    changes = compare_reports(evaluation, _report(run=lot("a")))["context_changes"]
+    assert any(c.startswith("git :") for c in changes)
+    assert not any(c.startswith("git du lot") for c in changes)
+
+
+def test_les_options_du_lot_apparaissent_dans_les_changements_de_contexte():
+    def lot(limit: int):
+        return {"verified": True, "git": {"sha": "a" * 40}, "options": {"limit": limit}}
+
+    changes = compare_reports(_report(run=lot(2)), _report(run=lot(0)))["context_changes"]
+    assert any(c.startswith("options du lot") and "limit" in c for c in changes)
+
+
+def test_un_lot_non_verifie_face_a_un_lot_verifie_est_signale():
+    verified = {"verified": True, "git": {"sha": "a" * 40}, "options": {"limit": 0}}
+    unverified = {"verified": False, "reason": "run.json absent"}
+    changes = compare_reports(_report(run=unverified), _report(run=verified))["context_changes"]
+    assert any(c.startswith("git du lot") for c in changes)
