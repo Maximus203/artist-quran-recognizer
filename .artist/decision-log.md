@@ -514,3 +514,73 @@
 
 - L'état `preview` appliquait la classe `recorder-preview` au conteneur micro, déjà utilisée par le lecteur interne : la règle flex comprimait tous les enfants en une seule rangée. Les états du conteneur utilisent désormais `is-*` et le conteneur une grille à une colonne.
 - L'introduction donne plus de largeur à l'import sur grand écran et s'empile sous 1180 px. Les largeurs des colonnes sont bornées avec `minmax(0, ...)` pour éviter la croissance par contenu. Les noms longs de session se tronquent dans l'en-tête ; les commandes conservent leur accès et leur libellé complet dans les attributs du lecteur.
+
+## 2026-10-09 — B3 : métriques de transcription et rapport vitesse / exactitude
+- `scripts/evaluate.py` est étendu (pas de second script) : rapport `aqr.evaluation/2` en deux blocs, `vitesse` (temps mur, facteur temps réel, pic de RAM, CPU/cœurs) et `exactitude` (localisation existante inchangée + identification + WER/CER), avec SHA git, empreintes `models/LOCK.json`, empreinte du manifeste, split, seuils et version de normalisation. Les clés existantes (`aggregate`, `cases`…) sont conservées.
+- WER/CER en lettres normalisées contre le texte Tanzil des versets attendus, en deux variantes toujours nommées : `tolerante` (normalisation + dictionnaire imla'i sur la référence, CER sans espaces) et `strict-lettres` (normalisation seule, espaces comptés — remplacé, voir 2026-10-09 : correctif strict-lettres de la PR #38). Hypothèse : un ASR écrit en imla'i, le dictionnaire (ADR-0003) ramène la référence Uthmani à sa graphie ; la variante stricte sert de plancher qui ne cache pas cet écart. Agrégation par sommes d'erreurs.
+- Identification sans horodatage : sourate, verset exact (par verset attendu), plage exacte (par cas : suite identique), non reconnus, faux positifs sur silence et hors cible. Seul `recognized` compte (I3, I5) ; faux positif = verset `recognized` dans un cas sans verset attendu (I4).
+- `--baseline` refuse (code 2, aucune écriture) si le manifeste (fichier ou cas évalués), le split, le schéma ou la normalisation diffèrent ; les différences de git, modèles, seuils, machine sont listées, pas refusées (c'est ce qu'on compare). `--split test` exige toujours `--final`.
+- Honnêteté des champs : la transcription brute et le pic de RAM ne sont pas écrits par `aqr recognize` aujourd'hui ; ils entrent par `--transcripts` (`aqr.transcript/1`). Absents, ils sont « non mesuré », jamais estimés. Reste à faire (brique séparée) : faire écrire ce fichier par le CLI / l'atelier.
+- Avertissements fixes dans chaque rapport : « identification de verset != validation du tajwid » et « plafond optimiste si audio EveryAyah » (+ comptage heuristique des cas EveryAyah / mixés).
+- Corpus de référence (branche `feat/ref-corpus-builder`, schéma figé v1 non encore fusionné) : c'est un manifeste ordinaire (`AudioCase` + bloc `ref` dans `extra`), lu sans modification. Seul couplage : si `ref.condition` vaut `silence` ou `off_target` pour un cas sans verset attendu, il fixe la classe du cas ; le code ne dépend pas de `aqr.data.refcorpus` (branche non fusionnée). Un cas `non_quran` sans aucune zone `non_quran` reste refusé par `evaluate_case` (annotation vide) : le constructeur doit y écrire une zone.
+
+## 2026-10-09 — B3 (correctif PR #38) : `strict-lettres` implémentée selon la spec
+- Constat : la « stricte » de la première version n'était que la tolérante sans dictionnaire (référence ET hypothèse passaient par `normalize_arabic`, donc tous les replis `أ إ آ`→`ا`, `ى`→`ي`, `ة`→`ه`, `ؤ`→`و`, `ئ`→`ي` s'appliquaient) avec un CER qui comptait les espaces. Or la spec de normalisation (docs/evaluation/normalisation.md §3, PR #36) définit `strict-lettres` : NFC, signes et tatweel supprimés, non-arabe → espace, espaces compactés, aucun repli sauf `ٱ`→`ا`, `ء` conservé, pas d'`imlai_corrections`.
+- Correctif : `_normalize(text, char_map)` factorisée dans `aqr.corpus.normalize` ; `normalize_arabic` garde `_CHAR_MAP` (contrat et `NORMALIZATION_VERSION` inchangés, NFC avant suppression des signes) ; `normalize_strict_letters` / `tokenize_strict_letters` = fonctions distinctes avec la table `{ٱ: ا}`, jamais un drapeau. Le repli de `ٱ` précède le filtre non arabe (U+0671 est hors des plages conservées). NFC avant suppression des signes : `ا`+U+0654 devient `أ` (lettre conservée en stricte), pas un `ا` nu.
+- `aqr.eval.transcription` : table `VARIANT_NORMALIZERS` variante → (normaliseur, tokenizer), utilisée pour la référence et l'hypothèse.
+- Décision CER : lettres SANS espaces dans les deux variantes. Ainsi l'écart tolérante/stricte ne vient que de la normalisation (replis de lettres, dictionnaire imla'i), jamais des espaces ; une coupure de mots différente coûte au WER, jamais au CER. Le test « CER compte les espaces en stricte » est remplacé par `test_cer_ignore_les_espaces_dans_les_deux_variantes` (seul test existant modifié, justifié par cette décision).
+- Hypothèse documentée : la référence reste les mots Uthmani du corpus (comme avant). La stricte est donc un PLANCHER : elle compte aussi les conventions du Mushaf absentes d'une orthographe imla'i (madda `ءَا` contre `آ`, hamza combinant, alef suscrit supprimé contre alef plein, `ى` contre `ي`). Mesure du 2026-10-09, corpus épinglé, hypothèse = texte imla'i du corpus (ASR parfait en imla'i) : tolérante WER 1,55 % / CER 0,27 % ; stricte WER 18,79 % / CER 5,07 % ; Mushaf recopié : stricte 0 %. Ne pas lire la stricte comme un taux d'erreur de l'ASR ; elle ne règle aucun seuil.
+- Traçabilité : `STRICT_NORMALIZATION_VERSION = "aqr.normalize-strict/1"` entre dans l'empreinte de normalisation et dans le bloc `normalization` du rapport (`strict_version`) ; `compare_reports` refuse une base qui en diffère ou qui en manque (les rapports d'avant ce correctif portaient des scores « stricts » qui n'en étaient pas). Le message de refus nomme les versions tolérante et stricte.
+- Aucun autre appelant de l'ancienne variante stricte dans le dépôt (`scripts/evaluate.py` itère sur `VARIANTS`).
+- Relecture indépendante (PR #38) : le refus `--baseline` ne liste plus que les parties de la normalisation qui diffèrent et écrit « absente » pour une valeur manquante (base d'avant le correctif). Décomposition de l'écart stricte/tolérante reproduite le 2026-10-09 (70 798 mots, 5 873 versets à nombres de mots égaux) : 12 658 mots diffèrent en stricte, 5 933 absorbés par les replis seuls, 6 542 par le dictionnaire, 183 par aucun des deux. La description de la variante dans le rapport dit « plancher d'orthographe du Mushaf, pas un taux d'erreur de l'ASR ».
+
+## 2026-10-09 — Quarantaine d'un récitant dont le jeu test a été exposé
+- **Problème** : la règle 3 du protocole (`docs/evaluation/protocole-reglage-evaluation.md`) disait qu'un cas
+  `test` observé pendant le réglage était « sorti du jeu `test` » sans dire où il va. L'envoyer en `dev`
+  contredit le découpage par récitants disjoints (une affectation écrite n'est jamais modifiée) et reviendrait à
+  choisir le jeu de réglage d'après ce qu'on a vu du test (sélection a posteriori).
+- **Décision** : TOUT le groupe du récitant (parents, mixes, dérivés `<parent>--<label>`) passe en split
+  `quarantaine`, jamais en `dev`. C'est un état, pas un jeu : `DataConfig.quarantine_split`, volontairement absent
+  de `DataConfig.splits`. Sens unique, définitif ; la mesure finale suivante se fait sur de nouveaux récitants.
+- **Code** : `quarantine_recitant(cases, recitant)` (`src/aqr/data/split.py`, `dataclasses.replace`) : idempotent,
+  refuse un récitant inconnu, sans affectation ou en `dev` (un mélange dev/test reste une fuite à corriger dans le
+  manifeste). `assign_splits` exclut la quarantaine du ratio et ne lève pas ; elle reste une erreur si un récitant est
+  en quarantaine ET ailleurs. `scripts/evaluate.py --split quarantaine` est refusé (code 2), `--final` compris.
+- **Aucun récitant n'est mis en quarantaine par ce changement** : le motif (date, récitant anonymisé, cause de
+  l'exposition, cas touchés) se consigne ici au premier cas réel.
+- **À reporter sur #40** (`feat/ref-corpus-builder`, `src/aqr/data/refcorpus.py`, non modifié ici) :
+  `validate_ref_manifest` n'accepte que `cfg.splits` ; il doit accepter aussi `cfg.quarantine_split` et signaler
+  un récitant en quarantaine ET en dev/test (son contrôle de fuite ne regarde que dev/test). Sa règle « un dérivé
+  a le récitant et le split de son parent » couvre déjà le groupe entier.
+- **Suite de revue** : `aqr data quarantine <récitant> [--dry-run]` écrit le manifeste ; `aqr data split`
+  affiche la quarantaine et y remplit les cas sans split ; `preannotate` refuse aussi la quarantaine.
+  **La quarantaine suit la voix** : `mixer.materialize` écrit `mix-<reciter>` (minuscules), autre nom pour la
+  même voix ; on a préféré l'accepter dans le code (`voice_key`, `DataConfig.mix_recitant_prefix`) plutôt que
+  nuancer la doc, car un mix de la voix exposée restant en `dev` aurait été une fuite. Contrepartie : nommer
+  `<reciter>` met aussi en quarantaine ses `mix-<reciter>` déjà en `dev`, et le résumé de la commande liste les
+  récitants touchés. `Manifest.upsert` garde le split existant quand le nouveau cas n'en a pas (une
+  re-matérialisation ne défait pas une quarantaine) ; un split explicite s'applique toujours.
+
+## 2026-10-09 — Décision d'usage des audios aux droits non établis (provisoire)
+- **Statut : provisoire — en attente de confirmation écrite du mainteneur.** Confirmation reçue : non. Texte et
+  portée : `docs/data-lots/ref-corpus-provenance.md`, section « Décision d'usage ».
+- **Qui** : le mainteneur seul. **Permis provisoirement** : évaluation interne locale, audio hors dépôt, aucune
+  redistribution, réglage de la configuration (seuils, décodeur) sur `dev`. **Interdit** : versionner, republier,
+  entraîner/affiner un modèle sur ces audios, tout usage de `RetaSy/quranic_audio_dataset`. **Portée** : EveryAyah,
+  lots Hugging Face lus pour le corpus de référence, lot 1 (évaluation interne locale seulement).
+- **Contradictions levées** : (a) « non clairement autorisé = non autorisé » vs « usage interne d'évaluation » :
+  la seconde n'est permise que par la décision, qui est l'unique exception ; (b) `scripts/fetch_everyayah.py`
+  télécharge par défaut (3 récitants × 10 sourates, hors dépôt) : documenté, script inchangé, un téléchargement
+  n'est pas une autorisation ; (c) le lot 1 n'est pas un précédent (`RIGHTS.md`, `lot-1.yaml`, protocole) ; (d)
+  libellé de licence canonique `droits non établis : usage interne d'évaluation uniquement, jamais redistribué
+  (docs/data-lots/ref-corpus-provenance.md)`, l'ancien libellé du lot 1 étant documenté comme hérité.
+- **Précisions de revue** : la fusion de la PR ne vaut PAS confirmation du mainteneur ; « Qui lance quoi » (le
+  mainteneur, ou un contributeur/agent dans un environnement qu'il maîtrise et à sa demande ; un agent cloud
+  seulement sur demande explicite pour le lancement) ; tout rapport chiffré mentionne le caractère provisoire
+  (`protocole`, « Biais à écrire dans tout rapport ») alors que `scripts/evaluate.py` ne l'affiche pas encore.
+  Libellés hérités documentés : lot 1 et mixer (`synthétique : …`), non réécrits.
+- **Hypothèse à confirmer** : « régler un modèle » interdit = toucher aux poids d'un modèle ; le calibrage de nos
+  seuils sur `dev` (protocole) est classé évaluation interne.
+- **Ouvert pour le mainteneur** : confirmer par écrit ; trancher les trois décisions de `RIGHTS.md` ; dire si le
+  téléchargement de la copie publique du lot 1 par un agent cloud (`fetch_public_lot.py`) est admis ; aligner le
+  libellé hérité (12 cas de `tests/fixtures/audio/manifest.yaml`, `scripts/audio_lot.py`) une fois la décision 3 prise.
