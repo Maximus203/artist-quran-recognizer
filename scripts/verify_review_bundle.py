@@ -15,7 +15,8 @@ import json
 import re
 import sys
 import zipfile
-from collections.abc import Sequence
+import zlib
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from scripts.export_review_bundle import (
     PREDICTION_ENTRY,
     REVIEW_ENTRY_DIR,
     sha256_bytes,
+    sha256_chunks,
     sha256_file,
 )
 
@@ -35,12 +37,44 @@ _SHA256 = re.compile(r"[0-9a-f]{64}")
 _AUDIO_ENTRY = re.compile(rf"{re.escape(AUDIO_ENTRY_STEM)}\.[A-Za-z0-9]+")
 _REVIEW_ENTRY = re.compile(rf"{re.escape(REVIEW_ENTRY_DIR)}/[A-Za-z0-9._-]+\.review\.json")
 _SOURCE_KINDS = {"file", "microphone"}
+MAX_MANIFEST_BYTES = 1 << 20  # le manifeste est petit (quelques entrées d'empreintes)
+MAX_JSON_ENTRY_BYTES = 64 << 20  # prédiction et révisions de revue : JSON, jamais l'audio
+_CHUNK_BYTES = 1 << 20
 
 
 def verify_bundle(
     bundle: Path, source: Path | None = None, *, require_prediction: bool = True
 ) -> dict[str, Any]:
-    """Vérifie `bundle` ; renvoie un résumé (session, empreintes, entrées) ou lève ValueError."""
+    """Vérifie `bundle` ; renvoie un résumé (session, empreintes, entrées) ou lève ValueError.
+
+    Mémoire bornée : le manifeste (<= MAX_MANIFEST_BYTES) et les autres entrées JSON
+    (<= MAX_JSON_ENTRY_BYTES) sont refusés d'après leur taille annoncée puis relus avec la même
+    limite ; l'audio est haché par blocs. Une archive hostile ou corrompue donne une ValueError,
+    jamais une MemoryError ni une erreur zlib."""
+    try:
+        return _verify(bundle, source, require_prediction)
+    except (MemoryError, NotImplementedError, zlib.error, zipfile.BadZipFile, RuntimeError) as exc:
+        raise ValueError(
+            f"pack illisible ou corrompu : {bundle} ({type(exc).__name__}: {exc})"
+        ) from exc
+
+
+def _chunks(archive: zipfile.ZipFile, name: str, limit: int | None) -> Iterator[bytes]:
+    """Lit `name` par blocs ; au-delà de `limit` octets réellement décompressés : ValueError."""
+    total = 0
+    with archive.open(name) as stream:
+        for block in iter(lambda: stream.read(_CHUNK_BYTES), b""):
+            total += len(block)
+            if limit is not None and total > limit:
+                raise ValueError(f"entrée trop volumineuse : {name} (plus de {limit} octets)")
+            yield block
+
+
+def _read_json_entry(archive: zipfile.ZipFile, name: str, limit: int) -> bytes:
+    return b"".join(_chunks(archive, name, limit))
+
+
+def _verify(bundle: Path, source: Path | None, require_prediction: bool) -> dict[str, Any]:
     try:
         archive = zipfile.ZipFile(bundle)
     except (zipfile.BadZipFile, OSError) as exc:
@@ -52,9 +86,8 @@ def verify_bundle(
             raise ValueError(f"entrée en double dans le pack : {duplicated}")
         if MANIFEST_ENTRY not in names:
             raise ValueError(f"{MANIFEST_ENTRY} absent du pack")
-        if (corrupt := archive.testzip()) is not None:
-            raise ValueError(f"entrée corrompue (CRC) : {corrupt}")
-        manifest = _manifest(archive.read(MANIFEST_ENTRY))
+        _check_declared_size(archive, MANIFEST_ENTRY, MAX_MANIFEST_BYTES)
+        manifest = _manifest(_read_json_entry(archive, MANIFEST_ENTRY, MAX_MANIFEST_BYTES))
         entries = [name for name in names if name != MANIFEST_ENTRY]
         listed: dict[str, str] = manifest["files"]
         for name in entries:
@@ -67,8 +100,18 @@ def verify_bundle(
             raise ValueError(f"entrée listée mais manquante dans le pack : {missing}")
         if unlisted := sorted(set(entries) - set(listed)):
             raise ValueError(f"entrée non listée dans le manifeste : {unlisted}")
-        contents = {name: archive.read(name) for name in entries}
-    digests = {name: sha256_bytes(data) for name, data in contents.items()}
+        digests: dict[str, str] = {}
+        prediction_raw: bytes | None = None
+        for name in entries:
+            # seul l'audio peut être gros ; tout JSON est plafonné (taille annoncée puis réelle)
+            limit = None if _AUDIO_ENTRY.fullmatch(name) else MAX_JSON_ENTRY_BYTES
+            if limit is not None:
+                _check_declared_size(archive, name, limit)
+            if name == PREDICTION_ENTRY:
+                prediction_raw = _read_json_entry(archive, name, MAX_JSON_ENTRY_BYTES)
+                digests[name] = sha256_bytes(prediction_raw)
+            else:
+                digests[name] = sha256_chunks(_chunks(archive, name, limit))
     for name, digest in digests.items():
         if digest != listed[name]:
             raise ValueError(f"empreinte incorrecte pour {name} : {digest} != {listed[name]}")
@@ -88,7 +131,9 @@ def verify_bundle(
             raise ValueError(
                 f"l'audio du pack ({audio_sha}) diffère du fichier de référence {source.name}"
             )
-    prediction_sha = _check_prediction(manifest, contents, digests, audio_sha, require_prediction)
+    prediction_sha = _check_prediction(
+        manifest, prediction_raw, digests, audio_sha, require_prediction
+    )
     return {
         "session_id": manifest["session_id"],
         "source_kind": manifest["source_kind"],
@@ -96,6 +141,14 @@ def verify_bundle(
         "prediction_sha256": prediction_sha,
         "entries": sorted(entries),
     }
+
+
+def _check_declared_size(archive: zipfile.ZipFile, name: str, limit: int) -> None:
+    declared = archive.getinfo(name).file_size
+    if declared > limit:
+        raise ValueError(
+            f"entrée trop volumineuse : {name} ({declared} octets annoncés, plafond {limit})"
+        )
 
 
 def _expected_entry_name(name: str) -> bool:
@@ -132,12 +185,12 @@ def _manifest(raw: bytes) -> dict[str, Any]:
 
 def _check_prediction(
     manifest: dict[str, Any],
-    contents: dict[str, bytes],
+    prediction_raw: bytes | None,
     digests: dict[str, str],
     audio_sha: str,
     require_prediction: bool,
 ) -> str | None:
-    if PREDICTION_ENTRY not in contents:
+    if prediction_raw is None:
         if require_prediction:
             raise ValueError(f"prédiction absente du pack ({PREDICTION_ENTRY})")
         if manifest.get("prediction_sha256") is not None:
@@ -148,7 +201,7 @@ def _check_prediction(
         claimed = manifest.get("prediction_sha256")
         raise ValueError(f"prediction_sha256 du manifeste ({claimed}) != {prediction_sha}")
     try:
-        prediction = json.loads(contents[PREDICTION_ENTRY])
+        prediction = json.loads(prediction_raw)
     except ValueError as exc:
         raise ValueError(f"prédiction illisible : {exc}") from exc
     if not isinstance(prediction, dict) or prediction.get("schema") != RECOGNITION_SCHEMA:
