@@ -247,6 +247,8 @@ export async function deleteSession(
   if (session.state === "running")
     throw new Error("Traitement en cours : annule-le avant de supprimer.");
   if (!force && (await hasReviewWork(dir))) throw new ReviewWorkError();
+  // Session annulée dont `close` n'est pas encore passé : il relirait un dossier supprimé.
+  await jobs.get(id)?.settled;
   await rm(dir, { recursive: true, force: true });
 }
 /** Plus grand mtime sous `dir` (dossiers compris). Ne suit pas les liens symboliques. */
@@ -325,6 +327,8 @@ export async function cleanupSessions(
   }
   for (const id of ids) {
     try {
+      // Traitement encore possédé par ce serveur (y compris launch → première écriture).
+      if (jobs.has(id)) continue;
       const dir = sessionDir(id);
       const active = async () =>
         now - (await lastActivityMs(dir, now)) < maxAgeSeconds * 1000;

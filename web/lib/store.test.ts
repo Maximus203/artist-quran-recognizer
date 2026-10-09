@@ -11,6 +11,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import type { ChildProcess } from "node:child_process";
 import { reviewSchema } from "./review";
 import {
   ReviewWorkError,
@@ -18,6 +19,7 @@ import {
   cleanupSessions,
   defaultReviewDir,
   exceedsUploadLimit,
+  jobs,
   lastActivityMs,
   sessionTtlSeconds,
   deleteSession,
@@ -441,6 +443,41 @@ describe("nettoyage des sessions", () => {
       expect(await cleanupSessions(86400)).toEqual([]);
       for (const id of [ID, OTHER, BROKEN])
         await expect(exists(id)).resolves.toBeTruthy();
+    });
+  });
+
+  describe("traitement possédé par ce serveur", () => {
+    const fakeJob = (settled: Promise<void>) => ({
+      child: {} as ChildProcess,
+      settled,
+    });
+    afterEach(() => {
+      jobs.clear();
+    });
+    it("cleanupSessions ne purge pas une session dont un job est encore enregistré", async () => {
+      await saveSession(done());
+      await ageTree(ID, 3);
+      jobs.set(ID, fakeJob(Promise.resolve()));
+      expect(await cleanupSessions(86400)).toEqual([]);
+      await expect(exists()).resolves.toBeTruthy();
+      jobs.delete(ID);
+      expect(await cleanupSessions(86400)).toEqual([ID]);
+    });
+    it("deleteSession attend la fin du gestionnaire close avant de supprimer", async () => {
+      await saveSession(session({ state: "cancelled" }));
+      let release!: () => void;
+      jobs.set(
+        ID,
+        fakeJob(new Promise<void>((resolve) => (release = resolve))),
+      );
+      let finished = false;
+      const pending = deleteSession(ID).then(() => (finished = true));
+      await new Promise((r) => setTimeout(r, 50));
+      expect(finished).toBe(false);
+      await expect(exists()).resolves.toBeTruthy();
+      release();
+      await pending;
+      await expect(exists()).rejects.toThrow();
     });
   });
 
