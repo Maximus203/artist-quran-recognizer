@@ -69,12 +69,30 @@ Une revue enregistrée récemment (« Enregistré localement ») garde donc la s
 
 `scripts/smoke_e2e.sh` récupère (si besoin) les 4 versets de la sourate 112 via `scripts/fetch_everyayah.py` dans `$AQR_AUDIO_DIR` (hors dépôt), puis lance :
 
-1. `pytest -m slow tests/e2e` : `aqr recognize` réel (Whisper, CPU). `tests/support/corpus_check.py` (`assert_matches_corpus`, même sémantique que `HomeRenderer.span_text`) contrôle chaque verset nommé : texte égal au corpus (verset entier) ou sous-chaîne exacte des mots `first..last` (verset partiel), plage de mots dans le verset, drapeau `partial` cohérent, sourate 112 uniquement (I3), `UNCERTAIN` sans texte, au moins un verset RECOGNIZED.
+1. `pytest -m slow tests/e2e` : `aqr recognize` réel (CPU ; moteur au choix, Whisper par défaut, voir « Moteur du smoke »). `tests/support/corpus_check.py` (`assert_matches_corpus`, même sémantique que `HomeRenderer.span_text`) contrôle chaque verset nommé : texte égal au corpus (verset entier) ou sous-chaîne exacte des mots `first..last` (verset partiel), plage de mots dans le verset, drapeau `partial` cohérent, sourate 112 uniquement (I3), `UNCERTAIN` sans texte, au moins un verset RECOGNIZED.
 2. `npm run smoke:browser` (`web/e2e/browser-smoke.mjs`, `playwright-core`) : import de l'audio, moteur réel, puis lecture de `GET /api/sessions/<id>` (une session `failed` fait échouer immédiatement avec son erreur) ; le résultat passe par le même `corpus_check`, chaque segment RECOGNIZED cliqué affiche le badge « Reconnu » et un texte arabe strictement égal à `interval.text`. Le pack ZIP téléchargé est ouvert et vérifié par `scripts/verify_review_bundle.py` (entrées attendues, SHA-256 recalculés, audio = manifeste = prédiction = fichier source de référence). Il lance `next start` (après `npm run build`) ou vise `AQR_SMOKE_URL` ; Chromium vient de `AQR_SMOKE_CHROMIUM` (défaut `/opt/pw-browsers/chromium`, aucun `playwright install`).
 
 **Ressource absente (audio, ffmpeg, modèles, corpus vérifié par `LOCK.json`, Chromium, build, Python)** : le mode strict est le **défaut partout** (`pytest -m slow tests/e2e`, `npm run smoke:browser`, `scripts/smoke_e2e.sh`) : échec explicite avec la raison (pytest : erreur ; navigateur : code 2), jamais un succès muet. Seul `AQR_SMOKE_STRICT=0`, posé explicitement, autorise le skip : le test est alors sauté avec la raison et un résumé « NON EXÉCUTÉ » le dit en toutes lettres. `node e2e/browser-smoke.mjs --check` ne vérifie que les ressources. `scripts/smoke_e2e.sh` n'accepte que `all`, `cli` ou `browser` (autre valeur : usage, code 2). Le `pytest` ordinaire n'est pas concerné : ces tests portent le marqueur `slow`.
 
 Ces smokes appellent les vrais modèles : plusieurs minutes sur CPU.
+
+### Moteur du smoke (Whisper ou FastConformer)
+
+`AQR_SMOKE_ASR=whisper` (défaut) ou `fastconformer` choisit le moteur du smoke **CLI** ; `scripts/smoke_e2e.sh` le transmet aussi au **navigateur**. Le navigateur le lisait déjà sous le nom `AQR_ASR` (inchangé) : `AQR_SMOKE_ASR` est prioritaire, `AQR_ASR` seul reste accepté, et les deux ne doivent pas se contredire (le script refuse, code 2). Une valeur inconnue est un **échec en strict** qui nomme les valeurs acceptées (`whisper | fastconformer`), jamais un repli silencieux sur Whisper ; avec `AQR_SMOKE_STRICT=0` explicite, elle est sautée et annoncée « NON EXÉCUTÉ ».
+
+- **Modèles du moteur choisi** : le contrôle de ressources porte sur `whisper-base-quran` ou `fastconformer-quran` (plus le segmenteur de récitation), tels qu'épinglés dans `models/LOCK.json`.
+- **Interpréteur** : `AQR_PYTHON` est celui du **moteur** (CLI `aqr recognize` et atelier web). FastConformer exige le venv NeMo, qui n'a pas forcément pytest : pytest tourne alors sous `AQR_PYTEST_PYTHON`, sinon sous `AQR_PYTHON` s'il sait importer pytest, sinon sous `python` du PATH. Un interpréteur sans le module du moteur (`nemo` pour FastConformer, `transformers` pour Whisper) est un manque nommé, avec l'interpréteur fautif.
+
+```bash
+# Whisper (défaut)
+bash scripts/smoke_e2e.sh cli
+# FastConformer : l'interpréteur du moteur est le venv NeMo
+AQR_SMOKE_ASR=fastconformer AQR_PYTHON=/chemin/venv-nemo/bin/python bash scripts/smoke_e2e.sh cli
+# sans le script (pytest sous l'interpréteur de développement) :
+AQR_SMOKE_ASR=fastconformer AQR_PYTHON=/chemin/venv-nemo/bin/python pytest -m slow tests/e2e -rs
+# navigateur : le même nom (ou l'ancien AQR_ASR)
+AQR_SMOKE_ASR=fastconformer AQR_PYTHON=/chemin/venv-nemo/bin/python npm run smoke:browser
+```
 
 ## Vérification
 
