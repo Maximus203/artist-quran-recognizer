@@ -42,6 +42,8 @@ from aqr.data.split import assign_splits
 
 REF_SCHEMA_VERSION = 1
 REF_KEY = "ref"
+DEGRADED_CATEGORY = "C12"
+"""Conditions dégradées (docs/TEST-CORPUS.md)."""
 
 CONDITION_CLEAN = "clean"
 DEGRADATION_KINDS = ("noise", "telephone", "reverb", "mp3_low", "silence_pad")
@@ -157,6 +159,10 @@ def _shift(span: tuple[float, float], by: float) -> tuple[float, float]:
     return (round(span[0] + by, 3), round(span[1] + by, 3))
 
 
+def degraded_id(parent_id: str, degradation: Degradation) -> str:
+    return f"{parent_id}--{degradation.label}"
+
+
 def degraded_case(
     parent: AudioCase, degradation: Degradation, *, sha256: str, duree_s: float | None
 ) -> AudioCase:
@@ -165,13 +171,14 @@ def degraded_case(
     if parent_meta.parent is not None:
         raise RefCorpusError(f"cas {parent.id} : on ne dégrade pas une dégradation")
     shift = degradation.shift_s
-    case_id = f"{parent.id}--{degradation.label}"
+    case_id = degraded_id(parent.id, degradation)
     derived = replace(
         parent,
         id=case_id,
         file=f"degraded/{case_id}.wav",
         sha256=sha256,
         duree_s=duree_s,
+        categorie=tuple(dict.fromkeys((*parent.categorie, DEGRADED_CATEGORY))),
         expected=tuple(
             ExpectedItem(_shift(i.t, shift), i.ref, i.words, i.status) for i in parent.expected
         ),
