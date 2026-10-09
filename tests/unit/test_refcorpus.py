@@ -271,6 +271,73 @@ def test_frozen_splits_releve_les_affectations_et_refuse_la_fuite() -> None:
         frozen_splits([a, replace(clean_case("a2", "R1_128kbps"), split="test")])
 
 
+QUARANTAINE = DataConfig().quarantine_split
+
+
+def _in(split: str | None, case_id: str, recitant: str) -> AudioCase:
+    return replace(clean_case(case_id, recitant), split=split)
+
+
+def test_quarantaine_acceptee_par_la_validation() -> None:
+    parent = _in(QUARANTAINE, "p", "Husary_128kbps")
+    child = replace(
+        degraded_case(parent, Degradation("telephone"), sha256=SHA_B, duree_s=12.5),
+        split=QUARANTAINE,
+    )
+    assert validate_ref_manifest(Manifest(cases=[parent, child])) == []
+    unknown = _in("corbeille", "x", "Other_128kbps")
+    assert any("split 'corbeille'" in p for p in validate_ref_manifest(Manifest(cases=[unknown])))
+    # un dérivé resté en test alors que son parent est en quarantaine est une fuite
+    leaky = replace(child, split="test")
+    assert any("split de p" in p for p in validate_ref_manifest(Manifest(cases=[parent, leaky])))
+
+
+def test_voix_en_quarantaine_et_en_dev_test_signalee() -> None:
+    quarantined = _in(QUARANTAINE, "a", "Husary_128kbps")
+    same_name = _in("test", "b", "Husary_128kbps")  # le même récitant des deux côtés
+    mixed = _in("dev", "c", "mix-husary_128kbps")  # même voix sous le nom d'un mixage local
+    other = _in("dev", "d", "Alafasy_128kbps")  # une autre voix : rien à dire
+    for leak in (same_name, mixed):
+        problems = validate_ref_manifest(Manifest(cases=[quarantined, other, leak]))
+        assert any("quarantaine" in p and "fuite" in p and leak.recitant in p for p in problems), (
+            problems
+        )
+    assert validate_ref_manifest(Manifest(cases=[quarantined, other])) == []
+    # la voix suit le préfixe configuré, casse ignorée
+    assert (
+        validate_ref_manifest(
+            Manifest(cases=[quarantined, _in(QUARANTAINE, "e", "MIX-husary_128kbps")])
+        )
+        == []
+    )
+
+
+def test_quarantaine_est_une_affectation_figee() -> None:
+    cfg = DataConfig()
+    old = [_in(QUARANTAINE, "a", "Husary_128kbps"), _in("dev", "b", "Alafasy_128kbps")]
+    frozen = frozen_splits(old, cfg)
+    assert frozen == {"Husary_128kbps": QUARANTAINE, "Alafasy_128kbps": "dev"}
+    # tout régénéré (aucun cas conservé) : le récitant et sa voix `mix-` ne reviennent pas en jeu
+    fresh = [clean_case("n1", "Husary_128kbps"), clean_case("n2", "mix-husary_128kbps")]
+    fresh += [clean_case(f"o{n}", f"Other{n}_128kbps") for n in range(4)]
+    assigned = {c.id: c.split for c in assign_ref_splits(fresh, cfg, frozen=frozen)}
+    assert assigned["n1"] == assigned["n2"] == QUARANTAINE
+    assert {assigned[f"o{n}"] for n in range(4)} <= {"dev", "test"}  # jamais en quarantaine
+    # le poids de la quarantaine ne compte pas dans le ratio dev/test
+    heavy = [replace(c, duree_s=10_000.0) for c in fresh[:2]]
+    light = assign_ref_splits([*heavy, *fresh[2:]], cfg, frozen=frozen)
+    assert {c.split for c in light[2:]} == {c.split for c in assign_ref_splits(fresh, cfg)[2:]}
+
+
+def test_frozen_splits_refuse_une_quarantaine_incomplete_ou_une_voix_partagee() -> None:
+    with pytest.raises(RefCorpusError, match=r"Husary_128kbps.*quarantine"):
+        frozen_splits([_in(QUARANTAINE, "a", "Husary_128kbps"), _in("test", "b", "Husary_128kbps")])
+    with pytest.raises(RefCorpusError, match="voix"):
+        frozen_splits(
+            [_in(QUARANTAINE, "a", "Husary_128kbps"), _in("dev", "b", "mix-husary_128kbps")]
+        )
+
+
 def test_fuite_dev_test_detectee() -> None:
     a = replace(clean_case("a"), split="dev")
     b = replace(clean_case("b"), split="test")  # même récitant
