@@ -27,9 +27,9 @@ Reproduire
 - Rejouer cette commande sur les mêmes sources (même LOCK.json, même ffmpeg) redonne le manifeste
   octet pour octet : `git diff tests/fixtures/ref-corpus/manifest.yaml` doit être vide.
 - Seule `manifest.build.json` peut changer d'un rejeu à l'autre (SHA git du code).
-- La trace ne décrit que le dernier lancement. Un build incrémental (même manifeste, autre graine ou
-  autres scénarios) garde les anciens cas : `carried_over` les compte et le rejeu n'est exact que si
-  `carried_over.cases` vaut 0. Sinon, reconstruire avec un manifeste et un dossier de sortie vierges.
+- La trace ne décrit que le dernier lancement. Un build incrémental (même manifeste, autre graine
+  ou autres scénarios) garde les anciens cas : `carried_over` les compte et le rejeu n'est exact
+  que si `carried_over.cases` vaut 0. Sinon, reconstruire avec un manifeste et un dossier vierges.
 """
 
 from __future__ import annotations
