@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from aqr.data.config import DataConfig
 from aqr.data.manifest import (
     Annotation,
     AudioCase,
@@ -132,6 +134,24 @@ def test_le_jeu_test_est_refuse_sans_final(world, capsys):
     assert "réservé" in capsys.readouterr().err
     assert _run(manifest, preds, out, "--split", "test", "--final") == 0
     assert json.loads(out.read_text(encoding="utf-8"))["final"] is True
+
+
+def test_la_quarantaine_n_est_jamais_evaluee_meme_avec_final(world, capsys):
+    tmp, manifest, preds = world
+    quarantaine = DataConfig().quarantine_split
+    saved = Manifest.load(manifest)
+    saved.upsert(replace(_case("quaA", quarantaine, human=True)))
+    saved.save(manifest)
+    (preds / "quaA.json").write_text(
+        json.dumps(_prediction(_case("quaA", "x", human=True), [])), "utf-8"
+    )
+    out = tmp / "report.json"
+    for extra in ((), ("--final",)):
+        with pytest.raises(SystemExit) as exc:
+            _run(manifest, preds, out, "--split", quarantaine, *extra)
+        assert exc.value.code == 2
+        assert "jamais évaluée" in capsys.readouterr().err
+    assert not out.exists()
 
 
 def test_aucun_cas_annote_ne_donne_aucune_metrique_et_code_non_nul(tmp_path: Path, capsys):

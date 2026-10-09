@@ -34,3 +34,8 @@ class DataConfig:
     statut_a_annoter: str = "a_annoter"
     statut_annote: str = "annote"
     splits: tuple[str, ...] = ("dev", "test")
+    quarantine_split: str = "quarantaine"
+    """Split d'un récitant dont le jeu `test` a été exposé pendant le réglage : ni évalué, ni
+    utilisé au réglage, hors du ratio dev/test, définitif
+    (docs/evaluation/protocole-reglage-evaluation.md). Volontairement absent de `splits`
+    (= les seuls jeux évaluables)."""
