@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 import shutil
 from array import array
@@ -52,6 +53,9 @@ class FourReciters(SyntheticProvider):
 
     def reciters(self) -> tuple[str, ...]:
         return ("recit_a", "recit_b", "recit_c", "recit_d")
+
+    def excluded_reciters(self) -> tuple[tuple[str, str], ...]:
+        return (("recit_x", "bismillah.mp3 absent"),)
 
     def speech(self, kind: NonQuranKind, rng: random.Random) -> array[int] | None:
         if kind is NonQuranKind.OTHER_LANGUAGE:
@@ -195,7 +199,10 @@ def test_recitant_sans_basmala_ecarte(tmp_path: Path) -> None:
     for reciter in ("Complet_128kbps", "SansBasmala_128kbps"):
         (root / reciter).mkdir(parents=True)
     (root / "Complet_128kbps" / "bismillah.mp3").write_bytes(b"x")
-    assert ReferenceClipProvider(tmp_path).reciters() == ("Complet_128kbps",)
+    provider = ReferenceClipProvider(tmp_path)
+    assert provider.reciters() == ("Complet_128kbps",)
+    ((name, reason),) = provider.excluded_reciters()  # plus de filtre silencieux
+    assert name == "SansBasmala_128kbps" and "bismillah" in reason
 
 
 def test_decalage_des_zones_non_coraniques_de_la_construction(
@@ -341,6 +348,9 @@ def test_reconstruction_retire_les_derives_dont_la_degradation_a_disparu(tmp_pat
     assert all("absente de ce lancement" in reason for _, reason in again.removed)
     assert {ref_meta(c).condition for c in again.manifest.cases if ref_meta(c).parent} == {"noise"}
     assert validate_ref_manifest(again.manifest) == []
+    assert read_trace(manifest)["removed"] == [  # la trace garde la raison du retrait
+        {"name": name, "reason": reason} for name, reason in again.removed
+    ]
 
 
 def test_reconstruction_avec_un_recitant_de_plus_ne_reaffecte_rien(tmp_path: Path) -> None:
@@ -458,3 +468,70 @@ def test_priere_un_seul_enregistrement_special_un_seul_jeu(tmp_path: Path) -> No
         "amin",
     }
     assert report.problems == [] and validate_ref_manifest(report.manifest) == []
+
+
+TRACE_NAME = "manifest.build.json"
+
+
+def read_trace(manifest: Path) -> dict[str, object]:
+    return json.loads((manifest.parent / TRACE_NAME).read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+
+
+def test_trace_de_construction_ecrite(built: tuple[BuildReport, Path, Path]) -> None:
+    """Tout ce qu'il faut pour rejouer le build est écrit à côté du manifeste, sans chemin local."""
+    report, out, manifest = built
+    assert (manifest.parent / TRACE_NAME).exists()
+    trace = read_trace(manifest)
+    assert trace["schema"] == 1 and trace["manifest"] == "manifest.yaml"
+    params = trace["parameters"]
+    assert isinstance(params, dict)
+    assert (params["seed"], params["per_scenario"]) == (3, 2)
+    assert params["scenarios"] == list(SCENARIOS)
+    assert params["split_seed"] == DataConfig().split_seed
+    assert params["dev_ratio"] == DataConfig().dev_ratio
+    assert [d["kind"] for d in params["degradations"]] == ["noise", "telephone", "silence_pad"]
+    assert params["degradations"][2] == {
+        "kind": "silence_pad",
+        "params": {"pad_s": 2},
+        "shift_s": 2.0,
+    }
+    assert trace["reciters"] == {
+        "retained": ["recit_a", "recit_b", "recit_c", "recit_d"],
+        "excluded": [{"name": "recit_x", "reason": "bismillah.mp3 absent"}],
+    }
+    skipped = {item["name"]: item["reason"] for item in trace["skipped"]}  # type: ignore[attr-defined]
+    assert skipped["reciter:recit_x"] == "bismillah.mp3 absent"  # le filtre n'est plus silencieux
+    assert "off_target:other_language" in skipped
+    assert dict(report.skipped) == skipped
+    split_of = {c.recitant: c.split for c in report.manifest.cases}
+    assert trace["splits"] == dict(sorted(split_of.items()))
+    toolchain = trace["toolchain"]
+    assert isinstance(toolchain, dict)
+    assert toolchain["ffmpeg"][0].isdigit() and toolchain["libmp3lame"][0].isdigit()
+    sources = trace["sources"]
+    assert isinstance(sources, dict)
+    assert sources["everyayah_lock_sha256"] is None  # pas de LOCK.json dans ce dossier de test
+    kinds = {f["kind"] for f in sources["files"]}
+    assert {"french", "arabic_speech", "takbir"} <= kinds
+    text = (manifest.parent / TRACE_NAME).read_text(encoding="utf-8")
+    for local in (str(out), str(manifest.parent), "/tmp", "/root", "/home"):
+        assert local not in text
+
+
+def test_trace_deterministe_et_environnement_transmis(tmp_path: Path) -> None:
+    out, manifest = tmp_path / "aqr-ref", tmp_path / "manifest.yaml"
+    lock = out / "everyayah" / "LOCK.json"
+    lock.parent.mkdir(parents=True)
+    lock.write_text('{"files": {}}', encoding="utf-8")
+    corpus = TanzilCorpusRepository(CORPUS_DIR)
+    kwargs = dict(
+        seed=3, per_scenario=1, scenarios=("murattal_continu",), degradations=DEGRADATIONS[:1]
+    )
+    env = {"command": "python scripts/build_ref_corpus.py --seed 3", "git": {"sha": "abc"}}
+    build_ref_corpus(FourReciters(corpus), corpus, out, manifest, environment=env, **kwargs)  # type: ignore[arg-type]
+    first = (tmp_path / TRACE_NAME).read_text(encoding="utf-8")
+    trace = json.loads(first)
+    assert trace["environment"] == env
+    assert trace["sources"]["everyayah_lock_sha256"] == sha256_file(lock)
+    build_ref_corpus(FourReciters(corpus), corpus, out, manifest, environment=env, **kwargs)  # type: ignore[arg-type]
+    assert (tmp_path / TRACE_NAME).read_text(encoding="utf-8") == first  # rejeu : octet pour octet
