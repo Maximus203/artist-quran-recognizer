@@ -1,0 +1,4 @@
+# Vérité terrain du corpus de référence — schéma : src/aqr/data/refcorpus.py (bloc `ref`, v1)
+# Aucun audio versionné : seulement SHA-256 et métadonnées. Générer avec scripts/build_ref_corpus.py.
+version: 1
+cases: []
