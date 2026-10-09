@@ -1,4 +1,4510 @@
-# Vérité terrain du corpus de référence — schéma : src/aqr/data/refcorpus.py (bloc `ref`, v1)
-# Aucun audio versionné : seulement SHA-256 et métadonnées. Générer avec scripts/build_ref_corpus.py.
+# Vérité terrain du corpus de test audio — protocole : docs/TEST-CORPUS.md
+# Les fichiers audio ne sont PAS versionnés (tests/fixtures/audio/files/ ou $AQR_AUDIO_DIR).
 version: 1
-cases: []
+cases:
+- id: ref-mix-arret-waqf-s7-00
+  file: mix/ref-mix-arret-waqf-s7-00.wav
+  sha256: 8c47740188c316420e5337e50787fd696481fd86167f4a93690bfa8a98ab6724
+  categorie:
+  - C06
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-arret-waqf-s7-01
+  file: mix/ref-mix-arret-waqf-s7-01.wav
+  sha256: 1d9711cfc650099cef02f68ff7fb9aaf85999cea3b26b161c0a011c0b2e44329
+  categorie:
+  - C06
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-murattal-continu-s7-00
+  file: mix/ref-mix-murattal-continu-s7-00.wav
+  sha256: fbf82e53cfa192161bfffe7c827efac44ee5586bfe5d8ddc855af19a0cdc1d55
+  categorie:
+  - C01
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-murattal-continu-s7-01
+  file: mix/ref-mix-murattal-continu-s7-01.wav
+  sha256: 087a0f1d3b777ef8dbbfacdab16da95f7a9c0034b3792405a864f367411d3cfe
+  categorie:
+  - C01
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-repetition-s7-00
+  file: mix/ref-mix-repetition-s7-00.wav
+  sha256: daf55d4e36a5df42ffa98a533441bf0c415474f3796a675f9ba79cf3f83f7a44
+  categorie:
+  - C05
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 35.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-repetition-s7-01
+  file: mix/ref-mix-repetition-s7-01.wav
+  sha256: d9fccd05ad6876d4ad711159165f71dfea8d2eac798023fd88f5f2ddcace6169
+  categorie:
+  - C05
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-saut-de-sourate-s7-00
+  file: mix/ref-mix-saut-de-sourate-s7-00.wav
+  sha256: 26af8e3373f503adea5301c04dfc27ebdf9ba0961a854672b553f28de85c09a2
+  categorie:
+  - C03
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 43.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-saut-de-sourate-s7-01
+  file: mix/ref-mix-saut-de-sourate-s7-01.wav
+  sha256: 51324270cad186530a4234bcf0b12c2441336665ac9314713c4864c7dc51670e
+  categorie:
+  - C03
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-verset1-avec-basmala-s7-00
+  file: mix/ref-mix-verset1-avec-basmala-s7-00.wav
+  sha256: 6a36fda73e40925a91f42b418161d1b6f2119bc917840f12d225b4c8d37a9870
+  categorie:
+  - C01
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-verset1-avec-basmala-s7-01
+  file: mix/ref-mix-verset1-avec-basmala-s7-01.wav
+  sha256: fcd8cced9fdb68485814fa906c19ad7081587454d15f08a332998740d9bd3cc3
+  categorie:
+  - C01
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-verset1-sans-basmala-s7-00
+  file: mix/ref-mix-verset1-sans-basmala-s7-00.wav
+  sha256: d135aa15ec80b1b968cdf2dad766895b4f8512c9ee460ced00d01451eb8caf98
+  categorie:
+  - C01
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-verset1-sans-basmala-s7-01
+  file: mix/ref-mix-verset1-sans-basmala-s7-01.wav
+  sha256: 67e53d57e8fa6d703501307927b852faf7870c44c7f06b676d2e3682dd89755c
+  categorie:
+  - C01
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-verset-brouille-s7-00
+  file: mix/ref-mix-verset-brouille-s7-00.wav
+  sha256: 62c45d1d603a02a8907bef5fd44479816954b716f916a95963361b8c5c78d3ac
+  categorie:
+  - C04
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 25.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-verset-brouille-s7-01
+  file: mix/ref-mix-verset-brouille-s7-01.wav
+  sha256: fbe015910624f74aacde044fe52f7df77c45e01589e52fbdb474c8c6ce19d47f
+  categorie:
+  - C04
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-versets-courts-souffle-s7-00
+  file: mix/ref-mix-versets-courts-souffle-s7-00.wav
+  sha256: 590c025bdf601fbed55dbb236e16fb57ec1ed8d673a397ce184c7f9c6b06a0aa
+  categorie:
+  - C01
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-mix-versets-courts-souffle-s7-01
+  file: mix/ref-mix-versets-courts-souffle-s7-01.wav
+  sha256: d03b610f2c37bc7dff74be17987ff4523549861f932d02ec28fc536bbc393d52
+  categorie:
+  - C01
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: clean
+    non_quran: false
+    parent: null
+    degradation: null
+- id: ref-silence-5s
+  file: generated/ref-silence-5s.wav
+  sha256: 1586be3b68ea58210469753e00972fa3614e0938963be5b41a37c7c7df6e1d4f
+  categorie:
+  - C12
+  recitant: synthetic-silence
+  riwaya: inconnu
+  langues: []
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: ffmpeg anullsrc
+  duree_s: 5.0
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran:
+  - {t: [0.0, 5.0], kind: silence}
+  ref:
+    schema: 1
+    condition: silence
+    non_quran: true
+    parent: null
+    degradation: null
+- id: ref-silence-30s
+  file: generated/ref-silence-30s.wav
+  sha256: d1b5f97aff46a022b761eeea4778f6747ea62d39fb946b48f10e7b38885cac59
+  categorie:
+  - C12
+  recitant: synthetic-silence
+  riwaya: inconnu
+  langues: []
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: ffmpeg anullsrc
+  duree_s: 30.0
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran:
+  - {t: [0.0, 30.0], kind: silence}
+  ref:
+    schema: 1
+    condition: silence
+    non_quran: true
+    parent: null
+    degradation: null
+- id: ref-mix-arret-waqf-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-arret-waqf-s7-00--noise-seed1-snr_db20.wav
+  sha256: cd8a63bd6aa9c48333bccce9a44ca8a1e37a7ccdb55c26d008631e5aa168c2a9
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-arret-waqf-s7-00--noise-seed1-snr_db10.wav
+  sha256: f1c259b7c65e1d41607b4cde601dbf855cf8ab7d076d82cfae9e5790da9138fa
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-arret-waqf-s7-00--noise-seed1-snr_db0.wav
+  sha256: 4e09f43c913a3810ea332985ad088ac3c27bf5528d0264ab3348119e96d9f915
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-00--telephone
+  file: degraded/ref-mix-arret-waqf-s7-00--telephone.wav
+  sha256: 43dff167de72fce86db40247a7d0eebbd73187202e5f7391f5cbe5dff720c1ff
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-arret-waqf-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: f16f49436aa9b275680bfba430a70bb03f22336a687ba49375286aed85d520f2
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.473
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-arret-waqf-s7-00--mp3low-kbps32.wav
+  sha256: 10557ccae04c6db3fb4cf2baf78b2c109c800abcde5583951c4fef4bdb1992d4
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 15.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 6.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [6.495, 15.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-arret-waqf-s7-00--silencepad-pad_s2.wav
+  sha256: 409e56bd0ed5a6669087b98f2062a4c7855112526d91734bb95d69d3bd251a9c
+  categorie:
+  - C06
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 17.293
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [2.0, 8.145], ref: '1:7', words: 1-4, status: recognized}
+  - {t: [8.495, 17.293], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-arret-waqf-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-arret-waqf-s7-01--noise-seed1-snr_db20.wav
+  sha256: 0b800c100d31dc4f786840750961eec02dac578caeed266f31af82369fb60ef6
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-arret-waqf-s7-01--noise-seed1-snr_db10.wav
+  sha256: 34c3729feb4a465db027145b7b228a63ff97eeaa68f045a8b0a4651e4c344f8e
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-arret-waqf-s7-01--noise-seed1-snr_db0.wav
+  sha256: c371060510cbae2b961f11028c7505847904669db11ff0f93232a9d8755ed8e9
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-01--telephone
+  file: degraded/ref-mix-arret-waqf-s7-01--telephone.wav
+  sha256: 62f3019f33d40c0a1c0d586c89d07747acd0035c1b91552bb50a4318058ffd4d
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-arret-waqf-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: 29f4f3df992dca1558465f22345221b308605378efddc3c9688adbed7aa145b4
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.665
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-arret-waqf-s7-01--mp3low-kbps32.wav
+  sha256: 3945f2d8c910c6e124e237c5a371211c177ffcc98da71959e2504e28e7be3ec2
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 8.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 4.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [4.539, 8.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-arret-waqf-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-arret-waqf-s7-01--silencepad-pad_s2.wav
+  sha256: 47e366c79bc2f4095acf762093e7f6d54427983f1a9d21990ca9bcbe75f8b0dd
+  categorie:
+  - C06
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.485
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [2.0, 6.189], ref: '110:2', words: 1-3, status: recognized}
+  - {t: [6.539, 10.485], ref: '110:2', words: 4-7, status: recognized}
+  non_quran: []
+  scenario: arret_waqf
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-arret-waqf-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-murattal-continu-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-murattal-continu-s7-00--noise-seed1-snr_db20.wav
+  sha256: d390d10bd27475b67f389c396605e06f6ebb9fd67f0c1a1d69b0c2c4f4768971
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-murattal-continu-s7-00--noise-seed1-snr_db10.wav
+  sha256: 8d9aecbb3abcbfcc767ee5a18154024c29d3d1cc945e2e2bddaf0c9d5d86ce92
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-murattal-continu-s7-00--noise-seed1-snr_db0.wav
+  sha256: 723c4f525988bd20e41dceae1300b8210f25a0030bd7b65148fa7e5505284777
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-00--telephone
+  file: degraded/ref-mix-murattal-continu-s7-00--telephone.wav
+  sha256: b04ae5a018be1d8ed4a0593bcda6b75c7a4321778df7872f764c947f281af8b9
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-murattal-continu-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: d6329fe0076aeb8a1cd9b0ad506a69b26f53056dcd351bb0146a1785cc7d4979
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.96
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-murattal-continu-s7-00--mp3low-kbps32.wav
+  sha256: fc924ccd40e5f725522bbe20ea77d5386f1c787f1079c3a88381cf0c989bf2c8
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 10.632], ref: '109:3', words: all, status: recognized}
+  - {t: [10.982, 19.786], ref: '109:4', words: all, status: recognized}
+  - {t: [20.136, 30.376], ref: '109:5', words: all, status: recognized}
+  - {t: [30.726, 37.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-murattal-continu-s7-00--silencepad-pad_s2.wav
+  sha256: 2b5ee1aaa20b496ebd1cda39f31e9af1e2d9b8861cc99e177fc371b93c2150bb
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 39.78
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 12.632], ref: '109:3', words: all, status: recognized}
+  - {t: [12.982, 21.786], ref: '109:4', words: all, status: recognized}
+  - {t: [22.136, 32.376], ref: '109:5', words: all, status: recognized}
+  - {t: [32.726, 39.78], ref: '109:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-murattal-continu-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-murattal-continu-s7-01--noise-seed1-snr_db20.wav
+  sha256: 8d8a88ec0bdedcce751d51a1e0e8d88353e49ca6e7e52152742783e78b071f4d
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-murattal-continu-s7-01--noise-seed1-snr_db10.wav
+  sha256: 56aa39a37da13df02c4c7613ed7bff477fa65d34faeb1c592c09096749aff769
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-murattal-continu-s7-01--noise-seed1-snr_db0.wav
+  sha256: e4dcf3a736bf1cc8a3d87fe850f447862b183d800fa2e98fbd347fb22a51c7e5
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-01--telephone
+  file: degraded/ref-mix-murattal-continu-s7-01--telephone.wav
+  sha256: 226baf2b1c006c0996c399d949cb6fde5109430997f75d1c305b87eaa528a995
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-murattal-continu-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: 2db0ac13e75f04922104e1d6c624a0d07a0d2429b3e3d3ab2523ede51b29fb6d
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.603
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-murattal-continu-s7-01--mp3low-kbps32.wav
+  sha256: 737b59d4da9f5dfacef362f1457743eb004110064d6c179435c7b1e1b8b9c73a
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 22.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.573], ref: '1:3', words: all, status: recognized}
+  - {t: [4.923, 9.525], ref: '1:4', words: all, status: recognized}
+  - {t: [9.875, 16.528], ref: '1:5', words: all, status: recognized}
+  - {t: [16.878, 22.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-murattal-continu-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-murattal-continu-s7-01--silencepad-pad_s2.wav
+  sha256: 4d929cc4f810d2f2edb74c5bcd87e8ecbb5bfd117122b939b7877f8d18cc2474
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 24.423
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 6.573], ref: '1:3', words: all, status: recognized}
+  - {t: [6.923, 11.525], ref: '1:4', words: all, status: recognized}
+  - {t: [11.875, 18.528], ref: '1:5', words: all, status: recognized}
+  - {t: [18.878, 24.423], ref: '1:6', words: all, status: recognized}
+  non_quran: []
+  scenario: murattal_continu
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-murattal-continu-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-repetition-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-repetition-s7-00--noise-seed1-snr_db20.wav
+  sha256: 4b375272fc34cf578fe1e55783300bc11dc028a034887e29c98972ff4355b7e3
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 35.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-repetition-s7-00--noise-seed1-snr_db10.wav
+  sha256: cfa34f92b5a3613fb30fa542d23ab04496bcf99048b4cf2da3a2401c8ca5bcf2
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 35.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-repetition-s7-00--noise-seed1-snr_db0.wav
+  sha256: 4a3ff17b93c13083ab2e9363618221bd0497cf73a39edfacb2b5e27cf2b839eb
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 35.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-00--telephone
+  file: degraded/ref-mix-repetition-s7-00--telephone.wav
+  sha256: f1e08ad3155872f88404995e209755cbdd38c8e617ee56e52f27cd15aef84ba6
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 35.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-repetition-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: d8426b5ff51178327f9c1920a234e0cf280f5b572e7d9ca3793c308acc5352c7
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 36.177
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-repetition-s7-00--mp3low-kbps32.wav
+  sha256: 4f6b526d827c5bd20f7d0d60bc96c8f75e13409e2300b43f9c75d68b0d7e5a0d
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 35.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 12.879], ref: '110:2', words: all, status: recognized}
+  - {t: [13.229, 19.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [19.931, 35.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-repetition-s7-00--silencepad-pad_s2.wav
+  sha256: e9e29482d9ed448f877bc440f70032decb47f4589b9f8af47885f0d6abc28ce9
+  categorie:
+  - C05
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 37.997
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [2.0, 14.879], ref: '110:2', words: all, status: recognized}
+  - {t: [15.229, 21.581], ref: '110:2', words: 4-7, status: recognized}
+  - {t: [21.931, 37.997], ref: '110:3', words: all, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-repetition-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-repetition-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-repetition-s7-01--noise-seed1-snr_db20.wav
+  sha256: 65316851b0daa39c4c62cadc33eaa522294ceddbde63796aeabf13e8a4ed6c02
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-repetition-s7-01--noise-seed1-snr_db10.wav
+  sha256: c3402c1dca2edf92d7081f57988dad31cc257c7570e02bcda2ed8b1a85349378
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-repetition-s7-01--noise-seed1-snr_db0.wav
+  sha256: 91b008c38fab012eab9d6487a425c6ebaa993c21c88b9a1895e9b4dd788a627c
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-01--telephone
+  file: degraded/ref-mix-repetition-s7-01--telephone.wav
+  sha256: b97cf82fac88f0cfd959c2f0fb07610589fb364b9be017deed5a4150871b91a4
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-repetition-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: e0aa5c68f41808d47d51e8c0b402585f1250b2c9d57efdcc04c60bd34a373d4a
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.486
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-repetition-s7-01--mp3low-kbps32.wav
+  sha256: 0a386dc0600ef0c42c1a4dc862bed0edb78df8be4b280df5eb5ca5f8c1aa868a
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [0.0, 13.188], ref: '1:7', words: all, status: recognized}
+  - {t: [13.538, 21.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-repetition-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-repetition-s7-01--silencepad-pad_s2.wav
+  sha256: abbe09775ca833e2cef317e6a58d333e9701e1230521d65bd80e04ba1aaffd35
+  categorie:
+  - C05
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 23.306
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: approximate
+  tolerance_ms: 500
+  expected:
+  - {t: [2.0, 15.188], ref: '1:7', words: all, status: recognized}
+  - {t: [15.538, 23.306], ref: '1:7', words: 5-9, status: recognized}
+  non_quran: []
+  scenario: repetition
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-repetition-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-saut-de-sourate-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-saut-de-sourate-s7-00--noise-seed1-snr_db20.wav
+  sha256: 53408004bb8ce7c5f4620e3b88161ab278959b41672b1dbf0e2031dc1ef5a2dd
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 43.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-saut-de-sourate-s7-00--noise-seed1-snr_db10.wav
+  sha256: 446c047d65fca8a8cd934b882271efadd43911467846fea85b95909e3a605083
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 43.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-saut-de-sourate-s7-00--noise-seed1-snr_db0.wav
+  sha256: 3a35fbdbcc073682b33f7c76eef52c332c731a7e54da13302673c8e0d9f1f275
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 43.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-00--telephone
+  file: degraded/ref-mix-saut-de-sourate-s7-00--telephone.wav
+  sha256: ccb0ab9cb00888fdcb0847bc20eef67ee4aeeb1bb553a61bcb43340c5bfd6db2
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 43.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-saut-de-sourate-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: 386e46266bdeb1cb81041e803a1f9de7d00f5ddef34873e3ecbbaf9c45319761
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 44.158
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-saut-de-sourate-s7-00--mp3low-kbps32.wav
+  sha256: c882b08ea231f9ff4b8a8764af29d776afecc0fb538bc14d92831d781303d06a
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 43.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  - {t: [22.028, 32.023], ref: '110:3', words: all, status: recognized}
+  - {t: [32.373, 36.975], ref: '1:4', words: all, status: recognized}
+  - {t: [37.325, 43.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-saut-de-sourate-s7-00--silencepad-pad_s2.wav
+  sha256: ae0d85c0d1e174037c19a808e94997764365fa2d1a5f1eb6f9021d3e9d1d2474
+  categorie:
+  - C03
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 45.978
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 15.193], ref: '110:1', words: all, status: recognized}
+  - {t: [15.543, 23.678], ref: '110:2', words: all, status: recognized}
+  - {t: [24.028, 34.023], ref: '110:3', words: all, status: recognized}
+  - {t: [34.373, 38.975], ref: '1:4', words: all, status: recognized}
+  - {t: [39.325, 45.978], ref: '1:5', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-saut-de-sourate-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-saut-de-sourate-s7-01--noise-seed1-snr_db20.wav
+  sha256: 606f2f8415c90f1f1d0428199fdd7adb1cfa6427810c8442ae6d6c9d5889ba5a
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-saut-de-sourate-s7-01--noise-seed1-snr_db10.wav
+  sha256: 8e21ed2a89575ae3d17b6495d3edde77425780f8f929b920c97ef96482195e33
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-saut-de-sourate-s7-01--noise-seed1-snr_db0.wav
+  sha256: 656892a04f83f1a9853a19c66c241937b547c98c0ad7de258f4f448ff221ed63
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-01--telephone
+  file: degraded/ref-mix-saut-de-sourate-s7-01--telephone.wav
+  sha256: ddfcd2e211a9f04170f3e40bddb5b122c895160a923b014d095579bf98a61ef0
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-saut-de-sourate-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: 2d2bf6a69efd8222451317f79ed50efc6351f8fa5d80188498e7849686ccd4df
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.18
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-saut-de-sourate-s7-01--mp3low-kbps32.wav
+  sha256: 5e880f97d25b513fb81c3d12e79be073f268e5ca5590b971321f2bd209c6fcc4
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 31.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 4.494], ref: '1:3', words: all, status: recognized}
+  - {t: [4.844, 9.468], ref: '1:4', words: all, status: recognized}
+  - {t: [9.818, 16.663], ref: '1:5', words: all, status: recognized}
+  - {t: [17.013, 22.813], ref: '108:2', words: all, status: recognized}
+  - {t: [23.163, 31.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-saut-de-sourate-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-saut-de-sourate-s7-01--silencepad-pad_s2.wav
+  sha256: 9d89e0b1bfa67df527278382b6063c10dc6065d72b3cea5bea657dacf940e9ac
+  categorie:
+  - C03
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 33.0
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 6.494], ref: '1:3', words: all, status: recognized}
+  - {t: [6.844, 11.468], ref: '1:4', words: all, status: recognized}
+  - {t: [11.818, 18.663], ref: '1:5', words: all, status: recognized}
+  - {t: [19.013, 24.813], ref: '108:2', words: all, status: recognized}
+  - {t: [25.163, 33.0], ref: '108:3', words: all, status: recognized}
+  non_quran: []
+  scenario: saut_de_sourate
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-saut-de-sourate-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-verset1-avec-basmala-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--noise-seed1-snr_db20.wav
+  sha256: 021630cd0a4f77365c747e76625d0cdcd87ca88bf427247ae0ca50efa8617415
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--noise-seed1-snr_db10.wav
+  sha256: 6bbff144f8f82f00079035f9b6515216e8e0fd6a377a236fddf1153cfb0b17b8
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--noise-seed1-snr_db0.wav
+  sha256: bbb1853eec75b674474e14ae50493c0edbfd8e57c1d01e52a0012a6736dd6c6b
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-00--telephone
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--telephone.wav
+  sha256: e339fc05a2c4b9c7d7603b8f917ca809f9a3d92946a659d1188c1f0dc88d67d8
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: 67f0984253f38caed4cec64a01ed4278c80145e869a2b2ebddbdc860aa08cb5f
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.858
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--mp3low-kbps32.wav
+  sha256: 2873171c15c0e471e41320fc25e0ac3bf9871d039b4604c24496edd78218cb6f
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.193], ref: '110:1', words: all, status: recognized}
+  - {t: [13.543, 21.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-verset1-avec-basmala-s7-00--silencepad-pad_s2.wav
+  sha256: 10b682e38c14e51aa60bd2790b09f73a2481036da8437c14306129da521f4e81
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 23.678
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 15.193], ref: '110:1', words: all, status: recognized}
+  - {t: [15.543, 23.678], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-verset1-avec-basmala-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--noise-seed1-snr_db20.wav
+  sha256: f4b7b1e4162f2ca727bfd5758fb3e9f8236165d228f0295108b77c2f93ded426
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--noise-seed1-snr_db10.wav
+  sha256: 98f7da2bcfb58da4c8c5223d7d4778265418d3228bd3d96f11717fb529660b9f
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--noise-seed1-snr_db0.wav
+  sha256: 714cc5e360f9d95a23784c139d36670b6aad3a45563c1d627538d93aac5e666a
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-01--telephone
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--telephone.wav
+  sha256: a9b7db08f8f3e7131733803dbbfa283c16d4a78f115a12a18ccb90a9d88dedc5
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: ebfd60017949fba10356d04272e5a1210adc371ef257e7cf0ca10ff487e58702
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.303
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--mp3low-kbps32.wav
+  sha256: 24c95becbdb39d2d6b963830c9868163eb87bfcfd5e5b8bc44565ad2e6197bba
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 13.66], ref: '111:1', words: all, status: recognized}
+  - {t: [14.01, 21.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-verset1-avec-basmala-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-verset1-avec-basmala-s7-01--silencepad-pad_s2.wav
+  sha256: dd86f1a74d1a421b0a910e20cfbaab5469a0c8add87821ea92bd625b1dcd933d
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 23.123
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 15.66], ref: '111:1', words: all, status: recognized}
+  - {t: [16.01, 23.123], ref: '111:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_avec_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-verset1-avec-basmala-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-verset1-sans-basmala-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--noise-seed1-snr_db20.wav
+  sha256: 87dc2089e8dfad59d05adf5ec0863d09c08494313500750e6e487badb2c90b47
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--noise-seed1-snr_db10.wav
+  sha256: ff54e58c8f3036f822743a69a66af8b61d7fa5afcf70d610f951a9a052d225af
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--noise-seed1-snr_db0.wav
+  sha256: 6d52a1b0728c2790a9e1be74c635c1af8779991203f94709c184d05997765325
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-00--telephone
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--telephone.wav
+  sha256: cbd49c87400aa1234e0c3ed99ac872f74de6f3e9da8b926f0eac96e7ce542e90
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: a21e59882112bdc12cf3efece7c59cfeb0452ac5a8d222b0ea42451ce7da7687
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.695
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--mp3low-kbps32.wav
+  sha256: 3df6fe3f82877dba94d1fc8bdd2b52c6485e33c046948d1bef9d0a703b211666
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 10.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [7.01, 10.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-verset1-sans-basmala-s7-00--silencepad-pad_s2.wav
+  sha256: 02197f194a88965eb3fe21fc90969877015e57e07b6192f7dbce12e45eaa4243
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 12.515
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 8.66], ref: '108:1', words: 5-7, status: recognized}
+  - {t: [9.01, 12.515], ref: '108:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-verset1-sans-basmala-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--noise-seed1-snr_db20.wav
+  sha256: a3d98066fc0ce8c61de24444b66afb67f4785c74f8475ba6e4ddb5ed0d59b907
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--noise-seed1-snr_db10.wav
+  sha256: b32e5e65d837aa9bf3dbe48dc3794cdead437744ee6ed58e62632bd1a6cfb258
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--noise-seed1-snr_db0.wav
+  sha256: 4d573e4face11acb2955412d6e778dc8fefb72d953110653c82698290b4a32b2
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-01--telephone
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--telephone.wav
+  sha256: fe64a059627be9c2d13ae4bf5df66d3eeaf81bc787ed4e8c0886622bb3701c69
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: b8451ac30e097ba4cb2c03497fb57a562626cc22c8d83cc0a713e4f5dbdba694
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.657
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--mp3low-kbps32.wav
+  sha256: 24fdce371d4eff6769b5d8205dd0f1b71801c18cad6f6a28ab047dae162157ab
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 22.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 9.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [9.598, 22.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-verset1-sans-basmala-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-verset1-sans-basmala-s7-01--silencepad-pad_s2.wav
+  sha256: 92a20c0af0a26c96c9bf3503dfc9af99a5cd14f4fa6d15587ff3e1ba52c6b4c8
+  categorie:
+  - C01
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 24.477
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 11.248], ref: '110:1', words: 5-9, status: recognized}
+  - {t: [11.598, 24.477], ref: '110:2', words: all, status: recognized}
+  non_quran: []
+  scenario: verset1_sans_basmala
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-verset1-sans-basmala-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-verset-brouille-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-verset-brouille-s7-00--noise-seed1-snr_db20.wav
+  sha256: 744b2439f3ebee970b21637506de6ea27faf665c6c009eec9a7d76e0129b27f4
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 25.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-verset-brouille-s7-00--noise-seed1-snr_db10.wav
+  sha256: 36047d75553c120383bffbc0d4fc7057873f176a2d32cc0f63f156bf8f5153d6
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 25.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-verset-brouille-s7-00--noise-seed1-snr_db0.wav
+  sha256: cbd5517d9a622e8c4cacb1230c912b06ff6d336c20d062661f105f62eb5a4cec
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 25.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-00--telephone
+  file: degraded/ref-mix-verset-brouille-s7-00--telephone.wav
+  sha256: 1a08abd7eaa06bec7824d3b3f6a495ff066ab0bbc63e11e34202556b8fdf7267
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 25.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-verset-brouille-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: 51d2375523a6efec2582f454f2963144ff22738faefad30453ab6eb3ab87ae09
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 26.153
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-verset-brouille-s7-00--mp3low-kbps32.wav
+  sha256: 899f46ca38ed627007cba8fb7dbf0e0894c0188ce350ff3038f22c5f0da2c5a3
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 25.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [6.176, 11.218], ref: '112:2', words: all, status: recognized}
+  - {t: [11.568, 17.498], ref: '112:3', words: all, status: inferred}
+  - {t: [17.848, 25.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-verset-brouille-s7-00--silencepad-pad_s2.wav
+  sha256: 1983bef9fa739db32734c7c2265eaee113d72152172ef227230c48ae610dd60e
+  categorie:
+  - C04
+  - C12
+  recitant: Husary_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Husary_128kbps
+  duree_s: 27.973
+  statut: annote
+  split: test
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 7.826], ref: '112:1', words: 5-8, status: recognized}
+  - {t: [8.176, 13.218], ref: '112:2', words: all, status: recognized}
+  - {t: [13.568, 19.498], ref: '112:3', words: all, status: inferred}
+  - {t: [19.848, 27.973], ref: '112:4', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-verset-brouille-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-verset-brouille-s7-01--noise-seed1-snr_db20.wav
+  sha256: 45f9ad9b3903e995dc5ab9dac384079595fe1c26995003a06fde9e5cf370a153
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-verset-brouille-s7-01--noise-seed1-snr_db10.wav
+  sha256: 996047a19c800dd618cca30d6419a350ee9dc08feb3c52fb0bf94a271256f8fa
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-verset-brouille-s7-01--noise-seed1-snr_db0.wav
+  sha256: 279de5ee53d74e1f826446522df3a633c86b79f8c30df16926b54d63a5e898c0
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-01--telephone
+  file: degraded/ref-mix-verset-brouille-s7-01--telephone.wav
+  sha256: 32ae7bcce294aaa3116970b62e62cce93d4b6f23e7343b61c8a8587571b8fb1b
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-verset-brouille-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: 0eed016e20965d089b7cac4cc9303bbb500035abd0d06c2a15282c4c5061e474
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.385
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-verset-brouille-s7-01--mp3low-kbps32.wav
+  sha256: b826db7b1fe61a47aebdf3daf80c5399631478a5fa0c64d10b92e0ef3f74dbfd
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 25.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 7.113], ref: '111:2', words: all, status: recognized}
+  - {t: [7.463, 12.581], ref: '111:3', words: all, status: recognized}
+  - {t: [12.931, 18.465], ref: '111:4', words: all, status: inferred}
+  - {t: [18.815, 25.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-verset-brouille-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-verset-brouille-s7-01--silencepad-pad_s2.wav
+  sha256: e6591a9c721316d0cd272856b1751bec52615be83229fe00f9c09b46c3b054a3
+  categorie:
+  - C04
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 27.205
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 9.113], ref: '111:2', words: all, status: recognized}
+  - {t: [9.463, 14.581], ref: '111:3', words: all, status: recognized}
+  - {t: [14.931, 20.465], ref: '111:4', words: all, status: inferred}
+  - {t: [20.815, 27.205], ref: '111:5', words: all, status: recognized}
+  non_quran: []
+  scenario: verset_brouille
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-verset-brouille-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-versets-courts-souffle-s7-00--noise-seed1-snr_db20
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--noise-seed1-snr_db20.wav
+  sha256: bc74af0ee9e70803c678ed07b156d275b5b7ac031cbb05498df024bb806d30aa
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-00--noise-seed1-snr_db10
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--noise-seed1-snr_db10.wav
+  sha256: 97086a3cd621712df99137dc9bd4e211d8069f347802f12f18a09da39fc266da
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-00--noise-seed1-snr_db0
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--noise-seed1-snr_db0.wav
+  sha256: a03beb8756532ab68b33b48ce578dde31333ede0a50a52c6feb30530ed7a9046
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-00--telephone
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--telephone.wav
+  sha256: 12750de7066bb79b7e02a1332d2ba5068289e9cc31fd297da67f04cbe1a09504
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-00--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--reverb-decay0.4-delay_ms60.wav
+  sha256: 6bec424c929084d86165358399caf564f4f2811a50c52c20ac99ac3b557eac8f
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.319
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-00--mp3low-kbps32
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--mp3low-kbps32.wav
+  sha256: e610ac6b431a92de6e19f6cd4921ad1c357ec2533a6ab33b2dc5f3ac1614f9a1
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 16.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 6.032], ref: '1:1', words: all, status: recognized}
+  - {t: [6.032, 11.566], ref: '1:2', words: all, status: recognized}
+  - {t: [11.566, 16.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-00--silencepad-pad_s2
+  file: degraded/ref-mix-versets-courts-souffle-s7-00--silencepad-pad_s2.wav
+  sha256: 27e5ff39b474806a7d477d523b2c9223f277bef714a8ea451bbd533ddeb27f88
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 18.139
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 8.032], ref: '1:1', words: all, status: recognized}
+  - {t: [8.032, 13.566], ref: '1:2', words: all, status: recognized}
+  - {t: [13.566, 18.139], ref: '1:3', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-00
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
+- id: ref-mix-versets-courts-souffle-s7-01--noise-seed1-snr_db20
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--noise-seed1-snr_db20.wav
+  sha256: dc4a9c23217f08094969ac2aa2540953ff5a767e5dd199fcd7ab68a7879a24d0
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 20
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-01--noise-seed1-snr_db10
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--noise-seed1-snr_db10.wav
+  sha256: 214604c1d60cb2ea355049300af6fc6bccf665f8a3d13397ae320d48315c1da0
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 10
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-01--noise-seed1-snr_db0
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--noise-seed1-snr_db0.wav
+  sha256: 71e161c594b9a2bb067b1beb2ded3b48f12ae61d8b683fe206e875e40cb568ae
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: noise
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: noise
+      params:
+        snr_db: 0
+        seed: 1
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-01--telephone
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--telephone.wav
+  sha256: 863ee32eaad05fcf535bd8dc71437be570918b4bd4f7293193762d832d3b229e
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: telephone
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: telephone
+      params: {}
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-01--reverb-decay0.4-delay_ms60
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--reverb-decay0.4-delay_ms60.wav
+  sha256: 9e422a1a914160d2203ffd2698fd59250b9a724901413254b64962dbb854d229
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.27
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: reverb
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: reverb
+      params:
+        decay: 0.4
+        delay_ms: 60
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-01--mp3low-kbps32
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--mp3low-kbps32.wav
+  sha256: 426ea482549caa1b871cdc3b436c85b1e4012abfc85814905ee4923dfc9a5bee
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 21.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [0.0, 5.293], ref: '114:3', words: all, status: recognized}
+  - {t: [5.293, 13.237], ref: '114:4', words: all, status: recognized}
+  - {t: [13.237, 21.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: mp3_low
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: mp3_low
+      params:
+        kbps: 32
+      shift_s: 0.0
+- id: ref-mix-versets-courts-souffle-s7-01--silencepad-pad_s2
+  file: degraded/ref-mix-versets-courts-souffle-s7-01--silencepad-pad_s2.wav
+  sha256: 20f3821c6fb60481114284c407b8cb7f174b6893d5e2c1bc308fa98a5606302e
+  categorie:
+  - C01
+  - C12
+  recitant: Alafasy_128kbps
+  riwaya: hafs
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: mixage de clips everyayah.com/data/Alafasy_128kbps
+  duree_s: 23.09
+  statut: annote
+  split: dev
+  origine: mix
+  boundaries: exact
+  tolerance_ms: 300
+  expected:
+  - {t: [2.0, 7.293], ref: '114:3', words: all, status: recognized}
+  - {t: [7.293, 15.237], ref: '114:4', words: all, status: recognized}
+  - {t: [15.237, 23.09], ref: '114:5', words: all, status: recognized}
+  non_quran: []
+  scenario: versets_courts_souffle
+  seed: 7
+  ref:
+    schema: 1
+    condition: silence_pad
+    non_quran: false
+    parent: ref-mix-versets-courts-souffle-s7-01
+    degradation:
+      kind: silence_pad
+      params:
+        pad_s: 2
+      shift_s: 2.0
