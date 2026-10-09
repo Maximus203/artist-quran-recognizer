@@ -3,12 +3,14 @@ import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import {
+  cleanupSessions,
+  exceedsUploadLimit,
   listSessions,
-  readResult,
-  readReview,
   saveSession,
   sessionDir,
+  sessionTtlSeconds,
   sha,
+  uploadLimitBytes,
   type Session,
 } from "@/lib/store";
 import { parseRecognition } from "@/lib/recognition";
@@ -16,7 +18,6 @@ import { isLocalRequest } from "@/lib/local-request";
 import { acceptedAudioExtensions } from "@/lib/audio-upload";
 
 export const runtime = "nodejs";
-const maxBytes = Number(process.env.AQR_MAX_UPLOAD_BYTES || 300 * 1024 * 1024);
 export async function GET(request: NextRequest) {
   if (!isLocalRequest(request))
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
@@ -25,7 +26,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!isLocalRequest(request, true))
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const maxBytes = uploadLimitBytes();
+  if (exceedsUploadLimit(request.headers.get("content-length"), maxBytes))
+    return NextResponse.json(
+      { error: "Envoi trop volumineux." },
+      { status: 413 },
+    );
   try {
+    await cleanupSessions(sessionTtlSeconds()).catch(() => []);
     const form = await request.formData();
     const file = form.get("audio");
     if (!(file instanceof File))
@@ -74,7 +82,7 @@ export async function POST(request: NextRequest) {
       );
     const value: Session = {
       id,
-      name: path.basename(file.name),
+      name: path.basename(file.name.replaceAll("\\", "/")).slice(0, 255),
       extension,
       audio_sha256,
       size: file.size,
