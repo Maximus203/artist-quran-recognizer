@@ -221,16 +221,22 @@ def test_comparaison_refusee_si_split_schema_ou_normalisation_different():
             "fingerprint": "n" * 64,
         }
     )
-    with pytest.raises(BaselineRefused, match="normalisation"):
+    with pytest.raises(BaselineRefused, match="normalisation") as refused:
         compare_reports(_report(), changed)
+    # le message ne liste que ce qui diffère (ici la version tolérante)
+    assert "version tolérante : aqr.normalize/2 (base) ≠ aqr.normalize/1" in str(refused.value)
+    assert "stricte" not in str(refused.value) and "dictionnaire" not in str(refused.value)
 
 
 def test_comparaison_refusee_si_seule_la_normalisation_stricte_change():
     # Une base écrite avant le correctif strict-lettres n'a pas de `strict_version` (et l'ancienne
     # « stricte » n'était que la tolérante sans dictionnaire) : ses scores ne sont pas comparables.
     before = _report(normalization={"version": "aqr.normalize/1", "fingerprint": "n" * 64})
-    with pytest.raises(BaselineRefused, match="strict"):
+    with pytest.raises(BaselineRefused, match=r"stricte : absente \(base\)") as refused:
         compare_reports(_report(), before)
+    message = str(refused.value)
+    assert "None" not in message  # « absente », jamais la valeur Python
+    assert "tolérante" not in message and "dictionnaire" not in message
     bumped = _report(
         normalization={
             "version": "aqr.normalize/1",
@@ -238,9 +244,32 @@ def test_comparaison_refusee_si_seule_la_normalisation_stricte_change():
             "fingerprint": "n" * 64,
         }
     )
-    with pytest.raises(BaselineRefused, match="strict"):
+    with pytest.raises(BaselineRefused, match="strict/2") as refused:
         compare_reports(_report(), bumped)
+    assert "stricte : aqr.normalize-strict/2 (base) ≠ aqr.normalize-strict/1" in str(refused.value)
+    assert "tolérante" not in str(refused.value) and "absente" not in str(refused.value)
     assert compare_reports(_report(), _report())["metrics"]  # identique : comparable
+
+
+def test_comparaison_refusee_dit_quand_seul_le_dictionnaire_imlai_change():
+    def with_dictionary(count: int, fingerprint: str):
+        return _report(
+            normalization={
+                "version": "aqr.normalize/1",
+                "strict_version": "aqr.normalize-strict/1",
+                "fingerprint": fingerprint,
+                "corrections": count,
+            }
+        )
+
+    with pytest.raises(BaselineRefused, match="dictionnaire") as refused:
+        compare_reports(with_dictionary(1935, "a" * 64), with_dictionary(1900, "b" * 64))
+    assert "dictionnaire imla'i (entrées) : 1900 (base) ≠ 1935" in str(refused.value)
+    assert "tolérante" not in str(refused.value) and "stricte" not in str(refused.value)
+    # même effectif, contenu différent : seule l'empreinte le dit
+    with pytest.raises(BaselineRefused, match="empreinte") as refused:
+        compare_reports(with_dictionary(1935, "a" * 64), with_dictionary(1935, "b" * 64))
+    assert "tolérante" not in str(refused.value) and "stricte" not in str(refused.value)
 
 
 def test_empreinte_de_normalisation_change_avec_la_version_stricte(monkeypatch):

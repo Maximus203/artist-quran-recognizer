@@ -90,8 +90,8 @@ def test_variantes_se_distinguent_sur_la_graphie_imlai():
 @pytest.mark.parametrize("variant", VARIANTS)
 def test_cer_ignore_les_espaces_dans_les_deux_variantes(variant):
     # Décision (B3, correctif strict-lettres) : le CER compte les lettres SANS espaces dans les deux
-    # variantes, pour que l'écart tolérante/stricte ne vienne que des replis de lettres. Une coupure
-    # de mots différente coûte au WER, jamais au CER.
+    # variantes, pour que l'écart tolérante/stricte ne vienne que de la normalisation (replis,
+    # dictionnaire), jamais des espaces. Une coupure de mots différente coûte au WER, jamais au CER.
     ref = reference_words([_exp("112:2")], _Corpus())
     hyp = "الله الصمد"
     glued = "اللهالصمد"
@@ -143,6 +143,10 @@ def test_chaque_variante_a_son_normaliseur_son_tokenizer_et_sa_description():
     assert strict.tokenize("ٱللَّهُ أَحَدٌ") == ["الله", "أحد"]
     for description in transcription_module.VARIANT_DESCRIPTIONS.values():
         assert "sans espaces" in description  # le CER compte les mêmes lettres dans les deux
+    # le rapport dit que la stricte est un plancher d'orthographe Mushaf, pas une erreur d'ASR
+    strict_description = transcription_module.VARIANT_DESCRIPTIONS["strict-lettres"]
+    assert "plancher" in strict_description and "Mushaf" in strict_description
+    assert "pas un taux d'erreur de l'ASR" in strict_description
 
 
 def test_strict_alef_wasla_de_l_hypothese_vaut_alef():

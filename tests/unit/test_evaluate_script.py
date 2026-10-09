@@ -292,6 +292,10 @@ def test_wer_cer_deux_variantes_nommees(world):
         assert variant["word_errors"] == 1 and variant["word_total"] == 3
         assert variant["wer"] == pytest.approx(1 / 3) and variant["description"]
         assert variant["cer"] is not None
+    strict_description = transcription["variants"]["strict-lettres"]["description"]
+    assert (
+        "plancher" in strict_description and "pas un taux d'erreur de l'ASR" in strict_description
+    )
     assert report["vitesse"]["peak_ram_mb"] == 1234.5
     assert report["normalization"]["fingerprint"]
 
@@ -396,6 +400,26 @@ def test_baseline_illisible_ou_d_un_autre_schema_refusee(world, capsys):
     assert _run_full(manifest, preds, tmp / "o.json", "--baseline", str(old)) == 2
     assert not (tmp / "o.json").exists()
     assert "baseline" in capsys.readouterr().err
+
+
+def test_baseline_sans_strict_version_refusee_de_bout_en_bout(world, capsys):
+    # Rapport écrit avant le correctif strict-lettres : ses scores « stricts » n'en étaient pas.
+    tmp, manifest, preds = world
+    first = tmp / "first.json"
+    assert _run_full(manifest, preds, first) == 0
+    report = json.loads(first.read_text(encoding="utf-8"))
+    assert report["normalization"]["strict_version"].startswith("aqr.normalize-strict/")
+    del report["normalization"]["strict_version"]  # empreinte et dictionnaire restent identiques
+    old = tmp / "old.json"
+    old.write_text(json.dumps(report), encoding="utf-8")
+    out = tmp / "second.json"
+    capsys.readouterr()
+    assert _run_full(manifest, preds, out, "--baseline", str(old)) == 2
+    assert not out.exists()  # rien n'est écrit quand la comparaison est refusée
+    err = capsys.readouterr().err
+    assert "version stricte : absente (base)" in err and "None" not in err
+    # la même base, complète, reste comparable
+    assert _run_full(manifest, preds, out, "--baseline", str(first)) == 0
 
 
 def test_split_test_exige_toujours_final_meme_avec_baseline(world, capsys):
