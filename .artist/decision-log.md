@@ -514,3 +514,43 @@
 
 - L'état `preview` appliquait la classe `recorder-preview` au conteneur micro, déjà utilisée par le lecteur interne : la règle flex comprimait tous les enfants en une seule rangée. Les états du conteneur utilisent désormais `is-*` et le conteneur une grille à une colonne.
 - L'introduction donne plus de largeur à l'import sur grand écran et s'empile sous 1180 px. Les largeurs des colonnes sont bornées avec `minmax(0, ...)` pour éviter la croissance par contenu. Les noms longs de session se tronquent dans l'en-tête ; les commandes conservent leur accès et leur libellé complet dans les attributs du lecteur.
+
+## 2026-10-09 — Quarantaine d'un récitant dont le jeu test a été exposé
+- **Problème** : la règle 3 du protocole (`docs/evaluation/protocole-reglage-evaluation.md`) disait qu'un cas
+  `test` observé pendant le réglage était « sorti du jeu `test` » sans dire où il va. L'envoyer en `dev`
+  contredit le découpage par récitants disjoints (une affectation écrite n'est jamais modifiée) et reviendrait à
+  choisir le jeu de réglage d'après ce qu'on a vu du test (sélection a posteriori).
+- **Décision** : TOUT le groupe du récitant (parents, mixes, dérivés `<parent>--<label>`) passe en split
+  `quarantaine`, jamais en `dev`. C'est un état, pas un jeu : `DataConfig.quarantine_split`, volontairement absent
+  de `DataConfig.splits`. Sens unique, définitif ; la mesure finale suivante se fait sur de nouveaux récitants.
+- **Code** : `quarantine_recitant(cases, recitant)` (`src/aqr/data/split.py`, `dataclasses.replace`) : idempotent,
+  refuse un récitant inconnu, sans affectation ou en `dev` (un mélange dev/test reste une fuite à corriger à la
+  main). `assign_splits` exclut la quarantaine du ratio et ne lève pas ; elle reste une erreur si un récitant est
+  en quarantaine ET ailleurs. `scripts/evaluate.py --split quarantaine` est refusé (code 2), `--final` compris.
+- **Aucun récitant n'est mis en quarantaine par ce changement** : le motif (date, récitant anonymisé, cause de
+  l'exposition, cas touchés) se consigne ici au premier cas réel.
+- **À reporter sur #40** (`feat/ref-corpus-builder`, `src/aqr/data/refcorpus.py`, non modifié ici) :
+  `validate_ref_manifest` n'accepte que `cfg.splits` ; il doit accepter aussi `cfg.quarantine_split` et signaler
+  un récitant en quarantaine ET en dev/test (son contrôle de fuite ne regarde que dev/test). Sa règle « un dérivé
+  a le récitant et le split de son parent » couvre déjà le groupe entier.
+- **Non traité** : le résumé de `aqr data split` ne liste que `dev` et `test` ; `preannotate` ne refuse que `test`
+  (une préannotation n'est pas du réglage, mais à revoir si la quarantaine doit être strictement inerte).
+
+## 2026-10-09 — Décision d'usage des audios aux droits non établis (provisoire)
+- **Statut : provisoire — en attente de confirmation écrite du mainteneur.** Confirmation reçue : non. Texte et
+  portée : `docs/data-lots/ref-corpus-provenance.md`, section « Décision d'usage ».
+- **Qui** : le mainteneur seul. **Permis provisoirement** : évaluation interne locale, audio hors dépôt, aucune
+  redistribution, réglage de la configuration (seuils, décodeur) sur `dev`. **Interdit** : versionner, republier,
+  entraîner/affiner un modèle sur ces audios, tout usage de `RetaSy/quranic_audio_dataset`. **Portée** : EveryAyah,
+  lots Hugging Face lus pour le corpus de référence, lot 1 (évaluation interne locale seulement).
+- **Contradictions levées** : (a) « non clairement autorisé = non autorisé » vs « usage interne d'évaluation » :
+  la seconde n'est permise que par la décision, qui est l'unique exception ; (b) `scripts/fetch_everyayah.py`
+  télécharge par défaut (3 récitants × 10 sourates, hors dépôt) : documenté, script inchangé, un téléchargement
+  n'est pas une autorisation ; (c) le lot 1 n'est pas un précédent (`RIGHTS.md`, `lot-1.yaml`, protocole) ; (d)
+  libellé de licence canonique `droits non établis : usage interne d'évaluation uniquement, jamais redistribué
+  (docs/data-lots/ref-corpus-provenance.md)`, l'ancien libellé du lot 1 étant documenté comme hérité.
+- **Hypothèse à confirmer** : « régler un modèle » interdit = toucher aux poids d'un modèle ; le calibrage de nos
+  seuils sur `dev` (protocole) est classé évaluation interne.
+- **Ouvert pour le mainteneur** : confirmer par écrit ; trancher les trois décisions de `RIGHTS.md` ; dire si le
+  téléchargement de la copie publique du lot 1 par un agent cloud (`fetch_public_lot.py`) est admis ; aligner le
+  libellé hérité (12 cas de `tests/fixtures/audio/manifest.yaml`, `scripts/audio_lot.py`) une fois la décision 3 prise.
