@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+import aqr.eval.transcription as transcription
 from aqr.eval.metrics import CaseResult
 from aqr.eval.report import (
     BaselineRefused,
@@ -19,6 +20,7 @@ from aqr.eval.report import (
     models_state,
     speed_block,
 )
+from aqr.eval.transcription import normalization_fingerprint
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -150,7 +152,11 @@ def _report(**over):
         "schema": "aqr.evaluation/2",
         "split": "dev",
         "manifest": {"name": "m.yaml", "sha256": "m" * 64, "cases_sha256": "c" * 64},
-        "normalization": {"version": "aqr.normalize/1", "fingerprint": "n" * 64},
+        "normalization": {
+            "version": "aqr.normalize/1",
+            "strict_version": "aqr.normalize-strict/1",
+            "fingerprint": "n" * 64,
+        },
         "git": {"sha": "a" * 40, "dirty": False},
         "thresholds": {"match": {"min_overlap": 0.5}},
         "models": {"lock_sha256": "l" * 64, "models": {}},
@@ -208,9 +214,47 @@ def test_comparaison_refusee_si_split_schema_ou_normalisation_different():
         compare_reports(_report(), _report(split="test"))
     with pytest.raises(BaselineRefused, match="schéma"):
         compare_reports(_report(), _report(schema="aqr.evaluation/1"))
-    changed = _report(normalization={"version": "aqr.normalize/2", "fingerprint": "n" * 64})
+    changed = _report(
+        normalization={
+            "version": "aqr.normalize/2",
+            "strict_version": "aqr.normalize-strict/1",
+            "fingerprint": "n" * 64,
+        }
+    )
     with pytest.raises(BaselineRefused, match="normalisation"):
         compare_reports(_report(), changed)
+
+
+def test_comparaison_refusee_si_seule_la_normalisation_stricte_change():
+    # Une base écrite avant le correctif strict-lettres n'a pas de `strict_version` (et l'ancienne
+    # « stricte » n'était que la tolérante sans dictionnaire) : ses scores ne sont pas comparables.
+    before = _report(normalization={"version": "aqr.normalize/1", "fingerprint": "n" * 64})
+    with pytest.raises(BaselineRefused, match="strict"):
+        compare_reports(_report(), before)
+    bumped = _report(
+        normalization={
+            "version": "aqr.normalize/1",
+            "strict_version": "aqr.normalize-strict/2",
+            "fingerprint": "n" * 64,
+        }
+    )
+    with pytest.raises(BaselineRefused, match="strict"):
+        compare_reports(_report(), bumped)
+    assert compare_reports(_report(), _report())["metrics"]  # identique : comparable
+
+
+def test_empreinte_de_normalisation_change_avec_la_version_stricte(monkeypatch):
+    corrections = {"ملك": "مالك"}
+    before = normalization_fingerprint(corrections)
+    assert normalization_fingerprint(corrections) == before  # stable à version égale
+    monkeypatch.setattr(transcription, "STRICT_NORMALIZATION_VERSION", "aqr.normalize-strict/999")
+    assert normalization_fingerprint(corrections) != before
+
+
+def test_empreinte_de_normalisation_change_avec_la_version_tolerante(monkeypatch):
+    before = normalization_fingerprint({})
+    monkeypatch.setattr(transcription, "NORMALIZATION_VERSION", "aqr.normalize/999")
+    assert normalization_fingerprint({}) != before
 
 
 def test_comparaison_ne_suppose_rien_quand_le_rapport_est_incomplet():

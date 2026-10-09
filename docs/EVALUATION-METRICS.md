@@ -104,7 +104,8 @@ qui a produit les sorties, sinon le facteur temps réel n'est pas lisible.
 **Provenance** (haut du rapport) : `git` (SHA + arbre modifié), `models` (révision et SHA-256 de chaque
 fichier de `models/LOCK.json` + empreinte du LOCK), `manifest` (empreinte du fichier + des cas
 évalués), `split`, `final`, `thresholds` (rattachement, décodeur lu dans les sorties, seuil
-d'effectif), `normalization` (version `aqr.normalize/N`, empreinte du dictionnaire imla'i),
+d'effectif), `normalization` (versions `aqr.normalize/N` et `aqr.normalize-strict/N`, empreinte de ces
+versions + dictionnaire imla'i),
 `warnings`.
 
 ### Identification (sans horodatage)
@@ -128,8 +129,28 @@ variantes, toujours nommées :
 
 | variante | normalisation | CER |
 |---|---|---|
-| `tolerante` | `normalize_arabic` + dictionnaire imla'i (`imlai_corrections`) sur la référence | lettres sans espaces |
-| `strict-lettres` | `normalize_arabic` seul, sans dictionnaire | lettres, espaces comptés |
+| `tolerante` | `normalize_arabic` (replis `أ إ آ ٱ`→`ا`, `ى`→`ي`, `ة`→`ه`, `ؤ`→`و`, `ئ`→`ي`) + dictionnaire imla'i (`imlai_corrections`) sur la référence | lettres sans espaces |
+| `strict-lettres` | `normalize_strict_letters` : NFC, diacritiques et tatweel supprimés, non-arabe → espace ; **aucun repli de lettres sauf `ٱ`→`ا`** ; `ء` conservé ; pas de dictionnaire | lettres sans espaces |
+
+Chaque variante a son normaliseur (table `VARIANT_NORMALIZERS`), appliqué à la référence ET à
+l'hypothèse. La variante stricte est une fonction distincte (`normalize_strict_letters`,
+`tokenize_strict_letters`), jamais un drapeau de `normalize_arabic`. Le CER compte les lettres SANS
+espaces dans les deux variantes : une coupure de mots différente coûte au WER, jamais au CER, et
+l'écart tolérante/stricte ne vient que des replis de lettres.
+
+**`strict-lettres` est un plancher.** La référence est le texte Uthmani du corpus, pas une
+orthographe imla'i : la variante compte donc aussi les conventions du Mushaf qu'une transcription
+imla'i n'a pas (madda écrite `ءَا` contre `آ`, hamza combinant, alef suscrit supprimé contre alef plein,
+`ى` contre `ي`). Mesure du 2026-10-09 sur le corpus épinglé (6 236 versets), avec pour hypothèse le
+texte imla'i du corpus lui-même (un ASR parfait en imla'i) : `tolerante` WER 1,55 % / CER 0,27 % ;
+`strict-lettres` WER 18,79 % / CER 5,07 %. Avec le texte Uthmani recopié : `strict-lettres` 0 %,
+`tolerante` WER 9,24 % (elle suppose une hypothèse imla'i). La stricte sert à diagnostiquer ce que la
+tolérance cache ; ne pas la lire comme un taux d'erreur de l'ASR, et ne régler aucun seuil dessus.
+
+Versions : `STRICT_NORMALIZATION_VERSION` (`aqr.normalize-strict/N`) est écrite dans le bloc
+`normalization` du rapport et incluse dans son empreinte ; elle est à incrémenter dès que
+`normalize_strict_letters` ou la façon dont la variante stricte est notée change. Un rapport d'avant
+le correctif n'a pas ce champ : `--baseline` le refuse (voir plus bas).
 
 WER = distance de Levenshtein sur les mots / mots de référence ; CER idem sur les lettres. Somme des
 erreurs sur somme des longueurs. Transcription vide = WER 1. Sans `--transcripts`, le bloc dit
@@ -147,8 +168,8 @@ erreurs sur somme des longueurs. Transcription vide = WER 1. Sans `--transcripts
 
 Ajoute un bloc `comparison` (écart courant − base de chaque valeur numérique commune de `vitesse` et
 `exactitude`, et `context_changes` : git, modèles, seuils, machine). **Refus (code 2, rien n'est
-écrit)** si le manifeste (fichier ou cas évalués), le split, le schéma ou la normalisation (version +
-dictionnaire) diffèrent, ou si la base est illisible : on ne compare que ce qui est comparable. `--split
+écrit)** si le manifeste (fichier ou cas évalués), le split, le schéma ou la normalisation (versions
+tolérante et stricte + dictionnaire) diffèrent, ou si la base est illisible : on ne compare que ce qui est comparable. `--split
 test` exige toujours `--final`, avec ou sans base.
 
 ## Limites connues

@@ -60,6 +60,7 @@ from aqr.eval.report import (
 )
 from aqr.eval.transcription import (
     NORMALIZATION_VERSION,
+    STRICT_NORMALIZATION_VERSION,
     VARIANT_DESCRIPTIONS,
     VARIANTS,
     TranscriptError,
@@ -393,6 +394,7 @@ def main(
         },
         "normalization": {
             "version": NORMALIZATION_VERSION,
+            "strict_version": STRICT_NORMALIZATION_VERSION,
             "fingerprint": normalization_fingerprint(word_corrections),
             "corrections": len(word_corrections),
         },

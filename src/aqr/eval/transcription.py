@@ -1,17 +1,23 @@
 """WER et CER d'une transcription ASR contre le texte du corpus (les versets attendus).
 
 Le texte de référence vient TOUJOURS du corpus Tanzil (I1) : mots Uthmani des versets attendus
-(`expected` du cas annoté, dans l'ordre du temps, plages de mots respectées). Hypothèse et référence
-passent par `normalize_arabic` (lettres de base seulement : ni voyelles, ni ponctuation). Deux
-variantes de score, TOUJOURS nommées dans le rapport :
+(`expected` du cas annoté, dans l'ordre du temps, plages de mots respectées). Deux variantes de
+score, TOUJOURS nommées dans le rapport, chacune avec SON normaliseur (`VARIANT_NORMALIZERS`,
+appliqué à la référence ET à l'hypothèse) :
 
-- `tolerante` : la référence est en plus ramenée à la graphie imla'i par le dictionnaire appris du
-  corpus (`aqr.corpus.imlai_corrections`, ADR-0003), car un ASR écrit en imla'i. Le CER est calculé
-  sur les lettres SANS espaces (une coupure de mots différente ne coûte rien au CER, elle coûte
-  au WER).
-- `strict-lettres` : normalisation seule, sans dictionnaire ; les écarts Uthmani/imla'i comptent
-  comme
-  des erreurs. Le CER compte les espaces (séparateur unique) comme des caractères.
+- `tolerante` : `normalize_arabic` (lettres de base seulement : ni voyelles, ni ponctuation ; formes
+  de l'alef, ى/ي, ة/ه, ؤ, ئ repliés) ; la référence est en plus ramenée à la graphie imla'i par le
+  dictionnaire appris du corpus (`aqr.corpus.imlai_corrections`, ADR-0003), car un ASR écrit en
+  imla'i.
+- `strict-lettres` : `normalize_strict_letters` (docs/evaluation/normalisation.md §3) : mêmes
+  étapes, AUCUN repli de lettres sauf `ٱ -> ا`, pas de dictionnaire. Un système n'est juste que
+  s'il écrit `ة ى ؤ ئ أ إ آ ء` comme la référence. La référence reste le texte Uthmani : la variante
+  est un PLANCHER, elle compte aussi les conventions du Mushaf qu'une orthographe imla'i n'a pas
+  (madda écrite `ءَا`, hamza combinant, `ى`). Elle diagnostique, elle ne règle aucun seuil.
+
+Le CER est calculé, dans les deux variantes, sur les lettres SANS espaces : une coupure de mots
+différente ne coûte rien au CER (elle coûte au WER), et l'écart tolérante/stricte ne vient que des
+replis de lettres.
 
 WER = erreurs de mots / mots de référence ; CER = erreurs de lettres / lettres de référence
 (Levenshtein : substitution, insertion, suppression à coût 1). Agrégation par SOMMES d'erreurs et
@@ -22,13 +28,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, NamedTuple, Protocol
 
 from aqr.corpus.normalize import NORMALIZATION_VERSION as NORMALIZATION_VERSION
-from aqr.corpus.normalize import normalize_arabic, tokenize
+from aqr.corpus.normalize import STRICT_NORMALIZATION_VERSION as STRICT_NORMALIZATION_VERSION
+from aqr.corpus.normalize import (
+    normalize_arabic,
+    normalize_strict_letters,
+    tokenize,
+    tokenize_strict_letters,
+)
 from aqr.data.manifest import ExpectedItem
 from aqr.domain.models import VerseRef
 
@@ -40,8 +52,24 @@ VARIANT_DESCRIPTIONS = {
         "normalize_arabic + corrections imla'i sur la référence ; CER sur les lettres sans espaces"
     ),
     STRICT_LETTRES: (
-        "normalize_arabic seul, sans dictionnaire imla'i ; CER sur les lettres, espaces comptés"
+        "normalize_strict_letters (aucun repli de lettres sauf alef wasla, sans dictionnaire "
+        "imla'i, référence Uthmani : plancher) ; CER sur les lettres sans espaces"
     ),
+}
+
+
+class VariantNormalizer(NamedTuple):
+    """Normaliseur d'une variante : forme d'un mot/texte, et découpe en mots."""
+
+    normalize: Callable[[str], str]
+    tokenize: Callable[[str], list[str]]
+
+
+# UNE seule table : référence et hypothèse passent par le même normaliseur (jamais un drapeau
+# caché dans `normalize_arabic`).
+VARIANT_NORMALIZERS: Mapping[str, VariantNormalizer] = {
+    TOLERANTE: VariantNormalizer(normalize_arabic, tokenize),
+    STRICT_LETTRES: VariantNormalizer(normalize_strict_letters, tokenize_strict_letters),
 }
 
 
@@ -117,7 +145,8 @@ def reference_words(items: Sequence[ExpectedItem], corpus: WordSource) -> tuple[
 def _normalized_reference(
     words: Sequence[str], corrections: Mapping[str, str], variant: str
 ) -> list[str]:
-    normalized = [w for w in (normalize_arabic(word) for word in words) if w]
+    normalize = VARIANT_NORMALIZERS[variant].normalize
+    normalized = [w for w in (normalize(word) for word in words) if w]
     if variant == TOLERANTE:
         return [corrections.get(w, w) for w in normalized]
     return normalized
@@ -127,12 +156,11 @@ def score_transcript(
     reference: Sequence[str], hypothesis: str, corrections: Mapping[str, str], variant: str
 ) -> TranscriptScore:
     """Score d'une transcription brute contre les mots de référence (voir le module)."""
-    if variant not in VARIANTS:
+    if variant not in VARIANT_NORMALIZERS:
         raise ValueError(f"variante {variant!r} inconnue (attendu {', '.join(VARIANTS)})")
     ref_words = _normalized_reference(reference, corrections, variant)
-    hyp_words = tokenize(hypothesis)
-    sep = "" if variant == TOLERANTE else " "
-    ref_letters, hyp_letters = sep.join(ref_words), sep.join(hyp_words)
+    hyp_words = VARIANT_NORMALIZERS[variant].tokenize(hypothesis)
+    ref_letters, hyp_letters = "".join(ref_words), "".join(hyp_words)
     return TranscriptScore(
         word_errors=edit_distance(ref_words, hyp_words),
         word_total=len(ref_words),
@@ -188,9 +216,13 @@ def load_transcript(path: Path) -> TranscriptFile:
 
 
 def normalization_fingerprint(corrections: Mapping[str, str]) -> str:
-    """Empreinte de la normalisation effective : version + dictionnaire imla'i utilisé."""
+    """Empreinte de la normalisation effective : versions tolérante et stricte + dictionnaire."""
     payload = json.dumps(
-        {"version": NORMALIZATION_VERSION, "corrections": sorted(corrections.items())},
+        {
+            "version": NORMALIZATION_VERSION,
+            "strict_version": STRICT_NORMALIZATION_VERSION,
+            "corrections": sorted(corrections.items()),
+        },
         ensure_ascii=False,
         sort_keys=True,
     )
