@@ -5,12 +5,12 @@
  * vient de AQR_SMOKE_AUDIO (par ex. produit par scripts/smoke_e2e.sh).
  *
  * Une ressource absente (audio, Chromium, build, Python, ffmpeg, modèles, corpus vérifié par
- * LOCK.json) est un ÉCHEC code 2 avec AQR_SMOKE_STRICT=1 (défaut de smoke_e2e.sh) ; sinon un
- * « SKIP ... NON EXÉCUTÉ » explicite (code 0) : jamais un succès muet. `--check` vérifie seulement
+ * LOCK.json) est un ÉCHEC code 2 : le mode strict est le défaut. Seul AQR_SMOKE_STRICT=0, explicite,
+ * donne un « SKIP ... NON EXÉCUTÉ » (code 0) : jamais un succès muet. `--check` vérifie seulement
  * les ressources (utilisé par smoke_e2e.sh avant les étapes longues).
  *
  * Variables :
- *   AQR_SMOKE_STRICT    1 : toute ressource absente fait échouer (exit 2)
+ *   AQR_SMOKE_STRICT    défaut strict (ressource absente => exit 2) ; 0 explicite : skip autorisé
  *   AQR_SMOKE_AUDIO     audio à importer
  *   AQR_SMOKE_SURAH     sourate attendue (défaut 112)
  *   AQR_SMOKE_CHROMIUM  exécutable Chromium (défaut /opt/pw-browsers/chromium)

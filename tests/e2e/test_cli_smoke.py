@@ -4,9 +4,9 @@ Aucun audio dans Git. Les 4 versets de la sourate 112 (récitant Alafasy, EveryA
 dans `$AQR_AUDIO_DIR/everyayah/` (voir `scripts/fetch_everyayah.py --reciters Alafasy_128kbps
 --surahs 112`), concaténés par ffmpeg dans un dossier temporaire.
 
-Ressource absente (audio, ffmpeg, modèles, corpus vérifié par LOCK.json) : ÉCHEC si
-`AQR_SMOKE_STRICT=1` (défaut de `scripts/smoke_e2e.sh`), sinon skip avec la raison et un résumé
-« NON EXÉCUTÉ » (`tests/e2e/conftest.py`) : un smoke sauté n'est pas un succès.
+Ressource absente (audio, ffmpeg, modèles, corpus vérifié par LOCK.json) : ÉCHEC avec la raison, le
+mode strict est le défaut. Seul `AQR_SMOKE_STRICT=0`, explicite, saute le test avec la raison et un
+résumé « NON EXÉCUTÉ » (`tests/e2e/conftest.py`) : un smoke sauté n'est pas un succès.
 Lancer : `scripts/smoke_e2e.sh cli` ou `pytest -m slow tests/e2e -rs`.
 """
 

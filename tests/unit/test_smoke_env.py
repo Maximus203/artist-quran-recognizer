@@ -145,19 +145,34 @@ def test_needs_restricts_the_checks(setup: Setup) -> None:
 
 @pytest.mark.parametrize(
     ("value", "expected"),
-    [("1", True), ("true", True), ("YES", True), ("0", False), ("", False), ("no", False)],
+    [
+        ("1", True),
+        ("true", True),
+        ("YES", True),
+        ("", True),  # vide = non défini = strict
+        ("0", False),
+        (" 0 ", False),
+        ("false", False),
+        ("No", False),
+        ("off", False),
+    ],
 )
 def test_strict_flag(value: str, expected: bool) -> None:
     assert strict({"AQR_SMOKE_STRICT": value}) is expected
-    assert strict({}) is False
 
 
-def test_unavailable_fails_when_strict_and_skips_otherwise(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_strict_is_the_default() -> None:
+    assert strict({}) is True
+
+
+def test_unavailable_fails_by_default_and_skips_only_on_explicit_zero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     missing = [smoke_env.Missing("audio", "AQR_AUDIO_DIR absent")]
-    monkeypatch.setenv("AQR_SMOKE_STRICT", "1")
-    with pytest.raises(pytest.fail.Exception, match=r"AQR_SMOKE_STRICT=1.*audio.*AQR_AUDIO_DIR"):
+    monkeypatch.delenv("AQR_SMOKE_STRICT", raising=False)
+    with pytest.raises(pytest.fail.Exception, match=r"AQR_SMOKE_STRICT=0.*audio.*AQR_AUDIO_DIR"):
         unavailable(missing)
-    monkeypatch.delenv("AQR_SMOKE_STRICT")
+    monkeypatch.setenv("AQR_SMOKE_STRICT", "0")
     with pytest.raises(pytest.skip.Exception, match=r"audio.*AQR_AUDIO_DIR absent"):
         unavailable(missing)
 
