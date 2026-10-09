@@ -33,16 +33,27 @@ async function missingFor({
 
 describe("isStrict", () => {
   it.each([
+    [undefined, true],
+    ["", true],
     ["1", true],
     ["true", true],
     ["YES", true],
     [" on ", true],
+    ["garbage", true],
     ["0", false],
-    ["", false],
-    ["no", false],
-    [undefined, false],
-  ])("AQR_SMOKE_STRICT=%j -> %s", (value, expected) => {
-    expect(isStrict({ AQR_SMOKE_STRICT: value })).toBe(expected);
+    [" 0 ", false],
+    ["false", false],
+    ["No", false],
+    ["OFF", false],
+  ])(
+    "AQR_SMOKE_STRICT=%j -> %s (strict par défaut, seul un refus explicite l'annule)",
+    (value, expected) => {
+      expect(isStrict({ AQR_SMOKE_STRICT: value })).toBe(expected);
+    },
+  );
+
+  it("est strict quand la variable n'existe pas", () => {
+    expect(isStrict({})).toBe(true);
   });
 });
 
@@ -142,6 +153,7 @@ describe("decide", () => {
     const d = decide({ strict: true, missing });
     expect(d).toMatchObject({ action: "fail", exitCode: 2 });
     expect(d.message).toContain("FAIL browser-smoke");
+    expect(d.message).toContain("AQR_SMOKE_STRICT=0");
     expect(d.message).toContain("audio : AQR_SMOKE_AUDIO absent");
     expect(d.message).toContain("chromium : Chromium introuvable");
   });
@@ -151,19 +163,19 @@ describe("decide", () => {
     expect(d).toMatchObject({ action: "skip", exitCode: 0 });
     expect(d.message).toContain("NON EXÉCUTÉ");
     expect(d.message).toContain("audio : AQR_SMOKE_AUDIO absent");
-    expect(d.message).toContain("AQR_SMOKE_STRICT=1");
+    expect(d.message).toContain("AQR_SMOKE_STRICT=0");
   });
 
-  it("scénario réel : strict sans audio ni Chromium => code 2", async () => {
+  it("scénario réel : variable absente, sans audio ni Chromium => code 2", async () => {
     const found = await findMissingResources({
-      env: { AQR_SMOKE_STRICT: "1" },
+      env: {},
       webDir: WEB,
       exists: () => false,
       canExecute: () => false,
       preflight: async () => [],
     });
     const d = decide({
-      strict: isStrict({ AQR_SMOKE_STRICT: "1" }),
+      strict: isStrict({}),
       missing: found,
     });
     expect(d.exitCode).toBe(2);

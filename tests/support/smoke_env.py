@@ -1,8 +1,9 @@
 """Ressources des smokes e2e (audio, ffmpeg, modèles, corpus vérifié) et mode strict.
 
-`AQR_SMOKE_STRICT=1` (exporté par `scripts/smoke_e2e.sh`) : une ressource absente est un ÉCHEC
-avec sa raison, jamais un skip qui laisse `pytest` rendre 0. Hors strict : skip avec la raison,
-repris par le résumé « NON EXÉCUTÉ » de `tests/e2e/conftest.py`.
+Le mode strict est le DÉFAUT (variable absente ou vide, `scripts/smoke_e2e.sh` l'exporte aussi) :
+une ressource absente est un ÉCHEC avec sa raison, jamais un skip qui laisse `pytest` rendre 0.
+Seul `AQR_SMOKE_STRICT=0` (explicite) autorise le skip avec la raison, repris par le résumé
+« NON EXÉCUTÉ » de `tests/e2e/conftest.py`.
 
 Le smoke navigateur (`web/e2e/browser-smoke.mjs`) réutilise ces contrôles sans les recopier :
     python -m tests.support.smoke_env --needs audio,ffmpeg,models,corpus   # JSON des manques
@@ -42,9 +43,13 @@ class Missing:
     reason: str
 
 
+_NOT_STRICT = {"0", "false", "no", "off"}
+
+
 def strict(env: Mapping[str, str] | None = None) -> bool:
+    """Vrai sauf refus explicite (`AQR_SMOKE_STRICT=0|false|no|off`) : un oubli reste strict."""
     value = (os.environ if env is None else env).get(STRICT_ENV, "")
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+    return value.strip().lower() not in _NOT_STRICT
 
 
 def corpus_dir(env: Mapping[str, str]) -> Path:
@@ -133,13 +138,17 @@ def _corpus_problem(env: Mapping[str, str]) -> str | None:
 
 
 def unavailable(missing: Sequence[Missing]) -> NoReturn:
-    """Échec explicite en mode strict, skip net sinon."""
+    """Échec explicite (mode strict, défaut), skip net seulement si AQR_SMOKE_STRICT=0."""
     import pytest  # paresseux : la ligne de commande tourne aussi sous l'interpréteur du moteur
 
     detail = " ; ".join(f"{m.resource} : {m.reason}" for m in missing)
     if strict():
-        pytest.fail(f"{STRICT_ENV}=1 : ressource(s) absente(s) — {detail}", pytrace=False)
-    pytest.skip(f"{detail} ({STRICT_ENV}=1 en ferait un échec)")
+        pytest.fail(
+            f"mode strict (défaut ; {STRICT_ENV}=0 pour autoriser le skip) : "
+            f"ressource(s) absente(s) — {detail}",
+            pytrace=False,
+        )
+    pytest.skip(f"{detail} ({STRICT_ENV}=0 explicite : skip autorisé)")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

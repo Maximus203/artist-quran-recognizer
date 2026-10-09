@@ -5,21 +5,28 @@
 # /opt/pw-browsers/chromium) ; aucun `playwright install` n'est lancé.
 #   scripts/smoke_e2e.sh            # fetch (si besoin) + CLI + navigateur
 #   scripts/smoke_e2e.sh cli|browser
-# Mode strict par défaut (AQR_SMOKE_STRICT=1) : une ressource absente est un ÉCHEC avec sa raison.
-# AQR_SMOKE_STRICT=0 : les étapes impossibles sont sautées, et le résumé final le dit clairement
-# (« NON EXÉCUTÉ ») : un smoke sauté n'est jamais présenté comme un succès.
+# Mode strict PAR DÉFAUT (variable absente ou vide) : une ressource absente est un ÉCHEC avec sa
+# raison. Seul AQR_SMOKE_STRICT=0, explicite, saute les étapes impossibles, et le résumé final le
+# dit clairement (« NON EXÉCUTÉ ») : un smoke sauté n'est jamais présenté comme un succès.
 set -euo pipefail
+usage() { echo "usage : scripts/smoke_e2e.sh [all|cli|browser]   (défaut : all)"; }
+if [ "$#" -gt 1 ]; then usage >&2; exit 2; fi
+case "${1:-all}" in
+  all | cli | browser) step="${1:-all}" ;;
+  -h | --help) usage; exit 0 ;;
+  *) echo "étape inconnue : « $1 »" >&2; usage >&2; exit 2 ;;
+esac
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export AQR_SMOKE_STRICT="${AQR_SMOKE_STRICT:-1}"
 : "${AQR_AUDIO_DIR:?AQR_AUDIO_DIR est requis (dossier hors dépôt)}"
 : "${AQR_MODELS_DIR:?AQR_MODELS_DIR est requis}"
 python="${AQR_PYTHON:-python}"
-step="${1:-all}"
 clips="$AQR_AUDIO_DIR/everyayah/Alafasy_128kbps"
 logs="$(mktemp -d)"
 trap 'rm -rf "$logs"' EXIT
 
-is_strict() { case "$(printf '%s' "$AQR_SMOKE_STRICT" | tr '[:upper:]' '[:lower:]')" in 1 | true | yes | on) return 0 ;; *) return 1 ;; esac; }
+# Strict sauf refus explicite (0|false|no|off) : une valeur inconnue ne désarme pas le contrôle.
+is_strict() { case "$(printf '%s' "$AQR_SMOKE_STRICT" | tr '[:upper:]' '[:lower:]')" in 0 | false | no | off) return 1 ;; *) return 0 ;; esac; }
 
 # Ressource d'outillage absente : échec en strict, étape sautée sinon.
 cli_status="non demandé"
@@ -27,10 +34,10 @@ browser_status="non demandé"
 worst=0
 if ! command -v ffmpeg > /dev/null 2>&1; then
   if is_strict; then
-    echo "FAIL smoke_e2e (AQR_SMOKE_STRICT=1) : ffmpeg absent du PATH" >&2
+    echo "FAIL smoke_e2e (mode strict, défaut ; AQR_SMOKE_STRICT=0 pour autoriser le skip) : ffmpeg absent du PATH" >&2
     exit 2
   fi
-  echo "SKIP smoke_e2e : NON EXÉCUTÉ, ffmpeg absent du PATH (AQR_SMOKE_STRICT=1 en ferait un échec)"
+  echo "SKIP smoke_e2e : NON EXÉCUTÉ, ffmpeg absent du PATH (AQR_SMOKE_STRICT=0 explicite : skip autorisé)"
   echo "== Résumé smoke e2e : NON EXÉCUTÉ (ffmpeg absent) =="
   exit 0
 fi

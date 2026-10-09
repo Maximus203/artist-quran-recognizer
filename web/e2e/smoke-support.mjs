@@ -6,11 +6,14 @@
 import path from "node:path";
 
 export const DEFAULT_CHROMIUM = "/opt/pw-browsers/chromium";
-const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
+const NOT_STRICT_VALUES = new Set(["0", "false", "no", "off"]);
 
-/** AQR_SMOKE_STRICT=1 : une ressource absente est un échec (exit 2), jamais un succès muet. */
+/**
+ * Le mode strict est le DÉFAUT : une ressource absente est un échec (exit 2), jamais un succès
+ * muet. Seul un refus explicite (AQR_SMOKE_STRICT=0|false|no|off) autorise le skip.
+ */
 export const isStrict = (env) =>
-  TRUE_VALUES.has(
+  !NOT_STRICT_VALUES.has(
     String(env.AQR_SMOKE_STRICT ?? "")
       .trim()
       .toLowerCase(),
@@ -75,14 +78,16 @@ export function decide({ strict, missing }) {
     return {
       action: "fail",
       exitCode: 2,
-      message: `FAIL browser-smoke (AQR_SMOKE_STRICT=1) : ressource(s) absente(s)\n${lines}`,
+      message:
+        `FAIL browser-smoke (mode strict, défaut) : ressource(s) absente(s)\n${lines}\n` +
+        "AQR_SMOKE_STRICT=0 (explicite) transformerait cet échec en skip « NON EXÉCUTÉ ».",
     };
   return {
     action: "skip",
     exitCode: 0,
     message:
       `SKIP browser-smoke : NON EXÉCUTÉ, rien n'a été vérifié (${missing.length} ressource(s) absente(s))\n${lines}\n` +
-      "AQR_SMOKE_STRICT=1 (défaut de scripts/smoke_e2e.sh) en ferait un échec.",
+      "AQR_SMOKE_STRICT=0 a été posé explicitement ; sans lui, c'est un échec (mode strict par défaut).",
   };
 }
 
