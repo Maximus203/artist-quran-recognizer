@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -68,6 +69,16 @@ def test_upsert_est_idempotent_par_id():
     manifest.upsert(_case())
     manifest.upsert(_case())
     assert len(manifest.cases) == 1
+
+
+def test_upsert_sans_split_conserve_l_affectation_existante():
+    manifest = Manifest(cases=[replace(_case(), split="quarantaine")])
+    manifest.upsert(replace(_case(), split=None, duree_s=99.0))  # re-matérialisation sans split
+    assert manifest.cases[0].split == "quarantaine" and manifest.cases[0].duree_s == 99.0
+    manifest.upsert(replace(_case(), split="dev"))  # une affectation explicite reste appliquée
+    assert manifest.cases[0].split == "dev"
+    manifest.upsert(replace(_case("c2", "b" * 64), split=None))  # nouveau cas : reste sans split
+    assert manifest.get("c2").split is None
 
 
 def test_recherche_par_sha():
