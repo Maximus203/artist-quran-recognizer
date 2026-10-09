@@ -9,15 +9,22 @@ non chargé). `done` associe chaque cas réussi à l'empreinte sha256 du fichier
 laissé par un autre run (autre moteur, autre code). Un `running` retrouvé après coup signe un
 processus tué sans pouvoir conclure : il est refusé comme les autres statuts non `complete`.
 
-Module sans modèle ni réseau : lecture stricte du fichier et écriture atomique.
+Cohérence exigée à la lecture : `done` et `failed` ne contiennent que des cas planifiés, sans
+cas commun, et un lot `complete` a tous ses cas planifiés dans `done` et aucun dans `failed`.
+
+Un seul lot à la fois par dossier de sortie : `exclusive_directory` prend un verrou `flock` non
+bloquant sur `<dossier>/.lock` (fichier laissé en place, jamais supprimé : le supprimer ouvrirait
+une course entre deux lots). Module sans modèle ni réseau (Unix : `fcntl`).
 """
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -26,6 +33,7 @@ from typing import Any
 RUN_SCHEMA = "aqr.recognition-run/1"
 RUN_FILE = "run.json"
 TIMINGS_FILE = "timings.json"
+LOCK_FILE = ".lock"
 
 
 class RunStatus(StrEnum):
@@ -36,7 +44,15 @@ class RunStatus(StrEnum):
 
 
 class RunError(ValueError):
-    """`run.json` absent, illisible ou hors schéma ; ou lot non `complete`."""
+    """`run.json` illisible, hors schéma ou incohérent ; ou lot non `complete`."""
+
+
+class RunMissing(RunError):
+    """Aucun `run.json` dans le dossier (seul cas où `--allow-unverified-run` s'applique)."""
+
+
+class DirectoryBusy(RuntimeError):
+    """Le dossier de sortie est utilisé par un autre lot (ou ne peut pas être verrouillé)."""
 
 
 def prediction_file(directory: Path, case_id: str) -> Path:
@@ -66,6 +82,30 @@ def write_text_atomic(path: Path, text: str) -> None:
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
+
+
+@contextmanager
+def exclusive_directory(directory: Path) -> Iterator[None]:
+    """Verrou exclusif non bloquant du dossier de sortie pendant tout un lot (libéré en sortie,
+    même sur exception ou Ctrl-C : la fermeture du descripteur relâche le `flock`)."""
+    lock = directory / LOCK_FILE
+    try:
+        fd = os.open(lock, os.O_RDWR | os.O_CREAT, 0o666)
+    except OSError as exc:
+        raise DirectoryBusy(f"verrou {lock} impossible à créer : {exc}") from exc
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise DirectoryBusy(
+                f"dossier de sortie déjà utilisé par un autre lot (verrou {lock}) : attendre sa "
+                "fin ou choisir un autre --out-dir"
+            ) from exc
+        except OSError as exc:
+            raise DirectoryBusy(f"verrou {lock} impossible à prendre : {exc}") from exc
+        yield
+    finally:
+        os.close(fd)
 
 
 @dataclass(frozen=True)
@@ -145,7 +185,7 @@ def parse_run(data: object) -> RunRecord:
         raise RunError(f"{RUN_FILE} : planned doit être une liste d'identifiants de cas")
     engine = data.get("engine")
     error = data.get("error")
-    return RunRecord(
+    record = RunRecord(
         status=status,
         asr=str(data.get("asr", "")),
         planned=tuple(planned),
@@ -158,12 +198,38 @@ def parse_run(data: object) -> RunRecord:
         timing=_object(data.get("timing", {}), "timing"),
         error=None if error is None else str(error),
     )
+    _check_consistency(record)
+    return record
+
+
+def _check_consistency(record: RunRecord) -> None:
+    """Refuse un `run.json` qui se contredit (édité à la main, ou écrit par un autre outil)."""
+    planned = set(record.planned)
+
+    def refuse(problem: str) -> RunError:
+        return RunError(f"{RUN_FILE} incohérent : {problem}")
+
+    for key, cases in (("done", record.done), ("failed", record.failed)):
+        outside = sorted(set(cases) - planned)
+        if outside:
+            raise refuse(f"{key} contient des cas absents de planned : {', '.join(outside)}")
+    both = sorted(set(record.done) & set(record.failed))
+    if both:
+        raise refuse(f"cas à la fois dans done et dans failed : {', '.join(both)}")
+    if record.status is RunStatus.COMPLETE:
+        if record.failed:
+            raise refuse("statut complete avec des cas dans failed")
+        unwritten = sorted(planned - set(record.done))
+        if unwritten:
+            raise refuse(
+                "statut complete mais cas planifiés sans fichier : " + ", ".join(unwritten)
+            )
 
 
 def load_run(directory: Path) -> RunRecord:
     path = directory / RUN_FILE
     if not path.is_file():
-        raise RunError(
+        raise RunMissing(
             f"{RUN_FILE} absent de {directory} : origine des prédictions inconnue "
             "(dossier non produit par scripts/recognize_batch.py)"
         )

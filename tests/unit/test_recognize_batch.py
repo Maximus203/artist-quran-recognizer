@@ -306,3 +306,121 @@ def test_un_identifiant_de_cas_ne_peut_pas_designer_un_fichier_du_lot_ni_sortir_
     saved.save(world.manifest)
     assert _batch(world, _Pipeline("moteur-A")) == 2
     assert not world.out.exists()  # rien n'est créé ni purgé
+
+
+def test_le_flag_de_evaluate_ne_lit_pas_un_cas_perime_d_un_lot_interrompu(world):
+    # sonde de relecture : lot A complet, lot B (--limit 2) interrompu ; devC reste celui du lot A
+    assert _batch(world, _Pipeline("moteur")) == 0
+    boom = {"devB": KeyboardInterrupt()}
+    assert _batch(world, _Pipeline("moteur", fail=boom), "--limit", "2") != 0
+    assert (world.out / "devC.json").exists()  # périmé, hors du lot B
+    code, report = _evaluate(world, "--allow-unverified-run")
+    assert code == 2 and not report.exists()  # run.json existe et n'est pas complete : refus
+
+
+def test_run_json_et_timings_json_d_un_run_precedent_sont_purges_avant_le_premier_cas(world):
+    world.out.mkdir()
+    (world.out / "run.json").write_text(
+        json.dumps({"schema": "aqr.recognition-run/1", "status": "complete", "asr": "ancien"}),
+        encoding="utf-8",
+    )
+    (world.out / "timings.json").write_text('{"status": "complete", "asr": "ancien"}', "utf-8")
+    seen: dict[str, Any] = {}
+
+    def peek(cid: str) -> None:
+        if not seen:  # avant le premier cas
+            seen["timings"] = (world.out / "timings.json").exists()
+            seen["asr"] = _run_json(world)["asr"]
+            seen["status"] = _run_json(world)["status"]
+
+    assert _batch(world, _Pipeline("moteur-A", on_run=peek), "--asr", "whisper") == 0
+    assert seen == {"timings": False, "asr": "whisper", "status": "running"}
+
+
+def test_echec_de_l_ecriture_finale_de_run_json_laisse_running_code_1_et_evaluate_refuse(
+    world, monkeypatch, capsys
+):
+    real_replace = os.replace
+
+    def refuse_final(src: Any, dst: Any) -> None:
+        if Path(dst).name == "run.json" and '"status": "complete"' in Path(src).read_text("utf-8"):
+            raise OSError("disque plein")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", refuse_final)
+    assert _batch(world, _Pipeline("moteur-A")) == 1  # jamais 0 : l'état final n'est pas écrit
+    assert _run_json(world)["status"] == "running"  # dernier état écrit : lot non conclu
+    assert "disque plein" in capsys.readouterr().err
+    monkeypatch.undo()
+    assert _evaluate(world)[0] == 2  # running n'est pas évaluable
+
+
+def test_un_second_lot_sur_le_meme_dossier_est_refuse_pendant_que_le_premier_tourne(world, capsys):
+    import threading
+
+    started, release = threading.Event(), threading.Event()
+    result: dict[str, int] = {}
+
+    def block(cid: str) -> None:
+        started.set()
+        assert release.wait(timeout=30)
+
+    first = threading.Thread(
+        target=lambda: result.update(code=_batch(world, _Pipeline("moteur-A", on_run=block)))
+    )
+    first.start()
+    try:
+        assert started.wait(timeout=30)
+        before = _run_json(world)
+        assert _batch(world, _Pipeline("moteur-B")) == 2  # verrou pris : rien n'est purgé ni écrit
+        assert "déjà utilisé" in capsys.readouterr().err
+        assert _run_json(world) == before  # le run en cours n'a pas été touché
+    finally:
+        release.set()
+        first.join(timeout=60)
+    assert result["code"] == 0 and _run_json(world)["status"] == "complete"
+    assert _engine_of(world, "devA") == "moteur-A"
+    assert _batch(world, _Pipeline("moteur-B")) == 0  # verrou libéré en fin de lot
+
+
+def test_le_verrou_est_libere_apres_un_lot_interrompu(world):
+    assert _batch(world, _Pipeline("moteur-A", fail={"devA": KeyError("bogue")})) != 0
+    assert _batch(world, _Pipeline("moteur-A")) == 0
+
+
+def test_sigterm_est_converti_en_interruption_propre(world):
+    import signal
+
+    def protective(signum: int, frame: Any) -> None:  # le test ne doit jamais tuer pytest
+        raise AssertionError("SIGTERM non converti par le lot")
+
+    original = signal.signal(signal.SIGTERM, protective)
+
+    def terminate(cid: str) -> None:
+        if cid == "devB":
+            os.kill(os.getpid(), signal.SIGTERM)
+
+    try:
+        code = _batch(world, _Pipeline("moteur-A", on_run=terminate))
+        restored = signal.getsignal(signal.SIGTERM)
+    finally:
+        signal.signal(signal.SIGTERM, original)
+    assert code != 0
+    run = _run_json(world)
+    assert run["status"] == "interrupted" and list(run["done"]) == ["devA"]
+    assert "SIGTERM" in run["error"] and "AssertionError" not in run["error"]
+    timings = json.loads((world.out / "timings.json").read_text(encoding="utf-8"))
+    assert timings["status"] == "interrupted"
+    assert restored is protective  # gestionnaire d'origine restauré en fin de lot
+    assert _evaluate(world)[0] == 2
+
+
+def test_un_dossier_nomme_comme_une_sortie_donne_une_erreur_claire_sans_rien_purger(world, capsys):
+    assert _batch(world, _Pipeline("moteur-A")) == 0
+    (world.out / "devB.json").unlink()
+    (world.out / "devB.json").mkdir()  # un dossier à la place de la sortie de devB
+    before = sorted(p.name for p in world.out.iterdir())
+    assert _batch(world, _Pipeline("moteur-B")) == 2
+    err = capsys.readouterr().err
+    assert "devB.json" in err and "dossier" in err and "Traceback" not in err
+    assert sorted(p.name for p in world.out.iterdir()) == before  # purge tout-ou-rien

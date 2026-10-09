@@ -8,11 +8,12 @@
 Aucun audio n'est écrit dans le dépôt ; `--split test` exige `--final` (ensemble réservé).
 
 Un dossier de sortie ne mélange jamais deux runs :
+- un seul lot à la fois : verrou `flock` non bloquant sur `<out-dir>/.lock` (code 2 si déjà pris) ;
 - au démarrage, `run.json`, `timings.json` et le `<id>.json` de chaque cas du lot sont supprimés
   (jamais un autre fichier : les cas hors lot, p. ex. avec `--limit`, ne sont pas touchés) ;
 - chaque `<id>.json` est écrit atomiquement (temporaire dans le dossier puis `os.replace`) ;
 - `run.json` est réécrit atomiquement avant le premier cas puis après chacun : statut `running`,
-  puis `complete` / `partial` / `interrupted` fixé quoi qu'il arrive (Ctrl-C et exception compris),
+  puis `complete` / `partial` / `interrupted` fixé quoi qu'il arrive (Ctrl-C, SIGTERM et exception),
   `planned`, `done` (cas -> sha256 du fichier écrit), `failed` (cas -> message), moteur, SHA git
   et empreinte du manifeste. `scripts/evaluate.py` refuse tout lot qui n'est pas `complete`.
 Code de sortie : 0 seulement si le lot est `complete` ; 1 si un cas a échoué ou si le lot est
@@ -27,10 +28,13 @@ import argparse
 import json
 import os
 import resource
+import signal
 import sys
+import threading
 import time
 import traceback
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -43,8 +47,10 @@ from aqr.eval.report import git_state
 from aqr.eval.run import (
     RUN_FILE,
     TIMINGS_FILE,
+    DirectoryBusy,
     RunRecord,
     RunStatus,
+    exclusive_directory,
     prediction_file,
     save_run,
     write_text_atomic,
@@ -99,11 +105,37 @@ def _usable_as_file_stem(case_id: str) -> bool:
 
 
 def _purge(out_dir: Path, cases: list[AudioCase]) -> None:
-    """Supprime l'état d'un run précédent : run.json, timings.json et les `<id>.json` du lot."""
+    """Supprime l'état d'un run précédent : run.json, timings.json et les `<id>.json` du lot.
+
+    Tout ou rien : si l'une de ces cibles est un dossier, rien n'est supprimé (OSError claire)."""
     stale = [out_dir / RUN_FILE, out_dir / TIMINGS_FILE]
     stale += [prediction_file(out_dir, c.id) for c in cases]
     for path in stale:
+        if path.is_dir() and not path.is_symlink():
+            raise IsADirectoryError(
+                f"{path} est un dossier, pas une sortie du lot : le déplacer ou choisir un autre "
+                "--out-dir (rien n'a été supprimé)"
+            )
+    for path in stale:
         path.unlink(missing_ok=True)
+
+
+@contextmanager
+def _sigterm_as_interrupt() -> Iterator[None]:
+    """SIGTERM devient un KeyboardInterrupt : le lot se conclut `interrupted` au lieu d'être tué
+    en laissant `running`. Handler d'origine restauré ; sans effet hors du thread principal."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def terminate(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt("SIGTERM")
+
+    previous = signal.signal(signal.SIGTERM, terminate)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
 
 
 def _recognize_case(
@@ -161,7 +193,26 @@ def main(
         )
         return 2
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    _purge(args.out_dir, cases)
+    try:
+        with exclusive_directory(args.out_dir), _sigterm_as_interrupt():
+            return _run_locked(args, cases, recognizer_factory, env)
+    except DirectoryBusy as exc:
+        print(f"Refusé : {exc}", file=sys.stderr)
+        return 2
+
+
+def _run_locked(
+    args: argparse.Namespace,
+    cases: list[AudioCase],
+    recognizer_factory: RecognizerFactory,
+    env: Mapping[str, str],
+) -> int:
+    """Le lot proprement dit, sous le verrou du dossier de sortie (un seul lot à la fois)."""
+    try:
+        _purge(args.out_dir, cases)
+    except OSError as exc:
+        print(f"ERREUR purge impossible, rien n'a été supprimé : {exc}", file=sys.stderr)
+        return 2
     translation_id = None if args.translation == "none" else args.translation
     options = RecognizeOptions(
         asr=args.asr, corpus_dir=args.corpus_dir, translation_id=translation_id, device="cpu"
@@ -214,9 +265,9 @@ def main(
     except RecognizerUnavailable as exc:
         error, code = str(exc), 2
         print(error, file=sys.stderr)
-    except KeyboardInterrupt:
-        error = "KeyboardInterrupt"
-        print("lot interrompu (Ctrl-C) : run.json = interrupted", file=sys.stderr)
+    except KeyboardInterrupt as exc:
+        error = f"KeyboardInterrupt: {exc}" if str(exc) else "KeyboardInterrupt"
+        print("lot interrompu (Ctrl-C ou SIGTERM) : run.json = interrupted", file=sys.stderr)
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
         traceback.print_exc()

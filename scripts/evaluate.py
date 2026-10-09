@@ -7,8 +7,9 @@
 `sorties/` contient un JSON par cas, nommé `<id>.json`, et le `run.json` du lot qui les a écrits
 (`scripts/recognize_batch.py`). Un cas n'est lu que s'il figure dans `run.json.done` avec la même
 empreinte sha256 ; un lot absent, non `complete` ou mêlant deux moteurs est REFUSÉ (code 2, rien
-n'est écrit). `--allow-unverified-run` lit d'anciennes prédictions sans run.json : c'est alors écrit
-dans le rapport (`run: {verified: false, reason}`) et dans ses avertissements.
+n'est écrit). `--allow-unverified-run` lit d'anciennes prédictions d'un dossier SANS run.json (un
+run.json existant non complet ou illisible reste refusé, flag ou non) : c'est alors écrit dans le
+rapport (`run: {verified: false, reason}`) et dans ses avertissements.
 Seuls les cas `annote` avec `annotation.by: human` et `reviewed_by` sont évalués ; les autres sont
 listés avec leur raison, jamais comptés. Aucun cas annoté : « aucune métrique », code non nul.
 Le jeu `test` est réservé : `--split test` exige `--final` (mesure finale, pas de réglage).
@@ -20,12 +21,13 @@ faux positifs sur silence et hors cible, WER/CER en deux variantes nommées), pl
 git, empreintes des modèles, manifeste, split, seuils, version de normalisation) et des
 avertissements.
 `--transcripts DIR` (un `<id>.transcript.json` par cas, sortie brute de l'ASR) active le WER/CER ;
+le moteur déclaré par chaque transcription doit concorder avec celui du lot (code 2 sinon) ;
 `--baseline rapport.json` compare à un rapport précédent et REFUSE si les manifestes diffèrent.
 Définitions : docs/EVALUATION-METRICS.md.
 
 Codes de sortie : 0 ok ; 1 rien d'évalué, un cas refusé ou une prédiction manquante pour un cas
-évaluable ; 2 usage / jeu test sans --final / comparaison refusée / run.json absent ou non complet /
-dossier mêlant plusieurs moteurs.
+évaluable ; 2 usage / jeu test sans --final / comparaison refusée / run.json absent (sans le flag),
+illisible ou non complet / dossier mêlant plusieurs moteurs / transcription d'un autre moteur.
 """
 
 from __future__ import annotations
@@ -69,7 +71,7 @@ from aqr.eval.report import (
     models_state,
     speed_block,
 )
-from aqr.eval.run import RunError, RunRecord, load_complete_run, prediction_file
+from aqr.eval.run import RunError, RunMissing, RunRecord, load_complete_run, prediction_file
 from aqr.eval.transcription import (
     NORMALIZATION_VERSION,
     STRICT_NORMALIZATION_VERSION,
@@ -151,7 +153,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--allow-unverified-run",
         action="store_true",
-        help="lit un dossier sans run.json complet (anciennes prédictions) ; tracé dans le rapport",
+        help="lit un dossier SANS run.json (anciennes prédictions) ; ne s'applique pas à un "
+        "run.json existant ; tracé dans le rapport",
     )
     parser.add_argument(
         "--baseline",
@@ -241,16 +244,41 @@ def _load_reference(
     return corpus, corrections if corrections is not None else {}
 
 
+class TranscriptEngineMismatch(Exception):
+    """Des transcriptions viennent d'un autre moteur que celui du lot : mesure refusée (code 2)."""
+
+
+def _engine_disagreement(
+    declared: Mapping[str, Any], lot_engine: Mapping[str, Any] | None
+) -> str | None:
+    """Pourquoi le moteur déclaré par une transcription n'est pas celui du lot, sinon `None`.
+
+    Le bloc `engine` d'une transcription (ASR seul, p. ex.) peut être un sous-ensemble de celui du
+    lot : chaque champ déclaré doit être égal. Un bloc vide ne prouve rien : refusé."""
+    if lot_engine is None:
+        return None
+    if not declared:
+        return "transcription sans moteur déclaré (engine vide) : non vérifiable"
+    differing = sorted(k for k, v in declared.items() if lot_engine.get(k) != v)
+    if not differing:
+        return None
+    return ", ".join(
+        f"{k} : {declared[k]!r} (transcription) ≠ {lot_engine.get(k)!r} (lot)" for k in differing
+    )
+
+
 def _score_transcripts(
     cases: list[AudioCase],
     directory: Path,
     corpus: WordSource,
     corrections: Mapping[str, str],
+    lot_engine: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, float]]:
     per_variant: dict[str, list[TranscriptScore]] = {v: [] for v in VARIANTS}
     per_case: list[dict[str, Any]] = []
     missing: list[str] = []
     refused: list[dict[str, str]] = []
+    foreign: list[str] = []
     peaks: dict[str, float] = {}
     for case in cases:
         if not case.expected:
@@ -270,12 +298,18 @@ def _score_transcripts(
         except (TranscriptError, ValueError) as exc:
             refused.append({"id": case.id, "reason": str(exc)})
             continue
+        disagreement = _engine_disagreement(transcript.engine, lot_engine)
+        if disagreement is not None:
+            foreign.append(f"{case.id} ({disagreement})")
+            continue
         scores = {v: score_transcript(reference, transcript.text, corrections, v) for v in VARIANTS}
         for variant, score in scores.items():
             per_variant[variant].append(score)
         if transcript.peak_rss_mb is not None:
             peaks[case.id] = transcript.peak_rss_mb
         per_case.append({"case_id": case.id, **{v: s.to_dict() for v, s in scores.items()}})
+    if foreign:
+        raise TranscriptEngineMismatch("; ".join(foreign))
     n_scored = len(per_case)
     block: dict[str, Any] = {
         "measured": n_scored > 0,
@@ -385,15 +419,25 @@ def main(
     unverified_reason: str | None = None
     try:
         run = load_complete_run(args.predictions)
-    except RunError as exc:
+    except RunMissing as exc:
         if not args.allow_unverified_run:
             print(
-                f"Refusé : {exc}. Pour lire d'anciennes prédictions sans run.json complet, "
-                "relancer avec --allow-unverified-run (tracé dans le rapport).",
+                f"Refusé : {exc}. Pour lire d'anciennes prédictions SANS run.json, relancer avec "
+                "--allow-unverified-run (tracé dans le rapport).",
                 file=stderr,
             )
             return 2
         unverified_reason = str(exc)
+    except (
+        RunError
+    ) as exc:  # run.json existant : le flag ne s'applique qu'à un dossier SANS run.json
+        note = (
+            " --allow-unverified-run ne s'applique qu'à un dossier SANS run.json."
+            if (args.allow_unverified_run)
+            else ""
+        )
+        print(f"Refusé : {exc}.{note}", file=stderr)
+        return 2
     reference: tuple[WordSource, Mapping[str, str]] | None = None
     if args.transcripts is not None:
         try:
@@ -468,9 +512,21 @@ def main(
     }
     peaks: dict[str, float] = {}
     if args.transcripts is not None and reference is not None:
-        transcription, peaks = _score_transcripts(
-            evaluated, args.transcripts, reference[0], reference[1]
-        )
+        try:
+            transcription, peaks = _score_transcripts(
+                evaluated,
+                args.transcripts,
+                reference[0],
+                reference[1],
+                next(iter(engines.values()), None),
+            )
+        except TranscriptEngineMismatch as exc:
+            print(
+                f"Refusé : transcription(s) d'un autre moteur que celui du lot : {exc}. Les "
+                "transcriptions doivent venir du même moteur que les prédictions.",
+                file=stderr,
+            )
+            return 2
 
     agg = aggregate(results, min_reference_verses=args.min_reference_verses) if results else None
     studio = [c.id for c in evaluated if _is_studio_case(c)]
@@ -486,7 +542,7 @@ def main(
             "manifest_sha256": run.manifest_sha256,
             "n_planned": len(run.planned),
             "n_done": len(run.done),
-            "failed": dict(run.failed),
+            "options": dict(run.options),
             "unlisted": unlisted,
         }
         if run.manifest_sha256 and run.manifest_sha256 != manifest_info["sha256"]:
@@ -559,9 +615,6 @@ def main(
         print(f"Refusé : transcription {item['id']} : {item['reason']}", file=stderr)
     if missing:
         print(f"Prédictions manquantes (cas non évalués) : {', '.join(missing)}", file=stderr)
-        for case_id in missing:
-            if run is not None and case_id in run.failed:
-                print(f"  {case_id} : échec du lot : {run.failed[case_id]}", file=stderr)
     if unlisted:
         print(
             "Fichiers ignorés (absents de run.json, laissés par un autre run ?) : "

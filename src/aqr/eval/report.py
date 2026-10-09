@@ -165,8 +165,17 @@ def _normalization_differences(now: Mapping[str, Any], then: Mapping[str, Any]) 
     return "; ".join(parts) or "empreinte différente (contenu du dictionnaire imla'i)"
 
 
+def _run_part(report: Mapping[str, Any], key: str) -> Any:
+    """`run.<key>` du rapport (bloc de `run.json` d'un lot vérifié) ; `None` si absent."""
+    return (report.get("run") or {}).get(key)
+
+
 def compare_reports(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> dict[str, Any]:
-    """Écarts (courant − base) des valeurs numériques communes ; refuse un couple non comparable."""
+    """Écarts (courant − base) des valeurs numériques communes ; refuse un couple non comparable.
+
+    `context_changes` liste ce qui a varié autour des mesures : le moteur, le `git` du checkout qui
+    a lancé l'évaluation, le `git` DU LOT (`run.git` : le code qui a produit les prédictions, à ne
+    pas confondre avec le précédent), les options du lot, les modèles, les seuils et la machine."""
     _require_same(
         "schéma",
         current.get("schema"),
@@ -209,7 +218,10 @@ def compare_reports(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> 
         f"{label} : {then_v} -> {now_v}"
         for label, now_v, then_v in (
             ("moteur", current.get("engine"), baseline.get("engine")),
+            # `git` = checkout qui a lancé evaluate ; `run.git` = code qui a PRODUIT les prédictions
             ("git", current.get("git"), baseline.get("git")),
+            ("git du lot", _run_part(current, "git"), _run_part(baseline, "git")),
+            ("options du lot", _run_part(current, "options"), _run_part(baseline, "options")),
             ("modèles", current.get("models"), baseline.get("models")),
             ("seuils", current.get("thresholds"), baseline.get("thresholds")),
             (
