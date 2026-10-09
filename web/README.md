@@ -54,6 +54,15 @@ npx next start --hostname 0.0.0.0 --port 3097
 
 À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : pas de limitation de débit intégrée, et les audios déposés restent des données privées. `DELETE /api/sessions/<id>` supprime une session (refusé si elle tourne). Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
 
+## Smoke de bout en bout (CLI + navigateur)
+
+`scripts/smoke_e2e.sh` récupère (si besoin) les 4 versets de la sourate 112 via `scripts/fetch_everyayah.py` dans `$AQR_AUDIO_DIR` (hors dépôt), puis lance :
+
+1. `pytest -m slow tests/e2e` : `aqr recognize` réel (Whisper, CPU) ; vérifie le schéma, que tout verset nommé appartient à la sourate 112 (I3), que le texte vient du corpus (I1) et qu'au moins un verset est RECOGNIZED. Sauté si audio, ffmpeg, modèles ou corpus manquent.
+2. `npm run smoke:browser` (`web/e2e/browser-smoke.mjs`, `playwright-core`) : import de l'audio, moteur réel, affichage « 112:n » + texte arabe, téléchargement du pack ZIP. Il lance `next start` (après `npm run build`) ou vise `AQR_SMOKE_URL` ; Chromium vient de `AQR_SMOKE_CHROMIUM` (défaut `/opt/pw-browsers/chromium`, aucun `playwright install`). Sans `AQR_SMOKE_AUDIO`, il s'affiche `SKIP` et sort en code 0.
+
+Ces smokes appellent les vrais modèles : plusieurs minutes sur CPU.
+
 ## Vérification
 
 ```powershell
