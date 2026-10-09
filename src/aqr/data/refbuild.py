@@ -216,6 +216,29 @@ def off_target_cases(
     return cases
 
 
+def degrade_cases(
+    parents: Sequence[AudioCase],
+    out_dir: Path,
+    degradations: Sequence[Degradation],
+    config: DataConfig,
+) -> list[AudioCase]:
+    """Dégrade chaque cas récité (audio dans `out_dir/degraded/`) : un dérivé par dégradation,
+    avec la vérité du parent décalée de `shift_s` et le split du parent."""
+    children: list[AudioCase] = []
+    for parent in parents:
+        if not parent.expected:  # on ne dégrade que les cas récités
+            continue
+        for degradation in degradations:
+            path = out_dir / "degraded" / f"{degraded_id(parent.id, degradation)}.wav"
+            degrade(degradation, out_dir / parent.file, path, sample_rate=config.sample_rate)
+            children.append(
+                degraded_case(
+                    parent, degradation, sha256=sha256_file(path), duree_s=_wav_duration(path)
+                )
+            )
+    return children
+
+
 def build_ref_corpus(
     provider: ClipProvider,
     corpus: CorpusRepository,
@@ -250,17 +273,7 @@ def build_ref_corpus(
     kept = [c for c in existing.cases if c.id not in replaced]
     split_bases = assign_ref_splits([*kept, *bases], cfg)[len(kept) :]
 
-    children: list[AudioCase] = []
-    for parent in split_bases:
-        if parent.expected:  # on ne dégrade que les cas récités
-            for degradation in degradations:
-                path = out_dir / "degraded" / f"{degraded_id(parent.id, degradation)}.wav"
-                degrade(degradation, out_dir / parent.file, path, sample_rate=cfg.sample_rate)
-                children.append(
-                    degraded_case(
-                        parent, degradation, sha256=sha256_file(path), duree_s=_wav_duration(path)
-                    )
-                )
+    children = degrade_cases(split_bases, out_dir, degradations, cfg)
     final = Manifest(cases=[*kept, *split_bases, *children])
     report.problems = validate_ref_manifest(final, cfg)
     report.manifest = final

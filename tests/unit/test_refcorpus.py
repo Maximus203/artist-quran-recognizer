@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
@@ -108,6 +109,54 @@ def test_degradation_inconnue_ou_decalage_negatif() -> None:
         Degradation("echo")
     with pytest.raises(RefCorpusError):
         Degradation("silence_pad", {"pad_s": 1}, shift_s=-1.0)
+
+
+@pytest.mark.parametrize(
+    "kind, params, shift",
+    [
+        ("silence_pad", {"pad_s": 3}, 2.0),  # décalage déclaré != silence réellement ajouté
+        ("silence_pad", {"pad_s": 2}, 0.0),  # silence ajouté mais vérité non décalée
+        ("silence_pad", {}, 2.0),  # pas de pad_s : le décalage n'a pas de source
+        ("silence_pad", {"pad_s": 0}, 0.0),  # un « silence » de 0 s n'est pas une dégradation
+        ("silence_pad", {"pad_s": 1.2345}, 1.2345),  # adelay travaille à la milliseconde
+        ("silence_pad", {"pad_s": "2"}, 2.0),
+        ("noise", {"snr_db": 10, "seed": 1}, 5.0),  # le bruit ne décale rien
+        ("telephone", {}, 0.5),
+        ("reverb", {"decay": 0.4}, 1.0),
+        ("mp3_low", {"kbps": 32}, 0.1),
+    ],
+)
+def test_shift_doit_egaler_pad(kind: str, params: dict[str, object], shift: float) -> None:
+    with pytest.raises(RefCorpusError, match=r"shift_s|pad_s"):
+        Degradation(kind, params, shift_s=shift)  # type: ignore[arg-type]
+    with pytest.raises(RefCorpusError):  # même refus à la relecture d'un manifeste
+        Degradation.from_dict({"kind": kind, "params": params, "shift_s": shift})
+
+
+def test_shift_egal_pad_accepte() -> None:
+    assert Degradation("silence_pad", {"pad_s": 2}, shift_s=2.0).shift_s == 2.0
+    assert Degradation("silence_pad", {"pad_s": 1.5}, shift_s=1.5).label == "silencepad-pad_s1.5"
+    for kind in ("noise", "telephone", "reverb", "mp3_low"):
+        assert Degradation(kind, {"snr_db": 10, "seed": 1}).shift_s == 0.0
+
+
+def test_manifeste_au_decalage_incoherent_signale(tmp_path: Path) -> None:
+    parent = replace(clean_case("p"), split="dev")
+    child = replace(
+        degraded_case(
+            parent,
+            Degradation("silence_pad", {"pad_s": 2}, shift_s=2.0),
+            sha256=SHA_B,
+            duree_s=14.5,
+        ),
+        split="dev",
+    )
+    path = tmp_path / "manifest.yaml"
+    Manifest(cases=[parent, child]).save(path)
+    text = path.read_text(encoding="utf-8").replace("shift_s: 2.0", "shift_s: 5.0")
+    path.write_text(text, encoding="utf-8")
+    problems = validate_ref_manifest(Manifest.load(path))
+    assert any(p.startswith(f"cas {child.id}") and "shift_s" in p for p in problems)
 
 
 def test_label_stable_et_trie() -> None:
@@ -226,6 +275,68 @@ def test_cas_non_quran_sans_verset() -> None:
     assert any("non_quran mais" in p for p in validate_ref_manifest(Manifest(cases=[wrong])))
 
 
+def _pair(degradation: Degradation, child_duration: float) -> tuple[AudioCase, AudioCase]:
+    parent = replace(clean_case("p"), split="dev")
+    child = degraded_case(parent, degradation, sha256=SHA_B, duree_s=child_duration)
+    return parent, replace(child, split="dev")
+
+
+PAD = Degradation("silence_pad", {"pad_s": 2}, shift_s=2.0)
+NOISE = Degradation("noise", {"snr_db": 10, "seed": 1})
+
+
+def test_enfant_conforme_au_parent_decale_valide() -> None:
+    for degradation, duration in ((PAD, 14.5), (NOISE, 12.5), (NOISE, 12.6)):
+        parent, child = _pair(degradation, duration)
+        assert validate_ref_manifest(Manifest(cases=[parent, child])) == []
+
+
+def _drop_shift(child: AudioCase) -> AudioCase:
+    return replace(child, expected=clean_case().expected)  # vérité du parent, non décalée
+
+
+@pytest.mark.parametrize(
+    "degradation, tamper, needle",
+    [
+        (PAD, _drop_shift, "expected"),
+        (PAD, lambda c: replace(c, non_quran=clean_case().non_quran), "non_quran"),
+        (PAD, lambda c: replace(c, annotated_windows=((0.0, 12.5),)), "annotated_windows"),
+        (PAD, lambda c: replace(c, annotated_windows=()), "annotated_windows"),
+        (PAD, lambda c: replace(c, duree_s=12.5), "durée"),  # le silence n'a pas été ajouté
+        (PAD, lambda c: replace(c, duree_s=None), "durée"),
+        (NOISE, lambda c: replace(c, expected=c.expected[:1]), "expected"),  # un verset perdu
+        (
+            NOISE,
+            lambda c: replace(c, expected=(replace(c.expected[0], t=(0.5, 4.0)), *c.expected[1:])),
+            "expected",
+        ),  # frontière déplacée sans décalage déclaré
+        (
+            NOISE,
+            lambda c: replace(
+                c, expected=(replace(c.expected[0], status=Status.INFERRED), *c.expected[1:])
+            ),
+            "expected",
+        ),  # la dégradation ne change pas le statut de preuve
+        (NOISE, lambda c: replace(c, duree_s=20.0), "durée"),
+    ],
+)
+def test_enfant_verite_non_decalee_signalee(
+    degradation: Degradation, tamper: Callable[[AudioCase], AudioCase], needle: str
+) -> None:
+    parent, child = _pair(degradation, 14.5 if degradation.shift_s else 12.5)
+    problems = validate_ref_manifest(Manifest(cases=[parent, tamper(child)]))
+    assert any(p.startswith(f"cas {child.id}") and needle in p for p in problems), problems
+
+
+def test_enfant_dont_le_parent_est_derive_signale() -> None:
+    parent, child = _pair(NOISE, 12.5)
+    grandchild = replace(
+        child, id="g", extra={**child.extra, "ref": {**child.extra["ref"], "parent": child.id}}
+    )
+    problems = validate_ref_manifest(Manifest(cases=[parent, child, grandchild]))
+    assert any("dégradation d'une dégradation" in p for p in problems)
+
+
 def test_enfant_orphelin_ou_dans_un_autre_jeu() -> None:
     parent = replace(clean_case("p"), split="dev")
     child = replace(
@@ -235,3 +346,29 @@ def test_enfant_orphelin_ou_dans_un_autre_jeu() -> None:
     assert any("split de p" in p for p in problems)
     orphan = replace(child, split="dev")
     assert any("absent" in p for p in validate_ref_manifest(Manifest(cases=[orphan])))
+
+
+VERSIONED = Path(__file__).resolve().parents[1] / "fixtures" / "ref-corpus" / "manifest.yaml"
+
+
+def test_manifeste_versionne_conforme_au_schema_fige() -> None:
+    manifest = Manifest.load(VERSIONED)
+    assert manifest.cases
+    assert validate_ref_manifest(manifest) == []
+
+
+def test_everyayah_par_recitant_jamais_partage_entre_jeux() -> None:
+    """Non-régression : un récitant EveryAyah (donc ses clips) n'est que dans un seul jeu, et
+    aucun audio (sha256) n'apparaît des deux côtés."""
+    manifest = Manifest.load(VERSIONED)
+    reciter_splits: dict[str, set[str | None]] = {}
+    sha_splits: dict[str, set[str | None]] = {}
+    for case in manifest.cases:
+        reciter_splits.setdefault(case.recitant, set()).add(case.split)
+        sha_splits.setdefault(case.sha256, set()).add(case.split)
+        if case.source and "everyayah.com/data/" in case.source:
+            assert case.source.endswith(f"everyayah.com/data/{case.recitant}"), case.id
+    assert {len(v) for v in reciter_splits.values()} == {1}
+    assert {len(v) for v in sha_splits.values()} == {1}
+    sides = {s for v in reciter_splits.values() for s in v}
+    assert sides == {"dev", "test"}
