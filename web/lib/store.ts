@@ -3,6 +3,7 @@ import {
   mkdir,
   readFile,
   rename,
+  rm,
   writeFile,
   readdir,
   stat,
@@ -12,9 +13,48 @@ import path from "node:path";
 import { parseRecognition, type Recognition } from "./recognition";
 import { reviewSchema, type Review } from "./review";
 
-export const ROOT =
-  process.env.AQR_REVIEW_DIR ||
-  path.join(os.homedir(), "AppData", "Local", "aqr-review");
+/** Dossier de données par défaut : AppData seulement sous Windows, XDG ailleurs. */
+export function defaultReviewDir(
+  platform: NodeJS.Platform,
+  home: string,
+  env: Record<string, string | undefined>,
+): string {
+  if (platform === "win32")
+    return path.join(home, "AppData", "Local", "aqr-review");
+  const base = env.XDG_DATA_HOME || path.join(home, ".local", "share");
+  return path.join(base, "aqr-review");
+}
+/** Lu à chaque appel (testable, et cohérent si l'environnement change). */
+export function reviewRoot(): string {
+  return path.resolve(
+    /* turbopackIgnore: true */ process.env.AQR_REVIEW_DIR ||
+      defaultReviewDir(process.platform, os.homedir(), process.env),
+  );
+}
+const DEFAULT_UPLOAD_BYTES = 300 * 1024 * 1024;
+/** Plafond d'upload en octets (`AQR_MAX_UPLOAD_BYTES`, 300 Mo par défaut). */
+export function uploadLimitBytes(
+  raw: string | undefined = process.env.AQR_MAX_UPLOAD_BYTES,
+): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0 ? value : DEFAULT_UPLOAD_BYTES;
+}
+/** Rejet précoce d'après `Content-Length` (marge pour l'enveloppe multipart). */
+export function exceedsUploadLimit(
+  contentLength: string | null,
+  limit = uploadLimitBytes(),
+): boolean {
+  if (contentLength === null) return false;
+  const declared = Number(contentLength);
+  return !Number.isFinite(declared) || declared > limit + 2 * 1024 * 1024;
+}
+/** Durée d'inactivité avant nettoyage (`AQR_SESSION_TTL_S`) ; 0 = jamais (défaut). */
+export function sessionTtlSeconds(
+  raw: string | undefined = process.env.AQR_SESSION_TTL_S,
+): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0 ? value : 0;
+}
 export const REPO = path.resolve(process.cwd(), "..");
 export type Session = {
   id: string;
@@ -31,12 +71,14 @@ export type Session = {
   prediction_sha256: string | null;
   pid: number | null;
 };
+const SESSION_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export function sha(data: Buffer): string {
   return createHash("sha256").update(data).digest("hex");
 }
 export function sessionDir(id: string): string {
-  if (!/^[a-f0-9-]{36}$/.test(id)) throw new Error("Identifiant invalide");
-  return path.join(ROOT, "sessions", id);
+  if (!SESSION_ID.test(id)) throw new Error("Identifiant invalide");
+  return path.join(reviewRoot(), "sessions", id);
 }
 export async function atomicJson(file: string, value: unknown): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
@@ -128,7 +170,7 @@ export async function readReviewHistory(id: string): Promise<Review[]> {
 }
 export async function listSessions(): Promise<Session[]> {
   try {
-    const dirs = await readdir(path.join(ROOT, "sessions"));
+    const dirs = await readdir(path.join(reviewRoot(), "sessions"));
     const sessions = await Promise.all(
       dirs.map(async (id) => {
         try {
@@ -151,4 +193,44 @@ export async function audioPath(id: string): Promise<string> {
   const p = path.join(sessionDir(id), `source${s.extension}`);
   await stat(p);
   return p;
+}
+/** Supprime une session (audio, résultat, revue, exports). Refuse si elle tourne. */
+export async function deleteSession(id: string): Promise<void> {
+  const dir = sessionDir(id);
+  const session = await readSession(id);
+  if (session.state === "running")
+    throw new Error("Traitement en cours : annule-le avant de supprimer.");
+  await rm(dir, { recursive: true, force: true });
+}
+/**
+ * Supprime les sessions inactives depuis plus de `maxAgeSeconds` (dernière
+ * écriture de `session.json`). `0` = désactivé. Les sessions en cours sont gardées.
+ * Renvoie les identifiants supprimés.
+ */
+export async function cleanupSessions(
+  maxAgeSeconds: number,
+  now = Date.now(),
+): Promise<string[]> {
+  if (!(maxAgeSeconds > 0)) return [];
+  const removed: string[] = [];
+  let ids: string[];
+  try {
+    ids = await readdir(path.join(reviewRoot(), "sessions"));
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw e;
+  }
+  for (const id of ids) {
+    try {
+      const dir = sessionDir(id);
+      const { mtimeMs } = await stat(path.join(dir, "session.json"));
+      if (now - mtimeMs < maxAgeSeconds * 1000) continue;
+      if ((await readSession(id)).state === "running") continue;
+      await rm(dir, { recursive: true, force: true });
+      removed.push(id);
+    } catch {
+      /* dossier étranger ou illisible : laissé tel quel */
+    }
+  }
+  return removed;
 }
