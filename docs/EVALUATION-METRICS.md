@@ -105,8 +105,19 @@ qui a produit les sorties, sinon le facteur temps réel n'est pas lisible.
 fichier de `models/LOCK.json` + empreinte du LOCK), `manifest` (empreinte du fichier + des cas
 évalués), `split`, `final`, `thresholds` (rattachement, décodeur lu dans les sorties, seuil
 d'effectif), `normalization` (versions `aqr.normalize/N` et `aqr.normalize-strict/N`, empreinte de ces
-versions + dictionnaire imla'i),
-`warnings`.
+versions + dictionnaire imla'i), `engine` (le bloc `engine` des sorties : un seul moteur par
+rapport), `run` (voir ci-dessous), `warnings`.
+
+**Entrée : un lot, pas un dossier quelconque.** `scripts/recognize_batch.py` écrit `run.json`
+(`aqr.recognition-run/1` : `status` `running` → `complete` / `partial` / `interrupted`, moteur,
+options, SHA git, empreinte du manifeste, `planned`, `done` = cas → sha256 du fichier écrit,
+`failed` = cas → message). `evaluate.py` ne lit un cas que s'il est dans `done` avec la même
+empreinte ; il refuse (code 2, rien d'écrit) un lot absent ou non `complete`, et un dossier dont les
+sorties mêlent deux moteurs. Un cas évaluable sans prédiction (hors lot, en échec, fichier modifié)
+est listé (`missing_predictions` / `refused`) et le code de sortie est 1. `--allow-unverified-run`
+lit d'anciennes prédictions sans `run.json` : le rapport porte alors `run: {verified: false, reason}`
+et un avertissement. Code : `src/aqr/eval/run.py` · tests : `test_eval_run.py`,
+`test_recognize_batch.py`.
 
 ### Identification (sans horodatage)
 

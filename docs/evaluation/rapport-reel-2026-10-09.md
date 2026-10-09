@@ -9,11 +9,27 @@ Whisper-Tarteel `5c3c53f…`). **Seuils** (provisoires) : reconnu ≥ 0,75, riva
 ## Reproduction
 ```bash
 python scripts/build_ref_corpus.py --seed 7 --per-scenario 2          # PR #40 → ~/aqr-ref (hors git)
+# UN dossier de sortie par moteur : OUT-fastconformer/, OUT-whisper/ (jamais un dossier partagé)
 python scripts/recognize_batch.py --manifest tests/fixtures/ref-corpus/manifest.yaml \
-  --audio-dir ~/aqr-ref --split dev --asr fastconformer --out-dir OUT   # ou --asr whisper
-python scripts/evaluate.py --manifest tests/fixtures/ref-corpus/manifest.yaml --predictions OUT \
-  --split dev --min-reference-verses 50 --out rapport.json              # test : --split test --final
+  --audio-dir ~/aqr-ref --split dev --asr fastconformer --out-dir OUT-fastconformer
+python scripts/recognize_batch.py --manifest tests/fixtures/ref-corpus/manifest.yaml \
+  --audio-dir ~/aqr-ref --split dev --asr whisper --out-dir OUT-whisper
+echo $?   # 0 seulement si OUT-*/run.json est « complete » ; 1 = cas en échec ou lot interrompu
+python scripts/evaluate.py --manifest tests/fixtures/ref-corpus/manifest.yaml \
+  --predictions OUT-fastconformer --split dev --min-reference-verses 50 \
+  --out rapport-fastconformer.json                                      # test : --split test --final
 ```
+Le lot écrit `OUT/run.json` (`aqr.recognition-run/1` : statut, moteur, SHA git, empreinte du
+manifeste, `planned` / `done` avec le sha256 de chaque fichier écrit / `failed`) ; au démarrage il
+supprime `run.json`, `timings.json` et les `<id>.json` des cas du lot. `evaluate.py` ne lit que les
+cas listés dans `done` avec la même empreinte, et refuse (code 2) un lot absent, `running`,
+`partial`, `interrupted` ou mêlant deux moteurs ; il rend 1 s'il manque un cas évaluable.
+`--allow-unverified-run` est réservé aux anciennes prédictions écrites sans `run.json` : il est
+tracé dans le rapport (`run: {verified: false, reason}`) et ne doit pas servir à un chiffre publié.
+`timings.json` donne `process_peak_rss_mb` : pic CUMULÉ du processus, pas celui d'un cas.
+**Les chiffres de la section suivante datent d'avant ce protocole** (dossiers sans `run.json`, donc
+sans garantie d'origine des fichiers) : ils sont à refaire avec un lot vérifié avant toute
+citation.
 
 ## Résultats (corpus : audio EveryAyah mixé/dégradé, vérité exacte construite)
 | | dev FastConformer | dev Whisper | test FastConformer | test Whisper |
