@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -116,3 +117,14 @@ def test_ecriture_qui_echoue_laisse_l_ancien_contenu_et_aucun_tmp(tmp_path: Path
         write_text_atomic(target, "nouveau")
     assert target.read_text(encoding="utf-8") == "ancien"
     assert [p.name for p in tmp_path.iterdir()] == ["x.json"]
+
+
+def test_le_fichier_ecrit_respecte_le_umask_au_lieu_d_etre_prive(tmp_path: Path):
+    # mkstemp crée en 0600 ; les sorties du lot doivent rester lisibles comme avant (umask)
+    target = tmp_path / "x.json"
+    previous = os.umask(0o022)
+    try:
+        write_text_atomic(target, "un")
+    finally:
+        os.umask(previous)
+    assert stat.S_IMODE(target.stat().st_mode) == 0o644

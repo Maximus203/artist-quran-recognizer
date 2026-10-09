@@ -203,20 +203,26 @@ def _read_recognition(path: Path, listed_sha: str | None) -> Recognition:
 
 
 def _mixed_engines(engines: Mapping[str, Mapping[str, Any]], run: RunRecord | None) -> str | None:
-    """Description des moteurs distincts du dossier s'il y en a plusieurs, sinon `None`."""
-    groups: dict[str, list[str]] = {}
-    for case_id, engine in engines.items():
-        groups.setdefault(json.dumps(engine, sort_keys=True, ensure_ascii=False), []).append(
-            case_id
-        )
+    """Les moteurs distincts du dossier (seuls les champs qui diffèrent, avec les cas concernés)
+    s'il y en a plusieurs, sinon `None`."""
+    groups: dict[str, tuple[Mapping[str, Any], list[str]]] = {}
+    sources = [(case_id, engine) for case_id, engine in engines.items()]
     if run is not None and run.engine is not None:
-        key = json.dumps(dict(run.engine), sort_keys=True, ensure_ascii=False)
-        groups.setdefault(key, []).append("run.json")
+        sources.append(("run.json", run.engine))
+    for source, engine in sources:
+        key = json.dumps(engine, sort_keys=True, ensure_ascii=False)
+        groups.setdefault(key, (engine, []))[1].append(source)
     if len(groups) < 2:
         return None
+    members = [engine for engine, _ in groups.values()]
+    varying = sorted(
+        {k for engine in members for k in engine}
+        - {k for k in members[0] if all(e.get(k) == members[0][k] for e in members)}
+    )
     return " ; ".join(
-        f"{engine} ({', '.join(ids[:3])}{', …' if len(ids) > 3 else ''})"
-        for engine, ids in groups.items()
+        f"{', '.join(f'{k}={engine.get(k)}' for k in varying)} "
+        f"({', '.join(ids[:3])}{', …' if len(ids) > 3 else ''})"
+        for engine, ids in groups.values()
     )
 
 
