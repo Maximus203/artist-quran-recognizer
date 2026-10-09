@@ -33,7 +33,7 @@ from aqr.data.labels import (
     preannotate,
 )
 from aqr.data.manifest import Manifest, ManifestError
-from aqr.data.split import assign_splits
+from aqr.data.split import assign_splits, quarantine_recitant
 from aqr.pipeline.factory import (
     CONSTRAINED_UNAVAILABLE,
     RecognizeOptions,
@@ -73,6 +73,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "split", help="dev/test 70/30 par récitant (affectations existantes figées)"
     )
     spl.add_argument("--dry-run", action="store_true")
+
+    qua = sub.add_parser(
+        "quarantine",
+        help="récitant exposé pendant le réglage -> quarantaine (sens unique ; voir le protocole)",
+    )
+    qua.add_argument("recitant", help="identifiant exact du récitant dans le manifeste")
+    qua.add_argument("--dry-run", action="store_true")
 
     rec = commands.add_parser(
         "recognize", help="audio/vidéo -> versets horodatés (JSON puis SRT/VTT)"
@@ -124,13 +131,33 @@ def _split(manifest_path: Path, config: DataConfig, dry_run: bool, out: TextIO) 
             changed += 1
     if not dry_run:
         manifest.save(manifest_path)
-    for side in config.splits:
+    for side in (*config.splits, config.quarantine_split):
         names = sorted(r for r, s in mapping.items() if s == side)
+        if not names and side == config.quarantine_split:
+            continue  # la quarantaine n'apparaît que s'il y en a une
         hours = sum(c.duree_s or 0 for c in manifest.cases if mapping[c.recitant] == side) / 3600
         print(
             f"{side:5s} {len(names):2d} récitants · {hours:5.2f} h · {', '.join(names)}", file=out
         )
     print(f"{changed} cas affecté(s){' (simulation)' if dry_run else ''}", file=out)
+    return 0
+
+
+def _quarantine(
+    manifest_path: Path, config: DataConfig, recitant: str, dry_run: bool, out: TextIO
+) -> int:
+    manifest = Manifest.load(manifest_path)
+    moved = quarantine_recitant(manifest.cases, recitant, config)
+    changed = [new for old, new in zip(manifest.cases, moved, strict=True) if old != new]
+    manifest.cases = moved
+    if not dry_run:
+        manifest.save(manifest_path)
+    names = sorted({case.recitant for case in changed})
+    print(
+        f"{len(changed)} cas passé(s) en {config.quarantine_split} "
+        f"({', '.join(names) or 'déjà en quarantaine'}){' (simulation)' if dry_run else ''}",
+        file=out,
+    )
     return 0
 
 
@@ -273,6 +300,8 @@ def main(
                 manifest_path, audio_dir, args.case_id, UnavailablePreAnnotator(), force=args.force
             )
             print(f"pré-annotation écrite : {path}", file=out)
+        elif args.action == "quarantine":
+            return _quarantine(manifest_path, config, args.recitant, args.dry_run, out)
         else:
             return _split(manifest_path, config, args.dry_run, out)
     except PreannotationUnavailable as exc:
