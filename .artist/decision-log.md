@@ -521,3 +521,8 @@
 - `AQR_REVIEW_DIR` par défaut : `AppData\Local` seulement sous Windows, XDG sinon (jusqu'ici un chemin Windows était créé sous `$HOME` sur Linux). La racine est lue à chaque appel (testable) ; les identifiants de session sont des UUID stricts (l'ancien motif `[a-f0-9-]{36}` laissait passer des chaînes non UUID).
 - Plafond d'upload : rejet `413` dès `Content-Length` avant de lire le corps multipart. Nettoyage : `AQR_SESSION_TTL_S` (0 = désactivé, comportement historique « rien n'est supprimé automatiquement ») appliqué à l'import, plus `DELETE /api/sessions/<id>` ; une session en cours n'est jamais supprimée.
 - `lib/jobs.ts`, `lib/store.ts` et `lib/local-request.ts` n'avaient aucun test : tests vitest ajoutés (jobs via un faux interpréteur exécutable, store dans un dossier temporaire). Les tests de `jobs` caractérisent le comportement existant (verts d'emblée).
+
+## 2026-10-09 — Smokes de bout en bout (CLI + navigateur)
+- Audio court non versionné : les versets 112:1 à 112:4 (Alafasy, EveryAyah) sont téléchargés par `scripts/fetch_everyayah.py` dans `$AQR_AUDIO_DIR` puis concaténés par ffmpeg en dossier temporaire. Toute ressource absente fait sauter le test (marqueur `slow`, hors suite par défaut).
+- Assertions volontairement sobres (pas de taux) : schéma, tout verset nommé appartient à la sourate jouée (I3), texte non vide issu du corpus (I1), au moins un verset RECOGNIZED. Mesure réelle sur CPU : environ 13 s d'audio, 95 s à 3,5 min selon le chargement des poids.
+- Le smoke navigateur utilise `playwright-core` (devDependency exacte) avec Chromium déjà présent (`executablePath`) : ni `playwright install`, ni runner supplémentaire. Il vise l'UI réelle (import, moteur Python, carte verset, pack ZIP), sans mock.
