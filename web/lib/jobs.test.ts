@@ -3,7 +3,20 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { cancel, jobSettled, launch } from "./jobs";
-import { readSession, saveSession, sessionDir, type Session } from "./store";
+import {
+  deleteSession,
+  jobs,
+  readSession,
+  saveSession,
+  sessionDir,
+  type Session,
+} from "./store";
+
+// Enveloppe transparente de saveSession : permet de faire échouer l'écriture initiale de launch.
+vi.mock("./store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./store")>();
+  return { ...actual, saveSession: vi.fn(actual.saveSession) };
+});
 
 // Faux interpréteur Python : un script node exécutable qui imite `aqr recognize`.
 const FAKE = `#!/usr/bin/env node
@@ -75,6 +88,40 @@ async function seed(over: Partial<Session> = {}, hash = HASH): Promise<void> {
   });
   await writeFile(path.join(sessionDir(ID), "source.mp3"), BYTES);
 }
+async function untilProcessGone(pid: number): Promise<void> {
+  for (let i = 0; i < 500; i++) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  throw new Error("le processus du faux moteur ne s'est pas arrêté");
+}
+/** Erreurs qu'aucun code n'a interceptées (rejets non gérés, exceptions non interceptées). */
+function watchUncaught(): { seen: unknown[]; stop: () => void } {
+  const seen: unknown[] = [];
+  const record = (error: unknown) => seen.push(error);
+  process.on("uncaughtException", record);
+  process.on("unhandledRejection", record);
+  return {
+    seen,
+    stop: () => {
+      process.off("uncaughtException", record);
+      process.off("unhandledRejection", record);
+    },
+  };
+}
+const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 30));
+/** jobSettled borné : un job jamais libéré fait échouer le test au lieu de le bloquer. */
+const settledWithin = (ms: number) =>
+  Promise.race([
+    jobSettled(ID),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("jobSettled jamais résolue")), ms),
+    ),
+  ]);
 /** Attend que le gestionnaire `close` ait consigné l'issue, sans sonder la session. */
 async function settle(): Promise<Session> {
   await jobSettled(ID);
@@ -150,17 +197,6 @@ describe("lancement du moteur", () => {
 
 describe("lecture concurrente pendant la fin du traitement", () => {
   const GENERIC = /s’est arrêté avant de produire/;
-  async function untilProcessGone(pid: number): Promise<void> {
-    for (let i = 0; i < 500; i++) {
-      try {
-        process.kill(pid, 0);
-      } catch {
-        return;
-      }
-      await new Promise((r) => setTimeout(r, 10));
-    }
-    throw new Error("le processus du faux moteur ne s'est pas arrêté");
-  }
   it("un lecteur ne déclare pas failed un traitement que ce serveur n'a pas fini de consigner", async () => {
     vi.stubEnv("FAKE_MODE", "linger");
     await seed();
@@ -178,6 +214,115 @@ describe("lecture concurrente pendant la fin du traitement", () => {
     expect(final.state).toBe("failed");
     expect(final.error).toContain("boom: modèle introuvable");
     expect(final.error).not.toMatch(GENERIC);
+  });
+});
+
+describe("robustesse du lancement", () => {
+  it("un interpréteur introuvable finit failed avec un message lisible, sans exception non interceptée", async () => {
+    vi.stubEnv("AQR_PYTHON", path.join(tmp, "absent", "python"));
+    await seed();
+    const watch = watchUncaught();
+    try {
+      await launch(ID);
+      await settledWithin(3000);
+      await tick();
+      const out = await readSession(ID);
+      expect(out.state).toBe("failed");
+      expect(out.error).toMatch(/ENOENT/);
+      expect(out.pid).toBeNull();
+      expect(jobs.has(ID)).toBe(false);
+      expect(watch.seen).toEqual([]);
+    } finally {
+      watch.stop();
+    }
+  });
+  it("l'issue n'est jamais écrasée par l'écriture initiale « running » même lente", async () => {
+    vi.stubEnv("AQR_PYTHON", path.join(tmp, "absent", "python"));
+    await seed();
+    const real = await vi.importActual<typeof import("./store")>("./store");
+    vi.mocked(saveSession).mockImplementationOnce(async (value) => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      await real.saveSession(value);
+    });
+    await launch(ID);
+    await settledWithin(3000);
+    expect((await readSession(ID)).state).toBe("failed");
+  });
+  it("si l'écriture initiale de la session échoue : processus tué, job libéré, session failed, erreur relancée", async () => {
+    vi.stubEnv("FAKE_MODE", "sleep");
+    await seed();
+    let pid: number | null = null;
+    vi.mocked(saveSession).mockImplementationOnce(async (value) => {
+      pid = value.pid;
+      throw new Error("disque plein");
+    });
+    await expect(launch(ID)).rejects.toThrow("disque plein");
+    expect(pid).not.toBeNull();
+    expect(jobs.has(ID)).toBe(false);
+    await settledWithin(3000);
+    await untilProcessGone(pid as unknown as number);
+    const out = await readSession(ID);
+    expect(out.state).toBe("failed");
+    expect(out.error).toContain("disque plein");
+  });
+  it("deux lancements simultanés : un seul démarre", async () => {
+    await seed();
+    const results = await Promise.allSettled([launch(ID), launch(ID)]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const rejected = results.filter((r) => r.status === "rejected");
+    expect(rejected).toHaveLength(1);
+    expect(String((rejected[0] as PromiseRejectedResult).reason)).toMatch(
+      /déjà en cours/,
+    );
+    expect((await settle()).state).toBe("done");
+  });
+  it("relancer une session annulée dont close n'est pas passé est refusé, puis permis après", async () => {
+    vi.stubEnv("FAKE_MODE", "linger");
+    await seed();
+    await launch(ID);
+    const { pid } = await readSession(ID);
+    await untilProcessGone(pid as number);
+    await cancel(ID);
+    await expect(launch(ID)).rejects.toThrow(/déjà en cours/);
+    await settle();
+    expect((await readSession(ID)).state).toBe("cancelled");
+    vi.stubEnv("FAKE_MODE", "ok");
+    await launch(ID);
+    expect((await settle()).state).toBe("done");
+  });
+  it("supprimer une session annulée attend la fin de close : aucun rejet non géré", async () => {
+    vi.stubEnv("FAKE_MODE", "linger");
+    await seed();
+    await launch(ID);
+    const { pid } = await readSession(ID);
+    await untilProcessGone(pid as number);
+    await cancel(ID);
+    const watch = watchUncaught();
+    try {
+      await deleteSession(ID);
+      await expect(readSession(ID)).rejects.toThrow();
+      await jobSettled(ID);
+      await tick();
+      expect(watch.seen).toEqual([]);
+    } finally {
+      watch.stop();
+    }
+  });
+  it("une session supprimée pendant le traitement ne provoque aucun rejet non géré", async () => {
+    vi.stubEnv("FAKE_MODE", "linger");
+    await seed();
+    await launch(ID);
+    const { pid } = await readSession(ID);
+    await untilProcessGone(pid as number);
+    const watch = watchUncaught();
+    try {
+      await rm(sessionDir(ID), { recursive: true, force: true });
+      await settledWithin(5000);
+      await tick();
+      expect(watch.seen).toEqual([]);
+    } finally {
+      watch.stop();
+    }
   });
 });
 

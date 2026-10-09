@@ -49,6 +49,12 @@ export async function launch(id: string): Promise<void> {
     "--lock",
     path.join(REPO, "models", "LOCK.json"),
   ];
+  // Synchrone jusqu'à `jobs.set` : deux lancements simultanés ne passent pas ensemble,
+  // et une session annulée n'est relançable qu'une fois son `close` passé.
+  if (jobs.has(id))
+    throw new Error(
+      "Traitement déjà en cours ou en cours d'arrêt : réessaie dans un instant.",
+    );
   const child = spawn(/* turbopackIgnore: true */ python, args, {
     cwd: REPO,
     shell: false,
@@ -58,12 +64,16 @@ export async function launch(id: string): Promise<void> {
   let settle!: () => void;
   const settled = new Promise<void>((resolve) => (settle = resolve));
   jobs.set(id, { child, settled });
+  let outputText = "";
+  let aborted = false;
   session.state = "running";
   session.error = null;
   session.started_at = new Date().toISOString();
   session.pid = child.pid || null;
-  await saveSession(session);
-  let outputText = "";
+  // Écrit avant toute issue : `close` l'attend, sinon il pourrait être écrasé par « running ».
+  const started = saveSession(session);
+  // Écouteurs posés avant tout `await` : un `error` de spawn (interpréteur introuvable)
+  // arrive au tick suivant et serait sinon une exception non interceptée.
   child.stdout?.on("data", (chunk: Buffer) => {
     outputText = (outputText + chunk.toString()).slice(-8000);
   });
@@ -75,6 +85,8 @@ export async function launch(id: string): Promise<void> {
   });
   child.on("close", async (code) => {
     try {
+      await started.catch(() => undefined);
+      if (aborted) return;
       const current = await readSession(id);
       if (current.state === "cancelled") return;
       current.pid = null;
@@ -100,18 +112,37 @@ export async function launch(id: string): Promise<void> {
       }
       await saveSession(current);
     } catch (error) {
-      const current = await readSession(id);
-      current.state = "failed";
-      current.error =
-        error instanceof Error ? error.message : "Résultat invalide";
-      current.pid = null;
-      await saveSession(current);
+      try {
+        const current = await readSession(id);
+        current.state = "failed";
+        current.error =
+          error instanceof Error ? error.message : "Résultat invalide";
+        current.pid = null;
+        await saveSession(current);
+      } catch {
+        /* session supprimée entre-temps : rien à consigner */
+      }
     } finally {
       // Libère le job seulement maintenant : jusque-là, aucun lecteur ne sonde le processus.
       if (jobs.get(id)?.child === child) jobs.delete(id);
       settle();
     }
   });
+  try {
+    await started;
+  } catch (error) {
+    aborted = true;
+    child.kill();
+    session.state = "failed";
+    session.error =
+      error instanceof Error ? error.message : "Lancement impossible";
+    session.pid = null;
+    session.finished_at = new Date().toISOString();
+    await saveSession(session).catch(() => undefined);
+    if (jobs.get(id)?.child === child) jobs.delete(id);
+    settle();
+    throw error;
+  }
 }
 /** Se résout quand le gestionnaire `close` du traitement de `id` a fini (immédiat sans traitement). */
 export function jobSettled(id: string): Promise<void> {
