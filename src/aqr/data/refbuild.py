@@ -11,9 +11,10 @@ from __future__ import annotations
 import random
 import wave
 from array import array
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, Protocol, runtime_checkable
 
 from aqr.data.config import DataConfig
 from aqr.data.degrade import degrade, make_silence
@@ -21,6 +22,7 @@ from aqr.data.everyayah import bismillah_clip_path
 from aqr.data.ingest import sha256_file
 from aqr.data.manifest import AudioCase, Manifest, NonQuranItem
 from aqr.data.mixer import (
+    SCENARIOS,
     ClipProvider,
     ClipUse,
     DiskClipProvider,
@@ -47,6 +49,7 @@ from aqr.data.refcorpus import (
     validate_ref_manifest,
     with_ref_meta,
 )
+from aqr.data.reftrace import build_trace, trace_path, write_trace
 from aqr.domain.models import NonQuranKind
 from aqr.domain.ports import CorpusRepository
 
@@ -79,16 +82,35 @@ class BuildReport:
     removed: list[tuple[str, str]] = field(default_factory=list)
     """(id, raison) : cas de l'ancien manifeste qui n'ont pas été conservés."""
     problems: list[str] = field(default_factory=list)
+    trace: dict[str, Any] = field(default_factory=dict)
+    """Contenu de `manifest.build.json` (écrit avec le manifeste quand il n'y a aucun problème)."""
+
+
+@runtime_checkable
+class ExclusionReporter(Protocol):
+    """Fournisseur qui écarte des récitants et sait dire pourquoi."""
+
+    def excluded_reciters(self) -> tuple[tuple[str, str], ...]: ...
 
 
 class ReferenceClipProvider(DiskClipProvider):
     """Sources disque, sans les récitants dont la basmala manque (EveryAyah n'en publie pas pour
     tous) : le mixeur en a besoin pour les versets 1, et mieux vaut un récitant de moins qu'un
-    mixage sans vérité."""
+    mixage sans vérité. Les récitants écartés sont listés par `excluded_reciters`."""
+
+    def _without_basmala(self) -> tuple[str, ...]:
+        root = self._dir / "everyayah"
+        return tuple(r for r in super().reciters() if not bismillah_clip_path(root, r).exists())
 
     def reciters(self) -> tuple[str, ...]:
-        root = self._dir / "everyayah"
-        return tuple(r for r in super().reciters() if bismillah_clip_path(root, r).exists())
+        missing = set(self._without_basmala())
+        return tuple(r for r in super().reciters() if r not in missing)
+
+    def excluded_reciters(self) -> tuple[tuple[str, str], ...]:
+        return tuple(
+            (r, "bismillah.mp3 absent : EveryAyah ne publie pas la basmala de ce récitant")
+            for r in self._without_basmala()
+        )
 
 
 def ensure_outside_repo(out_dir: Path, repo_root: Path) -> None:
@@ -371,11 +393,16 @@ def build_ref_corpus(
     scenarios: Sequence[str] | None = None,
     degradations: Sequence[Degradation] = DEFAULT_DEGRADATIONS,
     config: DataConfig | None = None,
+    environment: Mapping[str, Any] | None = None,
 ) -> BuildReport:
-    """Écrit les audios dans `out_dir` et le manifeste dans `manifest_path` (idempotent)."""
+    """Écrit les audios dans `out_dir`, le manifeste dans `manifest_path` et, à côté, sa trace de
+    construction `manifest.build.json` (idempotent). `environment` (commande, SHA git...) est
+    recopié tel quel dans la trace : seul l'appelant le connaît."""
     cfg = config or DataConfig()
     mix_config = MixConfig(sample_rate=cfg.sample_rate)
     report = BuildReport()
+    excluded = provider.excluded_reciters() if isinstance(provider, ExclusionReporter) else ()
+    report.skipped.extend((f"reciter:{name}", reason) for name, reason in excluded)
     mixes = generate_mixes(
         provider, corpus, seed=seed, per_scenario=per_scenario, scenarios=scenarios,
         config=mix_config,
@@ -415,6 +442,22 @@ def build_ref_corpus(
     final = Manifest(cases=[*kept, *split_bases, *children])
     report.problems = validate_ref_manifest(final, cfg)
     report.manifest = final
+    report.trace = build_trace(
+        manifest=final,
+        manifest_path=manifest_path,
+        out_dir=out_dir,
+        seed=seed,
+        per_scenario=per_scenario,
+        scenarios=list(scenarios) if scenarios else sorted(SCENARIOS),
+        degradations=degradations,
+        config=cfg,
+        retained=provider.reciters(),
+        excluded=excluded,
+        skipped=report.skipped,
+        removed=report.removed,
+        environment=environment,
+    )
     if not report.problems:
         final.save(manifest_path)
+        write_trace(trace_path(manifest_path), report.trace)
     return report
