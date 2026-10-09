@@ -585,6 +585,43 @@
   téléchargement de la copie publique du lot 1 par un agent cloud (`fetch_public_lot.py`) est admis ; aligner le
   libellé hérité (12 cas de `tests/fixtures/audio/manifest.yaml`, `scripts/audio_lot.py`) une fois la décision 3 prise.
 
+## 2026-10-09 — Corpus de référence (#40) : reconstruction figée, une source un jeu, trace
+- **Reconstruction** : les affectations du manifeste existant (`dev`, `test`, `quarantaine`) sont reprises avant tout
+  calcul (`frozen_splits`, `assign_ref_splits(frozen=...)`) ; la voix `mix-<récitant>` suit la quarantaine
+  (`voice_key`) même quand tous les anciens cas du récitant sont régénérés. Un dérivé dont le parent est régénéré
+  n'est jamais conservé (régénéré, ou retiré et signalé). Le « À reporter sur #40 » de l'entrée Quarantaine est fait :
+  `validate_ref_manifest` accepte la quarantaine et signale une voix en quarantaine ET en dev/test.
+- **Parole hors cible et sources** : pseudo-récitant dérivé du contenu (`speech-<nature>-<sha256[:12]>`), un cas par
+  enregistrement distinct ; un enregistrement source (`speech/`, `specials/`) ne sert qu'à un seul jeu (premier arrivé,
+  premier servi). **Conséquence assumée** : avec un seul clip par special, la prière n'existe que d'un côté. Choix fait
+  de préférence à des fuites silencieuses ; le remède est de fournir un clip distinct par jeu.
+- **Décalage** : `shift_s == pad_s` pour `silence_pad`, 0 sinon ; la validation compare chaque dérivé à son parent
+  décalé (vérité, statut, durée à `DataConfig.derived_duration_tolerance_s`).
+- **Trace** : `manifest.build.json` à côté du manifeste (aucun chemin local), procédure « Reproduire » dans
+  `docs/data-lots/ref-corpus-provenance.md`. Rejeu du constructeur réel (graine 7, 2 par scénario) : manifeste et 130
+  audios identiques à l'octet, donc les chiffres calculés sur ce manifeste restent valides.
+
+## 2026-10-09 — Corpus de référence (#40) : relecture indépendante, correctifs et limites connues
+- **Corrigé** : (a) la trace ne décrivait que le dernier lancement alors qu'un build incrémental garde les anciens cas
+  (`_kept_cases`) : elle porte maintenant `carried_over` (cas, graines, scénarios conservés), un scénario écarté dont des
+  cas restent est marqué « conservés d'un lancement précédent » dans `skipped`, et la doc dit que le rejeu n'est exact
+  que si `carried_over.cases` vaut 0 (sinon reconstruire dans un dossier et un manifeste vierges) ; (b) identifiants
+  dupliqués : `scenarios` dédoublonnés, `validate_ref_manifest` signale id et fichier dupliqués, deux dégradations de même
+  étiquette (`snr_db` 20 et 20.0) sont refusées avant toute écriture (`ensure_unique_degradations`) ; (c) `pad_s`
+  NaN/infini et `shift_s` non numérique sont des erreurs de schéma, pas des plantages ; (d) le script abandonne
+  proprement (« ABANDON », rien d'écrit) sur YAML illisible, `ManifestError` ou `RefCorpusError` ; (e) un dérivé doit aussi
+  garder `statut`, `boundaries` et `tolerance_ms` de son parent.
+- **Limites connues, non traitées** (assumées, à reprendre si elles gênent) :
+  1. Pas de dossier d'attente : l'audio est écrit dans `out_dir` avant la validation finale ; si elle échoue, manifeste et
+     trace ne sont pas écrits mais les audios déjà générés restent.
+  2. L'audio d'un mixage écarté pour source partagée est effacé sans autre trace que sa ligne dans `skipped` ; l'audio des
+     cas retirés (`removed`) n'est pas effacé.
+  3. Les réclamations de sources (`claims`) sont indexées par le sha256 du fichier source (à défaut, des échantillons),
+     pas par celui des échantillons : deux fichiers distincts qui décodent à l'identique ne sont pas reconnus comme la
+     même source (la dédup de la parole hors cible, elle, compare les échantillons).
+  4. Les noms de fichiers de `speech/` et `specials/` sont versionnés (`extra.sources[].file`, `manifest.build.json`) : un
+     nom qui désignerait une personne serait publié. Nommer ces fichiers de façon anonyme.
+
 ## 2026-10-09 — Mode test distant protégé de l'atelier (optionnel)
 - Le défaut ne change pas : boucle locale uniquement. `AQR_ALLOWED_HOSTS` (vide par défaut) ajoute des hôtes ; fail-closed : un hôte ajouté n'est accepté que si `AQR_ACCESS_TOKEN` est défini. Dès qu'un jeton est défini il protège aussi le loopback (un tunnel local ne contourne pas la protection).
 - Jeton par en-tête (`x-aqr-token`, `Bearer`) ou cookie `HttpOnly`/`SameSite=Strict` signé HMAC `<expiration>.<sig>` obtenu via `/access` ; sans état serveur, TTL `AQR_ACCESS_TTL_S` (3600 s par défaut). Comparaison à temps constant (HMAC des deux côtés puis `timingSafeEqual`, donc sans fuite de longueur). Pas de limitation de débit : jeton long exigé par la doc, reverse proxy pour l'exposition réelle.
