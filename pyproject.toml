@@ -11,6 +11,7 @@ dependencies = [
 # Dépendances lourdes isolées : le cœur (domain/corpus/matching/decoding) n'en a pas besoin.
 audio = ["soundfile>=0.12", "numpy>=1.26"]
 asr = ["torch>=2.7", "torchaudio>=2.7", "transformers>=4.44", "nemo_toolkit[asr]>=2.0", "huggingface_hub>=0.24"]
+muno = ["numpy>=1.26", "torch>=2.7", "torchaudio>=2.7", "onnxruntime>=1.18,<2", "sentencepiece>=0.2,<1", "huggingface_hub>=0.24"]
 data = ["huggingface_hub>=0.24"]
 segmenter = ["recitations-segmenter==1.0.0", "silero-vad==6.2.3"]  # installer avec --no-deps après [asr]
 # `numpy` : requis par les tests des adapters (le code testé l'importe paresseusement) et par
@@ -69,6 +70,12 @@ module = [
   "recitations_segmenter.*",
   "nemo",
   "nemo.*",
+  "onnxruntime",
+  "onnxruntime.*",
+  "sentencepiece",
+  "sentencepiece.*",
+  "torchaudio",
+  "torchaudio.*",
 ]
 follow_imports = "skip"
 ignore_missing_imports = true

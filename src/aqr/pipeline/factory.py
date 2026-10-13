@@ -80,8 +80,10 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
             "Variable d'environnement manquante : AQR_MODELS_DIR (ou --models-dir) ; "
             "télécharger les modèles avec `python scripts/fetch_models.py`"
         )
-    if options.asr not in ("whisper", "fastconformer"):
-        raise RecognizerUnavailable(f"ASR inconnu : {options.asr!r} (whisper | fastconformer)")
+    if options.asr not in ("whisper", "fastconformer", "muno-streaming"):
+        raise RecognizerUnavailable(
+            f"ASR inconnu : {options.asr!r} (whisper | fastconformer | muno-streaming)"
+        )
     if options.segmenter not in ("recitation", "silero"):
         raise RecognizerUnavailable(f"segmenteur inconnu : {options.segmenter!r}")
 
@@ -152,6 +154,14 @@ def _segmenter(
 
 
 def _asr(options: RecognizeOptions, lock: ModelsLock) -> tuple[QuranASR, str]:
+    if options.asr == "muno-streaming":
+        from aqr.adapters.muno_streaming import MunoStreamingConfig, MunoStreamingQuranASR
+
+        key = "muno-fastconformer-quran-streaming"
+        asr = MunoStreamingQuranASR(
+            MunoStreamingConfig(models_dir=options.models_dir, lock_path=options.lock_path)
+        )
+        return asr, f"{key}@{lock.models[key].revision[:12]}/ctc-q8"
     if options.asr == "whisper":
         from aqr.adapters.whisper_tarteel import WhisperTarteelASR, WhisperTarteelConfig
 

@@ -72,7 +72,7 @@ export type Session = {
   audio_sha256: string;
   size: number;
   source_kind?: "file" | "microphone";
-  asr?: "fastconformer" | "whisper";
+  asr?: "fastconformer" | "whisper" | "muno-streaming";
   created_at: string;
   state: "ready" | "running" | "done" | "failed" | "cancelled";
   error: string | null;

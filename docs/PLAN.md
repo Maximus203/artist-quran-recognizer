@@ -59,9 +59,9 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 
 ## Phase 4 — Adapters audio (GPU : RTX 5090 24 Go) ⏳
 - ✅ fait : B1 ffmpeg (#20), épinglage des modèles (#21), B4 FastConformer (#22) et Whisper-Tarteel (#23),
-  B2 recitation-segmenter-v2 + repli Silero (PR B2). ⏳ reste : décodage contraint (ADR-0003).
+  B2 recitation-segmenter-v2 + repli Silero (PR B2), Muno FastConformer streaming (PR de comparaison). ⏳ reste : décodage contraint (ADR-0003).
 - 🤖 B1 ffmpeg · B2 recitation-segmenter-v2 (+ repli VAD) · B4 FastConformer-Quran et
-  Whisper-Tarteel · décodage contraint optionnel (trie coranique + chemin poubelle).
+  Whisper-Tarteel et Muno Streaming · décodage contraint optionnel (trie coranique + chemin poubelle).
   Tests de contrat pour chaque port, tests `slow` sur de vrais extraits EveryAyah.
 - 👤 **Intervention** : coller `prompts/phase-04.md`. Accepter les installations lourdes
   (CUDA/PyTorch/NeMo) si l'agent le demande ; vérifier l'espace disque (~20 Go de modèles).
