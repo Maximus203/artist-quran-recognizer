@@ -10,6 +10,7 @@ import {
 import type { Annotation, Review } from "@/lib/review";
 import { audioAccept, bindAudioDrop } from "@/lib/audio-upload";
 import Recorder from "./recorder";
+import type { AsrChoice } from "@/lib/asr-choice";
 
 type Session = {
   id: string;
@@ -20,6 +21,7 @@ type Session = {
   error: string | null;
   prediction_sha256: string | null;
   started_at: string | null;
+  asr?: AsrChoice;
 };
 type Detail = {
   session: Session;
@@ -93,6 +95,7 @@ export default function ReviewApp() {
     [draft, setDraft] = useState<Annotation | null>(null),
     [saveState, setSaveState] = useState(""),
     [elapsed, setElapsed] = useState(0);
+  const [asrChoice, setAsrChoice] = useState<AsrChoice>("fastconformer");
   const audio = useRef<HTMLAudioElement>(null),
     wave = useRef<HTMLDivElement>(null),
     card = useRef<HTMLDivElement>(null),
@@ -364,7 +367,11 @@ export default function ReviewApp() {
       try {
         const id = await createSession(selectedAudio, undefined, "microphone");
         try {
-          const r = await fetch(`/api/sessions/${id}/run`, { method: "POST" });
+          const r = await fetch(`/api/sessions/${id}/run`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ asr: asrChoice }),
+          });
           const data = await r.json();
           if (!r.ok) throw new Error(data.error);
           await open(id);
@@ -379,7 +386,7 @@ export default function ReviewApp() {
         setBusy(false);
       }
     },
-    [createSession, open, refreshList],
+    [asrChoice, createSession, open, refreshList],
   );
   useEffect(() => {
     return bindAudioDrop(window, {
@@ -394,6 +401,12 @@ export default function ReviewApp() {
     try {
       const r = await fetch(`/api/sessions/${detail.session.id}/run`, {
         method,
+        ...(method === "POST"
+          ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ asr: asrChoice }),
+            }
+          : {}),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
@@ -521,6 +534,20 @@ export default function ReviewApp() {
           </p>
         </div>
         <div className="upload">
+          <label className="engine-choice">
+            Moteur de reconnaissance
+            <select
+              value={asrChoice}
+              onChange={(event) => setAsrChoice(event.target.value as AsrChoice)}
+            >
+              <option value="fastconformer">FastConformer · actuel</option>
+              <option value="whisper">Whisper · challenger</option>
+              <option value="muno-streaming" disabled>
+                Muno Streaming · accès en attente
+              </option>
+            </select>
+            <small>Choisi pour la prochaine analyse ; chaque session conserve le moteur utilisé.</small>
+          </label>
           <Recorder onAnalyze={analyzeRecording} />
           <span className="upload-divider">OU IMPORTER UN FICHIER</span>
           <label>
@@ -586,6 +613,7 @@ export default function ReviewApp() {
                 <span className="session-name">{s.name}</span>
                 <span className="session-meta">
                   {new Date(s.created_at).toLocaleString("fr-FR")} · {s.state}
+                  {s.asr ? ` · ${s.asr === "whisper" ? "Whisper" : "FastConformer"}` : ""}
                 </span>
               </button>
             ))
@@ -619,6 +647,11 @@ export default function ReviewApp() {
                           ? "Moteur indisponible"
                           : "Annulé"}
                 </span>
+                {detail.session.asr && (
+                  <span>
+                    Moteur : {detail.session.asr === "whisper" ? "Whisper" : "FastConformer"}
+                  </span>
+                )}
                 <span>SHA-256 {detail.session.audio_sha256.slice(0, 12)}…</span>
               </div>
               {detail.session.error && (
@@ -771,13 +804,26 @@ export default function ReviewApp() {
               {detail.session.state === "ready" ||
               detail.session.state === "failed" ||
               detail.session.state === "cancelled" ? (
-                <button
-                  className="primary run"
-                  disabled={busy}
-                  onClick={() => action("POST")}
-                >
-                  Lancer le vrai moteur Python ↗
-                </button>
+                <div className="run-controls">
+                  <label className="engine-choice">
+                    Moteur pour cette analyse
+                    <select
+                      value={asrChoice}
+                      onChange={(event) => setAsrChoice(event.target.value as AsrChoice)}
+                    >
+                      <option value="fastconformer">FastConformer · actuel</option>
+                      <option value="whisper">Whisper · challenger</option>
+                      <option value="muno-streaming" disabled>Muno Streaming · accès en attente</option>
+                    </select>
+                  </label>
+                  <button
+                    className="primary run"
+                    disabled={busy}
+                    onClick={() => action("POST")}
+                  >
+                    Lancer le vrai moteur Python ↗
+                  </button>
+                </div>
               ) : detail.session.state === "running" ? (
                 <button
                   className="outline run"
