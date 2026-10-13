@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { launch, cancel } from "@/lib/jobs";
 import { isLocalRequest } from "@/lib/local-request";
+import { parseAsrChoice } from "@/lib/asr-choice";
 export const runtime = "nodejs";
 export async function POST(
   request: Request,
@@ -9,7 +10,11 @@ export async function POST(
   if (!isLocalRequest(request, true))
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
   try {
-    await launch((await params).id);
+    const body: unknown = await request.json().catch(() => ({}));
+    const asr = parseAsrChoice(
+      body && typeof body === "object" && "asr" in body ? body.asr : undefined,
+    );
+    await launch((await params).id, asr);
     return NextResponse.json({ state: "running" });
   } catch (e) {
     return NextResponse.json(

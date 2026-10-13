@@ -150,6 +150,7 @@ a {
   font-weight: 700;
 }
 .upload input[type="file"],
+.engine-choice select,
 .editor input:not([type="checkbox"]),
 .editor select,
 .editor textarea {
@@ -724,6 +725,28 @@ a {
 }
 .run {
   margin: 15px 0 0;
+}
+.engine-choice {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #d8e3d5;
+}
+.engine-choice select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  background: #10201f;
+  border: 1px solid #476159;
+  border-radius: 7px;
+  color: var(--text);
+}
+.run-controls {
+  display: grid;
+  gap: 4px;
+  max-width: 440px;
 }
 .verse-card {
   min-height: 260px;
