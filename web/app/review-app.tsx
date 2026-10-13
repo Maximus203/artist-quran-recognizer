@@ -538,15 +538,20 @@ export default function ReviewApp() {
             Moteur de reconnaissance
             <select
               value={asrChoice}
-              onChange={(event) => setAsrChoice(event.target.value as AsrChoice)}
+              onChange={(event) =>
+                setAsrChoice(event.target.value as AsrChoice)
+              }
             >
               <option value="fastconformer">FastConformer · actuel</option>
               <option value="whisper">Whisper · challenger</option>
-              <option value="muno-streaming" disabled>
-                Muno Streaming · accès en attente
+              <option value="muno-streaming">
+                Muno Streaming · ONNX quantifié
               </option>
             </select>
-            <small>Choisi pour la prochaine analyse ; chaque session conserve le moteur utilisé.</small>
+            <small>
+              Choisi pour la prochaine analyse ; chaque session conserve le
+              moteur utilisé.
+            </small>
           </label>
           <Recorder onAnalyze={analyzeRecording} />
           <span className="upload-divider">OU IMPORTER UN FICHIER</span>
@@ -613,7 +618,9 @@ export default function ReviewApp() {
                 <span className="session-name">{s.name}</span>
                 <span className="session-meta">
                   {new Date(s.created_at).toLocaleString("fr-FR")} · {s.state}
-                  {s.asr ? ` · ${s.asr === "whisper" ? "Whisper" : "FastConformer"}` : ""}
+                  {s.asr
+                    ? ` · ${s.asr === "whisper" ? "Whisper" : s.asr === "muno-streaming" ? "Muno Streaming" : "FastConformer"}`
+                    : ""}
                 </span>
               </button>
             ))
@@ -649,7 +656,12 @@ export default function ReviewApp() {
                 </span>
                 {detail.session.asr && (
                   <span>
-                    Moteur : {detail.session.asr === "whisper" ? "Whisper" : "FastConformer"}
+                    Moteur :{" "}
+                    {detail.session.asr === "whisper"
+                      ? "Whisper"
+                      : detail.session.asr === "muno-streaming"
+                        ? "Muno Streaming"
+                        : "FastConformer"}
                   </span>
                 )}
                 <span>SHA-256 {detail.session.audio_sha256.slice(0, 12)}…</span>
@@ -809,11 +821,17 @@ export default function ReviewApp() {
                     Moteur pour cette analyse
                     <select
                       value={asrChoice}
-                      onChange={(event) => setAsrChoice(event.target.value as AsrChoice)}
+                      onChange={(event) =>
+                        setAsrChoice(event.target.value as AsrChoice)
+                      }
                     >
-                      <option value="fastconformer">FastConformer · actuel</option>
+                      <option value="fastconformer">
+                        FastConformer · actuel
+                      </option>
                       <option value="whisper">Whisper · challenger</option>
-                      <option value="muno-streaming" disabled>Muno Streaming · accès en attente</option>
+                      <option value="muno-streaming">
+                        Muno Streaming · ONNX quantifié
+                      </option>
                     </select>
                   </label>
                   <button

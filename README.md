@@ -45,7 +45,10 @@ aqr recognize cours.mp3 --out-dir sortie          # -> sortie/cours.recognition.
 ```
 
 Options : `--format json,srt,vtt`, `--translation french_hameedullah|none`, `--asr whisper|fastconformer`,
-`--device cpu|cuda`. Contrat de la sortie : [docs/RECOGNIZE-OUTPUT.md](docs/RECOGNIZE-OUTPUT.md). Un passage
+`--asr whisper|fastconformer|muno-streaming`, `--device cpu|cuda`. Muno requiert l'accès Hugging Face approuvé
+et l'extra `.[muno]` ; ses poids quantifiés sont téléchargés dans `$AQR_MODELS_DIR` et restent hors Git.
+Sa licence NPL-1.1 interdit les usages commerciaux et impose que l'utilisation locale reste gratuite.
+Contrat de la sortie : [docs/RECOGNIZE-OUTPUT.md](docs/RECOGNIZE-OUTPUT.md). Un passage
 non reconnu est une **abstention**, jamais un verset par défaut ; le repli Silero n'est pas fiable par défaut
 ([docs/evaluation/silero-fallback.md](docs/evaluation/silero-fallback.md)). Limites connues : [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
 

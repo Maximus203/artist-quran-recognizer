@@ -29,7 +29,7 @@
  [B3] LanguageGate ────────── français / autre langue → NON_QURAN direct
         │  (arabe seulement)
  [B4] QuranASR ────────────── transcription orientée Coran + timestamps mots
-        │                     (FastConformer-Quran | Whisper-Tarteel)
+        │                     (FastConformer-Quran | Whisper-Tarteel | Muno Streaming)
  [B5] QuranicityGate ──────── est-ce VRAIMENT du Coran ?  (cf. §4, piège n°1)
         │
  [B6] VerseMatcher ────────── texte normalisé → candidats (VerseRef, plage de mots, score)
@@ -53,7 +53,7 @@ que toute implémentation doit passer.
 | B1 | `AudioExtractor` | chemin fichier → `AudioClip` (PCM 16 kHz mono) | ffmpeg | oui |
 | B2 | `SpeechSegmenter` | `AudioClip` → `list[TimeSpan]` | recitation-segmenter-v2, repli Silero VAD | faux (fake) |
 | B3 | `LanguageGate` | segment → `lang` + confiance | Whisper LID | faux |
-| B4 | `QuranASR` | segment → `Transcript` (mots + timestamps + confiance) | FastConformer-Quran (CC-BY-4.0) ; Whisper-Tarteel en challenger | faux |
+| B4 | `QuranASR` | segment → `Transcript` (mots + timestamps + confiance) | FastConformer-Quran (CC-BY-4.0) ; Whisper-Tarteel et Muno Streaming (NPL-1.1) en challengers | faux |
 | B5 | `QuranicityGate` | `Transcript` (+ transcript générique) → score ∈ [0,1] | double ASR + couverture d'alignement | **oui (pur)** |
 | B6 | `VerseMatcher` | texte normalisé → `list[Candidate]` | flux continu + alignement local par mots (ADR-0004) | **oui (pur)** |
 | B7 | `SequenceDecoder` | `list[list[Candidate]]` → `Timeline` | Viterbi / HMM | **oui (pur)** |

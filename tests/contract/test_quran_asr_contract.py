@@ -26,11 +26,20 @@ def _whisper() -> QuranASR:
     return WhisperTarteelASR(WhisperTarteelConfig(models_dir=models_dir(), lock_path=LOCK_PATH))
 
 
+def _muno_streaming() -> QuranASR:
+    from tests.support.real import LOCK_PATH
+
+    from aqr.adapters.muno_streaming import MunoStreamingConfig, MunoStreamingQuranASR
+
+    return MunoStreamingQuranASR(MunoStreamingConfig(models_dir=models_dir(), lock_path=LOCK_PATH))
+
+
 @pytest.fixture(
     params=[
         pytest.param(lambda: FakeQuranASR(), id="fake"),
         pytest.param(_fastconformer, id="fastconformer", marks=pytest.mark.slow),
         pytest.param(_whisper, id="whisper-tarteel", marks=pytest.mark.slow),
+        pytest.param(_muno_streaming, id="muno-streaming", marks=pytest.mark.slow),
     ],
     scope="module",
 )

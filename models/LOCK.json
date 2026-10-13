@@ -12,6 +12,29 @@
         }
       }
     },
+    "muno-fastconformer-quran-streaming": {
+      "repo_id": "Muno459/fastconformer-quran-streaming",
+      "revision": "75799adac5d2a9bc0230d4c4b410dd68319560e4",
+      "license": "npl-1.1",
+      "files": {
+        "model.q8.onnx": {
+          "sha256": "41b3757505f9f5bb85d8fb6e478c1ab9f64d6454203ea5f032ce99a1e955f099",
+          "size": 131957764
+        },
+        "tokenizer.model": {
+          "sha256": "1fcfa104fa448c979cc2537788947c6516827f403ecdc55c4895b77d28630ba4",
+          "size": 254806
+        },
+        "streaming_global_cmvn.npz": {
+          "sha256": "e5083c4cdefc16d574eef9c16094b03bf8876ae70b40975a3c66caf995558d2e",
+          "size": 2302
+        },
+        "config.json": {
+          "sha256": "c172a1aedda2fc01569b41feb33698bcccb324238815d96588939d52da1c0b00",
+          "size": 150
+        }
+      }
+    },
     "recitation-segmenter": {
       "repo_id": "obadx/recitation-segmenter-v2",
       "revision": "5ee90364e7090ea6eb9dffe80353bed06996a196",
