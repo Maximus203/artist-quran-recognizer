@@ -13,13 +13,16 @@ import {
   sha,
 } from "./store";
 
-const ASR_ENGINES = ["fastconformer", "whisper"];
+const ASR_ENGINES = ["fastconformer", "whisper", "muno-streaming"];
 /** Moteur ASR de l'atelier : FastConformer par défaut, `AQR_ASR=whisper` pour l'autre. */
 export const ASR_ENGINE = ASR_ENGINES.includes(process.env.AQR_ASR ?? "")
   ? (process.env.AQR_ASR as string)
   : "fastconformer";
 
-export async function launch(id: string, requestedAsr?: AsrChoice): Promise<void> {
+export async function launch(
+  id: string,
+  requestedAsr?: AsrChoice,
+): Promise<void> {
   const asr = parseAsrChoice(requestedAsr ?? ASR_ENGINE);
   const session = await readSession(id);
   if (session.state === "running") throw new Error("Traitement déjà en cours");

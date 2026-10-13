@@ -696,6 +696,7 @@
 # 2026-10-13 — Choix du moteur dans l'atelier web
 
 - Le moteur ASR est choisi pour chaque lancement dans l'interface, envoyé à l'API locale, validé avant de créer le processus et inscrit dans la session. Les résultats passés et les audios ne sont pas réécrits.
-- FastConformer reste la valeur par défaut ; Whisper est le second choix réel. Muno Streaming apparaît désactivé car l'accès à ses poids est encore en attente de validation par l'auteur sur Hugging Face. Aucun repli silencieux ni résultat simulé.
+- FastConformer reste la valeur par défaut ; Whisper est le second choix réel. Muno Streaming a été autorisé sur Hugging Face puis ajouté comme troisième choix avec ONNX Q8, CMVN et tokenizer épinglés ; les poids sont installés hors Git. Aucun repli silencieux ni résultat simulé.
 - Le segmenteur de récitation est un composant commun, pas un troisième ASR. Whisper large-v3 est prévu par l'architecture comme vérification généraliste, mais son adapter et ses poids ne sont pas disponibles ; il n'est pas présenté comme un choix de reconnaissance de versets.
-- Validation : build, TypeScript, tests ciblés et essai Whisper réel dans le navigateur ; voir `.artist/acceptance-playbooks/web-engine-selector.md`.
+- Validation Muno : vrai ONNX Q8, hashes épinglés, contrat du port ASR réel réussi ; sur la sourate 112 complète, 112:3–4 sont reconnus et 112:1–2 restent en abstention (seuil prudent). Aucun résultat n'est inventé. Build/typecheck réussis ; détails et limites du test web Windows dans `.artist/acceptance-playbooks/web-engine-selector.md`.
+- Licence NPL-1.1 : usage local sans frais autorisé ; usage à but lucratif interdit. Ne pas déployer Muno dans une offre commerciale sans nouvelle licence.
