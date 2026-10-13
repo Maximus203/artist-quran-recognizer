@@ -30,6 +30,18 @@ MODELS: dict[str, ModelSpec] = {
             role="B4 ASR Coran (NeMo, hybride RNNT/CTC)",
         ),
         ModelSpec(
+            key="muno-fastconformer-quran-streaming",
+            repo_id="Muno459/fastconformer-quran-streaming",
+            files=(
+                "model.q8.onnx",
+                "tokenizer.model",
+                "streaming_global_cmvn.npz",
+                "config.json",
+            ),
+            license="npl-1.1",
+            role="B4 ASR Coran (FastConformer streaming ONNX, CPU quantisé)",
+        ),
+        ModelSpec(
             key="whisper-base-quran",
             repo_id="tarteel-ai/whisper-base-ar-quran",
             files=(

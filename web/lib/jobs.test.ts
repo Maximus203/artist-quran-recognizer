@@ -171,7 +171,7 @@ describe("lancement du moteur", () => {
     expect(args[args.indexOf("--models-dir") + 1]).toBe(
       path.join(tmp, "models"),
     );
-    expect(["fastconformer", "whisper"]).toContain(
+    expect(["fastconformer", "whisper", "muno-streaming"]).toContain(
       args[args.indexOf("--asr") + 1],
     );
   });
