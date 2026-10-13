@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { parseAsrChoice, type AsrChoice } from "./asr-choice";
 import { parseRecognition } from "./recognition";
 import {
   REPO,
@@ -18,7 +19,8 @@ export const ASR_ENGINE = ASR_ENGINES.includes(process.env.AQR_ASR ?? "")
   ? (process.env.AQR_ASR as string)
   : "fastconformer";
 
-export async function launch(id: string): Promise<void> {
+export async function launch(id: string, requestedAsr?: AsrChoice): Promise<void> {
+  const asr = parseAsrChoice(requestedAsr ?? ASR_ENGINE);
   const session = await readSession(id);
   if (session.state === "running") throw new Error("Traitement déjà en cours");
   if (session.state === "done")
@@ -39,7 +41,7 @@ export async function launch(id: string): Promise<void> {
     "--out-dir",
     output,
     "--asr",
-    ASR_ENGINE,
+    asr,
     "--format",
     "json",
     "--models-dir",
@@ -67,6 +69,7 @@ export async function launch(id: string): Promise<void> {
   let outputText = "";
   let aborted = false;
   session.state = "running";
+  session.asr = asr;
   session.error = null;
   session.started_at = new Date().toISOString();
   session.pid = child.pid || null;
