@@ -8,7 +8,9 @@ aucun verset nommé. Un fragment isolé, lui, doit rester une abstention (I3).
 
 from __future__ import annotations
 
-from aqr.decoding.chains import ChainConfig, promote_chains
+import pytest
+
+from aqr.decoding.chains import ChainConfig, chain_spans, find_chains, promote_chains
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import Candidate
 
@@ -130,3 +132,74 @@ def test_candidat_sans_qualite_connue_jamais_promu():
     ]
     promoted = run(observations)
     assert promoted[0][1][0].score == 0.4
+
+
+# --- Suites à vérifier acoustiquement (ADR-0008) -------------------------------------------------
+# Cas réel (2026-10-19, Muno, voix de Cherif) : « عَلَّمَ » amputé en « لَّمَ » au début de sa
+# fenêtre ; le matcher ne propose plus que 55:2 [2-2], qualité 0,5, un mot.
+MUNO_55 = [
+    (window(0), [cand("55:1", 5, 5, 1.0), cand("1:3", 1, 1, 1.0), cand("20:5", 1, 1, 1.0)]),
+    (window(1), [cand("55:2", 2, 2, 1.0, quality=0.5), cand("2:185", 6, 6, 1.0, quality=0.5)]),
+    (window(2), [cand("16:4", 1, 2, 2.0), cand("55:3", 1, 2, 2.0), cand("21:37", 1, 2, 2.0)]),
+    (window(3), [cand("55:4", 1, 2, 2.0)]),
+]
+
+
+def refs(chain, observations) -> list[str]:
+    return [str(observations[i][1][k].span.ref) for i, k in chain.links]
+
+
+def test_le_maillon_ampute_coupe_la_suite_a_la_qualite_exigee():
+    assert run(MUNO_55)[1][1][0].score == pytest.approx(0.1)
+    assert find_chains(MUNO_55, _Corpus(), ChainConfig(), min_quality=0.75) == []
+
+
+def test_avec_un_plancher_abaisse_la_suite_entiere_est_candidate_a_la_verification():
+    (chain,) = find_chains(MUNO_55, _Corpus(), ChainConfig(), min_quality=0.5)
+    assert refs(chain, MUNO_55) == ["55:1", "55:2", "55:3", "55:4"]
+    assert chain.words == pytest.approx(6.0)
+
+
+def test_une_suite_candidate_exige_toujours_assez_de_mots_et_deux_fenetres():
+    short = [
+        (window(0), [cand("55:2", 2, 2, 1.0, quality=0.5)]),
+        (window(1), [cand("55:3", 1, 2, 2.0)]),
+    ]
+    assert find_chains(short, _Corpus(), ChainConfig(), min_quality=0.5) == []
+    alone = [(window(0), [cand("2:255", 1, 9, 9.0)])]
+    assert find_chains(alone, _Corpus(), ChainConfig(), min_quality=0.5) == []
+
+
+def test_les_suites_au_plancher_du_matcher_sont_celles_que_la_preuve_textuelle_promeut():
+    observations = [(window(i), [cand(f"55:{i + 2}", 1, 2, 2.0)]) for i in range(3)]
+    (chain,) = find_chains(observations, _Corpus(), ChainConfig(), min_quality=0.75)
+    assert chain.links == ((0, 0), (1, 0), (2, 0))
+
+
+def test_texte_d_une_suite_comble_les_mots_que_l_asr_a_perdus():
+    (chain,) = find_chains(MUNO_55, _Corpus(), ChainConfig(), min_quality=0.5)
+    assert chain_spans(chain, MUNO_55, _Corpus()) == [
+        WordSpan(VerseRef(55, 1), 5, 5),
+        WordSpan(VerseRef(55, 2), 1, 2),
+        WordSpan(VerseRef(55, 3), 1, 2),
+        WordSpan(VerseRef(55, 4), 1, 2),
+    ]
+
+
+def test_texte_d_une_suite_coupee_au_waqf_est_un_seul_verset():
+    observations = [
+        (window(0), [cand("2:255", 1, 3, 3.0)]),
+        (window(1), [cand("2:255", 4, 6, 3.0)]),
+    ]
+    (chain,) = find_chains(observations, _Corpus(), ChainConfig(), min_quality=0.75)
+    assert chain_spans(chain, observations, _Corpus()) == [WordSpan(VerseRef(2, 255), 1, 6)]
+
+
+def test_texte_d_une_suite_finit_le_verset_tronque_par_l_asr():
+    # 2:21 a 9 mots (corpus factice) : l'ASR s'arrête au 8ᵉ, la suite continue sur 2:22
+    observations = [(window(0), [cand("2:21", 1, 8, 8.0)]), (window(1), [cand("2:22", 1, 4, 4.0)])]
+    (chain,) = find_chains(observations, _Corpus(), ChainConfig(), min_quality=0.75)
+    assert chain_spans(chain, observations, _Corpus()) == [
+        WordSpan(VerseRef(2, 21), 1, 9),
+        WordSpan(VerseRef(2, 22), 1, 4),
+    ]

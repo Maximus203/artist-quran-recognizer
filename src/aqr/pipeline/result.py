@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from aqr.alignment.verification import ChainCheck
 from aqr.domain.models import Detection, NonQuranSpan, TimeSpan
 
 
@@ -36,6 +37,8 @@ class EngineInfo:
     decoder: str
     constrained: bool = False
     corpus: str = ""
+    acoustic: str = ""
+    """Modèle CTC qui vérifie les suites et donne les temps au mot (ADR-0008) ; vide = aucun."""
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,8 @@ class RecognitionResult:
     decoder_config: dict[str, float]
     windows: int
     warnings: tuple[str, ...] = field(default_factory=tuple)
+    acoustic_checks: tuple[ChainCheck, ...] = ()
+    """Suites vérifiées sur l'audio, acceptées ou refusées (ADR-0008) : diagnostic."""
 
     def detections(self) -> tuple[Detection, ...]:
         return tuple(i for i in self.intervals if isinstance(i, Detection))
