@@ -70,3 +70,32 @@ class FinetuneConfig:
     """Dossier hors dépôt des fichiers téléchargés, des WAV extraits et des manifestes."""
     train_split: str = "train"
     val_split: str = "val"
+
+
+@dataclass(frozen=True)
+class LabelQcConfig:
+    """Contrôle des étiquettes du jeu de fine-tuning par le modèle de base, avant tout entraînement
+    (étape C, docs/evaluation/finetune-label-qc.md)."""
+
+    min_llr_per_frame: float | None = -0.45
+    """Un exemple dont le texte est moins soutenu par l'audio (`llr_per_frame` de l'alignement
+    forcé, ADR-0005/0006 : 0 = soutenu, très négatif = l'audio dit autre chose) est écarté.
+    Calibré le 2026-10-19 sur le shard Tadabur 384 (433 versets, description de tous les exemples
+    sous −0,3) : les segments qui débordent sur un verset voisin descendent jusqu'à −0,47 ;
+    au-dessus de −0,45, les écarts sont surtout acoustiques. Écarte 7,9 % des exemples (p7,5).
+    None = non calibré : le filtre refuse de juger."""
+    basmala_margin: float = 0.02
+    """Gain de `llr_per_frame` à partir duquel l'hypothèse inverse sur la basmala d'un verset 1
+    (récitée mais non annoncée, annoncée mais absente) l'emporte : l'étiquette est fausse.
+    Mesuré : basmala réellement récitée et non annoncée, gain de 0,076 à 0,36 (témoins EveryAyah,
+    3 voix) ; étiquette juste, gain ≤ −0,94 (7 versets 1 du shard 384)."""
+    robust_k: float = 3.0
+    """Seuil SUGGÉRÉ dans le rapport : médiane − k × MAD (normalisée). Aide au calibrage,
+    jamais appliqué seul : le seuil se fixe à l'oreille, sur les exemples écartés."""
+    histogram_bins: int = 20
+    report_examples: int = 30
+    """Exemples écartés listés dans le rapport (les pires d'abord), à écouter."""
+    scores_dir: str = "qc"
+    """Sous-dossier du dossier des manifestes d'une source : scores, rapport, liste d'écoute."""
+    manifest_suffix: str = ".qc.jsonl"
+    """Manifeste filtré : à côté de l'original (les chemins audio y restent relatifs)."""
