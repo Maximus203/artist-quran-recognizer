@@ -255,6 +255,12 @@ Libellés hérités (non réécrits ici) :
   ont des droits non établis (EveryAyah) : même statut que le canonique, que ce libellé ne dit pas.
   À aligner avec le canonique à la prochaine modification du mixeur.
 
+Licences **déclarées** par leur auteur (droits établis, ce ne sont pas des libellés de droits non
+établis) : les sources du jeu de fine-tuning (`src/aqr/data/finetune_sources.py`) portent
+`cc-by-nc-4.0` (Tadabur), `cc-by-4.0` (FLEURS) et `cc0-1.0` (Common Voice). Provenance, conditions
+et exclusions : `docs/evaluation/finetune-data.md`. EveryAyah et le lot 1 n'en font pas partie : la
+« Décision d'usage » ci-dessus interdit d'entraîner sur ces audios.
+
 Tout **nouveau** cas dont les droits ne sont pas établis porte le libellé canonique. Les libellés
 hérités ci-dessus sont les seuls tolérés en plus : `tests/unit/test_docs_links.py` échoue si un
 libellé du manifeste du lot 1 ou de `src/aqr/data/*.py` n'est pas documenté ici.
