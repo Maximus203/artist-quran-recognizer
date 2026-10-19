@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from aqr.domain.models import Riwaya, TimeSpan
-from aqr.domain.ports import AudioClip, TranscribedWord, Transcript
+from aqr.domain.ports import AudioClip, CtcLattice, TranscribedWord, Transcript
 from aqr.models.lock import ModelsLock, verify_model_files
 from aqr.models.registry import MODELS
 
@@ -51,6 +51,9 @@ class FastConformerConfig:
     """Amplitude (uniforme, graine fixe) du bruit qui remplit la marge manquante aux bords du clip.
     0 = zéros. Le silence NUMÉRIQUE fait halluciner le modèle (« الم », « موسوعية » : mesuré) ; un
     bruit très faible est plus proche d'un enregistrement réel."""
+    lattice_max_s: float = 120.0
+    """Durée maximale d'un passage dont on calcule le treillis CTC d'un seul tenant (mémoire GPU) :
+    l'alignement forcé travaille sur des fenêtres, un fichier entier se découpe en amont."""
     silence_rms: float = 1e-4
     """Un segment dont l'énergie (RMS) est inférieure n'est PAS envoyé au modèle : sur du silence
     numérique il hallucine un mot coranique (« الم », mesuré). Ne protège que du silence absolu
@@ -171,6 +174,60 @@ class FastConformerQuranASR:
             for (index, _fed, lead), hypothesis in zip(jobs, hypotheses, strict=True):
                 results[index] = self._to_transcript(hypothesis, spans[index], lead)
         return [results.get(i, Transcript(words=(), engine=self.engine)) for i in range(len(spans))]
+
+    # --- port CtcAcousticModel (alignement forcé, ADR-0006) -----------------------------------
+    def encode(self, text: str) -> tuple[int, ...]:
+        """Symboles CTC (SentencePiece) d'un texte. Un texte mot par mot donne la concaténation
+        des symboles de chaque mot (le découpage ne traverse pas les espaces : contrat vérifié)."""
+        return tuple(int(i) for i in self._ensure_model().tokenizer.text_to_ids(text))
+
+    def lattice(self, clip: AudioClip, span: TimeSpan) -> CtcLattice:
+        duration = len(clip.samples) / clip.sample_rate
+        if span.end_s > duration + 1e-6:
+            raise ValueError(f"segment {span} hors du clip ({duration:.2f} s)")
+        if span.duration_s > self._config.lattice_max_s:
+            raise ValueError(
+                f"passage de {span.duration_s:.1f} s > lattice_max_s "
+                f"({self._config.lattice_max_s} s) : découper en amont"
+            )
+        import numpy as np
+
+        rate = clip.sample_rate
+        segment = np.asarray(
+            clip.samples[round(span.start_s * rate) : round(span.end_s * rate)], dtype=np.float32
+        )
+        rows, blank, frame_s = self._ctc_log_probs(segment)
+        step = round(frame_s * rate)
+        padded = np.zeros(len(rows) * step, dtype=np.float32)
+        usable = min(len(segment), len(padded))
+        padded[:usable] = segment[:usable]
+        frame_rms = np.sqrt(np.mean(np.square(padded.reshape(len(rows), step)), axis=1))
+        return CtcLattice(
+            log_probs=rows,
+            blank=blank,
+            start_s=span.start_s,
+            frame_s=frame_s,
+            frame_rms=frame_rms.tolist(),
+        )
+
+    def _ctc_log_probs(  # pragma: no cover - GPU / modèle réel (tests `slow`)
+        self, segment: Any
+    ) -> tuple[list[list[float]], int, float]:
+        import torch
+
+        model = self._ensure_model()
+        device = next(model.parameters()).device
+        signal = torch.as_tensor(segment, dtype=torch.float32, device=device)[None]
+        length = torch.tensor([signal.shape[1]], device=device)
+        with torch.no_grad():
+            features, feature_length = model.preprocessor(input_signal=signal, length=length)
+            encoded, encoded_length = model.encoder(audio_signal=features, length=feature_length)
+            log_probs = model.ctc_decoder(encoder_output=encoded)
+        rows = log_probs[0, : int(encoded_length[0])].float().cpu().numpy().tolist()
+        frame_s = float(model.cfg.preprocessor.window_stride) * int(
+            model.cfg.encoder.subsampling_factor
+        )
+        return rows, int(model.tokenizer.vocab_size), frame_s
 
     def _filler(self, np: Any, count: int) -> Any:
         amplitude = self._config.pad_noise

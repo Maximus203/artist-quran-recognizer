@@ -184,3 +184,41 @@ def test_la_garde_de_silence_ne_regarde_que_le_segment_pas_la_marge():
 def test_marge_desactivee_par_defaut_car_mesuree_defavorable():
     cfg = FastConformerConfig()
     assert cfg.context_pad_s == 0.0 and cfg.pad_noise == 0.0
+
+
+# --- port CtcAcousticModel (alignement forcé, ADR-0006) ------------------------------------------
+class FakeTokenizer:
+    def text_to_ids(self, text: str) -> list[int]:
+        return [len(word) for word in text.split()]
+
+
+def test_encode_utilise_le_tokenizer_du_modele():
+    model = FakeNemo([])
+    model.tokenizer = FakeTokenizer()  # type: ignore[attr-defined]
+    assert asr(model).encode("قل هو الله") == (2, 2, 4)
+
+
+def test_treillis_du_seul_passage_en_temps_absolus(monkeypatch):
+    adapter = asr(FakeNemo([]))
+    seen: list[int] = []
+
+    def fake_log_probs(segment):  # type: ignore[no-untyped-def]
+        seen.append(len(segment))
+        return [[0.0, -9.0], [-9.0, 0.0]], 1, 0.08
+
+    monkeypatch.setattr(adapter, "_ctc_log_probs", fake_log_probs)
+    lattice = adapter.lattice(clip(10.0), TimeSpan(4.0, 6.5))
+    assert seen == [round(2.5 * RATE)]
+    assert lattice.start_s == 4.0 and lattice.blank == 1 and lattice.frame_s == 0.08
+    assert lattice.frames == 2 and lattice.time_of(2) == pytest.approx(4.16)
+    # énergie par trame du treillis (clip constant à 0,1)
+    assert lattice.frame_rms == [pytest.approx(0.1), pytest.approx(0.1)]
+
+
+def test_treillis_hors_du_clip_ou_trop_long_refuse(monkeypatch):
+    adapter = asr(FakeNemo([]), lattice_max_s=5.0)
+    monkeypatch.setattr(adapter, "_ctc_log_probs", lambda s: ([[0.0]], 0, 0.08))
+    with pytest.raises(ValueError, match="hors du clip"):
+        adapter.lattice(clip(3.0), TimeSpan(1.0, 4.0))
+    with pytest.raises(ValueError, match="lattice_max_s"):
+        adapter.lattice(clip(10.0), TimeSpan(0.0, 6.0))

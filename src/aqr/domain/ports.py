@@ -82,6 +82,43 @@ class QuranASR(Protocol):
     def transcribe(self, clip: AudioClip, span: TimeSpan) -> Transcript: ...
 
 
+@dataclass(frozen=True)
+class CtcLattice:
+    """Treillis CTC d'un passage : log-probabilités normalisées par trame (ADR-0005, ADR-0006)."""
+
+    log_probs: Sequence[Sequence[float]]
+    """[trame][symbole] ; chaque ligne est une distribution (log-softmax)."""
+    blank: int
+    start_s: float
+    """Temps absolu (dans le clip) du début de la première trame."""
+    frame_s: float
+    """Durée d'une trame (80 ms pour le FastConformer)."""
+    frame_rms: Sequence[float] | None = None
+    """Énergie (RMS) du signal sur chaque trame, si l'adapter la fournit : un CTC émet ses
+    symboles tôt et laisse un son tenu aux blancs, que seule l'énergie distingue du silence."""
+
+    @property
+    def frames(self) -> int:
+        return len(self.log_probs)
+
+    def time_of(self, frame: int) -> float:
+        """Temps absolu du début de la trame `frame` (`frames` = fin du passage)."""
+        return self.start_s + frame * self.frame_s
+
+
+class CtcAcousticModel(Protocol):
+    """Modèle acoustique CTC : treillis d'un passage et encodeur de texte dans ses symboles.
+
+    Sert à l'alignement forcé du texte du CORPUS (jamais d'un texte d'ASR) sur l'audio."""
+
+    @property
+    def engine(self) -> str: ...
+
+    def lattice(self, clip: AudioClip, span: TimeSpan) -> CtcLattice: ...
+
+    def encode(self, text: str) -> tuple[int, ...]: ...
+
+
 class GeneralASR(Protocol):
     """ASR généraliste (Whisper large-v3) utilisé par le QuranicityGate (ADR-0002)."""
 

@@ -52,6 +52,17 @@ Contrat de la sortie : [docs/RECOGNIZE-OUTPUT.md](docs/RECOGNIZE-OUTPUT.md). Un 
 non reconnu est une **abstention**, jamais un verset par défaut ; le repli Silero n'est pas fiable par défaut
 ([docs/evaluation/silero-fallback.md](docs/evaluation/silero-fallback.md)). Limites connues : [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
 
+## Aligner des versets connus (vérité terrain)
+
+```bash
+python scripts/fetch_corpus.py                    # épingle aussi quran-simple.txt (alignement)
+aqr align priere.mp3 --verses "21:51-21:62" --at 46-160   # -> aqr-out/priere.alignment.json
+```
+
+On déclare ce qui est récité, l'alignement forcé du texte du corpus sur le FastConformer donne le temps
+de chaque verset et de chaque mot, avec une preuve acoustique ; ce n'est pas une reconnaissance.
+Contrat : [docs/ALIGN-OUTPUT.md](docs/ALIGN-OUTPUT.md) · décision : [ADR-0006](docs/adr/0006-alignement-force-texte-du-corpus.md).
+
 ## Contribuer
 TDD strict, une PR par brique, invariants I1–I5 non négociables : voir [AGENTS.md](AGENTS.md).
 Aucun secret, aucun enregistrement audio de personne, aucun poids de modèle dans git.
