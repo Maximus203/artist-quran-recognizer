@@ -50,6 +50,11 @@ class Candidate:
     répartir le temps d'un segment entre les versets qu'il traverse."""
     coverage: float = 1.0
     """Part de la requête expliquée par l'alignement, avant pondération par la preuve."""
+    quality: float | None = None
+    """Ressemblance de la correspondance, AVANT le plafond de preuve (`score` = qualité ×
+    min(1, mots expliqués / evidence_words)). None = inconnue : jamais promue par la suite."""
+    explained: float = 0.0
+    """Mots de la requête expliqués (similarités cumulées) : la preuve qu'apporte ce candidat."""
 
     @property
     def spans(self) -> tuple[WordSpan, ...]:

@@ -373,12 +373,17 @@ class FlowVerseMatcher:
         word_spans = [WordSpan(refs[i], first, last) for i, first, last in spans]
         query_counts = [counts[r] for r in refs]
         query_counts[0] += credited
+        explained = alignment.similarity + credited
+        proof = min(1.0, explained / self._config.evidence_words)
         return Candidate(
             span=word_spans[0],
             score=score,
             continuation=tuple(word_spans[1:]),
             query_counts=tuple(max(1, c) for c in query_counts),
             coverage=coverage,
+            # même calcul que `_score`, avant le plafond de preuve (aqr.decoding.chains)
+            quality=score / proof if proof > 0 else None,
+            explained=explained,
         )
 
 
