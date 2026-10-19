@@ -760,3 +760,34 @@
   (page jamais hydratée ; `next build && next start` fonctionne) ; le lien nvm `C:\nvm4w\nodejs` a disparu
   (Node 22 et 24 installés mais aucun actif : `nvm use 24` le rétablit) ; `jobs.test.ts` échoue sous Windows
   (`spawn EFTYPE`, faux Python à shebang), identique sur `develop`.
+
+## 2026-10-19 — Jeu de fine-tuning de l'ASR (étape C) : sources, exclusions, manifestes
+- **Périmètre** : préparation des données seulement (`scripts/build_finetune_manifest.py`,
+  `src/aqr/data/finetune*.py`, `data/finetune/LOCK.json`) ; aucun entraînement. Détail, volumes et
+  preuve : `docs/evaluation/finetune-data.md`.
+- **Tadabur officiel = `FaisaI/tadabur`** (page du projet de l'auteur) ; `MShakir7137/tadabur` est une
+  copie, non utilisée. Licence des données CC BY-NC 4.0 (celle de l'article arXiv, CC BY-NC-SA, ne les
+  couvre pas). Riwaya non documentée : risque ouvert.
+- **Sourates de Tadabur numérotées à partir de 0** : constat mesuré (449/450 versets conformes au corpus
+  en base 0, 0/450 en base 1), non documenté par la source.
+- **Texte cible coranique = corpus `simple`**, jamais la source ; la source sert de contrôle (un écart
+  écarte la ligne) et décide de la basmala du verset 1.
+- **Arabe non coranique** : Common Voice officiel n'est plus distribué que par Mozilla Data Collective
+  (compte + conditions) : miroir CC0 `fsicoli/common_voice_17_0`, épinglé, signalé comme non officiel ;
+  plus FLEURS `ar_eg` (CC BY 4.0, officiel). **19,6 % des phrases dev de Common Voice sont des versets**
+  lus : filtre « 4 mots consécutifs d'un verset ou verset court entier » (`quran_ngram`), contrôlé à
+  l'œil sur un échantillon. Chiffres et lettres étrangères : phrase écartée (pas de verbalisation
+  inventée). Jeux `test` réservés à l'étape D.
+- **Exclusions de voix** : voix test ET dev du dépôt (corpus de référence et lot 1), identifiants
+  Tadabur seuls (aucun nom pour le lot 1, anonymisé) ; correspondance du lot 1 par les titres publics
+  des vidéos, partielle (un imam dev et les orateurs non résolus). Choix d'exclure aussi dev : 2 voix sur
+  618, pour que la comparaison de l'étape C sur dev reste propre.
+- **EveryAyah et le lot 1 retirés de C** (le PLAN les citait) : la décision d'usage provisoire interdit
+  d'entraîner sur ces audios ; à rouvrir seulement par décision écrite du mainteneur.
+- **Durée extraite 0,5–60 s** (97,7 % des heures Tadabur ; 30 s n'en garderait que 82 %) : la borne
+  d'entraînement se règle dans NeMo. Chemins audio relatifs au manifeste (portables Windows/WSL).
+- **Épinglage sans téléchargement** des 385 shards (empreinte LFS = sha256 du contenu), vérification
+  locale au téléchargement et avant chaque construction ; `fetch_checked` extrait de
+  `aqr.models.sync` (réutilisé), `HfHub(repo_type="dataset")`.
+- **Disque** : Tadabur complet = 937 Go bruts, ~160 Go extraits ; construction par shard avec
+  `--prune-raw`. Le poste a 91 Go libres : jeu complet = disque dédié ou sous-ensemble.

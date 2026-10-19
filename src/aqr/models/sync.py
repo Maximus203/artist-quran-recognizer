@@ -34,9 +34,10 @@ class Hub(Protocol):
     def download(self, repo_id: str, filename: str, revision: str, dest: Path) -> None: ...
 
 
-def _fetch_checked(
+def fetch_checked(
     hub: Hub,
-    spec: ModelSpec,
+    repo_id: str,
+    key: str,
     name: str,
     revision: str,
     target: Path,
@@ -47,11 +48,11 @@ def _fetch_checked(
     part = target.with_name(target.name + ".part")
     part.parent.mkdir(parents=True, exist_ok=True)
     try:
-        hub.download(spec.repo_id, name, revision, part)
+        hub.download(repo_id, name, revision, part)
         digest = sha256_file(part)
         if expected is not None and digest != expected:
             raise ModelLockError(
-                f"{spec.key}/{name} : le contenu téléchargé diffère de {what} "
+                f"{key}/{name} : le contenu téléchargé diffère de {what} "
                 f"({expected[:12]}… attendu, {digest[:12]}… reçu) : refusé."
             )
         part.replace(target)
@@ -82,8 +83,15 @@ def sync_model(
                         f"{spec.key}/{name} : fichier local altéré (empreinte ≠ épinglée)"
                     )
                 continue
-            _fetch_checked(
-                hub, spec, name, pinned.revision, target, locked.sha256, "l'empreinte épinglée"
+            fetch_checked(
+                hub,
+                spec.repo_id,
+                spec.key,
+                name,
+                pinned.revision,
+                target,
+                locked.sha256,
+                "l'empreinte épinglée",
             )
         return pinned
 
@@ -103,9 +111,10 @@ def sync_model(
                     f"{spec.key}/{name} : fichier local ≠ empreinte du serveur : le supprimer"
                 )
         else:
-            digest = _fetch_checked(
+            digest = fetch_checked(
                 hub,
-                spec,
+                spec.repo_id,
+                spec.key,
                 name,
                 info.revision,
                 target,
