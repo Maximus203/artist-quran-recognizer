@@ -52,7 +52,8 @@ un verset supposé, `[isti'adha]`, `[takbir]`, `[amin]`, `[basmala]` pour les fo
 pas de sous-titre.
 
 ## Ce qui n'est pas fait
-- Décodage contraint sur treillis CTC : algorithme présent (ADR-0005), non branché sur un modèle réel.
+- Décodage contraint sur treillis CTC : le FastConformer expose son treillis et l'alignement forcé du texte
+  du corpus existe (`aqr align`, ADR-0006), mais la reconnaissance ne s'en sert pas encore (étape B du plan).
 - Classification de la parole non coranique au-delà des formules de prière : B3/B5 (phase 7). Une parole
   française ou arabe courante est une abstention (`empty_transcript`, `no_candidate`, `below_threshold`), pas
   une étiquette `french`/`arabic_speech`.

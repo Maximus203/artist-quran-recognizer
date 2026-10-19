@@ -1,0 +1,112 @@
+{
+  "reference": "énergie (trames 20 ms, ratio 0.02)",
+  "engine": "fastconformer-quran@b33af7936f9a/ctc",
+  "passages": 85,
+  "audio_s": 2443.6,
+  "failures": [],
+  "variants": {
+    "simple_clean": 25,
+    "simple": 60
+  },
+  "llr_per_frame": {
+    "median": -0.078,
+    "min": -0.777
+  },
+  "start_error": {
+    "0.05": {
+      "n": 216,
+      "median_abs_ms": 20.0,
+      "median_signed_ms": -11.2,
+      "max_abs_ms": 1211.8,
+      "within_100ms": 0.944,
+      "within_300ms": 0.958,
+      "within_500ms": 0.972
+    },
+    "0.1": {
+      "n": 216,
+      "median_abs_ms": 22.8,
+      "median_signed_ms": 0.0,
+      "max_abs_ms": 1211.8,
+      "within_100ms": 0.944,
+      "within_300ms": 0.963,
+      "within_500ms": 0.972
+    }
+  },
+  "end_error": {
+    "0.05": {
+      "n": 216,
+      "median_abs_ms": 200.0,
+      "median_signed_ms": -200.0,
+      "max_abs_ms": 580.0,
+      "within_100ms": 0.259,
+      "within_300ms": 0.718,
+      "within_500ms": 0.963
+    },
+    "0.1": {
+      "n": 216,
+      "median_abs_ms": 294.4,
+      "median_signed_ms": -294.4,
+      "max_abs_ms": 980.0,
+      "within_100ms": 0.134,
+      "within_300ms": 0.514,
+      "within_500ms": 0.866
+    }
+  },
+  "worst_end": {
+    "0.05": [
+      {
+        "abs_ms": 541.6,
+        "reciter": "Alafasy_128kbps",
+        "ref": "67:18"
+      },
+      {
+        "abs_ms": 548.2,
+        "reciter": "Abdul_Basit_Murattal_192kbps",
+        "ref": "1:4"
+      },
+      {
+        "abs_ms": 550.9,
+        "reciter": "Alafasy_128kbps",
+        "ref": "110:3"
+      },
+      {
+        "abs_ms": 569.8,
+        "reciter": "Abdul_Basit_Murattal_192kbps",
+        "ref": "1:6"
+      },
+      {
+        "abs_ms": 580.0,
+        "reciter": "Husary_128kbps",
+        "ref": "110:1"
+      }
+    ],
+    "0.1": [
+      {
+        "abs_ms": 641.5,
+        "reciter": "Alafasy_128kbps",
+        "ref": "67:21"
+      },
+      {
+        "abs_ms": 680.0,
+        "reciter": "Alafasy_128kbps",
+        "ref": "1:7"
+      },
+      {
+        "abs_ms": 701.6,
+        "reciter": "Alafasy_128kbps",
+        "ref": "67:18"
+      },
+      {
+        "abs_ms": 810.8,
+        "reciter": "Alafasy_128kbps",
+        "ref": "67:8"
+      },
+      {
+        "abs_ms": 980.0,
+        "reciter": "Abdul_Basit_Murattal_192kbps",
+        "ref": "67:22"
+      }
+    ]
+  },
+  "align_compute_s_per_audio_s": 0.0041
+}
