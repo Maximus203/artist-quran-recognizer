@@ -13,10 +13,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from aqr.alignment.forced import AlignmentConfig, PassageAligner, PassageAlignment
+from aqr.alignment.forced import AlignedSpan, AlignmentConfig, PassageAligner, PassageAlignment
 from aqr.alignment.plan import PLAN_SCHEMA
-from aqr.corpus.alignment_text import AlignmentTexts, recited_span
-from aqr.domain.models import TimeSpan, VerseRef, WordSpan
+from aqr.corpus.alignment_text import (
+    FORMULA_KINDS,
+    AlignmentTexts,
+    Declared,
+    Formula,
+    recited_span,
+)
+from aqr.domain.models import NonQuranKind, TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import AudioClip, CtcAcousticModel
 
 SCHEMA = "aqr.alignment/2"
@@ -30,21 +36,24 @@ DEFAULT_ENERGY_RATIO = 0.1
 (studio) mais déborde dans les pauses réverbérées d'une prière (lot1-06) ; 0,10 est un compromis
 mesuré des deux côtés, à remplacer par un réglage sur des limites validées à l'oreille."""
 
+_FORMULA_NAMES = {kind.value for kind in FORMULA_KINDS}
 _ITEM = re.compile(
     r"^(?P<s>\d+):(?P<a>\d+)(?:-(?:(?P<s2>\d+):)?(?P<a2>\d+))?(?:\[(?P<w1>\d+)-(?P<w2>\d+)\])?$"
 )
 
 
-def parse_verse_spec(spec: str, word_count: Callable[[VerseRef], int]) -> list[WordSpan]:
+def parse_verse_spec(spec: str, word_count: Callable[[VerseRef], int]) -> list[Declared]:
     """« 112:1-4 », « 21:51-23:118 », « 2:255[1-10] », séparés par des virgules, dans l'ordre
     récité.
 
     Un verset entier exclut la basmala que Tanzil concatène au verset 1 (`recited_span`) ; une
-    plage de mots explicite est prise telle quelle (indices Uthmani)."""
+    plage de mots explicite est prise telle quelle (indices Uthmani). Les formules de la prière
+    (« amin », « takbir », « istiadha », « basmala ») se déclarent à leur place : alignées comme
+    le reste, elles empêchent un verset voisin d'absorber leur voix."""
     items = [item.strip() for item in spec.split(",") if item.strip()]
     if not items:
         raise ValueError("--verses vide : ex. « 112:1-4 » ou « 2:255[1-10] »")
-    spans: list[WordSpan] = []
+    spans: list[Declared] = []
     for item in items:
         try:
             spans.extend(_parse_item(item, word_count))
@@ -53,7 +62,9 @@ def parse_verse_spec(spec: str, word_count: Callable[[VerseRef], int]) -> list[W
     return spans
 
 
-def _parse_item(item: str, word_count: Callable[[VerseRef], int]) -> list[WordSpan]:
+def _parse_item(item: str, word_count: Callable[[VerseRef], int]) -> list[Declared]:
+    if item.lower() in _FORMULA_NAMES:
+        return [Formula(NonQuranKind(item.lower()))]
     match = _ITEM.match(item)
     if match is None:
         raise ValueError("illisible (ex. 112:1-4, 21:51-23:118, 2:255[1-10])")
@@ -70,7 +81,7 @@ def _parse_item(item: str, word_count: Callable[[VerseRef], int]) -> list[WordSp
         end = VerseRef(int(match["s2"] or match["s"]), int(match["a2"]))
         if end < start:
             raise ValueError("la fin précède le début")
-    spans: list[WordSpan] = []
+    spans: list[Declared] = []
     ref: VerseRef | None = start
     while ref is not None and ref <= end:
         spans.append(recited_span(ref, word_count(ref)))
@@ -180,20 +191,26 @@ def _passage_fields(service: AlignmentService, result: PassageAlignment) -> dict
             "free_logprob": round(result.evidence.free_logprob, 3),
             "frames": result.evidence.frames,
         },
-        "spans": [
-            {
-                "ref": str(aligned.span.ref),
-                "words": [aligned.span.first_word, aligned.span.last_word],
-                "partial": aligned.span
-                != recited_span(aligned.span.ref, texts.word_count(aligned.span.ref)),
-                "t": [round(aligned.time.start_s, 3), round(aligned.time.end_s, 3)],
-                "word_times": [
-                    [w.word, round(w.time.start_s, 3), round(w.time.end_s, 3)]
-                    for w in aligned.words
-                ],
-            }
-            for aligned in result.spans
+        "spans": [_span_fields(texts, aligned) for aligned in result.spans],
+    }
+
+
+def _span_fields(texts: AlignmentTexts, aligned: AlignedSpan) -> dict[str, Any]:
+    timing = {
+        "t": [round(aligned.time.start_s, 3), round(aligned.time.end_s, 3)],
+        "word_times": [
+            [w.word, round(w.time.start_s, 3), round(w.time.end_s, 3)] for w in aligned.words
         ],
+    }
+    span = aligned.span
+    if isinstance(span, Formula):
+        return {"kind": "non_quran", "label": span.kind.value, **timing}
+    return {
+        "kind": "verse",
+        "ref": str(span.ref),
+        "words": [span.first_word, span.last_word],
+        "partial": span != recited_span(span.ref, texts.word_count(span.ref)),
+        **timing,
     }
 
 

@@ -26,7 +26,7 @@ CC BY-NC et Muno NPL admissibles), puis dans l'ordre :
 
 | Étape | Objectif | Statut |
 |---|---|---|
-| A | Vérité terrain semi-automatique : l'humain dit QUOI (versets), l'alignement forcé dit QUAND, l'humain valide à l'oreille dans l'atelier ; 2–3 h d'audio réel validées (prière, assise) + mixages avec vraie parole non coranique | ⏳ brique 1 : alignement forcé + `aqr align` (ADR-0006, `docs/evaluation/alignment-2026-10-19.md`) ; reste : enchaînement sur un fichier entier et validation dans l'atelier |
+| A | Vérité terrain semi-automatique : l'humain dit QUOI (versets), l'alignement forcé dit QUAND, l'humain valide à l'oreille dans l'atelier ; 2–3 h d'audio réel validées (prière, assise) + mixages avec vraie parole non coranique | ⏳ outil prêt : alignement forcé (#44), fichier entier par passages, formules, validation à l'oreille dans l'atelier et écriture dans le manifeste (`docs/ALIGN-OUTPUT.md`) ; reste : **2–3 h validées par Cherif** (prière, assise) et mixages avec vraie parole non coranique |
 | B | Couche de décision acoustique : vérification CTC des candidats, suivi de position (prédire le verset suivant puis le vérifier), temps au mot près dans `aqr recognize` | |
 | C | Fine-tuning du FastConformer : Tadabur + EveryAyah + arabe non coranique transcrit (contre « il voit du Coran partout ») + dégradations (réverbération, foule, téléphone), comparé sur les données de l'étape A | |
 | D | Détecteur récitation / parole / bruit (B3/B5) et calibrage du rejet du non-Coran (phase 7) | |

@@ -13,9 +13,11 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from aqr.domain.models import TimeSpan, VerseRef, WordSpan
+from aqr.corpus.alignment_text import FORMULA_KINDS, Declared, Formula
+from aqr.domain.models import NonQuranKind, TimeSpan, VerseRef, WordSpan
 
 PLAN_SCHEMA = "aqr.align-plan/1"
+_FORMULA_NAMES = {kind.value for kind in FORMULA_KINDS}
 
 
 @dataclass(frozen=True)
@@ -25,9 +27,10 @@ class PassageProposal:
     """Déclaration au format de `aqr align --verses` (« 21:51-21:54, 21:54[5-8] »)."""
 
 
-def format_verse_spec(spans: Sequence[WordSpan], full: Sequence[bool]) -> str:
-    """Forme compacte d'une suite de plages (inverse de `parse_verse_spec`) : versets entiers
-    consécutifs regroupés en « a-b », plage partielle écrite « ref[premier-dernier] »."""
+def format_verse_spec(spans: Sequence[Declared], full: Sequence[bool]) -> str:
+    """Forme compacte d'une suite déclarée (inverse de `parse_verse_spec`) : versets entiers
+    consécutifs regroupés en « a-b », plage partielle écrite « ref[premier-dernier] », formule
+    écrite par son nom (« amin »)."""
     items: list[str] = []
     run: list[VerseRef] = []
 
@@ -37,6 +40,10 @@ def format_verse_spec(spans: Sequence[WordSpan], full: Sequence[bool]) -> str:
             run.clear()
 
     for span, whole in zip(spans, full, strict=True):
+        if isinstance(span, Formula):
+            flush()
+            items.append(span.kind.value)
+            continue
         if whole and run and run[-1].next() == span.ref:
             run.append(span.ref)
             continue
@@ -61,9 +68,10 @@ def propose_passages(
     groups: list[list[Mapping[str, Any]]] = []
     current: list[Mapping[str, Any]] = []
     for item in sorted(intervals, key=lambda i: float(i["t"][0]) if i.get("t") else -1.0):
-        if item.get("kind") != "verse" or not item.get("t"):
+        formula = item.get("kind") == "non_quran" and item.get("label") in _FORMULA_NAMES
+        if not item.get("t") or (item.get("kind") != "verse" and not formula):
             continue
-        if item.get("status") not in ("recognized", "inferred"):
+        if not formula and item.get("status") not in ("recognized", "inferred"):
             if current:
                 groups.append(current)
             current = []
@@ -79,6 +87,8 @@ def propose_passages(
         current.append(item)
     if current:
         groups.append(current)
+    # Une formule seule (takbir de transition, amin isolé) ne fait pas un passage à valider.
+    groups = [g for g in groups if any(i.get("kind") == "verse" for i in g)]
 
     bounds = [(float(g[0]["t"][0]), max(float(i["t"][1]) for i in g)) for g in groups]
     proposals: list[PassageProposal] = []
@@ -87,10 +97,16 @@ def propose_passages(
         low = (bounds[index - 1][1] + start) / 2 if index > 0 else 0.0
         high = (end + bounds[index + 1][0]) / 2 if index + 1 < len(groups) else duration_s
         window = TimeSpan(max(start - margin_s, low, 0.0), min(end + margin_s, high, duration_s))
-        spans = [WordSpan(VerseRef.parse(str(i["ref"])), *map(int, i["words"])) for i in group]
+        spans = [_declared(i) for i in group]
         full = [not bool(i.get("partial")) for i in group]
         proposals.append(PassageProposal(t=window, verses=format_verse_spec(spans, full)))
     return proposals
+
+
+def _declared(item: Mapping[str, Any]) -> Declared:
+    if item.get("kind") == "non_quran":
+        return Formula(NonQuranKind(str(item["label"])))
+    return WordSpan(VerseRef.parse(str(item["ref"])), *map(int, item["words"]))
 
 
 def plan_document(

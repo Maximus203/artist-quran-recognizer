@@ -5,7 +5,8 @@ passage validé devient une fenêtre annotée (`annotated_windows`) dont les ver
 terrain (`annotation.by: human`). Règles du protocole (docs/ANNOTATION-DEV-SET.md) : fichiers DEV
 seulement, relecteur désigné par un identifiant anonyme, rien n'est deviné.
 
-Une revalidation remplace les versets de sa fenêtre (milieu dans la fenêtre) et garde le reste ;
+Les formules déclarées (amin, takbir…) deviennent des zones `non_quran`. Une revalidation remplace
+les versets et les zones de sa fenêtre (milieu dans la fenêtre) et garde le reste ;
 une préannotation de modèle n'est jamais fusionnée, elle est remplacée.
 """
 
@@ -18,8 +19,8 @@ from pathlib import Path
 from typing import Any
 
 from aqr.data.config import DataConfig
-from aqr.data.manifest import Annotation, ExpectedItem, Manifest, WordRange
-from aqr.domain.models import Status, VerseRef
+from aqr.data.manifest import Annotation, ExpectedItem, Manifest, NonQuranItem, WordRange
+from aqr.domain.models import NonQuranKind, Status, VerseRef
 
 ALIGNMENT_SCHEMA = "aqr.alignment/2"
 _REVIEWER = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
@@ -87,6 +88,7 @@ def import_alignment(
     limit = (case.duree_s or float("inf")) + config.tolerance_ms / 1000
     windows: list[tuple[float, float]] = []
     added: list[ExpectedItem] = []
+    zones: list[NonQuranItem] = []
     for passage in passages:
         if "error" in passage or not passage.get("spans"):
             raise AlignmentImportError(
@@ -99,6 +101,14 @@ def import_alignment(
             )
         windows.append(window)
         for span in passage["spans"]:
+            if span.get("kind") == "non_quran":
+                zones.append(
+                    NonQuranItem(
+                        t=(float(span["t"][0]), float(span["t"][1])),
+                        kind=NonQuranKind(str(span["label"])),
+                    )
+                )
+                continue
             first, last = (int(w) for w in span["words"])
             added.append(
                 ExpectedItem(
@@ -123,7 +133,15 @@ def import_alignment(
     updated = replace(
         case,
         expected=tuple(sorted((*kept, *added), key=lambda e: e.t)),
-        non_quran=case.non_quran if human else (),
+        non_quran=tuple(
+            sorted(
+                (
+                    *(z for z in case.non_quran if human and not _inside(z.t, windows)),
+                    *zones,
+                ),
+                key=lambda z: z.t,
+            )
+        ),
         statut=config.statut_annote,
         annotation=Annotation("human", reviewed_by, date, note or default_note),
         annotated_windows=merged,

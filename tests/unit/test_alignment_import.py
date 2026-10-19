@@ -172,3 +172,33 @@ def test_cli_import_alignment_sans_dossier_audio(tmp_path):
     assert "lot1-06 : 1 verset(s)" in out.getvalue()
     code = main([*argv, "--reviewed-by", "Cherif"], env={}, out=out, err=err)
     assert code == 1 and "relecteur" in err.getvalue()
+
+
+def formula(label, t):
+    return {"kind": "non_quran", "label": label, "t": list(t), "word_times": []}
+
+
+def test_formules_ecrites_comme_zones_non_coraniques(tmp_path):
+    from aqr.domain.models import NonQuranKind
+
+    path = write(tmp_path, case())
+    doc = document(
+        passage(
+            [0.0, 60.0],
+            [
+                formula("takbir", (2.6, 5.4)),
+                span("1:7", (31.0, 41.0)),
+                formula("amin", (42.0, 44.5)),
+            ],
+        )
+    )
+    report = run(path, doc)
+    saved = Manifest.load(path).get("lot1-06")
+    assert report.verses == 1
+    assert [(z.kind, z.t) for z in saved.non_quran] == [
+        (NonQuranKind.TAKBIR, (2.6, 5.4)),
+        (NonQuranKind.AMIN, (42.0, 44.5)),
+    ]
+    # revalidation de la fenêtre : les anciennes zones de la fenêtre sont remplacées
+    run(path, document(passage([0.0, 60.0], [span("1:7", (31.0, 41.0))])))
+    assert Manifest.load(path).get("lot1-06").non_quran == ()
