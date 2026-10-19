@@ -2,9 +2,9 @@
 ADR-0006).
 
 Le moteur propose, l'humain corrige puis valide à l'oreille : une proposition n'est jamais une
-vérité terrain. Les versets `recognized` et `inferred` consécutifs et proches forment un passage (au plus
-`max_passage_s`, la longueur qu'un treillis CTC accepte d'un seul tenant) ; un `uncertain` coupe
-la proposition : c'est à l'humain de dire ce qui est récité là.
+vérité terrain. Les versets `recognized` et `inferred` consécutifs et proches forment un passage
+(au plus `max_passage_s`, la longueur qu'un treillis CTC accepte d'un seul tenant) ; un
+`uncertain` coupe la proposition : c'est à l'humain de dire ce qui est récité là.
 """
 
 from __future__ import annotations
