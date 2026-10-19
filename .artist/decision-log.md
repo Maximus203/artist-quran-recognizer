@@ -761,6 +761,21 @@
   (Node 22 et 24 installés mais aucun actif : `nvm use 24` le rétablit) ; `jobs.test.ts` échoue sous Windows
   (`spawn EFTYPE`, faux Python à shebang), identique sur `develop`.
 
+## 2026-10-19 — Étape B, brique 1 : preuve cumulée par la suite (ADR-0007)
+- **Déclencheur** : Cherif récite au micro la basmala puis 55:1-4 et teste les trois moteurs : aucun
+  verset nommé. Diagnostic : transcriptions justes, bon verset en tête dans chaque fenêtre, mais 2 mots
+  par fenêtre = score plafonné à 0,40 (`evidence_words` = 5) < 0,75, et le pipeline décidait
+  l'abstention fenêtre par fenêtre, avant tout contexte.
+- **Décision** : le matcher expose qualité et mots expliqués ; `promote_chains` promeut les maillons
+  d'une suite continue du Mushaf (fenêtres consécutives, qualité ≥ 0,75, ≥ 5 mots cumulés, ≥ 2 fenêtres) ;
+  l'abstention `below_threshold` est décidée après. Seuil et décodeur inchangés ; `ChainConfig(enabled=False)`
+  rend l'ancien comportement ; `decoder.chain_evidence_words` tracé dans chaque sortie.
+- **Mesures** (`docs/evaluation/chain-proof-2026-10-19.md`) : micro 55:1-4 reconnus avec FastConformer et
+  Whisper ; EveryAyah 71,8 % → 91,2 % de rappel, 0 faux verset ; assises dev : nouveaux versets = vraies
+  citations relues (22:5, 17:85) ou récitation d'Al-Qiyama ; prière : 21:53 passe d'`inferred` à reconnu.
+- **Reste** : Muno ampute le début des fenêtres (« لَّمَ » pour « عَلَّمَ ») et casse la suite : la
+  vérification acoustique CTC de la suite (brique suivante) doit rattraper ce cas.
+
 ## 2026-10-19 — Jeu de fine-tuning de l'ASR (étape C) : sources, exclusions, manifestes
 - **Périmètre** : préparation des données seulement (`scripts/build_finetune_manifest.py`,
   `src/aqr/data/finetune*.py`, `data/finetune/LOCK.json`) ; aucun entraînement. Détail, volumes et

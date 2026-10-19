@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Protocol
 
 from aqr.corpus.normalize import normalize_arabic
+from aqr.decoding.chains import ChainConfig, promote_chains
 from aqr.decoding.viterbi_decoder import DecoderConfig, ViterbiSequenceDecoder
 from aqr.domain.models import (
     Detection,
@@ -66,6 +67,8 @@ class PipelineConfig:
     """Fenêtre d'énergie RMS inférieure : abstention `silence` plutôt que `empty_transcript`."""
     formula: FormulaConfig = field(default_factory=FormulaConfig)
     decoder: DecoderConfig = field(default_factory=DecoderConfig)
+    chain: ChainConfig = field(default_factory=ChainConfig)
+    """Preuve cumulée par la suite (étape B) : des versets courts consécutifs se confirment."""
 
 
 class RecognitionPipeline:
@@ -114,11 +117,12 @@ class RecognitionPipeline:
         timing["asr_s"] = self._clock() - mark
 
         mark = self._clock()
-        observations: list[tuple[TimeSpan, list[Candidate]]] = []
         side: list[AbstentionSpan | NonQuranSpan] = []
-        for window, transcript in zip(windows, transcripts, strict=True):
-            candidates = self._classify(clip, window, transcript, side)
-            observations.append((window, candidates))
+        matched = [
+            (window, self._classify(clip, window, transcript, side))
+            for window, transcript in zip(windows, transcripts, strict=True)
+        ]
+        observations = self._decide(promote_chains(matched, self._corpus, self._config.chain), side)
         timeline = self._decoder.decode(observations)
         timing["match_s"] = self._clock() - mark
         timing["total_s"] = self._clock() - started
@@ -136,6 +140,9 @@ class RecognitionPipeline:
                 "uncertainty_ratio": cfg.uncertainty_ratio,
                 "merge_max_gap_s": cfg.merge_max_gap_s,
                 "infer_max_gap_s": cfg.infer_max_gap_s,
+                "chain_evidence_words": (
+                    self._config.chain.evidence_words if self._config.chain.enabled else 0.0
+                ),
             },
             windows=len(windows),
             warnings=self._run_warnings(),
@@ -183,17 +190,26 @@ class RecognitionPipeline:
         candidates = self._matcher.match(text, top_k=self._config.top_k)
         if self._verifier is not None and candidates:
             candidates = self._verifier(clip, window, candidates)
-        threshold = self._config.decoder.min_recognized_score
-        best = candidates[0].score if candidates else None
-        if not candidates or (best is not None and best < threshold):
-            reason = (
-                AbstentionReason.NO_CANDIDATE
-                if not candidates
-                else AbstentionReason.BELOW_THRESHOLD
-            )
-            side.append(AbstentionSpan(window, reason, best))
-            return []
+        if not candidates:
+            side.append(AbstentionSpan(window, AbstentionReason.NO_CANDIDATE, None))
         return candidates
+
+    def _decide(
+        self,
+        observations: Sequence[tuple[TimeSpan, list[Candidate]]],
+        side: list[AbstentionSpan | NonQuranSpan],
+    ) -> list[tuple[TimeSpan, list[Candidate]]]:
+        """Abstention `below_threshold` APRÈS la preuve par la suite : une fenêtre dont aucun
+        candidat n'atteint le seuil du décodeur n'entre pas dans le décodage (I3)."""
+        threshold = self._config.decoder.min_recognized_score
+        out: list[tuple[TimeSpan, list[Candidate]]] = []
+        for window, candidates in observations:
+            best = max((c.score for c in candidates), default=None)
+            if best is not None and best < threshold:
+                side.append(AbstentionSpan(window, AbstentionReason.BELOW_THRESHOLD, best))
+                candidates = []
+            out.append((window, candidates))
+        return out
 
     @staticmethod
     def _rms(clip: AudioClip, window: TimeSpan) -> float:
