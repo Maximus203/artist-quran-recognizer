@@ -7,6 +7,7 @@ candidats) ; un `INFERRED` est marqué comme tel ; une abstention est un interva
 
 from __future__ import annotations
 
+from aqr.alignment.verification import ChainCheck
 from aqr.domain.models import Detection, NonQuranKind, NonQuranSpan, TimeSpan
 from aqr.pipeline.result import AbstentionSpan, Interval, RecognitionResult
 from aqr.rendering.home_renderer import HomeRenderer, format_range
@@ -76,12 +77,25 @@ def build_json(
             "decoder": engine.decoder,
             "constrained": engine.constrained,
             "corpus": engine.corpus,
+            "acoustic": engine.acoustic,
         },
         "decoder": result.decoder_config,
         "timing": {k: round(v, 3) for k, v in result.timing.items()},
         "windows": result.windows,
         "warnings": list(result.warnings),
+        "acoustic_checks": [_check_json(c) for c in result.acoustic_checks],
         "intervals": [_interval_json(i, renderer, translation_id) for i in result.intervals],
+    }
+
+
+def _check_json(check: ChainCheck) -> dict[str, object]:
+    """Une suite vérifiée sur l'audio (ADR-0008) : passage, texte du corpus déclaré (syntaxe de
+    `aqr align --verses`), preuve et décision."""
+    return {
+        "t": _span(check.time),
+        "verses": ",".join(f"{s.ref}[{s.first_word}-{s.last_word}]" for s in check.spans),
+        "llr_per_frame": None if check.llr_per_frame is None else round(check.llr_per_frame, 4),
+        "accepted": check.accepted,
     }
 
 
