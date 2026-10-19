@@ -16,6 +16,9 @@ data/*
 !data/corpus/
 data/corpus/*
 !data/corpus/LOCK.json
+!data/finetune/
+data/finetune/*
+!data/finetune/LOCK.json
 models/*
 !models/LOCK.json
 tests/fixtures/audio/files/

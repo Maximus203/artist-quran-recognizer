@@ -10,13 +10,16 @@ from aqr.models.sync import RemoteFile, RemoteInfo
 
 
 class HfHub:  # pragma: no cover - réseau
-    def __init__(self, token: str | None = None) -> None:
+    def __init__(self, token: str | None = None, repo_type: str = "model") -> None:
         self._token = token
+        self._repo_type = repo_type  # `model` (registre) ou `dataset` (sources du fine-tuning)
 
     def resolve(self, repo_id: str, revision: str | None) -> RemoteInfo:
         from huggingface_hub import HfApi
 
-        info = HfApi(token=self._token).model_info(repo_id, revision=revision, files_metadata=True)
+        info = HfApi(token=self._token).repo_info(
+            repo_id, revision=revision, repo_type=self._repo_type, files_metadata=True
+        )
         if info.sha is None:
             raise RuntimeError(f"{repo_id} : révision introuvable")
         files: dict[str, RemoteFile] = {}
@@ -34,7 +37,12 @@ class HfHub:  # pragma: no cover - réseau
         scratch = Path(tempfile.mkdtemp(dir=dest.parent, prefix=".hf-"))
         try:
             fetched = hf_hub_download(
-                repo_id, filename, revision=revision, local_dir=scratch, token=self._token
+                repo_id,
+                filename,
+                revision=revision,
+                repo_type=self._repo_type,
+                local_dir=scratch,
+                token=self._token,
             )
             shutil.move(fetched, dest)
         finally:
