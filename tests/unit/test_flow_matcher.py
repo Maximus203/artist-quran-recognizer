@@ -184,3 +184,13 @@ def test_performance_fenetre_de_25_mots(matcher, simple_clean_words):
     for case in cases:
         matcher.match(case.query)
     assert (time.perf_counter() - started) / len(cases) * 1000 < 50
+
+
+def test_qualite_et_mots_expliques_avant_le_plafond_de_preuve(matcher):
+    """Fragment exact de 2 mots (55:2) : score plafonné à 2/5, qualité pleine, 2 mots expliqués —
+    ce que la preuve cumulée par la suite (aqr.decoding.chains) exploite."""
+    [top, *_rest] = matcher.match(_q("عَلَّمَ الْقُرْآنَ"), top_k=3)
+    assert str(top.span.ref) == "55:2"
+    assert top.score == pytest.approx(0.4)
+    assert top.quality == pytest.approx(1.0)
+    assert top.explained == pytest.approx(2.0)
