@@ -115,3 +115,24 @@ def test_corpus_reel_ya_ayyuha():
     words = texts.words(WordSpan(VerseRef(2, 21), 1, 2), AlignmentVariant.BARE)
     assert [w.text for w in words] == ["يا", "أيها", "الناس"]
     assert [w.word for w in words] == [1, 1, 2]
+
+
+def test_une_formule_s_aligne_avec_le_lexique_unique():
+    from aqr.corpus.alignment_text import Formula
+    from aqr.domain.models import NonQuranKind
+
+    words = _texts().words(Formula(NonQuranKind.TAKBIR), AlignmentVariant.BARE)
+    assert [(w.word, w.text) for w in words] == [(1, "الله"), (2, "أكبر")]
+    amin = _texts().words(Formula(NonQuranKind.AMIN), AlignmentVariant.VOCALIZED)
+    assert [w.text for w in amin] == ["آمِينَ"]
+
+
+@needs_corpus
+def test_corpus_reel_la_basmala_vient_du_verset_1_1():
+    from aqr.corpus.alignment_text import Formula
+    from aqr.corpus.tanzil_repository import TanzilCorpusRepository
+    from aqr.domain.models import NonQuranKind
+
+    texts = AlignmentTexts.from_corpus_dir(CORPUS_DIR, TanzilCorpusRepository(CORPUS_DIR))
+    words = texts.words(Formula(NonQuranKind.BASMALA), AlignmentVariant.BARE)
+    assert [w.text for w in words] == ["بسم", "الله", "الرحمن", "الرحيم"]
