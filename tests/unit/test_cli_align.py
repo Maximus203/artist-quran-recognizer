@@ -243,3 +243,17 @@ def test_fichier_absent(tmp_path):
         aligner_factory=lambda options, env: _service(),
     )
     assert code == 1 and "introuvable" in err.getvalue()
+
+
+def test_formules_declarees_a_leur_place():
+    from aqr.corpus.alignment_text import Formula
+    from aqr.domain.models import NonQuranKind
+
+    spans = parse_verse_spec("takbir, 1:7, Amin", count)
+    assert spans == [
+        Formula(NonQuranKind.TAKBIR),
+        WordSpan(VerseRef(1, 7), 1, 9),
+        Formula(NonQuranKind.AMIN),
+    ]
+    with pytest.raises(ValueError):
+        parse_verse_spec("french", count)

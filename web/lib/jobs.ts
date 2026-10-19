@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseAsrChoice, type AsrChoice } from "./asr-choice";
+import { engineArgs, pythonCommand } from "./python";
 import { parseRecognition } from "./recognition";
 import {
   REPO,
@@ -35,7 +36,7 @@ export async function launch(
     );
   const source = await audioPath(id),
     output = sessionDir(id);
-  const python = process.env.AQR_PYTHON || "python";
+  const { python, env } = pythonCommand();
   const args = [
     "-m",
     "aqr.cli",
@@ -47,12 +48,7 @@ export async function launch(
     asr,
     "--format",
     "json",
-    "--models-dir",
-    models,
-    "--corpus-dir",
-    process.env.AQR_CORPUS_DIR || path.join(REPO, "data", "corpus"),
-    "--lock",
-    path.join(REPO, "models", "LOCK.json"),
+    ...engineArgs(models),
   ];
   // Synchrone jusqu'à `jobs.set` : deux lancements simultanés ne passent pas ensemble,
   // et une session annulée n'est relançable qu'une fois son `close` passé.
@@ -64,7 +60,7 @@ export async function launch(
     cwd: REPO,
     shell: false,
     windowsHide: true,
-    env: { ...process.env, PYTHONPATH: path.join(REPO, "src") },
+    env,
   });
   let settle!: () => void;
   const settled = new Promise<void>((resolve) => (settle = resolve));

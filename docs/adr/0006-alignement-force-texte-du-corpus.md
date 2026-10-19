@@ -54,10 +54,12 @@ aucune vérité terrain humaine n'existe sur les audios réels : annoter à la m
 - Aucune limite n'a été validée à l'oreille : tous les seuils restent provisoires.
 - La reconnaissance (`aqr recognize`) n'utilise pas encore l'alignement (étape B) ; `--constrained`
   reste indisponible.
-- Un passage est limité à `lattice_max_s` (120 s) : un fichier entier se traite par passages
-  (l'atelier les enchaînera à partir des fenêtres du moteur, étape A).
+- Un passage est limité à `lattice_max_s` (120 s) : un fichier entier se traite par passages, proposés à
+  partir des fenêtres du moteur (`aqr plan-alignment`, puis `aqr align --plan` ; validation dans l'atelier,
+  écriture par `aqr data import-alignment` — ajout du 2026-10-19, `docs/ALIGN-OUTPUT.md`).
 - Les reprises (i'ada) doivent être déclarées (« 1:7, 1:7[5-9] ») : un texte déclaré sans la reprise
-  l'absorbe dans le verset (observé sur lot1-06, 21:56).
+  l'absorbe dans le verset (observé sur lot1-06, 21:56). De même, une formule voisine (« amin ») doit être
+  déclarée, sinon l'énergie de sa voix prolonge le verset.
 
 ## Conséquences
 - Annoter devient « dire quoi » (référence du verset) et « écouter pour valider » ; les temps sont

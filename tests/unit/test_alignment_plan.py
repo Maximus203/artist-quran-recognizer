@@ -95,3 +95,27 @@ def test_incertain_et_partiel():
 
 def test_aucun_verset_aucune_proposition():
     assert propose_passages([abstention(0.0, 5.0)], duration_s=10.0) == []
+
+
+def test_formules_du_moteur_proposees_a_leur_place_mais_jamais_seules():
+    intervals = [
+        {"kind": "non_quran", "label": "takbir", "t": [2.0, 5.0]},
+        verse("1:1", 6.0, 10.0),
+        verse("1:2", 10.5, 14.0),
+        {"kind": "non_quran", "label": "amin", "t": [15.0, 17.0]},
+        {"kind": "non_quran", "label": "takbir", "t": [60.0, 62.0]},
+    ]
+    passages = propose_passages(intervals, duration_s=100.0)
+    assert [p.verses for p in passages] == ["takbir, 1:1-1:2, amin"]
+
+
+def test_format_avec_formule():
+    from aqr.corpus.alignment_text import Formula
+    from aqr.domain.models import NonQuranKind
+
+    items = [
+        WordSpan(VerseRef(1, 6), 1, 3),
+        WordSpan(VerseRef(1, 7), 1, 9),
+        Formula(NonQuranKind.AMIN),
+    ]
+    assert format_verse_spec(items, full=[True, True, True]) == "1:6-1:7, amin"
