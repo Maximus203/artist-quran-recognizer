@@ -109,18 +109,106 @@ def test_sortie_alignment_json(tmp_path):
     code, out, err = run(tmp_path, "--verses", "112:2", "--at", "2-7")
     assert code == 0, err
     document = json.loads((tmp_path / "out" / "rec.alignment.json").read_text(encoding="utf-8"))
-    assert document["schema"] == "aqr.alignment/1"
+    assert document["schema"] == "aqr.alignment/2"
     assert document["kind"] == "forced_alignment"
-    assert document["declared"] == "112:2"
-    assert document["passage"]["t"] == [2.0, 7.0]
     assert document["engine"]["model"] == "fake-ctc@0"
-    assert document["variant"] == "simple_clean"
-    span = document["spans"][0]
-    assert span["ref"] == "112:2" and span["words"] == [1, 2]
+    [passage] = document["passages"]
+    assert passage["declared"] == "112:2"
+    assert passage["t"] == [2.0, 7.0]
+    assert passage["variant"] == "simple_clean"
+    span = passage["spans"][0]
+    assert span["ref"] == "112:2" and span["words"] == [1, 2] and span["partial"] is False
     assert span["t"] == [pytest.approx(3.0), pytest.approx(6.0)]
     assert [w[0] for w in span["word_times"]] == [1, 2]
-    assert document["evidence"]["llr_per_frame"] == pytest.approx(0.0, abs=1e-6)
+    assert passage["evidence"]["llr_per_frame"] == pytest.approx(0.0, abs=1e-6)
     assert "écrit" in out
+
+
+def _plan(tmp_path: Path, passages: list[dict], sha: str | None = None) -> Path:
+    import hashlib
+
+    audio = tmp_path / "rec.wav"
+    audio.write_bytes(b"RIFF")
+    plan = tmp_path / "plan.json"
+    source = {"sha256": sha or hashlib.sha256(b"RIFF").hexdigest(), "duration_s": 10.0}
+    plan.write_text(
+        json.dumps({"schema": "aqr.align-plan/1", "source": source, "passages": passages}),
+        encoding="utf-8",
+    )
+    return plan
+
+
+def test_plan_plusieurs_passages_un_en_erreur_n_arrete_pas_les_autres(tmp_path):
+    plan = _plan(
+        tmp_path,
+        [
+            {"t": [0, 5], "verses": "112:2"},
+            {"t": [5, 6], "verses": "112:2,112:2,112:2"},
+            {"t": [5, 10], "verses": "112:2[2-2]"},
+        ],
+    )
+    code, _out, err = run(tmp_path, "--plan", str(plan))
+    assert code == 0, err
+    document = json.loads((tmp_path / "out" / "rec.alignment.json").read_text(encoding="utf-8"))
+    first, second, third = document["passages"]
+    assert first["spans"][0]["ref"] == "112:2"
+    assert "ne tient pas" in second["error"] and "spans" not in second
+    assert third["spans"][0]["partial"] is True
+    assert "AVERTISSEMENT" in err
+
+
+def test_plan_d_un_autre_audio_refuse(tmp_path):
+    plan = _plan(tmp_path, [{"t": [0, 5], "verses": "112:2"}], sha="0" * 64)
+    code, _out, err = run(tmp_path, "--plan", str(plan))
+    assert code == 2 and "autre audio" in err
+
+
+def test_plan_alignment_propose_des_passages(tmp_path):
+    prediction = tmp_path / "x.recognition.json"
+    prediction.write_text(
+        json.dumps(
+            {
+                "schema": "aqr.recognition/1",
+                "source": {"file": "x", "sha256": "ab" * 32, "duration_s": 100.0},
+                "intervals": [
+                    {
+                        "kind": "verse",
+                        "ref": "112:1",
+                        "words": [5, 8],
+                        "partial": False,
+                        "status": "recognized",
+                        "t": [10.0, 13.0],
+                    },
+                    {
+                        "kind": "verse",
+                        "ref": "112:2",
+                        "words": [1, 2],
+                        "partial": False,
+                        "status": "recognized",
+                        "t": [13.5, 15.0],
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    out, err = io.StringIO(), io.StringIO()
+    target = tmp_path / "plan.json"
+    assert (
+        main(["plan-alignment", str(prediction), "--out", str(target)], env={}, out=out, err=err)
+        == 0
+    )
+    plan = json.loads(target.read_text(encoding="utf-8"))
+    assert plan["schema"] == "aqr.align-plan/1"
+    assert plan["source"]["sha256"] == "ab" * 32
+    assert plan["passages"] == [{"t": [9.0, 16.0], "verses": "112:1-112:2"}]
+
+
+def test_plan_alignment_refuse_un_autre_document(tmp_path):
+    other = tmp_path / "x.json"
+    other.write_text(json.dumps({"schema": "aqr.alignment/2"}), encoding="utf-8")
+    out, err = io.StringIO(), io.StringIO()
+    assert main(["plan-alignment", str(other)], env={}, out=out, err=err) == 1
 
 
 def test_pas_d_ecrasement_silencieux(tmp_path):
@@ -155,3 +243,17 @@ def test_fichier_absent(tmp_path):
         aligner_factory=lambda options, env: _service(),
     )
     assert code == 1 and "introuvable" in err.getvalue()
+
+
+def test_formules_declarees_a_leur_place():
+    from aqr.corpus.alignment_text import Formula
+    from aqr.domain.models import NonQuranKind
+
+    spans = parse_verse_spec("takbir, 1:7, Amin", count)
+    assert spans == [
+        Formula(NonQuranKind.TAKBIR),
+        WordSpan(VerseRef(1, 7), 1, 9),
+        Formula(NonQuranKind.AMIN),
+    ]
+    with pytest.raises(ValueError):
+        parse_verse_spec("french", count)

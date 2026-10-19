@@ -193,3 +193,27 @@ def test_silence_numerique_l_energie_ne_deplace_aucune_limite():
     assert result is not None
     assert result.spans[0].time.start_s == pytest.approx(10.0)
     assert result.spans[0].time.end_s == pytest.approx(10.24)
+
+
+def test_une_formule_declaree_coupe_le_verset_qui_l_aurait_absorbee():
+    from aqr.corpus.alignment_text import FORMULA_TEXTS, Formula
+    from aqr.domain.models import NonQuranKind
+
+    amin = FORMULA_TEXTS[NonQuranKind.AMIN]
+    SYMBOLS[amin[AlignmentVariant.BARE]] = 4  # réutilise un symbole libre de ce test
+    SYMBOLS[amin[AlignmentVariant.VOCALIZED]] = 9
+    try:
+        # « يا أيها الناس » trames 0-2, voix continue, « آمين » trames 4-5
+        path = [1, 2, 3, 0, 4, 4]
+        rms = [0.5] * 6
+        result = aligner(energy_ratio=0.1).align(
+            lattice_rms(path, rms), [WordSpan(V1, 1, 2), Formula(NonQuranKind.AMIN)]
+        )
+    finally:
+        del SYMBOLS[amin[AlignmentVariant.BARE]], SYMBOLS[amin[AlignmentVariant.VOCALIZED]]
+    assert result is not None
+    verse, formula = result.spans
+    assert verse.time.end_s == pytest.approx(formula.time.start_s)
+    assert formula.span == Formula(NonQuranKind.AMIN)
+    assert formula.words[0].ref is None
+    assert formula.time.start_s == pytest.approx(10.0 + 4 * 0.08)

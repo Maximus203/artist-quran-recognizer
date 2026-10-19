@@ -25,7 +25,7 @@ from typing import Final
 from aqr.corpus.checksums import CorpusLock
 from aqr.corpus.normalize import normalize_arabic
 from aqr.corpus.tanzil_format import parse_tanzil_txt
-from aqr.domain.models import VerseRef, WordSpan
+from aqr.domain.models import NonQuranKind, VerseRef, WordSpan
 from aqr.domain.ports import CorpusRepository
 from aqr.domain.quran_structure import BASMALA_WORD_COUNT, verse_one_includes_basmala
 
@@ -42,6 +42,39 @@ _LOCK_KEYS: Final[dict[AlignmentVariant, str]] = {
     AlignmentVariant.VOCALIZED: "simple",
     AlignmentVariant.BARE: "simple_clean",
 }
+
+
+FORMULA_TEXTS: Final[dict[NonQuranKind, dict[AlignmentVariant, str]]] = {
+    NonQuranKind.ISTIADHA: {
+        AlignmentVariant.VOCALIZED: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+        AlignmentVariant.BARE: "أعوذ بالله من الشيطان الرجيم",
+    },
+    NonQuranKind.TAKBIR: {
+        AlignmentVariant.VOCALIZED: "اللَّهُ أَكْبَرُ",
+        AlignmentVariant.BARE: "الله أكبر",
+    },
+    NonQuranKind.AMIN: {
+        AlignmentVariant.VOCALIZED: "آمِينَ",
+        AlignmentVariant.BARE: "آمين",
+    },
+}
+"""Formules de la prière (graphie imla'i, comme l'ASR les écrit) : jamais rendues (I1), jamais des
+versets (I4). Source unique du lexique : la reconnaissance (`aqr.pipeline.formulae`) en dérive ses
+formes normalisées. La basmala, elle, vient du corpus (1:1)."""
+
+
+@dataclass(frozen=True)
+class Formula:
+    """Une formule déclarée dans un passage (« amin », « takbir »…) : alignée comme un texte, rendue
+    comme une zone non coranique."""
+
+    kind: NonQuranKind
+
+
+FORMULA_KINDS: Final[tuple[NonQuranKind, ...]] = (*FORMULA_TEXTS, NonQuranKind.BASMALA)
+
+Declared = WordSpan | Formula
+"""Ce qu'un humain déclare dans un passage : une plage de verset ou une formule."""
 
 
 @dataclass(frozen=True)
@@ -137,7 +170,16 @@ class AlignmentTexts:
     def word_count(self, ref: VerseRef) -> int:
         return len(self._uthmani[ref])
 
-    def words(self, span: WordSpan, variant: AlignmentVariant) -> tuple[AlignmentWord, ...]:
+    def words(self, item: Declared, variant: AlignmentVariant) -> tuple[AlignmentWord, ...]:
+        """Mots à aligner d'une plage de verset (indices Uthmani) ou d'une formule (1..n)."""
+        if isinstance(item, Formula):
+            if item.kind is NonQuranKind.BASMALA:
+                return self.words(WordSpan(VerseRef(1, 1), 1, BASMALA_WORD_COUNT), variant)
+            return tuple(
+                AlignmentWord(index, text)
+                for index, text in enumerate(FORMULA_TEXTS[item.kind][variant].split(), start=1)
+            )
+        span = item
         uthmani = self._uthmani[span.ref]
         if span.last_word > len(uthmani):
             raise ValueError(

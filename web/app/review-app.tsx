@@ -10,6 +10,7 @@ import {
 import type { Annotation, Review } from "@/lib/review";
 import { audioAccept, bindAudioDrop } from "@/lib/audio-upload";
 import Recorder from "./recorder";
+import ValidationPanel from "./validation-panel";
 import type { AsrChoice } from "@/lib/asr-choice";
 
 type Session = {
@@ -1240,6 +1241,15 @@ export default function ReviewApp() {
                   </p>
                 </div>
               )}
+              <ValidationPanel
+                sessionId={detail.session.id}
+                ready={
+                  detail.session.state === "done" && Boolean(detail.result)
+                }
+                audio={audio}
+                time={time}
+                duration={duration}
+              />
               <div className="review-list">
                 <h3>Signalements ({detail.review?.annotations.length || 0})</h3>
                 {detail.review?.annotations.map((a) => (

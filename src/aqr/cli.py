@@ -23,16 +23,20 @@ from dataclasses import replace
 from pathlib import Path
 from typing import TextIO
 
-from aqr.alignment.forced import PassageAligner
+from aqr.alignment.plan import plan_document, propose_passages
 from aqr.alignment.service import (
     AlignerUnavailable,
     AlignmentService,
     AlignOptions,
+    PassageRequest,
+    align_passages,
     alignment_document,
     build_alignment_service,
     parse_verse_spec,
     passage_of,
+    read_plan,
 )
+from aqr.data.alignment_import import import_alignment
 from aqr.data.config import DataConfig
 from aqr.data.ingest import Converter, ffmpeg_converter, ingest
 from aqr.data.labels import (
@@ -52,6 +56,7 @@ from aqr.pipeline.factory import (
     RecognizerUnavailable,
     build_recognizer,
 )
+from aqr.pipeline.output import SCHEMA as RECOGNITION_SCHEMA
 from aqr.pipeline.output import build_json, render_srt, render_vtt
 
 _DEFAULT_MANIFEST = Path("tests/fixtures/audio/manifest.yaml")
@@ -93,6 +98,15 @@ def _build_parser() -> argparse.ArgumentParser:
     qua.add_argument("recitant", help="identifiant exact du récitant dans le manifeste")
     qua.add_argument("--dry-run", action="store_true")
 
+    imp = sub.add_parser(
+        "import-alignment",
+        help="passages alignés et validés à l'oreille -> vérité terrain (ADR-0006)",
+    )
+    imp.add_argument("alignment", type=Path, help="document aqr.alignment/2 des passages validés")
+    imp.add_argument("--reviewed-by", required=True, help="identifiant anonyme (ex. rel-01)")
+    imp.add_argument("--date", help="AAAA-MM-JJ de la validation")
+    imp.add_argument("--note", help="note de provenance (défaut : méthode et relecteur unique)")
+
     rec = commands.add_parser(
         "recognize", help="audio/vidéo -> versets horodatés (JSON puis SRT/VTT)"
     )
@@ -124,12 +138,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="versets déclarés -> limites mot à mot sur l'audio (alignement forcé, ADR-0006)",
     )
     ali.add_argument("file", type=Path)
-    ali.add_argument(
+    what = ali.add_mutually_exclusive_group(required=True)
+    what.add_argument(
         "--verses",
-        required=True,
         help="ce qui est récité, dans l'ordre : « 112:1-4 », « 21:51-23:118 », « 2:255[1-10] »",
     )
-    ali.add_argument("--at", help="passage « début-fin » en secondes (défaut : tout le fichier)")
+    what.add_argument(
+        "--plan",
+        type=Path,
+        help="plusieurs passages : plan `aqr.align-plan/1` (voir plan-alignment)",
+    )
+    ali.add_argument(
+        "--at", help="passage « début-fin » en secondes (avec --verses ; défaut : tout)"
+    )
     ali.add_argument("--out-dir", type=Path, default=Path("aqr-out"))
     ali.add_argument("--force", action="store_true", help="écraser une sortie existante")
     ali.add_argument("--models-dir", type=Path, help="défaut : $AQR_MODELS_DIR")
@@ -142,6 +163,13 @@ def _build_parser() -> argparse.ArgumentParser:
         default=AlignOptions.energy_ratio,
         help="affinage des limites par l'énergie (0 = désactivé ; défaut provisoire, ADR-0006)",
     )
+
+    pla = commands.add_parser(
+        "plan-alignment",
+        help="sortie de recognize -> passages proposés à aligner (à corriger par l'humain)",
+    )
+    pla.add_argument("prediction", type=Path, help="<fichier>.recognition.json")
+    pla.add_argument("--out", type=Path, help="défaut : sortie standard")
     return parser
 
 
@@ -299,50 +327,97 @@ def _align(
         device=args.device,
         energy_ratio=args.energy_ratio or None,
     )
+    sha256 = _sha256_of(args.file)
     try:
         service = factory(options, env)
-        spans = parse_verse_spec(args.verses, service.texts.word_count)
+        if args.verses is not None:
+            parse_verse_spec(args.verses, service.texts.word_count)
+        plan = (
+            read_plan(json.loads(args.plan.read_text(encoding="utf-8")), sha256)
+            if args.plan is not None
+            else None
+        )
     except AlignerUnavailable as exc:
         print(str(exc), file=err)
         return 2
-    except (ValueError, KeyError) as exc:
+    except (ValueError, KeyError, OSError) as exc:
         print(f"ERREUR {exc}", file=err)
         return 2
     try:
         clip = service.extract(args.file)
         duration = len(clip.samples) / clip.sample_rate
-        passage = passage_of(args.at, duration)
-        if passage.end_s > duration + 1e-6 or passage.duration_s > service.max_passage_s:
-            raise ValueError(
-                f"passage {passage.start_s:.1f}-{passage.end_s:.1f} s invalide : le fichier dure "
-                f"{duration:.1f} s, un passage au plus {service.max_passage_s:.0f} s (--at)"
-            )
-        lattice = service.model.lattice(clip, passage)
-        result = PassageAligner(service.texts, service.model.encode, service.config).align(
-            lattice, spans
-        )
+        requests = plan or [PassageRequest(passage_of(args.at, duration), args.verses)]
+        passages = align_passages(service, clip, requests)
     except (OSError, ValueError, RuntimeError) as exc:
         print(f"ERREUR {exc}", file=err)
         return 1
-    if result is None:
-        print(
-            f"ERREUR le texte déclaré ({args.verses}) ne tient pas dans le passage : trop de mots "
-            "pour sa durée",
-            file=err,
-        )
+    failed = [p for p in passages if "error" in p]
+    if len(failed) == len(passages):
+        for passage in failed:
+            print(f"ERREUR {passage['error']}", file=err)
         return 1
-    source = {"file": args.file.name, "sha256": _sha256_of(args.file), "duration_s": duration}
-    document = alignment_document(
-        source=source, declared=args.verses, passage=passage, service=service, result=result
-    )
+    source = {"file": args.file.name, "sha256": sha256, "duration_s": duration}
+    document = alignment_document(source=source, service=service, passages=passages)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(document, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    for passage in failed:
+        print(f"AVERTISSEMENT passage {passage['t']} : {passage['error']}", file=err)
+    for passage in passages:
+        if "error" not in passage:
+            print(
+                f"{passage['t'][0]:.1f}-{passage['t'][1]:.1f} s · {passage['declared']} · "
+                f"preuve acoustique {passage['evidence']['llr_per_frame']:.3f} par trame",
+                file=out,
+            )
+    print(f"écrit : {target}", file=out)
+    return 0
+
+
+def _import_alignment(
+    args: argparse.Namespace, env: Mapping[str, str], out: TextIO, err: TextIO
+) -> int:
+    """Aucun audio n'est lu : seul le manifeste est requis (`--manifest`, `$AQR_MANIFEST`, puis
+    celui du dépôt)."""
+    manifest = args.manifest or (Path(env["AQR_MANIFEST"]) if env.get("AQR_MANIFEST") else None)
+    manifest = manifest or _DEFAULT_MANIFEST
+    try:
+        document = json.loads(args.alignment.read_text(encoding="utf-8"))
+        report = import_alignment(
+            manifest,
+            document,
+            reviewed_by=args.reviewed_by,
+            config=DataConfig(),
+            date=args.date,
+            note=args.note,
+        )
+    except (OSError, ValueError, ManifestError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    windows = ", ".join(f"{a:.1f}-{b:.1f}" for a, b in report.windows) or "fichier entier"
     print(
-        f"{len(result.spans)} plage(s) alignée(s) · preuve acoustique "
-        f"{result.evidence.llr_per_frame:.3f} par trame (0 = soutenu)",
+        f"{report.case_id} : {report.verses} verset(s) de vérité terrain · fenêtres {windows} · "
+        f"écrit : {manifest}",
         file=out,
     )
-    print(f"écrit : {target}", file=out)
+    return 0
+
+
+def _plan_alignment(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
+    try:
+        prediction = json.loads(args.prediction.read_text(encoding="utf-8"))
+        if prediction.get("schema") != RECOGNITION_SCHEMA:
+            raise ValueError(f"{args.prediction} n'est pas une sortie {RECOGNITION_SCHEMA}")
+        source = prediction["source"]
+        proposals = propose_passages(prediction["intervals"], float(source["duration_s"]))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    text = json.dumps(plan_document(source, proposals), ensure_ascii=False, indent=1) + "\n"
+    if args.out is None:
+        out.write(text)
+    else:
+        args.out.write_text(text, encoding="utf-8")
+        print(f"{len(proposals)} passage(s) proposé(s) · écrit : {args.out}", file=out)
     return 0
 
 
@@ -364,10 +439,14 @@ def main(
         return _recognize(args, env, out, err, recognizer_factory)
     if args.command == "align":
         return _align(args, env, out, err, aligner_factory)
+    if args.command == "plan-alignment":
+        return _plan_alignment(args, out, err)
     if args.command != "data":
         parser.print_help(out)
         return 0
 
+    if args.action == "import-alignment":
+        return _import_alignment(args, env, out, err)
     paths = _resolve_paths(args, env)
     if paths is None:
         print("Variable d'environnement manquante : AQR_AUDIO_DIR (ou --audio-dir)", file=err)

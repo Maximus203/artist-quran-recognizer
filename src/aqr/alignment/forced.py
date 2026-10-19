@@ -15,7 +15,7 @@ import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant
+from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant, Declared
 from aqr.decoding.ctc_constrained import CtcEvidence, ctc_forced_align, ctc_free_logprob
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import CtcLattice
@@ -37,7 +37,8 @@ class AlignmentConfig:
 
 @dataclass(frozen=True)
 class AlignedWord:
-    ref: VerseRef
+    ref: VerseRef | None
+    """Verset du mot ; None pour un mot de formule (amin, takbir…)."""
     word: int
     """Indice du mot Uthmani (à partir de 1)."""
     time: TimeSpan
@@ -45,7 +46,7 @@ class AlignedWord:
 
 @dataclass(frozen=True)
 class AlignedSpan:
-    span: WordSpan
+    span: Declared
     time: TimeSpan
     words: tuple[AlignedWord, ...]
 
@@ -68,7 +69,7 @@ class PassageAligner:
         self._encode = encode
         self._config = config or AlignmentConfig()
 
-    def align(self, lattice: CtcLattice, spans: Sequence[WordSpan]) -> PassageAlignment | None:
+    def align(self, lattice: CtcLattice, spans: Sequence[Declared]) -> PassageAlignment | None:
         """Aligne les plages, dans l'ordre, sur tout le treillis ; None si le texte n'y tient
         pas."""
         if not spans:
@@ -103,7 +104,7 @@ class PassageAligner:
     def _timed(
         self,
         lattice: CtcLattice,
-        spans: Sequence[WordSpan],
+        spans: Sequence[Declared],
         owners: list[tuple[int, int]],
         frames: list[tuple[int, int]],
     ) -> tuple[AlignedSpan, ...]:
@@ -138,7 +139,8 @@ class PassageAligner:
                 # verset.
                 following = position + 1 < len(words_frames)
                 stop = lattice.time_of(words_frames[position + 1][1][0]) if following else end
-                words.append(AlignedWord(span.ref, word, TimeSpan(start, stop)))
+                ref = span.ref if isinstance(span, WordSpan) else None
+                words.append(AlignedWord(ref, word, TimeSpan(start, stop)))
             result.append(
                 AlignedSpan(
                     span=span, time=TimeSpan(words[0].time.start_s, end), words=tuple(words)

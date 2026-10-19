@@ -1155,3 +1155,103 @@ footer {
   background: #10201f;
   padding: 10px;
 }
+.validation {
+  margin-top: 28px;
+  display: grid;
+  gap: 12px;
+}
+.validation-tools {
+  display: grid;
+  gap: 8px;
+}
+.passages {
+  display: grid;
+  gap: 10px;
+}
+.passage {
+  background: #182b29;
+  border: 1px solid var(--line);
+  border-left: 3px solid #5d7a6c;
+  border-radius: 9px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+.passage.is-aligned {
+  border-left-color: var(--gold);
+}
+.passage.is-validated {
+  border-left-color: var(--mint);
+  background: #1d3530;
+}
+.passage.is-excluded {
+  opacity: 0.55;
+}
+.passage header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.passage header small {
+  font-size: 10px;
+  color: #c9d9bb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.passage label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: #d8e3d5;
+  font-weight: 700;
+}
+.passage input {
+  background: #10201f;
+  border: 1px solid #476159;
+  border-radius: 7px;
+  color: var(--text);
+  padding: 9px;
+  min-width: 0;
+  width: 100%;
+}
+.evidence {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #b8d8b1;
+}
+.evidence.weak {
+  color: var(--red);
+}
+.aligned-verses {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.aligned-verses button {
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+  padding: 5px 2px;
+  color: var(--text);
+}
+.passage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.passage-actions .primary,
+.passage-actions .outline {
+  min-height: 36px;
+  padding: 8px 12px;
+}
+.manifest-write {
+  margin-top: 6px;
+}
+.aligned-verses .formula button {
+  color: var(--gold);
+}
