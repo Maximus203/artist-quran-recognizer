@@ -184,3 +184,12 @@ def test_un_debut_pose_sur_le_silence_est_avance_jusqu_a_la_voix():
     # « يا » est posé trame 0 sur du silence : le verset commence avec la voix, au plus tard au
     # dernier symbole de son premier mot (ici trame 3, « أيها »)
     assert result.spans[0].time.start_s == pytest.approx(10.0 + 2 * 0.08)
+
+
+def test_silence_numerique_l_energie_ne_deplace_aucune_limite():
+    path = [1, 2, 3, 0, 0]
+    rms = [0.0] * 5
+    result = aligner(energy_ratio=0.1).align(lattice_rms(path, rms), [WordSpan(V1, 1, 2)])
+    assert result is not None
+    assert result.spans[0].time.start_s == pytest.approx(10.0)
+    assert result.spans[0].time.end_s == pytest.approx(10.24)

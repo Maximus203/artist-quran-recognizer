@@ -168,6 +168,8 @@ class PassageAligner:
         floor, limit = room
         latest_start, earliest_end = bounds
         threshold = ratio * max(rms[first : last + 1])
+        if threshold <= 0.0:  # silence numérique : l'énergie ne dit rien, les symboles font foi
+            return first, end
         while end < limit and rms[end] >= threshold:
             end += 1
         while end > earliest_end and rms[end - 1] < threshold:
