@@ -17,6 +17,23 @@ Légende : 🤖 = l'agent (Claude Code) · 👤 = Cherif · 🚦 = porte de vali
 | 8 | V1 « utilisation libre » : CLI finale + interface web locale | ⏳ atelier Next.js en cours ; validation sur les audios de Cherif et feu vert V1 encore nécessaires |
 | V1.1 / V2 | Warsh · anglais · sous-titrage vidéo | |
 
+## Direction du 2026-10-19 (audit) : A → B → C → D
+Constat (rapport réel du 2026-10-09) : sur de l'audio que les modèles ont vu à l'entraînement, la
+chaîne ne retrouve que 52,6 % des versets et borne leur fin à 0,8 s près, alors que l'ASR seul
+identifie 97–100 % des versets : le goulot est la couche de décision, pas le modèle. Aucune vérité
+terrain humaine n'existe sur de l'audio réel. Choix de Cherif : usage **non commercial** (Tadabur
+CC BY-NC et Muno NPL admissibles), puis dans l'ordre :
+
+| Étape | Objectif | Statut |
+|---|---|---|
+| A | Vérité terrain semi-automatique : l'humain dit QUOI (versets), l'alignement forcé dit QUAND, l'humain valide à l'oreille dans l'atelier ; 2–3 h d'audio réel validées (prière, assise) + mixages avec vraie parole non coranique | ⏳ brique 1 : alignement forcé + `aqr align` (ADR-0006, `docs/evaluation/alignment-2026-10-19.md`) ; reste : enchaînement sur un fichier entier et validation dans l'atelier |
+| B | Couche de décision acoustique : vérification CTC des candidats, suivi de position (prédire le verset suivant puis le vérifier), temps au mot près dans `aqr recognize` | |
+| C | Fine-tuning du FastConformer : Tadabur + EveryAyah + arabe non coranique transcrit (contre « il voit du Coran partout ») + dégradations (réverbération, foule, téléphone), comparé sur les données de l'étape A | |
+| D | Détecteur récitation / parole / bruit (B3/B5) et calibrage du rejet du non-Coran (phase 7) | |
+
+Indicateur unique : rappel à 0 faux verset sur l'audio réel dev validé ; chaque PR le fait bouger ou
+dit pourquoi.
+
 ---
 
 ## Phase 2 — Robustesse de la recherche ✅

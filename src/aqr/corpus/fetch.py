@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import urllib.request
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 from aqr.corpus.checksums import CorpusChecksumError, CorpusLock, LockedFile, sha256_of
@@ -21,6 +22,8 @@ TANZIL_BASE = "https://tanzil.net/pub/download/index.php"
 # Uthmani, jamais simple-clean : ~363/6236 versets ont un découpage en mots différent
 # entre les deux (ex. « يَـٰٓأَيُّهَا » fusionné vs « يا أيها » séparé), voir
 # .artist/decision-log.md (2026-09-25).
+# Le fichier `simple` (imla'i AVEC voyelles) sert uniquement à l'alignement acoustique sur le
+# treillis CTC (ADR-0006) : c'est la graphie que l'ASR a apprise ; il n'est jamais rendu (I1).
 SOURCES: dict[str, dict[str, str]] = {
     "uthmani": {
         "path": "quran-uthmani.txt",
@@ -33,6 +36,13 @@ SOURCES: dict[str, dict[str, str]] = {
             "quranType=simple-clean&outType=txt-2&marks=false&sajdah=false&tatweel=false&agree=true"
         ),
         "purpose": "provenance / vérification croisée uniquement (voir decision-log)",
+    },
+    "simple": {
+        "path": "quran-simple.txt",
+        "params": (
+            "quranType=simple&outType=txt-2&marks=false&sajdah=false&tatweel=false&agree=true"
+        ),
+        "purpose": "alignement acoustique CTC uniquement (ADR-0006) — jamais rendu",
     },
 }
 
@@ -49,19 +59,20 @@ def count_verses(uthmani_raw: str) -> int:
     )
 
 
+def _locked_file(key: str, data: bytes) -> LockedFile:
+    return LockedFile(
+        path=SOURCES[key]["path"],
+        url=source_url(key),
+        sha256=sha256_of(data),
+        quran_type=SOURCES[key]["params"].split("quranType=")[1].split("&")[0],
+        purpose=SOURCES[key]["purpose"],
+    )
+
+
 def build_lock(raw_by_key: dict[str, bytes], *, fetched_at: str | None = None) -> CorpusLock:
     if raw_by_key.keys() != SOURCES.keys():
         raise ValueError(f"sources attendues {sorted(SOURCES)}, reçues {sorted(raw_by_key)}")
-    files = {
-        key: LockedFile(
-            path=SOURCES[key]["path"],
-            url=source_url(key),
-            sha256=sha256_of(data),
-            quran_type=SOURCES[key]["params"].split("quranType=")[1].split("&")[0],
-            purpose=SOURCES[key]["purpose"],
-        )
-        for key, data in raw_by_key.items()
-    }
+    files = {key: _locked_file(key, data) for key, data in raw_by_key.items()}
     verse_count = count_verses(raw_by_key["uthmani"].decode("utf-8"))
     return CorpusLock(
         riwaya="hafs",
@@ -90,13 +101,18 @@ def fetch_and_lock(
     comparé aux empreintes épinglées ; identique -> lock laissé tel quel (pas de `fetched_at`
     qui bouge) ; différent -> `CorpusChecksumError`, ni lock ni fichiers modifiés. Seul
     `repin=True` (décision explicite) accepte un nouveau contenu et réécrit le lock.
+    Une source ajoutée au dépôt après l'épinglage (absente du lock) est épinglée à son premier
+    téléchargement ; les sources déjà épinglées restent vérifiées et leurs empreintes inchangées.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     raw_by_key = {key: fetch(source_url(key)) for key in SOURCES}
     lock_path = out_dir / "LOCK.json"
     if lock_path.exists() and not repin:
         pinned = CorpusLock.load(lock_path)
+        added = {key: data for key, data in raw_by_key.items() if key not in pinned.files}
         for key, data in raw_by_key.items():
+            if key in added:
+                continue
             expected = pinned.files[key].sha256
             if sha256_of(data) != expected:
                 raise CorpusChecksumError(
@@ -107,6 +123,12 @@ def fetch_and_lock(
             target = out_dir / SOURCES[key]["path"]
             if not target.exists():
                 target.write_bytes(data)
+        if added:
+            pinned = replace(
+                pinned,
+                files={**pinned.files, **{k: _locked_file(k, d) for k, d in added.items()}},
+            )
+            pinned.save(lock_path)
         return pinned
     for key, data in raw_by_key.items():
         (out_dir / SOURCES[key]["path"]).write_bytes(data)

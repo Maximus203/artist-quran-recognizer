@@ -700,3 +700,35 @@
 - Le segmenteur de récitation est un composant commun, pas un troisième ASR. Whisper large-v3 est prévu par l'architecture comme vérification généraliste, mais son adapter et ses poids ne sont pas disponibles ; il n'est pas présenté comme un choix de reconnaissance de versets.
 - Validation Muno : vrai ONNX Q8, hashes épinglés, contrat du port ASR réel réussi ; sur la sourate 112 complète, 112:3–4 sont reconnus et 112:1–2 restent en abstention (seuil prudent). Aucun résultat n'est inventé. Build/typecheck réussis ; détails et limites du test web Windows dans `.artist/acceptance-playbooks/web-engine-selector.md`.
 - Licence NPL-1.1 : usage local sans frais autorisé ; usage à but lucratif interdit. Ne pas déployer Muno dans une offre commerciale sans nouvelle licence.
+
+## 2026-10-19 — Audit et direction A → B → C → D ; brique 1 : alignement forcé (ADR-0006)
+- **Audit** : la copie locale avait 74 commits de retard sur `origin/develop` (avance rapide faite).
+  Le code de reconnaissance n'a pas changé depuis le 2026-10-06 ; aucune annotation humaine ; rappel
+  52,6 % sur EveryAyah (plafond optimiste) alors que l'ASR seul identifie 97–100 % des versets : le
+  goulot est la décision, pas le modèle. Recommandation suivie par Cherif : A (vérité terrain
+  semi-automatique) → B (décision acoustique) → C (fine-tuning) → D (détecteur non-Coran). Usage
+  **non commercial** confirmé : Tadabur (CC BY-NC) et Muno (NPL) admissibles. Plan : `docs/PLAN.md`.
+- **Graphie d'alignement mesurée, pas supposée** : sur 216 clips EveryAyah, l'uthmani brut sépare le
+  vrai verset des faux dans 79 % des cas ; la meilleure des graphies imla'i `simple` / `simple-clean`
+  dans 189/189 hors versets 1. Les 15 échecs restants venaient de la basmala que Tanzil concatène au
+  verset 1 (absente des clips) → `recited_span`.
+- **Nouveau fichier épinglé** `quran-simple.txt` (imla'i vocalisé, alignement seulement, jamais rendu).
+  `fetch_and_lock` épingle une source ajoutée après coup sans toucher aux empreintes existantes, qui
+  restent vérifiées (un contenu distant modifié reste refusé).
+- **Rattachement imla'i → Uthmani** : positionnel quand les découpages ont le même nombre de mots, sinon
+  alignement des lettres normalisées (difflib), monotone, couverture exigée ; vérifié sur les 6 236
+  versets. Attention : `simple-clean` contient aussi les marques de pause comme mots (même filtre que
+  `TanzilCorpusRepository.words`).
+- **Fins de verset** : un CTC émet tôt (−0,5 s médiane) et peut poser un symbole sur le silence (jusqu'à
+  4 s). Une prolongation fixe a été essayée et rejetée (dispersion trop large) ; retenu : affinage par
+  l'énergie par trame (`CtcLattice.frame_rms`), extension et recul bornés par les voisins. La mesure
+  est en partie circulaire (référence énergétique) : sensibilité publiée pour trois références.
+- **Défaut `energy_ratio` = 0,10 (provisoire)** : 0,05 colle aux clips studio mais déborde dans les pauses
+  réverbérées de la prière lot1-06 ; 0,10 est un compromis mesuré des deux côtés. À régler sur les
+  limites validées à l'oreille.
+- **Audio réel** (lot1-06, 46–160 s) : bonne déclaration −0,26 par trame, décalée d'un verset −1,47 ;
+  21:53 et 21:62 (`inferred` par le moteur) placés ; 21:56 absorbe 100–105 s, vraisemblable reprise non
+  déclarée. Rien n'est validé à l'oreille.
+- **Environnement** : `aqr.eval.run` importe `fcntl` (Unix) ; sous Windows, `test_eval_run.py` et
+  `test_recognize_batch.py` ne se chargent pas et mypy signale `fcntl.flock` : défaut préexistant sur
+  `develop`, hors de cette brique, non corrigé ici.
