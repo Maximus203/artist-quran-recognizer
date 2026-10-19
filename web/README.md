@@ -28,6 +28,27 @@ Ouvrir l'URL affichée par Next.js. L'atelier lance FastConformer et le segmente
 5. « Signaler ici » pour un point, « Sélectionner une plage » pour une durée. Décrire le problème, écouter, confirmer. La revue se sauvegarde localement ; vérifier l'indicateur « Enregistré localement ».
 6. Télécharger le pack ZIP complet pour le transférer dans un environnement cloud autorisé. Il contient l'audio, la prédiction originale, la revue courante, ses révisions et un manifeste d'empreintes SHA-256. Le bilan JSON seul est aussi disponible. Le stockage cloud, les droits sur des voix tierces et une vérité terrain exhaustive restent à établir avant d'annoncer des métriques.
 
+## Construire la vérité terrain (panneau « 07 / VÉRITÉ TERRAIN »)
+
+Une fois la reconnaissance terminée (ou une prédiction importée) sur un fichier **dev** du manifeste :
+
+1. « Proposer les passages du moteur » : les versets reconnus ou supposés proches sont regroupés en passages
+   (≤ 110 s) avec une déclaration pré-remplie, à corriger. Ce n'est pas une vérité terrain.
+2. Corriger chaque déclaration (« Versets récités, dans l'ordre ») : versets `1:2-1:7`, plage de mots
+   `21:56[5-8]` (reprise), formules `amin`, `takbir`, `istiadha`, `basmala` à leur place. Ajuster début et fin
+   du passage si besoin, ou ajouter un passage à partir de la position de lecture.
+3. « Aligner N passage(s) » : l'alignement forcé du texte du corpus pose le temps de chaque verset (un seul
+   chargement du modèle ; ≈ 2 min pour 34 passages d'une prière de 52 min sur RTX 5090). La preuve acoustique
+   s'affiche ; en rouge, la déclaration colle mal (reprise oubliée, verset en trop, passage trop court).
+4. Écouter chaque verset (▶), puis « Valider après écoute » ou « Exclure » (douteux, non coranique). Un passage
+   modifié repasse « à aligner ».
+5. « Écrire N passage(s) validé(s) dans le manifeste » avec un identifiant **anonyme** de relecteur (`rel-01`).
+   Les passages deviennent des fenêtres annotées de `tests/fixtures/audio/manifest.yaml` (`AQR_MANIFEST` pour
+   un autre fichier) : refus pour un fichier test ou en quarantaine. Committer ensuite le manifeste seul.
+
+Fichiers de la session : `validation.json` (déclarations et statuts), `alignment/` (plan, sortie d'alignement,
+document des passages validés). Contrat : `docs/ALIGN-OUTPUT.md`.
+
 Les sessions micro sont marquées `source_kind: microphone` dans `session.json`. Le manifeste du pack (`aqr.review-bundle/1`) indique l’empreinte audio, celle de chaque résultat et correction, ainsi que les versions déclarées par le moteur. Les fichiers restent dans `AQR_REVIEW_DIR/sessions/<id>` hors Git et ne sont pas supprimés automatiquement. Pour les réutiliser sur le cloud, conserver le ZIP dans un stockage privé puis ajouter au manifeste versionné `docs/data-lots/lot-N.yaml` uniquement les métadonnées vérifiées (empreinte, durée, catégorie, droits et emplacement privé). Aucun enregistrement micro n’est publié automatiquement.
 
 Le serveur est réservé à un usage local de confiance. Le pack de revue ne modifie jamais la prédiction. Les signalements partiels ne sont pas évalués comme vérité terrain. Les données conservées ne sont pas supprimées automatiquement.

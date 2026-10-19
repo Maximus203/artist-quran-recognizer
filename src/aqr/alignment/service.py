@@ -8,17 +8,24 @@ reconnaissance : elle sert à poser des limites de vérité terrain que l'humain
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from aqr.alignment.forced import AlignmentConfig, PassageAlignment
-from aqr.corpus.alignment_text import AlignmentTexts, recited_span
-from aqr.domain.models import TimeSpan, VerseRef, WordSpan
+from aqr.alignment.forced import AlignedSpan, AlignmentConfig, PassageAligner, PassageAlignment
+from aqr.alignment.plan import PLAN_SCHEMA
+from aqr.corpus.alignment_text import (
+    FORMULA_KINDS,
+    AlignmentTexts,
+    Declared,
+    Formula,
+    recited_span,
+)
+from aqr.domain.models import NonQuranKind, TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import AudioClip, CtcAcousticModel
 
-SCHEMA = "aqr.alignment/1"
+SCHEMA = "aqr.alignment/2"
 NOTICE = (
     "Alignement d'un texte DÉCLARÉ (--verses) : dit où ces versets seraient récités et à quel "
     "point l'audio les soutient (evidence.llr_per_frame, proche de 0 = soutenu). Ce n'est pas une "
@@ -29,21 +36,24 @@ DEFAULT_ENERGY_RATIO = 0.1
 (studio) mais déborde dans les pauses réverbérées d'une prière (lot1-06) ; 0,10 est un compromis
 mesuré des deux côtés, à remplacer par un réglage sur des limites validées à l'oreille."""
 
+_FORMULA_NAMES = {kind.value for kind in FORMULA_KINDS}
 _ITEM = re.compile(
     r"^(?P<s>\d+):(?P<a>\d+)(?:-(?:(?P<s2>\d+):)?(?P<a2>\d+))?(?:\[(?P<w1>\d+)-(?P<w2>\d+)\])?$"
 )
 
 
-def parse_verse_spec(spec: str, word_count: Callable[[VerseRef], int]) -> list[WordSpan]:
+def parse_verse_spec(spec: str, word_count: Callable[[VerseRef], int]) -> list[Declared]:
     """« 112:1-4 », « 21:51-23:118 », « 2:255[1-10] », séparés par des virgules, dans l'ordre
     récité.
 
     Un verset entier exclut la basmala que Tanzil concatène au verset 1 (`recited_span`) ; une
-    plage de mots explicite est prise telle quelle (indices Uthmani)."""
+    plage de mots explicite est prise telle quelle (indices Uthmani). Les formules de la prière
+    (« amin », « takbir », « istiadha », « basmala ») se déclarent à leur place : alignées comme
+    le reste, elles empêchent un verset voisin d'absorber leur voix."""
     items = [item.strip() for item in spec.split(",") if item.strip()]
     if not items:
         raise ValueError("--verses vide : ex. « 112:1-4 » ou « 2:255[1-10] »")
-    spans: list[WordSpan] = []
+    spans: list[Declared] = []
     for item in items:
         try:
             spans.extend(_parse_item(item, word_count))
@@ -52,7 +62,9 @@ def parse_verse_spec(spec: str, word_count: Callable[[VerseRef], int]) -> list[W
     return spans
 
 
-def _parse_item(item: str, word_count: Callable[[VerseRef], int]) -> list[WordSpan]:
+def _parse_item(item: str, word_count: Callable[[VerseRef], int]) -> list[Declared]:
+    if item.lower() in _FORMULA_NAMES:
+        return [Formula(NonQuranKind(item.lower()))]
     match = _ITEM.match(item)
     if match is None:
         raise ValueError("illisible (ex. 112:1-4, 21:51-23:118, 2:255[1-10])")
@@ -69,7 +81,7 @@ def _parse_item(item: str, word_count: Callable[[VerseRef], int]) -> list[WordSp
         end = VerseRef(int(match["s2"] or match["s"]), int(match["a2"]))
         if end < start:
             raise ValueError("la fin précède le début")
-    spans: list[WordSpan] = []
+    spans: list[Declared] = []
     ref: VerseRef | None = start
     while ref is not None and ref <= end:
         spans.append(recited_span(ref, word_count(ref)))
@@ -127,28 +139,51 @@ def build_alignment_service(options: AlignOptions, env: Mapping[str, str]) -> Al
     )
 
 
-def alignment_document(
-    *,
-    source: Mapping[str, Any],
-    declared: str,
-    passage: TimeSpan,
-    service: AlignmentService,
-    result: PassageAlignment,
-) -> dict[str, Any]:
-    config = service.config
+@dataclass(frozen=True)
+class PassageRequest:
+    t: TimeSpan
+    declared: str
+
+
+def align_passages(
+    service: AlignmentService, clip: AudioClip, requests: Sequence[PassageRequest]
+) -> list[dict[str, Any]]:
+    """Aligne chaque passage ; une déclaration illisible, un passage hors du fichier ou un texte
+    trop long pour sa durée donnent une entrée `error` sans arrêter les autres passages."""
+    duration = len(clip.samples) / clip.sample_rate
+    aligner = PassageAligner(service.texts, service.model.encode, service.config)
+    out: list[dict[str, Any]] = []
+    for request in requests:
+        entry: dict[str, Any] = {
+            "declared": request.declared,
+            "t": [round(request.t.start_s, 3), round(request.t.end_s, 3)],
+        }
+        out.append(entry)
+        try:
+            spans = parse_verse_spec(request.declared, service.texts.word_count)
+            if request.t.end_s > duration + 1e-6 or request.t.duration_s > service.max_passage_s:
+                raise ValueError(
+                    f"passage {request.t.start_s:.1f}-{request.t.end_s:.1f} s invalide : le "
+                    f"fichier dure {duration:.1f} s, un passage au plus "
+                    f"{service.max_passage_s:.0f} s"
+                )
+            result = aligner.align(service.model.lattice(clip, request.t), spans)
+        except (ValueError, KeyError) as exc:
+            entry["error"] = str(exc.args[0] if isinstance(exc, KeyError) else exc)
+            continue
+        if result is None:
+            entry["error"] = (
+                f"le texte déclaré ({request.declared}) ne tient pas dans le passage : trop de "
+                "mots pour sa durée"
+            )
+            continue
+        entry.update(_passage_fields(service, result))
+    return out
+
+
+def _passage_fields(service: AlignmentService, result: PassageAlignment) -> dict[str, Any]:
+    texts = service.texts
     return {
-        "schema": SCHEMA,
-        "kind": "forced_alignment",
-        "notice": NOTICE,
-        "source": dict(source),
-        "declared": declared,
-        "passage": {"t": [round(passage.start_s, 3), round(passage.end_s, 3)]},
-        "engine": {"model": service.model.engine, "corpus": service.corpus_version},
-        "config": {
-            "energy_ratio": config.energy_ratio,
-            "verse_end_extension_s": config.verse_end_extension_s,
-            "variants": [v.value for v in config.variants],
-        },
         "variant": result.variant.value,
         "evidence": {
             "llr_per_frame": round(result.evidence.llr_per_frame, 4),
@@ -156,19 +191,63 @@ def alignment_document(
             "free_logprob": round(result.evidence.free_logprob, 3),
             "frames": result.evidence.frames,
         },
-        "spans": [
-            {
-                "ref": str(aligned.span.ref),
-                "words": [aligned.span.first_word, aligned.span.last_word],
-                "t": [round(aligned.time.start_s, 3), round(aligned.time.end_s, 3)],
-                "word_times": [
-                    [w.word, round(w.time.start_s, 3), round(w.time.end_s, 3)]
-                    for w in aligned.words
-                ],
-            }
-            for aligned in result.spans
+        "spans": [_span_fields(texts, aligned) for aligned in result.spans],
+    }
+
+
+def _span_fields(texts: AlignmentTexts, aligned: AlignedSpan) -> dict[str, Any]:
+    timing = {
+        "t": [round(aligned.time.start_s, 3), round(aligned.time.end_s, 3)],
+        "word_times": [
+            [w.word, round(w.time.start_s, 3), round(w.time.end_s, 3)] for w in aligned.words
         ],
     }
+    span = aligned.span
+    if isinstance(span, Formula):
+        return {"kind": "non_quran", "label": span.kind.value, **timing}
+    return {
+        "kind": "verse",
+        "ref": str(span.ref),
+        "words": [span.first_word, span.last_word],
+        "partial": span != recited_span(span.ref, texts.word_count(span.ref)),
+        **timing,
+    }
+
+
+def alignment_document(
+    *, source: Mapping[str, Any], service: AlignmentService, passages: list[dict[str, Any]]
+) -> dict[str, Any]:
+    config = service.config
+    return {
+        "schema": SCHEMA,
+        "kind": "forced_alignment",
+        "notice": NOTICE,
+        "source": dict(source),
+        "engine": {"model": service.model.engine, "corpus": service.corpus_version},
+        "config": {
+            "energy_ratio": config.energy_ratio,
+            "verse_end_extension_s": config.verse_end_extension_s,
+            "variants": [v.value for v in config.variants],
+        },
+        "passages": passages,
+    }
+
+
+def read_plan(raw: Mapping[str, Any], sha256: str) -> list[PassageRequest]:
+    """Passages d'un plan `aqr.align-plan/1` (proposé par `aqr plan-alignment`, corrigé par
+    l'humain) ; refusé s'il a été établi pour un autre audio."""
+    if raw.get("schema") != PLAN_SCHEMA:
+        raise ValueError(f"plan : schéma {raw.get('schema')!r} inattendu (attendu {PLAN_SCHEMA})")
+    expected = (raw.get("source") or {}).get("sha256")
+    if expected and str(expected).lower() != sha256:
+        raise ValueError("plan établi pour un autre audio (sha256 différent)")
+    passages = raw.get("passages") or []
+    if not passages:
+        raise ValueError("plan sans passage")
+    return [
+        PassageRequest(TimeSpan(float(p["t"][0]), float(p["t"][1])), str(p["verses"]))
+        for p in passages
+    ]
 
 
 def passage_of(at: str | None, duration_s: float) -> TimeSpan:

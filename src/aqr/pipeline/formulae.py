@@ -10,14 +10,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from aqr.corpus.alignment_text import FORMULA_TEXTS, AlignmentVariant
+from aqr.corpus.normalize import tokenize
 from aqr.domain.models import NonQuranKind
 from aqr.matching.similarity import word_similarity
 
-# Formes normalisées (`normalize_arabic`) : hamzas et alef unifiés.
-_FORMULAE: tuple[tuple[NonQuranKind, tuple[str, ...]], ...] = (
-    (NonQuranKind.ISTIADHA, ("اعوذ", "بالله", "من", "الشيطان", "الرجيم")),
-    (NonQuranKind.TAKBIR, ("الله", "اكبر")),
-    (NonQuranKind.AMIN, ("امين",)),
+# Formes normalisées (`normalize_arabic`) du lexique unique des formules (alignement compris).
+_FORMULAE: tuple[tuple[NonQuranKind, tuple[str, ...]], ...] = tuple(
+    (kind, tuple(tokenize(texts[AlignmentVariant.BARE]))) for kind, texts in FORMULA_TEXTS.items()
 )
 
 

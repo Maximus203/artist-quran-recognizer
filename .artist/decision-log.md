@@ -733,6 +733,34 @@
   `test_recognize_batch.py` ne se chargent pas et mypy signale `fcntl.flock` : défaut préexistant sur
   `develop`, hors de cette brique, non corrigé ici.
 
+## 2026-10-19 — Étape A : validation à l'oreille dans l'atelier, fichier entier par passages
+- **Parcours retenu** : le moteur propose (`aqr plan-alignment`), l'humain déclare ce qui est récité,
+  `aqr align --plan` pose les temps (un seul chargement du modèle pour tous les passages), l'humain écoute
+  chaque verset puis valide ou exclut, `aqr data import-alignment` écrit les seuls passages validés dans le
+  manifeste (fenêtres annotées, `annotation.by: human`). L'atelier enchaîne le tout (panneau 07).
+- **Passages ≤ 110 s** (le treillis CTC accepte 120 s d'un tenant), écart ≤ 6 s, marge 1 s ; un `uncertain`
+  coupe la proposition (c'est à l'humain de dire ce qui est récité), une formule seule n'est pas un passage.
+- **`aqr.alignment/2`** remplace `/1` (fusionné le jour même, aucun consommateur) : `passages[]`, une erreur
+  par passage n'arrête pas les autres ; chaque élément porte `kind` (verse | non_quran).
+- **Formules déclarables** (`amin`, `takbir`, `istiadha`, `basmala`) : constat sur lot1-06, l'énergie de
+  l'« amin » qui suit la Fatiha prolongeait 1:7 jusqu'à 47 s. Lexique unique `FORMULA_TEXTS`
+  (`aqr.corpus.alignment_text`), dont la reconnaissance (`aqr.pipeline.formulae`) dérive désormais ses
+  formes normalisées (identiques, vérifié). Les formules deviennent des zones `non_quran` du manifeste.
+- **Garde-fous de l'import** : fichiers `dev` seulement (test et quarantaine refusés), relecteur =
+  identifiant anonyme (regex, un nom avec espace ou majuscules est refusé), revalidation = remplacement de
+  ce qui est dans la fenêtre, préannotation modèle remplacée, jamais fusionnée.
+- **Essai réel** (build de production, lot1-06 complet, dossiers temporaires, manifeste du dépôt intact) :
+  34 passages proposés et alignés en ≈ 2 min, 0 erreur, preuve médiane −0,31 ; garde-fou « colle mal »
+  vérifié (−2,42) ; écriture + lecture par `aqr.eval` vérifiées. Playbook :
+  `.artist/acceptance-playbooks/validation-verite-terrain.md`.
+- **Encodage** : sous Windows, Python écrivait ses erreurs en cp1252, illisibles dans l'atelier (« � ») :
+  `PYTHONIOENCODING=utf-8` et `PYTHONUTF8=1` forcés pour tout lancement du moteur (`web/lib/python.ts`,
+  partagé avec `jobs.ts`).
+- **Constats d'environnement, non corrigés ici** : `next dev` recharge en boucle dans le navigateur intégré
+  (page jamais hydratée ; `next build && next start` fonctionne) ; le lien nvm `C:\nvm4w\nodejs` a disparu
+  (Node 22 et 24 installés mais aucun actif : `nvm use 24` le rétablit) ; `jobs.test.ts` échoue sous Windows
+  (`spawn EFTYPE`, faux Python à shebang), identique sur `develop`.
+
 ## 2026-10-19 — Jeu de fine-tuning de l'ASR (étape C) : sources, exclusions, manifestes
 - **Périmètre** : préparation des données seulement (`scripts/build_finetune_manifest.py`,
   `src/aqr/data/finetune*.py`, `data/finetune/LOCK.json`) ; aucun entraînement. Détail, volumes et
