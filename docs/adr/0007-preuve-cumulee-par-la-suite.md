@@ -31,6 +31,8 @@ une grande partie des 47 % d'omissions du rapport réel du 2026-10-09 (sourates 
    `enabled=False` rend l'ancien comportement), tracée dans la sortie (`decoder.chain_evidence_words`).
 
 ## Mesures — `docs/evaluation/chain-proof-2026-10-19.md`
+Micro (voix de Cherif, 55:1-4) reconnu avec FastConformer et Whisper ; EveryAyah 71,8 % → 91,2 % de rappel,
+0 faux verset ; sur les assises dev, les nouveaux versets sont des citations réelles (transcriptions relues).
 
 ## Ce qui n'est PAS fait (étape B, suite)
 - Vérification **acoustique** de la suite (alignement forcé CTC de la suite déclarée par le matcher,
