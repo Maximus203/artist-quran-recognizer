@@ -13,6 +13,8 @@ audio = ["soundfile>=0.12", "numpy>=1.26"]
 asr = ["torch>=2.7", "torchaudio>=2.7", "transformers>=4.44", "nemo_toolkit[asr]>=2.0", "huggingface_hub>=0.24"]
 muno = ["numpy>=1.26", "torch>=2.7", "torchaudio>=2.7", "onnxruntime>=1.18,<2", "sentencepiece>=0.2,<1", "huggingface_hub>=0.24"]
 data = ["huggingface_hub>=0.24"]
+# Jeu de fine-tuning (scripts/build_finetune_manifest.py) : lecture Parquet, décodage, rééchantillonnage.
+finetune = ["huggingface_hub>=0.24", "pyarrow>=14", "soundfile>=0.12", "soxr>=0.3", "numpy>=1.26"]
 segmenter = ["recitations-segmenter==1.0.0", "silero-vad==6.2.3"]  # installer avec --no-deps après [asr]
 # `numpy` : requis par les tests des adapters (le code testé l'importe paresseusement) et par
 # tests/support/real.py ; absent, 28 tests échouent sur une installation propre. `soundfile` et
@@ -76,6 +78,10 @@ module = [
   "sentencepiece.*",
   "torchaudio",
   "torchaudio.*",
+  "pyarrow",
+  "pyarrow.*",
+  "soundfile",
+  "soxr",
 ]
 follow_imports = "skip"
 ignore_missing_imports = true

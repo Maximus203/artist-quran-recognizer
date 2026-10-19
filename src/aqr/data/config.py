@@ -45,3 +45,28 @@ class DataConfig:
     utilisé au réglage, hors du ratio dev/test, définitif
     (docs/evaluation/protocole-reglage-evaluation.md). Volontairement absent de `splits`
     (= les seuls jeux évaluables)."""
+
+
+@dataclass(frozen=True)
+class FinetuneConfig:
+    """Jeu de données du fine-tuning de l'ASR (étape C, docs/evaluation/finetune-data.md)."""
+
+    sample_rate: int = DataConfig.sample_rate
+    """Fréquence des WAV extraits (mono, PCM 16 bits) : celle du FastConformer."""
+    val_ratio: float = 0.02
+    """Part des LOCUTEURS (non de la durée) envoyée en validation quand la source n'a pas de
+    découpage officiel (Tadabur) ; tirage par hachage salé, un locuteur n'est que d'un côté."""
+    split_seed: str = "aqr-finetune-v1"
+    """Sel du hachage train/val : change l'affectation, jamais le principe."""
+    min_duration_s: float = 0.5
+    max_duration_s: float = 60.0
+    """Bornes de durée d'un exemple EXTRAIT. 60 s garde 97,7 % des heures de Tadabur (30 s : 82 %,
+    mesuré sur un shard réel) : la borne d'entraînement, qui dépend de la mémoire GPU, se règle
+    dans la configuration NeMo (`max_duration`), pas ici."""
+    quran_ngram: int = 4
+    """Une phrase « non coranique » qui partage N mots consécutifs (normalisés) avec un verset
+    est écartée : Common Voice arabe contient des versets lus (I3/I4)."""
+    env_var: str = "AQR_FINETUNE_DIR"
+    """Dossier hors dépôt des fichiers téléchargés, des WAV extraits et des manifestes."""
+    train_split: str = "train"
+    val_split: str = "val"
