@@ -8,17 +8,18 @@ reconnaissance : elle sert à poser des limites de vérité terrain que l'humain
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from aqr.alignment.forced import AlignmentConfig, PassageAlignment
+from aqr.alignment.forced import AlignmentConfig, PassageAligner, PassageAlignment
+from aqr.alignment.plan import PLAN_SCHEMA
 from aqr.corpus.alignment_text import AlignmentTexts, recited_span
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import AudioClip, CtcAcousticModel
 
-SCHEMA = "aqr.alignment/1"
+SCHEMA = "aqr.alignment/2"
 NOTICE = (
     "Alignement d'un texte DÉCLARÉ (--verses) : dit où ces versets seraient récités et à quel "
     "point l'audio les soutient (evidence.llr_per_frame, proche de 0 = soutenu). Ce n'est pas une "
@@ -127,28 +128,51 @@ def build_alignment_service(options: AlignOptions, env: Mapping[str, str]) -> Al
     )
 
 
-def alignment_document(
-    *,
-    source: Mapping[str, Any],
-    declared: str,
-    passage: TimeSpan,
-    service: AlignmentService,
-    result: PassageAlignment,
-) -> dict[str, Any]:
-    config = service.config
+@dataclass(frozen=True)
+class PassageRequest:
+    t: TimeSpan
+    declared: str
+
+
+def align_passages(
+    service: AlignmentService, clip: AudioClip, requests: Sequence[PassageRequest]
+) -> list[dict[str, Any]]:
+    """Aligne chaque passage ; une déclaration illisible, un passage hors du fichier ou un texte
+    trop long pour sa durée donnent une entrée `error` sans arrêter les autres passages."""
+    duration = len(clip.samples) / clip.sample_rate
+    aligner = PassageAligner(service.texts, service.model.encode, service.config)
+    out: list[dict[str, Any]] = []
+    for request in requests:
+        entry: dict[str, Any] = {
+            "declared": request.declared,
+            "t": [round(request.t.start_s, 3), round(request.t.end_s, 3)],
+        }
+        out.append(entry)
+        try:
+            spans = parse_verse_spec(request.declared, service.texts.word_count)
+            if request.t.end_s > duration + 1e-6 or request.t.duration_s > service.max_passage_s:
+                raise ValueError(
+                    f"passage {request.t.start_s:.1f}-{request.t.end_s:.1f} s invalide : le "
+                    f"fichier dure {duration:.1f} s, un passage au plus "
+                    f"{service.max_passage_s:.0f} s"
+                )
+            result = aligner.align(service.model.lattice(clip, request.t), spans)
+        except (ValueError, KeyError) as exc:
+            entry["error"] = str(exc.args[0] if isinstance(exc, KeyError) else exc)
+            continue
+        if result is None:
+            entry["error"] = (
+                f"le texte déclaré ({request.declared}) ne tient pas dans le passage : trop de "
+                "mots pour sa durée"
+            )
+            continue
+        entry.update(_passage_fields(service, result))
+    return out
+
+
+def _passage_fields(service: AlignmentService, result: PassageAlignment) -> dict[str, Any]:
+    texts = service.texts
     return {
-        "schema": SCHEMA,
-        "kind": "forced_alignment",
-        "notice": NOTICE,
-        "source": dict(source),
-        "declared": declared,
-        "passage": {"t": [round(passage.start_s, 3), round(passage.end_s, 3)]},
-        "engine": {"model": service.model.engine, "corpus": service.corpus_version},
-        "config": {
-            "energy_ratio": config.energy_ratio,
-            "verse_end_extension_s": config.verse_end_extension_s,
-            "variants": [v.value for v in config.variants],
-        },
         "variant": result.variant.value,
         "evidence": {
             "llr_per_frame": round(result.evidence.llr_per_frame, 4),
@@ -160,6 +184,8 @@ def alignment_document(
             {
                 "ref": str(aligned.span.ref),
                 "words": [aligned.span.first_word, aligned.span.last_word],
+                "partial": aligned.span
+                != recited_span(aligned.span.ref, texts.word_count(aligned.span.ref)),
                 "t": [round(aligned.time.start_s, 3), round(aligned.time.end_s, 3)],
                 "word_times": [
                     [w.word, round(w.time.start_s, 3), round(w.time.end_s, 3)]
@@ -169,6 +195,42 @@ def alignment_document(
             for aligned in result.spans
         ],
     }
+
+
+def alignment_document(
+    *, source: Mapping[str, Any], service: AlignmentService, passages: list[dict[str, Any]]
+) -> dict[str, Any]:
+    config = service.config
+    return {
+        "schema": SCHEMA,
+        "kind": "forced_alignment",
+        "notice": NOTICE,
+        "source": dict(source),
+        "engine": {"model": service.model.engine, "corpus": service.corpus_version},
+        "config": {
+            "energy_ratio": config.energy_ratio,
+            "verse_end_extension_s": config.verse_end_extension_s,
+            "variants": [v.value for v in config.variants],
+        },
+        "passages": passages,
+    }
+
+
+def read_plan(raw: Mapping[str, Any], sha256: str) -> list[PassageRequest]:
+    """Passages d'un plan `aqr.align-plan/1` (proposé par `aqr plan-alignment`, corrigé par
+    l'humain) ; refusé s'il a été établi pour un autre audio."""
+    if raw.get("schema") != PLAN_SCHEMA:
+        raise ValueError(f"plan : schéma {raw.get('schema')!r} inattendu (attendu {PLAN_SCHEMA})")
+    expected = (raw.get("source") or {}).get("sha256")
+    if expected and str(expected).lower() != sha256:
+        raise ValueError("plan établi pour un autre audio (sha256 différent)")
+    passages = raw.get("passages") or []
+    if not passages:
+        raise ValueError("plan sans passage")
+    return [
+        PassageRequest(TimeSpan(float(p["t"][0]), float(p["t"][1])), str(p["verses"]))
+        for p in passages
+    ]
 
 
 def passage_of(at: str | None, duration_s: float) -> TimeSpan:
