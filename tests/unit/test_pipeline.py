@@ -263,3 +263,43 @@ def test_verset_de_deux_mots_isole_est_une_abstention_pas_un_verset(corpus, matc
     (abstention,) = result.intervals
     assert isinstance(abstention, AbstentionSpan)
     assert abstention.reason is AbstentionReason.BELOW_THRESHOLD
+
+
+# --- Étape B : preuve cumulée par la suite (cas réel du 2026-10-19, voix de Cherif au micro) -----
+MICRO_55 = [
+    ("بسم الله الرحمن الرحيم", (1.3, 5.2)),
+    ("الرَّحْمَنُ", (5.6, 7.5)),
+    ("عَلَّمَ الْقُرْآنَ", (7.7, 10.4)),
+    ("خَلَقَ الْإِنْسَانَ", (10.6, 13.3)),
+    ("عَلَّمَهُ الْبَيَانَ", (13.6, 16.5)),
+]
+
+
+def _micro(corpus, matcher, **kwargs):
+    texts = [t for t, _ in MICRO_55]
+    spans = [s for _, s in MICRO_55]
+    return _pipeline(corpus, matcher, texts, spans, seconds=17.0, **kwargs)
+
+
+def test_versets_courts_consecutifs_au_micro_sont_reconnus(corpus, matcher):
+    result = _micro(corpus, matcher)
+    assert [(d.span.ref, d.status) for d in _verses(result)] == [
+        (VerseRef(55, n), Status.RECOGNIZED) for n in (1, 2, 3, 4)
+    ]
+    assert result.decoder_config["chain_evidence_words"] == 5.0
+
+
+def test_sans_la_preuve_par_la_suite_les_memes_fenetres_restent_des_abstentions(corpus, matcher):
+    from aqr.decoding.chains import ChainConfig
+
+    result = _micro(corpus, matcher, config=PipelineConfig(chain=ChainConfig(enabled=False)))
+    assert _verses(result) == []
+
+
+def test_un_fragment_court_isole_reste_une_abstention(corpus, matcher):
+    result = _pipeline(corpus, matcher, ["خَلَقَ الْإِنْسَانَ"], [(2.0, 4.0)], seconds=10.0)
+    assert _verses(result) == []
+    assert any(
+        isinstance(i, AbstentionSpan) and i.reason is AbstentionReason.BELOW_THRESHOLD
+        for i in result.intervals
+    )
