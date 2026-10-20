@@ -195,9 +195,7 @@ class AcousticVerifier:
         return replace(candidate, times=tuple(aligned.time for aligned in result.spans))
 
 
-def _with_words(
-    candidate: Candidate, words: Sequence[AlignedWord], window: TimeSpan
-) -> Candidate:
+def _with_words(candidate: Candidate, words: Sequence[AlignedWord], window: TimeSpan) -> Candidate:
     """Le candidat réduit aux mots alignés dans sa fenêtre, une plage (et son temps) par verset.
 
     Le temps reste dans la fenêtre : au-delà, le segmenteur n'a pas entendu de voix (l'énergie
