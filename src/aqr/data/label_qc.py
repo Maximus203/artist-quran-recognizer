@@ -15,7 +15,9 @@ d'origine telles quelles. Pur : le modèle et l'audio sont injectés (`LatticeOf
 
 from __future__ import annotations
 
+import difflib
 import json
+import re
 import statistics
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -24,6 +26,7 @@ from typing import Any
 
 from aqr.alignment.forced import AlignmentConfig, PassageAligner
 from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant, recited_span
+from aqr.corpus.normalize import normalize_arabic
 from aqr.data.config import LabelQcConfig
 from aqr.domain.models import VerseRef, WordSpan
 from aqr.domain.ports import CtcLattice
@@ -41,6 +44,13 @@ LatticeOf = Callable[[Mapping[str, Any]], CtcLattice]
 class QcFlag(StrEnum):
     BASMALA_UNANNOUNCED = "basmala_recitee_non_annoncee"
     BASMALA_MISSING = "basmala_annoncee_absente"
+    OVERFLOW = "debordement"
+    """Le modèle entend des mots en plus au début ou à la fin : le segment déborde sur un verset
+    voisin, ou le récitant reprend un passage."""
+    TRUNCATED = "troncature"
+    """Des mots de l'étiquette manquent au début ou à la fin de l'audio."""
+    REPEATED = "repetition"
+    """Des mots en plus à l'intérieur du verset : le récitant reprend un passage."""
     LOW_SCORE = "preuve_faible"
     NOT_ALIGNED = "texte_non_aligne"
     """Le texte ne tient pas dans les trames de l'audio (trop de symboles pour sa durée)."""
@@ -68,6 +78,9 @@ class LabelScore:
     unknown_symbols: int = 0
     """Symboles `<unk>` de l'étiquette (caractères que le modèle n'a jamais appris) : retirés pour
     la notation, comptés parce qu'une cible d'entraînement ne devrait pas en contenir."""
+    heard: str | None = None
+    """Ce que le modèle entend sans contrainte (meilleur symbole par trame, CTC) : jamais rendu
+    (I1) ; comparé à l'étiquette sur les lettres seules."""
 
     def to_json(self) -> dict[str, Any]:
         data = asdict(self)
@@ -90,22 +103,30 @@ class LabelScorer:
         config: AlignmentConfig | None = None,
         *,
         unknown_symbol: int | None = None,
+        target: Callable[[str], str] | None = None,
+        decode: Callable[[Sequence[int]], str] | None = None,
     ) -> None:
         """`unknown_symbol` (`<unk>`) est retiré du texte à aligner : le modèle ne l'émet jamais,
-        l'exiger noterait comme fausse toute étiquette juste qui contient un tel caractère."""
+        l'exiger noterait comme fausse toute étiquette juste qui contient un tel caractère.
+        `target` : graphie des cibles d'entraînement (`finetune.model_graphie`) ; une étiquette
+        est le texte d'un verset si les deux coïncident une fois écrits dans cette graphie.
+        `decode` (symboles → texte) : si fourni, ce que le modèle entend est noté (`heard`)."""
         self._texts = texts
         self._lattice_of = lattice_of
         self._encode = encode
         self._unknown = unknown_symbol
+        self._target: Callable[[str], str] = target or (lambda text: text)
+        self._decode = decode
         self._aligner = PassageAligner(texts, self._known, config)
 
     def _known(self, text: str) -> list[int]:
         return [s for s in self._encode(text) if s != self._unknown]
 
-    def _unknown_count(self, span: WordSpan) -> int:
+    def _unknown_count(self, text: str) -> int:
+        """Symboles `<unk>` que l'étiquette demanderait au modèle d'émettre."""
         if self._unknown is None:
             return 0
-        return sum(list(self._encode(w)).count(self._unknown) for w in self._words(span))
+        return sum(list(self._encode(w)).count(self._unknown) for w in text.split())
 
     def score(self, entry: Mapping[str, Any], split: str) -> LabelScore:
         """Note une ligne de manifeste coranique ; ValueError si elle n'a pas de verset."""
@@ -115,7 +136,12 @@ class LabelScorer:
         ref = VerseRef.parse(str(entry["aqr_ref"]))
         text = str(entry["text"])
         hypotheses = self._hypotheses(ref)
-        labelled = [(span, b) for span, b in hypotheses if self._words(span) == text.split()]
+        written = self._target(text)
+        labelled = [
+            (span, b)
+            for span, b in hypotheses
+            if self._target(" ".join(self._words(span))) == written
+        ]
 
         def result(**measures: Any) -> LabelScore:
             values: dict[str, Any] = {
@@ -126,6 +152,7 @@ class LabelScorer:
                 "basmala_alt_llr": None,
                 "error": None,
                 "unknown_symbols": 0,
+                "heard": None,
                 **measures,
             }
             return LabelScore(
@@ -141,8 +168,9 @@ class LabelScorer:
         if not labelled:
             return result(error=QcFlag.TEXT_MISMATCH)
         span, basmala = labelled[0]
-        unknown = self._unknown_count(span)
+        unknown = self._unknown_count(text)
         lattice = self._lattice_of(entry)
+        heard = None if self._decode is None else self._decode(greedy_symbols(lattice))
         main = self._aligner.align(lattice, [span])
         if main is None:
             return result(
@@ -150,6 +178,7 @@ class LabelScorer:
                 basmala_in_text=basmala,
                 error=QcFlag.NOT_ALIGNED,
                 unknown_symbols=unknown,
+                heard=heard,
             )
         alternative = None
         if basmala is not None:
@@ -163,6 +192,7 @@ class LabelScorer:
             basmala_in_text=basmala,
             basmala_alt_llr=alternative,
             unknown_symbols=unknown,
+            heard=heard,
         )
 
     def _hypotheses(self, ref: VerseRef) -> list[tuple[WordSpan, bool | None]]:
@@ -178,8 +208,77 @@ class LabelScorer:
         return [w.text for w in self._texts.words(span, AlignmentVariant.VOCALIZED)]
 
 
+def greedy_symbols(lattice: CtcLattice) -> list[int]:
+    """Chemin CTC libre : meilleur symbole par trame, répétitions fusionnées, blancs retirés."""
+    symbols: list[int] = []
+    previous = None
+    for row in lattice.log_probs:
+        best = max(range(len(row)), key=row.__getitem__)
+        if best != previous and best != lattice.blank:
+            symbols.append(best)
+        previous = best
+    return symbols
+
+
+_REPEATED = re.compile(r"(.)\1+")
+
+
+def _letters(text: str) -> list[str]:
+    # Lettres seules (voyelles retirées, hamza et alifs unifiés par `normalize_arabic`), lettres
+    # doublées fusionnées : un allongement transcrit « الااخره » reste « الاخره ».
+    return [_REPEATED.sub(r"\1", word) for word in normalize_arabic(text).split()]
+
+
+@dataclass(frozen=True)
+class HeardEdges:
+    same: bool
+    """Le modèle entend exactement les mots de l'étiquette (lettres seules)."""
+    extra: int
+    """Mots entendus en plus avant le premier ou après le dernier mot de l'étiquette (le max)."""
+    missing: int
+    """Mots de l'étiquette non entendus au début ou à la fin (le max)."""
+    inserted: int = 0
+    """Tous les mots entendus en plus, où qu'ils soient (bords compris)."""
+    own_words: bool = False
+    """Les mots entendus en plus sont tous des mots du verset : le récitant se répète (sinon ils
+    viennent d'ailleurs, d'un verset voisin)."""
+
+
+def _leading_edge(label: list[str], spoken: list[str]) -> tuple[int, int, int, list[str]]:
+    """(mots entendus en plus, mots de l'étiquette manquants) avant le premier mot commun, mots
+    de l'étiquette entendus, et tous les mots entendus en plus."""
+    ops = difflib.SequenceMatcher(None, label, spoken, autojunk=False).get_opcodes()
+    matched = sum(i2 - i1 for tag, i1, i2, _j1, _j2 in ops if tag == "equal")
+    inserted = [w for tag, _i1, _i2, j1, j2 in ops if tag == "insert" for w in spoken[j1:j2]]
+    tag, i1, i2, j1, j2 = ops[0] if ops else ("equal", 0, 0, 0, 0)
+    extra = j2 - j1 if tag == "insert" else 0
+    return extra, (i2 - i1 if tag == "delete" else 0), matched, inserted
+
+
+def heard_edges(text: str, heard: str) -> HeardEdges:
+    label, spoken = _letters(text), _letters(heard)
+    # Chaque bord est mesuré depuis son côté (la fin en alignant à rebours) : un mot répété dans
+    # le verset (« الرحمن … الرحمن ») accroché au mauvais exemplaire ne crée pas de faux manque.
+    extra_start, missing_start, matched, inserted = _leading_edge(label, spoken)
+    extra_end, missing_end, _, _ = _leading_edge(label[::-1], spoken[::-1])
+    if 2 * matched < len(label):
+        # Le modèle n'entend pas ce verset (autre verset, autre parole) : ses bords ne disent rien.
+        return HeardEdges(same=False, extra=0, missing=0)
+    return HeardEdges(
+        same=label == spoken,
+        extra=max(extra_start, extra_end),
+        missing=max(missing_start, missing_end),
+        inserted=len(inserted),
+        own_words=bool(inserted) and set(inserted) <= set(label),
+    )
+
+
 def verdict(score: LabelScore, config: LabelQcConfig) -> QcFlag | None:
-    """Raison d'écarter l'exemple, ou None s'il est gardé."""
+    """Raison d'écarter l'exemple, ou None s'il est gardé.
+
+    Ordre : erreur, basmala, mots entendus en trop ou en moins aux bords (quel que soit le score),
+    puis seuil — sauf si le modèle entend exactement l'étiquette : un score bas vient alors d'une
+    convention d'écriture (voyelles, soukoun), pas d'une étiquette fausse."""
     if config.min_llr_per_frame is None:
         raise ValueError(
             "LabelQcConfig.min_llr_per_frame non calibré : fixer le seuil à l'oreille "
@@ -190,7 +289,12 @@ def verdict(score: LabelScore, config: LabelQcConfig) -> QcFlag | None:
     alternative = score.basmala_alt_llr
     if alternative is not None and alternative - score.llr_per_frame >= config.basmala_margin:
         return QcFlag.BASMALA_MISSING if score.basmala_in_text else QcFlag.BASMALA_UNANNOUNCED
-    if score.llr_per_frame < config.min_llr_per_frame:
+    edges = None if score.heard is None else heard_edges(score.text, score.heard)
+    if edges is not None and max(edges.extra, edges.inserted) >= config.edge_words:
+        return QcFlag.REPEATED if edges.own_words else QcFlag.OVERFLOW
+    if edges is not None and edges.missing >= config.edge_words:
+        return QcFlag.TRUNCATED
+    if score.llr_per_frame < config.min_llr_per_frame and not (edges and edges.same):
         return QcFlag.LOW_SCORE
     return None
 
@@ -314,6 +418,7 @@ def rejected_examples(
             "basmala_alt_llr": s.basmala_alt_llr,
             "flag": flag.value,
             "text": s.text,
+            "heard": s.heard,
         }
         for s, flag in worst[:limit]
     ]
