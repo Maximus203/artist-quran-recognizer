@@ -19,6 +19,16 @@ npm run dev
 
 Ouvrir l'URL affichée par Next.js. L'atelier lance FastConformer et le segmenteur de récitation par défaut ; `AQR_ASR=whisper` choisit Whisper. Ce choix reste provisoire (décision en phase 6). La première analyse peut durer plusieurs minutes. Le temps affiché est réel, sans pourcentage simulé. Un échec de modèle, de corpus ou d'extraction apparaît dans la session.
 
+## Écoute exacte et pistes synchronisées
+
+Le lecteur ne joue pas le fichier importé mais sa **copie d'écoute** : le même décodage ffmpeg que le moteur (mono, 16 kHz), en WAV PCM, rangé dans `sessions/<id>/listening/`. Raison : dans un MP3 à débit variable (cas des fichiers extraits de vidéos), le navigateur se positionne à plusieurs secondes de l'instant demandé (mesuré sur 45 min : +7,9 s à 42:22, −10,3 s à 20:00), alors que les temps du JSON sont comptés sur le PCM du moteur. Avec la copie d'écoute, l'écart mesuré est inférieur à 0,05 s et la durée est identique à l'échantillon près. Le badge du lecteur l'indique (« ÉCOUTE = AUDIO DU MOTEUR ») ; si ffmpeg échoue, l'original est joué et le badge passe à « ORIGINAL · POSITION APPROXIMATIVE ».
+
+- La copie est préparée en tâche de fond dès l'import (≈ 20 s pour 45 min), sinon à la première écoute ; elle est régénérée si l'audio source change. `AQR_FFMPEG` désigne l'exécutable (défaut : `ffmpeg` du PATH, comme le moteur).
+- Fichiers dérivés : jamais dans le pack ZIP, jamais comptés comme activité de revue (`AQR_SESSION_TTL_S`), supprimés avec la session.
+- La forme d'onde vient des crêtes calculées par le serveur (`GET /api/sessions/<id>/peaks`, `aqr.listening-peaks/1`, 50 par seconde) : rien n'est décodé dans le navigateur, même pour 2 h d'audio.
+- Les intervalles du moteur sont posés **sur la forme d'onde** (référence du verset quand la place le permet) ; un clic place le lecteur sur leur début. La **fenêtre visible** (fichier entier, 10 min, 2 min, 30 s, 10 s) règle à la fois la forme d'onde et les pistes, qui partagent un seul repère temporel. « Suivre la lecture » garde la tête de lecture au centre.
+- « Écouter ce passage », sur la carte, joue exactement l'intervalle affiché puis s'arrête.
+
 ## Tester un audio
 
 1. Choisir un audio local (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 300 Mo maximum par défaut), ou cliquer « Enregistrer une récitation ». Pour le micro, autoriser l’accès sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer si nécessaire. « Analyser cette récitation » importe alors les octets originaux WebM/OGG/M4A et lance le moteur réel. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.

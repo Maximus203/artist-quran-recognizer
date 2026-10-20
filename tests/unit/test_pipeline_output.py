@@ -196,3 +196,14 @@ def test_les_suites_verifiees_sur_l_audio_sont_tracees(corpus, renderer):  # ADR
         },
     ]
     assert build_json(base, renderer, None, source_sha256="00")["acoustic_checks"] == []
+
+
+def test_la_riwaya_supposee_est_declaree_non_verifiee(corpus, renderer):
+    """Décision de Cherif (2026-10-20) : un avertissement tout de suite. Aucun signal ne détecte
+    encore le Warsh (mesure négative, docs/evaluation/riwaya-2026-10-20.md) : chaque sortie dit
+    donc que la riwaya est SUPPOSÉE, non vérifiée, et ce que cela implique pour le texte affiché."""
+    doc = build_json(_result(corpus), renderer, None, source_sha256="00")
+    riwaya = doc["riwaya"]
+    assert riwaya["assumed"] == "hafs"
+    assert riwaya["verified"] is False
+    assert "Warsh" in riwaya["notice"] and "Hafs" in riwaya["notice"]
