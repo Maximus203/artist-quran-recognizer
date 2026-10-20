@@ -962,3 +962,18 @@
   acceptées et refusées du lot 1 se touchaient à −1,0 ; elles sont maintenant séparées de −0,95 à −1,21.
 - **Seuils inchangés** (−1,0 ; Dice 0,6) : la correction ouvre une marge autour du seuil sans rien faire
   passer de nouveau à la sortie ; les resserrer attend la vérité terrain de l'étape A.
+
+## 2026-10-20 — Cascade multi-modèles par défaut, choix du moteur retiré de l'atelier (ADR-0009)
+- **Contexte** : Cherif trouvait Muno meilleur sur sa voix, FastConformer l'est sur les lots ; il a
+  demandé de construire la cascade, de la mesurer contre FastConformer seul et de retirer le choix du
+  moteur de l'interface si la mesure est bonne.
+- **Décision** : FastConformer partout ; Whisper puis Muno réécoutent seulement les fenêtres douteuses ;
+  un candidat secondaire n'est gardé que si l'audio soutient le texte du corpus (arbitre acoustique,
+  I3). Défaut de l'atelier (sélecteur supprimé) et de `aqr recognize` ; un moteur seul reste
+  disponible pour mesurer (`--asr`, `AQR_ASR`).
+- **Mesuré** (split dev, `docs/evaluation/cascade-2026-10-20.md`) : 0 verset perdu, 0 ajouté sur les
+  fichiers sans Coran ; EveryAyah 211 → 216/216 ; lot 1 dev +10 versets distincts, lot 2 dev +5, tous
+  dans des suites cohérentes. Coût ×2,85 sur les lots (fichiers parlés).
+- **Bug corrigé en route** : Muno échouait sur un dernier morceau de moins de 10 trames mel.
+- **Ouvert** : réduire le coût (attribuer chaque sauvetage à un moteur et un critère) ; détections d'un
+  seul mot (« كلا » → 75:26), déjà produites par FastConformer seul, à trancher avec la vérité terrain.

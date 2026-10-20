@@ -207,3 +207,17 @@ def test_la_riwaya_supposee_est_declaree_non_verifiee(corpus, renderer):
     assert riwaya["assumed"] == "hafs"
     assert riwaya["verified"] is False
     assert "Warsh" in riwaya["notice"] and "Hafs" in riwaya["notice"]
+
+
+def test_la_cascade_est_tracee_seulement_quand_elle_a_tourne(corpus, renderer):  # ADR-0009
+    from dataclasses import replace
+
+    base = _result(corpus)
+    cascade = {
+        "secondary": ["whisper@rev", "muno@rev"],
+        "relistened_windows": 3,
+        "rescued_windows": 1,
+    }
+    doc = build_json(replace(base, cascade=cascade), renderer, None, source_sha256="00")
+    assert doc["cascade"] == cascade
+    assert "cascade" not in build_json(base, renderer, None, source_sha256="00")

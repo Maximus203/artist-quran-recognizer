@@ -59,6 +59,7 @@ const states: Record<string, string> = {
   cancelled: "annulé",
 };
 const engines: Record<string, string> = {
+  cascade: "Cascade (FastConformer → Whisper, Muno)",
   fastconformer: "FastConformer",
   whisper: "Whisper",
   "muno-streaming": "Muno Streaming",
@@ -137,7 +138,6 @@ export default function ReviewApp() {
     [draft, setDraft] = useState<Annotation | null>(null),
     [saveState, setSaveState] = useState(""),
     [elapsed, setElapsed] = useState(0);
-  const [asrChoice, setAsrChoice] = useState<AsrChoice>("fastconformer");
   const audio = useRef<HTMLAudioElement>(null),
     wave = useRef<HTMLDivElement>(null),
     card = useRef<HTMLDivElement>(null),
@@ -593,7 +593,7 @@ export default function ReviewApp() {
           const r = await fetch(`/api/sessions/${id}/run`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ asr: asrChoice }),
+            body: JSON.stringify({}),
           });
           const data = await r.json();
           if (!r.ok) throw new Error(data.error);
@@ -609,7 +609,7 @@ export default function ReviewApp() {
         setBusy(false);
       }
     },
-    [asrChoice, createSession, open, refreshList],
+    [createSession, open, refreshList],
   );
   useEffect(() => {
     return bindAudioDrop(window, {
@@ -627,7 +627,7 @@ export default function ReviewApp() {
         ...(method === "POST"
           ? {
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ asr: asrChoice }),
+              body: JSON.stringify({}),
             }
           : {}),
       });
@@ -790,23 +790,13 @@ export default function ReviewApp() {
   }, [duration, span, lanesWidth]);
   const uploadPanel = (
     <div className="upload">
-      <label className="engine-choice">
-        Moteur de reconnaissance
-        <select
-          value={asrChoice}
-          onChange={(event) => setAsrChoice(event.target.value as AsrChoice)}
-        >
-          <option value="fastconformer">FastConformer · actuel</option>
-          <option value="whisper">Whisper · challenger</option>
-          <option value="muno-streaming">
-            Muno Streaming · ONNX quantifié
-          </option>
-        </select>
+      <p className="engine-choice">
+        <strong>Reconnaissance automatique</strong>
         <small>
-          Choisi pour la prochaine analyse ; chaque session conserve le moteur
-          utilisé.
+          FastConformer écoute tout ; Whisper et Muno réécoutent les passages
+          douteux ; l’audio départage leurs propositions. Aucun choix à faire.
         </small>
-      </label>
+      </p>
       <div className="upload-sources">
         <Recorder onAnalyze={analyzeRecording} />
         <div className="upload-file">
@@ -1211,23 +1201,6 @@ export default function ReviewApp() {
               detail.session.state === "failed" ||
               detail.session.state === "cancelled" ? (
                 <div className="run-controls">
-                  <label className="engine-choice">
-                    Moteur pour cette analyse
-                    <select
-                      value={asrChoice}
-                      onChange={(event) =>
-                        setAsrChoice(event.target.value as AsrChoice)
-                      }
-                    >
-                      <option value="fastconformer">
-                        FastConformer · actuel
-                      </option>
-                      <option value="whisper">Whisper · challenger</option>
-                      <option value="muno-streaming">
-                        Muno Streaming · ONNX quantifié
-                      </option>
-                    </select>
-                  </label>
                   <button
                     className="primary run"
                     disabled={busy}
