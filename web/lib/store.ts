@@ -12,6 +12,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { LISTENING } from "./listening";
 import { parseRecognition, type Recognition } from "./recognition";
 import { reviewSchema, type Review } from "./review";
 
@@ -252,10 +253,13 @@ export async function deleteSession(
   await jobs.get(id)?.settled;
   await rm(dir, { recursive: true, force: true });
 }
+/** Copie d'écoute dérivée (`listening.ts`) : régénérable, l'écouter n'est pas une activité. */
+export const DERIVED_DIRS = new Set<string>([LISTENING.dir]);
 /** Plus grand mtime sous `dir` (dossiers compris). Ne suit pas les liens symboliques. */
 async function newestMtimeMs(dir: string): Promise<number> {
   let newest = (await lstat(dir)).mtimeMs;
   for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.isDirectory() && DERIVED_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     try {
       newest = Math.max(

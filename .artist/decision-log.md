@@ -921,6 +921,22 @@
   dans les fiches ; sans `licence` (lot 1), le libellé hérité est conservé (rien n'est réécrit).
 - **Aucun dépôt hors machine** pour ce lot (pas de dataset Hugging Face) : droits non établis.
 
+## 2026-10-20 — Atelier : le lecteur joue l'audio du moteur (copie d'écoute PCM)
+- **Constat** (signalé par le mainteneur, mesuré) : sur un MP3 VBR de 45 min, le navigateur annonçait
+  `currentTime = 42:22.515` mais jouait l'audio de 42:30.4 (+7,9 s) ; à 20:00, −10,3 s. Les temps du JSON
+  sont ceux du PCM décodé par ffmpeg (`FfmpegAudioExtractor`) : écouter « à l'instant du verset » tombait à
+  côté. Second défaut, visuel : dans les pistes, les segments étaient décalés de la colonne des noms (70 px)
+  mais pas la tête de lecture, et une largeur minimale de 0,28 % gonflait un segment d'1 s à 7,7 s.
+- **Décision** : servir au lecteur une copie d'écoute = même commande ffmpeg que le moteur (`-ac 1 -ar 16000`),
+  en WAV PCM 16 bits (positionnement à l'échantillon), avec crêtes pré-calculées pour la forme d'onde.
+  Écarté : MP3 CBR (décalage de délai d'encodeur, toujours approximatif), FLAC (positionnement dépendant du
+  démultiplexeur), décodage complet côté navigateur (≈ 1 Go pour 45 min stéréo 48 kHz). 16 kHz plutôt que la
+  fréquence d'origine : on entend exactement ce que le moteur a entendu, coût disque ≈ 32 ko/s.
+- **Repli** : ffmpeg indisponible → l'original est joué, signalé par le badge et un message (jamais silencieux).
+- **Vérifié** : corrélation d'enveloppe lecteur/décodage complet aux 4 instants mesurés : écart 0 à −0,05 s
+  (contre +7,9 / +2,5 / −10,3 / −2,9 s) ; durée de la copie 2742,6987 s = `source.duration_s` du moteur ;
+  tête de lecture et segment sélectionné au même pixel (fichier entier et fenêtre 30 s).
+
 ## 2026-10-20 — Arbitrages de Cherif au réveil
 1. **Warsh** : « avertissement tout de suite ». Deux signaux mesurés, tous deux négatifs (preuve
    acoustique globale ; ibdâl de la hamza muette Hafs/Warsh aligné sur le treillis) :

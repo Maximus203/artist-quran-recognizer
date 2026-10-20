@@ -14,6 +14,7 @@ import {
   type Session,
 } from "@/lib/store";
 import { parseRecognition } from "@/lib/recognition";
+import { ensureListening } from "@/lib/listening";
 import { isLocalRequest } from "@/lib/local-request";
 import { acceptedAudioExtensions } from "@/lib/audio-upload";
 
@@ -96,6 +97,11 @@ export async function POST(request: NextRequest) {
       pid: null,
     };
     await saveSession(value);
+    // Copie d'écoute préparée en tâche de fond : le lecteur s'ouvre sans attendre ffmpeg.
+    // Un échec est retenté (et signalé) à la première écoute.
+    void ensureListening(dir, path.join(dir, `source${extension}`)).catch(
+      () => {},
+    );
     return NextResponse.json(value, { status: 201 });
   } catch (e) {
     return NextResponse.json(
