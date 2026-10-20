@@ -854,3 +854,15 @@
   écartés pour la validation à l'oreille.
 - Témoin positif de la basmala construit avec EveryAyah **en mesure seule** (scratch, hors dépôt et
   hors manifeste) : n'enfreint pas l'interdiction d'entraîner sur EveryAyah.
+
+## 2026-10-20 — Étape C : cible d'entraînement dans la graphie du modèle (sans `<unk>`)
+- **Mesure** : sur les 78 248 mots du corpus `simple`, l'alif suscrit (U+0670) et le tatweel (U+0640)
+  sont les deux seuls caractères que le tokenizer du FastConformer code `<unk>` ; sans eux, aucun mot.
+- **Décision** : les retirer de toute cible (`FinetuneConfig.target_drop_chars`, `model_graphie`),
+  récitation et non-Coran, plutôt qu'étendre le tokenizer : le modèle écrit déjà cette graphie
+  (« ذَلِكَ », « فَهَدَى »), et changer son vocabulaire réinitialiserait sa tête CTC. Le texte
+  rendu, lui, vient toujours du corpus Uthmani (I1) : la cible d'entraînement n'est jamais affichée.
+- Le contrôle des étiquettes reconnaît une étiquette dans cette graphie (même règle des deux côtés),
+  compte les `<unk>` dans l'étiquette réelle, et renote une ligne dont le texte a changé (clé de
+  reprise = chemin audio + texte). Échantillon reconstruit et renoté : 0 `<unk>`, 399/433 gardés.
+

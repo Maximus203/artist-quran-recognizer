@@ -90,22 +90,27 @@ class LabelScorer:
         config: AlignmentConfig | None = None,
         *,
         unknown_symbol: int | None = None,
+        target: Callable[[str], str] | None = None,
     ) -> None:
         """`unknown_symbol` (`<unk>`) est retiré du texte à aligner : le modèle ne l'émet jamais,
-        l'exiger noterait comme fausse toute étiquette juste qui contient un tel caractère."""
+        l'exiger noterait comme fausse toute étiquette juste qui contient un tel caractère.
+        `target` : graphie des cibles d'entraînement (`finetune.model_graphie`) ; une étiquette
+        est le texte d'un verset si les deux coïncident une fois écrits dans cette graphie."""
         self._texts = texts
         self._lattice_of = lattice_of
         self._encode = encode
         self._unknown = unknown_symbol
+        self._target: Callable[[str], str] = target or (lambda text: text)
         self._aligner = PassageAligner(texts, self._known, config)
 
     def _known(self, text: str) -> list[int]:
         return [s for s in self._encode(text) if s != self._unknown]
 
-    def _unknown_count(self, span: WordSpan) -> int:
+    def _unknown_count(self, text: str) -> int:
+        """Symboles `<unk>` que l'étiquette demanderait au modèle d'émettre."""
         if self._unknown is None:
             return 0
-        return sum(list(self._encode(w)).count(self._unknown) for w in self._words(span))
+        return sum(list(self._encode(w)).count(self._unknown) for w in text.split())
 
     def score(self, entry: Mapping[str, Any], split: str) -> LabelScore:
         """Note une ligne de manifeste coranique ; ValueError si elle n'a pas de verset."""
@@ -115,7 +120,12 @@ class LabelScorer:
         ref = VerseRef.parse(str(entry["aqr_ref"]))
         text = str(entry["text"])
         hypotheses = self._hypotheses(ref)
-        labelled = [(span, b) for span, b in hypotheses if self._words(span) == text.split()]
+        written = self._target(text)
+        labelled = [
+            (span, b)
+            for span, b in hypotheses
+            if self._target(" ".join(self._words(span))) == written
+        ]
 
         def result(**measures: Any) -> LabelScore:
             values: dict[str, Any] = {
@@ -141,7 +151,7 @@ class LabelScorer:
         if not labelled:
             return result(error=QcFlag.TEXT_MISMATCH)
         span, basmala = labelled[0]
-        unknown = self._unknown_count(span)
+        unknown = self._unknown_count(text)
         lattice = self._lattice_of(entry)
         main = self._aligner.align(lattice, [span])
         if main is None:

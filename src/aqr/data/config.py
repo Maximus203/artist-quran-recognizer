@@ -66,6 +66,12 @@ class FinetuneConfig:
     quran_ngram: int = 4
     """Une phrase « non coranique » qui partage N mots consécutifs (normalisés) avec un verset
     est écartée : Common Voice arabe contient des versets lus (I3/I4)."""
+    target_drop_chars: tuple[str, ...] = ("ٰ", "ـ")
+    """Caractères retirés de TOUTE cible d'entraînement : l'alif suscrit et le tatweel de la
+    graphie Tanzil n'existent pas pour le tokenizer du FastConformer (`<unk>`, qu'il n'émet
+    jamais). Mesuré sur tout le corpus `simple` : ce sont les deux seuls, et sans eux aucun mot ne
+    donne `<unk>` (docs/evaluation/finetune-label-qc.md). La cible prend la graphie que le modèle
+    écrit déjà (« ذَلِكَ », « الرَّحْمَنُ »)."""
     env_var: str = "AQR_FINETUNE_DIR"
     """Dossier hors dépôt des fichiers téléchargés, des WAV extraits et des manifestes."""
     train_split: str = "train"

@@ -159,6 +159,28 @@ def test_symbole_inconnu_du_modele_retire_et_compte() -> None:
     assert retire.unknown_symbols == 1 and exige.unknown_symbols == 0
 
 
+def test_etiquette_dans_la_graphie_du_modele_reconnue_et_sans_inconnu() -> None:
+    # Cible écrite sans alif suscrit (`model_graphie`) : c'est toujours le texte du verset, et
+    # elle ne demande plus aucun symbole inconnu au modèle.
+    label = f"{BASMALA} {QUL}".replace(DAGGER_ALIF, "")
+
+    def lattice_of(line: Mapping[str, Any]) -> CtcLattice:
+        return lattice(label)
+
+    graphie = LabelScorer(
+        texts(),
+        encode,
+        lattice_of,
+        unknown_symbol=UNK,
+        target=lambda text: text.replace(DAGGER_ALIF, ""),
+    ).score(entry(label), "train")
+    assert graphie.error is None and graphie.basmala_in_text is True
+    assert graphie.unknown_symbols == 0
+    assert graphie.llr_per_frame == pytest.approx(0.0, abs=1e-9)
+    # Sans la règle de graphie, la même étiquette ne serait pas reconnue comme le verset.
+    assert scorer(label).score(entry(label), "train").error is QcFlag.TEXT_MISMATCH
+
+
 def test_hors_verset_1_aucune_hypothese_de_basmala() -> None:
     score = scorer(SAMAD).score(entry(SAMAD, ref=V2), "val")
     assert score.basmala_in_text is None and score.basmala_alt_llr is None
