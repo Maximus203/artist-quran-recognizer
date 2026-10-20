@@ -28,9 +28,21 @@ Réglages : `LabelQcConfig` (`src/aqr/data/config.py`).
   Le modèle n'émet jamais `<unk>` : exiger ce symbole noterait comme fausse toute étiquette juste
   qui en contient (ذَٰلِكَ, فَهَدَىٰ, أُولَـٰئِكَ). Il est retiré du texte à aligner (l'aligneur ne
   change pas : c'est l'encodeur qui lui est passé) et compté dans `unknown_symbols` (voir « Constat »).
+- **Ce que le modèle entend** (depuis le 2026-10-20) : le même treillis donne aussi le chemin CTC
+  libre (`heard`, meilleur symbole par trame), comparé à l'étiquette sur les **lettres seules**
+  (voyelles retirées, lettres doublées fusionnées) : ≥ `edge_words` (2) mots en plus au début ou à
+  la fin → `debordement` ; mots en plus qui sont des mots du verset (bords ou intérieur) →
+  `repetition` ; ≥ 2 mots de l'étiquette absents au début ou à la fin → `troncature` (la fin est
+  mesurée à rebours, pour qu'un mot répété dans le verset ne crée pas de faux manque). Ces règles
+  jouent **quel que soit le score** : un mot de trop sur un long verset pèse peu par trame. Si le
+  modèle n'entend pas au moins la moitié des mots de l'étiquette, les bords ne disent rien (autre
+  verset, autre parole) et seul le score décide.
 - **Filtre** : écarté si le texte ne correspond pas au corpus (`texte_different_du_corpus`), ne tient
-  pas dans les trames (`texte_non_aligne`), si la basmala est fausse, ou si
-  `llr_per_frame < min_llr_per_frame` (`preuve_faible`). Le manifeste filtré reprend les lignes
+  pas dans les trames (`texte_non_aligne`), si la basmala est fausse, si les mots entendus le
+  disent (ci-dessus), ou si `llr_per_frame < min_llr_per_frame` (`preuve_faible`) — **sauf** si le
+  modèle entend exactement les lettres de l'étiquette : le score bas vient alors d'une convention
+  d'écriture (Tanzil n'écrit pas le soukoun d'un noun assimilé, « الْإِنسَانَ », le modèle l'écrit,
+  « الْإِنْسَانَ » : −1 par trame sur un verset de deux mots). Le manifeste filtré reprend les lignes
   d'origine **à l'identique**.
 - La parole non coranique (FLEURS, Common Voice) n'est pas concernée : `score` la refuse.
 
@@ -111,19 +123,56 @@ Les trois basmalas non annoncées ont un score **au-dessus** du seuil de −0,45
 elles passeraient. Marge 0,02 : sous le plus petit gain positif (0,076), loin des gains des
 étiquettes justes (≤ −0,94).
 
-## Constat : la cible d'entraînement contient des `<unk>`
+## Constat : la cible d'entraînement contenait des `<unk>` (corrigé le 2026-10-20)
 
-**140 étiquettes sur 433 (32 %, 0,63 h)** contiennent au moins un alif suscrit ou un tatweel, que le
+**140 étiquettes sur 433 (32 %, 0,63 h)** contenaient au moins un alif suscrit ou un tatweel, que le
 tokenizer du modèle code `<unk>`. La première passe, sans retrait, en écartait 42 au seuil de −0,6
-dont des étiquettes justes (3:94, 38:25, 70:18 : le modèle entend exactement le texte). Deux
-conséquences, **hors de cette brique** :
+dont des étiquettes justes (3:94, 38:25, 70:18 : le modèle entend exactement le texte).
 
-1. **Entraînement** : les manifestes de `build` (graphie `simple`) donneraient au modèle des cibles
-   avec `<unk>`. À trancher avant d'entraîner : retirer ces caractères de la cible (graphie que le
-   modèle écrit déjà : « ذَلِكَ », « فَهَدَى ») ou étendre le tokenizer.
-2. **Alignement (ADR-0006) et porte acoustique (ADR-0005)** : ils encodent le même texte et paient la
-   même pénalité sur ~ un verset sur deux ; les seuils calibrés ailleurs l'intègrent sans le savoir.
-   Non modifiés ici (comportement de l'alignement inchangé par consigne).
+1. **Entraînement — corrigé** : mesuré sur tout le corpus `simple` (78 248 mots), l'alif suscrit
+   (U+0670, 3 330 mots) et le tatweel (U+0640) sont les **deux seuls** caractères inconnus du
+   tokenizer ; sans eux, aucun mot ne donne `<unk>`. `build` écrit désormais toute cible (récitation
+   et non-Coran) dans la graphie du modèle (`model_graphie`, `FinetuneConfig.target_drop_chars`) :
+   « ذَلِكَ », « الرَّحْمَنُ », comme le modèle les écrit déjà. Échantillon reconstruit : 0 ligne avec
+   ces caractères dans les 6 manifestes ; `score` a renoté les 140 lignes changées (le texte entre
+   dans la clé de reprise), distribution inchangée, rapport `unknown_symbols` : 0 étiquette.
+   `filter` signale toute étiquette qui demanderait encore un `<unk>`.
+2. **Alignement (ADR-0006) et porte acoustique (ADR-0005)** : ils encodent le texte du corpus et
+   paient la même pénalité sur ~ un verset sur deux ; les seuils calibrés ailleurs l'intègrent sans
+   le savoir. Non modifiés ici (comportement de l'alignement inchangé par consigne).
+
+## Ce que le modèle entend : résultat du 2026-10-20
+
+**Shard 384** (renoté avec l'écoute, même seuil −0,45) : **405 gardés, 28 écartés, tous nommés** —
+16 débordements, 3 répétitions (19:72 « وَنَذَرُ الظَّالِمِينَ », 34:3 « وَلَا أَكْبَرُ », 5:69), 3
+troncatures (4:3, 6:59, 21:66), 6 preuves faibles (dont 6:96, lecture autre que Hafs probable). Par
+rapport au seuil seul (34 écartés) :
+- **9 étiquettes justes sauvées** : le modèle entend exactement leurs mots (3:94, 4:30, 10:35,
+  18:83, 23:65, 26:176, 35:36, 50:20, 55:39) ; seule la convention de voyelles les pénalisait.
+- **3 étiquettes fausses attrapées** au-dessus du seuil : 4:161 (−0,27, passage repris au début,
+  9 mots en plus), 21:66 (−0,42, « وَلَا يَضُرُّكُمْ » absent), 34:3 (−0,29, répétition).
+- Sur les étiquettes gardées, jamais plus d'un mot en plus ou en moins aux bords (un fragment du
+  verset voisin) : d'où `edge_words = 2`.
+
+**Voix directe : les 3 prises micro de Cherif** (atelier, 2026-10-19 : basmala puis 55:1-4, jamais
+vues par le modèle ni par Tadabur ; mesure seule, hors dépôt). Découpées par l'alignement forcé, puis
+chaque cas fabriqué à partir de sa voix et noté par le contrôle réel (même modèle, même réglage) :
+
+| Cas (× 3 prises) | Verdict |
+|---|---|
+| 55:1, 55:2, 55:3, 55:4 bien étiquetés | gardés (12/12 ; 55:3 à −0,68/−1,06 sauvé par l'écoute) |
+| 55:2 annoncé 55:3, 55:4 annoncé 55:3 | `preuve_faible` (6/6, −3,0 à −4,6) |
+| 55:2+55:3 annoncé 55:2 ; 55:3+55:4 annoncé 55:4 ; 55:1-4 annoncé 55:3 | `debordement` (9/9) |
+| 55:3 + premier mot de 55:4 | écarté (3/3 : 2 `debordement`, 1 `preuve_faible`) |
+| 55:2 récité deux fois | `repetition` (3/3) |
+| 55:4 coupé à moitié, ou au début de son dernier mot | écarté, `preuve_faible` (6/6) |
+| basmala seule annoncée « basmala + 55:1 » | écarté (3/3) |
+| basmala + 55:1 annoncé sans basmala | `basmala_recitee_non_annoncee` (3/3) |
+| basmala + 55:1 annoncé avec | gardé (3/3) |
+| 55:1 seul annoncé avec basmala | `basmala_annoncee_absente` (3/3) |
+
+**51/51** décisions justes. Défaut corrigé en chemin : un mot répété dans le passage (« الرحمن … الرحمن »)
+faisait croire à une troncature sur une prise ; la fin se mesure désormais à rebours.
 
 ## Limites
 
@@ -133,7 +182,11 @@ conséquences, **hors de cette brique** :
   elle-même se tromper (6:96 est à confirmer à l'oreille).
 - Une autre riwaya n'est détectée que si elle change des mots ou des voyelles que le modèle entend ;
   les différences de prononciation seules (imala, taqlil, madd) passent. Seul 6:96 l'a révélée ici.
-- Le score est par trame : un mot de trop sur un long verset pèse peu (débordement court non vu).
+- Un seul mot en plus ou en moins aux bords n'est pas nommé (tolérance mesurée) : sur un verset
+  court il est écarté par le score, sur un long verset il peut passer.
+- Une troncature d'un verset de deux mots est écartée comme `preuve_faible`, pas nommée.
+- L'écoute repose sur la transcription du modèle de base : s'il se trompe sur des mots aux bords
+  d'une étiquette juste, celle-ci peut être écartée (aucun cas sur le shard 384).
 
 ## Reproduire
 

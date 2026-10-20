@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pytest
@@ -21,6 +21,7 @@ from aqr.data.label_qc import (
     LabelScorer,
     QcFlag,
     filter_manifest,
+    heard_edges,
     qc_report,
     verdict,
 )
@@ -46,8 +47,12 @@ BARE = {
 DAGGER_ALIF = "ٰ"
 """Alif suscrit de la graphie Tanzil (« الرَّحْمَٰنِ ») : le tokenizer du vrai modèle n'en a pas
 de symbole et le code `<unk>`, que le modèle n'émet jamais."""
+CONVENTION = "هُوْ"
+"""« هُوَ » écrit avec une autre voyelle : ce que le modèle peut émettre pour un mot juste quand
+sa convention diffère de celle du corpus (soukoun noté ou non, mesuré : « الْإِنْسَانَ »)."""
 WORDS = sorted(
     {w.replace(DAGGER_ALIF, "") for v in (VOCALIZED, BARE) for words in v.values() for w in words}
+    | {CONVENTION}
 )
 SYMBOLS = {word: index for index, word in enumerate(WORDS, start=1)}
 UNK = len(SYMBOLS) + 1
@@ -66,6 +71,10 @@ def encode(text: str) -> tuple[int, ...]:
         symbols.append(SYMBOLS[word.replace(DAGGER_ALIF, "")])
         symbols += [UNK] * word.count(DAGGER_ALIF)
     return tuple(symbols)
+
+
+def decode(symbols: Sequence[int]) -> str:
+    return " ".join(WORDS[s - 1] for s in symbols)
 
 
 def texts() -> AlignmentTexts:
@@ -97,14 +106,20 @@ def entry(text: str, ref: VerseRef | None = V1, name: str = "a.wav") -> dict[str
 
 
 def scorer(
-    spoken: str, calls: list[str] | None = None, pause: int = 2, unknown: int | None = UNK
+    spoken: str,
+    calls: list[str] | None = None,
+    pause: int = 2,
+    unknown: int | None = UNK,
+    heard: bool = True,
 ) -> LabelScorer:
     def lattice_of(line: Mapping[str, Any]) -> CtcLattice:
         if calls is not None:
             calls.append(str(line["audio_filepath"]))
         return lattice(spoken, pause)
 
-    return LabelScorer(texts(), encode, lattice_of, unknown_symbol=unknown)
+    return LabelScorer(
+        texts(), encode, lattice_of, unknown_symbol=unknown, decode=decode if heard else None
+    )
 
 
 # --- Notation -----------------------------------------------------------------------------------
@@ -157,6 +172,91 @@ def test_symbole_inconnu_du_modele_retire_et_compte() -> None:
     assert exige.llr_per_frame is not None and exige.llr_per_frame < -0.1
     assert retire.llr_per_frame == pytest.approx(0.0, abs=1e-9)
     assert retire.unknown_symbols == 1 and exige.unknown_symbols == 0
+
+
+def test_etiquette_dans_la_graphie_du_modele_reconnue_et_sans_inconnu() -> None:
+    # Cible écrite sans alif suscrit (`model_graphie`) : c'est toujours le texte du verset, et
+    # elle ne demande plus aucun symbole inconnu au modèle.
+    label = f"{BASMALA} {QUL}".replace(DAGGER_ALIF, "")
+
+    def lattice_of(line: Mapping[str, Any]) -> CtcLattice:
+        return lattice(label)
+
+    graphie = LabelScorer(
+        texts(),
+        encode,
+        lattice_of,
+        unknown_symbol=UNK,
+        target=lambda text: text.replace(DAGGER_ALIF, ""),
+    ).score(entry(label), "train")
+    assert graphie.error is None and graphie.basmala_in_text is True
+    assert graphie.unknown_symbols == 0
+    assert graphie.llr_per_frame == pytest.approx(0.0, abs=1e-9)
+    # Sans la règle de graphie, la même étiquette ne serait pas reconnue comme le verset.
+    assert scorer(label).score(entry(label), "train").error is QcFlag.TEXT_MISMATCH
+
+
+# --- Ce que le modèle entend : débordement, troncature, convention de voyelles -----------------
+
+TOLERANT = LabelQcConfig(min_llr_per_frame=-10.0, basmala_margin=0.05, edge_words=2)
+"""Seuil hors jeu : seuls les mots entendus en trop ou en moins aux bords décident."""
+
+
+def test_ce_que_le_modele_entend_est_garde() -> None:
+    score = scorer(f"{QUL} {SAMAD}").score(entry(QUL), "train")
+    assert score.heard == f"{QUL} {SAMAD}"
+
+
+def test_debordement_sur_le_verset_voisin_nomme_meme_au_dessus_du_seuil() -> None:
+    # Segment automatique trop long : il contient aussi le verset suivant. Sur un long verset, deux
+    # mots de trop pèsent peu par trame ; le modèle, lui, les entend.
+    score = scorer(f"{QUL} {SAMAD}").score(entry(QUL), "train")
+    assert verdict(score, TOLERANT) is QcFlag.OVERFLOW
+
+
+def test_troncature_nommee() -> None:
+    score = scorer("قُلْ هُوَ").score(entry(QUL), "train")
+    assert score.error is None
+    assert verdict(score, TOLERANT) is QcFlag.TRUNCATED
+
+
+def test_repetition_par_le_recitant_nommee() -> None:
+    # Le récitant reprend un passage (34:3, « وَلَا أَكْبَرُ » dit deux fois, shard 384) : les deux
+    # bords coïncident avec l'étiquette, les mots en plus sont à l'intérieur.
+    score = scorer("قُلْ هُوَ قُلْ هُوَ اللَّهُ أَحَدٌ").score(entry(QUL), "train")
+    assert verdict(score, TOLERANT) is QcFlag.REPEATED
+    assert heard_edges("علم القران", "علم القران علم القران").inserted == 2
+
+
+def test_un_seul_mot_de_trop_au_bord_est_tolere() -> None:
+    # Un fragment du verset voisin (une syllabe, un mot) n'est pas un débordement : mesuré sur le
+    # shard 384, les étiquettes justes en ont parfois un, jamais deux.
+    score = scorer(f"{QUL} اللَّهُ").score(entry(QUL), "train")
+    assert verdict(score, TOLERANT) is None
+
+
+def test_convention_de_voyelles_ne_condamne_pas_une_etiquette_juste() -> None:
+    spoken = QUL.replace("هُوَ", CONVENTION)
+    sauvee = scorer(spoken, pause=1).score(entry(QUL), "train")
+    assert sauvee.llr_per_frame is not None
+    assert sauvee.llr_per_frame < CONFIG.min_llr_per_frame  # type: ignore[operator]
+    assert verdict(sauvee, CONFIG) is None  # le modèle entend exactement ces mots
+    sans_ecoute = scorer(spoken, pause=1, heard=False).score(entry(QUL), "train")
+    assert verdict(sans_ecoute, CONFIG) is QcFlag.LOW_SCORE
+
+
+def test_mot_repete_dans_le_verset_ne_fabrique_pas_de_troncature() -> None:
+    # Voix réelle (micro) : « الرحيم » transcrit de travers, et « الرحمن » revient en fin de
+    # passage ; aligné dans un seul sens, le second « الرحمن » s'accroche au premier et laisse deux
+    # mots « manquants » à la fin. La fin se mesure en alignant à rebours.
+    edges = heard_edges("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ الرَّحْمَنُ", "بسم الله الرحمنح الرحمن")
+    assert edges.missing == 0 and edges.extra == 0 and not edges.same
+
+
+def test_bords_mesures_des_deux_cotes() -> None:
+    edges = heard_edges("قل هو الله احد", "الله الصمد قل هو الله احد الله الصمد لم يلد")
+    assert edges.extra == 4  # le plus grand des deux bords : 2 avant, 4 après
+    assert heard_edges("قل هو الله احد", "الله احد").missing == 2
 
 
 def test_hors_verset_1_aucune_hypothese_de_basmala() -> None:
@@ -264,3 +364,4 @@ def test_rapport_distribution_et_exemples_a_ecouter() -> None:
     worst = [e["key"].rsplit("/", 1)[1] for e in report["rejected_examples"]]
     assert worst == ["long.wav", "21.wav", "20.wav"]
     assert report["rejected_examples"][1]["flag"] == QcFlag.LOW_SCORE.value
+    assert "heard" in report["rejected_examples"][1]
