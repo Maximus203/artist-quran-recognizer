@@ -22,6 +22,8 @@ abstentions, voir la méthode). Les cas `test` du lot (lot2-08 à lot2-10) n'ont
    12 ont pour meilleur candidat la suite exacte du verset (≈ 15 en comptant les reprises), sous le
    seuil parce que l'ASR est approximatif ou que le fragment est court.
 
+**Suivi** : les constats 5 (`top_k` qui coupait 67:25) et 6 (suite d'un verset commencé) sont traités par #55 et #54 ; les chiffres ci-dessous datent d'avant ces correctifs.
+
 ## Pins
 | Élément | Valeur |
 |---|---|
