@@ -19,15 +19,17 @@ impossible) · 2 utilisation impossible (variable manquante, option indisponible
              "chain_evidence_words", "acoustic_min_llr_per_frame"?, "acoustic_rescue_min_quality"?},
  "timing": {"extract_s", "segment_s", "asr_s", "match_s", "acoustic_s"?, "total_s"},
  "windows": N, "warnings": [...],
- "acoustic_checks": [{"t":[a,b], "verses":"55:1[5-5],55:2[1-2]", "llr_per_frame":-0.43|null,
-                      "accepted":true}],
+ "acoustic_checks": [{"kind":"chain|continuation", "t":[a,b], "verses":"55:1[5-5],55:2[1-2]",
+                      "llr_per_frame":-0.43|null, "accepted":true, "text_similarity"?:0.92}],
  "intervals": [ ... ]}      // ordre chronologique
 ```
 `engine.acoustic` nomme le modèle CTC qui vérifie les suites (ADR-0008), vide s'il n'y en a pas (poids
 du FastConformer absents : signalé dans `warnings` ; ou `--no-acoustic-check`). Les champs marqués `?` n'existent
-qu'avec lui. `acoustic_checks` trace chaque suite vérifiée : son passage, le texte du corpus aligné (syntaxe de
-`aqr align --verses`), la preuve (`null` : le texte ne tient pas dans le passage) et la décision. Diagnostic : une
-suite acceptée n'est pas une vérité terrain.
+qu'avec lui. `acoustic_checks` trace chaque vérification : `chain` (suite de versets) ou `continuation` (suite d'un verset
+commencé, prédite puis alignée sur la fenêtre suivante), son passage, le texte du corpus aligné (syntaxe de
+`aqr align --verses`), la preuve (`null` : le texte ne tient pas dans le passage), pour une suite de verset la
+similarité avec la transcription de la fenêtre (second témoin exigé), et la décision. Diagnostic : une
+vérification acceptée n'est pas une vérité terrain.
 Trois sortes d'intervalles :
 - `{"kind":"verse","ref":"42:3","words":[1,10],"partial":false,"status":"recognized|inferred|uncertain",
   "t":[a,b]|null,"time_interpolated":false,"confidence":0.97,"candidates":[],"repetition":false,

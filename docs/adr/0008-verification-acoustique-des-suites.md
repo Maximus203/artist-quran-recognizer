@@ -41,6 +41,25 @@ La preuve par la suite (ADR-0007) ne lit que le texte de l'ASR.
    Traçabilité : `engine.acoustic`, `decoder.acoustic_min_llr_per_frame`, `timing.acoustic_s` et
    `acoustic_checks` (chaque suite : passage, texte aligné, preuve, décision ; docs/RECOGNIZE-OUTPUT.md).
 
+## Ajout du 2026-10-20 (demande de Cherif) — la suite d'un verset commencé
+Règle de récitation : **un verset commencé est toujours récité jusqu'au bout** ; le récitant peut respirer au
+milieu, ou reprendre quelques mots en arrière (i'ada). Cas observé : le début est reconnu (21:56 [1-8], 21:87
+[2-10]) et la fenêtre suivante, qui porte la suite, reste une abstention (81 cas sur le lot 1 dev).
+6. **Prédire** : après un candidat retenu dont la dernière plage s'arrête au mot k < n, le texte attendu dans la
+   fenêtre suivante (si rien n'y est retenu et si ce n'est pas une formule) est le reste du verset (k+1..n),
+   avec un départ jusqu'à 3 mots plus tôt (reprise), suivi du verset suivant.
+7. **Vérifier** : ce texte est aligné **à fin libre** sur la fenêtre (`ctc_forced_align(ends=…)`,
+   `PassageAligner.align(free_end=True)` : l'alignement s'arrête à la fin d'un mot Uthmani, là où l'audio le
+   soutient le mieux). Le meilleur départ est retenu.
+8. **Deux témoins** : la preuve acoustique (même seuil) ET la transcription de la fenêtre, dont la similarité
+   avec le texte aligné (Dice des lettres normalisées) doit atteindre 0,6. Mesuré : l'audio seul laissait
+   passer un mot de fin de verset sur de la parole non coranique que le modèle rend surtout en blancs
+   (lot1-04 : 9:24 [22] sur « ليه يال لك هنا انتم », −0,55 par trame ; 12:23 [21] cinq fois sur un commentaire).
+   Acceptée, la suite devient un candidat (seuil du décodeur, mots et temps de l'alignement) ; elle peut à
+   son tour finir avant la fin du verset et se poursuivre dans la fenêtre d'après. Refusée : rien n'est nommé.
+   Le décodeur fusionne les deux moitiés contiguës ou marque une reprise (`repetition`).
+   `AcousticCheckConfig.continuation*`, désactivable ; trace `acoustic_checks[].kind = "continuation"`.
+
 ## Mesures — `docs/evaluation/acoustic-check-2026-10-20.md`
 Mêmes transcriptions, décision textuelle (ADR-0007) contre acoustique :
 - Micro (3 enregistrements × 3 moteurs) : 55:1-4 reconnus partout ; avec Muno, 1/3 → 3/3.
@@ -49,6 +68,9 @@ Mêmes transcriptions, décision textuelle (ADR-0007) contre acoustique :
 - Dev : lot1-01 68 → 82 (Al-Qiyama récitée, une citation de 12:23), lot1-06 272 → 276 (21:62, 22:10,
   22:64, 23:50), lot1-09 inchangé ; aucun faux verset nouveau à la relecture ; les suites refusées
   sont des homonymes que le décodeur écartait déjà par le contexte.
+- Suite d'un verset commencé (81 cas dev « verset commencé puis abstention ») : résolus 34 (texte) →
+  47 (suites seules) → **57** ; 25 suites acceptées, toutes conformes à leur transcription ; EveryAyah et
+  micro inchangés.
 - **Bug corrigé en mesurant** : NeMo laisse l'encodeur en mode entraînement après `transcribe()` ;
   le treillis calculé ensuite (même FastConformer) tournait avec dropout et corrompait la BatchNorm
   (lot1-01 : 68 versets reconnus → 5). `model.eval()` avant chaque treillis, contrat sur le vrai modèle.

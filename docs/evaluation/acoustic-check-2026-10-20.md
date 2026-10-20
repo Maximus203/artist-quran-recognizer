@@ -88,6 +88,39 @@ les 30 sourates (≈ 41 min d'audio).
   transcrite (« وَأونك عنِ الوروح ») ; le verset reste reconnu par sa propre preuve.
 - Coût de la vérification : 1,3 s, 7,1 s et 113 s (3,6 % du temps réel sur la prière).
 
+## 4. Suite d'un verset commencé (ajout du 2026-10-20, ADR-0008 § 6-8)
+Liste de référence : 81 cas « verset commencé, puis abstention, suite jamais reconnue » sur les fichiers dev du
+lot 1 (sorties FastConformer du 2026-10-07, `D:-Dev\Dataqr-out\suites-non-detectees-dev.json`, établie
+par la session d'audit ; fichiers test non utilisés). Un cas est résolu si ce verset, ou le suivant, est reconnu
+sur le temps de l'abstention. Trois décisions sur les mêmes transcriptions (`--cases`) :
+
+| Fichier | Cas | Texte (ADR-0007) | Suites vérifiées | + suite d'un verset |
+|---|---|---|---|---|
+| lot1-04 (assise) | 35 | 12 | 15 | **19** |
+| lot1-06 (prière) | 24 | 15 | 21 | **24** |
+| lot1-05 | 8 | 5 | 8 | 8 |
+| lot1-01 | 6 | 1 | 1 | **4** |
+| lot1-03 | 3 | 0 | 0 | 0 |
+| lot1-12 | 3 | 0 | 1 | 1 |
+| lot1-09 | 2 | 1 | 1 | 1 |
+| **Total** | **81** | **34** | **47** | **57** |
+
+- 25 suites acceptées (lot1-04 : 9, lot1-01 : 6, lot1-03 : 4, lot1-06 : 3, lot1-09 : 3), relues une à une :
+  toutes conformes à la transcription de leur fenêtre (« وَهُدًى », « أَفَلَا تَعْقِلُونَ », « إِلَّا قَلِيلًا »,
+  « وَقَالَتْ هَيْتَ لَكَ », « فَنِعْمَ عُقْبَى الدَّارِ »…), preuve −0,67 à 0, similarité 0,61 à 1,00.
+- **Second témoin indispensable** : sans lui, 23 suites étaient acceptées sur lot1-04 seul, dont une
+  douzaine sur de la parole non coranique (9:24 [22] sur « ليه يال لك هنا انتم », 4:10 [11] sur « نيلك أونج
+  تون », cinq homonymes de « هو » sur « لي القران ك تج »), et 12:23 [21] cinq fois sur un commentaire de
+  l'orateur (lot1-01). Normaliser la preuve par les seules trames de parole ne les séparait pas (vraies suites
+  jusqu'à −2,9, fausses dès −1,6) ; la similarité de Dice avec la transcription à 0,6 les écarte toutes, au
+  prix de quelques reprises mal transcrites (12:23 « هيت ل », 17:12 « فمحو آت »).
+- Non résolus : surtout des fenêtres de commentaire où l'orateur ne finit pas le verset dans la fenêtre
+  suivante (lot1-04 : « يوم محمد صلى… », langue locale), ou des transcriptions trop dégradées.
+- Les comptes de versets reconnus peuvent **baisser** (lot1-03 21 → 17, lot1-09 7 → 6) : deux moitiés d'un
+  même verset deviennent une seule détection (vérifié : aucune détection n'apparaît ni ne disparaît).
+- EveryAyah : 96,8 %, 0 faux, limites inchangées ; micro : inchangé (55:1-4 partout).
+- Coût : 2 à 98 s par fichier (lot1-04, 134 min : 22 s).
+
 ## Limites
 - Pas de vérité humaine : relecture des transcriptions seulement ; seuils provisoires.
 - Un seuil absolu ne distingue pas les quasi-homonymes (§ 2, lot1-01 à 583 s) : il faut comparer entre elles
