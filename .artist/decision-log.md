@@ -896,3 +896,11 @@
 - Adaptateur : `FastConformerQuranASR.symbols_text` (symboles → texte du tokenizer), ajout ; aligneur
   et décodage inchangés.
 
+
+## 2026-10-20 — Matcher : `top_k` ne coupe jamais une égalité de score
+- **Constat** (lot 2, lot2-04, Al-Mulk en studio) : « ويقولون متى هذا الوعد إن كنتم صادقين » est le texte
+  exact de 6 versets ; avec `top_k = 5` dans l'ordre du Mushaf, 67:25 sortait de la liste et le décodeur,
+  encadré par 67:24 et 67:26, rendait 10:48 `uncertain`. Même risque pour le refrain d'Ar-Rahman (31 fois).
+- **Décision** : `_rank` continue au-delà de `top_k` tant que le score égale celui du dernier candidat
+  gardé ; les sosies exacts restent tous candidats, le contexte (B7, suites ADR-0007/0008) tranche.
+- **Vérifié** : tests (6 sosies, 31 refrains) ; audio réel lot2-04 : 67:24 → 67:25 → 67:26 reconnus, plus de 10:48.
