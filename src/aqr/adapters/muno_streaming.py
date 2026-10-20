@@ -7,7 +7,7 @@ du corpus. Poids et tokenizer sont épinglés dans `models/LOCK.json` et restent
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,8 @@ MODEL_KEY = "muno-fastconformer-quran-streaming"
 SAMPLE_RATE = 16_000
 HOP_LENGTH = 160
 CHUNK_MEL_FRAMES = 112
+MIN_CHUNK_MEL_FRAMES = 10
+"""En dessous, le sous-échantillonnage du modèle ne laisse aucune trame et l'ONNX échoue."""
 OUTPUT_FRAME_S = 0.08
 BLANK_ID = 1024
 VOCAB_SIZE = 1025
@@ -32,6 +34,19 @@ class MunoStreamingConfig:
     device: str = "cpu"
     cmvn_kind: str = "tlog"
     verify_on_load: bool = True
+
+
+def mel_chunks(features: Any) -> Iterator[Any]:
+    """Morceaux successifs `(1, n_mels, ≤ CHUNK_MEL_FRAMES)` pour le modèle streaming. Un dernier
+    morceau trop court est complété par des trames nulles (la moyenne CMVN, donc neutres)."""
+    import numpy as np
+
+    for offset in range(0, features.shape[1], CHUNK_MEL_FRAMES):
+        chunk = features[:, offset : offset + CHUNK_MEL_FRAMES]
+        missing = MIN_CHUNK_MEL_FRAMES - chunk.shape[1]
+        if missing > 0:
+            chunk = np.pad(chunk, ((0, 0), (0, missing)))
+        yield chunk[None]
 
 
 def words_from_tokens(
@@ -178,8 +193,7 @@ class MunoStreamingQuranASR(QuranASR):
         observed: list[tuple[int, int, float]] = []
         previous = -1
         output_frame = 0
-        for offset in range(0, features.shape[1], CHUNK_MEL_FRAMES):
-            chunk = features[:, offset : offset + CHUNK_MEL_FRAMES][None]
+        for chunk in mel_chunks(features):
             chunk_length = np.asarray([chunk.shape[2]], dtype=np.int64)
             logprobs, encoded_lengths, cache_channel, cache_time, cache_len = self._session.run(
                 None,

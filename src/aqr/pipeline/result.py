@@ -54,6 +54,8 @@ class RecognitionResult:
     acoustic_checks: tuple[ChainCheck, ...] = ()
     """Suites vérifiées sur l'audio, acceptées ou refusées (ADR-0008) : diagnostic."""
     riwaya: Riwaya = Riwaya.HAFS
+    cascade: dict[str, object] | None = None
+    """Moteurs secondaires, fenêtres réécoutées et sauvées ; None = un seul moteur."""
     """Riwaya du corpus et du modèle, SUPPOSÉE : rien ne la vérifie dans l'audio (I6)."""
 
     def detections(self) -> tuple[Detection, ...]:

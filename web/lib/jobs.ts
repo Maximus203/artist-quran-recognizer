@@ -14,11 +14,11 @@ import {
   sha,
 } from "./store";
 
-const ASR_ENGINES = ["fastconformer", "whisper", "muno-streaming"];
-/** Moteur ASR de l'atelier : FastConformer par défaut, `AQR_ASR=whisper` pour l'autre. */
+const ASR_ENGINES = ["cascade", "fastconformer", "whisper", "muno-streaming"];
+/** Moteur de l'atelier : la cascade par défaut ; `AQR_ASR` force un moteur seul (avancé). */
 export const ASR_ENGINE = ASR_ENGINES.includes(process.env.AQR_ASR ?? "")
   ? (process.env.AQR_ASR as string)
-  : "fastconformer";
+  : "cascade";
 
 export async function launch(
   id: string,
