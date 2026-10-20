@@ -181,6 +181,14 @@ class FastConformerQuranASR:
         des symboles de chaque mot (le découpage ne traverse pas les espaces : contrat vérifié)."""
         return tuple(int(i) for i in self._ensure_model().tokenizer.text_to_ids(text))
 
+    @property
+    def unknown_symbol(self) -> int:
+        """Symbole `<unk>` : ce que rend `encode` pour un caractère que le modèle n'a jamais appris
+        et qu'il n'émet donc jamais (alif suscrit « ٰ », tatweel « ـ » de la graphie Tanzil :
+        mesuré, docs/evaluation/finetune-label-qc.md)."""
+        unk = self._ensure_model().tokenizer.unk_id
+        return int(unk() if callable(unk) else unk)
+
     def lattice(self, clip: AudioClip, span: TimeSpan) -> CtcLattice:
         duration = len(clip.samples) / clip.sample_rate
         if span.end_s > duration + 1e-6:
