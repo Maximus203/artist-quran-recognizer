@@ -73,6 +73,16 @@ def encode(text: str) -> tuple[int, ...]:
     return tuple(symbols)
 
 
+class _Model:
+    """Encodeur factice et son `<unk>` (None : le modèle n'en a pas)."""
+
+    def __init__(self, unknown: int | None = UNK) -> None:
+        self.unknown_symbol = unknown
+
+    def encode(self, text: str) -> tuple[int, ...]:
+        return encode(text)
+
+
 def decode(symbols: Sequence[int]) -> str:
     return " ".join(WORDS[s - 1] for s in symbols)
 
@@ -117,9 +127,7 @@ def scorer(
             calls.append(str(line["audio_filepath"]))
         return lattice(spoken, pause)
 
-    return LabelScorer(
-        texts(), encode, lattice_of, unknown_symbol=unknown, decode=decode if heard else None
-    )
+    return LabelScorer(texts(), _Model(unknown), lattice_of, decode=decode if heard else None)
 
 
 # --- Notation -----------------------------------------------------------------------------------
@@ -184,9 +192,8 @@ def test_etiquette_dans_la_graphie_du_modele_reconnue_et_sans_inconnu() -> None:
 
     graphie = LabelScorer(
         texts(),
-        encode,
+        _Model(),
         lattice_of,
-        unknown_symbol=UNK,
         target=lambda text: text.replace(DAGGER_ALIF, ""),
     ).score(entry(label), "train")
     assert graphie.error is None and graphie.basmala_in_text is True

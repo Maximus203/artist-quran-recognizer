@@ -391,9 +391,8 @@ def cmd_score(args: argparse.Namespace) -> int:
         model = model or acoustic_model(args)
         scorer = LabelScorer(
             texts,
-            model.encode,
+            model,
             clip_lattice(model, manifest_dir),
-            unknown_symbol=model.unknown_symbol,
             target=lambda text: model_graphie(text, CONFIG),
             decode=model.symbols_text,
         )

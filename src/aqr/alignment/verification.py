@@ -33,7 +33,13 @@ from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
 from typing import Protocol
 
-from aqr.alignment.forced import AlignedWord, AlignmentConfig, PassageAligner, PassageAlignment
+from aqr.alignment.forced import (
+    AlignedWord,
+    AlignmentConfig,
+    PassageAligner,
+    PassageAlignment,
+    emittable_encoder,
+)
 from aqr.corpus.alignment_text import AlignmentTexts, recited_span
 from aqr.corpus.normalize import normalize_arabic
 from aqr.decoding.chains import Chain, ChainConfig, Observation, chain_spans, find_chains
@@ -106,7 +112,7 @@ class AcousticVerifier:
         self._model, self._corpus = model, corpus
         self._chain, self._config = chain, config
         self._threshold = config.min_llr_per_frame
-        self._aligner = PassageAligner(texts, model.encode, alignment)
+        self._aligner = PassageAligner(texts, emittable_encoder(model), alignment)
         self._max_passage_s = max_passage_s
         self._floor = floor
         self._lattices: dict[TimeSpan, CtcLattice] = {}
