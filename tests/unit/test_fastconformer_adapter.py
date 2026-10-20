@@ -188,6 +188,8 @@ def test_marge_desactivee_par_defaut_car_mesuree_defavorable():
 
 # --- port CtcAcousticModel (alignement forcé, ADR-0006) ------------------------------------------
 class FakeTokenizer:
+    unk_id = 0
+
     def text_to_ids(self, text: str) -> list[int]:
         return [len(word) for word in text.split()]
 
@@ -196,6 +198,12 @@ def test_encode_utilise_le_tokenizer_du_modele():
     model = FakeNemo([])
     model.tokenizer = FakeTokenizer()  # type: ignore[attr-defined]
     assert asr(model).encode("قل هو الله") == (2, 2, 4)
+
+
+def test_symbole_inconnu_du_tokenizer_expose():
+    model = FakeNemo([])
+    model.tokenizer = FakeTokenizer()  # type: ignore[attr-defined]
+    assert asr(model).unknown_symbol == 0
 
 
 def test_treillis_du_seul_passage_en_temps_absolus(monkeypatch):

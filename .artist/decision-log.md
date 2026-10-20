@@ -806,3 +806,28 @@
   `aqr.models.sync` (réutilisé), `HfHub(repo_type="dataset")`.
 - **Disque** : Tadabur complet = 937 Go bruts, ~160 Go extraits ; construction par shard avec
   `--prune-raw`. Le poste a 91 Go libres : jeu complet = disque dédié ou sous-ensemble.
+
+## 2026-10-19 — Étape C : contrôle des étiquettes du jeu de fine-tuning avant l'entraînement
+- **Score = preuve `llr_per_frame` (ADR-0005) de l'aligneur de l'ADR-0006, réutilisé tel quel**, sur
+  tout le WAV, contre le texte de l'étiquette retrouvé dans le corpus (`aqr_ref`, avec ou sans
+  basmala) ; une étiquette qui ne correspond pas au corpus n'est pas notée. Plutôt qu'une perte CTC
+  (somme sur tous les chemins), le meilleur chemin contraint comparé au chemin libre : même mesure
+  que l'alignement et la porte acoustique, normalisée par trame, sans dépendance à NeMo.
+- **Basmala : hypothèse inverse notée** pour chaque verset 1 ; nécessaire, car une basmala récitée et
+  non annoncée laisse le score au-dessus du seuil (−0,23 à −0,42 sur 3 voix témoins).
+- **`<unk>` retiré du texte aligné, compté** : l'alif suscrit (U+0670) et le tatweel (U+0640) de la
+  graphie `simple` n'existent pas pour le tokenizer ; les exiger notait faux des étiquettes justes
+  (première passe). L'aligneur ne change pas : c'est l'encodeur passé qui filtre
+  (`FastConformerQuranASR.unknown_symbol`, ajout). Constat reporté, non corrigé ici : 32 % des cibles
+  d'entraînement du shard 384 contiennent un `<unk>`, et l'alignement/la porte paient la même
+  pénalité.
+- **Seuil −0,45, marge basmala 0,02** (`LabelQcConfig`), calibrés sur le shard 384 en décrivant les
+  69 exemples sous −0,3 (transcription libre du modèle, pas d'écoute) : 34 écartés (7,9 %), dont 19
+  étiquettes fausses visibles (14 débordements sur un verset voisin, 3 troncatures, 1 répétition,
+  1 lecture autre que Hafs probable en 6:96). La précision des étiquettes prime sur le volume.
+- **Score et filtre séparés** : `score` (lent, reprenable, refuse de mêler deux modèles/corpus) et
+  `filter` (instantané, relançable pour essayer un seuil) ; le manifeste filtré reprend les lignes
+  d'origine à l'identique, à côté des originaux (chemins audio inchangés). Liste d'écoute M3U des
+  écartés pour la validation à l'oreille.
+- Témoin positif de la basmala construit avec EveryAyah **en mesure seule** (scratch, hors dépôt et
+  hors manifeste) : n'enfreint pas l'interdiction d'entraîner sur EveryAyah.
