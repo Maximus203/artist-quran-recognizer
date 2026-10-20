@@ -139,7 +139,8 @@ dont des étiquettes justes (3:94, 38:25, 70:18 : le modèle entend exactement l
    `filter` signale toute étiquette qui demanderait encore un `<unk>`.
 2. **Alignement (ADR-0006) et porte acoustique (ADR-0005)** : ils encodent le texte du corpus et
    paient la même pénalité sur ~ un verset sur deux ; les seuils calibrés ailleurs l'intègrent sans
-   le savoir. Non modifiés ici (comportement de l'alignement inchangé par consigne).
+   le savoir. Non modifiés ici (comportement de l'alignement inchangé par consigne). **Alignement
+   corrigé le 2026-10-20** (`emittable_encoder`, mesures : `alignment-unk-2026-10-20.md`).
 
 ## Ce que le modèle entend : résultat du 2026-10-20
 

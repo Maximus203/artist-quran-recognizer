@@ -10,7 +10,7 @@ import math
 
 import pytest
 
-from aqr.alignment.forced import AlignmentConfig, PassageAligner
+from aqr.alignment.forced import AlignmentConfig, PassageAligner, emittable_encoder
 from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant
 from aqr.domain.models import VerseRef, WordSpan
 from aqr.domain.ports import CtcLattice
@@ -236,3 +236,35 @@ def test_fin_libre_jamais_au_milieu_d_un_mot_uthmani():
     assert result.spans[0].span == WordSpan(V1, 1, 1)
     assert [w.word for w in result.spans[0].words] == [1]
     assert result.evidence.llr_per_frame < -1.0  # « أيها » manque : la preuve le dit
+
+
+# --- Encodeur de l'aligneur : seuls les symboles que le modèle peut émettre ----------------------
+class _LazyModel:
+    """Comme le FastConformer : `unknown_symbol` charge le modèle."""
+
+    def __init__(self, unknown: int | None) -> None:
+        self.unknown, self.loaded = unknown, False
+
+    def encode(self, text: str) -> tuple[int, ...]:
+        return (SYMBOLS[text], VOCAB, *encode(text))
+
+    @property
+    def unknown_symbol(self) -> int | None:
+        self.loaded = True
+        return self.unknown
+
+
+def test_l_encodeur_retire_le_symbole_inconnu_que_le_modele_n_emet_jamais():
+    assert emittable_encoder(_LazyModel(VOCAB))("يا") == [1, 1]
+
+
+def test_l_encodeur_garde_tout_si_le_modele_n_a_pas_de_symbole_inconnu():
+    assert emittable_encoder(_LazyModel(None))("يا") == [1, VOCAB, 1]
+
+
+def test_l_encodeur_ne_charge_pas_le_modele_avant_le_premier_texte():
+    model = _LazyModel(VOCAB)
+    encoder = emittable_encoder(model)
+    assert not model.loaded
+    encoder("يا")
+    assert model.loaded

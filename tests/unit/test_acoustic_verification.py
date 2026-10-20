@@ -48,6 +48,7 @@ class _Model:
     """« Entend » chaque mot de `said` pendant 3 trames depuis son instant ; du blanc ailleurs."""
 
     engine = "fake-ctc@test"
+    unknown_symbol: int | None = None
 
     def __init__(self, said: list[tuple[float, str]]) -> None:
         self.said = said
@@ -67,6 +68,16 @@ class _Model:
         rest = 0.03 / (VOCAB - 1)
         rows = [[math.log(0.97 if v == s else rest) for v in range(VOCAB)] for s in frames]
         return CtcLattice(log_probs=rows, blank=BLANK, start_s=span.start_s, frame_s=FRAME)
+
+
+class _ModelWithUnknown(_Model):
+    """Le tokenizer rend `<unk>` pour une lettre de chaque mot (alif suscrit de Tanzil) ; le
+    modèle ne l'émet jamais (ici : un mot qui n'est jamais dit)."""
+
+    unknown_symbol = SYMBOLS[OTHER[-1]]
+
+    def encode(self, text: str) -> tuple[int, ...]:
+        return (SYMBOLS[text], self.unknown_symbol)
 
 
 def texts() -> AlignmentTexts:
@@ -145,6 +156,12 @@ def test_le_maillon_ampute_est_sauve_par_l_audio():
     assert check.accepted and check.llr_per_frame == pytest.approx(0.0, abs=1e-6)
     assert check.spans[1] == WordSpan(VerseRef(55, 2), 1, 2)
     assert check.time == TimeSpan(0.0, 11.5)
+
+
+def test_un_symbole_que_le_modele_n_emet_jamais_n_est_pas_exige():
+    observations, (check,) = verifier(_ModelWithUnknown(SAID_55)).verify(CLIP, MUNO_55)
+    assert check.accepted and check.llr_per_frame == pytest.approx(0.0, abs=1e-6)
+    assert scores(observations)[1] == {"55:2": 0.75}
 
 
 def test_le_maillon_sauve_couvre_les_mots_que_l_audio_contient_avec_leurs_temps():

@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from tests.support.real import LOCK_PATH, everyayah_clip, models_dir
 
-from aqr.alignment.forced import PassageAligner
+from aqr.alignment.forced import PassageAligner, emittable_encoder
 from aqr.corpus.alignment_text import AlignmentTexts, recited_span
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 
@@ -54,11 +54,18 @@ def test_encodage_mot_par_mot_egal_a_l_encodage_du_texte(model):  # type: ignore
     assert model.encode(text) == tuple(s for w in text.split() for s in model.encode(w))
 
 
+def test_l_alif_suscrit_et_le_tatweel_de_tanzil_ne_sont_pas_exiges_par_l_aligneur(model):  # type: ignore[no-untyped-def]
+    # Graphie `simple` : le tokenizer rend `<unk>` pour ces lettres, que le modèle n'émet jamais.
+    for word in ("الرَّحْمَٰنِ", "يَـا"):
+        assert model.unknown_symbol in model.encode(word)
+        assert model.unknown_symbol not in emittable_encoder(model)(word)
+
+
 def test_le_verset_dit_est_aligne_dans_le_clip_et_prefere(model, texts):  # type: ignore[no-untyped-def]
     clip = everyayah_clip("Alafasy_128kbps", "112001.mp3")
     duration = len(clip.samples) / clip.sample_rate
     lattice = model.lattice(clip, TimeSpan(0.0, duration))
-    aligner = PassageAligner(texts, model.encode)
+    aligner = PassageAligner(texts, emittable_encoder(model))
     said = aligner.align(
         lattice, [recited_span(VerseRef(112, 1), texts.word_count(VerseRef(112, 1)))]
     )
