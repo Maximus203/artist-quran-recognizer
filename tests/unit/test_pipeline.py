@@ -303,3 +303,131 @@ def test_un_fragment_court_isole_reste_une_abstention(corpus, matcher):
         isinstance(i, AbstentionSpan) and i.reason is AbstentionReason.BELOW_THRESHOLD
         for i in result.intervals
     )
+
+
+# --- Étape B, brique 2 : vérification acoustique des suites et temps au mot (ADR-0008) ---------
+# Cas réel (2026-10-19, Muno au micro) : « عَلَّمَ » amputé en « لَّمَ » au début de sa fenêtre.
+MICRO_55_MUNO = [
+    ("بسم الله الرحمن الرحيم", (0.8, 4.4)),
+    ("الرَّحْمَنُ", (4.7, 6.5)),
+    ("لَّمَ الْقُرْآنَ", (6.7, 9.4)),
+    ("خَلَقَ الْإِنسَان", (9.6, 12.2)),
+    ("عَلَّمَهُ الْبَيَانَ", (12.4, 15.5)),
+]
+
+
+class _HeardModel:
+    """Modèle CTC factice : « entend » des mots imla'i (un symbole par mot, 3 trames chacun) à des
+    instants donnés, du blanc ailleurs."""
+
+    engine = "fake-ctc@test"
+    frame_s = 0.08
+    vocab = 512
+
+    def __init__(self, heard: list[tuple[float, str]]) -> None:
+        self.ids: dict[str, int] = {}
+        self.heard = [(t, self.encode(w)[0]) for t, w in heard]
+
+    def encode(self, text: str) -> tuple[int, ...]:
+        return (self.ids.setdefault(text, len(self.ids) + 1),)
+
+    def lattice(self, clip, span):
+        import math
+
+        from aqr.domain.ports import CtcLattice
+
+        frames = [0] * round(span.duration_s / self.frame_s)
+        for time, symbol in self.heard:
+            first = round((time - span.start_s) / self.frame_s)
+            for f in range(max(first, 0), min(first + 3, len(frames))):
+                frames[f] = symbol
+        rest = math.log(0.03 / (self.vocab - 1))
+        rows = []
+        for s in frames:
+            row = [rest] * self.vocab
+            row[s] = math.log(0.97)
+            rows.append(row)
+        return CtcLattice(log_probs=rows, blank=0, start_s=span.start_s, frame_s=self.frame_s)
+
+
+@pytest.fixture(scope="module")
+def alignment_texts(corpus):
+    from aqr.corpus.alignment_text import AlignmentTexts
+
+    return AlignmentTexts.from_corpus_dir(CORPUS_DIR, corpus)
+
+
+def _heard(alignment_texts, *said: tuple[float, str]) -> list[tuple[float, str]]:
+    """Mots imla'i (avec voyelles) de chaque plage « 55:2[1-2] » dite à partir de l'instant donné,
+    un mot toutes les 0,6 s."""
+    from aqr.alignment.service import parse_verse_spec
+    from aqr.corpus.alignment_text import AlignmentVariant
+
+    out: list[tuple[float, str]] = []
+    for start, spec in said:
+        (span,) = parse_verse_spec(spec, alignment_texts.word_count)
+        for n, word in enumerate(alignment_texts.words(span, AlignmentVariant.VOCALIZED)):
+            out.append((start + 0.6 * n, word.text))
+    return out
+
+
+def _acoustic(corpus, alignment_texts, heard, **check):
+    from aqr.alignment.forced import AlignmentConfig
+    from aqr.alignment.verification import AcousticCheckConfig, AcousticVerifier
+    from aqr.decoding.chains import ChainConfig
+
+    return AcousticVerifier(
+        model=_HeardModel(heard),
+        texts=alignment_texts,
+        corpus=corpus,
+        chain=ChainConfig(),
+        config=AcousticCheckConfig(**check),
+        alignment=AlignmentConfig(),
+        max_passage_s=120.0,
+        floor=0.75,
+    )
+
+
+def _muno(corpus, matcher, **kwargs):
+    texts = [t for t, _ in MICRO_55_MUNO]
+    spans = [s for _, s in MICRO_55_MUNO]
+    return _pipeline(corpus, matcher, texts, spans, seconds=16.0, **kwargs)
+
+
+SAID_55 = ((4.9, "55:1[5-5]"), (6.9, "55:2"), (9.8, "55:3"), (12.6, "55:4"))
+
+
+def test_muno_au_micro_le_maillon_ampute_coupe_la_suite_sans_l_audio(corpus, matcher):
+    assert _verses(_muno(corpus, matcher)) == []
+
+
+def test_muno_au_micro_l_audio_sauve_la_suite_et_donne_les_temps_au_mot(
+    corpus, matcher, alignment_texts
+):
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, *SAID_55))
+    result = _muno(corpus, matcher, acoustic=acoustic)
+    dets = _verses(result)
+    assert [(d.span.ref, d.status) for d in dets] == [
+        (VerseRef(55, n), Status.RECOGNIZED) for n in (1, 2, 3, 4)
+    ]
+    # « عَلَّمَ », perdu par l'ASR, est rendu par l'alignement du texte du corpus
+    assert (dets[1].span.first_word, dets[1].span.last_word) == (1, 2)
+    # temps de l'alignement (au mot près, trame de 80 ms), pas les bords des fenêtres
+    assert dets[1].time is not None and dets[1].time.start_s == pytest.approx(6.9, abs=0.08)
+    assert dets[1].time != TimeSpan(6.7, 9.4)
+    assert not any(d.time_interpolated for d in dets)
+    (check,) = result.acoustic_checks
+    assert check.accepted
+    assert result.engine.acoustic == "fake-ctc@test"
+    assert result.decoder_config["acoustic_min_llr_per_frame"] == -1.0
+    assert "acoustic_s" in result.timing
+
+
+def test_une_suite_que_le_texte_prouve_mais_que_l_audio_ne_soutient_pas_n_est_pas_nommee(
+    corpus, matcher, alignment_texts
+):  # I3 : les quatre fenêtres sont bien transcrites, mais l'audio dit autre chose
+    heard = _heard(alignment_texts, (4.9, "2:1"), (6.9, "2:2"), (9.8, "2:3"), (12.6, "2:4"))
+    acoustic = _acoustic(corpus, alignment_texts, heard)
+    result = _micro(corpus, matcher, acoustic=acoustic)
+    assert [d.span.ref for d in _verses(result)] == []
+    assert [c.accepted for c in result.acoustic_checks] == [False]

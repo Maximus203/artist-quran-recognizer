@@ -223,3 +223,26 @@ def test_observation_ecartee_hors_de_l_intervalle_ne_bloque_pas_la_fusion():
         (TimeSpan(20.0, 22.0), []),
     ]
     assert len(_decoder().decode(obs).detections()) == 1
+
+
+def test_temps_mesures_par_alignement_remplacent_les_bords_de_fenetre():  # ADR-0008
+    measured = Candidate(
+        span=WordSpan(VerseRef(55, 2), 1, 2),
+        score=0.9,
+        continuation=(WordSpan(VerseRef(55, 3), 1, 2),),
+        times=(TimeSpan(6.7, 9.3), TimeSpan(9.6, 12.2)),
+    )
+    (first, second) = _decoder().decode([(TimeSpan(6.0, 13.0), [measured])]).detections()
+    assert (first.time, second.time) == (TimeSpan(6.7, 9.3), TimeSpan(9.6, 12.2))
+    assert not first.time_interpolated and not second.time_interpolated
+
+
+def test_sans_temps_mesures_le_partage_au_prorata_reste_estime():
+    cand = Candidate(
+        span=WordSpan(VerseRef(55, 2), 1, 2),
+        score=0.9,
+        continuation=(WordSpan(VerseRef(55, 3), 1, 2),),
+    )
+    dets = _decoder().decode([(TimeSpan(0.0, 4.0), [cand])]).detections()
+    assert [d.time for d in dets] == [TimeSpan(0.0, 2.0), TimeSpan(2.0, 4.0)]
+    assert all(d.time_interpolated for d in dets)
