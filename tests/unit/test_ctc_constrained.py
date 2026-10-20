@@ -134,3 +134,24 @@ def test_verify_candidates_porte_desactivee_garde_tout_et_joint_la_preuve():
     )
     assert len(kept) == 2
     assert kept[1][1].llr_per_frame < kept[0][1].llr_per_frame
+
+
+# --- Fin libre (suite d'un verset, ADR-0008) : l'audio dit jusqu'où va le texte attendu ---------
+def test_fin_libre_le_passage_ne_contient_qu_un_debut_du_texte():
+    frames = _lattice([1, BLANK, 2, BLANK])
+    score, spans = ctc_forced_align(frames, [1, 2, 3, 4], BLANK, ends=(1, 2, 3, 4))
+    assert len(spans) == 2  # « 1 2 » dits, « 3 4 » hors du passage
+    assert score == pytest.approx(ctc_free_logprob(frames))
+
+
+def test_fin_libre_seulement_aux_frontieres_permises():
+    # 3 symboles dits, mais seules les fins après 2 ou 4 symboles sont permises (frontières de mots)
+    frames = _lattice([1, 2, 3, BLANK])
+    _score, spans = ctc_forced_align(frames, [1, 2, 3, 4], BLANK, ends=(2, 4))
+    assert len(spans) == 2
+
+
+def test_sans_fin_libre_tout_le_texte_doit_tenir():
+    frames = _lattice([1, BLANK, 2, BLANK])
+    score, spans = ctc_forced_align(frames, [1, 2, 3, 4], BLANK)
+    assert len(spans) == 4 and score < ctc_free_logprob(frames) - 5

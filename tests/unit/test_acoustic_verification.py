@@ -26,6 +26,7 @@ VERSES = {
     VerseRef(55, 4): ("علمه", "البيان"),
     VerseRef(55, 5): ("الشمس", "والقمر", "بحسبان"),
     VerseRef(55, 6): ("والنجم", "والشجر", "يسجدان"),
+    VerseRef(55, 7): ("والسماء", "رفعها", "ووضع", "الميزان"),
     VerseRef(16, 4): ("خلق", "الإنسان", "من", "نطفة"),
 }
 OTHER = ("كتاب", "بيت", "رجل", "ماء", "باب", "قلم")
@@ -245,3 +246,85 @@ def test_un_maillon_ne_deborde_pas_de_la_fenetre_ou_le_segmenteur_a_entendu_la_v
     observations, _checks = verifier(_Model(sorted(said))).verify(CLIP, MUNO_55)
     (time,) = observations[1][1][0].times
     assert time.end_s <= window(1).end_s
+
+
+# --- Suite d'un verset commencé (un verset commencé est toujours récité jusqu'au bout) ----------
+# Cas réels : lot1-06, 21:56 [1-8] puis 100-105 s en abstention ; 21:87 [2-10] puis 442-453 s.
+def proven(ref: str, first: int, last: int) -> Candidate:
+    """Candidat prouvé seul (assez de mots), plage partielle."""
+    return Candidate(WordSpan(VerseRef.parse(ref), first, last), 0.9, quality=0.9, explained=5.0)
+
+
+def weak(ref: str = "2:185") -> Candidate:
+    return cand(ref, 6, 6, 1.0, quality=0.5)
+
+
+BEGUN = [(window(4), [proven("55:5", 1, 2)]), (window(5), [weak()])]
+
+
+def continuation(observations, said, **config):
+    out, checks = verifier(_Model(said), **config).verify(CLIP, observations)
+    return out, [c for c in checks if c.kind == "continuation"]
+
+
+def test_la_suite_du_verset_commence_est_reconnue_avec_les_temps_de_l_alignement():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    out, (check,) = continuation(BEGUN, said)
+    assert check.accepted
+    rest = out[1][1][0]
+    assert rest.spans == (WordSpan(VerseRef(55, 5), 3, 3),) and rest.score == 0.75
+    assert rest.times[0].start_s == pytest.approx(15.4, abs=FRAME)
+    assert [round(c.score, 2) for c in out[1][1][1:]] == [0.1]  # le faible reste, sous le seuil
+
+
+def test_une_suite_que_l_audio_ne_soutient_pas_n_est_jamais_nommee():
+    said = recited((4, VerseRef(55, 5), 1, 2)) + said_other(5, 4)
+    out, (check,) = continuation(BEGUN, said)
+    assert not check.accepted
+    assert [c.span.ref for c in out[1][1]] == [VerseRef(2, 185)]
+
+
+def test_reprise_de_quelques_mots_avant_la_coupure():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 2, 3))
+    out, _checks = continuation(BEGUN, said)
+    assert out[1][1][0].spans == (WordSpan(VerseRef(55, 5), 2, 3),)
+
+
+def test_la_suite_continue_sur_le_verset_suivant():
+    said = [
+        *recited((4, VerseRef(55, 5), 1, 2)),
+        (15.4, "بحسبان"), (15.9, "والنجم"), (16.4, "والشجر"), (16.9, "يسجدان"),
+    ]  # fmt: skip
+    out, _checks = continuation(BEGUN, said)
+    assert out[1][1][0].spans == (WordSpan(VerseRef(55, 5), 3, 3), WordSpan(VerseRef(55, 6), 1, 3))
+    assert len(out[1][1][0].times) == 2
+
+
+def test_une_suite_en_deux_souffles_se_poursuit_de_fenetre_en_fenetre():
+    observations = [*BEGUN, (window(6), [])]
+    said = [*recited((4, VerseRef(55, 5), 1, 2)), (15.4, "بحسبان"), (15.9, "والنجم")]
+    said += recited((6, VerseRef(55, 6), 2, 3))
+    out, checks = continuation(observations, said)
+    assert [c.accepted for c in checks] == [True, True]
+    assert out[1][1][0].spans == (WordSpan(VerseRef(55, 5), 3, 3), WordSpan(VerseRef(55, 6), 1, 1))
+    assert out[2][1][0].spans == (WordSpan(VerseRef(55, 6), 2, 3),)
+
+
+def test_une_formule_apres_le_verset_n_est_jamais_prise_pour_sa_suite():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    out, checks = verifier(_Model(said)).verify(CLIP, BEGUN, blocked={1})
+    assert [c for c in checks if c.kind == "continuation"] == []
+    assert [c.span.ref for c in out[1][1]] == [VerseRef(2, 185)]
+
+
+def test_rien_a_predire_si_le_verset_est_fini_ou_la_fenetre_suivante_reconnue():
+    done = [(window(4), [proven("55:5", 1, 3)]), (window(5), [weak()])]
+    assert continuation(done, [])[1] == []
+    known = [(window(4), [proven("55:5", 1, 2)]), (window(5), [proven("55:6", 1, 3)])]
+    assert continuation(known, [])[1] == []
+
+
+def test_suite_desactivable():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    out, checks = continuation(BEGUN, said, continuation=False)
+    assert checks == [] and [c.span.ref for c in out[1][1]] == [VerseRef(2, 185)]
