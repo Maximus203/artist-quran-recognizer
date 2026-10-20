@@ -181,6 +181,11 @@ class FastConformerQuranASR:
         des symboles de chaque mot (le découpage ne traverse pas les espaces : contrat vérifié)."""
         return tuple(int(i) for i in self._ensure_model().tokenizer.text_to_ids(text))
 
+    def symbols_text(self, symbols: Sequence[int]) -> str:
+        """Texte de symboles CTC (inverse de `encode`) : ce que le modèle a émis, jamais rendu
+        (I1) ; sert à comparer ce qu'il entend à une étiquette."""
+        return str(self._ensure_model().tokenizer.ids_to_text(list(symbols))) if symbols else ""
+
     @property
     def unknown_symbol(self) -> int:
         """Symbole `<unk>` : ce que rend `encode` pour un caractère que le modèle n'a jamais appris
