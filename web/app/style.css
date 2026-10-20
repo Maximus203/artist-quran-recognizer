@@ -1434,3 +1434,8 @@ footer {
     max-height: 260px;
   }
 }
+
+.riwaya-notice {
+  color: var(--gold);
+  cursor: help;
+}

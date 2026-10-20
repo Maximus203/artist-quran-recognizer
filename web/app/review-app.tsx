@@ -971,6 +971,18 @@ export default function ReviewApp() {
                     Moteur : {engines[detail.session.asr] || detail.session.asr}
                   </span>
                 )}
+                {detail.result?.riwaya && !detail.result.riwaya.verified && (
+                  <span
+                    className="riwaya-notice"
+                    title={detail.result.riwaya.notice}
+                  >
+                    Riwaya{" "}
+                    {detail.result.riwaya.assumed === "hafs"
+                      ? "Hafs"
+                      : detail.result.riwaya.assumed}{" "}
+                    supposée · non vérifiée
+                  </span>
+                )}
                 <span>SHA-256 {detail.session.audio_sha256.slice(0, 12)}…</span>
               </div>
               {detail.session.error && (
