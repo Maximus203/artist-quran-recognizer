@@ -50,6 +50,7 @@ from aqr.data.finetune import (
     Utterance,
     corpus_alphabet,
     merge_parts,
+    model_graphie,
     part_done,
     process_utterances,
     tadabur_speaker,
@@ -308,7 +309,15 @@ def manifest_lines(manifest_dir: Path) -> list[tuple[str, str]]:
     return out
 
 
+def scored(line: str, done: Mapping[str, LabelScore]) -> bool:
+    """Déjà noté, et pour ce texte : un manifeste reconstruit garde ses chemins audio."""
+    entry = json.loads(line)
+    score = done.get(str(entry["audio_filepath"]))
+    return score is not None and score.text == entry["text"]
+
+
 def load_scores(path: Path) -> dict[str, LabelScore]:
+    """Scores par chemin audio ; le dernier écrit fait foi (renotation après reconstruction)."""
     if not path.exists():
         return {}
     scores = (
@@ -373,9 +382,7 @@ def cmd_score(args: argparse.Namespace) -> int:
         if meta_path.exists() and json.loads(meta_path.read_text(encoding="utf-8")) != meta:
             sys.exit(f"{meta_path} : scores d'un autre modèle ou corpus (supprimer {qc_dir})")
         done = load_scores(scores_path)
-        todo = [
-            (s, line) for s, line in manifest_lines(manifest_dir) if entry_key(line) not in done
-        ]
+        todo = [(s, line) for s, line in manifest_lines(manifest_dir) if not scored(line, done)]
         todo = todo[: args.limit]
         print(f"{spec.key} : {len(done)} déjà noté(s), {len(todo)} à noter")
         if not todo:
@@ -386,6 +393,7 @@ def cmd_score(args: argparse.Namespace) -> int:
             model.encode,
             clip_lattice(model, manifest_dir),
             unknown_symbol=model.unknown_symbol,
+            target=lambda text: model_graphie(text, CONFIG),
         )
         qc_dir.mkdir(parents=True, exist_ok=True)
         meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
@@ -462,6 +470,11 @@ def cmd_filter(args: argparse.Namespace) -> int:
         )
         counts = {k: v["count"] for k, v in report["rejected"].items()}
         print(f"{spec.key} : {report['kept']['count']} gardé(s), écartés {counts}")
+        if report["unknown_symbols"]["labels"]:
+            print(
+                f"  ATTENTION : {report['unknown_symbols']['labels']} étiquette(s) demandent un "
+                "symbole inconnu du modèle (<unk>) : reconstruire avec `build --rebuild`"
+            )
         if report["distribution"] is not None:
             print(histogram_text(report["distribution"], threshold))
         print(f"  à écouter : {qc_dir / 'rejected.m3u'}")
