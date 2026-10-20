@@ -66,6 +66,12 @@ class FinetuneConfig:
     quran_ngram: int = 4
     """Une phrase « non coranique » qui partage N mots consécutifs (normalisés) avec un verset
     est écartée : Common Voice arabe contient des versets lus (I3/I4)."""
+    target_drop_chars: tuple[str, ...] = ("ٰ", "ـ")
+    """Caractères retirés de TOUTE cible d'entraînement : l'alif suscrit et le tatweel de la
+    graphie Tanzil n'existent pas pour le tokenizer du FastConformer (`<unk>`, qu'il n'émet
+    jamais). Mesuré sur tout le corpus `simple` : ce sont les deux seuls, et sans eux aucun mot ne
+    donne `<unk>` (docs/evaluation/finetune-label-qc.md). La cible prend la graphie que le modèle
+    écrit déjà (« ذَلِكَ », « الرَّحْمَنُ »)."""
     env_var: str = "AQR_FINETUNE_DIR"
     """Dossier hors dépôt des fichiers téléchargés, des WAV extraits et des manifestes."""
     train_split: str = "train"
@@ -89,6 +95,12 @@ class LabelQcConfig:
     (récitée mais non annoncée, annoncée mais absente) l'emporte : l'étiquette est fausse.
     Mesuré : basmala réellement récitée et non annoncée, gain de 0,076 à 0,36 (témoins EveryAyah,
     3 voix) ; étiquette juste, gain ≤ −0,94 (7 versets 1 du shard 384)."""
+    edge_words: int = 2
+    """Mots que le modèle entend en trop (débordement) ou pas (troncature) au DÉBUT ou à la FIN
+    de l'étiquette, comparés sur les lettres seules (`label_qc.heard_edges`) : à partir de ce
+    nombre, l'étiquette est fausse, quel que soit son score. Mesuré sur le shard 384 : les
+    étiquettes justes en ont au plus 1 (un fragment du verset voisin), les débordements et
+    troncatures décrits de 2 à 13."""
     robust_k: float = 3.0
     """Seuil SUGGÉRÉ dans le rapport : médiane − k × MAD (normalisée). Aide au calibrage,
     jamais appliqué seul : le seuil se fixe à l'oreille, sur les exemples écartés."""

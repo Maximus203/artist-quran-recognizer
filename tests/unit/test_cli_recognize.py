@@ -160,3 +160,23 @@ def test_vraie_fabrique_sans_dossier_de_modeles_est_une_erreur_claire(tmp_path, 
     code = main(["recognize", str(audio), "--out-dir", str(tmp_path)], env={}, out=out, err=err)
     assert code == 2
     assert "AQR_MODELS_DIR" in err.getvalue()
+
+
+def test_verification_acoustique_par_defaut_et_desactivable(tmp_path, audio, corpus, matcher):
+    seen: list[bool] = []
+    build = _factory(corpus, matcher)
+
+    def spy(options, env):
+        seen.append(options.acoustic_check)
+        return build(options, env)
+
+    for extra in ([], ["--no-acoustic-check"]):
+        out_dir = tmp_path / str(len(seen))
+        main(
+            ["recognize", str(audio), "--out-dir", str(out_dir), *extra],
+            env={},
+            out=io.StringIO(),
+            err=io.StringIO(),
+            recognizer_factory=spy,
+        )
+    assert seen == [True, False]

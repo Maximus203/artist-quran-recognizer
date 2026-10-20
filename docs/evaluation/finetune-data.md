@@ -118,6 +118,9 @@ Voix Tadabur exclues de l'entraînement **et** de la validation (`EXCLUDED_TADAB
   après `normalize_arabic`) ; un écart écarte la ligne (`texte_different_du_corpus`). Sur le shard
   réel : 1 ligne sur 450, une variante d'écriture (« يا ويلتا » pour « يَا وَيْلَتَىٰ », 5:31),
   écartée par prudence.
+- **Graphie du modèle** : l'alif suscrit et le tatweel sont retirés de toute cible (récitation et
+  non-Coran), car le tokenizer du modèle ne les connaît pas (`<unk>`) ; ce sont les deux seuls
+  caractères du corpus dans ce cas (`FinetuneConfig.target_drop_chars`, `finetune-label-qc.md`).
 - **Basmala** : Tanzil la colle au verset 1 des sourates (sauf 1 et 9) ; si la source ne l'annonce
   pas, elle est retirée du texte cible.
 - **Non coranique** : ponctuation et symboles remplacés par une espace ; une phrase qui garde un
@@ -202,13 +205,15 @@ des 1,6 Go en 2 min 25 s.
    ASR). **Traité** : `score` puis `filter` notent chaque exemple par l'alignement forcé du modèle
    de base et écartent la queue (`{train,val}.qc.jsonl`, à donner à NeMo à la place des
    manifestes bruts) ; sur le shard 384, 34 exemples sur 433 écartés, dont 14 segments qui
-   débordent sur un verset voisin et 3 tronqués (`finetune-label-qc.md`).
+   débordent sur un verset voisin et 3 tronqués (`finetune-label-qc.md`). Depuis le 2026-10-20, le
+   contrôle compare aussi ce que le modèle entend : 28 écartés, tous nommés (débordement,
+   répétition, troncature), 9 étiquettes justes sauvées, validé sur une voix au micro (51/51).
 2. **Riwaya** non documentée par Tadabur (ci-dessus). Le contrôle des étiquettes n'en détecte que les
    différences de mots ou de voyelles : une seule sur le shard 384 (6:96, « وجاعل »).
 3. **Proportion et graphie du non-Coran** : ~45 h utilisables (Common Voice train + dev, FLEURS) contre
    ~1 400 h de récitation ; transcriptions non vocalisées.
 4. **Common Voice** vient d'un miroir non officiel (empreintes non recoupables avec Mozilla).
 5. **Lot 1** : correspondance des voix partielle (voir « Exclus »).
-6. **Cible avec `<unk>`** : l'alif suscrit et le tatweel de la graphie `simple` n'existent pas pour
-   le tokenizer du modèle (32 % des étiquettes du shard 384) ; à trancher avant d'entraîner
-   (`finetune-label-qc.md`, « Constat »).
+6. **Cible avec `<unk>`** : **corrigé** — l'alif suscrit et le tatweel (32 % des étiquettes du shard
+   384) sont retirés de la cible (`finetune-label-qc.md`, « Constat »). Reste : l'alignement et la
+   porte acoustique paient la même pénalité.
