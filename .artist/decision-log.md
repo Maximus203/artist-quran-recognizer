@@ -806,3 +806,19 @@
   `aqr.models.sync` (réutilisé), `HfHub(repo_type="dataset")`.
 - **Disque** : Tadabur complet = 937 Go bruts, ~160 Go extraits ; construction par shard avec
   `--prune-raw`. Le poste a 91 Go libres : jeu complet = disque dédié ou sous-ensemble.
+
+## 2026-10-20 — Lot 2 (voix sénégalaises) : constitution et premiers essais
+- **Périmètre** : manifeste `docs/data-lots/lot-2.yaml` (12 fichiers YouTube, 4,96 h), ingestion et
+  split ; essais `recognize` FastConformer GPU sur dev ; sonde des abstentions
+  (`scripts/probe_abstentions.py`). Rapport : `docs/evaluation/lot2-premiers-essais.md`.
+- **Seconde voix wolof ajoutée** : le split place orateur_M (tafsir wolof) en `test`. Plutôt que
+  d'ouvrir le test ou de forcer l'affectation, une seconde voix de tafsir wolof (orateur_N) a été
+  ajoutée, simulée en `dev` avant téléchargement sans changer aucune autre affectation. orateur_M
+  reste la seule voix wolof du jeu test.
+- **Identifiant réutilisé** : un intervenant déjà présent au lot 1 garde son identifiant anonyme
+  (orateur_C), donc son affectation `dev` figée.
+- **Riwaya établie par l'audio** (annonces entendues par l'ASR) : lot2-04 Hafs, lot2-05 Warsh (C15).
+  Les autres restent `inconnu` : la sortie d'un ASR entraîné sur Hafs n'est pas une preuve.
+- **Licence par lot** : `scripts/audio_lot.py` recopie la `licence` déclarée par le manifeste du lot
+  dans les fiches ; sans `licence` (lot 1), le libellé hérité est conservé (rien n'est réécrit).
+- **Aucun dépôt hors machine** pour ce lot (pas de dataset Hugging Face) : droits non établis.
