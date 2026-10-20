@@ -73,6 +73,17 @@ class PipelineConfig:
     decoder: DecoderConfig = field(default_factory=DecoderConfig)
     chain: ChainConfig = field(default_factory=ChainConfig)
     """Preuve cumulée par la suite (étape B) : des versets courts consécutifs se confirment."""
+    cascade: CascadeConfig = field(default_factory=lambda: CascadeConfig())
+    """Réécoute des fenêtres douteuses par les moteurs secondaires (avec arbitre acoustique)."""
+
+
+@dataclass(frozen=True)
+class CascadeConfig:
+    relisten_min_quality: float = 0.3
+    """Un candidat coranique au moins aussi ressemblant justifie une seconde oreille. Provisoire :
+    sous ce seuil, la fenêtre est de la parole sans rapport (cours en français, wolof)."""
+    relisten_neighbors: bool = True
+    """Réécouter aussi les fenêtres voisines d'un verset retenu (la récitation y continue)."""
 
 
 class RecognitionPipeline:
@@ -87,6 +98,7 @@ class RecognitionPipeline:
         config: PipelineConfig | None = None,
         verifier: CandidateVerifier | None = None,
         acoustic: AcousticVerifier | None = None,
+        secondary: Sequence[tuple[str, QuranASR]] = (),
         warnings: tuple[str, ...] = (),
         clock: Callable[[], float] = _time.perf_counter,
     ) -> None:
@@ -96,6 +108,9 @@ class RecognitionPipeline:
         self._engine = engine
         self._verifier = verifier
         self._acoustic = acoustic
+        self._secondary = tuple(secondary)
+        """Moteurs qui ne réécoutent que les fenêtres douteuses ; sans arbitre acoustique, aucun
+        (un verset d'un autre moteur n'est jamais nommé sans que l'audio le soutienne, I3)."""
         self._warnings = warnings
         self._clock = clock
         self._basmala = tuple(normalize_arabic(w) for w in corpus.words(VerseRef(1, 1))[:4])
@@ -128,19 +143,31 @@ class RecognitionPipeline:
             (window, self._classify(clip, window, transcript, side))
             for window, transcript in zip(windows, transcripts, strict=True)
         ]
-        checks: tuple[ChainCheck, ...] = ()
-        if self._acoustic is None:
-            proven = promote_chains(matched, self._corpus, self._config.chain)
-        else:
-            match_s, mark = self._clock() - mark, self._clock()
-            formulae = {s.time for s in side if isinstance(s, NonQuranSpan)}
-            blocked = {i for i, (window, _c) in enumerate(matched) if window in formulae}
-            heard = [" ".join(w.text for w in t.words) for t in transcripts]
-            proven, checks = self._acoustic.verify(clip, matched, blocked, heard)
-            timing["acoustic_s"] = self._clock() - mark
-            mark = self._clock() - match_s  # match_s exclut la vérification acoustique
-        timeline = self._decoder.decode(self._decide(proven, side))
+        heard = [" ".join(w.text for w in t.words) for t in transcripts]
         timing["match_s"] = self._clock() - mark
+        proven, checks = self._resolve(clip, matched, heard, side, timing)
+
+        cascade: dict[str, object] | None = None
+        if self._secondary and self._acoustic is not None:
+            mark = self._clock()
+            doubtful = self._doubtful(proven, side)
+            relistens: list[ChainCheck] = []
+            if doubtful:
+                matched, heard, relistens = self._relisten(clip, matched, heard, doubtful, side)
+                proven, checks = self._resolve(clip, matched, heard, side, timing)
+                checks = (*checks, *relistens)
+            floor = self._config.decoder.min_recognized_score
+            rescued = sum(1 for i in doubtful if any(c.score >= floor for c in proven[i][1]))
+            cascade = {
+                "secondary": [name for name, _asr in self._secondary],
+                "relistened_windows": len(doubtful),
+                "rescued_windows": rescued,
+            }
+            timing["relisten_s"] = self._clock() - mark
+
+        mark = self._clock()
+        timeline = self._decoder.decode(self._decide(proven, side))
+        timing["match_s"] += self._clock() - mark
         timing["total_s"] = self._clock() - started
 
         intervals = self._assemble(timeline.detections(), side)
@@ -155,7 +182,118 @@ class RecognitionPipeline:
             warnings=self._run_warnings(),
             acoustic_checks=checks,
             riwaya=self._corpus.riwaya,
+            cascade=cascade,
         )
+
+    # -- Décision : preuve par la suite, vérifiée sur l'audio quand le modèle CTC est là ---------
+    def _resolve(
+        self,
+        clip: AudioClip,
+        matched: list[tuple[TimeSpan, list[Candidate]]],
+        heard: Sequence[str],
+        side: list[AbstentionSpan | NonQuranSpan],
+        timing: dict[str, float],
+    ) -> tuple[list[tuple[TimeSpan, list[Candidate]]], tuple[ChainCheck, ...]]:
+        if self._acoustic is None:
+            return promote_chains(matched, self._corpus, self._config.chain), ()
+        mark = self._clock()
+        blocked = self._blocked(matched, side)
+        proven, checks = self._acoustic.verify(clip, matched, blocked, heard)
+        timing["acoustic_s"] = timing.get("acoustic_s", 0.0) + self._clock() - mark
+        return proven, checks
+
+    @staticmethod
+    def _blocked(
+        matched: Sequence[tuple[TimeSpan, list[Candidate]]],
+        side: Sequence[AbstentionSpan | NonQuranSpan],
+    ) -> set[int]:
+        formulae = {s.time for s in side if isinstance(s, NonQuranSpan)}
+        return {i for i, (window, _c) in enumerate(matched) if window in formulae}
+
+    # -- Cascade : réécoute des fenêtres douteuses par les moteurs secondaires ---------------------
+    def _doubtful(
+        self,
+        proven: Sequence[tuple[TimeSpan, list[Candidate]]],
+        side: Sequence[AbstentionSpan | NonQuranSpan],
+    ) -> list[int]:
+        """Fenêtres sans verset retenu qui méritent une seconde oreille : un candidat coranique
+        de qualité suffisante, ou le voisinage d'un verset retenu (la récitation y continue
+        souvent). Silence, formules et parole sans aucun candidat loin de tout verset : non."""
+        floor = self._config.decoder.min_recognized_score
+        cfg = self._config.cascade
+        silent = {
+            s.time
+            for s in side
+            if isinstance(s, AbstentionSpan) and s.reason is AbstentionReason.SILENCE
+        }
+        blocked = self._blocked(proven, side)
+        kept = [any(c.score >= floor for c in cands) for _w, cands in proven]
+        out: list[int] = []
+        for i, (window, candidates) in enumerate(proven):
+            if kept[i] or i in blocked or window in silent:
+                continue
+            promising = any((c.quality or 0.0) >= cfg.relisten_min_quality for c in candidates)
+            beside = cfg.relisten_neighbors and (
+                (i > 0 and kept[i - 1]) or (i + 1 < len(kept) and kept[i + 1])
+            )
+            if promising or beside:
+                out.append(i)
+        return out
+
+    def _relisten(
+        self,
+        clip: AudioClip,
+        matched: list[tuple[TimeSpan, list[Candidate]]],
+        heard: list[str],
+        doubtful: Sequence[int],
+        side: list[AbstentionSpan | NonQuranSpan],
+    ) -> tuple[list[tuple[TimeSpan, list[Candidate]]], list[str], list[ChainCheck]]:
+        """Chaque moteur secondaire réécoute les fenêtres douteuses. Leurs candidats rejoignent
+        ceux du moteur principal ; un candidat qui se suffit seul (score au seuil) n'est gardé que
+        si l'audio soutient le texte du corpus (arbitre, I3) ; les autres ne peuvent devenir un
+        verset que par une suite, que la vérification acoustique juge comme toute suite."""
+        assert self._acoustic is not None
+        floor = self._config.decoder.min_recognized_score
+        windows = [matched[i][0] for i in doubtful]
+        matched, heard = list(matched), list(heard)
+        best = {i: _best_quality(matched[i][1]) for i in doubtful}
+        checks: list[ChainCheck] = []
+        for _name, asr in self._secondary:
+            for i, transcript in zip(
+                doubtful, _transcribe_with(asr, clip, windows, self._config.batch_size), strict=True
+            ):
+                window = matched[i][0]
+                scratch: list[AbstentionSpan | NonQuranSpan] = []
+                found = self._classify(clip, window, transcript, scratch)
+                admitted: list[Candidate] = []
+                for candidate in found:
+                    if candidate.score >= floor:
+                        llr = self._acoustic.supports(clip, window, candidate.spans)
+                        threshold = self._acoustic.threshold
+                        accepted = llr is not None and llr >= threshold
+                        checks.append(
+                            ChainCheck(window, candidate.spans, llr, accepted, kind="relisten")
+                        )
+                        if not accepted:
+                            continue
+                    admitted.append(candidate)
+                if not admitted:
+                    continue
+                matched[i] = (window, _merge(matched[i][1], admitted))
+                if _best_quality(admitted) > best[i]:
+                    best[i] = _best_quality(admitted)
+                    heard[i] = " ".join(w.text for w in transcript.words)
+                side[:] = [
+                    s
+                    for s in side
+                    if not (
+                        isinstance(s, AbstentionSpan)
+                        and s.time == window
+                        and s.reason
+                        in (AbstentionReason.NO_CANDIDATE, AbstentionReason.EMPTY_TRANSCRIPT)
+                    )
+                ]
+        return matched, heard, checks
 
     def _engine_info(self) -> EngineInfo:
         if self._acoustic is None:
@@ -189,14 +327,7 @@ class RecognitionPipeline:
 
     # -- ASR -------------------------------------------------------------------------------
     def _transcribe(self, clip: AudioClip, windows: Sequence[TimeSpan]) -> list[Transcript]:
-        batch = getattr(self._asr, "transcribe_batch", None)
-        if batch is None:
-            return [self._asr.transcribe(clip, w) for w in windows]
-        out: list[Transcript] = []
-        step = self._config.batch_size
-        for i in range(0, len(windows), step):
-            out.extend(batch(clip, windows[i : i + step]))
-        return out
+        return _transcribe_with(self._asr, clip, windows, self._config.batch_size)
 
     # -- Une fenêtre : formule, abstention ou candidats --------------------------------------
     def _classify(
@@ -287,3 +418,30 @@ class RecognitionPipeline:
             else:
                 out.append(det)
         return out
+
+
+def _transcribe_with(
+    asr: QuranASR, clip: AudioClip, windows: Sequence[TimeSpan], step: int
+) -> list[Transcript]:
+    batch = getattr(asr, "transcribe_batch", None)
+    if batch is None:
+        return [asr.transcribe(clip, w) for w in windows]
+    out: list[Transcript] = []
+    for i in range(0, len(windows), step):
+        out.extend(batch(clip, windows[i : i + step]))
+    return out
+
+
+def _best_quality(candidates: Sequence[Candidate]) -> float:
+    return max(((c.quality or 0.0) for c in candidates), default=0.0)
+
+
+def _merge(first: Sequence[Candidate], second: Sequence[Candidate]) -> list[Candidate]:
+    """Candidats de deux oreilles pour une même fenêtre : une position du Coran n'apparaît qu'une
+    fois (celle de meilleur score), ordre par score décroissant."""
+    kept: dict[tuple[object, ...], Candidate] = {}
+    for candidate in (*first, *second):
+        key = tuple((s.ref, s.first_word, s.last_word) for s in candidate.spans)
+        if key not in kept or candidate.score > kept[key].score:
+            kept[key] = candidate
+    return sorted(kept.values(), key=lambda c: -c.score)

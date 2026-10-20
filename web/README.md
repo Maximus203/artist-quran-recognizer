@@ -17,7 +17,7 @@ cd web
 npm run dev
 ```
 
-Ouvrir l'URL affichée par Next.js. L'atelier lance FastConformer et le segmenteur de récitation par défaut ; `AQR_ASR=whisper` choisit Whisper. Ce choix reste provisoire (décision en phase 6). La première analyse peut durer plusieurs minutes. Le temps affiché est réel, sans pourcentage simulé. Un échec de modèle, de corpus ou d'extraction apparaît dans la session.
+Ouvrir l'URL affichée par Next.js. L'atelier lance la cascade (FastConformer partout, Whisper et Muno réécoutent les fenêtres douteuses, arbitre acoustique : ADR-0009) et le segmenteur de récitation ; l'interface ne propose plus de choisir le moteur. `AQR_ASR=fastconformer` (ou `whisper`, `muno-streaming`) force un moteur seul, pour une mesure. La première analyse peut durer plusieurs minutes. Le temps affiché est réel, sans pourcentage simulé. Un échec de modèle, de corpus ou d'extraction apparaît dans la session.
 
 ## Écoute exacte et pistes synchronisées
 

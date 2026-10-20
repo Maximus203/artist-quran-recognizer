@@ -50,6 +50,8 @@ from aqr.data.labels import (
 from aqr.data.manifest import Manifest, ManifestError
 from aqr.data.split import assign_splits, quarantine_recitant
 from aqr.pipeline.factory import (
+    ASR_CHOICES,
+    CASCADE,
     CONSTRAINED_UNAVAILABLE,
     RecognizeOptions,
     Recognizer,
@@ -115,9 +117,7 @@ def _build_parser() -> argparse.ArgumentParser:
     rec.add_argument("--format", default="json,srt", help="liste parmi json,srt,vtt")
     rec.add_argument("--force", action="store_true", help="écraser des sorties existantes")
     rec.add_argument("--translation", default="french_hameedullah", help="identifiant ou « none »")
-    rec.add_argument(
-        "--asr", default="whisper", choices=("whisper", "fastconformer", "muno-streaming")
-    )
+    rec.add_argument("--asr", default=CASCADE, choices=ASR_CHOICES)
     rec.add_argument("--segmenter", default="recitation", choices=("recitation", "silero"))
     rec.add_argument(
         "--allow-fallback-segmenter",

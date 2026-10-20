@@ -125,6 +125,18 @@ class AcousticVerifier:
     def config(self) -> AcousticCheckConfig:
         return self._config
 
+    @property
+    def threshold(self) -> float:
+        return self._threshold
+
+    def supports(
+        self, clip: AudioClip, window: TimeSpan, spans: Sequence[WordSpan]
+    ) -> float | None:
+        """Preuve qu'apporte l'audio de la fenêtre au texte du corpus de `spans` (arbitre de la
+        cascade) ; None si le texte ne tient pas dans la fenêtre."""
+        result = self._aligner.align(self._lattice(clip, window), list(spans))
+        return None if result is None else result.evidence.llr_per_frame
+
     def verify(
         self,
         clip: AudioClip,

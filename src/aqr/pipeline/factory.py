@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -35,6 +35,13 @@ CONSTRAINED_UNAVAILABLE = (
     "--constrained indisponible : l'ASR choisi n'expose pas son treillis CTC (ADR-0005 : le "
     "branchement du FastConformer exige NeMo et un GPU et n'est pas validé)"
 )
+
+
+CASCADE = "cascade"
+"""FastConformer partout, puis Whisper et Muno sur les seules fenêtres douteuses, départagés par
+l'arbitre acoustique (le choix du moteur n'est plus l'affaire de l'utilisateur)."""
+ASR_CHOICES = (CASCADE, "fastconformer", "whisper", "muno-streaming")
+MUNO_KEY = "muno-fastconformer-quran-streaming"
 
 
 class RecognizerUnavailable(RuntimeError):
@@ -90,10 +97,8 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
             "Variable d'environnement manquante : AQR_MODELS_DIR (ou --models-dir) ; "
             "télécharger les modèles avec `python scripts/fetch_models.py`"
         )
-    if options.asr not in ("whisper", "fastconformer", "muno-streaming"):
-        raise RecognizerUnavailable(
-            f"ASR inconnu : {options.asr!r} (whisper | fastconformer | muno-streaming)"
-        )
+    if options.asr not in ASR_CHOICES:
+        raise RecognizerUnavailable(f"ASR inconnu : {options.asr!r} ({' | '.join(ASR_CHOICES)})")
     if options.segmenter not in ("recitation", "silero"):
         raise RecognizerUnavailable(f"segmenteur inconnu : {options.segmenter!r}")
 
@@ -110,7 +115,11 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
 
     warnings: list[str] = []
     segmenter, segmenter_name = _segmenter(options, lock, warnings)
-    asr, asr_name = _asr(options, lock)
+    cascading = options.asr == CASCADE
+    asr, asr_name = _asr(replace(options, asr="fastconformer") if cascading else options, lock)
+    secondary = _secondary(options, lock, warnings) if cascading else []
+    if secondary:
+        asr_name = f"cascade({asr_name} -> {', '.join(name for name, _a in secondary)})"
     engine = EngineInfo(
         asr=asr_name,
         segmenter=segmenter_name,
@@ -132,6 +141,7 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
         engine,
         config=config,
         acoustic=acoustic,
+        secondary=secondary,
         warnings=tuple(warnings),
     )
     translations = (
@@ -168,11 +178,27 @@ def _segmenter(
     return primary, name
 
 
+def _secondary(
+    options: RecognizeOptions, lock: ModelsLock, warnings: list[str]
+) -> list[tuple[str, QuranASR]]:
+    """Moteurs de la réécoute, dans l'ordre ; un moteur dont les poids manquent est sauté et
+    signalé (jamais un repli silencieux)."""
+    out: list[tuple[str, QuranASR]] = []
+    for choice, key in (("whisper", "whisper-base-quran"), ("muno-streaming", MUNO_KEY)):
+        assert options.models_dir is not None
+        if not (options.models_dir / key).is_dir():
+            warnings.append(f"cascade : moteur {choice} absent ({key}), réécoute sans lui")
+            continue
+        asr, name = _asr(replace(options, asr=choice), lock)
+        out.append((name, asr))
+    return out
+
+
 def _asr(options: RecognizeOptions, lock: ModelsLock) -> tuple[QuranASR, str]:
     if options.asr == "muno-streaming":
         from aqr.adapters.muno_streaming import MunoStreamingConfig, MunoStreamingQuranASR
 
-        key = "muno-fastconformer-quran-streaming"
+        key = MUNO_KEY
         asr = MunoStreamingQuranASR(
             MunoStreamingConfig(models_dir=options.models_dir, lock_path=options.lock_path)
         )
