@@ -31,7 +31,7 @@ from pathlib import Path
 
 from aqr.adapters.fastconformer import FastConformerConfig, FastConformerQuranASR
 from aqr.adapters.ffmpeg_extractor import FfmpegAudioExtractor
-from aqr.alignment.forced import AlignmentConfig, PassageAligner
+from aqr.alignment.forced import AlignmentConfig, PassageAligner, emittable_encoder
 from aqr.corpus.alignment_text import AlignmentTexts, recited_span
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.domain.models import TimeSpan, VerseRef
@@ -147,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
             spans = [recited_span(p.ref, texts.word_count(p.ref)) for p in placed]
             for ratio in ratios:
                 aligner = PassageAligner(
-                    texts, model.encode, AlignmentConfig(energy_ratio=ratio or None)
+                    texts, emittable_encoder(model), AlignmentConfig(energy_ratio=ratio or None)
                 )
                 began = time.perf_counter()
                 result = aligner.align(lattice, spans)

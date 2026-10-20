@@ -58,21 +58,33 @@ def test_declaration_invalide(spec):
 # --- CLI ----------------------------------------------------------------------------------------
 V = VerseRef(112, 2)
 SYMBOLS = {"الله": 1, "الصمد": 2, "اللَّهُ": 3, "الصَّمَدُ": 4}
+UNK = 5
+"""Symbole `<unk>` : présent dans le treillis, jamais émis par le modèle."""
 
 
 class _Model:
     engine = "fake-ctc@0"
+    unknown_symbol: int | None = None
 
     def encode(self, text: str) -> tuple[int, ...]:
         return (SYMBOLS[text],)
 
     def lattice(self, clip: AudioClip, span: TimeSpan) -> CtcLattice:
         path = [0, 1, 0, 2, 0]
-        rows = [[math.log(0.96 if v == s else 0.01) for v in range(5)] for s in path]
+        rows = [[math.log(0.96 if v == s else 0.008) for v in range(UNK + 1)] for s in path]
         return CtcLattice(rows, 0, span.start_s, (span.end_s - span.start_s) / len(path))
 
 
-def _service() -> AlignmentService:
+class _ModelWithUnknown(_Model):
+    """Le tokenizer rend `<unk>` pour une lettre de chaque mot (alif suscrit de Tanzil)."""
+
+    unknown_symbol = UNK
+
+    def encode(self, text: str) -> tuple[int, ...]:
+        return (SYMBOLS[text], UNK)
+
+
+def _service(model: _Model | None = None) -> AlignmentService:
     texts = AlignmentTexts(
         uthmani={V: ("ٱللَّهُ", "ٱلصَّمَدُ")},
         imlai={
@@ -82,7 +94,7 @@ def _service() -> AlignmentService:
     )
     return AlignmentService(
         extract=lambda path: AudioClip(array("f", [0.2] * 16000 * 10), 16000, str(path)),
-        model=_Model(),
+        model=model or _Model(),
         texts=texts,
         config=AlignmentConfig(energy_ratio=None),
         corpus_version="tanzil-test",
@@ -90,7 +102,7 @@ def _service() -> AlignmentService:
     )
 
 
-def run(tmp_path: Path, *args: str) -> tuple[int, str, str]:
+def run(tmp_path: Path, *args: str, model: _Model | None = None) -> tuple[int, str, str]:
     audio = tmp_path / "rec.wav"
     if not audio.exists():
         audio.write_bytes(b"RIFF")
@@ -100,7 +112,7 @@ def run(tmp_path: Path, *args: str) -> tuple[int, str, str]:
         env={},
         out=out,
         err=err,
-        aligner_factory=lambda options, env: _service(),
+        aligner_factory=lambda options, env: _service(model),
     )
     return code, out.getvalue(), err.getvalue()
 
@@ -122,6 +134,15 @@ def test_sortie_alignment_json(tmp_path):
     assert [w[0] for w in span["word_times"]] == [1, 2]
     assert passage["evidence"]["llr_per_frame"] == pytest.approx(0.0, abs=1e-6)
     assert "écrit" in out
+
+
+def test_un_symbole_que_le_modele_n_emet_jamais_n_est_pas_exige(tmp_path):
+    # Le modèle n'émet jamais `<unk>` : l'exiger pénaliserait tout texte qui en contient.
+    code, _out, err = run(tmp_path, "--verses", "112:2", "--at", "2-7", model=_ModelWithUnknown())
+    assert code == 0, err
+    document = json.loads((tmp_path / "out" / "rec.alignment.json").read_text(encoding="utf-8"))
+    [passage] = document["passages"]
+    assert passage["evidence"]["llr_per_frame"] == pytest.approx(0.0, abs=1e-6)
 
 
 def _plan(tmp_path: Path, passages: list[dict], sha: str | None = None) -> Path:

@@ -946,3 +946,19 @@
 2. **Citations courtes isolées (tafsir)** : un statut à part, mais **après** la validation à l'oreille de
    Cherif sur quelques cas. Rien n'est codé d'ici là ; elles restent écartées (I3).
 3. **Droits du lot 2** : usage interne d'évaluation confirmé, jamais redistribué (`docs/data-lots/RIGHTS.md`).
+
+## 2026-10-20 — L'aligneur n'exige plus `<unk>` (alif suscrit, tatweel)
+- **Constat** (étape C) : la variante vocalisée de l'aligneur (Tanzil `simple`) demandait `<unk>` pour
+  l'alif suscrit et le tatweel ; le modèle ne l'émet jamais. Pénalité sur ~ un verset sur deux, en partie
+  masquée parce que l'aligneur garde la meilleure des deux graphies.
+- **Décision** : une seule fonction, `alignment.forced.emittable_encoder(model)`, filtre
+  `model.unknown_symbol` (ajouté au port `CtcAcousticModel`) ; elle sert `aqr align`, la vérification
+  acoustique de `recognize`, `measure_alignment.py` et `LabelScorer` (qui prend désormais le modèle au lieu
+  de `encode` + `unknown_symbol`). Lecture paresseuse : le FastConformer dédié n'est chargé qu'au premier
+  treillis, comme avant.
+- **Mesuré** (mêmes transcriptions, `docs/evaluation/alignment-unk-2026-10-20.md`) : aucune sortie ne
+  change (EveryAyah 98,1 %, 0 faux ; micro 55:1-4 avec les trois moteurs ; lot 1 dev 57/81 cas, 617
+  versets) ; les vraies suites gagnent jusqu'à +0,96 par trame (micro −0,33/−0,44 → −0,08/−0,13). Suites
+  acceptées et refusées du lot 1 se touchaient à −1,0 ; elles sont maintenant séparées de −0,95 à −1,21.
+- **Seuils inchangés** (−1,0 ; Dice 0,6) : la correction ouvre une marge autour du seuil sans rien faire
+  passer de nouveau à la sortie ; les resserrer attend la vérité terrain de l'étape A.

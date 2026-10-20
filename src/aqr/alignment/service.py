@@ -13,7 +13,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from aqr.alignment.forced import AlignedSpan, AlignmentConfig, PassageAligner, PassageAlignment
+from aqr.alignment.forced import (
+    AlignedSpan,
+    AlignmentConfig,
+    PassageAligner,
+    PassageAlignment,
+    emittable_encoder,
+)
 from aqr.alignment.plan import PLAN_SCHEMA
 from aqr.corpus.alignment_text import (
     FORMULA_KINDS,
@@ -151,7 +157,7 @@ def align_passages(
     """Aligne chaque passage ; une déclaration illisible, un passage hors du fichier ou un texte
     trop long pour sa durée donnent une entrée `error` sans arrêter les autres passages."""
     duration = len(clip.samples) / clip.sample_rate
-    aligner = PassageAligner(service.texts, service.model.encode, service.config)
+    aligner = PassageAligner(service.texts, emittable_encoder(service.model), service.config)
     out: list[dict[str, Any]] = []
     for request in requests:
         entry: dict[str, Any] = {

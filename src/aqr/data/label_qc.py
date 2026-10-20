@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Any
 
-from aqr.alignment.forced import AlignmentConfig, PassageAligner
+from aqr.alignment.forced import AlignmentConfig, PassageAligner, SymbolEncoder, emittable_encoder
 from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant, recited_span
 from aqr.corpus.normalize import normalize_arabic
 from aqr.data.config import LabelQcConfig
@@ -98,35 +98,32 @@ class LabelScorer:
     def __init__(
         self,
         texts: AlignmentTexts,
-        encode: Callable[[str], Sequence[int]],
+        model: SymbolEncoder,
         lattice_of: LatticeOf,
         config: AlignmentConfig | None = None,
         *,
-        unknown_symbol: int | None = None,
         target: Callable[[str], str] | None = None,
         decode: Callable[[Sequence[int]], str] | None = None,
     ) -> None:
-        """`unknown_symbol` (`<unk>`) est retiré du texte à aligner : le modèle ne l'émet jamais,
-        l'exiger noterait comme fausse toute étiquette juste qui contient un tel caractère.
+        """`model.unknown_symbol` (`<unk>`) est retiré du texte à aligner (`emittable_encoder`) et
+        compté : le modèle ne l'émet jamais, l'exiger noterait comme fausse toute étiquette juste
+        qui contient un tel caractère.
         `target` : graphie des cibles d'entraînement (`finetune.model_graphie`) ; une étiquette
         est le texte d'un verset si les deux coïncident une fois écrits dans cette graphie.
         `decode` (symboles → texte) : si fourni, ce que le modèle entend est noté (`heard`)."""
         self._texts = texts
         self._lattice_of = lattice_of
-        self._encode = encode
-        self._unknown = unknown_symbol
+        self._model = model
         self._target: Callable[[str], str] = target or (lambda text: text)
         self._decode = decode
-        self._aligner = PassageAligner(texts, self._known, config)
-
-    def _known(self, text: str) -> list[int]:
-        return [s for s in self._encode(text) if s != self._unknown]
+        self._aligner = PassageAligner(texts, emittable_encoder(model), config)
 
     def _unknown_count(self, text: str) -> int:
         """Symboles `<unk>` que l'étiquette demanderait au modèle d'émettre."""
-        if self._unknown is None:
+        unknown = self._model.unknown_symbol
+        if unknown is None:
             return 0
-        return sum(list(self._encode(w)).count(self._unknown) for w in text.split())
+        return sum(list(self._model.encode(w)).count(unknown) for w in text.split())
 
     def score(self, entry: Mapping[str, Any], split: str) -> LabelScore:
         """Note une ligne de manifeste coranique ; ValueError si elle n'a pas de verset."""
