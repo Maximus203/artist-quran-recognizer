@@ -95,6 +95,12 @@ class LabelQcConfig:
     (récitée mais non annoncée, annoncée mais absente) l'emporte : l'étiquette est fausse.
     Mesuré : basmala réellement récitée et non annoncée, gain de 0,076 à 0,36 (témoins EveryAyah,
     3 voix) ; étiquette juste, gain ≤ −0,94 (7 versets 1 du shard 384)."""
+    edge_words: int = 2
+    """Mots que le modèle entend en trop (débordement) ou pas (troncature) au DÉBUT ou à la FIN
+    de l'étiquette, comparés sur les lettres seules (`label_qc.heard_edges`) : à partir de ce
+    nombre, l'étiquette est fausse, quel que soit son score. Mesuré sur le shard 384 : les
+    étiquettes justes en ont au plus 1 (un fragment du verset voisin), les débordements et
+    troncatures décrits de 2 à 13."""
     robust_k: float = 3.0
     """Seuil SUGGÉRÉ dans le rapport : médiane − k × MAD (normalisée). Aide au calibrage,
     jamais appliqué seul : le seuil se fixe à l'oreille, sur les exemples écartés."""

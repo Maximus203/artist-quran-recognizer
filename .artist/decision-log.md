@@ -866,3 +866,20 @@
   compte les `<unk>` dans l'étiquette réelle, et renote une ligne dont le texte a changé (clé de
   reprise = chemin audio + texte). Échantillon reconstruit et renoté : 0 `<unk>`, 399/433 gardés.
 
+## 2026-10-20 — Étape C : le contrôle des étiquettes compare ce que le modèle entend
+- **Déclencheur** : test sur la voix de Cherif au micro (55:3 juste écarté à −1,0) et sur le shard
+  384 (9 étiquettes justes écartées, 4:161 et 21:66 fausses gardées). Cause : la convention de
+  voyelles de Tanzil (soukoun d'un noun assimilé non écrit) coûte cher au score par trame sur un
+  verset court, et un mot de trop pèse peu sur un verset long.
+- **Décision** : le même treillis donne le chemin CTC libre ; comparé à l'étiquette sur les lettres
+  seules, il nomme le débordement, la répétition et la troncature (≥ 2 mots, `edge_words`, mesuré :
+  les étiquettes justes en ont au plus 1) quel que soit le score, et il sauve une étiquette sous le
+  seuil quand le modèle entend exactement ses lettres. Pas de second passage du modèle.
+- **Bords mesurés depuis leur côté** (la fin à rebours) : sur une prise micro, « الرحمن » répété dans
+  le passage créait une fausse troncature. Bords ignorés si moins de la moitié des mots de
+  l'étiquette est entendue (autre verset : seul le score décide).
+- **Résultat** : shard 384, 405 gardés, 28 écartés tous nommés ; voix au micro, 51/51 cas justes
+  (étiquette juste, mauvais verset, débordement, répétition, troncature, basmala dans les deux sens).
+- Adaptateur : `FastConformerQuranASR.symbols_text` (symboles → texte du tokenizer), ajout ; aligneur
+  et décodage inchangés.
+
