@@ -164,3 +164,14 @@ def test_score_note_chaque_ligne_une_seule_fois(
     assert main(argv) == 0
     assert len(calls) == 1
     assert len((manifests / "qc" / "scores.jsonl").read_text("utf-8").splitlines()) == 2
+
+    # Manifeste reconstruit (même audio, texte changé) : la ligne est renotée, le dernier score
+    # fait foi.
+    (manifests / "train.jsonl").write_text(
+        _line("a.wav", text=samad) + "\n" + _line("b.wav", ref="112:1", text="قُلْ هُوَ") + "\n",
+        "utf-8",
+    )
+    assert main(argv) == 0
+    rescored = script.load_scores(manifests / "qc" / "scores.jsonl")
+    assert rescored["../../audio/tadabur/tadabur-7/b.wav"].text == "قُلْ هُوَ"
+    assert len(rescored) == 2

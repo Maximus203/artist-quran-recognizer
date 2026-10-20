@@ -8,6 +8,8 @@ part existe (Tadabur pèse 938 Go), et une construction interrompue reprend où 
 Règles (docs/evaluation/finetune-data.md) :
 - Récitation : le texte cible vient TOUJOURS du corpus (graphie Tanzil `simple`, imla'i vocalisée),
   jamais de la source ; la source sert seulement à vérifier que l'audio dit bien ce verset.
+- Toute cible est écrite dans la graphie du modèle (`model_graphie`) : sans les caractères que son
+  tokenizer ne connaît pas (alif suscrit, tatweel), qui deviendraient `<unk>`.
 - Parole non coranique : texte de la source nettoyé de sa ponctuation ; une phrase avec un
   caractère hors de l'alphabet du corpus (chiffres, lettres latines) est écartée, une phrase qui
   contient un passage du Coran aussi (I3/I4).
@@ -264,6 +266,12 @@ class Part:
     report: PartReport = field(default_factory=PartReport)
 
 
+def model_graphie(text: str, config: FinetuneConfig) -> str:
+    """Cible écrite dans la graphie du modèle : sans les caractères qu'il ne connaît pas
+    (`FinetuneConfig.target_drop_chars`), espaces normalisées."""
+    return " ".join(text.translate({ord(c): None for c in config.target_drop_chars}).split())
+
+
 def _target_text(utt: Utterance, ctx: BuildContext) -> str | Rejection:
     if ctx.spec.quran:
         if utt.ref is None or utt.ref not in ctx.simple_words:
@@ -289,6 +297,8 @@ def process_utterances(utts: Iterable[Utterance], ctx: BuildContext, decode: Dec
             part.report.reject(Rejection.EXCLUDED_VOICE, utt)
             continue
         text = _target_text(utt, ctx)
+        if not isinstance(text, Rejection):
+            text = model_graphie(text, config) or Rejection.EMPTY
         if isinstance(text, Rejection):
             part.report.reject(text, utt)
             continue
