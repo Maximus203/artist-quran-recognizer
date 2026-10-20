@@ -62,19 +62,31 @@ def _continues(previous: Candidate, following: Candidate, corpus: _Words, slack:
     return finished and first.first_word <= _recited_start(first.ref) + slack
 
 
-def promote_chains(
-    observations: Sequence[Observation], corpus: _Words, config: ChainConfig
-) -> list[Observation]:
-    """Observations où les maillons d'une suite assez prouvée ont leur qualité pour score."""
-    if not config.enabled:
-        return list(observations)
+@dataclass(frozen=True)
+class Chain:
+    """Suite de candidats sur des fenêtres consécutives, qui se continue dans le Mushaf."""
+
+    links: tuple[tuple[int, int], ...]
+    """(indice d'observation, indice de candidat) de chaque maillon, dans l'ordre."""
+    words: float
+    """Mots expliqués cumulés par ses maillons."""
+
+
+def find_chains(
+    observations: Sequence[Observation], corpus: _Words, config: ChainConfig, min_quality: float
+) -> list[Chain]:
+    """Suites assez prouvées en mots (`min_windows`, `evidence_words`) dont chaque maillon a une
+    qualité ≥ `min_quality` : la meilleure suite (en mots) passant par chaque candidat, sans
+    doublon. Au plancher `config.min_quality`, ce sont les suites que la preuve textuelle promeut ;
+    plus bas, des suites qu'il faut vérifier sur l'audio (ADR-0008)."""
     eligible = [
-        [c.quality is not None and c.quality >= config.min_quality for c in candidates]
+        [c.quality is not None and c.quality >= min_quality for c in candidates]
         for _time, candidates in observations
     ]
+    own = [[c.explained for c in candidates] for _time, candidates in observations]
 
     def links(i: int, j: int) -> list[tuple[int, int]]:
-        """Paires (k dans i, l dans j) de maillons éligibles où j continue i."""
+        """Paires (k dans i, m dans j) de maillons éligibles où j continue i."""
         return [
             (k, m)
             for k, a in enumerate(observations[i][1])
@@ -83,28 +95,76 @@ def promote_chains(
         ]
 
     n = len(observations)
-    # (fenêtres, mots) de la meilleure suite qui FINIT (fwd) / COMMENCE (bwd) à chaque maillon.
-    fwd = [[(1, c.explained) for c in cands] for _t, cands in observations]
-    bwd = [[(1, c.explained) for c in cands] for _t, cands in observations]
+    # Mots de la meilleure suite qui FINIT (fwd) / COMMENCE (bwd) à chaque maillon, et son voisin.
+    fwd = [list(words) for words in own]
+    bwd = [list(words) for words in own]
+    before: list[list[int | None]] = [[None] * len(words) for words in own]
+    after: list[list[int | None]] = [[None] * len(words) for words in own]
     for i in range(1, n):
         for k, m in links(i - 1, i):
-            windows, words = fwd[i - 1][k]
-            own = observations[i][1][m].explained
-            fwd[i][m] = max(fwd[i][m], (windows + 1, words + own), key=lambda s: s[1])
+            if fwd[i - 1][k] + own[i][m] > fwd[i][m]:
+                fwd[i][m], before[i][m] = fwd[i - 1][k] + own[i][m], k
     for i in range(n - 2, -1, -1):
         for k, m in links(i, i + 1):
-            windows, words = bwd[i + 1][m]
-            own = observations[i][1][k].explained
-            bwd[i][k] = max(bwd[i][k], (windows + 1, words + own), key=lambda s: s[1])
+            if bwd[i + 1][m] + own[i][k] > bwd[i][k]:
+                bwd[i][k], after[i][k] = bwd[i + 1][m] + own[i][k], m
 
+    found: dict[tuple[tuple[int, int], ...], Chain] = {}
+    for i in range(n):
+        for k in range(len(own[i])):
+            if not eligible[i][k]:
+                continue
+            path = [(i, k)]
+            while (back := before[path[0][0]][path[0][1]]) is not None:
+                path.insert(0, (path[0][0] - 1, back))
+            while (ahead := after[path[-1][0]][path[-1][1]]) is not None:
+                path.append((path[-1][0] + 1, ahead))
+            words = fwd[i][k] + bwd[i][k] - own[i][k]
+            if len(path) >= config.min_windows and words >= config.evidence_words:
+                found.setdefault(tuple(path), Chain(tuple(path), words))
+    return [found[key] for key in sorted(found)]
+
+
+def chain_spans(
+    chain: Chain, observations: Sequence[Observation], corpus: _Words
+) -> list[WordSpan]:
+    """Texte du CORPUS d'une suite, en plages de mots : du premier mot de son premier maillon au
+    dernier mot du dernier, versets intermédiaires entiers. Les mots que l'ASR a perdus aux bords
+    d'une fenêtre (`word_slack`) y sont : c'est ce texte que l'audio doit soutenir."""
+    spans: list[WordSpan] = []
+    for i, k in chain.links:
+        for span in observations[i][1][k].spans:
+            if not spans:
+                spans.append(span)
+                continue
+            last = spans[-1]
+            if span.ref == last.ref:
+                spans[-1] = WordSpan(last.ref, last.first_word, max(last.last_word, span.last_word))
+            elif span.ref == last.ref.next():
+                spans[-1] = WordSpan(last.ref, last.first_word, len(corpus.words(last.ref)))
+                first = min(span.first_word, _recited_start(span.ref))
+                spans.append(WordSpan(span.ref, first, span.last_word))
+            else:
+                raise ValueError(f"suite discontinue : {last.ref} puis {span.ref}")
+    return spans
+
+
+def promote_chains(
+    observations: Sequence[Observation], corpus: _Words, config: ChainConfig
+) -> list[Observation]:
+    """Observations où les maillons d'une suite assez prouvée ont leur qualité pour score."""
+    if not config.enabled:
+        return list(observations)
+    promoted = {
+        link
+        for chain in find_chains(observations, corpus, config, config.min_quality)
+        for link in chain.links
+    }
     out: list[Observation] = []
     for i, (time, candidates) in enumerate(observations):
         updated: list[Candidate] = []
         for k, c in enumerate(candidates):
-            windows = fwd[i][k][0] + bwd[i][k][0] - 1
-            words = fwd[i][k][1] + bwd[i][k][1] - c.explained
-            proven = windows >= config.min_windows and words >= config.evidence_words
-            if eligible[i][k] and proven and c.quality is not None and c.quality > c.score:
+            if (i, k) in promoted and c.quality is not None and c.quality > c.score:
                 updated.append(replace(c, score=c.quality))
             else:
                 updated.append(c)

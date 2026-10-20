@@ -132,6 +132,13 @@ def _build_parser() -> argparse.ArgumentParser:
     rec.add_argument(
         "--constrained", action="store_true", help="preuve acoustique CTC (ADR-0005, indisponible)"
     )
+    rec.add_argument(
+        "--no-acoustic-check",
+        dest="acoustic_check",
+        action="store_false",
+        help="ne pas vérifier les suites sur le treillis du FastConformer (ADR-0008) : preuve "
+        "textuelle seule, temps = bords des fenêtres",
+    )
 
     ali = commands.add_parser(
         "align",
@@ -271,6 +278,7 @@ def _recognize(
         device=args.device,
         batch_size=args.batch_size,
         constrained=args.constrained,
+        acoustic_check=args.acoustic_check,
     )
     try:
         recognizer = factory(options, env)

@@ -776,6 +776,29 @@
 - **Reste** : Muno ampute le début des fenêtres (« لَّمَ » pour « عَلَّمَ ») et casse la suite : la
   vérification acoustique CTC de la suite (brique suivante) doit rattraper ce cas.
 
+## 2026-10-20 — Étape B, brique 2 : vérification acoustique des suites et temps au mot (ADR-0008)
+- **Déclencheur** : après ADR-0007, Muno ne reconnaît toujours pas 55:1-4 au micro sur 2 enregistrements
+  sur 3 (« لَّمَ » pour « عَلَّمَ », qualité 0,5, la suite se coupe) ; et une suite textuellement parfaite
+  était promue sans consulter l'audio (homonymes 23:52-53 / 21:92-93).
+- **Décision** : `find_chains` (meilleure suite par candidat, à un plancher de qualité) et `chain_spans`
+  (texte du corpus de la suite, mots perdus aux bords compris) ; `AcousticVerifier` aligne ce texte sur le
+  treillis du FastConformer : acceptée (llr ≥ −1,0) -> maillons promus avec mots et temps de l'alignement ;
+  refusée -> aucun maillon promu. Suites candidates au plancher 0,5 (sauvetage) ET au plancher du texte
+  (une suite longue refusée ne condamne pas la suite courte). Le maillon sauvé reçoit le seuil du décodeur,
+  pas plus. `Candidate.times` porte les temps mesurés, le décodeur les prend ; temps d'un maillon bornés à
+  sa fenêtre. FastConformer comme modèle acoustique quel que soit l'ASR ; absent -> avertissement et
+  ADR-0007 seul ; `--no-acoustic-check`. Trace dans la sortie : `engine.acoustic`, `acoustic_checks`.
+- **Bug trouvé en mesurant** : NeMo laisse l'encodeur en mode entraînement après `transcribe()`
+  (`encoder.unfreeze()`) ; un treillis calculé ensuite sur le même modèle tournait avec dropout et mettait à
+  jour la BatchNorm (lot1-01 : 68 reconnus -> 5 après 30 treillis). `model.eval()` avant chaque treillis,
+  contrat sur le vrai modèle. Les premières mesures (avant correctif) sont jetées.
+- **Mesures** (`docs/evaluation/acoustic-check-2026-10-20.md`) : micro Muno 1/3 -> 3/3 ; EveryAyah 91,2 % ->
+  96,8 %, 0 faux ; débuts 63 -> 21 ms (médiane), fins 64 ms en avance en moyenne ; lot1-01 68 -> 82,
+  lot1-06 272 -> 276, ajouts relus cohérents ; 7 suites homonymes refusées sur l'audio réel.
+- **Limite assumée** : un seuil absolu ne sépare pas les quasi-homonymes (23:78-79 sur 67:23-24 accepté à
+  −0,15/−0,85, une vraie prière réverbérée à −1,003) ; le décodeur tranche par le contexte. Prochaine
+  brique : preuve relative entre suites concurrentes sur les mêmes fenêtres.
+
 ## 2026-10-19 — Jeu de fine-tuning de l'ASR (étape C) : sources, exclusions, manifestes
 - **Périmètre** : préparation des données seulement (`scripts/build_finetune_manifest.py`,
   `src/aqr/data/finetune*.py`, `data/finetune/LOCK.json`) ; aucun entraînement. Détail, volumes et
