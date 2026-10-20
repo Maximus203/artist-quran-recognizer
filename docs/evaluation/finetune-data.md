@@ -205,7 +205,9 @@ des 1,6 Go en 2 min 25 s.
    ASR). **Traité** : `score` puis `filter` notent chaque exemple par l'alignement forcé du modèle
    de base et écartent la queue (`{train,val}.qc.jsonl`, à donner à NeMo à la place des
    manifestes bruts) ; sur le shard 384, 34 exemples sur 433 écartés, dont 14 segments qui
-   débordent sur un verset voisin et 3 tronqués (`finetune-label-qc.md`).
+   débordent sur un verset voisin et 3 tronqués (`finetune-label-qc.md`). Depuis le 2026-10-20, le
+   contrôle compare aussi ce que le modèle entend : 28 écartés, tous nommés (débordement,
+   répétition, troncature), 9 étiquettes justes sauvées, validé sur une voix au micro (51/51).
 2. **Riwaya** non documentée par Tadabur (ci-dessus). Le contrôle des étiquettes n'en détecte que les
    différences de mots ou de voyelles : une seule sur le shard 384 (6:96, « وجاعل »).
 3. **Proportion et graphie du non-Coran** : ~45 h utilisables (Common Voice train + dev, FLEURS) contre

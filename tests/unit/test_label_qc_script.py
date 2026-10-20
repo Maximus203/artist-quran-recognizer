@@ -113,6 +113,9 @@ class FakeModel:
     def encode(self, text: str) -> tuple[int, ...]:
         return tuple(self.symbols.setdefault(c, len(self.symbols) % 40 + 1) for c in text)
 
+    def symbols_text(self, symbols: tuple[int, ...] | list[int]) -> str:
+        return " ".join(str(s) for s in symbols)
+
     def lattice(self, clip: AudioClip, span: TimeSpan) -> CtcLattice:
         self.clips.append(span.duration_s)
         rows = [[math.log(1 / 41)] * 41 for _ in range(round(span.duration_s / 0.08))]
@@ -154,6 +157,7 @@ def test_score_note_chaque_ligne_une_seule_fois(
     scores = script.load_scores(manifests / "qc" / "scores.jsonl")
     good = scores["../../audio/tadabur/tadabur-7/a.wav"]
     assert good.error is None and good.llr_per_frame == pytest.approx(0.0, abs=1e-9)
+    assert good.heard == ""  # treillis uniforme : le chemin libre ne garde que des blancs
     assert fake.clips == [pytest.approx(4.0)]  # tout le WAV, lu depuis le manifeste
     # « قُلْ » seul n'est pas le texte du verset 112:1 : écarté sans calculer de treillis.
     assert scores["../../audio/tadabur/tadabur-7/b.wav"].error is QcFlag.TEXT_MISMATCH

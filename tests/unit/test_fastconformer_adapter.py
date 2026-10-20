@@ -193,11 +193,21 @@ class FakeTokenizer:
     def text_to_ids(self, text: str) -> list[int]:
         return [len(word) for word in text.split()]
 
+    def ids_to_text(self, ids: list[int]) -> str:
+        return "-".join(str(i) for i in ids)
+
 
 def test_encode_utilise_le_tokenizer_du_modele():
     model = FakeNemo([])
     model.tokenizer = FakeTokenizer()  # type: ignore[attr-defined]
     assert asr(model).encode("قل هو الله") == (2, 2, 4)
+
+
+def test_texte_des_symboles_par_le_tokenizer_du_modele():
+    model = FakeNemo([])
+    model.tokenizer = FakeTokenizer()  # type: ignore[attr-defined]
+    assert asr(model).symbols_text((3, 7)) == "3-7"
+    assert asr(model).symbols_text(()) == ""
 
 
 def test_symbole_inconnu_du_tokenizer_expose():
