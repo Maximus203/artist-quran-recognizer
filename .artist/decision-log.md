@@ -920,3 +920,13 @@
 - **Licence par lot** : `scripts/audio_lot.py` recopie la `licence` déclarée par le manifeste du lot
   dans les fiches ; sans `licence` (lot 1), le libellé hérité est conservé (rien n'est réécrit).
 - **Aucun dépôt hors machine** pour ce lot (pas de dataset Hugging Face) : droits non établis.
+
+## 2026-10-20 — Arbitrages de Cherif au réveil
+1. **Warsh** : « avertissement tout de suite ». Deux signaux mesurés, tous deux négatifs (preuve
+   acoustique globale ; ibdâl de la hamza muette Hafs/Warsh aligné sur le treillis) :
+   `docs/evaluation/riwaya-2026-10-20.md`. Faute de détection fiable, l'avertissement est permanent et
+   honnête : `riwaya: {assumed, verified: false, notice}` dans chaque sortie, affiché par l'atelier.
+   La détection de la riwaya reste à faire (données Warsh annotées).
+2. **Citations courtes isolées (tafsir)** : un statut à part, mais **après** la validation à l'oreille de
+   Cherif sur quelques cas. Rien n'est codé d'ici là ; elles restent écartées (I3).
+3. **Droits du lot 2** : usage interne d'évaluation confirmé, jamais redistribué (`docs/data-lots/RIGHTS.md`).

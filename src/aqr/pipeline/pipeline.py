@@ -154,6 +154,7 @@ class RecognitionPipeline:
             windows=len(windows),
             warnings=self._run_warnings(),
             acoustic_checks=checks,
+            riwaya=self._corpus.riwaya,
         )
 
     def _engine_info(self) -> EngineInfo:
