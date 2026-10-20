@@ -126,6 +126,12 @@ class CtcAcousticModel(Protocol):
 
     def encode(self, text: str) -> tuple[int, ...]: ...
 
+    @property
+    def unknown_symbol(self) -> int | None:
+        """Symbole que rend `encode` pour une lettre inconnue du modèle, qui ne l'émet jamais ;
+        None s'il n'en a pas. L'aligneur ne l'exige pas (`emittable_encoder`)."""
+        ...
+
 
 class GeneralASR(Protocol):
     """ASR généraliste (Whisper large-v3) utilisé par le QuranicityGate (ADR-0002)."""

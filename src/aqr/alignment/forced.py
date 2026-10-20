@@ -14,6 +14,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Protocol
 
 from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant, Declared
 from aqr.decoding.ctc_constrained import CtcEvidence, ctc_forced_align, ctc_free_logprob
@@ -33,6 +34,30 @@ class AlignmentConfig:
     """Affinage des limites par l'énergie (`CtcLattice.frame_rms`) : un verset s'étend autour de
     ses symboles tant que la RMS reste ≥ ratio × sa RMS maximale. None = désactivé. Provisoire :
     réglé par `scripts/measure_alignment.py`, à confirmer sur des limites annotées à l'oreille."""
+
+
+class SymbolEncoder(Protocol):
+    """Encodeur d'un modèle CTC et son symbole `<unk>` (`CtcAcousticModel`)."""
+
+    def encode(self, text: str) -> Sequence[int]: ...
+
+    @property
+    def unknown_symbol(self) -> int | None: ...
+
+
+def emittable_encoder(model: SymbolEncoder) -> Callable[[str], list[int]]:
+    """Encodeur de l'aligneur : les symboles d'un texte que le modèle peut émettre.
+
+    `<unk>` (lettre que le tokenizer ne connaît pas : alif suscrit, tatweel de la graphie Tanzil
+    `simple`) est retiré : le modèle ne l'émet jamais, l'exiger pénaliserait tout texte juste qui
+    en contient. Lu à chaque texte, pas à la construction : un modèle chargé paresseusement ne
+    l'est qu'au premier alignement."""
+
+    def encode(text: str) -> list[int]:
+        unknown = model.unknown_symbol
+        return [s for s in model.encode(text) if s != unknown]
+
+    return encode
 
 
 @dataclass(frozen=True)

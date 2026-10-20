@@ -323,6 +323,7 @@ class _HeardModel:
     engine = "fake-ctc@test"
     frame_s = 0.08
     vocab = 512
+    unknown_symbol: int | None = None
 
     def __init__(self, heard: list[tuple[float, str]]) -> None:
         self.ids: dict[str, int] = {}
