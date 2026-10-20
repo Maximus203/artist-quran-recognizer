@@ -71,6 +71,14 @@ export const recognitionSchema = z
     decoder: z.record(z.string(), finite),
     timing: z.record(z.string(), finite),
     windows: z.number().int().nonnegative(),
+    // Riwaya SUPPOSÉE par le moteur (jamais vérifiée dans l'audio) ; absente des anciens résultats.
+    riwaya: z
+      .object({
+        assumed: z.string(),
+        verified: z.boolean(),
+        notice: z.string(),
+      })
+      .optional(),
     warnings: z.array(z.string()),
     intervals: z.array(interval),
   })

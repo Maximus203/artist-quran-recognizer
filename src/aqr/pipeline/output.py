@@ -13,6 +13,13 @@ from aqr.pipeline.result import AbstentionSpan, Interval, RecognitionResult
 from aqr.rendering.home_renderer import HomeRenderer, format_range
 
 SCHEMA = "aqr.recognition/1"
+RIWAYA_NOTICE = (
+    "Riwaya supposée Hafs, non vérifiée : le corpus et le modèle sont en Hafs. Une récitation "
+    "en Warsh (ou une autre riwaya) peut être reconnue, mais le texte affiché est celui du Hafs "
+    "et peut différer sur certains mots."
+)
+"""Aucun signal ne détecte encore une autre riwaya (mesure négative du 2026-10-20) : avertissement
+permanent, décision de Cherif du 2026-10-20."""
 
 _LABEL_CAPTION = {
     NonQuranKind.ISTIADHA: "[isti'adha]",
@@ -82,6 +89,7 @@ def build_json(
         "decoder": result.decoder_config,
         "timing": {k: round(v, 3) for k, v in result.timing.items()},
         "windows": result.windows,
+        "riwaya": {"assumed": result.riwaya.value, "verified": False, "notice": RIWAYA_NOTICE},
         "warnings": list(result.warnings),
         "acoustic_checks": [_check_json(c) for c in result.acoustic_checks],
         "intervals": [_interval_json(i, renderer, translation_id) for i in result.intervals],

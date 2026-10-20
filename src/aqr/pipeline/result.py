@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from aqr.alignment.verification import ChainCheck
-from aqr.domain.models import Detection, NonQuranSpan, TimeSpan
+from aqr.domain.models import Detection, NonQuranSpan, Riwaya, TimeSpan
 
 
 class AbstentionReason(StrEnum):
@@ -53,6 +53,8 @@ class RecognitionResult:
     warnings: tuple[str, ...] = field(default_factory=tuple)
     acoustic_checks: tuple[ChainCheck, ...] = ()
     """Suites vérifiées sur l'audio, acceptées ou refusées (ADR-0008) : diagnostic."""
+    riwaya: Riwaya = Riwaya.HAFS
+    """Riwaya du corpus et du modèle, SUPPOSÉE : rien ne la vérifie dans l'audio (I6)."""
 
     def detections(self) -> tuple[Detection, ...]:
         return tuple(i for i in self.intervals if isinstance(i, Detection))

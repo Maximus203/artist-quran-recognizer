@@ -98,8 +98,10 @@ def test_chaque_libelle_de_licence_herite_est_documente_a_part_du_canonique() ->
     labels = {case["license"] for case in manifest["cases"]}
     for source in sorted((ROOT / "src/aqr/data").glob("*.py")):
         labels |= set(re.findall(r'license="([^"]+)"', source.read_text(encoding="utf-8")))
+    # Le lot 2 (2026-10-20) porte le libellé canonique, le bon : seuls les libellés HÉRITÉS doivent
+    # être documentés à part.
+    labels.discard(LIBELLE_CANONIQUE)
     assert len(labels) >= 2, "le contrôle ne voit plus les libellés (lot 1 et mixer)"
-    assert LIBELLE_CANONIQUE not in labels
     undocumented = sorted(label for label in labels if label not in heritage)
     assert not undocumented, f"libellés de licence hérités non documentés : {undocumented}"
 

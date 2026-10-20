@@ -33,3 +33,10 @@ trancher le droit par inspection.
    disposition `lot-1/<id>.mp3`, différente de la racine actuelle).
 2. Faut-il retirer du dataset les enregistrements dont les droits ne sont pas établis (voix de tiers) ?
 3. Quelle mention de droits remplace « jamais redistribué » dans les fiches si la publication est voulue ?
+
+## Lot 2 — décision du mainteneur (2026-10-20)
+Confirmée par Cherif le 2026-10-20 : les audios du lot 2 (`docs/data-lots/lot-2.yaml`, vidéos YouTube de
+récitants et d'un orateur sénégalais) servent à l'**évaluation interne uniquement**. Ils restent hors dépôt,
+sur la machine locale (`$AQR_AUDIO_DIR/lot-2/`), et ne sont **jamais redistribués** : pas de dataset
+public, pas d'entraînement sans nouvelle décision. Cette décision ne vaut que pour le lot 2 ; les points
+ouverts du lot 1 ci-dessus restent ouverts.
