@@ -27,7 +27,7 @@ from aqr.alignment.forced import AlignedWord, AlignmentConfig, PassageAligner, P
 from aqr.corpus.alignment_text import AlignmentTexts
 from aqr.decoding.chains import Chain, ChainConfig, Observation, chain_spans, find_chains
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
-from aqr.domain.ports import AudioClip, Candidate, CtcAcousticModel
+from aqr.domain.ports import AudioClip, Candidate, CtcAcousticModel, CtcLattice
 
 
 @dataclass(frozen=True)
@@ -83,6 +83,7 @@ class AcousticVerifier:
         self._aligner = PassageAligner(texts, model.encode, alignment)
         self._max_passage_s = max_passage_s
         self._floor = floor
+        self._lattices: dict[TimeSpan, CtcLattice] = {}
 
     @property
     def engine(self) -> str:
@@ -96,6 +97,7 @@ class AcousticVerifier:
         self, clip: AudioClip, observations: Sequence[Observation]
     ) -> tuple[list[Observation], tuple[ChainCheck, ...]]:
         """Observations (avant toute promotion) -> observations décidées, et la trace."""
+        self._lattices = {}  # un treillis par passage, partagé par ses candidats
         updated: dict[Link, Candidate] = {}
         checks: list[ChainCheck] = []
         for chain in self._chains(observations):
@@ -144,7 +146,7 @@ class AcousticVerifier:
         spans = chain_spans(piece, observations, self._corpus)
         first, last = piece.links[0][0], piece.links[-1][0]
         passage = TimeSpan(observations[first][0].start_s, observations[last][0].end_s)
-        result = self._aligner.align(self._model.lattice(clip, passage), spans)
+        result = self._aligner.align(self._lattice(clip, passage), spans)
         llr = None if result is None else result.evidence.llr_per_frame
         accepted = result is not None and llr is not None and llr >= self._threshold
         check = ChainCheck(passage, tuple(spans), llr, accepted)
@@ -175,21 +177,32 @@ class AcousticVerifier:
             score = max(candidate.score, candidate.quality or 0.0, self._floor)
             promoted[(i, k)] = replace(candidate, score=score)
             if self._config.word_times:
-                promoted[(i, k)] = _with_words(promoted[(i, k)], words)
+                promoted[(i, k)] = _with_words(promoted[(i, k)], words, observations[i][0])
         return promoted
+
+    def _lattice(self, clip: AudioClip, passage: TimeSpan) -> CtcLattice:
+        if passage not in self._lattices:
+            self._lattices[passage] = self._model.lattice(clip, passage)
+        return self._lattices[passage]
 
     # -- Temps au mot d'un verset prouvé seul ------------------------------------------------------
     def _timed(self, clip: AudioClip, window: TimeSpan, candidate: Candidate) -> Candidate:
         if candidate.times or candidate.score < self._floor:
             return candidate
-        result = self._aligner.align(self._model.lattice(clip, window), list(candidate.spans))
+        result = self._aligner.align(self._lattice(clip, window), list(candidate.spans))
         if result is None or result.evidence.llr_per_frame < self._threshold:
             return candidate
         return replace(candidate, times=tuple(aligned.time for aligned in result.spans))
 
 
-def _with_words(candidate: Candidate, words: Sequence[AlignedWord]) -> Candidate:
-    """Le candidat réduit aux mots alignés dans sa fenêtre, une plage (et son temps) par verset."""
+def _with_words(
+    candidate: Candidate, words: Sequence[AlignedWord], window: TimeSpan
+) -> Candidate:
+    """Le candidat réduit aux mots alignés dans sa fenêtre, une plage (et son temps) par verset.
+
+    Le temps reste dans la fenêtre : au-delà, le segmenteur n'a pas entendu de voix (l'énergie
+    d'une pause ou d'une respiration prolongeait sinon la fin jusqu'au verset suivant : +2,7 s
+    mesurés sur EveryAyah, Husary 67:4)."""
     groups: list[list[AlignedWord]] = []
     for word in words:
         if groups and groups[-1][0].ref == word.ref:
@@ -202,7 +215,11 @@ def _with_words(candidate: Candidate, words: Sequence[AlignedWord]) -> Candidate
         ref = group[0].ref
         assert ref is not None  # une suite ne contient que des versets
         spans.append(WordSpan(ref, group[0].word, group[-1].word))
-        times.append(TimeSpan(group[0].time.start_s, group[-1].time.end_s))
+        start = max(group[0].time.start_s, window.start_s)
+        end = min(group[-1].time.end_s, window.end_s)
+        if end <= start:  # mot placé hors de toute fenêtre : le temps de l'alignement fait foi
+            start, end = group[0].time.start_s, group[-1].time.end_s
+        times.append(TimeSpan(start, end))
     return replace(
         candidate, span=spans[0], continuation=tuple(spans[1:]), query_counts=(), times=tuple(times)
     )
