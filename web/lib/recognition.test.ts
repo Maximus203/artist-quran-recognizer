@@ -66,6 +66,15 @@ const base = {
 };
 
 describe("contrat recognition", () => {
+  it("garde la riwaya supposée (non vérifiée) et accepte un ancien résultat sans elle", () => {
+    const riwaya = {
+      assumed: "hafs",
+      verified: false,
+      notice: "Riwaya supposée Hafs",
+    };
+    expect(parseRecognition({ ...base, riwaya }).riwaya).toEqual(riwaya);
+    expect(parseRecognition(base).riwaya).toBeUndefined();
+  });
   it("conserve les occurrences et le chevauchement", () => {
     const parsed = parseRecognition(base);
     expect(activeIntervals(parsed.intervals, 2).map((i) => i.kind)).toEqual([

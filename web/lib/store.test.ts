@@ -498,6 +498,16 @@ describe("nettoyage des sessions", () => {
       await utimes(sessionFile, ago(9), ago(9));
       expect(await lastActivityMs(sessionDir(ID))).toBe(at(2));
     });
+    it("ne compte pas la copie d'écoute (écouter n'est pas une activité de revue)", async () => {
+      await saveSession(done());
+      const derived = path.join(sessionDir(ID), "listening", "peaks.json");
+      await atomicJson(derived, { peaks: [] });
+      await ageTree(ID, 9);
+      const now = new Date();
+      await utimes(derived, now, now);
+      await utimes(path.dirname(derived), now, now);
+      expect(await lastActivityMs(sessionDir(ID))).toBeLessThan(at(1));
+    });
     it("tient compte de review.updated_at et de finished_at s'ils sont plus récents", async () => {
       await saveSession(done({ finished_at: new Date(at(5)).toISOString() }));
       await ageTree(ID, 9);
