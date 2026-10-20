@@ -90,6 +90,7 @@ def build_json(
         "timing": {k: round(v, 3) for k, v in result.timing.items()},
         "windows": result.windows,
         "riwaya": {"assumed": result.riwaya.value, "verified": False, "notice": RIWAYA_NOTICE},
+        **({} if result.cascade is None else {"cascade": result.cascade}),
         "warnings": list(result.warnings),
         "acoustic_checks": [_check_json(c) for c in result.acoustic_checks],
         "intervals": [_interval_json(i, renderer, translation_id) for i in result.intervals],

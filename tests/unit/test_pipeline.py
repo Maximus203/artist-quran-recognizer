@@ -462,3 +462,84 @@ def test_une_formule_apres_un_verset_commence_reste_une_formule(corpus, matcher,
         isinstance(i, NonQuranSpan) and i.kind is NonQuranKind.AMIN for i in result.intervals
     )
     assert not [c for c in result.acoustic_checks if c.kind == "continuation"]
+
+
+# --- Cascade multi-modèles avec arbitre acoustique (2026-10-20) ---------------------------------
+# FastConformer passe partout ; seules les fenêtres DOUTEUSES sont réécoutées par les moteurs
+# secondaires ; un verset qu'ils proposent n'est gardé que si l'audio soutient le texte du corpus.
+SAID_67_2 = ((10.0, "67:2"),)
+
+
+def _cascade(corpus, matcher, alignment_texts, primary, secondary, said, **kwargs):
+    from aqr.pipeline.pipeline import PipelineConfig
+
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, *said))
+    second = _ASR(secondary)
+    result = _pipeline(
+        corpus,
+        matcher,
+        primary,
+        [(2.0, 8.0), (9.5, 30.0)],
+        seconds=40.0,
+        acoustic=acoustic,
+        secondary=(("whisper-test", second),),
+        config=kwargs.pop("config", PipelineConfig()),
+        **kwargs,
+    )
+    return result, second
+
+
+def test_cascade_sauve_une_fenetre_mal_transcrite_que_l_audio_soutient(
+    corpus, matcher, alignment_texts
+):
+    primary = [_verse(corpus, 67, 1, 5), "تبارك بيده"]  # fenêtre 2 : transcription ratée
+    result, second = _cascade(
+        corpus, matcher, alignment_texts, primary, [_verse(corpus, 67, 2)], SAID_67_2
+    )
+    assert second.calls == 1  # seule la fenêtre douteuse est réécoutée
+    assert VerseRef(67, 2) in [d.span.ref for d in _verses(result)]
+    assert result.cascade == {
+        "secondary": ["whisper-test"],
+        "relistened_windows": 1,
+        "rescued_windows": 1,
+    }
+    assert any(c.kind == "relisten" and c.accepted for c in result.acoustic_checks)
+
+
+def test_cascade_l_arbitre_refuse_ce_que_l_audio_ne_soutient_pas(corpus, matcher, alignment_texts):
+    # le moteur secondaire « entend » 2:255 ; l'audio, lui, contient 67:2
+    primary = [_verse(corpus, 67, 1, 5), "تبارك بيده"]
+    result, _second = _cascade(
+        corpus, matcher, alignment_texts, primary, [_verse(corpus, 2, 255, 1, 12)], SAID_67_2
+    )
+    assert VerseRef(2, 255) not in [d.span.ref for d in _verses(result)]
+    assert result.cascade["rescued_windows"] == 0
+    assert any(c.kind == "relisten" and not c.accepted for c in result.acoustic_checks)
+
+
+def test_cascade_ne_reecoute_ni_les_fenetres_reconnues_ni_la_parole_sans_candidat(
+    corpus, matcher, alignment_texts
+):
+    from aqr.pipeline.pipeline import CascadeConfig, PipelineConfig
+
+    primary = [_verse(corpus, 67, 1), "bonjour à tous mes frères"]
+    config = PipelineConfig(cascade=CascadeConfig(relisten_neighbors=False))
+    result, second = _cascade(
+        corpus, matcher, alignment_texts, primary, ["x"], SAID_67_2, config=config
+    )
+    assert second.calls == 0
+    assert result.cascade["relistened_windows"] == 0
+
+
+def test_sans_arbitre_acoustique_pas_de_cascade(corpus, matcher):
+    second = _ASR([_verse(corpus, 67, 2)])
+    result = _pipeline(
+        corpus,
+        matcher,
+        [_verse(corpus, 67, 1, 5), "تبارك بيده"],
+        [(2.0, 8.0), (9.5, 30.0)],
+        seconds=40.0,
+        secondary=(("whisper-test", second),),
+    )
+    assert second.calls == 0  # I3 : jamais un verset d'un autre moteur sans preuve acoustique
+    assert result.cascade is None
