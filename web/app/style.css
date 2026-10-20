@@ -1255,3 +1255,7 @@ footer {
 .aligned-verses .formula button {
   color: var(--gold);
 }
+.riwaya-notice {
+  color: var(--gold);
+  cursor: help;
+}
