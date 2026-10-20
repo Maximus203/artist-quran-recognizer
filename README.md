@@ -44,8 +44,9 @@ python scripts/fetch_models.py                    # modèles épinglés -> $AQR_
 aqr recognize cours.mp3 --out-dir sortie          # -> sortie/cours.recognition.json puis cours.srt
 ```
 
-Options : `--format json,srt,vtt`, `--translation french_hameedullah|none`, `--asr whisper|fastconformer`,
-`--asr whisper|fastconformer|muno-streaming`, `--device cpu|cuda`. Muno requiert l'accès Hugging Face approuvé
+Options : `--format json,srt,vtt`, `--translation french_hameedullah|none`,
+`--asr cascade|fastconformer|whisper|muno-streaming` (défaut `cascade` : FastConformer partout, Whisper
+et Muno réécoutent les fenêtres douteuses, ADR-0009), `--device cpu|cuda`. Muno requiert l'accès Hugging Face approuvé
 et l'extra `.[muno]` ; ses poids quantifiés sont téléchargés dans `$AQR_MODELS_DIR` et restent hors Git.
 Sa licence NPL-1.1 interdit les usages commerciaux et impose que l'utilisation locale reste gratuite.
 Contrat de la sortie : [docs/RECOGNIZE-OUTPUT.md](docs/RECOGNIZE-OUTPUT.md). Un passage
