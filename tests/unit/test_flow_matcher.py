@@ -194,3 +194,20 @@ def test_qualite_et_mots_expliques_avant_le_plafond_de_preuve(matcher):
     assert top.score == pytest.approx(0.4)
     assert top.quality == pytest.approx(1.0)
     assert top.explained == pytest.approx(2.0)
+
+
+def test_les_sosies_exacts_ne_sont_jamais_coupes_par_top_k(matcher):
+    """Lot 2 (2026-10-20) : « ويقولون متى هذا الوعد إن كنتم صادقين » est le texte exact de 6
+    versets ; avec top_k = 5 dans l'ordre du Mushaf, 67:25 sortait de la liste et le décodeur,
+    encadré par 67:24 et 67:26, ne pouvait répondre que 10:48 « incertain ». Une égalité de score
+    n'est jamais coupée."""
+    found = matcher.match(_q("وَيَقُولُونَ مَتَىٰ هَٰذَا الْوَعْدُ إِنْ كُنْتُمْ صَادِقِينَ"), top_k=5)
+    refs = {str(c.span.ref) for c in found}
+    assert "67:25" in refs and "10:48" in refs
+    assert len(found) >= 6
+
+
+def test_le_refrain_d_ar_rahman_garde_ses_31_occurrences(matcher):
+    found = matcher.match(_q("فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ"), top_k=5)
+    assert {c.span.ref.surah for c in found} == {55}
+    assert len(found) == 31
