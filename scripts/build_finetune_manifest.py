@@ -336,6 +336,7 @@ def scoring_meta(args: argparse.Namespace) -> dict[str, Any]:
         "corpus_lock_sha256": sha256_path(args.corpus / "LOCK.json"),
         "variants": [v.value for v in AlignmentConfig().variants],
         "unknown_symbol": "retiré",
+        "heard": "chemin CTC libre",
     }
 
 
@@ -394,6 +395,7 @@ def cmd_score(args: argparse.Namespace) -> int:
             clip_lattice(model, manifest_dir),
             unknown_symbol=model.unknown_symbol,
             target=lambda text: model_graphie(text, CONFIG),
+            decode=model.symbols_text,
         )
         qc_dir.mkdir(parents=True, exist_ok=True)
         meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
