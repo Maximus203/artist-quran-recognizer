@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import {
   activeIntervals,
@@ -12,6 +12,16 @@ import { audioAccept, bindAudioDrop } from "@/lib/audio-upload";
 import Recorder from "./recorder";
 import ValidationPanel from "./validation-panel";
 import type { AsrChoice } from "@/lib/asr-choice";
+import {
+  ZOOM_SPANS,
+  centeredScroll,
+  formatTick,
+  laneWidthPercent,
+  percentAt,
+  tickStep,
+  ticks,
+  visibleSpan,
+} from "@/lib/timeline";
 
 type Session = {
   id: string;
@@ -41,6 +51,31 @@ const labels: Record<string, string> = {
   timing: "Décalage",
   other: "Autre",
 };
+const states: Record<string, string> = {
+  ready: "prêt",
+  running: "en cours",
+  done: "terminé",
+  failed: "échec",
+  cancelled: "annulé",
+};
+const engines: Record<string, string> = {
+  fastconformer: "FastConformer",
+  whisper: "Whisper",
+  "muno-streaming": "Muno Streaming",
+};
+/** Couleur d'un intervalle sur la forme d'onde (mêmes teintes que les pistes). */
+function regionColor(item: Interval): string {
+  if (item.kind === "abstention") return "rgba(99, 116, 119, 0.22)";
+  if (item.kind === "non_quran") return "rgba(118, 157, 154, 0.3)";
+  if (item.status === "inferred") return "rgba(211, 184, 114, 0.28)";
+  if (item.status === "uncertain") return "rgba(176, 147, 117, 0.34)";
+  return "rgba(131, 168, 143, 0.34)";
+}
+type Peaks = { duration: number; peaks: number[] };
+/** Arrêt d'un passage écouté : 10 ms avant sa fin, pour que la carte l'affiche encore. */
+const STOP_MARGIN_S = 0.01;
+/** Largeur minimale (px) d'un segment pour y écrire sa référence sur la forme d'onde. */
+const REGION_LABEL_PX = 34;
 const reasons: Record<string, string> = {
   silence: "Silence selon le moteur",
   empty_transcript: "Aucun texte exploitable",
@@ -89,7 +124,13 @@ export default function ReviewApp() {
     [selected, setSelected] = useState<number | null>(null),
     [filter, setFilter] = useState("all"),
     [follow, setFollow] = useState(true),
-    [zoom, setZoom] = useState(1),
+    [span, setSpan] = useState<number | null>(null),
+    [peaks, setPeaks] = useState<Peaks | null>(null),
+    [listening, setListening] = useState<"pending" | "ready" | "fallback">(
+      "pending",
+    ),
+    [waveReady, setWaveReady] = useState(false),
+    [lanesWidth, setLanesWidth] = useState(Infinity),
     [fontSize, setFontSize] = useState(40),
     [translation, setTranslation] = useState(true),
     [loop, setLoop] = useState(false),
@@ -104,6 +145,17 @@ export default function ReviewApp() {
     file = useRef<HTMLInputElement>(null),
     resultFile = useRef<HTMLInputElement>(null),
     raf = useRef<number>(0),
+    lanes = useRef<HTMLDivElement>(null),
+    ws = useRef<import("wavesurfer.js").default | null>(null),
+    regions = useRef<
+      import("wavesurfer.js/dist/plugins/regions.esm.js").default | null
+    >(null),
+    timeline = useRef<{
+      create: (typeof import("wavesurfer.js/dist/plugins/timeline.esm.js"))["default"]["create"];
+      plugin: { destroy: () => void } | null;
+    } | null>(null),
+    stopAt = useRef<number | null>(null),
+    seekRef = useRef<(index: number) => void>(() => {}),
     uploading = useRef(false),
     saved = useRef<string>("");
   const refreshList = useCallback(async () => {
@@ -168,33 +220,28 @@ export default function ReviewApp() {
     return () => clearInterval(t);
   }, [detail]);
   useEffect(() => {
-    const node = audio.current;
-    if (!node || !detail || !wave.current) return;
-    let destroyed = false;
-    let ws: import("wavesurfer.js").default | null = null;
-    import("wavesurfer.js").then(({ default: WaveSurfer }) => {
-      if (destroyed || !wave.current) return;
-      ws = WaveSurfer.create({
-        container: wave.current,
-        media: node,
-        waveColor: "#697878",
-        progressColor: "#b4ddac",
-        cursorColor: "#eff8df",
-        height: 84,
-        barWidth: 2,
-        barGap: 2,
-        normalize: true,
-      });
-      ws.on("interaction", () => setFollow(false));
-      ws.on("error", () =>
+    if (!detail) return;
+    const id = detail.session.id;
+    let cancelled = false;
+    setPeaks(null);
+    setListening("pending");
+    fetch(`/api/sessions/${id}/peaks`, { cache: "no-store" })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error);
+        if (cancelled) return;
+        setPeaks({ duration: data.duration, peaks: data.peaks });
+        setListening("ready");
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setListening("fallback");
         setMessage(
-          "Waveform indisponible ; le lecteur et la liste restent utilisables.",
-        ),
-      );
-    });
+          `${e instanceof Error ? e.message : "Copie d’écoute indisponible"}. Lecture du fichier original : le positionnement peut y être décalé de plusieurs secondes.`,
+        );
+      });
     return () => {
-      destroyed = true;
-      ws?.destroy();
+      cancelled = true;
     };
   }, [detail?.session.id]);
   useEffect(() => {
@@ -205,9 +252,22 @@ export default function ReviewApp() {
   useEffect(() => {
     const node = audio.current;
     if (!node) return;
+    /** Fin d'un « Écouter ce passage » : arrêt juste avant la fin, la carte garde le passage. */
+    const checkStop = () => {
+      const end = stopAt.current;
+      if (end === null || node.currentTime < end - STOP_MARGIN_S) return;
+      node.pause();
+      node.currentTime = end - STOP_MARGIN_S;
+    };
     const tick = () => {
+      checkStop();
       setTime(node.currentTime);
       if (!node.paused) raf.current = requestAnimationFrame(tick);
+    };
+    // requestAnimationFrame est suspendu quand l'onglet est masqué : timeupdate prend le relais.
+    const onTimeUpdate = () => {
+      checkStop();
+      if (document.hidden) setTime(node.currentTime);
     };
     const onPlay = () => {
       setSelected(null);
@@ -215,6 +275,7 @@ export default function ReviewApp() {
       tick();
     };
     const onPause = () => {
+      stopAt.current = null;
       setPlaying(false);
       cancelAnimationFrame(raf.current);
       setTime(node.currentTime);
@@ -225,6 +286,7 @@ export default function ReviewApp() {
     node.addEventListener("play", onPlay);
     node.addEventListener("pause", onPause);
     node.addEventListener("seeked", onSeek);
+    node.addEventListener("timeupdate", onTimeUpdate);
     node.addEventListener("ended", onPause);
     node.addEventListener("loadedmetadata", onDuration);
     node.addEventListener("durationchange", onDuration);
@@ -236,6 +298,7 @@ export default function ReviewApp() {
       node.removeEventListener("play", onPlay);
       node.removeEventListener("pause", onPause);
       node.removeEventListener("seeked", onSeek);
+      node.removeEventListener("timeupdate", onTimeUpdate);
       node.removeEventListener("ended", onPause);
       node.removeEventListener("loadedmetadata", onDuration);
       node.removeEventListener("durationchange", onDuration);
@@ -250,6 +313,8 @@ export default function ReviewApp() {
     if (time >= end || time < start) audio.current.currentTime = start;
   }, [time, loop, draft]);
   const intervals = detail?.result?.intervals || [];
+  const duration =
+    mediaDuration || peaks?.duration || detail?.result?.source.duration_s || 0;
   const active = activeIntervals(intervals, time);
   const currentIndex = intervals.findIndex(
     (i) => i.t && i.t[0] <= time && time < i.t[1] && i.kind === "verse",
@@ -261,6 +326,163 @@ export default function ReviewApp() {
       : currentIndex >= 0
         ? intervals[currentIndex]
         : null;
+  useEffect(() => {
+    const node = audio.current;
+    if (!node || !detail || !wave.current || listening === "pending") return;
+    let destroyed = false;
+    let instance: import("wavesurfer.js").default | null = null;
+    Promise.all([
+      import("wavesurfer.js"),
+      import("wavesurfer.js/dist/plugins/regions.esm.js"),
+      import("wavesurfer.js/dist/plugins/timeline.esm.js"),
+    ]).then(
+      ([
+        { default: WaveSurfer },
+        { default: Regions },
+        { default: Timeline },
+      ]) => {
+        if (destroyed || !wave.current) return;
+        const regionPlugin = Regions.create();
+        instance = WaveSurfer.create({
+          container: wave.current,
+          media: node,
+          // Crêtes calculées par le serveur sur la copie d'écoute : rien à décoder ici.
+          ...(peaks
+            ? {
+                peaks: [Float32Array.from(peaks.peaks)],
+                duration: peaks.duration,
+              }
+            : {}),
+          waveColor: "#697878",
+          progressColor: "#b4ddac",
+          cursorColor: "#f7e7a8",
+          cursorWidth: 2,
+          height: 96,
+          barWidth: 2,
+          barGap: 1,
+          normalize: true,
+          autoScroll: true,
+          autoCenter: true,
+          plugins: [regionPlugin],
+        });
+        timeline.current = {
+          create: (options) => Timeline.create(options),
+          plugin: null,
+        };
+        regionPlugin.on("region-clicked", (region, event) => {
+          event.stopPropagation();
+          seekRef.current(Number(region.id.slice(2)));
+        });
+        instance.on("ready", () => setWaveReady(true));
+        instance.on("interaction", () => {
+          stopAt.current = null;
+          setFollow(false);
+        });
+        instance.on("error", () =>
+          setMessage(
+            "Forme d’onde indisponible ; le lecteur et la liste restent utilisables.",
+          ),
+        );
+        ws.current = instance;
+        regions.current = regionPlugin;
+      },
+    );
+    return () => {
+      destroyed = true;
+      instance?.destroy();
+      ws.current = null;
+      regions.current = null;
+      timeline.current = null;
+      setWaveReady(false);
+    };
+  }, [detail?.session.id, listening, peaks]);
+  useEffect(() => {
+    const plugin = regions.current;
+    if (!waveReady || !plugin) return;
+    plugin.clearRegions();
+    const pxPerSecond =
+      wave.current && duration
+        ? wave.current.clientWidth / visibleSpan(duration, span)
+        : 0;
+    intervals.forEach((item, index) => {
+      if (!item.t) return;
+      const wide = (item.t[1] - item.t[0]) * pxPerSecond >= REGION_LABEL_PX;
+      plugin.addRegion({
+        id: `i-${index}`,
+        start: item.t[0],
+        end: item.t[1],
+        color: regionColor(item),
+        drag: false,
+        resize: false,
+        content:
+          wide &&
+          item.kind === "verse" &&
+          item.status !== "uncertain" &&
+          item.ref
+            ? item.ref
+            : undefined,
+      });
+    });
+  }, [waveReady, detail?.result, span, duration]);
+  useEffect(() => {
+    const plugin = regions.current;
+    if (!waveReady || !plugin) return;
+    // Les régions vivent dans le DOM fantôme de wavesurfer : style posé directement.
+    for (const region of plugin.getRegions())
+      if (region.element)
+        region.element.style.outline =
+          region.id === `i-${selected}` ? "2px solid #f8e8b8" : "";
+  }, [waveReady, selected, detail?.result]);
+  useEffect(() => {
+    const instance = ws.current;
+    if (!waveReady || !instance || !wave.current || !duration) return;
+    instance.zoom(
+      span === null
+        ? 0
+        : wave.current.clientWidth / visibleSpan(duration, span),
+    );
+    // Graduations de la forme d'onde : même pas que celles des pistes.
+    const marks = timeline.current;
+    if (marks) {
+      marks.plugin?.destroy();
+      const step = tickStep(
+        visibleSpan(duration, span),
+        wave.current.clientWidth,
+      );
+      const plugin = marks.create({
+        height: 18,
+        timeInterval: step,
+        primaryLabelInterval: 1,
+        secondaryLabelInterval: 1,
+        formatTimeCallback: (t) => formatTick(t, step),
+        style: { color: "#a0b1a8", fontSize: "10px" },
+      });
+      instance.registerPlugin(plugin);
+      marks.plugin = plugin;
+    }
+    // Après le changement d'échelle : la position courante revient au centre des deux vues.
+    centerOn(audio.current?.currentTime ?? 0);
+  }, [waveReady, span, duration]);
+  useEffect(() => {
+    const box = lanes.current;
+    if (!box) return;
+    const observer = new ResizeObserver(() => setLanesWidth(box.clientWidth));
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [detail?.session.id]);
+  useEffect(() => {
+    ws.current?.setOptions({ autoScroll: follow, autoCenter: follow });
+  }, [follow, waveReady]);
+  useEffect(() => {
+    const box = lanes.current;
+    if (!follow || !box || span === null) return;
+    box.scrollLeft = centeredScroll(
+      time,
+      duration,
+      box.clientWidth,
+      box.scrollWidth,
+    );
+  }, [time, follow, span, duration]);
   useEffect(() => {
     if (follow && currentIndex >= 0)
       segmentList.current
@@ -419,11 +641,49 @@ export default function ReviewApp() {
       setBusy(false);
     }
   }
+  /** Amène `t` au centre de la forme d'onde et des pistes. */
+  function centerOn(t: number) {
+    const box = lanes.current;
+    if (box)
+      box.scrollLeft = centeredScroll(
+        t,
+        duration,
+        box.clientWidth,
+        box.scrollWidth,
+      );
+    if (ws.current && duration)
+      ws.current.setScrollTime(
+        Math.max(0, t - visibleSpan(duration, span) / 2),
+      );
+  }
+  /** Sélectionne un intervalle et place le lecteur sur son début, sans lancer la lecture. */
   function seek(index: number) {
     const item = intervals[index];
     setSelected(index);
-    if (item?.t && audio.current) audio.current.currentTime = item.t[0];
     setFollow(false);
+    stopAt.current = null;
+    if (item?.t && audio.current) {
+      audio.current.currentTime = item.t[0];
+      setTime(item.t[0]);
+      centerOn(item.t[0]);
+    }
+  }
+  seekRef.current = seek;
+  /** Joue exactement l'intervalle [début, fin] puis s'arrête. */
+  function playSegment(item: Interval) {
+    const node = audio.current;
+    if (!node || !item.t) return;
+    const [start, end] = item.t;
+    node.currentTime = start;
+    centerOn(start);
+    void node
+      .play()
+      .then(() => {
+        stopAt.current = end;
+      })
+      .catch(() =>
+        setMessage("Lecture impossible pour cet audio dans ce navigateur."),
+      );
   }
   function togglePlayback() {
     const node = audio.current;
@@ -485,7 +745,6 @@ export default function ReviewApp() {
       ),
     );
   }
-  const duration = mediaDuration || detail?.result?.source.duration_s || 0;
   const visible = intervals
     .map((item, index) => ({ item, index }))
     .filter(
@@ -497,6 +756,101 @@ export default function ReviewApp() {
             ? item.kind === "verse" && item.status !== "recognized"
             : item.kind === filter),
     );
+  const laneItems = useMemo(
+    () =>
+      (["main", "inferred"] as const).map((track) => (
+        <div key={track} className="track">
+          {intervals.map((item, index) =>
+            item.t &&
+            (track === "inferred") ===
+              (item.kind === "verse" && item.status === "inferred") ? (
+              <button
+                key={index}
+                className={`track-item ${item.kind} ${item.kind === "verse" ? item.status : ""} ${selected === index ? "selected" : ""}`}
+                style={{
+                  left: `${percentAt(item.t[0], duration)}%`,
+                  width: `${percentAt(item.t[1] - item.t[0], duration)}%`,
+                }}
+                onClick={() => seekRef.current(index)}
+                title={`${intervalLabel(item)} · ${formatTime(item.t[0])} – ${formatTime(item.t[1])}`}
+              />
+            ) : null,
+          )}
+        </div>
+      )),
+    [intervals, selected, duration],
+  );
+  const tickMarks = useMemo(() => {
+    const step = tickStep(visibleSpan(duration, span), lanesWidth);
+    return ticks(duration, step).map((t) => (
+      <span key={t} style={{ left: `${percentAt(t, duration)}%` }}>
+        {formatTick(t, step)}
+      </span>
+    ));
+  }, [duration, span, lanesWidth]);
+  const uploadPanel = (
+    <div className="upload">
+      <label className="engine-choice">
+        Moteur de reconnaissance
+        <select
+          value={asrChoice}
+          onChange={(event) => setAsrChoice(event.target.value as AsrChoice)}
+        >
+          <option value="fastconformer">FastConformer · actuel</option>
+          <option value="whisper">Whisper · challenger</option>
+          <option value="muno-streaming">
+            Muno Streaming · ONNX quantifié
+          </option>
+        </select>
+        <small>
+          Choisi pour la prochaine analyse ; chaque session conserve le moteur
+          utilisé.
+        </small>
+      </label>
+      <div className="upload-sources">
+        <Recorder onAnalyze={analyzeRecording} />
+        <div className="upload-file">
+          <span className="upload-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="icon">
+              <path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+            </svg>
+            Importer un fichier
+          </span>
+          <label>
+            Fichier audio
+            <input ref={file} type="file" accept={audioAccept} />
+          </label>
+          <label>
+            <span>
+              Résultat existant <span className="optional">· facultatif</span>
+            </span>
+            <input
+              ref={resultFile}
+              type="file"
+              accept=".json,application/json"
+            />
+          </label>
+          <button
+            className="primary upload-submit"
+            onClick={() =>
+              void uploadFiles(
+                file.current?.files?.[0],
+                resultFile.current?.files?.[0],
+              )
+            }
+            disabled={busy}
+          >
+            Importer dans l’atelier <span>↗</span>
+          </button>
+          <small>Ou dépose un audio n’importe où sur la page.</small>
+        </div>
+      </div>
+      <small>
+        Fichiers conservés localement hors Git. L’import JSON exige le même
+        audio, vérifié par SHA-256.
+      </small>
+    </div>
+  );
   return (
     <main className="shell">
       {dragActive && (
@@ -520,74 +874,32 @@ export default function ReviewApp() {
           Hafs · Revue locale <span className="dot" /> Moteur expérimental
         </div>
       </header>
-      <section className="intro">
-        <div>
-          <p className="eyebrow">ÉCOUTER · VÉRIFIER · CORRIGER</p>
-          <h2>
-            Chaque récitation mérite
-            <br />
-            <em>une écoute attentive.</em>
-          </h2>
-          <p>
-            Enregistre une récitation ou importe un audio, puis lance le moteur
-            existant. Les hypothèses et les abstentions restent visibles comme
-            telles.
-          </p>
-        </div>
-        <div className="upload">
-          <label className="engine-choice">
-            Moteur de reconnaissance
-            <select
-              value={asrChoice}
-              onChange={(event) =>
-                setAsrChoice(event.target.value as AsrChoice)
-              }
-            >
-              <option value="fastconformer">FastConformer · actuel</option>
-              <option value="whisper">Whisper · challenger</option>
-              <option value="muno-streaming">
-                Muno Streaming · ONNX quantifié
-              </option>
-            </select>
-            <small>
-              Choisi pour la prochaine analyse ; chaque session conserve le
-              moteur utilisé.
-            </small>
-          </label>
-          <Recorder onAnalyze={analyzeRecording} />
-          <span className="upload-divider">OU IMPORTER UN FICHIER</span>
-          <label>
-            Fichier audio <input ref={file} type="file" accept={audioAccept} />
-          </label>
-          <label>
-            Résultat existant <span className="optional">facultatif</span>
-            <input
-              ref={resultFile}
-              type="file"
-              accept=".json,application/json"
-            />
-          </label>
-          <button
-            className="primary upload-submit"
-            onClick={() =>
-              void uploadFiles(
-                file.current?.files?.[0],
-                resultFile.current?.files?.[0],
-              )
-            }
-            disabled={busy}
-          >
-            Importer dans l’atelier <span>↗</span>
-          </button>
-          <small>
-            Tu peux aussi déposer un audio n’importe où sur la page.
-          </small>
-          <small>
-            Fichiers conservés localement hors Git. L’import JSON exige le même
-            audio, vérifié par SHA-256.
-          </small>
-        </div>
-      </section>
+      {detail ? (
+        <details className="new-trial">
+          <summary>
+            <span aria-hidden="true">＋</span> Nouvel essai
+            <small>enregistrer une récitation ou importer un audio</small>
+          </summary>
+          {uploadPanel}
+        </details>
+      ) : (
+        <section className="intro">
+          <div>
+            <p className="eyebrow">ÉCOUTER · VÉRIFIER · CORRIGER</p>
+            <h2>
+              Chaque récitation mérite
+              <br />
+              <em>une écoute attentive.</em>
+            </h2>
+            <p>
+              Enregistre une récitation ou importe un audio, puis lance le
+              moteur existant. Les hypothèses et les abstentions restent
+              visibles comme telles.
+            </p>
+          </div>
+          {uploadPanel}
+        </section>
+      )}
       {message && (
         <p className="notice error" role="alert">
           {message}
@@ -618,10 +930,9 @@ export default function ReviewApp() {
               >
                 <span className="session-name">{s.name}</span>
                 <span className="session-meta">
-                  {new Date(s.created_at).toLocaleString("fr-FR")} · {s.state}
-                  {s.asr
-                    ? ` · ${s.asr === "whisper" ? "Whisper" : s.asr === "muno-streaming" ? "Muno Streaming" : "FastConformer"}`
-                    : ""}
+                  {new Date(s.created_at).toLocaleString("fr-FR")} ·{" "}
+                  {states[s.state] || s.state}
+                  {s.asr ? ` · ${engines[s.asr] || s.asr}` : ""}
                 </span>
               </button>
             ))
@@ -657,12 +968,7 @@ export default function ReviewApp() {
                 </span>
                 {detail.session.asr && (
                   <span>
-                    Moteur :{" "}
-                    {detail.session.asr === "whisper"
-                      ? "Whisper"
-                      : detail.session.asr === "muno-streaming"
-                        ? "Muno Streaming"
-                        : "FastConformer"}
+                    Moteur : {engines[detail.session.asr] || detail.session.asr}
                   </span>
                 )}
                 <span>SHA-256 {detail.session.audio_sha256.slice(0, 12)}…</span>
@@ -693,7 +999,22 @@ export default function ReviewApp() {
                       {detail.session.name}
                     </strong>
                   </div>
-                  <span className="player-badge">AUDIO LOCAL</span>
+                  <span
+                    className={`player-badge ${listening}`}
+                    title={
+                      listening === "ready"
+                        ? "Audio décodé exactement comme le moteur l’a entendu (mono, 16 kHz) : les temps affichés et l’écoute coïncident à l’échantillon près."
+                        : listening === "pending"
+                          ? "Décodage de l’audio comme le moteur, une seule fois par session."
+                          : "Fichier original : dans un MP3 à débit variable, le navigateur peut se positionner à plusieurs secondes de l’instant demandé."
+                    }
+                  >
+                    {listening === "ready"
+                      ? "ÉCOUTE = AUDIO DU MOTEUR"
+                      : listening === "pending"
+                        ? "PRÉPARATION DE L’ÉCOUTE…"
+                        : "ORIGINAL · POSITION APPROXIMATIVE"}
+                  </span>
                 </div>
                 <div className="player-main">
                   <button
@@ -777,14 +1098,22 @@ export default function ReviewApp() {
                 />
                 <div className="transport-row player-tools">
                   <label>
-                    Zoom{" "}
-                    <input
-                      type="range"
-                      min="1"
-                      max="8"
-                      value={zoom}
-                      onChange={(e) => setZoom(Number(e.target.value))}
-                    />
+                    Fenêtre visible{" "}
+                    <select
+                      value={span ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          ? Number(e.target.value)
+                          : null;
+                        setSpan(value);
+                      }}
+                    >
+                      {ZOOM_SPANS.map((z) => (
+                        <option key={z.label} value={z.seconds ?? ""}>
+                          {z.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label>
                     <input
@@ -812,6 +1141,58 @@ export default function ReviewApp() {
                       }}
                     />
                   </label>
+                </div>
+              </div>
+              <div className="timeline">
+                <div className="section-head">
+                  <span>04 / PISTES SYNCHRONISÉES</span>
+                  <span className="muted">
+                    {intervals.length} intervalles · repère commun{" "}
+                    {formatTime(time)}
+                  </span>
+                </div>
+                <div className="ruler">
+                  <div className="track-names" aria-hidden="true">
+                    <span>Moteur</span>
+                    <span>Hypothèses</span>
+                    <span>Revue</span>
+                  </div>
+                  <div
+                    ref={lanes}
+                    className="lanes-scroll"
+                    onWheel={() => setFollow(false)}
+                    onPointerDown={() => setFollow(false)}
+                  >
+                    <div
+                      className="lanes"
+                      style={{ width: `${laneWidthPercent(duration, span)}%` }}
+                    >
+                      <div
+                        className="playhead"
+                        style={{ left: `${percentAt(time, duration)}%` }}
+                      />
+                      {laneItems}
+                      <div className="track">
+                        {detail.review?.annotations
+                          .filter((a) => a.end_s !== null)
+                          .map((a) => (
+                            <button
+                              key={a.id}
+                              className="track-item correction"
+                              style={{
+                                left: `${percentAt(a.start_s, duration)}%`,
+                                width: `${percentAt(a.end_s! - a.start_s, duration)}%`,
+                              }}
+                              onClick={() => setDraft(a)}
+                              title={a.description || labels[a.type]}
+                            />
+                          ))}
+                      </div>
+                      <div className="lane-ticks" aria-hidden="true">
+                        {tickMarks}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               {detail.session.state === "ready" ||
@@ -882,15 +1263,26 @@ export default function ReviewApp() {
                       {shown.repetition && <span>Répétition</span>}
                       {shown.time_interpolated && <span>Temps interpolé</span>}
                     </div>
-                    <p className="ref">
-                      {shown.status === "uncertain"
-                        ? "Identification ambiguë"
-                        : shown.ref}{" "}
-                      ·{" "}
-                      {shown.t
-                        ? `${formatTime(shown.t[0])} – ${formatTime(shown.t[1])}`
-                        : "Sans temps"}
-                    </p>
+                    <div className="ref-row">
+                      <p className="ref">
+                        {shown.status === "uncertain"
+                          ? "Identification ambiguë"
+                          : shown.ref}{" "}
+                        ·{" "}
+                        {shown.t
+                          ? `${formatTime(shown.t[0])} – ${formatTime(shown.t[1])}`
+                          : "Sans temps"}
+                      </p>
+                      {shown.t && (
+                        <button
+                          className="outline play-segment"
+                          onClick={() => playSegment(shown)}
+                        >
+                          <span className="play-icon" aria-hidden="true" />{" "}
+                          Écouter ce passage
+                        </button>
+                      )}
+                    </div>
                     {shown.text ? (
                       <p
                         className="arabic"
@@ -941,77 +1333,6 @@ export default function ReviewApp() {
                   />{" "}
                   Afficher la traduction
                 </label>
-              </div>
-              <div className="timeline">
-                <div className="section-head">
-                  <span>04 / PISTES SYNCHRONISÉES</span>
-                  <span className="muted">{intervals.length} intervalles</span>
-                </div>
-                <div className="ruler" style={{ overflowX: "auto" }}>
-                  <div
-                    className="track-inner"
-                    style={{ width: `${zoom * 100}%` }}
-                  >
-                    <div
-                      className="playhead"
-                      style={{
-                        left: `${duration ? (time / duration) * 100 : 0}%`,
-                      }}
-                    />
-                    {(["main", "inferred", "review"] as const).map((track) => (
-                      <div key={track} className="track">
-                        <span className="track-name">
-                          {track === "main"
-                            ? "Moteur"
-                            : track === "inferred"
-                              ? "Hypothèses"
-                              : "Revue"}
-                        </span>
-                        {track === "review"
-                          ? detail.review?.annotations
-                              .filter((a) => a.end_s !== null)
-                              .map((a) => (
-                                <button
-                                  key={a.id}
-                                  className="track-item correction"
-                                  style={{
-                                    left: `${duration ? (a.start_s / duration) * 100 : 0}%`,
-                                    width: `${duration ? ((a.end_s! - a.start_s) / duration) * 100 : 0}%`,
-                                  }}
-                                  onClick={() => setDraft(a)}
-                                  title={a.description || labels[a.type]}
-                                />
-                              ))
-                          : intervals.map((item, index) =>
-                              item.t &&
-                              (track === "inferred"
-                                ? item.kind === "verse" &&
-                                  item.status === "inferred"
-                                : !(
-                                    item.kind === "verse" &&
-                                    item.status === "inferred"
-                                  )) ? (
-                                <button
-                                  key={index}
-                                  className={`track-item ${item.kind} ${item.kind === "verse" ? item.status : ""} ${selected === index ? "selected" : ""}`}
-                                  style={{
-                                    left: `${duration ? (item.t[0] / duration) * 100 : 0}%`,
-                                    width: `${Math.max(0.28, duration ? ((item.t[1] - item.t[0]) / duration) * 100 : 0)}%`,
-                                  }}
-                                  onClick={() => seek(index)}
-                                  title={`${intervalLabel(item)} ${formatTime(item.t![0])}`}
-                                />
-                              ) : null,
-                            )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="ticks">
-                  <span>00:00</span>
-                  <span>{formatTime(duration / 2)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
               </div>
               <div className="segments">
                 <div className="section-head">
