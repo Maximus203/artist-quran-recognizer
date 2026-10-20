@@ -13,18 +13,29 @@ bords des fenêtres compris) sur le treillis CTC de ses fenêtres (`PassageAlign
   toujours au moins le score que le matcher lui a donné seul.
 
 Un verset prouvé seul (une fenêtre, assez de mots) reçoit aussi les temps de l'alignement si l'audio
-le soutient ; sinon il garde les bords de sa fenêtre. Le texte aligné vient du corpus (I1), jamais
+le soutient ; sinon il garde les bords de sa fenêtre.
+
+Un verset commencé est toujours récité jusqu'au bout (le récitant peut respirer, ou reprendre
+quelques mots en arrière). Après un candidat retenu dont la plage s'arrête avant la fin du verset,
+la SUITE attendue (reste du verset, reprise possible, puis versets suivants) est alignée, fin libre,
+sur la fenêtre suivante si elle n'a rien de retenu. Deux témoins sont exigés : l'audio (preuve de
+l'alignement) ET la transcription de la fenêtre (similarité avec le texte aligné) — l'audio seul
+laisse passer un mot de fin de verset sur de la parole non coranique, que le modèle rend surtout en
+blancs (mesuré, lot1-04). Soutenue par les deux, la suite devient un candidat avec ses mots et ses
+temps ; sinon rien n'est nommé. Le texte aligné vient du corpus (I1), jamais
 de l'ASR ; aucun verset n'est inventé : seuls des candidats du matcher sont promus.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, replace
+from difflib import SequenceMatcher
 from typing import Protocol
 
 from aqr.alignment.forced import AlignedWord, AlignmentConfig, PassageAligner, PassageAlignment
-from aqr.corpus.alignment_text import AlignmentTexts
+from aqr.corpus.alignment_text import AlignmentTexts, recited_span
+from aqr.corpus.normalize import normalize_arabic
 from aqr.decoding.chains import Chain, ChainConfig, Observation, chain_spans, find_chains
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import AudioClip, Candidate, CtcAcousticModel, CtcLattice
@@ -42,6 +53,17 @@ class AcousticCheckConfig:
     un mot amputé par l'ASR (« لَّمَ » pour « عَلَّمَ ») vaut 0,5. Seul l'audio peut le sauver."""
     word_times: bool = True
     """Temps et mots des versets reconnus pris dans l'alignement (sinon : bords des fenêtres)."""
+    continuation: bool = True
+    """Prédire puis vérifier la suite d'un verset commencé dans la fenêtre suivante."""
+    continuation_reprise_words: int = 3
+    """Mots que le récitant peut reprendre en arrière avant de continuer (i'ada). Provisoire."""
+    continuation_min_text_similarity: float = 0.6
+    """Similarité (Dice des lettres normalisées) exigée entre la transcription de la fenêtre et le
+    texte aligné. Provisoire : 0,6 écarte toutes les fausses suites relevées sur le lot 1 dev
+    (2026-10-20), au prix de quelques reprises mal transcrites."""
+    continuation_following_verses: int = 1
+    """Versets suivants ajoutés au texte attendu (le reste du verset peut finir tôt dans la
+    fenêtre) ; l'alignement à fin libre dit jusqu'où l'audio va."""
 
 
 @dataclass(frozen=True)
@@ -53,6 +75,10 @@ class ChainCheck:
     llr_per_frame: float | None
     """None : le texte ne tient pas dans le passage (trop de symboles pour ses trames)."""
     accepted: bool
+    kind: str = "chain"
+    """`chain` : suite de versets vérifiée ; `continuation` : suite d'un verset commencé."""
+    text_similarity: float | None = None
+    """Suite d'un verset : similarité entre la transcription de la fenêtre et le texte aligné."""
 
 
 Link = tuple[int, int]
@@ -94,9 +120,15 @@ class AcousticVerifier:
         return self._config
 
     def verify(
-        self, clip: AudioClip, observations: Sequence[Observation]
+        self,
+        clip: AudioClip,
+        observations: Sequence[Observation],
+        blocked: Collection[int] = (),
+        heard: Sequence[str] | None = None,
     ) -> tuple[list[Observation], tuple[ChainCheck, ...]]:
-        """Observations (avant toute promotion) -> observations décidées, et la trace."""
+        """Observations (avant toute promotion) -> observations décidées, et la trace. `blocked` :
+        fenêtres non coraniques (formules) qu'aucune suite ne peut occuper ; `heard` : transcription
+        de chaque fenêtre, second témoin de la suite d'un verset (sans elle, aucune suite)."""
         self._lattices = {}  # un treillis par passage, partagé par ses candidats
         updated: dict[Link, Candidate] = {}
         checks: list[ChainCheck] = []
@@ -112,7 +144,76 @@ class AcousticVerifier:
             if self._config.word_times:
                 decided = [self._timed(clip, time, c) for c in decided]
             out.append((time, decided))
+        if self._config.continuation and heard is not None:
+            checks.extend(self._continue(clip, out, set(blocked), heard))
         return out, tuple(checks)
+
+    # -- Suite d'un verset commencé ---------------------------------------------------------------
+    def _continue(
+        self,
+        clip: AudioClip,
+        observations: list[Observation],
+        blocked: set[int],
+        heard: Sequence[str],
+    ) -> list[ChainCheck]:
+        """De fenêtre en fenêtre (une suite acceptée peut elle-même finir avant la fin d'un verset,
+        le récitant ayant repris son souffle)."""
+        checks: list[ChainCheck] = []
+        for i in range(len(observations) - 1):
+            following = i + 1
+            window, candidates = observations[following]
+            if following in blocked or any(c.score >= self._floor for c in candidates):
+                continue
+            found: list[Candidate] = []
+            for candidate in observations[i][1]:
+                last = candidate.spans[-1]
+                if candidate.score < self._floor or last.last_word >= len(
+                    self._corpus.words(last.ref)
+                ):
+                    continue
+                check, rest = self._rest(clip, window, last, heard[following])
+                checks.append(check)
+                if rest is not None:
+                    found.append(rest)
+            if found:
+                observations[following] = (window, [*found, *candidates])
+        return checks
+
+    def _rest(
+        self, clip: AudioClip, window: TimeSpan, begun: WordSpan, heard: str
+    ) -> tuple[ChainCheck, Candidate | None]:
+        """Meilleure suite (départ avec ou sans reprise) alignée à fin libre sur la fenêtre."""
+        lattice = self._lattice(clip, window)
+        total = len(self._corpus.words(begun.ref))
+        following: list[WordSpan] = []
+        ref = begun.ref.next()
+        while ref is not None and len(following) < self._config.continuation_following_verses:
+            following.append(recited_span(ref, len(self._corpus.words(ref))))
+            ref = ref.next()
+        best: tuple[float, PassageAlignment] | None = None
+        earliest = max(1, begun.last_word + 1 - self._config.continuation_reprise_words)
+        for start in range(begun.last_word + 1, earliest - 1, -1):
+            spans = [WordSpan(begun.ref, start, total), *following]
+            result = self._aligner.align(lattice, spans, free_end=True)
+            if result is not None and (best is None or result.evidence.llr_per_frame > best[0]):
+                best = (result.evidence.llr_per_frame, result)
+        if best is None:
+            rest = (WordSpan(begun.ref, begun.last_word + 1, total),)
+            return ChainCheck(window, rest, None, False, kind="continuation"), None
+        llr, result = best
+        aligned = tuple(a.span for a in result.spans if isinstance(a.span, WordSpan))
+        similarity = self._similarity(aligned, heard)
+        accepted = llr >= self._threshold and (
+            similarity >= self._config.continuation_min_text_similarity
+        )
+        check = ChainCheck(window, aligned, llr, accepted, "continuation", round(similarity, 4))
+        if not accepted:
+            return check, None
+        words = [w for a in result.spans for w in a.words]
+        seed = Candidate(span=aligned[0], score=self._floor, explained=float(len(words)))
+        if not self._config.word_times:
+            return check, replace(seed, continuation=aligned[1:])
+        return check, _with_words(seed, words, window)
 
     # -- Suites à vérifier ---------------------------------------------------------------------
     def _chains(self, observations: Sequence[Observation]) -> list[Chain]:
@@ -179,6 +280,19 @@ class AcousticVerifier:
             if self._config.word_times:
                 promoted[(i, k)] = _with_words(promoted[(i, k)], words, observations[i][0])
         return promoted
+
+    def _similarity(self, spans: Sequence[WordSpan], heard: str) -> float:
+        """Dice des lettres normalisées (sans espaces) : symétrique, une transcription faite
+        d'autre chose que le texte aligné le fait baisser autant qu'un texte absent."""
+        expected = "".join(
+            normalize_arabic(word).replace(" ", "")
+            for span in spans
+            for word in self._corpus.words(span.ref)[span.first_word - 1 : span.last_word]
+        )
+        got = normalize_arabic(heard).replace(" ", "")
+        if not expected or not got:
+            return 0.0
+        return SequenceMatcher(None, expected, got, autojunk=False).ratio()
 
     def _lattice(self, clip: AudioClip, passage: TimeSpan) -> CtcLattice:
         if passage not in self._lattices:

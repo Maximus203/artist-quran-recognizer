@@ -19,7 +19,7 @@ L'alignement forcé donne aussi les trames de chaque symbole (temps de mots).
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 
 from aqr.domain.ports import Candidate
@@ -64,10 +64,17 @@ def ctc_free_logprob(log_probs: LogProbs) -> float:
 
 
 def ctc_forced_align(
-    log_probs: LogProbs, labels: Sequence[int], blank: int
+    log_probs: LogProbs,
+    labels: Sequence[int],
+    blank: int,
+    ends: Collection[int] | None = None,
 ) -> tuple[float, list[tuple[int, int]]]:
     """Viterbi CTC contraint à `labels`. Renvoie (log-vraisemblance, intervalle de trames
-    [début, fin] par symbole) ; (-inf, []) si le texte ne tient pas dans les trames."""
+    [début, fin] par symbole émis) ; (-inf, []) si le texte ne tient pas dans les trames.
+
+    `ends` (fin libre) : nombres de symboles après lesquels le passage peut s'arrêter (frontières de
+    mots) ; le chemin retenu n'émet alors qu'un début de `labels`, le plus vraisemblable. None = le
+    texte entier doit être émis."""
     _validate(log_probs, labels, blank)
     extended = [blank]
     for symbol in labels:
@@ -90,7 +97,9 @@ def ctc_forced_align(
             if best > neg:
                 score[t][s] = best + log_probs[t][extended[s]]
                 back[t][s] = source
-    end = max((states - 1, states - 2), key=lambda s: score[frames - 1][s] if s >= 0 else neg)
+    counts = [len(labels)] if ends is None else sorted({m for m in ends if 1 <= m <= len(labels)})
+    finals = [s for m in counts for s in (2 * m, 2 * m - 1)]
+    end = max(finals, key=lambda s: score[frames - 1][s])
     final = score[frames - 1][end]
     if final == neg:
         return neg, []
@@ -103,7 +112,7 @@ def ctc_forced_align(
             first[index] = t
             last.setdefault(index, t)
         state = back[t][state]
-    return final, [(first[i], last[i]) for i in range(len(labels))]
+    return final, [(first[i], last[i]) for i in range(len(first))]
 
 
 def acoustic_support(log_probs: LogProbs, labels: Sequence[int], blank: int) -> CtcEvidence:

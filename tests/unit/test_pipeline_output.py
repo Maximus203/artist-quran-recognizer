@@ -171,7 +171,9 @@ def test_les_suites_verifiees_sur_l_audio_sont_tracees(corpus, renderer):  # ADR
             -0.4361,
             True,
         ),
-        ChainCheck(TimeSpan(20.0, 21.0), (WordSpan(VerseRef(2, 1), 1, 1),), None, False),
+        ChainCheck(
+            TimeSpan(20.0, 21.0), (WordSpan(VerseRef(2, 1), 1, 1),), None, False, "continuation"
+        ),
     )
     base = _result(corpus)
     result = replace(base, engine=replace(base.engine, acoustic="ctc@rev"), acoustic_checks=checks)
@@ -179,11 +181,18 @@ def test_les_suites_verifiees_sur_l_audio_sont_tracees(corpus, renderer):  # ADR
     assert doc["engine"]["acoustic"] == "ctc@rev"
     assert doc["acoustic_checks"] == [
         {
+            "kind": "chain",
             "t": [4.7, 15.5],
             "verses": "55:1[5-5],55:2[1-2]",
             "llr_per_frame": -0.4361,
             "accepted": True,
         },
-        {"t": [20.0, 21.0], "verses": "2:1[1-1]", "llr_per_frame": None, "accepted": False},
+        {
+            "kind": "continuation",
+            "t": [20.0, 21.0],
+            "verses": "2:1[1-1]",
+            "llr_per_frame": None,
+            "accepted": False,
+        },
     ]
     assert build_json(base, renderer, None, source_sha256="00")["acoustic_checks"] == []

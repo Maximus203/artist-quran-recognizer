@@ -431,3 +431,33 @@ def test_une_suite_que_le_texte_prouve_mais_que_l_audio_ne_soutient_pas_n_est_pa
     result = _micro(corpus, matcher, acoustic=acoustic)
     assert [d.span.ref for d in _verses(result)] == []
     assert [c.accepted for c in result.acoustic_checks] == [False]
+
+
+# --- Suite d'un verset commencé (cas réel lot1-06 : 21:56 [1-8], puis 100-105 s en abstention) ---
+def test_la_suite_d_un_verset_commence_est_reconnue_sur_l_audio(corpus, matcher, alignment_texts):
+    words = corpus.words(VerseRef(21, 56))
+    # l'ASR a perdu le début de la fenêtre (mots 9-10) : trois mots ne nomment pas la suite seuls
+    # (score 0,6) et la suite textuelle ne se raccroche pas au mot 8 (ADR-0007)
+    texts = [_verse(corpus, 21, 56, 1, 8), _verse(corpus, 21, 56, 11, 13)]
+    heard = _heard(alignment_texts, (1.0, "21:56[1-8]"), (10.4, f"21:56[9-{len(words)}]"))
+    acoustic = _acoustic(corpus, alignment_texts, heard)
+    result = _pipeline(corpus, matcher, texts, [(0.5, 9.9), (10.1, 14.9)], acoustic=acoustic)
+    (det,) = _verses(result)  # les deux moitiés, contiguës, forment le verset entier
+    assert (det.span.ref, det.span.first_word, det.span.last_word) == (
+        VerseRef(21, 56),
+        1,
+        len(words),
+    )
+    assert det.status is Status.RECOGNIZED and det.time is not None and det.time.end_s > 10.1
+    assert [c.kind for c in result.acoustic_checks if c.accepted] == ["continuation"]
+
+
+def test_une_formule_apres_un_verset_commence_reste_une_formule(corpus, matcher, alignment_texts):
+    texts = [_verse(corpus, 21, 56, 1, 8), "آمين"]
+    heard = _heard(alignment_texts, (1.0, "21:56[1-8]"), (10.4, "21:56[9-10]"))
+    acoustic = _acoustic(corpus, alignment_texts, heard)
+    result = _pipeline(corpus, matcher, texts, [(0.5, 9.9), (10.1, 14.9)], acoustic=acoustic)
+    assert any(
+        isinstance(i, NonQuranSpan) and i.kind is NonQuranKind.AMIN for i in result.intervals
+    )
+    assert not [c for c in result.acoustic_checks if c.kind == "continuation"]
