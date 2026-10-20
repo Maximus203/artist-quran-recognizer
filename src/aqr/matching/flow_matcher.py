@@ -345,14 +345,17 @@ class FlowVerseMatcher:
         taken: list[tuple[int, int]] = []
         candidates: list[Candidate] = []
         for score, coverage, alignment, credited in found:
+            # `top_k` ne coupe jamais au milieu d'une égalité : des sosies exacts (67:25 et ses
+            # 5 jumeaux, le refrain d'Ar-Rahman 31 fois) restent tous candidats, le contexte (B7)
+            # tranche. Couper dans l'ordre du Mushaf rendait faux le verset qui suit la coupe.
+            if len(candidates) >= top_k and round(score, 6) < round(candidates[-1].score, 6):
+                break
             if score <= 0 or any(
                 alignment.first <= last and first <= alignment.last for first, last in taken
             ):
                 continue
             taken.append((alignment.first, alignment.last))
             candidates.append(self._candidate(score, coverage, alignment, credited))
-            if len(candidates) == top_k:
-                break
         return candidates
 
     def _candidate(
