@@ -229,3 +229,19 @@ def test_un_texte_trop_long_pour_le_passage_est_refuse():
 def test_seuil_absent_refuse_d_etre_construit():
     with pytest.raises(ValueError, match="désactivée"):
         verifier(_Model([]), min_llr_per_frame=None)
+
+
+def test_un_seul_treillis_par_fenetre_quel_que_soit_le_nombre_de_candidats():
+    proven = Candidate(WordSpan(VerseRef(55, 5), 1, 3), 0.9, quality=0.9, explained=5.0)
+    rival = Candidate(WordSpan(VerseRef(55, 6), 1, 3), 0.9, quality=0.9, explained=5.0)
+    model = _Model(recited((4, VerseRef(55, 5), 1, 3)))
+    verifier(model).verify(CLIP, [(window(4), [proven, rival])])
+    assert model.passages == [window(4)]
+
+
+def test_un_maillon_ne_deborde_pas_de_la_fenetre_ou_le_segmenteur_a_entendu_la_voix():
+    # le dernier mot de 55:2 est posé à cheval sur la fin de sa fenêtre (5,5 s)
+    said = [w for w in SAID_55 if w[1] != "القرآن"] + [(5.36, "القرآن")]
+    observations, _checks = verifier(_Model(sorted(said))).verify(CLIP, MUNO_55)
+    (time,) = observations[1][1][0].times
+    assert time.end_s <= window(1).end_s
