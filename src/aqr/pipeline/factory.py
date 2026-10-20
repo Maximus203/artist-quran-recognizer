@@ -2,7 +2,9 @@
 
 Aucun repli silencieux : le segmenteur de récitation est le défaut ; Silero n'est utilisé que sur
 demande explicite (`--segmenter silero`) ou avec `--allow-fallback-segmenter`, et son usage est
-toujours signalé dans `warnings` (limite mesurée : docs/evaluation/silero-fallback.md).
+toujours signalé dans `warnings` (limite mesurée : docs/evaluation/silero-fallback.md). De même, la
+vérification acoustique des suites (ADR-0008) est branchée dès que les poids du FastConformer sont
+là, quel que soit l'ASR ; son absence est signalée, jamais silencieuse.
 """
 
 from __future__ import annotations
@@ -11,18 +13,24 @@ import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from aqr.domain.models import VerseRef
-from aqr.domain.ports import QuranASR, SpeechSegmenter, Translation
+from aqr.domain.ports import CorpusRepository, QuranASR, SpeechSegmenter, Translation
 from aqr.models.lock import ModelsLock
+from aqr.models.registry import MODELS
 from aqr.pipeline.pipeline import PipelineConfig, RecognitionPipeline
 from aqr.pipeline.result import EngineInfo
 from aqr.rendering.home_renderer import HomeRenderer
+
+if TYPE_CHECKING:
+    from aqr.alignment.verification import AcousticVerifier
 
 SILERO_WARNING = (
     "segmenteur Silero VAD utilisé : non fiable par défaut sur la récitation à pauses longues "
     "(docs/evaluation/silero-fallback.md)"
 )
+ACOUSTIC_UNAVAILABLE = "vérification acoustique des suites indisponible (ADR-0008)"
 CONSTRAINED_UNAVAILABLE = (
     "--constrained indisponible : l'ASR choisi n'expose pas son treillis CTC (ADR-0005 : le "
     "branchement du FastConformer exige NeMo et un GPU et n'est pas validé)"
@@ -46,6 +54,8 @@ class RecognizeOptions:
     device: str = "auto"
     batch_size: int = 8
     constrained: bool = False
+    acoustic_check: bool = True
+    """Vérifier les suites sur le treillis du FastConformer et en prendre les temps au mot."""
 
 
 @dataclass(frozen=True)
@@ -109,6 +119,10 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
         constrained=False,
         corpus=f"tanzil.net hafs ({corpus.version})",
     )
+    config = PipelineConfig(batch_size=options.batch_size)
+    acoustic = (
+        _acoustic(options, lock, corpus, asr, config, warnings) if options.acoustic_check else None
+    )
     pipeline = RecognitionPipeline(
         FfmpegAudioExtractor(),
         segmenter,
@@ -116,7 +130,8 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
         matcher,
         corpus,
         engine,
-        config=PipelineConfig(batch_size=options.batch_size),
+        config=config,
+        acoustic=acoustic,
         warnings=tuple(warnings),
     )
     translations = (
@@ -184,6 +199,57 @@ def _asr(options: RecognizeOptions, lock: ModelsLock) -> tuple[QuranASR, str]:
             lock_path=options.lock_path,
             device=options.device,
             batch_size=options.batch_size,
-        )
+        ),
+        revision=lock.models[key].revision,
     )
     return fastconformer, f"{key}@{lock.models[key].revision[:12]}"
+
+
+def _acoustic(
+    options: RecognizeOptions,
+    lock: ModelsLock,
+    corpus: CorpusRepository,
+    asr: QuranASR,
+    config: PipelineConfig,
+    warnings: list[str],
+) -> AcousticVerifier | None:
+    """Vérificateur des suites sur le treillis CTC du FastConformer (ADR-0008) : l'ASR lui-même
+    s'il est le FastConformer, sinon une instance dédiée (chargée au premier treillis)."""
+    from aqr.adapters.fastconformer import FastConformerConfig, FastConformerQuranASR
+    from aqr.alignment.forced import AlignmentConfig
+    from aqr.alignment.service import DEFAULT_ENERGY_RATIO
+    from aqr.alignment.verification import AcousticCheckConfig, AcousticVerifier
+    from aqr.corpus.alignment_text import AlignmentTexts
+
+    key = "fastconformer-quran"
+    assert options.models_dir is not None  # vérifié par build_recognizer
+    fallback = "preuve textuelle seule (ADR-0007), temps = bords des fenêtres"
+    if not (options.models_dir / key / MODELS[key].files[0]).exists():
+        warnings.append(
+            f"{ACOUSTIC_UNAVAILABLE} : poids du FastConformer absents de {options.models_dir} "
+            f"(`python scripts/fetch_models.py`) ; {fallback}"
+        )
+        return None
+    try:
+        texts = AlignmentTexts.from_corpus_dir(options.corpus_dir, corpus)
+    except (KeyError, FileNotFoundError) as exc:
+        warnings.append(f"{ACOUSTIC_UNAVAILABLE} : {exc} ; {fallback}")
+        return None
+    fc_config = FastConformerConfig(
+        models_dir=options.models_dir, lock_path=options.lock_path, device=options.device
+    )
+    model = (
+        asr
+        if isinstance(asr, FastConformerQuranASR)
+        else FastConformerQuranASR(fc_config, revision=lock.models[key].revision)
+    )
+    return AcousticVerifier(
+        model=model,
+        texts=texts,
+        corpus=corpus,
+        chain=config.chain,
+        config=AcousticCheckConfig(),
+        alignment=AlignmentConfig(energy_ratio=DEFAULT_ENERGY_RATIO),
+        max_passage_s=fc_config.lattice_max_s,
+        floor=config.decoder.min_recognized_score,
+    )
