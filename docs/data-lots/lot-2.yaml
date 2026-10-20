@@ -47,7 +47,7 @@ fichiers:
     duree_s: 585.9
     categorie: [C01]
     recitant: orateur_C
-    riwaya: inconnu
+    riwaya: hafs   # annoncée en arabe au début de l'enregistrement (entendue par l'ASR)
     langues: [ar]
     source: "https://www.youtube.com/watch?v=EWFX_0o3qmQ"
   # recitant_L — récitant sénégalais, style d'Al-Husary (récitations en public)
@@ -55,9 +55,9 @@ fichiers:
     sha256: 56929d6fc79a50df3cc8c35453fdc0440ac4d3b61d0a66c739d89ef8afdfacb2
     octets: 11148164
     duree_s: 1107.2
-    categorie: [C01]
+    categorie: [C01, C15]
     recitant: recitant_L
-    riwaya: inconnu
+    riwaya: warsh  # concours : le présentateur annonce une lecture « selon Warsh » (entendue par l'ASR)
     langues: [ar]
     source: "https://www.youtube.com/watch?v=2J2n8A4Hz0c"
   - id: lot2-06

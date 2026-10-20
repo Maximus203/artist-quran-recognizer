@@ -313,7 +313,7 @@ cases:
   categorie:
   - C01
   recitant: orateur_c
-  riwaya: inconnu
+  riwaya: hafs
   langues:
   - ar
   license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
@@ -331,8 +331,9 @@ cases:
   sha256: 56929d6fc79a50df3cc8c35453fdc0440ac4d3b61d0a66c739d89ef8afdfacb2
   categorie:
   - C01
+  - C15
   recitant: recitant_l
-  riwaya: inconnu
+  riwaya: warsh
   langues:
   - ar
   license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
