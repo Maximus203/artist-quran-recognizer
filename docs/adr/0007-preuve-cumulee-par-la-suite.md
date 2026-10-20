@@ -35,7 +35,7 @@ Micro (voix de Cherif, 55:1-4) reconnu avec FastConformer et Whisper ; EveryAyah
 0 faux verset ; sur les assises dev, les nouveaux versets sont des citations réelles (transcriptions relues).
 
 ## Ce qui n'est PAS fait (étape B, suite)
-- Vérification **acoustique** de la suite (alignement forcé CTC de la suite déclarée par le matcher,
+- *(fait le 2026-10-20 : ADR-0008)* Vérification **acoustique** de la suite (alignement forcé CTC de la suite déclarée par le matcher,
   ADR-0006) : elle rattraperait un maillon mal transcrit (Muno ampute « عَلَّمَ » en « لَّمَ » au début
   d'une fenêtre, la suite se coupe) et renforcerait le rejet du non-Coran.
 - Seuils non calibrés sur une vérité humaine (étape A en cours).

@@ -175,10 +175,22 @@ class ViterbiSequenceDecoder:
         status: Status,
         candidates: tuple[VerseRef, ...],
     ) -> list[Detection]:
-        """Une détection par verset touché. Le temps du segment est réparti au prorata
-        des mots expliqués dans chaque verset ; la coupure interne est estimée
-        (`time_interpolated`), le segment lui-même est mesuré."""
+        """Une détection par verset touché. Temps mesurés par alignement forcé s'il y en a
+        (ADR-0008) ; sinon le temps du segment est réparti au prorata des mots expliqués dans
+        chaque verset : la coupure interne est estimée (`time_interpolated`), le segment lui-même
+        est mesuré."""
         spans = candidate.spans
+        if len(candidate.times) == len(spans):
+            return [
+                Detection(
+                    span=span,
+                    time=measured,
+                    status=status,
+                    confidence=candidate.score,
+                    candidates=candidates,
+                )
+                for span, measured in zip(spans, candidate.times, strict=True)
+            ]
         if len(spans) == 1:
             return [
                 Detection(

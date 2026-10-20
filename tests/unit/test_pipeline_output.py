@@ -156,3 +156,34 @@ def test_expurge_retire_texte_et_traduction_mais_garde_refs_temps_et_statuts(cor
         assert {k: v for k, v in original.items() if k not in ("text", "translation")} == light
     assert redacted["source"] == doc["source"] and redacted["timing"] == doc["timing"]
     assert "text" in doc["intervals"][1]  # l'original n'est pas modifié
+
+
+def test_les_suites_verifiees_sur_l_audio_sont_tracees(corpus, renderer):  # ADR-0008
+    from dataclasses import replace
+
+    from aqr.alignment.verification import ChainCheck
+    from aqr.domain.models import WordSpan
+
+    checks = (
+        ChainCheck(
+            TimeSpan(4.7, 15.5),
+            (WordSpan(VerseRef(55, 1), 5, 5), WordSpan(VerseRef(55, 2), 1, 2)),
+            -0.4361,
+            True,
+        ),
+        ChainCheck(TimeSpan(20.0, 21.0), (WordSpan(VerseRef(2, 1), 1, 1),), None, False),
+    )
+    base = _result(corpus)
+    result = replace(base, engine=replace(base.engine, acoustic="ctc@rev"), acoustic_checks=checks)
+    doc = build_json(result, renderer, None, source_sha256="00")
+    assert doc["engine"]["acoustic"] == "ctc@rev"
+    assert doc["acoustic_checks"] == [
+        {
+            "t": [4.7, 15.5],
+            "verses": "55:1[5-5],55:2[1-2]",
+            "llr_per_frame": -0.4361,
+            "accepted": True,
+        },
+        {"t": [20.0, 21.0], "verses": "2:1[1-1]", "llr_per_frame": None, "accepted": False},
+    ]
+    assert build_json(base, renderer, None, source_sha256="00")["acoustic_checks"] == []

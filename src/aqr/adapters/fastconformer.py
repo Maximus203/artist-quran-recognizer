@@ -224,6 +224,10 @@ class FastConformerQuranASR:
         import torch
 
         model = self._ensure_model()
+        # NeMo laisse l'encodeur en mode entraînement à la fin de `transcribe()`
+        # (`encoder.unfreeze()`) : sans ceci, le treillis tournerait avec dropout et mettrait à jour
+        # la BatchNorm, ruinant les transcriptions suivantes (contrat, ADR-0008).
+        model.eval()
         device = next(model.parameters()).device
         signal = torch.as_tensor(segment, dtype=torch.float32, device=device)[None]
         length = torch.tensor([signal.shape[1]], device=device)

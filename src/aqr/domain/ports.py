@@ -55,6 +55,9 @@ class Candidate:
     min(1, mots expliqués / evidence_words)). None = inconnue : jamais promue par la suite."""
     explained: float = 0.0
     """Mots de la requête expliqués (similarités cumulées) : la preuve qu'apporte ce candidat."""
+    times: tuple[TimeSpan, ...] = ()
+    """Temps MESURÉS de chaque span (même ordre que `spans`) par alignement forcé du texte du
+    corpus (ADR-0008) ; vide = inconnus, le décodeur prend les bords de la fenêtre."""
 
     @property
     def spans(self) -> tuple[WordSpan, ...]:
