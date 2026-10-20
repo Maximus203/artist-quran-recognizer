@@ -249,3 +249,242 @@ cases:
   tolerance_ms: 300
   expected: []
   non_quran: []
+- id: lot2-01
+  file: C01/lot2-01.mp3
+  sha256: 44aa475137d967360b9e25a57805dfbc148ab78ffd99b53f1b2d611b58770fc6
+  categorie:
+  - C01
+  - C12
+  recitant: orateur_c
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=cGlP-UQPD6w
+  duree_s: 1686.477
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-02
+  file: C01/lot2-02.mp3
+  sha256: d1b9f00fcddb46aeda52e2804098c21f6f9ae3713e075b3dc871d4f2ec47daf0
+  categorie:
+  - C01
+  recitant: orateur_c
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=Nwptvr63lRg
+  duree_s: 1600.235
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-03
+  file: C01/lot2-03.mp3
+  sha256: ee2e68416ab281a11a6b0c0713e0fa7145d46dc28860e17e1490955485d912ef
+  categorie:
+  - C01
+  recitant: orateur_c
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=zVCgDf255bU
+  duree_s: 817.006
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-04
+  file: C01/lot2-04.mp3
+  sha256: d8a982fac9f75f539f74a3faee42da509d614ea5f8f78bbb4d2134d4cce7c9e6
+  categorie:
+  - C01
+  recitant: orateur_c
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=EWFX_0o3qmQ
+  duree_s: 585.851
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-05
+  file: C01/lot2-05.mp3
+  sha256: 56929d6fc79a50df3cc8c35453fdc0440ac4d3b61d0a66c739d89ef8afdfacb2
+  categorie:
+  - C01
+  recitant: recitant_l
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=2J2n8A4Hz0c
+  duree_s: 1107.162
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-06
+  file: C01/lot2-06.mp3
+  sha256: d7735f1b02d98eafd4dd54edffd0f6d1a78353ae05d34b1b258d124b9458b292
+  categorie:
+  - C01
+  recitant: recitant_l
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=roOVn6fQpuk
+  duree_s: 638.955
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-07
+  file: C01/lot2-07.mp3
+  sha256: 45d551df6a270d0e72796671efe7b93c3a9e92e722d5445552756faa841e45f0
+  categorie:
+  - C01
+  recitant: recitant_l
+  riwaya: inconnu
+  langues:
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=wn52Srssjyk
+  duree_s: 373.075
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-08
+  file: C09/lot2-08.mp3
+  sha256: e00612d02a70972fa8d2726b5b9d877aba387fdadfb7aa045a54cb24d02ddcda
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_m
+  riwaya: inconnu
+  langues:
+  - wo
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=jg8YhIaBBrc
+  duree_s: 1460.941
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-09
+  file: C09/lot2-09.mp3
+  sha256: 8b5ef1d6ebebed9c9d55d2117ff629b540e1f6bcf7529c82a8a6188e9f50d7bf
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_m
+  riwaya: inconnu
+  langues:
+  - wo
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=v-VmMnnqNrE
+  duree_s: 2742.699
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-10
+  file: C09/lot2-10.mp3
+  sha256: bdffa09e23d307f146fc5127cd4b646da6ba3d1cd302e0b9ec6e29337e227046
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_m
+  riwaya: inconnu
+  langues:
+  - wo
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=3RmdapPMbk8
+  duree_s: 2626.247
+  statut: a_annoter
+  split: test
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-11
+  file: C09/lot2-11.mp3
+  sha256: 9c48fa263222ef52f891c4d69f3efd065f77abb401203cc3619773dc689b5871
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_n
+  riwaya: inconnu
+  langues:
+  - wo
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=7cw2jBrLNd0
+  duree_s: 914.75
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
+- id: lot2-12
+  file: C09/lot2-12.mp3
+  sha256: cbba6e9c827916976743170b76b0ac33a2051cd1227a9841cf2f67aaf6f33288
+  categorie:
+  - C09
+  - C11
+  recitant: orateur_n
+  riwaya: inconnu
+  langues:
+  - wo
+  - ar
+  license: 'droits non établis : usage interne d''évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)'
+  source: https://www.youtube.com/watch?v=AwAWKuXJXzc
+  duree_s: 3291.579
+  statut: a_annoter
+  split: dev
+  origine: reel
+  boundaries: exact
+  tolerance_ms: 300
+  expected: []
+  non_quran: []
