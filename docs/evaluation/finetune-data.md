@@ -118,6 +118,9 @@ Voix Tadabur exclues de l'entraînement **et** de la validation (`EXCLUDED_TADAB
   après `normalize_arabic`) ; un écart écarte la ligne (`texte_different_du_corpus`). Sur le shard
   réel : 1 ligne sur 450, une variante d'écriture (« يا ويلتا » pour « يَا وَيْلَتَىٰ », 5:31),
   écartée par prudence.
+- **Graphie du modèle** : l'alif suscrit et le tatweel sont retirés de toute cible (récitation et
+  non-Coran), car le tokenizer du modèle ne les connaît pas (`<unk>`) ; ce sont les deux seuls
+  caractères du corpus dans ce cas (`FinetuneConfig.target_drop_chars`, `finetune-label-qc.md`).
 - **Basmala** : Tanzil la colle au verset 1 des sourates (sauf 1 et 9) ; si la source ne l'annonce
   pas, elle est retirée du texte cible.
 - **Non coranique** : ponctuation et symboles remplacés par une espace ; une phrase qui garde un
@@ -209,6 +212,6 @@ des 1,6 Go en 2 min 25 s.
    ~1 400 h de récitation ; transcriptions non vocalisées.
 4. **Common Voice** vient d'un miroir non officiel (empreintes non recoupables avec Mozilla).
 5. **Lot 1** : correspondance des voix partielle (voir « Exclus »).
-6. **Cible avec `<unk>`** : l'alif suscrit et le tatweel de la graphie `simple` n'existent pas pour
-   le tokenizer du modèle (32 % des étiquettes du shard 384) ; à trancher avant d'entraîner
-   (`finetune-label-qc.md`, « Constat »).
+6. **Cible avec `<unk>`** : **corrigé** — l'alif suscrit et le tatweel (32 % des étiquettes du shard
+   384) sont retirés de la cible (`finetune-label-qc.md`, « Constat »). Reste : l'alignement et la
+   porte acoustique paient la même pénalité.

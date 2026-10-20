@@ -111,19 +111,23 @@ Les trois basmalas non annoncées ont un score **au-dessus** du seuil de −0,45
 elles passeraient. Marge 0,02 : sous le plus petit gain positif (0,076), loin des gains des
 étiquettes justes (≤ −0,94).
 
-## Constat : la cible d'entraînement contient des `<unk>`
+## Constat : la cible d'entraînement contenait des `<unk>` (corrigé le 2026-10-20)
 
-**140 étiquettes sur 433 (32 %, 0,63 h)** contiennent au moins un alif suscrit ou un tatweel, que le
+**140 étiquettes sur 433 (32 %, 0,63 h)** contenaient au moins un alif suscrit ou un tatweel, que le
 tokenizer du modèle code `<unk>`. La première passe, sans retrait, en écartait 42 au seuil de −0,6
-dont des étiquettes justes (3:94, 38:25, 70:18 : le modèle entend exactement le texte). Deux
-conséquences, **hors de cette brique** :
+dont des étiquettes justes (3:94, 38:25, 70:18 : le modèle entend exactement le texte).
 
-1. **Entraînement** : les manifestes de `build` (graphie `simple`) donneraient au modèle des cibles
-   avec `<unk>`. À trancher avant d'entraîner : retirer ces caractères de la cible (graphie que le
-   modèle écrit déjà : « ذَلِكَ », « فَهَدَى ») ou étendre le tokenizer.
-2. **Alignement (ADR-0006) et porte acoustique (ADR-0005)** : ils encodent le même texte et paient la
-   même pénalité sur ~ un verset sur deux ; les seuils calibrés ailleurs l'intègrent sans le savoir.
-   Non modifiés ici (comportement de l'alignement inchangé par consigne).
+1. **Entraînement — corrigé** : mesuré sur tout le corpus `simple` (78 248 mots), l'alif suscrit
+   (U+0670, 3 330 mots) et le tatweel (U+0640) sont les **deux seuls** caractères inconnus du
+   tokenizer ; sans eux, aucun mot ne donne `<unk>`. `build` écrit désormais toute cible (récitation
+   et non-Coran) dans la graphie du modèle (`model_graphie`, `FinetuneConfig.target_drop_chars`) :
+   « ذَلِكَ », « الرَّحْمَنُ », comme le modèle les écrit déjà. Échantillon reconstruit : 0 ligne avec
+   ces caractères dans les 6 manifestes ; `score` a renoté les 140 lignes changées (le texte entre
+   dans la clé de reprise), distribution inchangée, rapport `unknown_symbols` : 0 étiquette.
+   `filter` signale toute étiquette qui demanderait encore un `<unk>`.
+2. **Alignement (ADR-0006) et porte acoustique (ADR-0005)** : ils encodent le texte du corpus et
+   paient la même pénalité sur ~ un verset sur deux ; les seuils calibrés ailleurs l'intègrent sans
+   le savoir. Non modifiés ici (comportement de l'alignement inchangé par consigne).
 
 ## Limites
 
