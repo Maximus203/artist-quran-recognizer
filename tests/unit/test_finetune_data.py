@@ -242,6 +242,26 @@ def test_unite_non_coranique_ecarte_le_coran_et_garde_le_split_officiel(tmp_path
     assert part.report.rejected[Rejection.EMPTY].count == 1
 
 
+def test_cible_sans_caractere_inconnu_du_modele(tmp_path: Path) -> None:
+    # L'alif suscrit (U+0670) et le tatweel (U+0640) de la graphie Tanzil sont `<unk>` pour le
+    # tokenizer du modèle, qui ne les émet jamais : la cible prend la graphie qu'il écrit déjà
+    # (« الرَّحْمَنُ »), pour la récitation comme pour la parole non coranique.
+    ctx = context(tmp_path, TADABUR)
+    part = process_utterances(
+        [tadabur_utt(500, "rahman", VerseRef(55, 1), "الرحمن", "1.0")], ctx, FakeDecoder()
+    )
+    split = speaker_split(tadabur_speaker(500), CFG)
+    assert [e.text for e in part.entries[split]] == ["الرَّحْمَنُ"]
+
+    ctx = context(tmp_path, "common-voice-ar")
+    part = process_utterances([non_quran_utt("t", "الكتـاب لهٰم", "2.0")], ctx, FakeDecoder())
+    assert [e.text for e in part.entries["train"]] == ["الكتاب لهم"]
+
+
+def test_caracteres_retires_de_la_cible_configures() -> None:
+    assert CFG.target_drop_chars == ("ٰ", "ـ")
+
+
 @pytest.mark.parametrize(
     ("raw", "safe"),
     [

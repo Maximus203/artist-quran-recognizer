@@ -67,3 +67,29 @@ def test_le_verset_dit_est_aligne_dans_le_clip_et_prefere(model, texts):  # type
     assert [w.word for w in said.spans[0].words] == [5, 6, 7, 8]  # après la basmala de Tanzil
     assert 0.0 <= said.spans[0].time.start_s < said.spans[0].time.end_s <= duration
     assert other is None or other.evidence.llr_per_frame < said.evidence.llr_per_frame - 0.5
+
+
+def _max_gap(a, b) -> float:  # type: ignore[no-untyped-def]
+    assert a.frames == b.frames
+    return max(
+        abs(x - y)
+        for ra, rb in zip(a.log_probs, b.log_probs, strict=True)
+        for x, y in zip(ra, rb, strict=True)
+    )
+
+
+def test_le_treillis_ne_depend_pas_d_une_transcription_et_ne_la_modifie_pas(model):  # type: ignore[no-untyped-def]
+    """Le même FastConformer sert d'ASR et de modèle acoustique (ADR-0008). NeMo laisse l'encodeur
+    en mode entraînement après `transcribe()` (`encoder.unfreeze()`) : un treillis calculé ensuite
+    tournait avec dropout et mettait à jour la BatchNorm, ce qui ruinait les transcriptions
+    suivantes (mesuré le 2026-10-20 : lot1-01, 68 versets reconnus -> 5)."""
+    clip = everyayah_clip("Alafasy_128kbps", "112001.mp3")
+    duration = len(clip.samples) / clip.sample_rate
+    span = TimeSpan(0.0, duration)
+    before = model.lattice(clip, span)
+    heard = model.transcribe(clip, span)
+    after = model.lattice(clip, span)
+    again = model.lattice(clip, span)
+    assert _max_gap(after, before) < 1e-3
+    assert _max_gap(again, after) < 1e-3
+    assert [w.text for w in model.transcribe(clip, span).words] == [w.text for w in heard.words]

@@ -776,6 +776,42 @@
 - **Reste** : Muno ampute le début des fenêtres (« لَّمَ » pour « عَلَّمَ ») et casse la suite : la
   vérification acoustique CTC de la suite (brique suivante) doit rattraper ce cas.
 
+## 2026-10-20 — Étape B, brique 2 : vérification acoustique des suites et temps au mot (ADR-0008)
+- **Déclencheur** : après ADR-0007, Muno ne reconnaît toujours pas 55:1-4 au micro sur 2 enregistrements
+  sur 3 (« لَّمَ » pour « عَلَّمَ », qualité 0,5, la suite se coupe) ; et une suite textuellement parfaite
+  était promue sans consulter l'audio (homonymes 23:52-53 / 21:92-93).
+- **Décision** : `find_chains` (meilleure suite par candidat, à un plancher de qualité) et `chain_spans`
+  (texte du corpus de la suite, mots perdus aux bords compris) ; `AcousticVerifier` aligne ce texte sur le
+  treillis du FastConformer : acceptée (llr ≥ −1,0) -> maillons promus avec mots et temps de l'alignement ;
+  refusée -> aucun maillon promu. Suites candidates au plancher 0,5 (sauvetage) ET au plancher du texte
+  (une suite longue refusée ne condamne pas la suite courte). Le maillon sauvé reçoit le seuil du décodeur,
+  pas plus. `Candidate.times` porte les temps mesurés, le décodeur les prend ; temps d'un maillon bornés à
+  sa fenêtre. FastConformer comme modèle acoustique quel que soit l'ASR ; absent -> avertissement et
+  ADR-0007 seul ; `--no-acoustic-check`. Trace dans la sortie : `engine.acoustic`, `acoustic_checks`.
+- **Bug trouvé en mesurant** : NeMo laisse l'encodeur en mode entraînement après `transcribe()`
+  (`encoder.unfreeze()`) ; un treillis calculé ensuite sur le même modèle tournait avec dropout et mettait à
+  jour la BatchNorm (lot1-01 : 68 reconnus -> 5 après 30 treillis). `model.eval()` avant chaque treillis,
+  contrat sur le vrai modèle. Les premières mesures (avant correctif) sont jetées.
+- **Mesures** (`docs/evaluation/acoustic-check-2026-10-20.md`) : micro Muno 1/3 -> 3/3 ; EveryAyah 91,2 % ->
+  96,8 %, 0 faux ; débuts 63 -> 21 ms (médiane), fins 64 ms en avance en moyenne ; lot1-01 68 -> 82,
+  lot1-06 272 -> 276, ajouts relus cohérents ; 7 suites homonymes refusées sur l'audio réel.
+- **Limite assumée** : un seuil absolu ne sépare pas les quasi-homonymes (23:78-79 sur 67:23-24 accepté à
+  −0,15/−0,85, une vraie prière réverbérée à −1,003) ; le décodeur tranche par le contexte. Prochaine
+  brique : preuve relative entre suites concurrentes sur les mêmes fenêtres.
+
+## 2026-10-20 — Suite d'un verset commencé, prédite puis vérifiée (ADR-0008 § 6-8)
+- **Demande de Cherif** (transmise par la session d'audit) : un verset commencé est toujours récité jusqu'au
+  bout (pause pour respirer, reprise possible) ; 81 cas dev où le début est reconnu et la suite abstenue.
+- **Décision** : après un candidat retenu qui s'arrête avant la fin de son verset, le reste du verset (départ
+  jusqu'à 3 mots plus tôt, puis le verset suivant) est aligné à fin libre sur la fenêtre suivante, si rien n'y
+  est retenu et si ce n'est pas une formule. Nommé seulement avec **deux témoins** : preuve acoustique ≥ −1,0
+  ET similarité de Dice ≥ 0,6 avec la transcription de la fenêtre.
+- **Pourquoi deux témoins** : mesuré sur lot1-04/01, l'audio seul acceptait un mot de fin de verset sur de la
+  parole non coranique (rendue surtout en blancs par le modèle) ; normaliser par les trames de parole ne
+  séparait pas vrai et faux ; le texte de l'ASR, si.
+- **Mesure** : cas résolus 34 → 47 (suites) → 57 / 81 ; 25 suites acceptées, toutes conformes ; EveryAyah
+  96,8 %, 0 faux, inchangé.
+
 ## 2026-10-19 — Jeu de fine-tuning de l'ASR (étape C) : sources, exclusions, manifestes
 - **Périmètre** : préparation des données seulement (`scripts/build_finetune_manifest.py`,
   `src/aqr/data/finetune*.py`, `data/finetune/LOCK.json`) ; aucun entraînement. Détail, volumes et
@@ -831,6 +867,34 @@
   écartés pour la validation à l'oreille.
 - Témoin positif de la basmala construit avec EveryAyah **en mesure seule** (scratch, hors dépôt et
   hors manifeste) : n'enfreint pas l'interdiction d'entraîner sur EveryAyah.
+
+## 2026-10-20 — Étape C : cible d'entraînement dans la graphie du modèle (sans `<unk>`)
+- **Mesure** : sur les 78 248 mots du corpus `simple`, l'alif suscrit (U+0670) et le tatweel (U+0640)
+  sont les deux seuls caractères que le tokenizer du FastConformer code `<unk>` ; sans eux, aucun mot.
+- **Décision** : les retirer de toute cible (`FinetuneConfig.target_drop_chars`, `model_graphie`),
+  récitation et non-Coran, plutôt qu'étendre le tokenizer : le modèle écrit déjà cette graphie
+  (« ذَلِكَ », « فَهَدَى »), et changer son vocabulaire réinitialiserait sa tête CTC. Le texte
+  rendu, lui, vient toujours du corpus Uthmani (I1) : la cible d'entraînement n'est jamais affichée.
+- Le contrôle des étiquettes reconnaît une étiquette dans cette graphie (même règle des deux côtés),
+  compte les `<unk>` dans l'étiquette réelle, et renote une ligne dont le texte a changé (clé de
+  reprise = chemin audio + texte). Échantillon reconstruit et renoté : 0 `<unk>`, 399/433 gardés.
+
+## 2026-10-20 — Étape C : le contrôle des étiquettes compare ce que le modèle entend
+- **Déclencheur** : test sur la voix de Cherif au micro (55:3 juste écarté à −1,0) et sur le shard
+  384 (9 étiquettes justes écartées, 4:161 et 21:66 fausses gardées). Cause : la convention de
+  voyelles de Tanzil (soukoun d'un noun assimilé non écrit) coûte cher au score par trame sur un
+  verset court, et un mot de trop pèse peu sur un verset long.
+- **Décision** : le même treillis donne le chemin CTC libre ; comparé à l'étiquette sur les lettres
+  seules, il nomme le débordement, la répétition et la troncature (≥ 2 mots, `edge_words`, mesuré :
+  les étiquettes justes en ont au plus 1) quel que soit le score, et il sauve une étiquette sous le
+  seuil quand le modèle entend exactement ses lettres. Pas de second passage du modèle.
+- **Bords mesurés depuis leur côté** (la fin à rebours) : sur une prise micro, « الرحمن » répété dans
+  le passage créait une fausse troncature. Bords ignorés si moins de la moitié des mots de
+  l'étiquette est entendue (autre verset : seul le score décide).
+- **Résultat** : shard 384, 405 gardés, 28 écartés tous nommés ; voix au micro, 51/51 cas justes
+  (étiquette juste, mauvais verset, débordement, répétition, troncature, basmala dans les deux sens).
+- Adaptateur : `FastConformerQuranASR.symbols_text` (symboles → texte du tokenizer), ajout ; aligneur
+  et décodage inchangés.
 
 ## 2026-10-20 — Lot 2 (voix sénégalaises) : constitution et premiers essais
 - **Périmètre** : manifeste `docs/data-lots/lot-2.yaml` (12 fichiers YouTube, 4,96 h), ingestion et

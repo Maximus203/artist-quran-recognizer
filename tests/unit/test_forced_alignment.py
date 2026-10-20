@@ -217,3 +217,22 @@ def test_une_formule_declaree_coupe_le_verset_qui_l_aurait_absorbee():
     assert formula.span == Formula(NonQuranKind.AMIN)
     assert formula.words[0].ref is None
     assert formula.time.start_s == pytest.approx(10.0 + 4 * 0.08)
+
+
+def test_fin_libre_seul_le_debut_dit_du_texte_attendu_est_aligne():  # ADR-0008, suite d'un verset
+    lat = lattice([0, 1, 2, 0, 3, 0])  # « يا أيها الناس » puis rien
+    result = aligner().align(lat, [WordSpan(V1, 1, 2), WordSpan(V2, 1, 2)], free_end=True)
+    assert result is not None
+    assert [a.span for a in result.spans] == [WordSpan(V1, 1, 2)]
+    assert result.evidence.llr_per_frame == pytest.approx(0.0, abs=1e-6)
+
+
+def test_fin_libre_jamais_au_milieu_d_un_mot_uthmani():
+    # Le mot Uthmani 1 « يَـٰٓأَيُّهَا » = « يا أيها » (2 symboles) : l'audio ne dit que « يا », mais le
+    # texte ne peut s'arrêter qu'après « أيها » (fin du mot 1) ou « الناس » (fin du mot 2).
+    lat = lattice([0, 1, 0, 0])
+    result = aligner().align(lat, [WordSpan(V1, 1, 2)], free_end=True)
+    assert result is not None
+    assert result.spans[0].span == WordSpan(V1, 1, 1)
+    assert [w.word for w in result.spans[0].words] == [1]
+    assert result.evidence.llr_per_frame < -1.0  # « أيها » manque : la preuve le dit

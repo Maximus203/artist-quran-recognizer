@@ -5,8 +5,11 @@ Garde-fous (I3, I4, I5) :
   fenêtre est une **abstention** avec sa raison, jamais un verset par défaut ;
 - les formules de prière et la basmala (hors 1:1 suivi de 1:2) sont `NON_QURAN` ;
 - un verset manquant entre deux versets reconnus reste `INFERRED` (décodeur), jamais « reconnu » ;
-- chaque détection porte le temps de ses fenêtres (pas début/fin du fichier) ; les fenêtres sans
-  candidat viable font barrière à la fusion de deux moitiés de verset.
+- chaque détection porte le temps de ses fenêtres (pas début/fin du fichier), ou celui de
+  l'alignement forcé du texte du corpus quand le modèle CTC est là (ADR-0008) ; les fenêtres sans
+  candidat viable font barrière à la fusion de deux moitiés de verset ;
+- avec le modèle CTC, une suite de versets n'est nommée que si l'audio soutient le texte du corpus
+  de la suite (ADR-0008) ; sans lui, la preuve textuelle d'ADR-0007 décide seule.
 Le texte arabe et la traduction ne sont jamais produits ici : le rendu les lit dans les corpus.
 """
 
@@ -14,10 +17,11 @@ from __future__ import annotations
 
 import time as _time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Protocol
 
+from aqr.alignment.verification import AcousticVerifier, ChainCheck
 from aqr.corpus.normalize import normalize_arabic
 from aqr.decoding.chains import ChainConfig, promote_chains
 from aqr.decoding.viterbi_decoder import DecoderConfig, ViterbiSequenceDecoder
@@ -82,6 +86,7 @@ class RecognitionPipeline:
         engine: EngineInfo,
         config: PipelineConfig | None = None,
         verifier: CandidateVerifier | None = None,
+        acoustic: AcousticVerifier | None = None,
         warnings: tuple[str, ...] = (),
         clock: Callable[[], float] = _time.perf_counter,
     ) -> None:
@@ -90,6 +95,7 @@ class RecognitionPipeline:
         self._config = config or PipelineConfig()
         self._engine = engine
         self._verifier = verifier
+        self._acoustic = acoustic
         self._warnings = warnings
         self._clock = clock
         self._basmala = tuple(normalize_arabic(w) for w in corpus.words(VerseRef(1, 1))[:4])
@@ -122,31 +128,56 @@ class RecognitionPipeline:
             (window, self._classify(clip, window, transcript, side))
             for window, transcript in zip(windows, transcripts, strict=True)
         ]
-        observations = self._decide(promote_chains(matched, self._corpus, self._config.chain), side)
-        timeline = self._decoder.decode(observations)
+        checks: tuple[ChainCheck, ...] = ()
+        if self._acoustic is None:
+            proven = promote_chains(matched, self._corpus, self._config.chain)
+        else:
+            match_s, mark = self._clock() - mark, self._clock()
+            formulae = {s.time for s in side if isinstance(s, NonQuranSpan)}
+            blocked = {i for i, (window, _c) in enumerate(matched) if window in formulae}
+            heard = [" ".join(w.text for w in t.words) for t in transcripts]
+            proven, checks = self._acoustic.verify(clip, matched, blocked, heard)
+            timing["acoustic_s"] = self._clock() - mark
+            mark = self._clock() - match_s  # match_s exclut la vérification acoustique
+        timeline = self._decoder.decode(self._decide(proven, side))
         timing["match_s"] = self._clock() - mark
         timing["total_s"] = self._clock() - started
 
         intervals = self._assemble(timeline.detections(), side)
-        cfg = self._config.decoder
         return RecognitionResult(
             source_file=Path(path).name,
             duration_s=duration,
             intervals=tuple(intervals),
-            engine=self._engine,
+            engine=self._engine_info(),
             timing=timing,
-            decoder_config={
-                "min_recognized_score": cfg.min_recognized_score,
-                "uncertainty_ratio": cfg.uncertainty_ratio,
-                "merge_max_gap_s": cfg.merge_max_gap_s,
-                "infer_max_gap_s": cfg.infer_max_gap_s,
-                "chain_evidence_words": (
-                    self._config.chain.evidence_words if self._config.chain.enabled else 0.0
-                ),
-            },
+            decoder_config=self._decoder_config(),
             windows=len(windows),
             warnings=self._run_warnings(),
+            acoustic_checks=checks,
         )
+
+    def _engine_info(self) -> EngineInfo:
+        if self._acoustic is None:
+            return self._engine
+        return replace(self._engine, acoustic=self._acoustic.engine)
+
+    def _decoder_config(self) -> dict[str, float]:
+        cfg = self._config.decoder
+        out = {
+            "min_recognized_score": cfg.min_recognized_score,
+            "uncertainty_ratio": cfg.uncertainty_ratio,
+            "merge_max_gap_s": cfg.merge_max_gap_s,
+            "infer_max_gap_s": cfg.infer_max_gap_s,
+            "chain_evidence_words": (
+                self._config.chain.evidence_words if self._config.chain.enabled else 0.0
+            ),
+        }
+        if self._acoustic is not None:
+            check = self._acoustic.config
+            assert check.min_llr_per_frame is not None  # garanti par AcousticVerifier
+            out["acoustic_min_llr_per_frame"] = check.min_llr_per_frame
+            out["acoustic_rescue_min_quality"] = check.rescue_min_quality
+        return out
 
     def _run_warnings(self) -> tuple[str, ...]:
         extra: tuple[str, ...] = ()
