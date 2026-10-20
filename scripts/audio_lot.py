@@ -22,9 +22,19 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 
+LEGACY_RIGHTS = "usage interne d'évaluation uniquement, jamais redistribué"
+"""Libellé hérité du lot 1 (manifeste sans `licence`), voir ref-corpus-provenance.md."""
+
+
 def load_manifest(lot: int) -> list[dict]:
+    """Fichiers du lot ; la `licence` du lot (si déclarée) est recopiée dans chacun."""
     path = ROOT / "docs" / "data-lots" / f"lot-{lot}.yaml"
-    return yaml.safe_load(path.read_text(encoding="utf-8"))["fichiers"]
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    items: list[dict] = data["fichiers"]
+    if "licence" in data:
+        for item in items:
+            item.setdefault("licence", data["licence"])
+    return items
 
 
 def sha256_of(path: Path) -> str:
@@ -73,7 +83,7 @@ def _stage(item: dict, source: Path, inbox: Path) -> None:
     dest.write_bytes(source.read_bytes())
     sidecar = {k: item[k] for k in ("categorie", "recitant", "riwaya", "langues", "source")}
     sidecar["fichier"] = dest.name
-    sidecar["droits"] = "usage interne d'évaluation uniquement, jamais redistribué"
+    sidecar["droits"] = item.get("licence", LEGACY_RIGHTS)
     dest.with_suffix(".yaml").write_text(
         yaml.safe_dump(sidecar, allow_unicode=True, sort_keys=False), encoding="utf-8"
     )
