@@ -89,9 +89,11 @@ def build_json(
 
 
 def _check_json(check: ChainCheck) -> dict[str, object]:
-    """Une suite vérifiée sur l'audio (ADR-0008) : passage, texte du corpus déclaré (syntaxe de
-    `aqr align --verses`), preuve et décision."""
+    """Une vérification sur l'audio (ADR-0008) : suite de versets (`chain`) ou suite d'un verset
+    commencé (`continuation`) ; passage, texte du corpus aligné (syntaxe de `aqr align --verses`),
+    preuve et décision."""
     return {
+        "kind": check.kind,
         "t": _span(check.time),
         "verses": ",".join(f"{s.ref}[{s.first_word}-{s.last_word}]" for s in check.spans),
         "llr_per_frame": None if check.llr_per_frame is None else round(check.llr_per_frame, 4),

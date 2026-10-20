@@ -69,9 +69,15 @@ class PassageAligner:
         self._encode = encode
         self._config = config or AlignmentConfig()
 
-    def align(self, lattice: CtcLattice, spans: Sequence[Declared]) -> PassageAlignment | None:
+    def align(
+        self, lattice: CtcLattice, spans: Sequence[Declared], free_end: bool = False
+    ) -> PassageAlignment | None:
         """Aligne les plages, dans l'ordre, sur tout le treillis ; None si le texte n'y tient
-        pas."""
+        pas.
+
+        `free_end` : le passage peut ne contenir qu'un DÉBUT du texte (suite attendue d'un verset,
+        ADR-0008) ; l'alignement s'arrête à la fin d'un mot Uthmani, là où l'audio le soutient le
+        mieux, et ne rend que les plages (réduites) effectivement alignées."""
         if not spans:
             raise ValueError("aucune plage à aligner")
         best: tuple[float, AlignmentVariant, list[tuple[int, int]], list[tuple[int, int]]] | None
@@ -84,12 +90,16 @@ class PassageAligner:
                     for symbol in self._encode(word.text):
                         labels.append(symbol)
                         owners.append((index, word.word))
-            forced, frames = ctc_forced_align(lattice.log_probs, labels, lattice.blank)
+            ends = None
+            if free_end:  # après le dernier symbole de chaque mot Uthmani
+                ends = [n + 1 for n in range(len(owners)) if owners[n + 1 : n + 2] != [owners[n]]]
+            forced, frames = ctc_forced_align(lattice.log_probs, labels, lattice.blank, ends)
             if forced > -math.inf and (best is None or forced > best[0]):
-                best = (forced, variant, owners, frames)
+                best = (forced, variant, owners[: len(frames)], frames)
         if best is None:
             return None
         forced, variant, owners, frames = best
+        spans = _consumed(spans, owners)
         free = ctc_free_logprob(lattice.log_probs)
         evidence = CtcEvidence(
             forced_logprob=forced,
@@ -181,3 +191,18 @@ class PassageAligner:
         while first < latest_start and rms[first] < threshold:
             first += 1
         return first, end
+
+
+def _consumed(spans: Sequence[Declared], owners: Sequence[tuple[int, int]]) -> list[Declared]:
+    """Plages effectivement alignées (fin libre) : la dernière réduite à son dernier mot émis."""
+    last_word: dict[int, int] = {}
+    for index, word in owners:
+        last_word[index] = max(last_word.get(index, word), word)
+    out: list[Declared] = []
+    for index, span in enumerate(spans):
+        if index not in last_word:
+            break
+        if isinstance(span, WordSpan) and last_word[index] < span.last_word:
+            span = WordSpan(span.ref, span.first_word, last_word[index])
+        out.append(span)
+    return out
