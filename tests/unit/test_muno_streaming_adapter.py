@@ -39,3 +39,28 @@ def test_empty_ctc_output_stays_empty() -> None:
     from aqr.adapters.muno_streaming import words_from_tokens
 
     assert words_from_tokens([], _Tokenizer(), TimeSpan(0.0, 1.0), 0.08) == ()
+
+
+def test_a_short_last_chunk_is_padded_to_what_the_model_accepts() -> None:
+    """Le modèle ONNX refuse un morceau de moins de 10 trames mel (sous-échantillonnage x8 → 0
+    trame) : vu sur lot1-01, la cascade s'arrêtait net sur une fenêtre dont le dernier morceau
+    faisait quelques trames. Le dernier morceau est complété par des trames neutres."""
+    import numpy as np
+
+    from aqr.adapters.muno_streaming import CHUNK_MEL_FRAMES, MIN_CHUNK_MEL_FRAMES, mel_chunks
+
+    features = np.ones((80, CHUNK_MEL_FRAMES + 3), dtype=np.float32)
+    chunks = list(mel_chunks(features))
+
+    assert [c.shape for c in chunks] == [(1, 80, CHUNK_MEL_FRAMES), (1, 80, MIN_CHUNK_MEL_FRAMES)]
+    assert chunks[1][0, :, :3].tolist() == features[:, -3:].tolist()
+    assert not chunks[1][0, :, 3:].any()
+
+
+def test_full_chunks_are_left_untouched() -> None:
+    import numpy as np
+
+    from aqr.adapters.muno_streaming import CHUNK_MEL_FRAMES, mel_chunks
+
+    features = np.ones((80, 2 * CHUNK_MEL_FRAMES + 20), dtype=np.float32)
+    assert [c.shape[2] for c in mel_chunks(features)] == [CHUNK_MEL_FRAMES, CHUNK_MEL_FRAMES, 20]
