@@ -176,7 +176,10 @@ export default function Recorder({
     <div className={`recorder is-${phase}`}>
       <div className="recorder-heading">
         <span className="recorder-symbol" aria-hidden="true">
-          ●
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="icon">
+            <rect x="9" y="3" width="6" height="11" rx="3" />
+            <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7" />
+          </svg>
         </span>
         <div>
           <strong>Enregistrer une récitation</strong>
@@ -197,7 +200,8 @@ export default function Recorder({
           type="button"
           onClick={() => void begin()}
         >
-          Enregistrer une récitation
+          <span className="record-dot" aria-hidden="true" />
+          Démarrer l’enregistrement
         </button>
       )}
       {phase === "requesting" && (
@@ -210,7 +214,12 @@ export default function Recorder({
           <span className="recorder-live" role="status">
             Enregistrement en cours
           </span>
-          <button className="outline" type="button" onClick={stop}>
+          <button
+            className="outline recorder-stop"
+            type="button"
+            onClick={stop}
+          >
+            <span className="stop-square" aria-hidden="true" />
             Arrêter
           </button>
         </div>

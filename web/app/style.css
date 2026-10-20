@@ -107,9 +107,9 @@ a {
 }
 .intro {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 640px);
   gap: clamp(24px, 3vw, 50px);
-  padding: 55px 0 45px;
+  padding: 36px 0 32px;
   align-items: center;
 }
 .intro > * {
@@ -185,7 +185,7 @@ a {
   justify-content: space-between;
   gap: 8px;
   white-space: nowrap;
-  font-size: clamp(13px, 4vw, 16px);
+  font-size: 14px;
 }
 .upload-submit span {
   float: none;
@@ -253,6 +253,8 @@ a {
 }
 .recorder-start {
   width: 100%;
+  font-size: 14px;
+  white-space: nowrap;
 }
 .recorder-actions {
   justify-content: space-between;
@@ -369,7 +371,8 @@ a {
   border-radius: 14px;
   background: #12201f;
   min-height: 740px;
-  overflow: hidden;
+  /* clip et non hidden : laisse la liste des sessions rester visible (sticky). */
+  overflow: clip;
 }
 .library,
 .review {
@@ -378,6 +381,11 @@ a {
 }
 .library {
   border-right: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 .review {
   border-left: 1px solid var(--line);
@@ -460,14 +468,13 @@ a {
 .statusbar,
 .transport-row,
 .card-top,
-.badges,
-.ticks {
+.badges {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px 16px;
 }
 .statusbar {
+  flex-wrap: wrap;
   font-size: 11px;
   color: #8ea99b;
   margin-bottom: 18px;
@@ -516,7 +523,16 @@ a {
   letter-spacing: 0.2em;
   color: #a7c4ad;
 }
+.player-badge.pending {
+  border-color: #7d7454;
+  color: var(--gold);
+}
+.player-badge.fallback {
+  border-color: #81574e;
+  color: var(--red);
+}
 .player-badge {
+  cursor: help;
   border: 1px solid #63806e;
   border-radius: 20px;
   padding: 5px 9px;
@@ -646,7 +662,7 @@ a {
   margin-left: auto;
 }
 .wave {
-  height: 94px;
+  min-height: 124px;
   padding-top: 10px;
   margin-top: 15px;
   border-top: 1px solid #3f5c50;
@@ -829,6 +845,7 @@ a {
 .segments {
   margin-top: 25px;
 }
+.ruler-frame,
 .ruler {
   position: relative;
   background: #1b2c29;
@@ -836,26 +853,54 @@ a {
   border-radius: 8px;
   overflow: hidden;
 }
-.track-inner {
-  min-width: 100%;
+.ruler {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+}
+.track-names {
+  display: grid;
+  grid-template-rows: repeat(3, 37px);
+  padding: 5px 0 24px;
+  border-right: 1px solid #33473f;
+}
+.track-names span {
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  color: #a8b9aa;
+  font-size: 10px;
+}
+.lanes-scroll {
+  overflow-x: auto;
+  min-width: 0;
+}
+/* Tête de lecture, segments et graduations partagent ce seul repère (0 % = 0 s). */
+.lanes {
   position: relative;
-  padding: 5px 0;
+  min-width: 100%;
+  padding: 5px 0 0;
 }
 .track {
   position: relative;
   height: 37px;
   border-bottom: 1px solid #33473f;
-  margin-left: 70px;
 }
-.track:last-child {
-  border: 0;
+.lane-ticks {
+  position: relative;
+  height: 24px;
+  border-top: 1px solid #3f5c50;
 }
-.track-name {
+.lane-ticks span {
   position: absolute;
-  left: -68px;
-  top: 11px;
-  color: #a8b9aa;
+  top: 0;
+  padding: 5px 0 0 4px;
+  border-left: 1px solid #4f6a5f;
+  height: 10px;
   font-size: 10px;
+  line-height: 1;
+  color: #a0b1a8;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .track-item {
   position: absolute;
@@ -864,7 +909,8 @@ a {
   border: 0;
   border-radius: 3px;
   background: #83a88f;
-  min-width: 3px;
+  min-width: 2px;
+  padding: 0;
   overflow: hidden;
 }
 .track-item.inferred {
@@ -894,11 +940,6 @@ a {
   background: #f7e7a8;
   z-index: 3;
   pointer-events: none;
-}
-.ticks {
-  font-size: 10px;
-  color: #a0b1a8;
-  margin-top: 6px;
 }
 .segment {
   display: flex;
@@ -1254,4 +1295,142 @@ footer {
 }
 .aligned-verses .formula button {
   color: var(--gold);
+}
+
+/* Import : deux sources côte à côte, panneau compact */
+.upload-sources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+.upload-sources .recorder {
+  margin-top: 0;
+  align-content: start;
+}
+.upload-file {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.upload-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.upload-title .icon {
+  color: var(--mint);
+}
+.upload input[type="file"] {
+  font-size: 11px;
+  padding: 7px;
+}
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.recorder-symbol {
+  display: inline-flex;
+}
+.recorder-start,
+.recorder-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.record-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e5604f;
+  box-shadow: 0 0 0 3px #e5604f33;
+}
+.stop-square {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: currentColor;
+}
+/* Session ouverte : l'import se replie en une ligne */
+.new-trial {
+  margin: 14px 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #142423;
+}
+.new-trial summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mint);
+  list-style: none;
+}
+.new-trial summary::-webkit-details-marker {
+  display: none;
+}
+.new-trial summary small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.new-trial[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+.new-trial .upload {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  max-width: 900px;
+}
+/* Segments posés sur la forme d'onde (DOM fantôme de wavesurfer : ::part) */
+.wave ::part(region) {
+  border-left: 1px solid #ffffff2e;
+}
+.wave ::part(region-content) {
+  font-size: 10px;
+  color: #eaf3e2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.play-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.play-segment .play-icon {
+  transform: scale(0.7);
+}
+@media (max-width: 700px) {
+  .upload-sources {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .library {
+    position: static;
+    max-height: 260px;
+  }
 }
