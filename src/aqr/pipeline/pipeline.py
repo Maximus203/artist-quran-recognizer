@@ -135,7 +135,8 @@ class RecognitionPipeline:
             match_s, mark = self._clock() - mark, self._clock()
             formulae = {s.time for s in side if isinstance(s, NonQuranSpan)}
             blocked = {i for i, (window, _c) in enumerate(matched) if window in formulae}
-            proven, checks = self._acoustic.verify(clip, matched, blocked)
+            heard = [" ".join(w.text for w in t.words) for t in transcripts]
+            proven, checks = self._acoustic.verify(clip, matched, blocked, heard)
             timing["acoustic_s"] = self._clock() - mark
             mark = self._clock() - match_s  # match_s exclut la vérification acoustique
         timeline = self._decoder.decode(self._decide(proven, side))

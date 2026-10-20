@@ -436,7 +436,9 @@ def test_une_suite_que_le_texte_prouve_mais_que_l_audio_ne_soutient_pas_n_est_pa
 # --- Suite d'un verset commencé (cas réel lot1-06 : 21:56 [1-8], puis 100-105 s en abstention) ---
 def test_la_suite_d_un_verset_commence_est_reconnue_sur_l_audio(corpus, matcher, alignment_texts):
     words = corpus.words(VerseRef(21, 56))
-    texts = [_verse(corpus, 21, 56, 1, 8), "بلا كلام"]
+    # l'ASR a perdu le début de la fenêtre (mots 9-10) : trois mots ne nomment pas la suite seuls
+    # (score 0,6) et la suite textuelle ne se raccroche pas au mot 8 (ADR-0007)
+    texts = [_verse(corpus, 21, 56, 1, 8), _verse(corpus, 21, 56, 11, 13)]
     heard = _heard(alignment_texts, (1.0, "21:56[1-8]"), (10.4, f"21:56[9-{len(words)}]"))
     acoustic = _acoustic(corpus, alignment_texts, heard)
     result = _pipeline(corpus, matcher, texts, [(0.5, 9.9), (10.1, 14.9)], acoustic=acoustic)

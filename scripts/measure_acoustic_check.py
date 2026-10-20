@@ -3,7 +3,9 @@
 
 Chaque fichier passe une fois par le segmenteur et l'ASR (mis en cache), puis deux décisions :
 - `texte` : preuve par la suite sur le texte seul (ADR-0007), temps = bords des fenêtres ;
-- `audio` : suites vérifiées sur le treillis du FastConformer, temps de l'alignement (ADR-0008).
+- `suites` : suites vérifiées sur le treillis du FastConformer, temps de l'alignement (ADR-0008),
+  sans prédire la suite d'un verset commencé ;
+- `audio` : tout ADR-0008, suite d'un verset commencé comprise.
 
 Corpus mesurés :
 - `--everyayah DIR` : sourates reconstituées (clips EveryAyah mis bout à bout) ; versets attendus
@@ -12,6 +14,8 @@ Corpus mesurés :
   suites vraies / fausses (calibrage du seuil) ;
 - `--micro SESSION...` : enregistrements micro (dossiers de session de l'atelier), passés par
   chaque ASR de `--asrs` ; versets attendus `--micro-expected` ;
+- `--cases JSON` (avec `--lot`) : cas « verset commencé, puis abstention » (fichier, verset,
+  temps de l'abstention) ; résolu si ce verset ou le suivant, reconnu, couvre l'abstention ;
 - `--lot FICHIER...` : audio réel sans vérité terrain ; versets nouveaux et perdus, avec la
   transcription des fenêtres derrière chacun (à relire : ni juste ni faux par principe).
 
@@ -23,6 +27,7 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import statistics
 import sys
@@ -42,7 +47,7 @@ from aqr.pipeline.result import RecognitionResult
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from measure_alignment import passages, summary
 
-MODES = ("texte", "audio")
+MODES = ("texte", "suites", "audio")
 
 
 @dataclass
@@ -122,8 +127,11 @@ class Bench:
             real._engine,
         )
         self.corpus = real._corpus
+        chains_only = copy.copy(real._acoustic)
+        chains_only._config = replace(real._acoustic.config, continuation=False)
         self.pipelines = {
             "texte": RecognitionPipeline(*parts, config=real._config),
+            "suites": RecognitionPipeline(*parts, config=real._config, acoustic=chains_only),
             "audio": RecognitionPipeline(*parts, config=real._config, acoustic=real._acoustic),
         }
 
@@ -163,6 +171,8 @@ def checks(result: RecognitionResult) -> list[dict[str, Any]]:
             "refs": sorted({str(s.ref) for s in c.spans}),
             "llr_per_frame": None if c.llr_per_frame is None else round(c.llr_per_frame, 3),
             "accepted": c.accepted,
+            "kind": c.kind,
+            "text_similarity": c.text_similarity,
         }
         for c in result.acoustic_checks
     ]
@@ -207,7 +217,7 @@ def everyayah(bench: Bench, root: Path) -> dict[str, Any]:
             # Limites : versets reconnus ENTIERS (une détection, toute la plage récitée) dans les
             # deux modes, comparés sur le même ensemble (une détection partielle mesure la
             # reconnaissance, pas la limite).
-            for ref in sorted(set(timed["texte"]) & set(timed["audio"])):
+            for ref in sorted(set.intersection(*(set(timed[m]) for m in MODES))):
                 for mode in MODES:
                     time, truth_time = timed[mode][ref].time, expected[ref]
                     assert time is not None
@@ -276,15 +286,49 @@ def micro(bench: Bench, sessions: list[Path], expected: set[VerseRef]) -> list[d
     return out
 
 
-def lot(bench: Bench, files: list[Path]) -> list[dict[str, Any]]:
+def resolved(result: RecognitionResult, case: dict[str, Any]) -> bool:
+    ref = VerseRef.parse(case["verset"])
+    after = {ref, ref.next()}
+    gap = TimeSpan(*case["t_abstention"])
+    return any(
+        d.span.ref in after and d.time and d.time.start_s < gap.end_s and gap.start_s < d.time.end_s
+        for d in recognized(result)
+    )
+
+
+def lot(bench: Bench, files: list[Path], cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
     out = []
     for path in files:
         results = bench.run(path)
+        mine = [c for c in cases if c["fichier"] == path.stem]
+        solved = {m: [c for c in mine if resolved(r, c)] for m, r in results.items()}
+        if mine:
+            counts = " · ".join(f"{m} {len(v)}" for m, v in solved.items())
+            print(
+                f"{path.name} : cas « verset commencé puis abstention » résolus"
+                f" / {len(mine)} : {counts}"
+            )
+            for case in solved["audio"]:
+                gap = TimeSpan(*case["t_abstention"])
+                print(
+                    f"   résolu {case['verset']} {case['mots']} {gap.start_s:.1f}-{gap.end_s:.1f}"
+                    f" « {bench.heard(str(path), gap)} »"
+                )
+            for case in mine:
+                if case not in solved["audio"]:
+                    gap = TimeSpan(*case["t_abstention"])
+                    print(
+                        f"   non résolu {case['verset']} {case['mots']}"
+                        f" {gap.start_s:.1f}-{gap.end_s:.1f}"
+                        f" « {bench.heard(str(path), gap)} »"
+                    )
         keys = {m: [d.span.ref for d in recognized(r)] for m, r in results.items()}
         source = str(path)
         new = [d for d in recognized(results["audio"]) if d.span.ref not in keys["texte"]]
         lost = [d for d in recognized(results["texte"]) if d.span.ref not in keys["audio"]]
-        refused = [c for c in checks(results["audio"]) if not c["accepted"]]
+        refused = [
+            c for c in checks(results["audio"]) if not c["accepted"] and c["kind"] == "chain"
+        ]
         for check in refused:
             span = TimeSpan(*check["t"])
             for mode in MODES:
@@ -301,6 +345,9 @@ def lot(bench: Bench, files: list[Path]) -> list[dict[str, Any]]:
             "lost": [{"verse": label(d), "heard": bench.heard(source, d.time)} for d in lost],
             "checks": len(results["audio"].acoustic_checks),
             "refused": refused,
+            "cases": {m: len(v) for m, v in solved.items()},
+            "cases_total": len(mine),
+            "continuations": [c for c in checks(results["audio"]) if c["kind"] == "continuation"],
             "acoustic_s": round(results["audio"].timing.get("acoustic_s", 0.0), 1),
             "duration_s": round(results["audio"].duration_s, 1),
         }
@@ -332,6 +379,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--micro", type=Path, nargs="*", default=[])
     parser.add_argument("--micro-expected", default="55:1,55:2,55:3,55:4")
     parser.add_argument("--lot", type=Path, nargs="*", default=[])
+    parser.add_argument("--cases", type=Path)
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
@@ -353,7 +401,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"== micro, {asr}")
             report["micro"][asr] = micro(bench(asr), args.micro, expected)
     if args.lot:
-        report["lot"] = lot(bench("fastconformer"), args.lot)
+        cases = json.loads(args.cases.read_text(encoding="utf-8")) if args.cases else []
+        report["lot"] = lot(bench("fastconformer"), args.lot, cases)
     if args.out:
         args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return 0

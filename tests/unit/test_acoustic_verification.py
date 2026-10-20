@@ -262,8 +262,16 @@ def weak(ref: str = "2:185") -> Candidate:
 BEGUN = [(window(4), [proven("55:5", 1, 2)]), (window(5), [weak()])]
 
 
-def continuation(observations, said, **config):
-    out, checks = verifier(_Model(said), **config).verify(CLIP, observations)
+def heard_of(observations, said) -> list[str]:
+    """Ce que l'ASR aurait transcrit : les mots dits dans chaque fenêtre."""
+    return [
+        " ".join(w for t, w in said if time.start_s <= t < time.end_s) for time, _c in observations
+    ]
+
+
+def continuation(observations, said, heard=None, **config):
+    heard = heard_of(observations, said) if heard is None else heard
+    out, checks = verifier(_Model(said), **config).verify(CLIP, observations, heard=heard)
     return out, [c for c in checks if c.kind == "continuation"]
 
 
@@ -312,7 +320,8 @@ def test_une_suite_en_deux_souffles_se_poursuit_de_fenetre_en_fenetre():
 
 def test_une_formule_apres_le_verset_n_est_jamais_prise_pour_sa_suite():
     said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
-    out, checks = verifier(_Model(said)).verify(CLIP, BEGUN, blocked={1})
+    heard = heard_of(BEGUN, said)
+    out, checks = verifier(_Model(said)).verify(CLIP, BEGUN, blocked={1}, heard=heard)
     assert [c for c in checks if c.kind == "continuation"] == []
     assert [c.span.ref for c in out[1][1]] == [VerseRef(2, 185)]
 
@@ -328,3 +337,20 @@ def test_suite_desactivable():
     said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
     out, checks = continuation(BEGUN, said, continuation=False)
     assert checks == [] and [c.span.ref for c in out[1][1]] == [VerseRef(2, 185)]
+
+
+def test_l_audio_seul_ne_suffit_pas_la_transcription_doit_temoigner():
+    # Mesuré (lot1-04) : un mot de fin de verset s'aligne à bon compte sur de la parole non
+    # coranique, rendue surtout en blancs (9:24 [22] sur « ليه يال لك هنا انتم », −0,55 par trame).
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    heard = ["الشمس والقمر", "كتاب بيت رجل ماء"]
+    out, (check,) = continuation(BEGUN, said, heard=heard)
+    assert not check.accepted and check.llr_per_frame == pytest.approx(0.0, abs=1e-6)
+    assert check.text_similarity is not None and check.text_similarity < 0.6
+    assert [c.span.ref for c in out[1][1]] == [VerseRef(2, 185)]
+
+
+def test_sans_transcription_aucune_suite_n_est_tentee():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    _out, checks = verifier(_Model(said)).verify(CLIP, BEGUN)
+    assert [c for c in checks if c.kind == "continuation"] == []

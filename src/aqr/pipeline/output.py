@@ -98,6 +98,7 @@ def _check_json(check: ChainCheck) -> dict[str, object]:
         "verses": ",".join(f"{s.ref}[{s.first_word}-{s.last_word}]" for s in check.spans),
         "llr_per_frame": None if check.llr_per_frame is None else round(check.llr_per_frame, 4),
         "accepted": check.accepted,
+        **({} if check.text_similarity is None else {"text_similarity": check.text_similarity}),
     }
 
 
