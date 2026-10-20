@@ -799,6 +799,19 @@
   −0,15/−0,85, une vraie prière réverbérée à −1,003) ; le décodeur tranche par le contexte. Prochaine
   brique : preuve relative entre suites concurrentes sur les mêmes fenêtres.
 
+## 2026-10-20 — Suite d'un verset commencé, prédite puis vérifiée (ADR-0008 § 6-8)
+- **Demande de Cherif** (transmise par la session d'audit) : un verset commencé est toujours récité jusqu'au
+  bout (pause pour respirer, reprise possible) ; 81 cas dev où le début est reconnu et la suite abstenue.
+- **Décision** : après un candidat retenu qui s'arrête avant la fin de son verset, le reste du verset (départ
+  jusqu'à 3 mots plus tôt, puis le verset suivant) est aligné à fin libre sur la fenêtre suivante, si rien n'y
+  est retenu et si ce n'est pas une formule. Nommé seulement avec **deux témoins** : preuve acoustique ≥ −1,0
+  ET similarité de Dice ≥ 0,6 avec la transcription de la fenêtre.
+- **Pourquoi deux témoins** : mesuré sur lot1-04/01, l'audio seul acceptait un mot de fin de verset sur de la
+  parole non coranique (rendue surtout en blancs par le modèle) ; normaliser par les trames de parole ne
+  séparait pas vrai et faux ; le texte de l'ASR, si.
+- **Mesure** : cas résolus 34 → 47 (suites) → 57 / 81 ; 25 suites acceptées, toutes conformes ; EveryAyah
+  96,8 %, 0 faux, inchangé.
+
 ## 2026-10-19 — Jeu de fine-tuning de l'ASR (étape C) : sources, exclusions, manifestes
 - **Périmètre** : préparation des données seulement (`scripts/build_finetune_manifest.py`,
   `src/aqr/data/finetune*.py`, `data/finetune/LOCK.json`) ; aucun entraînement. Détail, volumes et
