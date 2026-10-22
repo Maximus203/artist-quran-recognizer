@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Compte — Atelier de revue</title>
+<!-- PROTOTYPE STATIQUE phase 2 — données factices. Tokens : ../tokens.css · composants : base.css + phase2.css · spec : ../phase2.md -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3Cpath d=%27M13 12v8M16 8.5v15M19 11v10%27 stroke=%27%23888%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&family=Scheherazade+New:wght@400;600&display=swap">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="phase2.css">
+
+</head>
+<body class="pg" data-page="compte">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-panel-l" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></symbol>
+  <symbol id="i-panel-r" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M14.5 4.5v15"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.6.6 0 0 0 .9.5l10.6-6.8a.6.6 0 0 0 0-1L8.9 4.7a.6.6 0 0 0-.9.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.8" height="14" rx="1"/><rect x="13.7" y="5" width="3.8" height="14" rx="1"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2M12 17v.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4m0 0h11l-2.5 4L17 12H6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0M12 16l4-5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2 2 0 0 1 3 3L8 18.5zM14.5 6l3.5 3.5"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5 2-2h4"/></symbol>
+  <symbol id="i-seek-back" viewBox="0 0 24 24"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-seek-fwd" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/></g><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="4.5" rx="1.5"/><path d="M5 9.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V9.5M10 13.5h4"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"/><circle cx="14" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol><symbol id="i-chevron-d" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol><symbol id="i-chevron-r" viewBox="0 0 24 24"><path d="M9.5 6.5l5.5 5.5-5.5 5.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.6 5.3 3.6 8.5s-1 6.1-3.6 8.5c-2.6-2.4-3.6-5.3-3.6-8.5s1-6.1 3.6-8.5z"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.3 3-5 6-5s5.4 1.7 6 5M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.8c2 .5 3.2 2.1 3.5 4.7"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.7-3.7 3.5-5.5 7-5.5s6.3 1.8 7 5.5"/></symbol><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4.5H7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3M14 8l4 4-4 4M18 12H9.5"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5c1.6 0 3 .5 4.2 1.2M21.5 12S18 18.5 12 18.5c-1.6 0-3-.5-4.2-1.2"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4.2 4.2M4 4l16 16"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h10a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M14 3.5v4h4M8.5 12h7M8.5 15.5h7"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M4 14h16M4 14l2-7.5A2 2 0 0 1 7.9 5h8.2A2 2 0 0 1 18 6.5L20 14v3.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M7.5 16.5h.01M11 16.5h.01"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol><symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/><path d="M6 7.5v9M18 16.5V10a3 3 0 0 0-3-3h-2.5M15 4.5l-2.5 2.5L15 9.5"/></symbol><symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 19v-8M12 19V5M19 19v-5"/></symbol><symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 19V5M8 19l-3-3M8 19l3-3M16 5v14M16 5l-3 3M16 5l3 3"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M7 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L5 11l4 4M5 11h9a5 5 0 0 1 0 10h-3"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol><symbol id="i-signpost" viewBox="0 0 24 24"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.2"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.5v5.5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="3.5"/><path d="M10.5 12.5L19 4M16 7l2.5 2.5M13.5 9.5L15 11"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5M6 9.5V19a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V9.5"/></symbol><symbol id="i-filter-x" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></symbol>
+</svg>
+<div class="sr" id="aria-live" aria-live="polite" role="status"></div>
+<header class="header">
+    
+    <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em>de revue</em></b></a>
+    <nav class="nav" aria-label="Pages"><a href="index.html">Revue</a><a href="sessions.html">Sessions</a><a href="index.html#view=perf">Performance</a><a href="docs.html">Documentation<span class="nav-dot" title="Nouveautés depuis ta dernière visite"><span class="sr"> Nouveautés</span></span></a></nav>
+    <span class="spacer"></span>
+    <a class="btn btn--primary btn--sm" href="index.html#view=new" aria-label="Nouvel essai"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span class="hide-sm">Nouvel essai</span></a>
+    <div class="pop-wrap" id="acct-wrap">
+      <button class="acct-btn" id="acct-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="acct-menu"><span class="av" data-i="C" aria-hidden="true"></span><span class="acct-name">cherif</span><span class="sr"> (menu du compte)</span><svg class="i" aria-hidden="true"><use href="#i-chevron-d"/></svg></button>
+      <div class="menu" id="acct-menu" role="menu" aria-label="Compte" hidden>
+        <div class="menu-head"><span class="av av--lg" data-i="C" aria-hidden="true"></span><div><b>cherif</b><small>Administrateur · inscrit le 14 oct. 2026</small></div></div>
+        <div class="menu-only-sm"><div class="menu-sep"></div><p class="eyebrow menu-label">Aller à</p><a role="menuitem" class="menu-item" href="index.html"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg>Revue</a><a role="menuitem" class="menu-item" href="sessions.html"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Sessions</a><a role="menuitem" class="menu-item" href="index.html#view=perf"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg>Performance</a><a role="menuitem" class="menu-item" href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documentation</a></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item" href="compte.html"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+        <a role="menuitem" class="menu-item" href="compte.html#statistiques"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg>Mes statistiques</a>
+        <p class="eyebrow menu-label" id="theme-lbl">Thème</p>
+        <div class="menu-theme" role="group" aria-labelledby="theme-lbl"><button data-theme-set="light" aria-pressed="false">Clair</button><button data-theme-set="dark" aria-pressed="false">Sombre</button><button data-theme-set="" aria-pressed="true">Système</button></div>
+        <div class="menu-quota"><span>Espace utilisé : <b class="mono" style="font-weight:600;color:var(--text)">2,3 Go</b> sur 5 Go · <a href="compte.html#statistiques">détails</a></span><div class="quota-hint"><span class="mini" style="flex:1"><i style="--w:46%"></i></span></div></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item menu-item--danger" href="login.html"><svg class="i" aria-hidden="true"><use href="#i-logout"/></svg>Se déconnecter</a>
+      </div>
+    </div>
+  </header>
+<main class="page" id="main" style="max-width:1080px">
+  <div class="pg-title"><div><h1 id="h-prefs">Compte</h1><p>Tes préférences, tes chiffres et ta sécurité.</p></div></div>
+  <div class="autosave-wrap"><div class="autosave" role="status" data-show="false" aria-live="polite"></div></div>
+  <div class="acct-layout">
+    <nav class="subnav" aria-label="Sections du compte" id="subnav">
+      <a href="#preferences" data-tab="preferences" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+      <a href="#statistiques" data-tab="statistiques"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg>Statistiques</a>
+      <a href="#securite" data-tab="securite"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>Sécurité</a>
+    </nav>
+    <div style="display:grid;gap:var(--sp-5);min-width:0">
+      
+    <section class="statpane" id="pane-preferences" aria-labelledby="h-prefs" data-pane="preferences">
+      <div class="card acct-id">
+        <span class="av av--lg" aria-hidden="true">C</span>
+        <div style="flex:1;min-width:0"><b>cherif</b><small>Inscrit le 14 oct. 2026</small></div>
+        <span class="badge badge--outline"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>Administrateur</span>
+      </div>
+
+      <div class="card setgroup" aria-labelledby="g-aff">
+        <header><h2 id="g-aff">Affichage</h2><p>Appliqué partout, sur tous tes appareils, dès que tu te connectes.</p></header>
+        <div class="srow2"><div class="lab"><b id="lab-theme">Thème</b><small>« Système » suit le réglage clair ou sombre de ton appareil.</small></div><div class="ctl"><div class="seg-ctl" role="radiogroup" aria-labelledby="lab-theme" id="pref-theme"><button type="button" role="radio" data-v="system" aria-checked="true">Système</button><button type="button" role="radio" data-v="light" aria-checked="false">Clair</button><button type="button" role="radio" data-v="dark" aria-checked="false">Sombre</button></div></div></div>
+        <div class="srow2 srow2--wide"><div class="lab"><b id="lab-font">Police du texte arabe</b><small>Seule la police change : le texte vient toujours du corpus.</small></div><div class="ctl"><div class="fontpick" role="radiogroup" aria-labelledby="lab-font" id="pref-font"><button class="radio-card" type="button" role="radio" data-font="amiri-quran" aria-checked="true"><span class="radio" aria-hidden="true"></span><b>Amiri Quran<small class="muted" style="font-weight:400;font-size:var(--fs-xs)">défaut</small></b><span class="d">Naskh classique dessiné pour le Coran. Licence OFL.</span><span class="sample" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span></button><button class="radio-card" type="button" role="radio" data-font="scheherazade" aria-checked="false"><span class="radio" aria-hidden="true"></span><b>Scheherazade New<small class="muted" style="font-weight:400;font-size:var(--fs-xs)"></small></b><span class="d">Formes ouvertes, très lisible en petit. Licence OFL.</span><span class="sample" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span></button><button class="radio-card" type="button" role="radio" data-font="noto-naskh" aria-checked="false"><span class="radio" aria-hidden="true"></span><b>Noto Naskh Arabic<small class="muted" style="font-weight:400;font-size:var(--fs-xs)"></small></b><span class="d">Sobre et neutre. Licence OFL.</span><span class="sample" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span></button><button class="radio-card" type="button" role="radio" data-font="kfgqpc-hafs" aria-checked="false" aria-disabled="true"><span class="radio" aria-hidden="true"></span><b>KFGQPC Uthmanic Hafs<small class="muted" style="font-weight:400;font-size:var(--fs-xs)">Mushaf de Médine</small></b><span class="d">Indisponible ici : sa licence interdit de la servir sans accord écrit du Complexe du Roi Fahd.</span><span class="sample" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span></button></div></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-size">Taille du texte arabe</b><small>De 28 à 72 px, par pas de 4. « Automatique » : 40 px sur ordinateur, 32 px sur téléphone.</small></div><div class="ctl"><div class="slider-line"><input type="range" id="pref-size" min="28" max="72" step="4" value="40" style="--p:27%" aria-labelledby="lab-size" aria-valuetext="40 pixels"><output id="size-out" for="pref-size">40 px</output></div><label class="check" style="width:100%"><input type="checkbox" id="pref-size-auto" checked> Automatique selon l’écran</label></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-tr">Afficher la traduction</b><small>Sous chaque verset : traduction officielle QuranEnc, sans modification.</small></div><div class="ctl"><button class="switch" type="button" role="switch" id="pref-translation" data-pref="pref-translation" aria-checked="true" aria-label="Afficher la traduction"><i></i><span class="state-txt" data-yes="Oui" data-no="Non">Oui</span></button></div></div>
+        <div class="preview-ar" aria-label="Aperçu"><p class="eyebrow lbl"><span>Aperçu</span><span class="mono" id="prev-meta">Amiri Quran · 40 px</span></p><p class="arabic basmala" lang="ar" dir="rtl" id="prev-ar">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</p><div class="translation" id="prev-tr"><p>Au nom d’Allah, le Tout Miséricordieux, le Très Miséricordieux.</p></div></div>
+      </div>
+
+      <div class="card setgroup" aria-labelledby="g-lec">
+        <header><h2 id="g-lec">Lecture</h2><p>Les réglages du lecteur que tu retrouves à chaque ouverture d’une session.</p></header>
+        <div class="srow2"><div class="lab"><b id="lab-win">Fenêtre visible par défaut</b><small>La partie de l’onde affichée à l’ouverture. Tu peux toujours zoomer ensuite.</small></div><div class="ctl"><select class="input" id="pref-window" aria-labelledby="lab-win"><option value="30">30 secondes</option><option value="60">1 minute</option><option value="120" selected>2 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option><option value="0">Tout le fichier</option></select></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-fol">Suivre la lecture</b><small>L’onde et la liste des intervalles suivent la tête de lecture.</small></div><div class="ctl"><button class="switch" type="button" role="switch" id="pref-follow" data-pref="pref-follow" aria-checked="true" aria-label="Suivre la lecture"><i></i><span class="state-txt" data-yes="Oui" data-no="Non">Oui</span></button></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-spd">Vitesse de lecture</b><small>Appliquée à l’ouverture. Se met à jour quand tu la changes dans le lecteur.</small></div><div class="ctl"><select class="input" id="pref-speed" aria-labelledby="lab-spd"><option>0,5×</option><option>0,75×</option><option selected>1×</option><option>1,25×</option><option>1,5×</option><option>2×</option></select></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-vol">Volume</b><small>Se met à jour quand tu le changes dans le lecteur.</small></div><div class="ctl"><div class="slider-line"><input type="range" id="pref-volume" min="0" max="100" step="5" value="80" style="--p:80%" aria-labelledby="lab-vol"><output for="pref-volume" id="vol-out">80 %</output></div></div></div>
+      </div>
+
+      <div class="card setgroup" aria-labelledby="g-esp">
+        <header><h2 id="g-esp">Espace de travail</h2><p>Comment l’atelier s’ouvre. Un panneau que tu ouvres ou fermes pendant ta séance garde ce nouvel état.</p></header>
+        <div class="srow2"><div class="lab"><b id="lab-left">Panneau Sessions ouvert</b><small>La colonne de gauche : favoris et sessions récentes. Sur téléphone, c’est un tiroir et il reste fermé.</small></div><div class="ctl"><button class="switch" type="button" role="switch" id="pref-left" data-pref="pref-left" aria-checked="true" aria-label="Panneau Sessions ouvert au démarrage"><i></i><span class="state-txt" data-yes="Ouvert" data-no="Fermé">Ouvert</span></button></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-right">Panneau Revue ouvert</b><small>La colonne de droite : signalements et vérité terrain.</small></div><div class="ctl"><button class="switch" type="button" role="switch" id="pref-right" data-pref="pref-right" aria-checked="true" aria-label="Panneau Revue ouvert au démarrage"><i></i><span class="state-txt" data-yes="Ouvert" data-no="Fermé">Ouvert</span></button></div></div>
+        <div class="srow2"><div class="lab"><b id="lab-scope">Portée des nouveaux essais</b><small>Les audios importés ou enregistrés sont globaux par défaut. Tu peux changer la portée de chacun ensuite.</small></div><div class="ctl"><div class="seg-ctl" role="radiogroup" aria-labelledby="lab-scope" id="pref-scope"><button type="button" role="radio" data-v="global" aria-checked="true"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global</button><button type="button" role="radio" data-v="private" aria-checked="false"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Privé</button></div></div></div>
+      </div>
+      <p class="hint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span>Chaque réglage est enregistré sur ton compte dès que tu le changes.</span><button class="btn btn--ghost btn--sm" type="button" id="reset-prefs">Rétablir les réglages par défaut</button></p>
+    </section>
+      
+    <section class="statpane" id="pane-statistiques" aria-labelledby="h-stats" data-pane="statistiques" hidden>
+      <div class="tiles tiles--3" aria-label="Mes chiffres">
+        <div class="card tile"><p class="eyebrow">Tests</p><p class="v">47</p><p class="s">sessions analysées, dont 3 en échec</p></div>
+        <div class="card tile"><p class="eyebrow">Audio analysé</p><p class="v">12 h 40<small>min</small></p><p class="s">sur 47 sessions</p></div>
+        <div class="card tile"><p class="eyebrow">Vitesse moyenne</p><p class="v">×6,8</p><p class="s">fois plus vite que l’audio</p></div>
+        <div class="card tile"><p class="eyebrow">Espace utilisé</p><p class="v" id="tile-space">2,3<small>Go</small></p><p class="s" id="tile-space-s">sur 5 Go de quota</p></div>
+      </div>
+
+      <div class="card meter-card" id="meter-card" data-state="ok">
+        <div class="meter-head"><div><p class="eyebrow">Stockage</p><p class="big"><span id="m-used">2,3</span> <small>Go sur 5 Go</small></p></div><a class="btn btn--secondary btn--sm" href="sessions.html?portee=mine"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Voir mes sessions</a></div>
+        <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="2.3" aria-valuetext="2,3 Go utilisés sur 5 Go" id="meter" aria-label="Espace utilisé"><span class="m aud" style="--w:28%"></span><span class="m vid" style="--w:18%"></span><span class="tick" aria-hidden="true"></span></div>
+        <ul class="meter-legend" aria-label="Légende du stockage"><li><span><i class="sw s-recognized" aria-hidden="true"></i>Audio · <b class="mono" id="m-aud">1,4 Go</b></span></li><li><span><i class="sw s-inferred" aria-hidden="true"></i>Vidéo · <b class="mono" id="m-vid">0,9 Go</b></span></li><li><span class="muted">Libre · <b class="mono" id="m-free">2,7 Go</b></span></li></ul>
+        <div class="meter-alert" role="status"><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><div><b class="when-warn" id="m-alert-t">Espace presque plein : 4,2 Go sur 5 Go.</b><b class="when-full">Quota atteint : les nouveaux imports sont bloqués.</b><br><span class="when-warn">À partir de 5 Go, tu ne pourras plus importer. Archive puis supprime les gros fichiers dont tu n’as plus besoin.</span><span class="when-full">Supprime des sessions archivées pour libérer de la place, ou demande à l’administrateur d’augmenter ton quota.</span><div class="btnrow"><a class="btn btn--secondary btn--sm" href="sessions.html?portee=mine">Trier par taille</a><a class="btn btn--secondary btn--sm" href="sessions.html?portee=arch">Voir les archives</a></div></div></div>
+        <p class="hint when-ok">Les sessions archivées comptent aussi. Seule la suppression définitive libère de l’espace.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="card card-pad bigfiles"><div class="sec-title"><h2>Ce qui prend le plus de place</h2></div>
+          <div class="qrow"><span class="nm">Conf ramadan nuit 3<small>Vidéo · 1:12:08 · global</small></span><span class="sz">332 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Khutba vendredi<small>Vidéo · 41:15 · global</small></span><span class="sz">186 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Micro 55 1 4 muno nuit<small>Audio WAV · 6:12 · global</small></span><span class="sz">63 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Sourate baqara warsh<small>Audio · 21:08 · global</small></span><span class="sz">21 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+        </div>
+        <div class="card card-pad"><div class="sec-title"><h2>Vitesse par moteur</h2></div><p class="hint">Sur mes analyses. Plus la barre est longue, plus le moteur est rapide.</p>
+          <div class="bars">
+            <div class="bar-row"><span class="nm">Cascade<small>31 analyses</small></span><span class="bar-track"><i style="--v:80%"></i></span><span class="val">×7,3</span></div>
+            <div class="bar-row"><span class="nm">FastConformer<small>9 analyses</small></span><span class="bar-track"><i style="--v:100%"></i></span><span class="val">×9,2</span></div>
+            <div class="bar-row"><span class="nm">Whisper<small>4 analyses</small></span><span class="bar-track"><i style="--v:57%"></i></span><span class="val">×5,2</span></div>
+            <div class="bar-row"><span class="nm">Muno<small>3 analyses</small></span><span class="bar-track"><i style="--v:45%"></i></span><span class="val">×4,1</span></div>
+          </div>
+          <p class="axis-note">Échelle commune : ×0 à ×10. Valeurs médianes.</p>
+        </div>
+      </div>
+    </section>
+      
+    <section class="statpane" id="pane-securite" aria-labelledby="h-sec" data-pane="securite" hidden>
+      <div class="card setgroup" aria-labelledby="g-pw">
+        <header><h2 id="g-pw">Mot de passe</h2><p>10 caractères minimum. Sans e-mail, il n’y a pas de récupération automatique : garde-le dans un gestionnaire de mots de passe.</p></header>
+        <form class="srow2" style="grid-template-columns:1fr;max-width:480px" novalidate>
+          <input class="sr" type="text" name="username" value="cherif" autocomplete="username" readonly tabindex="-1" aria-hidden="true">
+          <label class="field">Mot de passe actuel<span class="pw"><input class="input" type="password" autocomplete="current-password"><button type="button" class="toggle" aria-label="Afficher le mot de passe"><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg></button></span></label>
+          <label class="field">Nouveau mot de passe<span class="pw"><input class="input" type="password" autocomplete="new-password"><button type="button" class="toggle" aria-label="Afficher le mot de passe"><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg></button></span><span class="help">10 caractères minimum.</span></label>
+          <div><button class="btn btn--primary" type="submit">Changer le mot de passe</button></div>
+        </form>
+      </div>
+      <div class="card setgroup" aria-labelledby="g-dev">
+        <header><h2 id="g-dev">Appareils connectés</h2><p>Tu restes connecté 30 jours sur un appareil. Ici, tu peux fermer toutes les autres sessions.</p></header>
+        <div class="srow2"><div class="lab"><b>Cet appareil</b><small>Windows · Chrome · connecté depuis le 20 oct. 2026</small></div><div class="ctl"><button class="btn btn--secondary" type="button">Déconnecter les autres appareils</button></div></div>
+      </div>
+      <div class="card setgroup danger-zone" aria-labelledby="g-del">
+        <header><h2 id="g-del">Supprimer mon compte</h2><p>Efface ton compte, tes préférences et tes sessions. Les sessions globales sont supprimées aussi : les autres testeurs ne les verront plus.</p></header>
+        <div class="srow2"><div class="lab"><b>Action irréversible</b><small>Exporte d’abord ce que tu veux garder.</small></div><div class="ctl"><button class="btn btn--danger" type="button">Supprimer mon compte…</button></div></div>
+      </div>
+    </section>
+      <div class="demo-bar" style="margin-top:0"><b>Prototype</b>
+        <label>Stockage <select class="input" id="demo-storage" aria-label="État du stockage"><option value="ok">Normal · 46 %</option><option value="warn">Alerte · 84 %</option><option value="full">Plein · 100 %</option></select></label>
+        <label>Enregistrement <select class="input" id="demo-save" aria-label="Simuler l’enregistrement"><option value="ok">Réussit</option><option value="err">Échoue</option></select></label>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="phase2.js"></script>
+<script src="compte.js"></script>
+</body></html>
