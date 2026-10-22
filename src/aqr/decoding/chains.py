@@ -45,7 +45,7 @@ class ChainConfig:
     dernier mot, « النَّاسِ » -> « النَّ », mesuré le 2026-10-05)."""
 
 
-def _recited_start(ref: VerseRef) -> int:
+def recited_start(ref: VerseRef) -> int:
     if ref.ayah == 1 and ref.surah != 1 and verse_one_includes_basmala(ref.surah):
         return BASMALA_WORD_COUNT + 1
     return 1
@@ -59,7 +59,7 @@ def _continues(previous: Candidate, following: Candidate, corpus: _Words, slack:
     if first.ref != last.ref.next():
         return False
     finished = last.last_word >= len(corpus.words(last.ref)) - slack
-    return finished and first.first_word <= _recited_start(first.ref) + slack
+    return finished and first.first_word <= recited_start(first.ref) + slack
 
 
 @dataclass(frozen=True)
@@ -142,7 +142,7 @@ def chain_spans(
                 spans[-1] = WordSpan(last.ref, last.first_word, max(last.last_word, span.last_word))
             elif span.ref == last.ref.next():
                 spans[-1] = WordSpan(last.ref, last.first_word, len(corpus.words(last.ref)))
-                first = min(span.first_word, _recited_start(span.ref))
+                first = min(span.first_word, recited_start(span.ref))
                 spans.append(WordSpan(span.ref, first, span.last_word))
             else:
                 raise ValueError(f"suite discontinue : {last.ref} puis {span.ref}")

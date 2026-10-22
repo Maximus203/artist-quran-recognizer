@@ -4,6 +4,7 @@ Texte arabe et traduction : uniquement depuis les corpus ; verset incertain jama
 from __future__ import annotations
 
 import json
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
@@ -314,3 +315,142 @@ def test_la_basmala_expurgee_perd_texte_et_traduction_mais_garde_sa_reference(co
 def test_les_sous_titres_gardent_le_libelle_de_la_basmala(corpus, renderer):
     srt = render_srt(_formulas_result(), renderer)
     assert "[basmala]" in srt and corpus.text(VerseRef(1, 1)) not in srt
+
+
+# --- Temps au mot dans la sortie (ADR-0010) : contrat additif de `aqr.recognition/1` ------------
+def _one(corpus, renderer, detection, **kwargs):
+    from dataclasses import replace
+
+    result = replace(_result(corpus), intervals=(detection,))
+    return build_json(result, renderer, None, source_sha256="00")["intervals"][0]
+
+
+def _measured(start: float, count: int, step: float = 0.4) -> tuple[TimeSpan, ...]:
+    return tuple(TimeSpan(start + n * step, start + (n + 1) * step) for n in range(count))
+
+
+def test_temps_au_mot_mesures_par_l_alignement(corpus, renderer):
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    words = _measured(3.2, 4)
+    detection = Detection(span, TimeSpan(3.2, 4.8), Status.RECOGNIZED, 0.95, word_times=words)
+    interval = _one(corpus, renderer, detection)
+    assert interval["word_times_source"] == "ctc-alignment"
+    assert interval["word_times"] == [[3.2, 3.6], [3.6, 4.0], [4.0, 4.4], [4.4, 4.8]]
+    assert len(interval["word_times"]) == interval["words"][1] - interval["words"][0] + 1
+    assert interval["word_times"][0][0] == interval["t"][0]
+    assert interval["word_times"][-1][1] == interval["t"][1]
+    assert interval["time_interpolated"] is False
+
+
+def test_sans_temps_mesures_les_temps_au_mot_sont_interpoles_et_declares_tels(corpus, renderer):
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    interval = _one(corpus, renderer, Detection(span, TimeSpan(3.0, 7.0), Status.RECOGNIZED, 0.95))
+    times = interval["word_times"]
+    assert interval["word_times_source"] == "interpolated" and len(times) == 4
+    assert times[0][0] == 3.0 and times[-1][1] == 7.0  # borné à l'intervalle
+    assert all(a[1] == b[0] for a, b in pairwise(times))  # sans trou
+    # proportionnel à la longueur des mots du corpus (قُلْ est le mot le plus court)
+    durations = [end - start for start, end in times]
+    assert durations[0] == min(durations) and sum(durations) == pytest.approx(4.0, abs=0.01)
+
+
+def test_une_plage_partielle_interpole_les_seuls_mots_affiches(corpus, renderer):
+    span = WordSpan(VerseRef(55, 13), 2, 4)
+    interval = _one(corpus, renderer, Detection(span, TimeSpan(10.0, 12.0), Status.RECOGNIZED, 0.9))
+    assert interval["words"] == [2, 4] and len(interval["word_times"]) == 3
+
+
+def test_des_temps_au_mot_incoherents_avec_les_mots_ne_sont_jamais_publies_comme_mesures(
+    corpus, renderer
+):
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    detection = Detection(
+        span, TimeSpan(3.0, 7.0), Status.RECOGNIZED, 0.9, word_times=_measured(3.0, 3)
+    )
+    interval = _one(corpus, renderer, detection)
+    assert interval["word_times_source"] == "interpolated" and len(interval["word_times"]) == 4
+
+
+@pytest.mark.parametrize("status", [Status.UNCERTAIN, Status.INFERRED])
+def test_ni_incertain_ni_deduit_n_ont_de_temps_au_mot(corpus, renderer, status):
+    span = WordSpan(VerseRef(55, 13), 1, 4)
+    candidates = (VerseRef(55, 13), VerseRef(55, 16)) if status is Status.UNCERTAIN else ()
+    detection = Detection(
+        span, TimeSpan(10.0, 12.0), status, 0.5, time_interpolated=True, candidates=candidates
+    )
+    interval = _one(corpus, renderer, detection)
+    assert "word_times" not in interval and "word_times_source" not in interval
+
+
+def test_une_promotion_par_le_voisin_est_declaree(corpus, renderer):
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    detection = Detection(
+        span, TimeSpan(3.2, 4.8), Status.RECOGNIZED, 0.9, word_times=_measured(3.2, 4),
+        promoted_by="neighbor",
+    )  # fmt: skip
+    interval = _one(corpus, renderer, detection)
+    assert interval["promoted_by"] == "neighbor" and interval["status"] == "recognized"
+    plain = _one(corpus, renderer, Detection(span, TimeSpan(3.0, 7.0), Status.RECOGNIZED, 0.9))
+    assert "promoted_by" not in plain
+
+
+def test_l_expurge_garde_les_temps_au_mot(corpus, renderer):  # des temps, pas du texte
+    from aqr.pipeline.output import redact_document
+
+    doc = build_json(_result(corpus), renderer, None, source_sha256="00")
+    light = redact_document(doc)["intervals"][1]
+    assert light["word_times"] == doc["intervals"][1]["word_times"]
+
+
+def test_le_lecteur_python_lit_les_champs_additifs(corpus, renderer):
+    from dataclasses import replace
+
+    from aqr.eval.recognition import parse_recognition
+
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    detection = Detection(
+        span, TimeSpan(3.2, 4.8), Status.RECOGNIZED, 0.9, word_times=_measured(3.2, 4),
+        promoted_by="neighbor",
+    )  # fmt: skip
+    doc = build_json(replace(_result(corpus), intervals=(detection,)), renderer, None, "00")
+    (verse,) = parse_recognition(doc).intervals
+    assert verse.word_times == ((3.2, 3.6), (3.6, 4.0), (4.0, 4.4), (4.4, 4.8))
+    assert verse.word_times_source == "ctc-alignment" and verse.promoted_by == "neighbor"
+
+
+def _doc_with(word_times, source="ctc-alignment"):
+    return {
+        "schema": "aqr.recognition/1",
+        "intervals": [
+            {
+                "kind": "verse", "ref": "112:1", "words": [1, 3], "status": "recognized",
+                "t": [1.0, 2.5], "word_times": word_times, "word_times_source": source,
+            }
+        ],
+    }  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("word_times", "source", "motif"),
+    [
+        ([[1.0, 1.5], [1.5, 2.0]], "ctc-alignment", "3 mots"),  # 2 temps pour 3 mots
+        ([[1.0, 1.5], [1.4, 2.0], [2.0, 2.5]], "ctc-alignment", "chevauche"),
+        ([[1.0, 1.0], [1.0, 2.0], [2.0, 2.5]], "ctc-alignment", "intervalle invalide"),
+        ([[1.0, 1.5], [1.5, 2.0], [2.0, 2.5]], "devine", "source"),
+        ([[0.2, 0.5], [1.5, 2.0], [2.0, 2.5]], "ctc-alignment", "hors de l'intervalle"),
+    ],
+)
+def test_le_lecteur_refuse_des_temps_au_mot_incoherents(word_times, source, motif):
+    from aqr.eval.recognition import RecognitionError, parse_recognition
+
+    with pytest.raises(RecognitionError, match=motif):
+        parse_recognition(_doc_with(word_times, source))
+
+
+def test_le_lecteur_accepte_l_ancien_format_sans_temps_au_mot():
+    from aqr.eval.recognition import parse_recognition
+
+    doc = _doc_with([[1.0, 1.5], [1.5, 2.0], [2.0, 2.5]])
+    del doc["intervals"][0]["word_times"], doc["intervals"][0]["word_times_source"]
+    (verse,) = parse_recognition(doc).intervals
+    assert verse.word_times is None and verse.word_times_source is None

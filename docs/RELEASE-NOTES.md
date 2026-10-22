@@ -17,6 +17,14 @@ PR : #73
 
 **Pourquoi / décision.** Pour un verset partiel, l'arabe montrait les mots entendus mais la traduction était celle du verset entier, qui ne commençait pas au début de la lecture. L'atelier ne devine rien : sans temps de mots dans le résultat, ou si le texte ne s'aligne pas sur la plage de mots, il ne surligne aucun mot et marque seulement le passage entier ; sans découpage de la traduction, il garde « Traduction du verset entier ». Le texte arabe (corpus) et la traduction (QuranEnc) ne sont jamais modifiés. Les champs lus (`word_times`, `translation.segments`, `translation.fragment`) sont ceux du contrat de sortie ; un ancien résultat s'affiche comme avant.
 
+## 2026-10-22 — Début de verset retrouvé, et temps de chaque mot
+Étiquettes : utilisateur, technique, décision
+PR : #75
+
+**Ce qui change.** Un début de verset ambigu (le début de 11:61 ressemble à celui de 7:73) n'est plus laissé « incertain » quand le verset reconnu qui le suit le continue et que l'audio soutient son texte : sur la session Hud, l'intervalle 21,5-35,7 s passe en reconnu. De même, quand le récitant commence un verset, fait une pause puis continue, le début d'avant la pause est retrouvé si l'audio et la transcription le confirment ; sinon l'abstention reste (le moteur reste Hafs : un début qui ne correspond pas au texte Hafs n'est jamais forcé). La sortie JSON donne en plus, pour chaque verset reconnu, le temps de chaque mot (`word_times`) et d'où il vient (`word_times_source` : `ctc-alignment` mesuré, `interpolated` estimé) ; l'interface s'en sert pour surligner le mot récité. Champs additifs : `aqr.recognition/1` reste lisible.
+
+**Pourquoi / décision.** Précision d'abord : rien n'est promu sans que l'audio soutienne le texte du corpus (même seuil que les suites). Le « début tardif » signalé à 55,1 s n'était pas un bord de fenêtre : la voix commence à 55,06 s, ce qui précède est une inspiration. ADR-0010, `docs/RECOGNIZE-OUTPUT.md`.
+
 ## 2026-10-22 — Comptes, audios globaux ou privés, plusieurs testeurs
 Étiquettes : utilisateur, technique, décision
 PR : #70, #72
