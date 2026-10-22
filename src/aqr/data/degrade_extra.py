@@ -26,10 +26,11 @@ import sys
 import tempfile
 from array import array
 from pathlib import Path
+from typing import Final
 
 from aqr.data import degrade as base
 from aqr.data.refcorpus import Degradation
-from aqr.eval.degradation_curve import Condition
+from aqr.eval.degradation_curve import Condition, resolve_step
 
 PINK_AMPLITUDE = 0.5
 IR_EXTRA_S = 0.05
@@ -177,6 +178,23 @@ def _telephone(
         run(["-i", str(coded), "-ac", "1", "-ar", str(rate), "-c:a", "pcm_s16le", str(dest)])
 
 
+ATEMPO_MIN: Final = 0.5
+"""`atempo` n'accepte pas moins de 0,5 par instance : au-delà, on enchaîne."""
+
+
+def tempo_filters(tempo: float) -> list[str]:
+    """Chaîne de filtres `atempo` dont le produit vaut `tempo` (0,3 -> 0,5 puis 0,6)."""
+    if tempo <= 0:
+        raise ValueError(f"vitesse invalide : {tempo}")
+    factors: list[float] = []
+    remaining = tempo
+    while remaining < ATEMPO_MIN:
+        factors.append(ATEMPO_MIN)
+        remaining /= ATEMPO_MIN
+    factors.append(remaining)
+    return [f"atempo={factor:g}" for factor in factors]
+
+
 def apply_condition(
     condition: Condition,
     src: Path,
@@ -216,13 +234,59 @@ def apply_condition(
             sample_rate=sample_rate,
             run=run,
         )
+    elif kind == "chain":
+        steps = [resolve_step(step) for step in str(params["steps"]).split(">")]
+        with tempfile.TemporaryDirectory() as tmp:
+            current = src
+            for index, step in enumerate(steps):
+                last = index == len(steps) - 1
+                target = dest if last else Path(tmp) / f"step{index}.wav"
+                log.extend(
+                    apply_condition(
+                        step, current, target, seed_offset=seed_offset, sample_rate=sample_rate
+                    )
+                )
+                current = target
+    elif kind == "denoise":
+        run(
+            [
+                "-i",
+                str(src),
+                "-af",
+                f"afftdn=nr={int(params['nr'])}:nf={int(params['nf'])}:tn=1",
+                "-ac",
+                "1",
+                "-ar",
+                str(sample_rate),
+                "-c:a",
+                "pcm_s16le",
+                str(dest),
+            ]
+        )
+    elif kind == "lowpass":
+        cutoff = round(float(params["hz"]))
+        run(
+            [
+                "-i",
+                str(src),
+                "-af",
+                f"aresample={2 * cutoff},aresample={sample_rate}",
+                "-ac",
+                "1",
+                "-ar",
+                str(sample_rate),
+                "-c:a",
+                "pcm_s16le",
+                str(dest),
+            ]
+        )
     elif kind == "tempo":
         run(
             [
                 "-i",
                 str(src),
                 "-af",
-                f"atempo={float(params['tempo']):g}",
+                ",".join(tempo_filters(float(params["tempo"]))),
                 "-ac",
                 "1",
                 "-ar",

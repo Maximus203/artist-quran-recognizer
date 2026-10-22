@@ -62,6 +62,8 @@ class Condition:
     fine-tuning ; les autres éclairent le choix des cibles."""
     cascade: bool = False
     """Mesurée aussi avec la cascade par défaut (et pas seulement le moteur principal seul)."""
+    exploratory: bool = False
+    """Ajoutée APRÈS le résultat principal, au-delà du cahier : éclaire, ne décide jamais."""
 
 
 def _noise(kind: str, family: str, name: str) -> list[Condition]:
@@ -181,8 +183,180 @@ def build_conditions() -> tuple[Condition, ...]:
     return tuple(conditions)
 
 
+def build_exploratory_conditions() -> tuple[Condition, ...]:
+    """Niveaux plus sévères que ceux du cahier, et la bande passante : où ça casse, et pourquoi.
+
+    Décidées APRÈS avoir vu le résultat principal (aucune famille n'échouait) : elles ne sont
+    jamais une ancre, n'entrent pas dans la règle de décision et sont signalées comme telles."""
+    out: list[Condition] = []
+    for kind, family, name in (
+        ("noise_white", "bruit_blanc", "bruit blanc"),
+        ("noise_pink", "bruit_rose", "bruit rose"),
+    ):
+        for rank, snr in ((4, 0), (5, -5)):
+            tag = f"m{-snr}" if snr < 0 else str(snr)
+            out.append(
+                Condition(
+                    id=f"{family}_{tag}db",
+                    family=family,
+                    level=f"SNR {snr} dB",
+                    label=f"{name}, SNR {snr} dB",
+                    kind=kind,
+                    params={"snr_db": snr, "seed": BASE_SEED},
+                    severity=rank,
+                    exploratory=True,
+                )
+            )
+    out.append(
+        Condition(
+            id="reverberation_extreme",
+            family="reverberation",
+            level="extrême",
+            label="réverbération extrême (grande nef, RT60 3,5 s, direct/réverbéré -10 dB)",
+            kind="reverb_room",
+            params={"rt60_s": 3.5, "drr_db": -10, "seed": BASE_SEED},
+            severity=4,
+            exploratory=True,
+        )
+    )
+    for rank, kbps in ((4, 16), (5, 8)):
+        out.append(
+            Condition(
+                id=f"mp3_{kbps}k",
+                family="mp3",
+                level=f"{kbps} kbit/s",
+                label=f"MP3 {kbps} kbit/s",
+                kind="mp3",
+                params={"kbps": kbps},
+                severity=rank,
+                exploratory=True,
+            )
+        )
+    for rank, tempo in ((4, 0.4), (5, 0.3)):
+        out.append(
+            Condition(
+                id=f"lent_x{tempo:g}",
+                family="lent",
+                level=f"×{tempo:g}".replace(".", ","),
+                label=f"vitesse ×{tempo:g} sans changement de hauteur".replace(".", ","),
+                kind="tempo",
+                params={"tempo": tempo},
+                severity=rank,
+                tempo=tempo,
+                exploratory=True,
+            )
+        )
+    for rank, hz in enumerate((7000, 5500, 4000), start=1):
+        cutoff, rate = f"{hz / 1000:g} kHz", f"{2 * hz / 1000:g} kHz"
+        out.append(
+            Condition(
+                id=f"passe_bas_{hz}",
+                family="passe_bas",
+                level=cutoff.replace(".", ","),
+                label=f"propre, passe-bas à {cutoff} (rééchantillonnage à {rate})".replace(
+                    ".", ","
+                ),
+                kind="lowpass",
+                params={"hz": hz},
+                severity=rank,
+                exploratory=True,
+            )
+        )
+    return tuple(out)
+
+
+def _front_end(
+    identifier: str, kind: str, label: str, *, tempo: float = 1.0, **params: Param
+) -> Condition:
+    return Condition(
+        id=identifier,
+        family="levier",
+        level=label,
+        label=label,
+        kind=kind,
+        params={**params, "tempo": tempo} if kind == "tempo" else params,
+        tempo=tempo,
+        exploratory=True,
+    )
+
+
+FRONT_ENDS: Final[tuple[Condition, ...]] = (
+    _front_end("accelerer_x2", "tempo", "accélération ×2", tempo=2.0),
+    _front_end("accelerer_x3", "tempo", "accélération ×3", tempo=3.0),
+    _front_end("debruitage", "denoise", "débruitage afftdn", nr=20, nf=-30),
+)
+"""Traitements applicables EN AMONT de l'ASR, essayés après une dégradation (étapes d'un levier).
+Ils ne sont pas mesurés seuls. Une accélération est un `tempo` > 1 : `params["tempo"]` le dit."""
+
+
+def resolve_step(identifier: str) -> Condition:
+    """Une étape d'un levier : une condition de la campagne ou un traitement amont."""
+    table = {c.id: c for c in (*build_conditions(), *build_exploratory_conditions(), *FRONT_ENDS)}
+    return table[identifier]  # KeyError explicite
+
+
+def _lever(identifier: str, steps: Sequence[str], label: str) -> Condition:
+    net = 1.0
+    for step in steps:
+        net *= resolve_step(step).tempo
+    return Condition(
+        id=f"levier_{identifier}",
+        family="levier",
+        level=label,
+        label=label,
+        kind="chain",
+        params={"steps": ">".join(steps)},
+        tempo=net,
+        exploratory=True,
+    )
+
+
+def build_lever_conditions() -> tuple[Condition, ...]:
+    """Leviers peu coûteux testés sur les conditions qui cassent le moteur (exploratoire)."""
+    return (
+        _lever(
+            "x0.4_puis_x2", ("lent_x0.4", "accelerer_x2"), "×0,4 puis accélération ×2 (net ×0,8)"
+        ),
+        _lever(
+            "x0.3_puis_x2", ("lent_x0.3", "accelerer_x2"), "×0,3 puis accélération ×2 (net ×0,6)"
+        ),
+        _lever(
+            "x0.3_puis_x3", ("lent_x0.3", "accelerer_x3"), "×0,3 puis accélération ×3 (net ×0,9)"
+        ),
+        _lever(
+            "bruit_blanc_m5db_puis_debruitage",
+            ("bruit_blanc_m5db", "debruitage"),
+            "bruit blanc -5 dB puis débruitage",
+        ),
+        _lever(
+            "bruit_rose_m5db_puis_debruitage",
+            ("bruit_rose_m5db", "debruitage"),
+            "bruit rose -5 dB puis débruitage",
+        ),
+        _lever(
+            "bruit_blanc_m5db_puis_passe_bas_5500",
+            ("bruit_blanc_m5db", "passe_bas_5500"),
+            "bruit blanc -5 dB puis passe-bas 5,5 kHz",
+        ),
+        _lever(
+            "bruit_rose_m5db_puis_passe_bas_5500",
+            ("bruit_rose_m5db", "passe_bas_5500"),
+            "bruit rose -5 dB puis passe-bas 5,5 kHz",
+        ),
+        _lever(
+            "reverberation_extreme_puis_passe_bas_5500",
+            ("reverberation_extreme", "passe_bas_5500"),
+            "réverbération extrême puis passe-bas 5,5 kHz",
+        ),
+    )
+
+
+def all_conditions() -> tuple[Condition, ...]:
+    return (*build_conditions(), *build_exploratory_conditions(), *build_lever_conditions())
+
+
 def conditions_by_id(ids: Iterable[str]) -> list[Condition]:
-    table = {c.id: c for c in build_conditions()}
+    table = {c.id: c for c in all_conditions()}
     return [table[i] for i in ids]  # KeyError explicite pour un identifiant inconnu
 
 
