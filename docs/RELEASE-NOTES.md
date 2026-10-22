@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Détection en direct sans plage déclarée : conception et décisions produit
+Étiquettes : technique, décision
+PR : #74
+
+**Ce qui change.** Rien ne change encore pour celui qui utilise le système : cette étape est une conception. Les décisions de Cherif sont consignées : usage **non commercial** avec publication en open source sous une licence non commerciale, **Hafs uniquement**, et pour objectif la **détection en direct sur un flux, sans plage déclarée** (l'analyse de fichiers reste le premier terrain). L'ADR-0011 (proposé) décrit comment : garder les candidats ouverts au début d'un verset, n'afficher que le passage entendu, nommer `sourate:verset` dès qu'un mot départage, attendre la suite du verset détecté et signaler un saut. Un script mesure le corpus : `scripts/analyze_verse_prefixes.py`.
+
+**Pourquoi / décision.** Chiffres du script (corpus Hafs, mots exacts, donc une borne basse) : 2 mots en médiane pour distinguer un début de verset (74 % des versets en 3 mots), mais 26 % en exigent plus de 3 et 289 versets (4,6 %) n'ont aucun début propre ; avec la sourate pour contexte, 83 % se tranchent en 2 mots. Les écarts à traiter avant de publier (licence, attributions, données de tiers) sont dans `.artist/decision-log.md`. Voir `docs/adr/0011-detection-en-direct-sans-plage.md`.
+
 ## 2026-10-22 — La traduction suit le passage entendu et se surligne en direct
 Étiquettes : utilisateur, technique
 PR : #73
