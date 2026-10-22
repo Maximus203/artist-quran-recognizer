@@ -4,9 +4,10 @@ import {
   deleteSession,
   readResult,
   readReview,
-  readSession,
 } from "@/lib/store";
+import { ensureQueueRecovered } from "@/lib/jobs";
 import { isLocalRequest } from "@/lib/local-request";
+import { readSessionView } from "@/lib/session-view";
 export const runtime = "nodejs";
 export async function GET(
   request: Request,
@@ -16,7 +17,8 @@ export async function GET(
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
   try {
     const { id } = await params;
-    const session = await readSession(id);
+    await ensureQueueRecovered().catch(() => []);
+    const session = await readSessionView(id);
     const result = await readResult(id);
     const review = await readReview(id);
     return NextResponse.json({
