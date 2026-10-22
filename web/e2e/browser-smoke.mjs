@@ -217,8 +217,11 @@ try {
   await page.getByTestId("media-input").setInputFiles(audio);
   const creation = await created;
   assert(creation.status() === 201, `import refusé (${creation.status()})`);
-  const sessionId = (await creation.json()).id;
   await page.getByTestId("session-title").waitFor({ timeout: 60_000 });
+  // L'identifiant se lit dans l'adresse (la session s'ouvre toute seule) : le corps d'un envoi en flux
+  // n'est plus toujours disponible dans l'inspecteur une fois la page passée à autre chose.
+  const sessionId = new URL(page.url()).searchParams.get("session");
+  assert(sessionId, `session non ouverte après l'import (${page.url()})`);
   ok(`audio importé et mis en file (session ${sessionId})`);
 
   const detail = await waitForSession({

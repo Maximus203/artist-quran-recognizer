@@ -171,8 +171,9 @@
   font: 600 var(--fs-xs) / 1 var(--font-mono);
   color: var(--text-2);
 }
-.rcard.is-locked {
-  opacity: 0.6;
+/* Sans testeur, seuls les boutons sont atténués (aria-disabled) : le texte d'aide reste lisible. */
+.rcard.is-locked .btn {
+  opacity: 0.45;
 }
 .range-chip {
   display: flex;
