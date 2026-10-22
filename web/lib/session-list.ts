@@ -14,6 +14,9 @@ import {
 } from "./format";
 import type { SessionView } from "./session-view";
 
+/** Une session telle que l'API la sert (sans le numéro de processus). */
+export type ListedSession = Omit<SessionView, "pid">;
+
 export type SessionFilter = "all" | "active" | "unread";
 export type RowTone = "neutral" | "accent" | "warn" | "danger";
 
@@ -84,7 +87,7 @@ function waitingFor(seconds: number): string {
     : `${text} restantes`;
 }
 
-const spentSeconds = (view: SessionView): number | null => {
+const spentSeconds = (view: ListedSession): number | null => {
   if (typeof view.duration_s === "number" && view.duration_s > 0)
     return view.duration_s;
   const start = Date.parse(view.started_at ?? "");
@@ -94,7 +97,7 @@ const spentSeconds = (view: SessionView): number | null => {
     : null;
 };
 
-export function buildRow(view: SessionView, now: number): SessionRow {
+export function buildRow(view: ListedSession, now: number): SessionRow {
   const mediaKind = isVideoSession(view) ? "video" : "audio";
   const length = view.audio_duration_s
     ? formatClockLength(view.audio_duration_s)
@@ -205,19 +208,19 @@ export function buildRow(view: SessionView, now: number): SessionRow {
   return row;
 }
 
-const finishedAt = (view: SessionView): string =>
+const finishedAt = (view: ListedSession): string =>
   view.finished_at ?? view.created_at;
 
 export type SessionGroups = {
   /** Analyse en cours puis en attente, dans l'ordre de la file. */
-  queue: SessionView[];
+  queue: ListedSession[];
   /** Importées sans lancement : elles attendent un clic. */
-  ready: SessionView[];
+  ready: ListedSession[];
   /** Terminées, en échec ou annulées, les plus récentes d'abord. */
-  done: SessionView[];
+  done: ListedSession[];
 };
 
-export function groupViews(views: readonly SessionView[]): SessionGroups {
+export function groupViews(views: readonly ListedSession[]): SessionGroups {
   const queue = views
     .filter((v) => v.state === "running" || v.state === "queued")
     .sort(
@@ -234,19 +237,19 @@ export function groupViews(views: readonly SessionView[]): SessionGroups {
   return { queue, ready, done };
 }
 
-const isActive = (v: SessionView) =>
+const isActive = (v: ListedSession) =>
   v.state === "running" || v.state === "queued";
 
 export function filterViews(
-  views: readonly SessionView[],
+  views: readonly ListedSession[],
   filter: SessionFilter,
-): SessionView[] {
+): ListedSession[] {
   if (filter === "active") return views.filter(isActive);
   if (filter === "unread") return views.filter((v) => v.unread === true);
   return [...views];
 }
 
-export function sessionCounts(views: readonly SessionView[]) {
+export function sessionCounts(views: readonly ListedSession[]) {
   return {
     all: views.length,
     active: views.filter(isActive).length,
@@ -255,7 +258,7 @@ export function sessionCounts(views: readonly SessionView[]) {
 }
 
 /** « 1 en cours · 1 en attente · fin estimée dans ≈ 12 min » ; null si la file est vide. */
-export function queueSummary(views: readonly SessionView[]): string | null {
+export function queueSummary(views: readonly ListedSession[]): string | null {
   const running = views.filter((v) => v.state === "running").length;
   const waiting = views.filter((v) => v.state === "queued").length;
   if (running + waiting === 0) return null;
@@ -273,6 +276,6 @@ export const pageTitle = (unread: number): string =>
   unread > 0 ? `(${unread}) Atelier de revue` : "Atelier de revue";
 
 /** Ce qui mérite un coup d'œil panneau fermé : résultats non lus + analyses actives. */
-export function attentionCount(views: readonly SessionView[]): number {
+export function attentionCount(views: readonly ListedSession[]): number {
   return views.filter((v) => v.unread === true || isActive(v)).length;
 }
