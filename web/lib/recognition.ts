@@ -51,14 +51,17 @@ const nonQuran = z
     ref: ref.optional(),
     text: z.string().nullish(),
     translation: translation.nullish(),
-    label_ar: z.string().optional(),
+    label_ar: z.string().min(1).optional(),
   })
   .refine(
     (z) =>
       z.basmala === true
-        ? z.label === "basmala" && z.ref === "1:1" && z.label_ar === undefined
-        : z.text == null && z.ref === undefined,
-    "Zone non coranique incohérente : seule la basmala (1:1) porte du texte",
+        ? z.label === "basmala" &&
+          z.ref === "1:1" &&
+          z.label_ar === undefined &&
+          (z.text == null || z.text.length > 0)
+        : z.text == null && z.ref === undefined && z.translation == null,
+    "Zone non coranique incohérente : seule la basmala (1:1) porte du texte et une traduction",
   );
 const abstention = z.object({
   kind: z.literal("abstention"),

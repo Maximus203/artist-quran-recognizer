@@ -298,7 +298,9 @@ try {
       `${interval.ref} : verset partiel sans badge « Passage partiel » (${badges})`,
     );
     // Le texte seul (le médaillon de fin de verset est un décor, hors de ce nœud).
-    const arabic = (await card.getByTestId("arabic-text").textContent())?.trim();
+    const arabic = (
+      await card.getByTestId("arabic-text").textContent()
+    )?.trim();
     assert(
       arabic === interval.text.trim(),
       `${interval.ref} : texte affiché « ${arabic} » ≠ interval.text « ${interval.text} »`,

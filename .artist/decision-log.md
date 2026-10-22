@@ -978,6 +978,48 @@
 - **Ouvert** : réduire le coût (attribuer chaque sauvetage à un moteur et un critère) ; détections d'un
   seul mot (« كلا » → 75:26), déjà produites par FastConformer seul, à trancher avec la vérité terrain.
 
+## 2026-10-22 — La basmala est restituée comme un verset (texte du corpus 1:1 + traduction)
+- **Besoin** : l'atelier montrait `[basmala]` seul ; Cherif veut le texte et la traduction, comme pour un verset.
+- **Décision** : l'intervalle `non_quran` de label `basmala` porte `basmala: true`, `ref: "1:1"`, `text` (lu dans
+  le corpus par `HomeRenderer.render_basmala`, jamais d'un modèle : I1) et `translation` (QuranEnc, id + version
+  + attribution : I2). Champs additifs : `aqr.recognition/1` ne change pas, l'ancien format reste lisible
+  (lecteur Python, schéma zod). Isti'adha, takbir, amin n'ont pas de texte du Mushaf : seulement un libellé
+  arabe constant `label_ar`, clairement distinct d'un texte de verset.
+- **Écartés** :
+  - *Une nouvelle sorte d'intervalle (`kind: "basmala"`)* : casserait tous les lecteurs (`kind` est
+    discriminant) ; un champ additif sur `non_quran` n'en casse aucun.
+  - *Faire de la basmala un `verse` 1:1* : la basmala d'une sourate n'est pas une récitation du verset 1:1 d'Al-Fatiha
+    (I3/I4 : ne jamais nommer un verset qu'on n'a pas entendu) ; elle reste une zone non coranique, juste
+    habillée comme un verset à l'affichage.
+  - *Réutiliser `FORMULA_TEXTS` (graphie imla'i de l'alignement) pour `label_ar`* : ces formes servent à aligner ce
+    que l'ASR écrit, pas à être montrées ; `aqr.rendering.formula_labels` porte les libellés d'affichage.
+  - *Texte de la basmala dans les sous-titres SRT/VTT* : hors besoin exprimé, et l'atelier lit le JSON ; `[basmala]`
+    inchangé.
+- **Contrôles** : le lecteur Python et le schéma web refusent une zone incohérente (`basmala` hors 1:1, texte
+  sur une formule, `label_ar` sur la basmala) ; `tests/support/corpus_check.py` (déjà appelé par les smokes)
+  vérifie que le texte de la basmala est exactement `repo.text(1:1)` et que `label_ar` est la constante du label.
+- **Mesuré** : cascade réelle sur `test-55.webm` (55:1-4 précédé de la basmala) : intervalle basmala 1,29-4,33 s avec
+  texte et traduction ; `corpus_check --surah 55` OK.
+- **Passe Cherif QA (22 octobre)** :
+  - *Zone basmala issue d'un verset UNCERTAIN/INFERRED* (signalée ❌) : **gardée, par construction**. La basmala est
+    aussi le début du verset 1 de chacune des 113 autres sourates : une fenêtre qui ne contient qu'elle est
+    toujours ambiguë (UNCERTAIN) ; c'est précisément ce que `_relabel_basmala` rattrape. Restreindre la
+    relabellisation aux seuls RECOGNIZED (essayé : `test_basmala_d_ouverture_non_coranique_puis_le_verset`
+    échoue) supprimerait la fonction. Le texte montré est celui de la basmala, pas la preuve d'un verset : documenté
+    (`ref: "1:1"` hors `kind: "verse"`, à filtrer par les consommateurs, tous le font déjà).
+  - *1:1 isolé (001001.mp3) sort en basmala* : règle d'avant (« 1:1 non suivi de 1:2 »), inchangée ; le texte et la
+    traduction sont exactement ceux de 1:1, donc justes. Doc et commentaire de `NonQuranKind` corrigés (ils disaient
+    « hors Al-Fatiha 1:1 »). Al-Fatiha entière reste en versets.
+  - *Hors ligne, traduction de la sourate 1 absente du cache* : `build_json` plantait en trace d'appels après le
+    calcul, sans aucun fichier (déjà vrai pour tout verset d'une sourate non cachée ; la basmala ajoute la sourate 1).
+    `aqr recognize` écrit maintenant les sous-titres d'abord, puis le JSON dans un `try` : message actionnable, code 1,
+    pas de JSON à moitié écrit.
+  - Lecteur Python : `basmala` strictement booléen (« false » était lu vrai), `label_ar` non vide, traduction refusée
+    hors basmala ; schéma web : mêmes règles. `corpus_check` : provenance de la traduction de la basmala (id,
+    version, attribution, `scope: "verse"`, I2 sur la forme).
+  - *Écarté* : comparer le contenu de la traduction dans `corpus_check` (le dépôt de traductions n'y est pas
+    chargé ; même limite que pour les versets). Noté pour l'interface : la note `[1]` de la traduction.
+
 ## 2026-10-22 — Atelier : file d'attente des analyses, vidéos, « non lu », durées et estimation
 - **Besoin** (Cherif) : lancer plusieurs analyses (audios et vidéos) et revenir plus tard ; la carte graphique
   n'aime pas le parallèle ; voir ce qui est terminé et pas encore ouvert ; savoir combien de temps ça prend.
