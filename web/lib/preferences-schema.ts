@@ -36,6 +36,8 @@ export const preferencesShape = {
   arabicFont: z.enum(fontIds).nullable(),
   arabicSize: z.number().int().min(28).max(72).multipleOf(4).nullable(),
   translation: z.boolean(),
+  /** Surligner en direct le mot arabe récité et le fragment de traduction correspondant. */
+  liveHighlight: z.boolean(),
   visibleSpanSeconds: z
     .union([z.literal(600), z.literal(120), z.literal(30), z.literal(10)])
     .nullable(),
@@ -61,6 +63,7 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   arabicFont: null,
   arabicSize: null,
   translation: true,
+  liveHighlight: true,
   visibleSpanSeconds: null,
   followPlayback: true,
   leftPanelOpen: null,

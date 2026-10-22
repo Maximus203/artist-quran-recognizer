@@ -75,6 +75,103 @@ describe("contrat recognition", () => {
     expect(parseRecognition({ ...base, riwaya }).riwaya).toEqual(riwaya);
     expect(parseRecognition(base).riwaya).toBeUndefined();
   });
+  describe("temps de mots et traduction par passage (champs additifs)", () => {
+    const enriched = {
+      kind: "verse",
+      ref: "11:61",
+      words: [15, 16],
+      partial: true,
+      status: "recognized",
+      t: [0, 3],
+      time_interpolated: false,
+      confidence: 0.8,
+      candidates: [],
+      repetition: true,
+      text: "أَنشَأَكُم مِّنَ",
+      word_times: [
+        [0.2, 1],
+        [1, 2.5],
+      ],
+      word_times_source: "ctc-alignment",
+      translation: {
+        text: "De la terre Il vous a créé, et Il vous l’a fait peupler.",
+        translation_id: "french_hameedullah",
+        version: "quranenc.com",
+        attribution: "QuranEnc.com",
+        scope: "fragment",
+        segments: [
+          { words: [14, 17], text: "De la terre Il vous a créé," },
+          { words: [18, 19], text: "et Il vous l’a fait peupler." },
+        ],
+        fragment: {
+          words: [15, 16],
+          text: "De la terre Il vous a créé,",
+          approximate: true,
+          ellipsis_before: true,
+          ellipsis_after: true,
+        },
+      },
+    };
+    const parse = (interval: unknown) => {
+      const doc = parseRecognition({ ...base, intervals: [interval] });
+      return doc.intervals[0] as Extract<
+        (typeof doc.intervals)[number],
+        { kind: "verse" }
+      >;
+    };
+
+    it("conserve word_times, la source des temps, les segments et le fragment", () => {
+      const verse = parse(enriched);
+      expect(verse.word_times).toEqual([
+        [0.2, 1],
+        [1, 2.5],
+      ]);
+      expect(verse.word_times_source).toBe("ctc-alignment");
+      expect(verse.translation?.scope).toBe("fragment");
+      expect(verse.translation?.segments).toHaveLength(2);
+      expect(verse.translation?.fragment).toMatchObject({
+        words: [15, 16],
+        approximate: true,
+        ellipsis_before: true,
+      });
+    });
+
+    it("un ancien résultat sans ces champs reste valide", () => {
+      const verse = parse({
+        ...enriched,
+        word_times: undefined,
+        word_times_source: undefined,
+        translation: {
+          ...enriched.translation,
+          scope: "verse",
+          segments: undefined,
+          fragment: undefined,
+        },
+      });
+      expect(verse.word_times).toBeUndefined();
+      expect(verse.translation?.scope).toBe("verse");
+    });
+
+    it("un enrichissement mal formé retombe sur « absent » sans casser tout le résultat", () => {
+      const verse = parse({
+        ...enriched,
+        word_times: "pas une liste",
+        word_times_source: "devine",
+        translation: {
+          ...enriched.translation,
+          scope: "inconnu",
+          segments: [{ words: "x", text: 3 }],
+          fragment: { words: [1], text: 4 },
+        },
+      });
+      expect(verse.word_times).toBeUndefined();
+      expect(verse.word_times_source).toBeUndefined();
+      expect(verse.translation?.scope).toBe("verse");
+      expect(verse.translation?.segments).toBeUndefined();
+      expect(verse.translation?.fragment).toBeUndefined();
+      expect(verse.translation?.text).toContain("De la terre");
+    });
+  });
   it("conserve les occurrences et le chevauchement", () => {
     const parsed = parseRecognition(base);
     expect(activeIntervals(parsed.intervals, 2).map((i) => i.kind)).toEqual([
