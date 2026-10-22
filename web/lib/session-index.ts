@@ -241,6 +241,20 @@ export function markViewedBy(
   ).viewed_at;
 }
 
+/** Une session vue par un utilisateur (ligne d'index + favori, non lu, ouverture), relue à l'instant. */
+export function getListed(
+  db: Db,
+  userId: number,
+  id: string,
+): ListedRow | null {
+  const row = db
+    .prepare(`${BASE}, ${PER_USER} ${FROM} WHERE m.id = ?`)
+    .get(userId, userId, userId, userId, id) as
+    | Record<string, unknown>
+    | undefined;
+  return row ? withUser(row) : null;
+}
+
 export function viewState(
   db: Db,
   userId: number,

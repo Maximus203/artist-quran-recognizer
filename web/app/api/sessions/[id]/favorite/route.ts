@@ -1,10 +1,10 @@
-import { json } from "@/lib/http";
+import { json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { setFavorite } from "@/lib/session-index";
 export const runtime = "nodejs";
 
 /** Ajoute aux favoris DE L'UTILISATEUR (idempotent) : `{ id, favorite: true }`. Il faut voir la session. */
-export async function PUT(
+async function handlePUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -23,7 +23,7 @@ export async function PUT(
 }
 
 /** Retire des favoris (idempotent) : `{ id, favorite: false }`. */
-export async function DELETE(
+async function handleDELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -40,3 +40,6 @@ export async function DELETE(
   );
   return json({ id: access.id, favorite: false });
 }
+
+export const PUT = safe(handlePUT);
+export const DELETE = safe(handleDELETE);

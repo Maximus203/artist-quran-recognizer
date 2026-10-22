@@ -69,15 +69,29 @@ export function closeDb(): void {
   delete holder[HOLDER];
 }
 
-/** Exécute `work` dans une transaction (IMMEDIATE : prend le verrou d'écriture d'emblée). */
+const depths = new WeakMap<Db, number>();
+
+/**
+ * Exécute `work` dans une transaction (IMMEDIATE : prend le verrou d'écriture d'emblée). Réentrant :
+ * une transaction imbriquée devient un point de sauvegarde, annulé seul si elle échoue.
+ */
 export function transaction<T>(db: Db, work: () => T): T {
-  db.exec("BEGIN IMMEDIATE");
+  const depth = depths.get(db) ?? 0;
+  const savepoint = `aqr_sp_${depth}`;
+  db.exec(depth === 0 ? "BEGIN IMMEDIATE" : `SAVEPOINT ${savepoint}`);
+  depths.set(db, depth + 1);
   try {
     const result = work();
-    db.exec("COMMIT");
+    db.exec(depth === 0 ? "COMMIT" : `RELEASE ${savepoint}`);
     return result;
   } catch (error) {
-    db.exec("ROLLBACK");
+    db.exec(
+      depth === 0
+        ? "ROLLBACK"
+        : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`,
+    );
     throw error;
+  } finally {
+    depths.set(db, depth);
   }
 }

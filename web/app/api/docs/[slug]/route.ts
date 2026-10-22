@@ -1,10 +1,10 @@
 import { readDoc } from "@/lib/docs";
-import { notFound } from "@/lib/http";
+import { notFound, safe } from "@/lib/http";
 import { requireUser } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
 /** Markdown brut d'un document de l'index (`text/markdown`). `404` pour tout slug hors de l'index. */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
@@ -20,3 +20,5 @@ export async function GET(
     },
   });
 }
+
+export const GET = safe(handleGET);

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { apiError, json } from "@/lib/http";
+import { apiError, json, safe } from "@/lib/http";
 import {
   ImportError,
   importFromBytes,
@@ -9,7 +9,7 @@ import {
 import { ensureQueueRecovered, launch } from "@/lib/jobs";
 import { userQuotaBytes } from "@/lib/quota";
 import { requireUser } from "@/lib/route-guard";
-import { getMeta, usedBytes } from "@/lib/session-index";
+import { getMeta, markViewedBy, usedBytes } from "@/lib/session-index";
 import { cleanUserName } from "@/lib/session-name";
 import { parseListQuery } from "@/lib/session-query";
 import { listForUser, viewForUser } from "@/lib/session-service";
@@ -30,7 +30,7 @@ export const runtime = "nodejs";
  * size), `limit` (1–100, défaut 20), `cursor` (valeur de `next_cursor`).
  * Réponse : `{ items, next_cursor, total, counts: { scopes, states } }`.
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   const auth = await requireUser(request);
   if (!auth.ok) return auth.response;
   const parsed = parseListQuery(new URL(request.url).searchParams);
@@ -81,7 +81,7 @@ function chosenOptions(
  * `?name=…` (ou en-tête `x-aqr-name`) donne un nom ; sans lui, un nom par défaut est dérivé du fichier.
  * `413` si le fichier dépasse le plafond d'envoi ou le quota de l'utilisateur.
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   const auth = await requireUser(request, { mutation: true });
   if (!auth.ok) return auth.response;
   try {
@@ -151,6 +151,9 @@ export async function POST(request: NextRequest) {
           e instanceof Error ? e.message : "Mise en file impossible";
       }
     }
+    // Un résultat joint à l'import est sous les yeux de l'utilisateur : pas de point « non lu ».
+    if (created.state === "done")
+      markViewedBy(auth.db, auth.user.id, created.id, new Date().toISOString());
     const meta = getMeta(auth.db, created.id);
     const view = meta ? await viewForUser(auth.db, auth.user, meta) : null;
     return json(
@@ -165,3 +168,6 @@ export async function POST(request: NextRequest) {
     return apiError(400, e instanceof Error ? e.message : "Import impossible");
   }
 }
+
+export const GET = safe(handleGET);
+export const POST = safe(handlePOST);

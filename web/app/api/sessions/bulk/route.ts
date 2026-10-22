@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { decide, type Ability } from "@/lib/access";
 import { transaction } from "@/lib/db";
-import { apiError, json, readJson } from "@/lib/http";
+import { apiError, json, readJson, safe } from "@/lib/http";
 import { metaFor, requireUser } from "@/lib/route-guard";
 import { setFavorite, updateMeta } from "@/lib/session-index";
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ type Status = "ok" | "not_found" | "forbidden";
  * `{ results: [{ id, status: "ok" | "not_found" | "forbidden" }], applied }`. Une session invisible
  * est « not_found » (jamais révélée) ; « forbidden » = visible mais ni propriétaire ni administrateur.
  */
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   const auth = await requireUser(request, { mutation: true });
   if (!auth.ok) return auth.response;
   const parsed = body.safeParse(await readJson(request));
@@ -82,3 +82,5 @@ export async function POST(request: Request) {
     applied: results.filter((r) => r.status === "ok").length,
   });
 }
+
+export const POST = safe(handlePOST);

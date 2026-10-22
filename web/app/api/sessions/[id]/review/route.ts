@@ -1,11 +1,11 @@
-import { apiError, json, readJson } from "@/lib/http";
+import { apiError, json, readJson, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { updateReviewAs } from "@/lib/review-update";
 import { readReview } from "@/lib/store";
 export const runtime = "nodejs";
 
 /** La revue d'une session (tous testeurs confondus) : sert au rafraîchissement du panneau. */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -25,7 +25,7 @@ export async function GET(
  * (administrateurs exceptés) : ces identifiants reviennent dans `rejected`.
  * Réponse : `{ saved: true, review, rejected: string[] }`.
  */
-export async function PUT(
+async function handlePUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -50,3 +50,6 @@ export async function PUT(
     );
   }
 }
+
+export const GET = safe(handleGET);
+export const PUT = safe(handlePUT);

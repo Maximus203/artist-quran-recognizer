@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicUser } from "@/lib/auth-response";
-import { apiError, json, notFound, readJson } from "@/lib/http";
+import { apiError, json, notFound, readJson, safe } from "@/lib/http";
 import { requireAdmin } from "@/lib/route-guard";
 import { LastAdminError, updateUser } from "@/lib/users";
 export const runtime = "nodejs";
@@ -15,7 +15,7 @@ const patch = z
  * révoque ses connexions ; ses sessions et revues restent. `409` si ce changement retirerait le
  * dernier administrateur actif.
  */
-export async function PATCH(
+async function handlePATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -43,3 +43,5 @@ export async function PATCH(
     throw error;
   }
 }
+
+export const PATCH = safe(handlePATCH);

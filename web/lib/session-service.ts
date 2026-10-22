@@ -6,6 +6,7 @@ import { log } from "./log";
 import {
   deleteMeta,
   estimationRows,
+  getListed,
   listCounts,
   listPage,
   visibleRows,
@@ -140,9 +141,12 @@ async function viewsFor(
   const views = buildViews([...real.values(), ...others], currentContext());
   const byId = new Map(views.map((view) => [view.id, view]));
   const out: ApiSession[] = [];
-  for (const row of rows) {
-    const view = byId.get(row.id);
-    if (view && real.has(row.id)) out.push(compose(me, row, view));
+  for (const queried of rows) {
+    const view = byId.get(queried.id);
+    if (!view || !real.has(queried.id)) continue;
+    // Lire la session sur le disque peut avoir adopté une fin d'analyse et mis l'index à jour :
+    // l'état, l'étiquette et le « non lu » sont relus pour ne pas répondre avec la valeur d'avant.
+    out.push(compose(me, getListed(db, me.id, queried.id) ?? queried, view));
   }
   return out;
 }

@@ -1,4 +1,4 @@
-import { apiError, json, readJson } from "@/lib/http";
+import { apiError, json, readJson, safe } from "@/lib/http";
 import {
   isPreferenceKey,
   patchPreferences,
@@ -15,7 +15,7 @@ export const runtime = "nodejs";
  * une valeur invalide refuse tout le corps (`400`, rien n'est écrit). `DELETE` remet toutes les
  * clés par défaut, ou une seule avec `?key=theme`.
  */
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const auth = await requireUser(request);
   if (!auth.ok) return auth.response;
   return json(readPreferences(auth.db, auth.user.id));
@@ -41,10 +41,10 @@ async function merge(request: Request) {
     );
   return json(patchPreferences(auth.db, auth.user.id, parsed.data));
 }
-export const PUT = merge;
-export const PATCH = merge;
+export const PUT = safe(merge);
+export const PATCH = safe(merge);
 
-export async function DELETE(request: Request) {
+async function handleDELETE(request: Request) {
   const auth = await requireUser(request, { mutation: true });
   if (!auth.ok) return auth.response;
   const key = new URL(request.url).searchParams.get("key");
@@ -52,3 +52,6 @@ export async function DELETE(request: Request) {
     return apiError(400, "Préférence inconnue.", { code: "invalid" });
   return json(resetPreferences(auth.db, auth.user.id, key ?? undefined));
 }
+
+export const GET = safe(handleGET);
+export const DELETE = safe(handleDELETE);

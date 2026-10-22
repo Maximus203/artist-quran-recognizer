@@ -1,5 +1,5 @@
 import { ensureQueueRecovered } from "@/lib/jobs";
-import { json } from "@/lib/http";
+import { json, safe } from "@/lib/http";
 import { requireUser } from "@/lib/route-guard";
 import { statsForUser } from "@/lib/session-service";
 export const runtime = "nodejs";
@@ -10,9 +10,11 @@ export const runtime = "nodejs";
  * analyses, `totals` (sessions, taille des audios, heures) et `disk` (espace utilisé par ces
  * sessions, espace libre et total du volume). Calcul pur sur l'index, aucune donnée nouvelle.
  */
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const auth = await requireUser(request);
   if (!auth.ok) return auth.response;
   await ensureQueueRecovered().catch(() => []);
   return json(await statsForUser(auth.db, auth.user));
 }
+
+export const GET = safe(handleGET);

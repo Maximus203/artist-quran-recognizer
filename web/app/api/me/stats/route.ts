@@ -1,4 +1,4 @@
-import { json } from "@/lib/http";
+import { json, safe } from "@/lib/http";
 import { userQuotaBytes } from "@/lib/quota";
 import { requireUser } from "@/lib/route-guard";
 import { ownedTotals, userAnalysisStats } from "@/lib/session-index";
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  * été supprimée depuis), heures d'audio analysées, facteur temps réel moyen, espace utilisé et
  * quota. Aucune donnée d'un autre utilisateur.
  */
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const auth = await requireUser(request);
   if (!auth.ok) return auth.response;
   const analyses = userAnalysisStats(auth.db, auth.user.id);
@@ -35,3 +35,5 @@ export async function GET(request: Request) {
     },
   });
 }
+
+export const GET = safe(handleGET);

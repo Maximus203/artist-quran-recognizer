@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -41,7 +42,7 @@ const action = z.discriminatedUnion("action", [
   }),
 ]);
 
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -60,7 +61,7 @@ export async function GET(
 }
 
 /** Propose, modifie, aligne (modèle réel, peut durer) ou écrit dans le manifeste. */
-export async function POST(
+async function handlePOST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -102,3 +103,6 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
+
+export const GET = safe(handleGET);
+export const POST = safe(handlePOST);

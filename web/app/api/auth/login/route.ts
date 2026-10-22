@@ -1,6 +1,6 @@
 import { loginAccount } from "@/lib/auth";
 import { authResponse } from "@/lib/auth-response";
-import { apiError, readJson } from "@/lib/http";
+import { apiError, readJson, safe } from "@/lib/http";
 import { authDeps, authenticate, clientIp } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  * `401` générique (jamais « ce pseudonyme n'existe pas »), `429` avec `Retry-After` après
  * plusieurs échecs (verrouillage progressif par IP + pseudonyme).
  */
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   const guard = await authenticate(request, {
     mutation: true,
     anonymous: true,
@@ -26,3 +26,5 @@ export async function POST(request: Request) {
   );
   return authResponse(request, deps.cfg, result, 200);
 }
+
+export const POST = safe(handlePOST);

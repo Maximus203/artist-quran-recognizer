@@ -1,10 +1,11 @@
+import { safe } from "@/lib/http";
 import { revokeLogin } from "@/lib/auth";
 import { clearCookieHeader } from "@/lib/auth-response";
 import { authenticate } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
 /** Déconnexion : révoque le jeton côté serveur et efface le cookie. Idempotente (`204` même sans connexion). */
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   const guard = await authenticate(request, {
     mutation: true,
     anonymous: true,
@@ -19,3 +20,5 @@ export async function POST(request: Request) {
     },
   });
 }
+
+export const POST = safe(handlePOST);
