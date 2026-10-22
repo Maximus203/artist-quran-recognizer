@@ -37,7 +37,7 @@ dit pourquoi.
 ### Direction produit du 2026-10-23
 Usage non commercial, publication en open source sous une licence non commerciale, **Hafs uniquement**, et
 pour objectif la **détection en direct sur flux WebSocket, sans plage déclarée** (l'analyse de fichiers
-reste le premier terrain). Conception : `docs/adr/0010-detection-en-direct-sans-plage.md` (proposé), avec
+reste le premier terrain). Conception : `docs/adr/0011-detection-en-direct-sans-plage.md` (proposé), avec
 quatre étapes (simulation hors ligne, moteur incrémental, service WebSocket, interface). Ce travail
 s'appuie sur l'étape B (suivi de position) et n'attend pas l'étape C.
 

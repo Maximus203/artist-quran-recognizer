@@ -1204,7 +1204,7 @@
   (sauvegarder la base avec le dossier de données) ; limiteurs en mémoire ; quota vérifié à l'import (deux
   imports simultanés peuvent le dépasser d'un fichier).
 
-## 2026-10-23 — Direction produit : non commercial, Hafs seul, détection en direct sans plage (ADR-0010 proposé)
+## 2026-10-23 — Direction produit : non commercial, Hafs seul, détection en direct sans plage (ADR-0011 proposé)
 - **Décisions du mainteneur** :
   - **Usage non commercial uniquement.** Le projet sera **publié en open source sous une licence non
     commerciale** (question réglée, ne plus la reposer) ; les modèles et jeux non commerciaux (Tadabur
@@ -1215,9 +1215,9 @@
   - **Direction** : l'analyse de fichiers d'abord ; l'**objectif** est la **détection en direct sur flux
     WebSocket, sans plage déclarée** (le passage peut venir de n'importe où dans le Coran ; pas de mode
     « plage déclarée » façon Tarteel).
-  - **Budget de la cascade** conditionnel au temps disponible (conçu dans l'ADR-0010 §7, pas codé).
+  - **Budget de la cascade** conditionnel au temps disponible (conçu dans l'ADR-0011 §7, pas codé).
   - **Comptes** : le mainteneur est administrateur ; relecteur et écrans d'administration plus tard.
-- **Conception** : `docs/adr/0010-detection-en-direct-sans-plage.md` (statut **proposé**). L'idée du
+- **Conception** : `docs/adr/0011-detection-en-direct-sans-plage.md` (statut **proposé**). L'idée du
   mainteneur (garder les candidats ouverts, n'afficher que le sûr, basculer vers la source exacte dès
   qu'un mot départage, supposer la suite, détecter le saut) est formalisée en suivi d'hypothèses de
   position avec quatre classes d'a priori, quatre niveaux d'affichage et un protocole `aqr.live/1`.

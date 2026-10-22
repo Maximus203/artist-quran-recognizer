@@ -103,14 +103,14 @@ modèle réentraîné.** Les mêmes modèles, mieux exploités, retrouvent plus 
   verset plusieurs versets se ressemblent, le système garde donc les candidats ouverts, n'affiche que ce qui
   est sûr (le passage entendu), et nomme `sourate:verset` dès qu'un mot départage ; une fois un verset
   détecté, la suite est attendue, et un début qui casse l'attente signale un saut. **Conception :
-  ADR-0010 (proposé, rien n'est encore codé en dehors d'un script d'analyse).**
+  ADR-0011 (proposé, rien n'est encore codé en dehors d'un script d'analyse).**
 - **Ce que disent les chiffres** (corpus Hafs, mots exactement entendus, donc une borne basse) : il faut en
   médiane **2 mots** pour distinguer un début de verset de tous les autres (p90 : 5 mots) ; 54 % des
   versets sont connus en 2 mots, 74 % en 3 ; **26 % exigent plus de 3 mots** et **289 versets (4,6 %)
   n'ont aucun début propre** (refrains, formules répétées). Avec la sourate pour contexte, 83 % se
   tranchent en 2 mots ; 125 versets (surtout les refrains) ne se nomment que par leur position. Détail et
-  limites : `docs/adr/0010-detection-en-direct-sans-plage.md`.
-- **Le budget de la cascade dépendra du temps disponible** (conçu dans l'ADR-0010, pas codé).
+  limites : `docs/adr/0011-detection-en-direct-sans-plage.md`.
+- **Le budget de la cascade dépendra du temps disponible** (conçu dans l'ADR-0011, pas codé).
 - **Comptes** : Cherif est administrateur ; le relecteur et les écrans d'administration viendront plus tard.
 
 ## 5. Les chiffres mesurés, avec leurs limites
@@ -165,5 +165,5 @@ Elles sont listées dans `docs/KNOWN-ISSUES.md` et dans les rapports :
 | voir ce qui a changé et quand | `docs/RELEASE-NOTES.md` |
 | connaître le plan et les phases | `docs/PLAN.md` |
 | savoir comment on mesure | `docs/EVALUATION-METRICS.md` |
-| savoir pourquoi telle décision | les ADR, `docs/adr/0001` à `0010` |
-| comprendre la détection en direct envisagée | `docs/adr/0010-detection-en-direct-sans-plage.md` |
+| savoir pourquoi telle décision | les ADR, `docs/adr/0001` à `0011` |
+| comprendre la détection en direct envisagée | `docs/adr/0011-detection-en-direct-sans-plage.md` |
