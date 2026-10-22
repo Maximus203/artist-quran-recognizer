@@ -10,6 +10,7 @@ from __future__ import annotations
 from aqr.alignment.verification import ChainCheck
 from aqr.domain.models import Detection, NonQuranKind, NonQuranSpan, TimeSpan
 from aqr.pipeline.result import AbstentionSpan, Interval, RecognitionResult
+from aqr.rendering.formula_labels import FORMULA_LABELS_AR
 from aqr.rendering.home_renderer import HomeRenderer, format_range
 
 SCHEMA = "aqr.recognition/1"
@@ -33,6 +34,19 @@ def _span(time: TimeSpan | None) -> list[float] | None:
     return None if time is None else [round(time.start_s, 3), round(time.end_s, 3)]
 
 
+def _non_quran_json(
+    item: NonQuranSpan, renderer: HomeRenderer, translation_id: str | None
+) -> dict[str, object]:
+    """Zone non coranique. La basmala est le verset 1:1 : son texte et sa traduction viennent du
+    corpus (I1, I2), signalés par `basmala: true`. Isti'adha, takbir et amin n'ont aucun texte du
+    Mushaf : un libellé arabe constant (`label_ar`), jamais présenté comme un verset."""
+    base: dict[str, object] = {"kind": "non_quran", "label": item.kind.value, "t": _span(item.time)}
+    if item.kind is NonQuranKind.BASMALA:
+        return {**base, **renderer.render_basmala(translation_id)}
+    label_ar = FORMULA_LABELS_AR.get(item.kind)
+    return base if label_ar is None else {**base, "label_ar": label_ar}
+
+
 def _interval_json(
     item: Interval, renderer: HomeRenderer, translation_id: str | None
 ) -> dict[str, object]:
@@ -53,7 +67,7 @@ def _interval_json(
             "translation": rendered["translation"],
         }
     if isinstance(item, NonQuranSpan):
-        return {"kind": "non_quran", "label": item.kind.value, "t": _span(item.time)}
+        return _non_quran_json(item, renderer, translation_id)
     assert isinstance(item, AbstentionSpan)
     return {
         "kind": "abstention",
