@@ -21,7 +21,7 @@ import subprocess
 import tempfile
 import wave
 from array import array
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from aqr.data.refcorpus import Degradation, Param
@@ -36,6 +36,11 @@ def _ffmpeg() -> str:
     if path is None:
         raise RuntimeError("ffmpeg introuvable dans le PATH (requis pour dégrader l'audio)")
     return path
+
+
+Runner = Callable[[list[str]], None]
+"""Exécute une commande ffmpeg (arguments après `ffmpeg -nostdin -y -v error`) ; injectable pour
+tracer les commandes exactes d'une campagne (`aqr.data.degrade_extra`)."""
 
 
 def _run(args: list[str]) -> None:
@@ -86,7 +91,41 @@ def gaussian_noise(length: int, target_rms: float, seed: int) -> array[int]:
     )
 
 
-def degrade(degradation: Degradation, src: Path, dest: Path, *, sample_rate: int = 16000) -> None:
+def mix_with_noise(
+    src: Path,
+    noise: array[int],
+    dest: Path,
+    *,
+    sample_rate: int = 16000,
+    run: Runner = _run,
+) -> None:
+    """Ajoute `noise` (même taux que `src`) à `src` : `amix` sans normalisation, WAV 16 bits."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        noise_path = Path(tmp) / "noise.wav"
+        write_samples(noise_path, noise, read_samples(src)[1])
+        run(
+            [
+                "-i",
+                str(src),
+                "-i",
+                str(noise_path),
+                "-filter_complex",
+                "amix=inputs=2:duration=first:normalize=0",
+                "-ac",
+                "1",
+                "-ar",
+                str(sample_rate),
+                "-c:a",
+                "pcm_s16le",
+                str(dest),
+            ]
+        )
+
+
+def degrade(
+    degradation: Degradation, src: Path, dest: Path, *, sample_rate: int = 16000, run: Runner = _run
+) -> None:
     """Écrit la version dégradée de `src` dans `dest` (WAV mono 16 bits, `sample_rate`)."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     params = degradation.params
@@ -97,41 +136,27 @@ def degrade(degradation: Degradation, src: Path, dest: Path, *, sample_rate: int
         chain = (
             f"aresample={TELEPHONE_RATE},highpass=f={low},lowpass=f={high},aresample={sample_rate}"
         )
-        _run(["-i", str(src), "-af", chain, *out])
+        run(["-i", str(src), "-af", chain, *out])
     elif kind == "reverb":
         decay = float(params.get("decay", DEFAULT_REVERB["decay"]))
         delay = float(params.get("delay_ms", DEFAULT_REVERB["delay_ms"]))
         delays = "|".join(f"{delay * n:g}" for n in (1, 2, 3))
         decays = "|".join(f"{decay * f:g}" for f in (1.0, 0.75, 0.5))
-        _run(["-i", str(src), "-af", f"aecho=0.8:0.88:{delays}:{decays}", *out])
+        run(["-i", str(src), "-af", f"aecho=0.8:0.88:{delays}:{decays}", *out])
     elif kind == "silence_pad":
         ms = round(_num(params, "pad_s") * 1000)
-        _run(["-i", str(src), "-af", f"adelay={ms}:all=1", *out])
+        run(["-i", str(src), "-af", f"adelay={ms}:all=1", *out])
     elif kind == "mp3_low":
         with tempfile.TemporaryDirectory() as tmp:
             coded = Path(tmp) / "coded.mp3"
             kbps = round(_num(params, "kbps"))
-            _run(["-i", str(src), "-ac", "1", "-c:a", "libmp3lame", "-b:a", f"{kbps}k", str(coded)])
-            _run(["-i", str(coded), *out])
+            run(["-i", str(src), "-ac", "1", "-c:a", "libmp3lame", "-b:a", f"{kbps}k", str(coded)])
+            run(["-i", str(coded), *out])
     elif kind == "noise":
-        samples, rate = read_samples(src)
+        samples, _rate = read_samples(src)
         level = rms(samples) / (10 ** (_num(params, "snr_db") / 20))
-        with tempfile.TemporaryDirectory() as tmp:
-            noise_path = Path(tmp) / "noise.wav"
-            write_samples(
-                noise_path, gaussian_noise(len(samples), level, int(params["seed"])), rate
-            )
-            _run(
-                [
-                    "-i",
-                    str(src),
-                    "-i",
-                    str(noise_path),
-                    "-filter_complex",
-                    "amix=inputs=2:duration=first:normalize=0",
-                    *out,
-                ]
-            )
+        noise = gaussian_noise(len(samples), level, int(params["seed"]))
+        mix_with_noise(src, noise, dest, sample_rate=sample_rate, run=run)
     else:  # pragma: no cover - Degradation valide déjà le type
         raise ValueError(f"dégradation inconnue : {kind}")
 
