@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   currentWordIndex,
   layoutArabicWords,
+  seekTimeForWord,
+  verseWordNumber,
   liveWords,
   validateWordTimes,
   wordTimesOf,
@@ -217,5 +219,22 @@ describe("reprise dans un même verset (11:61, intervalles 3 → 4)", () => {
 
   it("n'affiche aucun mot entre deux passages (le silence avant la reprise)", () => {
     expect(live(50)).toEqual({ index: -1, word: -1 });
+  });
+});
+
+describe("clic sur un mot : où placer le lecteur", () => {
+  it("au début du mot, borné au passage affiché pour que la carte ne change pas", () => {
+    expect(seekTimeForWord(times, 2, [1, 6])).toBe(4);
+    expect(seekTimeForWord(times, 0, [1.5, 6])).toBe(1.5);
+    expect(seekTimeForWord(times, 3, [1, 5])).toBeCloseTo(4.999);
+    expect(seekTimeForWord(times, 1, null)).toBe(2);
+  });
+  it("refuse un mot qui n'existe pas", () => {
+    expect(seekTimeForWord(times, 9, [1, 6])).toBeNull();
+    expect(seekTimeForWord(times, -1, [1, 6])).toBeNull();
+  });
+  it("numérote le mot dans le verset à partir du premier mot affiché", () => {
+    expect(verseWordNumber(15, 0)).toBe(15);
+    expect(verseWordNumber(15, 3)).toBe(18);
   });
 });

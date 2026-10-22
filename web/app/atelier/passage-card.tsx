@@ -12,6 +12,7 @@ import {
 import {
   currentWordIndex,
   seekTimeForWord,
+  verseWordNumber,
   wordTimesOf,
 } from "@/lib/live-highlight";
 import { activePartIndex } from "@/lib/translation-fragment";
@@ -56,7 +57,7 @@ function VerseTranslation({
 }) {
   const word =
     live.enabled && model.live && live.wordIndex >= 0
-      ? model.live.first + live.wordIndex
+      ? verseWordNumber(model.live.first, live.wordIndex)
       : null;
   const segmentFound =
     word !== null && activePartIndex(translation.display, word) >= 0;
