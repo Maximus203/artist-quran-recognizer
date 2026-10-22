@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Documentation — Atelier de revue</title>
+<!-- PROTOTYPE STATIQUE phase 2 — données factices. Tokens : ../tokens.css · composants : base.css + phase2.css · spec : ../phase2.md -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3Cpath d=%27M13 12v8M16 8.5v15M19 11v10%27 stroke=%27%23888%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&family=Scheherazade+New:wght@400;600&display=swap">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="phase2.css">
+
+</head>
+<body class="pg" data-page="docs">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-panel-l" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></symbol>
+  <symbol id="i-panel-r" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M14.5 4.5v15"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.6.6 0 0 0 .9.5l10.6-6.8a.6.6 0 0 0 0-1L8.9 4.7a.6.6 0 0 0-.9.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.8" height="14" rx="1"/><rect x="13.7" y="5" width="3.8" height="14" rx="1"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2M12 17v.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4m0 0h11l-2.5 4L17 12H6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0M12 16l4-5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2 2 0 0 1 3 3L8 18.5zM14.5 6l3.5 3.5"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5 2-2h4"/></symbol>
+  <symbol id="i-seek-back" viewBox="0 0 24 24"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-seek-fwd" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/></g><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="4.5" rx="1.5"/><path d="M5 9.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V9.5M10 13.5h4"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"/><circle cx="14" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol><symbol id="i-chevron-d" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol><symbol id="i-chevron-r" viewBox="0 0 24 24"><path d="M9.5 6.5l5.5 5.5-5.5 5.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.6 5.3 3.6 8.5s-1 6.1-3.6 8.5c-2.6-2.4-3.6-5.3-3.6-8.5s1-6.1 3.6-8.5z"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.3 3-5 6-5s5.4 1.7 6 5M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.8c2 .5 3.2 2.1 3.5 4.7"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.7-3.7 3.5-5.5 7-5.5s6.3 1.8 7 5.5"/></symbol><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4.5H7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3M14 8l4 4-4 4M18 12H9.5"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5c1.6 0 3 .5 4.2 1.2M21.5 12S18 18.5 12 18.5c-1.6 0-3-.5-4.2-1.2"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4.2 4.2M4 4l16 16"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h10a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M14 3.5v4h4M8.5 12h7M8.5 15.5h7"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M4 14h16M4 14l2-7.5A2 2 0 0 1 7.9 5h8.2A2 2 0 0 1 18 6.5L20 14v3.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M7.5 16.5h.01M11 16.5h.01"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol><symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/><path d="M6 7.5v9M18 16.5V10a3 3 0 0 0-3-3h-2.5M15 4.5l-2.5 2.5L15 9.5"/></symbol><symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 19v-8M12 19V5M19 19v-5"/></symbol><symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 19V5M8 19l-3-3M8 19l3-3M16 5v14M16 5l-3 3M16 5l3 3"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M7 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L5 11l4 4M5 11h9a5 5 0 0 1 0 10h-3"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol><symbol id="i-signpost" viewBox="0 0 24 24"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.2"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.5v5.5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="3.5"/><path d="M10.5 12.5L19 4M16 7l2.5 2.5M13.5 9.5L15 11"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5M6 9.5V19a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V9.5"/></symbol><symbol id="i-filter-x" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></symbol>
+</svg>
+<div class="sr" id="aria-live" aria-live="polite" role="status"></div>
+<header class="header">
+    
+    <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em>de revue</em></b></a>
+    <nav class="nav" aria-label="Pages"><a href="index.html">Revue</a><a href="sessions.html">Sessions</a><a href="index.html#view=perf">Performance</a><a href="docs.html" aria-current="page">Documentation</a></nav>
+    <span class="spacer"></span>
+    <a class="btn btn--primary btn--sm" href="index.html#view=new" aria-label="Nouvel essai"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span class="hide-sm">Nouvel essai</span></a>
+    <div class="pop-wrap" id="acct-wrap">
+      <button class="acct-btn" id="acct-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="acct-menu"><span class="av" data-i="C" aria-hidden="true"></span><span class="acct-name">cherif</span><span class="sr"> (menu du compte)</span><svg class="i" aria-hidden="true"><use href="#i-chevron-d"/></svg></button>
+      <div class="menu" id="acct-menu" role="menu" aria-label="Compte" hidden>
+        <div class="menu-head"><span class="av av--lg" data-i="C" aria-hidden="true"></span><div><b>cherif</b><small>Administrateur · inscrit le 14 oct. 2026</small></div></div>
+        <div class="menu-only-sm"><div class="menu-sep"></div><p class="eyebrow menu-label">Aller à</p><a role="menuitem" class="menu-item" href="index.html"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg>Revue</a><a role="menuitem" class="menu-item" href="sessions.html"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Sessions</a><a role="menuitem" class="menu-item" href="index.html#view=perf"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg>Performance</a><a role="menuitem" class="menu-item" href="docs.html" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documentation</a></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item" href="compte.html"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+        <a role="menuitem" class="menu-item" href="compte.html#statistiques"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg>Mes statistiques</a>
+        <p class="eyebrow menu-label" id="theme-lbl">Thème</p>
+        <div class="menu-theme" role="group" aria-labelledby="theme-lbl"><button data-theme-set="light" aria-pressed="false">Clair</button><button data-theme-set="dark" aria-pressed="false">Sombre</button><button data-theme-set="" aria-pressed="true">Système</button></div>
+        <div class="menu-quota"><span>Espace utilisé : <b class="mono" style="font-weight:600;color:var(--text)">2,3 Go</b> sur 5 Go · <a href="compte.html#statistiques">détails</a></span><div class="quota-hint"><span class="mini" style="flex:1"><i style="--w:46%"></i></span></div></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item menu-item--danger" href="login.html"><svg class="i" aria-hidden="true"><use href="#i-logout"/></svg>Se déconnecter</a>
+      </div>
+    </div>
+  </header>
+<div class="docs" id="docs">
+  <aside class="docs-nav" id="docs-nav" aria-label="Documents"><div class="search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input class="input" type="search" data-docs-filter placeholder="Filtrer les documents…" aria-label="Filtrer les documents"></div><div class="dgroup"><h2 class="eyebrow">Démarrer</h2><a class="dlink" href="docs.html?doc=vue-d-ensemble" data-slug="vue-d-ensemble"><span class="nm">Vue d’ensemble</span><span class="when"></span></a><a class="dlink" href="docs.html?doc=guide-du-testeur" data-slug="guide-du-testeur"><span class="nm">Guide du testeur</span><span class="when"></span></a></div><div class="dgroup"><h2 class="eyebrow">Comprendre</h2><a class="dlink" href="docs.html?doc=architecture" data-slug="architecture" aria-current="page"><span class="nm">Architecture</span><span class="when">20 oct.</span></a><a class="dlink" href="docs.html?doc=adr" data-slug="adr"><span class="nm">Décisions (ADR)</span><span class="when">20 oct.</span></a><a class="dlink" href="docs.html?doc=evaluation" data-slug="evaluation"><span class="nm">Évaluation et métriques</span><span class="when">20 oct.</span></a></div><div class="dgroup"><h2 class="eyebrow">Suivre</h2><a class="dlink" href="docs.html?doc=etat-d-avancement" data-slug="etat-d-avancement"><span class="nm">État d’avancement</span><span class="when">20 oct.</span></a><a class="dlink" href="docs.html?doc=problemes-connus" data-slug="problemes-connus"><span class="nm">Problèmes connus</span><span class="when">19 oct.</span></a><a class="dlink" href="docs.html?doc=notes-de-version" data-slug="notes-de-version"><span class="nm">Notes de version</span><span class="nav-dot" style="margin-left:auto" title="Nouveau"><span class="sr"> Nouveau</span></span></a></div><div class="dgroup"><h2 class="eyebrow">Référence</h2><a class="dlink" href="docs.html?doc=sortie-recognize" data-slug="sortie-recognize"><span class="nm">Sortie de recognize</span><span class="when">9 oct.</span></a><a class="dlink" href="docs.html?doc=sortie-align" data-slug="sortie-align"><span class="nm">Sortie de align</span><span class="when">19 oct.</span></a><a class="dlink" href="docs.html?doc=reproductibilite" data-slug="reproductibilite"><span class="nm">Reproductibilité</span><span class="when">2 oct.</span></a></div></aside>
+  <main class="docs-main" id="main">
+    <div class="docs-top">
+      <nav class="crumbs" aria-label="Fil d’Ariane"><a href="docs.html">Documentation</a><svg class="i" aria-hidden="true"><use href="#i-chevron-r"/></svg><span id="crumb-g">Comprendre</span><svg class="i" aria-hidden="true"><use href="#i-chevron-r"/></svg><span id="crumb-t" aria-current="page">Architecture</span></nav>
+      <button class="btn btn--secondary btn--sm docs-pick" type="button" id="docs-open" aria-haspopup="dialog" aria-controls="docs-drawer" aria-expanded="false"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documents<svg class="i" aria-hidden="true"><use href="#i-chevron-d"/></svg></button>
+    </div>
+    <details class="toc-m" id="toc-m"><summary>Sur cette page</summary><ol class="toc-list" id="toc-list-m"></ol></details>
+    
+<article class="prose doc" data-slug="architecture" data-title="Architecture" data-group="Comprendre">
+  <div class="meta-line"><span>Source <span class="mono">docs/ARCHITECTURE.md</span></span><span>Mis à jour le <time datetime="2026-10-20">20 oct. 2026</time></span><span>≈ 9 min de lecture</span></div>
+  <h1>Architecture</h1>
+  <p class="lead">Un moteur qui prend un audio ou une vidéo quelconque (récitation, prière, cours mêlant français, arabe, hadiths) et produit une <strong>timeline horodatée des versets du Coran récités</strong>, puis restitue leur texte exact et leur traduction officielle.</p>
+
+  <h2 id="invariants">1. Invariants<a class="anchor" href="#invariants" aria-label="Lien vers cette section">#</a></h2>
+  <p>Ces règles ne se négocient pas : chaque changement les respecte, et chaque brique est testée contre elles.</p>
+  <div class="tbl" tabindex="0" role="region" aria-label="Tableau des invariants"><table>
+    <thead><tr><th>#</th><th>Invariant</th><th>Conséquence technique</th></tr></thead>
+    <tbody>
+      <tr><td>I1</td><td><strong>Le texte arabe affiché ne vient jamais d’un modèle.</strong> Il vient du corpus, par consultation <code>VerseRef → texte</code>.</td><td>L’ASR ne sert qu’à <em>localiser</em>. Aucun LLM génératif dans la chaîne.</td></tr>
+      <tr><td>I2</td><td><strong>Traductions officielles, non modifiées, versionnées.</strong></td><td>Source QuranEnc ; <code>translation_id</code> + <code>version</code> stockés ; attribution affichée.</td></tr>
+      <tr><td>I3</td><td><strong>Nommer un faux verset est pire que n’en nommer aucun.</strong></td><td>Sous le seuil : <code>UNCERTAIN</code> ou rien. La précision prime sur le rappel.</td></tr>
+      <tr><td>I4</td><td><strong>Tout ce qui n’est pas du Coran est étiqueté et ignoré.</strong></td><td>Classe <code>NON_QURAN</code>, jamais un verset « le plus proche ».</td></tr>
+      <tr><td>I5</td><td><strong>Chaque verset porte un statut de preuve.</strong></td><td><code>RECOGNIZED</code> (entendu et aligné), <code>INFERRED</code> (déduit d’un trou), <code>UNCERTAIN</code>.</td></tr>
+    </tbody>
+  </table></div>
+  <blockquote><span class="tag-line">Pourquoi I3 ?</span><p>Un faux verset nommé avec assurance trompe l’écouteur ; un silence honnête le laisse écouter lui-même. C’est pour cela que la barre d’état des intervalles distingue toujours <em>reconnu</em>, <em>déduit</em> et <em>incertain</em>.</p></blockquote>
+
+  <h2 id="pipeline">2. Vue d’ensemble : le pipeline<a class="anchor" href="#pipeline" aria-label="Lien vers cette section">#</a></h2>
+  <p>Neuf briques s’enchaînent, de l’extraction audio au rendu. Les trois du milieu décident de ce qui est du Coran.</p>
+<pre class="diagram" tabindex="0" aria-label="Schéma du pipeline en neuf étapes"><code> fichier audio/vidéo
+        │
+ [B1] AudioExtractor ──────── ffmpeg → WAV mono 16 kHz
+        │
+ [B2] SpeechSegmenter ─────── découpe en segments de parole (pauses / waqf)
+        │
+ [B3] LanguageGate ────────── français / autre langue → NON_QURAN direct
+        │  (arabe seulement)
+ [B4] QuranASR ────────────── transcription orientée Coran + timestamps mots
+        │
+ [B5] QuranicityGate ──────── est-ce VRAIMENT du Coran ?
+        │
+ [B6] VerseMatcher ────────── texte normalisé → candidats (VerseRef, mots, score)
+        │
+ [B7] SequenceDecoder ─────── Viterbi : continuité, sauts, répétitions, trous
+        │
+ [B8] Timeline ────────────── [ {ref, mots i..j, t_debut, t_fin, statut}, NON_QURAN… ]
+        │
+ [B9] Renderer ────────────── texte Mushaf (I1) + traduction (I2) · JSON, SRT/VTT</code></pre>
+
+  <h2 id="briques">3. Les briques : contrats<a class="anchor" href="#briques" aria-label="Lien vers cette section">#</a></h2>
+  <p>Toutes les interfaces vivent dans <code>src/aqr/domain/ports.py</code>, les implémentations dans <code>src/aqr/adapters/</code>. Chaque port a un <strong>test de contrat</strong> que toute implémentation doit passer.</p>
+  <div class="tbl" tabindex="0" role="region" aria-label="Tableau des briques"><table>
+    <thead><tr><th>Brique</th><th>Port</th><th>Entrée → sortie</th><th>Implémentation V1</th></tr></thead>
+    <tbody>
+      <tr><td>B1</td><td><code>AudioExtractor</code></td><td>chemin fichier → <code>AudioClip</code></td><td>ffmpeg</td></tr>
+      <tr><td>B4</td><td><code>QuranASR</code></td><td>segment → <code>Transcript</code> (mots + temps)</td><td>FastConformer-Quran, challengers Whisper et Muno</td></tr>
+      <tr><td>B5</td><td><code>QuranicityGate</code></td><td><code>Transcript</code> → score ∈ [0, 1]</td><td>double ASR + couverture d’alignement</td></tr>
+      <tr><td>B7</td><td><code>SequenceDecoder</code></td><td>candidats → <code>Timeline</code></td><td>Viterbi / HMM</td></tr>
+    </tbody>
+  </table></div>
+  <h3 id="exemple-port">Exemple : le port B4<a class="anchor" href="#exemple-port" aria-label="Lien vers cette section">#</a></h3>
+  <div class="codebox"><header><span>src/aqr/domain/ports.py</span><span class="lang">Python</span><button class="btn btn--ghost" type="button" data-copy>Copier</button></header>
+<pre tabindex="0"><code><span class="c"># --- B4 --------------------------------------------------</span>
+<span class="k">class</span> QuranASR(Protocol):
+    riwaya: Riwaya
+
+    <span class="k">def</span> transcribe(self, clip: AudioClip, span: TimeSpan) -&gt; Transcript: ...</code></pre></div>
+  <p>Un nouveau modèle se branche en écrivant un adaptateur qui respecte ce contrat, sans toucher au domaine. Les détails sont dans <a href="docs.html?doc=adr">les décisions ADR</a> et dans <a href="docs.html?doc=evaluation">l’évaluation</a>.</p>
+
+  <h2 id="pieges">4. Les pièges connus<a class="anchor" href="#pieges" aria-label="Lien vers cette section">#</a></h2>
+  <h3 id="piege-1">Piège n°1 : l’ASR du Coran « voit du Coran partout »<a class="anchor" href="#piege-1" aria-label="Lien vers cette section">#</a></h3>
+  <p>Un modèle affiné sur le Coran projette n’importe quel arabe (hadith, dou’a, khutba) vers le texte coranique le plus proche. Un segment n’est accepté que si plusieurs signaux concordent :</p>
+  <ol>
+    <li>un ASR généraliste transcrit le même segment ; une forte divergence signifie « pas du Coran » ;</li>
+    <li>la couverture d’alignement atteint au moins <em>N</em> mots consécutifs avec une similarité au-dessus du seuil ;</li>
+    <li>en option, des indices acoustiques de tartil (débit, allongements).</li>
+  </ol>
+  <h3 id="piege-3">Piège n°3 : versets identiques<a class="anchor" href="#piege-3" aria-label="Lien vers cette section">#</a></h3>
+  <p>Le verset <span class="ar-inline" lang="ar" dir="rtl">فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ</span> revient 31 fois dans Ar-Rahman. Le contexte (verset précédent et suivant) lève l’ambiguïté, d’où un décodage de séquence plutôt qu’un verset à la fois. Si l’ambiguïté persiste : <code>UNCERTAIN</code>, avec la liste des candidats.</p>
+
+  <h2 id="donnees">5. Modèle de données<a class="anchor" href="#donnees" aria-label="Lien vers cette section">#</a></h2>
+<pre tabindex="0"><code>VerseRef(surah: 1..114, ayah: 1..n)            <span class="c"># validé contre le corpus</span>
+WordSpan(ref: VerseRef, first_word, last_word)  <span class="c"># plage de mots dans un verset</span>
+TimeSpan(start_s, end_s)                        <span class="c"># secondes, start &lt; end</span>
+Detection(span, time, status, confidence, candidates)</code></pre>
+  <hr>
+  <p class="meta-line" style="margin-top:0">Une erreur ou un oubli dans cette page ? Le fichier source est <span class="mono">docs/ARCHITECTURE.md</span> : la correction passe par une demande de fusion.</p>
+</article>
+
+    
+<article class="prose doc" data-slug="notes-de-version" data-title="Notes de version" data-group="Suivre">
+  <div class="meta-line"><span>Source <span class="mono">docs/notes-de-version/</span></span><span>Une entrée par changement notable, écrite à chaque fusion</span></div>
+  <h1>Notes de version</h1>
+  <p class="lead">Ce qui change dans l’atelier, du plus récent au plus ancien. Filtre par type pour ne garder que ce qui te concerne.</p>
+  <div class="rn-filters" role="group" aria-label="Filtrer par type">
+    <button class="chip" type="button" data-tag="all" aria-pressed="true">Tout <span class="n">10</span></button>
+    <button class="chip" type="button" data-tag="utilisateur" aria-pressed="false">Utilisateur <span class="n">5</span></button>
+    <button class="chip" type="button" data-tag="technique" aria-pressed="false">Technique <span class="n">5</span></button>
+    <button class="chip" type="button" data-tag="decision" aria-pressed="false">Décision <span class="n">4</span></button>
+  </div>
+  <div class="rn-month"><h2 id="oct-2026" style="border:0;padding:0;margin:0">Octobre 2026</h2></div>
+  <ol class="rn" id="rn-list">
+    <li data-tags="utilisateur" data-major="true">
+      <time datetime="2026-10-22">22 oct.</time>
+      <div class="rn-card"><h3>Nouvelle interface « Encre &amp; lapis »</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span></div><p>L’atelier change d’allure : fond encre, un seul accent bleu lapis, panneaux Sessions et Revue repliables, police arabe au choix, formules (isti’adha, takbir, amin) affichées comme étiquettes lisibles.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/66" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 66</a></div></div>
+    </li>
+    <li data-tags="utilisateur">
+      <time datetime="2026-10-22">22 oct.</time>
+      <div class="rn-card"><h3>La basmala s’affiche comme un verset</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span></div><p>Texte du corpus et traduction officielle, avec son badge « Basmala », au lieu d’une simple étiquette.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/65" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 65</a></div></div>
+    </li>
+    <li data-tags="utilisateur technique">
+      <time datetime="2026-10-22">22 oct.</time>
+      <div class="rn-card"><h3>File d’attente des analyses</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span><span class="tag tag--tech"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Technique</span></div><p>Les analyses passent par une file : rang, durée estimée, point « non lu » sur les résultats, vidéos acceptées à l’import.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/64" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 64</a></div></div>
+    </li>
+    <li data-tags="technique">
+      <time datetime="2026-10-22">22 oct.</time>
+      <div class="rn-card"><h3>Protection contre le rebond DNS</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--tech"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Technique</span></div><p>L’en-tête Host doit désormais être un hôte autorisé ; Next.js passe en 16.4.2 pour corriger une faille connue.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/68" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 68</a></div></div>
+    </li>
+    <li data-tags="utilisateur technique decision" data-major="true">
+      <time datetime="2026-10-20">20 oct.</time>
+      <div class="rn-card"><h3>La cascade multi-modèles devient le moteur par défaut</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span><span class="tag tag--tech"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Technique</span><span class="tag tag--decision"><svg class="i" aria-hidden="true"><use href="#i-signpost"/></svg>Décision</span></div><p>Plusieurs reconnaisseurs travaillent ensemble et un arbitre acoustique tranche quand ils divergent.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/61" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 61</a><span>Décision : <a class="link" href="docs.html?doc=adr">ADR-0009</a></span></div></div>
+    </li>
+    <li data-tags="utilisateur">
+      <time datetime="2026-10-20">20 oct.</time>
+      <div class="rn-card"><h3>Écoute exacte et pistes synchronisées</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span></div><p>L’onde, les pistes et la lecture partagent un seul repère temporel : la tête de lecture traverse tout au même endroit.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/60" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 60</a></div></div>
+    </li>
+    <li data-tags="utilisateur decision">
+      <time datetime="2026-10-20">20 oct.</time>
+      <div class="rn-card"><h3>Riwaya supposée Hafs, déclarée non vérifiée</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span><span class="tag tag--decision"><svg class="i" aria-hidden="true"><use href="#i-signpost"/></svg>Décision</span></div><p>Le moteur ne détecte pas la riwaya : l’interface l’affiche franchement comme supposée, jamais comme prouvée.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/58" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 58</a></div></div>
+    </li>
+    <li data-tags="technique decision">
+      <time datetime="2026-10-20">20 oct.</time>
+      <div class="rn-card"><h3>La suite d’un verset commencé est prédite, puis vérifiée</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--tech"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Technique</span><span class="tag tag--decision"><svg class="i" aria-hidden="true"><use href="#i-signpost"/></svg>Décision</span></div><p>Après une tête de verset reconnue, le décodeur prédit les mots suivants et les confirme sur l’audio avant de les nommer.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/54" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 54</a><span>Décision : <a class="link" href="docs.html?doc=adr">ADR-0008</a></span></div></div>
+    </li>
+    <li data-tags="utilisateur">
+      <time datetime="2026-10-19">19 oct.</time>
+      <div class="rn-card"><h3>Vérité terrain validée à l’oreille</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--user"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Utilisateur</span></div><p>Un relecteur peut écouter, corriger et valider des passages ; l’export alimente le jeu de test.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/45" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 45</a></div></div>
+    </li>
+    <li data-tags="technique decision">
+      <time datetime="2026-10-19">19 oct.</time>
+      <div class="rn-card"><h3>La preuve se cumule le long de la suite</h3><div class="tags" aria-label="Étiquettes"><span class="tag tag--tech"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Technique</span><span class="tag tag--decision"><svg class="i" aria-hidden="true"><use href="#i-signpost"/></svg>Décision</span></div><p>Les versets courts se confirment entre eux au lieu d’être jugés isolément.</p>
+        <div class="rn-foot"><a class="pr" href="https://github.com/Maximus203/artist-quran-recognizer/pull/47" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-branch"/></svg>Demande de fusion n° 47</a><span>Décision : <a class="link" href="docs.html?doc=adr">ADR-0007</a></span></div></div>
+    </li>
+  </ol>
+</article>
+
+    
+<article class="prose doc" data-slug="__stub" data-title="" data-group="">
+  <div class="meta-line"><span>Source <span class="mono" id="stub-src"></span></span></div>
+  <h1 id="stub-h"></h1>
+  <p class="lead">Cette page utilise le même gabarit que « Architecture » : titres, tableaux, code, schémas et liens internes. Le prototype n’en montre qu’un exemple complet.</p>
+</article>
+
+    <nav class="pn" aria-label="Pages voisines" id="pn"></nav>
+  </main>
+  <aside class="docs-toc" aria-label="Sommaire de la page"><span class="eyebrow">Sur cette page</span><nav><ol class="toc-list" id="toc-list"></ol></nav></aside>
+</div>
+<div class="drawer-docs" id="docs-drawer" role="dialog" aria-modal="true" aria-label="Documents"><div style="display:flex;justify-content:flex-end;padding:8px 8px 0"><button class="btn btn--ghost btn--icon btn--sm" type="button" id="docs-close" aria-label="Fermer"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div><div class="docs-nav" id="docs-nav-m"><div class="search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input class="input" type="search" data-docs-filter placeholder="Filtrer les documents…" aria-label="Filtrer les documents"></div><div class="dgroup"><h2 class="eyebrow">Démarrer</h2><a class="dlink" href="docs.html?doc=vue-d-ensemble" data-slug="vue-d-ensemble"><span class="nm">Vue d’ensemble</span><span class="when"></span></a><a class="dlink" href="docs.html?doc=guide-du-testeur" data-slug="guide-du-testeur"><span class="nm">Guide du testeur</span><span class="when"></span></a></div><div class="dgroup"><h2 class="eyebrow">Comprendre</h2><a class="dlink" href="docs.html?doc=architecture" data-slug="architecture" aria-current="page"><span class="nm">Architecture</span><span class="when">20 oct.</span></a><a class="dlink" href="docs.html?doc=adr" data-slug="adr"><span class="nm">Décisions (ADR)</span><span class="when">20 oct.</span></a><a class="dlink" href="docs.html?doc=evaluation" data-slug="evaluation"><span class="nm">Évaluation et métriques</span><span class="when">20 oct.</span></a></div><div class="dgroup"><h2 class="eyebrow">Suivre</h2><a class="dlink" href="docs.html?doc=etat-d-avancement" data-slug="etat-d-avancement"><span class="nm">État d’avancement</span><span class="when">20 oct.</span></a><a class="dlink" href="docs.html?doc=problemes-connus" data-slug="problemes-connus"><span class="nm">Problèmes connus</span><span class="when">19 oct.</span></a><a class="dlink" href="docs.html?doc=notes-de-version" data-slug="notes-de-version"><span class="nm">Notes de version</span><span class="nav-dot" style="margin-left:auto" title="Nouveau"><span class="sr"> Nouveau</span></span></a></div><div class="dgroup"><h2 class="eyebrow">Référence</h2><a class="dlink" href="docs.html?doc=sortie-recognize" data-slug="sortie-recognize"><span class="nm">Sortie de recognize</span><span class="when">9 oct.</span></a><a class="dlink" href="docs.html?doc=sortie-align" data-slug="sortie-align"><span class="nm">Sortie de align</span><span class="when">19 oct.</span></a><a class="dlink" href="docs.html?doc=reproductibilite" data-slug="reproductibilite"><span class="nm">Reproductibilité</span><span class="when">2 oct.</span></a></div></div></div>
+<script src="phase2.js"></script>
+<script src="docs.js"></script>
+</body></html>
