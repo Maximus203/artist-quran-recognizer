@@ -16,11 +16,16 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Transform, Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import type { Visibility } from "./access";
 import { acceptedMediaExtensions, isVideoName } from "./audio-upload";
+import { getDb } from "./db";
+import { formatBytesFr } from "./format";
 import { ensureListening } from "./listening";
 import { inspectUpload, MediaRejected } from "./media-probe";
 import { parseRecognition, type Recognition } from "./recognition";
+import { createMeta, deleteMeta, type NewMeta } from "./session-index";
 import { engineFromLabel } from "./session-meta";
+import { cleanUserName, defaultSessionName } from "./session-name";
 import {
   saveSession,
   sessionDir,
@@ -40,7 +45,20 @@ export class ImportError extends Error {
   }
 }
 
+/** Propriétaire d'un import : qui, quelle portée, quel nom choisi, et le quota restant. */
+export type ImportOwner = {
+  ownerId: number;
+  visibility: Visibility;
+  /** Nom choisi par l'utilisateur ; null = nom par défaut dérivé du fichier. */
+  name: string | null;
+  /** Octets déjà occupés / plafond (`null` = illimité). */
+  quota: { limit: number; used: number } | null;
+};
+
 export type ImportDeps = {
+  /** Inscrit propriétaire, portée et nom AVANT que la session existe sur le disque (jamais de fenêtre « globale »). */
+  claim: (meta: NewMeta) => void;
+  release: (id: string) => void;
   probe: (
     file: string,
     extension: string,
@@ -50,6 +68,8 @@ export type ImportDeps = {
 };
 
 export const defaultImportDeps: ImportDeps = {
+  claim: (meta) => createMeta(getDb(), meta),
+  release: (id) => deleteMeta(getDb(), id),
   probe: (file, extension) => inspectUpload(file, extension),
   prepareListening: (dir, extension) => {
     void ensureListening(dir, path.join(dir, `source${extension}`)).catch(
@@ -124,6 +144,17 @@ function parseSourceKind(value: string | null): "file" | "microphone" {
 }
 
 class TooLarge extends Error {}
+class QuotaExceeded extends Error {}
+
+const quotaRefusal = (quota: { limit: number; used: number }) =>
+  new ImportError(
+    413,
+    `Quota atteint : tu utilises ${formatBytesFr(quota.used)} sur ${formatBytesFr(quota.limit)}. Supprime des sessions pour libérer de la place.`,
+  );
+const remainingBytes = (owner: ImportOwner | undefined): number =>
+  owner?.quota
+    ? Math.max(0, owner.quota.limit - owner.quota.used)
+    : Number.POSITIVE_INFINITY;
 
 type Landed = {
   id: string;
@@ -134,6 +165,7 @@ type Landed = {
   size: number;
   sourceKind: "file" | "microphone";
   prediction: Buffer | null;
+  owner?: ImportOwner;
 };
 
 /** Sonde le fichier posé sur le disque, puis écrit la session ; supprime tout en cas de refus. */
@@ -174,6 +206,27 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
       throw error;
     }
     const now = new Date().toISOString();
+    if (landed.owner) {
+      const chosen = cleanUserName(landed.owner.name);
+      deps.claim({
+        id: landed.id,
+        ownerId: landed.owner.ownerId,
+        name:
+          chosen ??
+          defaultSessionName(
+            landed.name,
+            now,
+            landed.sourceKind,
+            process.env.AQR_TIMEZONE || undefined,
+          ),
+        nameSource: chosen ? "user" : "auto",
+        originalName: landed.name,
+        sourceKind: landed.sourceKind,
+        visibility: landed.owner.visibility,
+        createdAt: now,
+        sizeBytes: landed.size,
+      });
+    }
     const value: Session = {
       id: landed.id,
       name: landed.name,
@@ -199,6 +252,7 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
     return value;
   } catch (error) {
     await rm(landed.dir, { recursive: true, force: true });
+    if (landed.owner) deps.release(landed.id);
     if (error instanceof ImportError) throw error;
     throw new ImportError(
       400,
@@ -214,6 +268,7 @@ export type StreamImport = {
   sourceKind: string | null;
   /** Valeur brute de `Content-Length` (ou null) : refus précoce d'un envoi trop gros. */
   contentLength: string | null;
+  owner?: ImportOwner;
 };
 
 export async function importFromStream(
@@ -231,6 +286,11 @@ export async function importFromStream(
     void input.stream.cancel().catch(() => undefined);
     throw tooLarge(extension);
   }
+  const remaining = remainingBytes(input.owner);
+  if (input.owner?.quota && Number.isFinite(declared) && declared > remaining) {
+    void input.stream.cancel().catch(() => undefined);
+    throw quotaRefusal(input.owner.quota);
+  }
   const id = randomUUID();
   const dir = sessionDir(id);
   await mkdir(dir, { recursive: true });
@@ -239,6 +299,7 @@ export async function importFromStream(
   const guard = new Transform({
     transform(chunk: Buffer, _encoding, done) {
       size += chunk.length;
+      if (size > remaining) return done(new QuotaExceeded());
       if (size > limit) return done(new TooLarge());
       hash.update(chunk);
       done(null, chunk);
@@ -255,6 +316,8 @@ export async function importFromStream(
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
     if (error instanceof TooLarge) throw tooLarge(extension);
+    if (error instanceof QuotaExceeded && input.owner?.quota)
+      throw quotaRefusal(input.owner.quota);
     throw new ImportError(
       400,
       "Envoi interrompu : le fichier n'a pas été reçu en entier.",
@@ -274,6 +337,7 @@ export async function importFromStream(
       size,
       sourceKind,
       prediction: null,
+      owner: input.owner,
     },
     deps,
   );
@@ -284,6 +348,7 @@ export type BytesImport = {
   bytes: Buffer;
   sourceKind: string | null;
   prediction: Buffer | null;
+  owner?: ImportOwner;
 };
 
 export async function importFromBytes(
@@ -300,6 +365,8 @@ export async function importFromBytes(
       413,
       `Fichier trop volumineux pour un envoi par formulaire (maximum ${mb(uploadLimitBytes())}) : les fichiers volumineux, vidéos comprises, s'envoient en flux (en-tête x-aqr-filename).`,
     );
+  if (input.owner?.quota && input.bytes.length > remainingBytes(input.owner))
+    throw quotaRefusal(input.owner.quota);
   const id = randomUUID();
   const dir = sessionDir(id);
   await mkdir(dir, { recursive: true });
@@ -319,6 +386,7 @@ export async function importFromBytes(
       size: input.bytes.length,
       sourceKind,
       prediction: input.prediction,
+      owner: input.owner,
     },
     deps,
   );

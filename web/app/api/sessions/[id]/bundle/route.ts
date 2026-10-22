@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { createReadStream } from "node:fs";
@@ -7,17 +8,18 @@ import { promisify } from "node:util";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { REPO, readSession, sessionDir } from "@/lib/store";
-import { isLocalRequest } from "@/lib/local-request";
+import { sessionAccess } from "@/lib/route-guard";
 export const runtime = "nodejs";
 const exec = promisify(execFile);
-export async function GET(
+/** Pack de revue (ZIP) d'une session : réservé aux testeurs qui la voient (privée : son propriétaire). */
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "view");
+  if (!access.ok) return access.response;
   try {
-    const { id } = await params;
+    const id = access.id;
     await readSession(id);
     const output = path.join(sessionDir(id), "exports", `${randomUUID()}.zip`);
     await exec(
@@ -48,3 +50,5 @@ export async function GET(
     );
   }
 }
+
+export const GET = safe(handleGET);

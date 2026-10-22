@@ -61,12 +61,12 @@ La carte du passage montre la **basmala** comme un verset (arabe du corpus, trad
 
 ## Revue humaine (`aqr.review/2`)
 
-Trois onglets : **Signaler**, **Signalements** et, avec `?relecteur=1` seulement, **Vérité terrain** (il écrit dans le manifeste de test : les testeurs qui utilisent la machine n'y touchent pas).
+Trois onglets : **Signaler**, **Signalements** et, pour les **administrateurs** seulement (`role: "admin"`, voir « Comptes, partage et préférences »), **Vérité terrain** (il écrit dans le manifeste de test : les testeurs n'y touchent pas ; `?relecteur=1` n'a plus d'effet côté serveur, qui refuse en `403`).
 
 - **Délimiter** : un seul bouton « Marquer le début » puis « Marquer la fin » (`M`), un point (`P`), ou **tracer sur l'onde** (mode « Tracer sur l'onde » ou `Maj` + glisser : glisser = plage, toucher = point ; `touch-action: none` en mode tracé). Une plage dure au moins 0,2 s ; les valeurs sont au dixième de seconde. Les poignées de la plage s'ajustent à la souris, au doigt ou aux flèches (0,1 s ; `Maj` : 1 s), ou avec − / + / « caler sur la lecture ».
 - **Brouillon** enregistré dès la pose (puis 500 ms après chaque frappe), écoute de la plage (en boucle possible ; l'écoute est **indicative**, elle ne bloque pas la confirmation), 23 puces en 7 familles (`lib/review-presets.ts`, la seule source des libellés), verset attendu (`sourate:verset`, vérifié), commentaire (3 000 caractères). Un signalement se confirme avec au moins une puce ou un commentaire.
 - **Suppression** sans boîte de dialogue : « Annuler » pendant 6 s, ensuite elle devient réelle.
-- **Testeur** : pseudonyme libre de 2 à 24 caractères (lettres, chiffres, espace, `- _ .`, jamais une adresse e-mail), mémorisé avec les 8 derniers, copié dans chaque signalement. Modifier le signalement d'un autre testeur est permis avec un encart ; son nom reste (`updated_by` note le modificateur).
+- **Testeur** : le pseudonyme du **compte connecté** (2 à 24 caractères, jamais une adresse e-mail), copié dans chaque signalement par le serveur — le client ne choisit plus son nom. Le signalement d'un autre testeur ne se modifie pas (sauf administrateur : son nom reste, `updated_by` note le modificateur).
 - **Liste** : filtres testeur et état (ils valent aussi sur l'onde et la piste Revue), clic = saut à l'instant et surlignage de la plage ; losange plein = confirmé, creux = brouillon.
 
 **Modèle.** `aqr.review/2` ajoute à chaque annotation `tags` (puces, ids stables), `tester`, `updated_by?`, `created_at` ; `type` (historique d'`aqr.review/1`) est dérivé du premier tag pour ne pas changer les exports. La lecture est rétro-compatible : une revue `aqr.review/1` se lit avec des `tags` dérivés de `type` et `tester: "inconnu"` (le fichier n'est réécrit qu'au premier enregistrement).
@@ -145,11 +145,193 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 - **Sans course** : deux lancements simultanés (même session ou sessions différentes) ne démarrent jamais deux fois le moteur au-delà de `AQR_MAX_CONCURRENT` ; l'issue d'une analyse n'est jamais écrasée par un écrasement tardif de `session.json` (écritures atomiques, reprise des refus passagers de Windows `EPERM`/`EBUSY` quand un autre lecteur ouvre le fichier).
 - **Purge** (`AQR_SESSION_TTL_S`) : une session en attente n'est jamais purgée.
 
+## Comptes, partage et préférences
+
+Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonyme + mot de passe), ses **préférences** (côté serveur, elles le suivent d'un appareil à l'autre), ses **favoris** et son **non lu**. Les audios importés sont **globaux** par défaut (visibles et écoutables par tous les testeurs connectés, avec leurs performances) ou **privés** (visibles de leur seul propriétaire).
+
+> **Pour l'interface (état du contrat : `web/lib/**` et `web/app/api/**` sont livrés, les écrans restent à brancher).** Toute l'API sauf `/api/auth/*`, `/api/access` et `/api/fonts*` exige une connexion : sans cookie valide, `401 { error, code: "unauthenticated" }`. Une page protégée appelle `requirePageUser()` (`lib/page-auth.ts`, composant serveur : redirige vers `/login?next=…`) ; `/login` et `/register` appellent `redirectIfSignedIn()`. **Il reste à écrire** les pages `/login` et `/register` (aucun écran n'existe encore pour elles) et à retirer `?relecteur=1` : l'onglet « Vérité terrain » devient `user.role === "admin"` (voir plus bas).
+
+### Variables
+
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `AQR_DB_PATH` | fichier SQLite | `<AQR_REVIEW_DIR>/aqr.sqlite` |
+| `AQR_SIGNUP` | `open` (tout le monde peut s'inscrire), `closed` (personne, sauf le tout premier compte), `code` (il faut `AQR_SIGNUP_CODE`). Une valeur inconnue ferme l'inscription | `open` |
+| `AQR_SIGNUP_CODE` | code d'invitation du mode `code` ; absent = inscription fermée | — |
+| `AQR_LOGIN_TTL_DAYS` | durée **glissante** d'une connexion (repoussée à chaque usage) | `30` |
+| `AQR_LOGIN_MAX_DAYS` | durée **absolue** : une connexion ne glisse jamais au-delà | `180` |
+| `AQR_TRUST_PROXY` | `1` derrière un reverse proxy de confiance : IP lue dans le dernier `X-Forwarded-For`, HTTPS lu dans `X-Forwarded-Proto` (cookie `Secure`). Sans lui, toutes les requêtes comptent comme une seule IP « local » | absent |
+| `AQR_REGISTER_PER_HOUR` | inscriptions par IP et par heure | `10` |
+| `AQR_USER_QUOTA_BYTES` | quota d'envoi par utilisateur (octets de fichiers importés, tous ses audios, archivés et privés compris) ; `0` = illimité | `0` |
+| `AQR_TIMEZONE` | fuseau des noms horodatés (« Enregistrement du 22 oct. à 17:51 »), nom IANA | celui de la machine |
+
+### Authentification
+
+- Pseudonyme 2 à 24 caractères (lettres, chiffres, espace, `- _ .` ; **jamais une adresse e-mail**, aucune donnée personnelle ; unique sans tenir compte de la casse ; « inconnu » est réservé). Mot de passe 10 à 128 caractères, différent du pseudonyme. **Le premier compte créé est administrateur.** Aucun compte n'est pré-créé.
+- Mot de passe haché par **scrypt** (`node:crypto`, N = 2¹⁵, r = 8, p = 1, sel aléatoire ; les paramètres sont dans la chaîne stockée, donc relevables plus tard ; comparaison à temps constant). Connexion : **cookie `aqr_session`**, `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` si HTTPS ; jeton de 256 bits aléatoires dont **seul le SHA-256** est stocké ; révoqué à la déconnexion, au changement de mot de passe (les autres connexions) et à la désactivation du compte.
+- **Limitation de débit** : 5 échecs de connexion pour une même (IP, pseudonyme) → verrou de 15 s, doublé à chaque échec (plafond 15 min) ; 25 échecs depuis une IP, tous pseudonymes confondus, déclenchent le même verrou ; inscriptions limitées par IP. `429` + en-tête `Retry-After` (secondes). Un pseudonyme inconnu et un mauvais mot de passe donnent **le même `401`** (même durée de réponse).
+- Deux couches : le contrôle réseau existant (`isLocalRequest` : hôte, origine, jeton d'accès du mode distant → `403`) puis l'identité (→ `401`). Les mutations exigent toujours une origine identique.
+
+| Route | Corps → réponse |
+| --- | --- |
+| `GET /api/auth/config` | `{ signup: "open"\|"closed"\|"code", setup_required, authenticated, rules }` : à lire avant d'afficher `/register` (`setup_required` = aucun compte, le premier inscrit sera administrateur ; `rules` = longueurs permises) |
+| `POST /api/auth/register` | `{ username, password, code? }` → `201 { user }` + cookie. `400` (`field`: `username`\|`password`), `403` (fermé / code invalide, `field: "code"`), `409` (pseudonyme pris), `429` |
+| `POST /api/auth/login` | `{ username, password }` → `200 { user }` + cookie. `401 { code: "bad_credentials" }`, `429` |
+| `POST /api/auth/logout` | `204` (idempotent, même sans connexion) |
+| `GET /api/me` | `{ user, preferences, quota: { used_bytes, limit_bytes } }` : l'appel d'amorçage. `401` → rediriger vers `/login` |
+| `POST /api/me/password` | `{ current, next }` → `204` ; les autres connexions sont révoquées |
+| `GET /api/admin/users` · `PATCH /api/admin/users/<id>` | administrateurs : liste avec usage (`sessions`, `used_bytes`, `tests`) ; `{ role?, disabled? }` (désactiver révoque les connexions). `409 { code: "last_admin" }` si cela retirerait le dernier administrateur actif |
+
+`user` = `{ id, username, role: "user"\|"admin", created_at, last_login_at }` (jamais d'empreinte). Format d'erreur unique : `{ error, code?, field? }`, `error` toujours en français lisible.
+
+### Qui voit et fait quoi
+
+| Action | Propriétaire | Autre testeur | Administrateur |
+| --- | :-: | :-: | :-: |
+| Lister, ouvrir, écouter, forme d'onde, exporter (JSON, ZIP) | ✅ | global seulement | global **et ses propres privés** |
+| Signaler (revue), favori, marquer lu | ✅ | global seulement | idem |
+| Renommer, changer la portée, archiver, supprimer, lancer ou annuler l'analyse | ✅ | ❌ `403` | ✅ (sessions visibles) |
+| **Vérité terrain** (`/validation`, écriture dans le manifeste de test) | ❌ `403` | ❌ `403` | ✅ |
+
+- Un audio **privé** n'est ni listé, ni lisible, ni exportable par un autre compte, **administrateur compris** : toute route répond **`404 Session introuvable`** (jamais `403`, pour ne pas révéler son existence). `403` ne sort que pour une session visible mais non modifiable.
+- Une session d'avant les comptes (`owner: null`) n'a pas de propriétaire : seuls les administrateurs la modifient.
+- **Signalements** : le champ `tester` envoyé par le client est **ignoré**, l'auteur est le pseudonyme du compte (`updated_by` = le compte quand un administrateur modifie le signalement d'un autre). Un testeur ne modifie ni ne supprime le signalement d'un autre : ces `id` reviennent dans `rejected` de la réponse du `PUT` (administrateurs exceptés).
+- **Vérité terrain** : le relecteur écrit dans le manifeste (`reviewed_by`) est le pseudonyme de l'administrateur connecté (le champ du corps est ignoré). L'onglet se montre si `user.role === "admin"`.
+
+### Préférences (`/api/me/preferences`)
+
+`GET` → `{ preferences, updated_at, defaults }` : `preferences` = valeurs effectives (choix de l'utilisateur, sinon défaut), `updated_at` = date de dernière modification **par clé** (absente = jamais choisie). `PUT` et `PATCH` (identiques) : **fusion partielle** d'un objet à clés connues ; une clé inconnue ou une valeur invalide refuse **tout** le corps (`400`, rien n'est écrit). `DELETE` remet tout par défaut, `DELETE ?key=theme` une seule clé. Les défauts vivent dans **un seul fichier** : `lib/preferences.ts` (`PREFERENCE_DEFAULTS`, `preferencesPatchSchema`) ; l'interface n'en redéfinit aucun.
+
+| Clé | Valeurs | Défaut (`null` = automatique) |
+| --- | --- | --- |
+| `theme` | `system` · `light` · `dark` | `system` |
+| `arabicFont` | `kfgqpc-hafs` · `amiri-quran` · `scheherazade` · `noto-naskh` · `null` | `null` (Hafs V30 si installée) |
+| `arabicSize` | entier 28–72, multiple de 4, ou `null` | `null` (taille du thème) |
+| `translation` | booléen | `true` |
+| `visibleSpanSeconds` | `600` · `120` · `30` · `10` · `null` (fichier entier) | `null` |
+| `followPlayback` | booléen | `true` |
+| `leftPanelOpen` · `rightPanelOpen` | booléen ou `null` | `null` (selon la largeur d'écran) |
+| `sessionsFilter` | `{ scope, state, engine, sort }` (mêmes valeurs que la liste, plus `all` pour `state` et `engine`) | `{ scope: "all", state: "all", engine: "all", sort: "recent" }` |
+| `playbackRate` | nombre 0,25–3 | `1` |
+| `volume` | nombre 0–1 | `1` |
+| `shortcutsEnabled` | booléen | `true` |
+| `reviewTab` | `sig` · `list` · `truth` | `sig` |
+
+Appliquer les préférences : lire `GET /api/me` au démarrage (une requête), écrire par `PATCH` au changement (anti-rebond côté client). Le script d'amorçage de `<head>` ne peut pas attendre le réseau : il garde `localStorage` (`aqr.ui.v1`) comme **cache de premier rendu** (pas de flash), réconcilié avec le serveur dès que `/api/me` répond ; le serveur fait foi.
+
+### Sessions à l'échelle (`GET /api/sessions`)
+
+Paramètres (tous facultatifs) :
+
+| Paramètre | Sens |
+| --- | --- |
+| `scope` | `mine` (les miennes) · `shared` (les globales des autres et d'avant les comptes) · `all` (miennes + globales, **défaut**) · `favorites` · `archived`. Hors `archived`, les sessions archivées sont exclues |
+| `q` | recherche (100 caractères) : tous les mots doivent figurer dans le nom, l'étiquette de contenu ou le nom de fichier ; insensible à la casse et aux accents (diacritiques arabes ignorés) |
+| `state` | liste séparée par des virgules : `ready` `queued` `running` `done` `failed` `cancelled` · `active` (= queued + running) · `unread` |
+| `engine` | `cascade` `fastconformer` `whisper` `muno-streaming` (liste possible) |
+| `from` · `to` | sur la date d'import : `2026-10-22` (jour entier, UTC) ou horodatage ISO ; `to` inclus |
+| `sort` | `recent` (défaut) · `oldest` · `name` · `duration` (durée audio, décroissante) · `size` |
+| `limit` | 1–100, **20 par défaut** ; la barre « récentes » : `?scope=all&limit=8` |
+| `cursor` | valeur de `next_cursor` de la page précédente (opaque, liée au tri : un autre tri la refuse) |
+
+Réponse : `{ items, next_cursor, total, counts }`. **Pagination par curseur (keyset)** : `next_cursor` vaut `null` à la dernière page ; stable quand des sessions arrivent entre deux pages, sans `OFFSET`. `total` = nombre de résultats pour ce filtre. `counts.scopes` = `{ mine, shared, all, favorites, archived }` (filtres `q`/`engine`/dates appliqués, pas l'état) ; `counts.states` = `{ total, ready, queued, running, done, failed, cancelled, active, unread }` dans la portée courante. Paramètre invalide → `400 { error }` lisible.
+
+Chaque `item` (et `session` de `GET /api/sessions/<id>`) reprend les champs historiques (`id`, `state`, `queue_position`, `eta_s`, `audio_duration_s`, `engine`… voir « File d'attente ») **sans `pid`**, avec en plus :
+
+| Champ | Sens |
+| --- | --- |
+| `name` | nom **affiché** (modifiable) ; `original_name` = nom du fichier envoyé (immuable) ; `name_source` = `auto` · `user` |
+| `content_label` | contenu reconnu, `null` avant la fin : « Yusuf 12:11–31 », « Al-Fatiha 1:1–7 + Al-Baqara 2:1–5 » (versets reconnus ou inférés seulement ; au plus 3 sourates puis « + N autres » ; ≥ 4 tronçons d'une sourate = une plage englobante) |
+| `visibility` | `global` · `private` |
+| `owner` | `{ id, username }` ou `null` (session d'avant les comptes) ; `mine` : booléen ; `can_edit` : renommer/portée/archiver/supprimer/lancer permis à l'utilisateur courant |
+| `favorite` | favori **de l'utilisateur courant** |
+| `unread` · `viewed_at` | **propres à l'utilisateur** : « non lu » = session terminée dont il est **propriétaire** et qu'il n'a pas ouverte depuis la fin de l'analyse (une relance redevient non lue). Un autre testeur n'a jamais de point. `viewed_at` = sa dernière ouverture ou `null` |
+| `archived_at` · `size_bytes` | archivée le… (ISO ou `null`) ; octets du fichier envoyé |
+
+| Route | Rôle |
+| --- | --- |
+| `GET /api/sessions/<id>` | `{ session, result, review }` (`404` si invisible) |
+| `PATCH /api/sessions/<id>` | `{ name?: string \| null, visibility?, archived?: boolean }` → `{ session }`. `name` 1–120 caractères ; `name: null` rétablit le nom par défaut dérivé du fichier. Propriétaire ou administrateur (`403` sinon) |
+| `PUT` · `DELETE /api/sessions/<id>/favorite` | `{ id, favorite }` ; idempotents ; il suffit de voir la session |
+| `POST /api/sessions/bulk` | `{ ids: uuid[1..100], action: "archive"\|"unarchive"\|"favorite"\|"unfavorite"\|"set_visibility", visibility? }` → `{ results: [{ id, status: "ok"\|"not_found"\|"forbidden" }], applied }` ; chaque `id` est contrôlé séparément |
+| `POST /api/sessions/<id>/viewed` | enregistre l'ouverture **pour le compte courant** → `{ id, state, viewed_at, unread }` (inchangé pour les non-propriétaires) |
+| `DELETE /api/sessions/<id>` | inchangé (`409` si travail de revue, `?force=1`) ; propriétaire ou administrateur |
+
+**Import** (`POST /api/sessions`) : le propriétaire est l'utilisateur connecté. Paramètres d'adresse (ou champs du formulaire multipart) : `visibility=global\|private` (**défaut `global`**), `name=…` (ou en-tête `x-aqr-name`, encodé en pourcentage) ; sans `name`, un **nom par défaut intelligent** est calculé. Réponse `201` = la session complète (mêmes champs que ci-dessus). `413` au-delà du plafond d'envoi **ou du quota** (« Quota atteint : tu utilises X sur Y. Supprime des sessions… »).
+
+**Nom par défaut** (`lib/session-name.ts`, `defaultSessionName(filename, createdAt, sourceKind)`) : nom de fichier nettoyé — extension, identifiants `[dQw4w9WgXcQ]`, `_` → espace, `-` répétés, horodatages (`2026-10-20T17-58-52-469`) retirés ; un enregistrement au micro devient « Enregistrement du 22 oct. à 17:51 » ; si le nettoyage ne laisse rien de lisible (que des chiffres, un identifiant opaque, « recording »…), repli horodaté « Audio du 22 oct. à 17:51 ». Un nom **choisi** (`name_source: "user"`) n'est jamais remplacé par le serveur ; l'étiquette `content_label` est un champ à part (à montrer en sous-titre).
+
+### Statistiques et quotas
+
+- `GET /api/me/stats` → `{ tests, failures, audio_hours, processing_hours, rtf_mean, by_engine: [{ engine, tests }], sessions: { total, private, audio_hours }, storage: { used_bytes, disk_bytes, limit_bytes, remaining_bytes } }`. `tests` compte les **analyses terminées** (journal `analysis_log`, conservé même si la session est supprimée) ; `limit_bytes` / `remaining_bytes` valent `null` sans quota.
+- `GET /api/stats` (performance de la machine) ne compte que ce que l'utilisateur **voit** (globales + les siennes) et ajoute `disk: { used_bytes, free_bytes, total_bytes }` (espace occupé par ces sessions, libre et total du volume) et `totals: { sessions, audio_bytes, audio_hours }`. Le détail par moteur est `engines` (inchangé).
+- **Documentation** : `GET /api/docs` → `{ docs: [{ slug, title, section, summary? }] }` ; `GET /api/docs/<slug>` → Markdown brut (`text/markdown`). Liste blanche stricte : seules les entrées de `docs/docs-index.json` (`[{ slug, title, section, summary?, file }]`, `file` relatif à la racine du dépôt ou à `docs/`, `.md` seulement, aucun segment caché) sont lisibles ; tout autre slug, chemin ou lien sortant du dépôt → `404`. Le `file` n'est jamais renvoyé. Un test (`lib/docs.test.ts`) vérifie que l'index versionné reste entièrement servable. Connexion requise.
+
+### Base de données (SQLite, `node:sqlite`)
+
+Aucune dépendance native, aucun PostgreSQL : un fichier (`AQR_DB_PATH`), mode WAL, clés étrangères actives, `busy_timeout` 5 s. **Les fichiers lourds restent sur le disque** (`sessions/<id>/` : audio, résultat, revue, révisions) ; la base porte les métadonnées, et `session.json` reste la source de vérité de l'état d'une analyse (les colonnes miroir de `session_meta` sont réécrites à chaque sauvegarde, voir `lib/session-sync.ts`). **À sauvegarder avec le dossier de données** : perdre `aqr.sqlite` perd les comptes, la portée (**les sessions privées redeviendraient globales à la réimportation**) et les favoris.
+
+Migrations versionnées : `db/migrations/NNN_nom.sql`, appliquées dans l'ordre, chacune dans une transaction, consignées dans `schema_migrations` avec l'empreinte de leur contenu ; idempotentes, et **immuables** (modifier une migration appliquée est une erreur : on en ajoute une). Au premier démarrage, les sessions déjà sur le disque entrent dans la base : sans propriétaire, **globales**, nom par défaut dérivé de leur fichier, taille mesurée (idempotent : seules les absentes sont importées).
+
+```mermaid
+erDiagram
+  users ||--o{ auth_sessions : "se connecte"
+  users ||--o{ preferences : "règle (1 ligne par clé)"
+  users ||--o{ session_meta : "possède (owner_id, nullable)"
+  users ||--o{ favorites : ""
+  users ||--o{ views : "ouvre"
+  users ||--o{ analysis_log : "lance"
+  session_meta ||--o{ favorites : ""
+  session_meta ||--o{ views : ""
+  users { int id PK
+    text username
+    text username_key UK
+    text password_hash "scrypt"
+    text role "user|admin"
+    text disabled_at }
+  auth_sessions { text token_hash UK "SHA-256"
+    int user_id FK
+    text expires_at "glissante" }
+  preferences { int user_id PK
+    text key PK
+    text value "JSON"
+    text updated_at }
+  session_meta { text id PK "UUID = dossier"
+    int owner_id FK
+    text name
+    text name_source "auto|user"
+    text content_label
+    text visibility "global|private"
+    text archived_at
+    text state "miroir de session.json"
+    int size_bytes
+    real audio_duration_s }
+  favorites { int user_id PK
+    text session_id PK }
+  views { int user_id PK
+    text session_id PK
+    text viewed_at }
+  analysis_log { text session_id PK
+    int user_id FK
+    text outcome "done|failed"
+    real audio_duration_s
+    real duration_s }
+```
+
+Le schéma commenté ligne à ligne est dans `db/migrations/001_comptes_et_sessions.sql`. Index : `(created_at, id)`, `(owner_id, created_at, id)`, `(visibility, created_at, id)`, `(sort_name, id)`, `state`, `engine` (pagination par curseur et filtres).
+
+### Limites connues (à lire avant de brancher l'interface)
+
+- Les limiteurs de débit vivent en mémoire d'un seul processus : un redémarrage les remet à zéro, et plusieurs instances du serveur ne les partagent pas.
+- Sans `AQR_TRUST_PROXY=1`, toutes les requêtes comptent comme une même IP : derrière un reverse proxy, **l'activer**, sinon un testeur qui se trompe verrouille les autres.
+- Le quota est vérifié à l'import ; deux imports simultanés du même compte peuvent le dépasser d'un fichier.
+- `npm run smoke:browser` (`e2e/browser-smoke.mjs`) n'a pas encore de compte : il échouera en `401` tant que l'étape de connexion n'y est pas ajoutée.
+
 ## Performance
 
 L'onglet « Performance » (barre du haut ; pied du tiroir de gauche sur mobile) dit combien de temps prend une analyse et à quelle vitesse : durée moyenne, vitesse médiane (« ×7,1 » = 7 fois plus vite que l'audio), audio traité (dont vidéo), file d'attente, vitesse par moteur (barres d'une seule teinte, nommées et chiffrées, avec une vue en tableau), file en cours avec estimation et dernières analyses. Les tuiles, les moteurs et le tableau sont calculés sur les sessions terminées de la **période choisie** (7 jours, 30 jours, tout) à partir de `GET /api/sessions` ; la file en cours et la précision de l'estimation viennent de `GET /api/stats` (rafraîchi toutes les 5 s onglet visible). Aucun chiffre n'est inventé : une analyse sans durée mesurée n'entre dans aucune moyenne.
 
-## Construire la vérité terrain (onglet « Vérité terrain », `?relecteur=1`)
+## Construire la vérité terrain (onglet « Vérité terrain », administrateurs)
 
 Une fois la reconnaissance terminée (ou une prédiction importée) sur un fichier **dev** du manifeste :
 
@@ -163,7 +345,7 @@ Une fois la reconnaissance terminée (ou une prédiction importée) sur un fichi
    s'affiche ; en rouge, la déclaration colle mal (reprise oubliée, verset en trop, passage trop court).
 4. Écouter chaque verset (▶), puis « Valider après écoute » ou « Exclure » (douteux, non coranique). Un passage
    modifié repasse « à aligner ».
-5. « Écrire N passage(s) validé(s) dans le manifeste » avec un identifiant **anonyme** de relecteur (`rel-01`).
+5. « Écrire N passage(s) validé(s) dans le manifeste » : le relecteur est le pseudonyme du compte administrateur connecté.
    Les passages deviennent des fenêtres annotées de `tests/fixtures/audio/manifest.yaml` (`AQR_MANIFEST` pour
    un autre fichier) : refus pour un fichier test ou en quarantaine. Committer ensuite le manifeste seul.
 
@@ -194,7 +376,7 @@ AQR_ACCESS_TTL_S=1800 AQR_SESSION_TTL_S=86400 \
 npx next start --hostname 0.0.0.0 --port 3097
 ```
 
-À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : pas de limitation de débit intégrée, et les audios déposés restent des données privées. Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
+À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : la limitation de débit intégrée ne couvre que l'authentification (voir « Comptes, partage et préférences »), pas le reste de l'API, et les audios déposés restent des données privées. Avec des comptes, ce jeton d'accès reste la porte d'entrée réseau : les testeurs se connectent ensuite avec leur pseudonyme. Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
 
 ### Règle d'activité et suppression
 

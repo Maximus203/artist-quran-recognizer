@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatBytesFr,
   formatClockLength,
   formatDurationFr,
   formatEtaFr,
@@ -99,5 +100,18 @@ describe("formatRelative", () => {
   it("ne plante pas sur une date invalide ou future", () => {
     expect(formatRelative("pas une date", now)).toBe("");
     expect(formatRelative(at(-5000), now)).toBe("à l’instant");
+  });
+});
+
+describe("formatBytesFr", () => {
+  it("choisit l unité lisible", () => {
+    expect(formatBytesFr(0)).toBe("0 o");
+    expect(formatBytesFr(512)).toBe("512 o");
+    expect(formatBytesFr(60000)).toBe("58,6 Ko");
+    expect(formatBytesFr(1536 * 1024)).toBe("1,5 Mo");
+    expect(formatBytesFr(300 * 1024 * 1024)).toBe("300 Mo");
+    expect(formatBytesFr(2 * 1024 ** 3)).toBe("2,0 Go");
+    expect(formatBytesFr(-1)).toBe("—");
+    expect(formatBytesFr(Number.NaN)).toBe("—");
   });
 });

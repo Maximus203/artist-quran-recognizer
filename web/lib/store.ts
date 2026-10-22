@@ -14,6 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import type { AsrChoice } from "./asr-choice";
 import { LISTENING } from "./listening";
+import { log } from "./log";
 import { peekQueue } from "./queue";
 import { parseRecognition, type Recognition } from "./recognition";
 import { reviewSchema, type Review } from "./review";
@@ -118,6 +119,33 @@ export type Session = {
    */
   viewed_at?: string | null;
 };
+/**
+ * Crochets d'observation (motif Observer) : la couche données (`session-sync.ts`) s'y branche pour
+ * suivre les sessions dans la base SQLite sans que ce module la connaisse. Un crochet qui échoue
+ * est journalisé et ne fait jamais échouer l'écriture de `session.json`.
+ */
+export type SessionHooks = {
+  saved?: (session: Session) => Promise<void> | void;
+  removed?: (id: string) => Promise<void> | void;
+};
+const HOOKS_KEY = Symbol.for("aqr.session-hooks");
+export const sessionHooks: SessionHooks = ((
+  globalThis as { [HOOKS_KEY]?: SessionHooks }
+)[HOOKS_KEY] ??= {});
+async function notifySaved(session: Session): Promise<void> {
+  try {
+    await sessionHooks.saved?.(session);
+  } catch (error) {
+    log.error("store", "suivi de la session en échec", error);
+  }
+}
+async function notifyRemoved(id: string): Promise<void> {
+  try {
+    await sessionHooks.removed?.(id);
+  } catch (error) {
+    log.error("store", "retrait de la session de l'index en échec", error);
+  }
+}
 const SESSION_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export function sha(data: Buffer): string {
@@ -223,6 +251,7 @@ export async function saveSession(
   await atomicJson(path.join(sessionDir(value.id), "session.json"), value, {
     createDir: create,
   });
+  await notifySaved(value);
 }
 const locks = new Map<string, Promise<unknown>>();
 /** Sérialise les lecture-modification-écriture de `session.json` faites par ce serveur. */
@@ -414,6 +443,7 @@ export async function deleteSession(
   // Session annulée dont `close` n'est pas encore passé : il relirait un dossier supprimé.
   await jobs.get(id)?.settled;
   await rm(dir, { recursive: true, force: true });
+  await notifyRemoved(id);
 }
 /** Copie d'écoute dérivée (`listening.ts`) : régénérable, l'écouter n'est pas une activité. */
 export const DERIVED_DIRS = new Set<string>([LISTENING.dir]);
@@ -506,6 +536,7 @@ export async function cleanupSessions(
       // Un PUT de revue a pu écrire depuis la première lecture : relecture juste avant rm.
       if (await active()) continue;
       await rm(dir, { recursive: true, force: true });
+      await notifyRemoved(id);
       removed.push(id);
     } catch {
       /* dossier étranger ou illisible : laissé tel quel */
