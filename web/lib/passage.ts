@@ -8,15 +8,22 @@
  * sans modification ; `splitNoteMarkers` ne fait que la découper pour styler les `[n]` à l'affichage.
  */
 import { formulaFromLabel, type Formula } from "./formulas";
+import { liveWords, type LiveWords } from "./live-highlight";
 import type { Interval } from "./recognition";
+import {
+  translationDisplay,
+  type TranslationDisplay,
+} from "./translation-fragment";
 
 export type TranslationView = {
   text: string;
   attribution: string;
   translationId: string;
   version: string;
-  /** Verset partiel : la traduction est celle du verset entier. */
+  /** Verset partiel dont la traduction montrée est celle du verset ENTIER (pas du passage). */
   partialNote: boolean;
+  /** Ce qui est montré : le fragment du passage ou le verset entier, découpé si on sait l'aligner. */
+  display: TranslationDisplay;
 };
 
 export type PassageModel =
@@ -30,6 +37,8 @@ export type PassageModel =
       ayahNumber: string | null;
       translation: TranslationView | null;
       badges: string[];
+      /** Mots surlignables en direct ; `null` = repli sur le passage entier (pas de temps au mot). */
+      live: LiveWords | null;
     }
   | {
       type: "basmala";
@@ -103,15 +112,16 @@ function translationView(
   translation: Translation | null | undefined,
   partial: boolean,
 ): TranslationView | null {
-  return translation
-    ? {
-        text: translation.text,
-        attribution: translation.attribution,
-        translationId: translation.translation_id,
-        version: translation.version,
-        partialNote: partial,
-      }
-    : null;
+  if (!translation) return null;
+  const display = translationDisplay(translation);
+  return {
+    text: translation.text,
+    attribution: translation.attribution,
+    translationId: translation.translation_id,
+    version: translation.version,
+    partialNote: partial && display.scope === "verse",
+    display,
+  };
 }
 
 export function describePassage(item: Interval | null): PassageModel {
@@ -146,6 +156,7 @@ export function describePassage(item: Interval | null): PassageModel {
         : toArabicIndic(item.ref.split(":")[1] ?? ""),
       translation: translationView(item.translation, item.partial),
       badges,
+      live: liveWords(item),
     };
   }
   if (item.kind === "non_quran") {

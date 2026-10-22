@@ -229,6 +229,18 @@ export function PreferencesPane() {
             onChange={(translation) => update({ translation })}
           />
         </Setting>
+        <Setting
+          id="lab-live"
+          label="Surligner en direct"
+          help="Pendant la lecture, marque le mot arabe récité et le fragment de traduction qui lui correspond. Sans temps de mots dans le résultat, seul le passage entier est marqué."
+        >
+          <Switch
+            label="Surligner en direct"
+            testId="pref-live-highlight"
+            checked={prefs.liveHighlight}
+            onChange={(liveHighlight) => update({ liveHighlight })}
+          />
+        </Setting>
         <div className="preview-ar" aria-label="Aperçu">
           <p className="eyebrow lbl">
             <span>Aperçu</span>

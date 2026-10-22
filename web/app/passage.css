@@ -131,6 +131,79 @@
   flex-wrap: wrap;
   margin-top: var(--sp-5);
 }
+.p-toggles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-4);
+}
+
+/* ── Surlignage en direct ──────────────────────────────────────────────────────
+ * Le mot arabe en cours et le segment de traduction qui le contient : fond teinté ET trait sous le
+ * texte (jamais la couleur seule). Aucun déplacement de page, aucune animation de défilement ; le
+ * fondu de la teinte tombe à 0 sous prefers-reduced-motion (règle globale de tokens.css). Sans temps
+ * de mots, seul le passage entier est teinté en lecture (.is-live), sans désigner de mot.
+ */
+.arabic .w,
+.translation .seg {
+  border-radius: var(--r-xs);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease);
+}
+.arabic .w {
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
+}
+.translation .seg {
+  padding: 0.06em 0.22em;
+  margin: 0 -0.22em;
+}
+.arabic .w[aria-current="true"],
+.translation .seg[aria-current="true"] {
+  background-color: var(--live-fill);
+  box-shadow: inset 0 -0.1em 0 var(--live-edge);
+}
+[data-seekable="true"] .w {
+  cursor: pointer;
+}
+[data-seekable="true"] .w:hover {
+  background-color: var(--live-soft);
+}
+[data-seekable="true"] .w[aria-current="true"]:hover {
+  background-color: var(--live-fill);
+}
+.arabic.is-live,
+.translation.is-live > p[data-testid="translation-text"] {
+  background-color: var(--live-soft);
+  border-radius: var(--r-sm);
+}
+.translation .ell {
+  color: var(--text-3);
+}
+.translation .tr-scope {
+  max-width: 68ch;
+  margin: 0 auto var(--sp-2);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+.live-note {
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+@media (forced-colors: active) {
+  .arabic .w[aria-current="true"],
+  .translation .seg[aria-current="true"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}
 .p-empty {
   text-align: center;
   padding: var(--sp-8) 0;
