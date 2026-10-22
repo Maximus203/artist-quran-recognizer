@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — Détection en direct sans plage déclarée : conception et décisions produit
 Étiquettes : technique, décision
-PR : -
+PR : #74
 
 **Ce qui change.** Rien ne change encore pour celui qui utilise le système : cette étape est une conception. Les décisions de Cherif sont consignées : usage **non commercial** avec publication en open source sous une licence non commerciale, **Hafs uniquement**, et pour objectif la **détection en direct sur un flux, sans plage déclarée** (l'analyse de fichiers reste le premier terrain). L'ADR-0010 (proposé) décrit comment : garder les candidats ouverts au début d'un verset, n'afficher que le passage entendu, nommer `sourate:verset` dès qu'un mot départage, attendre la suite du verset détecté et signaler un saut. Un script mesure le corpus : `scripts/analyze_verse_prefixes.py`.
 
