@@ -1,28 +1,21 @@
-import { DEFAULT_QURAN_FONT } from "./quran-fonts";
-import { QURAN_FONT_IDS, QURAN_SIZE, UI_STORAGE_KEY } from "./ui-prefs";
+import { PREFS_CACHE_KEY } from "./prefs-sync";
 
 /**
- * Script d'amorçage posé dans `<head>` : il lit les préférences AVANT le premier rendu pour poser le
- * thème, la police arabe et sa taille. Sans lui, la page s'afficherait d'abord dans le thème du
- * système puis « sauterait » (flash). Il ne dépend de rien et ne plante jamais : stockage bloqué ou
- * JSON invalide laissent les valeurs par défaut. Corps de fonction : `root` (l'élément <html>) et
- * `storage` (localStorage ou null) sont fournis par l'appelant.
+ * Script d'amorçage posé dans `<head>` des pages SANS compte connecté (connexion, inscription) :
+ * il reprend le thème mémorisé par le navigateur (cache `aqr.prefs.v2`) AVANT le premier rendu,
+ * pour que la page ne s'affiche pas dans le thème du système puis « saute ». Pour une page
+ * connectée, c'est le serveur qui pose thème, police et taille dans le HTML (les préférences du
+ * compte font foi) : ce script n'y est pas servi. Il ne dépend de rien et ne plante jamais :
+ * stockage bloqué ou JSON invalide laissent le thème du système. Corps de fonction : `root`
+ * (l'élément <html>) et `storage` (localStorage ou null) sont fournis par l'appelant.
  */
 export const BOOTSTRAP_SCRIPT = `
-var font = ${JSON.stringify(DEFAULT_QURAN_FONT)};
 try {
-  var raw = storage && storage.getItem(${JSON.stringify(UI_STORAGE_KEY)});
-  var prefs = raw ? JSON.parse(raw) : null;
-  if (prefs && typeof prefs === "object") {
-    if (prefs.theme === "light" || prefs.theme === "dark") root.setAttribute("data-theme", prefs.theme);
-    if (typeof prefs.font === "string" && ${JSON.stringify(QURAN_FONT_IDS)}.indexOf(prefs.font) >= 0) font = prefs.font;
-    if (typeof prefs.size === "number" && isFinite(prefs.size)) {
-      var size = Math.round(prefs.size / ${QURAN_SIZE.step}) * ${QURAN_SIZE.step};
-      root.style.setProperty("--quran-size", Math.min(${QURAN_SIZE.max}, Math.max(${QURAN_SIZE.min}, size)) + "px");
-    }
-  }
+  var raw = storage && storage.getItem(${JSON.stringify(PREFS_CACHE_KEY)});
+  var cache = raw ? JSON.parse(raw) : null;
+  var theme = cache && cache.prefs && cache.prefs.theme;
+  if (theme === "light" || theme === "dark") root.setAttribute("data-theme", theme);
 } catch (e) {}
-root.setAttribute("data-quran-font", font);
 `;
 
 /** Le script complet, prêt pour `dangerouslySetInnerHTML` (accès au stockage protégé). */
