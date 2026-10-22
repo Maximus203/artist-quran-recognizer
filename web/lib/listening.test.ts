@@ -101,6 +101,10 @@ describe("mediaType", () => {
     expect(mediaType(".mp3")).toBe("audio/mpeg");
     expect(mediaType(".M4A")).toBe("audio/mp4");
     expect(mediaType(".wav")).toBe("audio/wav");
+    expect(mediaType(".MKV")).toBe("video/x-matroska");
+    expect(mediaType(".mov")).toBe("video/quicktime");
+    expect(mediaType(".avi")).toBe("video/x-msvideo");
+    expect(mediaType(".m4v")).toBe("video/x-m4v");
     expect(mediaType(".xyz")).toBe("application/octet-stream");
   });
 });
