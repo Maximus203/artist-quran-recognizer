@@ -4,7 +4,8 @@ Schéma lu (voir docs/EVALUATION-METRICS.md) : `source`, `engine`, `decoder`, `t
 `intervals` (chronologiques) de trois sortes :
 - `verse` : ref, words [a, b], status recognized|inferred|uncertain, t [début, fin] ou null,
   time_interpolated, confidence, candidates ;
-- `non_quran` : label, t ;
+- `non_quran` : label, t ; la basmala porte en plus `basmala: true`, `ref` (1:1), `text` (corpus)
+  et `translation` ; isti'adha, takbir et amin un libellé `label_ar` (pas un texte du Mushaf) ;
 - `abstention` : reason, t, best_score (absence de décision, jamais un verset).
 
 Le lecteur ne juge rien : il valide la forme et renvoie des objets typés. Un verset `recognized`
@@ -44,6 +45,12 @@ class VerseInterval:
 class NonQuranInterval:
     label: str
     t: tuple[float, float]
+    basmala: bool = False
+    """Vrai pour la basmala : le verset 1:1 (`ref`), son texte vient du corpus (I1)."""
+    ref: VerseRef | None = None
+    text: str | None = None
+    label_ar: str | None = None
+    """Libellé arabe constant d'une formule (isti'adha, takbir, amin) : pas du texte du Mushaf."""
 
 
 @dataclass(frozen=True)
@@ -77,6 +84,32 @@ def _span(raw: object, where: str) -> tuple[float, float]:
     return start, end
 
 
+_BASMALA_REF = VerseRef(1, 1)
+
+
+def _parse_non_quran(raw: Mapping[str, Any], where: str) -> NonQuranInterval:
+    label = str(raw.get("label", "unclassified"))
+    t = _span(raw.get("t"), where)
+    basmala = bool(raw.get("basmala", False))
+    label_ar = raw.get("label_ar")
+    if basmala:
+        if label != "basmala":
+            raise RecognitionError(f"{where} : basmala: true sur le libellé {label!r}")
+        if str(raw.get("ref")) != str(_BASMALA_REF):
+            raise RecognitionError(
+                f"{where} : la basmala est le verset 1:1, pas {raw.get('ref')!r}"
+            )
+        if label_ar is not None:
+            raise RecognitionError(f"{where} : un libellé n'est pas le texte de la basmala")
+        return NonQuranInterval(label, t, basmala=True, ref=_BASMALA_REF, text=raw.get("text"))
+    if raw.get("text") is not None or raw.get("ref") is not None:
+        # Seule la basmala (verset 1:1) porte du texte du Mushaf dans une zone non coranique.
+        raise RecognitionError(
+            f"{where} : texte ou référence sur une zone qui n'est pas la basmala"
+        )
+    return NonQuranInterval(label, t, label_ar=None if label_ar is None else str(label_ar))
+
+
 def _parse_one(raw: object, index: int) -> Interval:
     where = f"intervals[{index}]"
     if not isinstance(raw, Mapping):
@@ -103,9 +136,7 @@ def _parse_one(raw: object, index: int) -> Interval:
                 candidates=tuple(VerseRef.parse(str(c)) for c in raw.get("candidates") or ()),
             )
         if kind == "non_quran":
-            return NonQuranInterval(
-                str(raw.get("label", "unclassified")), _span(raw.get("t"), where)
-            )
+            return _parse_non_quran(raw, where)
         if kind == "abstention":
             score = raw.get("best_score")
             return AbstentionInterval(
