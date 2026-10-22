@@ -126,6 +126,13 @@
     "summary": "Trois moteurs de reconnaissance en cascade : seules les fenêtres douteuses sont réécoutées, et l'audio arbitre."
   },
   {
+    "slug": "adr-0010",
+    "title": "ADR-0010 — Promotion par le voisin reconnu et temps au mot",
+    "section": "Décisions",
+    "file": "docs/adr/0010-promotion-par-le-voisin-et-temps-au-mot.md",
+    "summary": "Un début de verset ambigu prolongé par un verset reconnu est promu si l'audio soutient son texte ; chaque mot reçoit son temps dans la sortie."
+  },
+  {
     "slug": "adr-0011",
     "title": "ADR-0011 — Détection en direct sur flux, sans plage déclarée",
     "section": "Décisions",

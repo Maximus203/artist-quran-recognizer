@@ -201,6 +201,20 @@ def test_rejeu_ignore_les_versets_non_reconnus_ou_partiels() -> None:
     assert m.replay_document(document, flow, everywhere, same_surah) == []
 
 
+def test_rejeu_prefere_les_temps_de_mots_mesures_au_debit_uniforme() -> None:
+    flow = {_Ref(1, 1): ("a", "b", "c", "d"), _Ref(1, 2): ("a", "b", "x", "y")}
+    everywhere, same_surah = m.start_and_rival_lengths(flow)
+    interval = _verse("1:1", [1, 4], [0.0, 4.0])
+    interval["word_times"] = [[0.0, 0.5], [0.5, 1.0], [1.0, 1.2], [1.2, 4.0]]
+    rows = m.replay_document({"intervals": [interval]}, flow, everywhere, same_surah)
+    assert rows[0]["t_start"] == pytest.approx(1.2)  # 3e mot mesuré, et non 3,0 s à débit uniforme
+    assert rows[0]["measured_word_times"] is True
+    incomplete = dict(interval, word_times=[[0.0, 0.5]])
+    rows = m.replay_document({"intervals": [incomplete]}, flow, everywhere, same_surah)
+    assert rows[0]["t_start"] == pytest.approx(3.0)
+    assert rows[0]["measured_word_times"] is False
+
+
 def test_un_temps_est_none_quand_aucun_prefixe_nest_unique() -> None:
     flow = {_Ref(1, 1): ("a", "b"), _Ref(1, 2): ("a", "b")}
     everywhere, same_surah = m.start_and_rival_lengths(flow)

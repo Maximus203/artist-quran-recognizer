@@ -109,6 +109,13 @@ class Detection:
     is_repetition: bool = False
     """True si ce passage redit des mots déjà reconnus juste avant (reprise, i'ada) : la détection
     garde son propre temps au lieu d'être fusionnée avec la précédente (playbook P8)."""
+    word_times: tuple[TimeSpan, ...] = field(default_factory=tuple)
+    """Temps MESURÉS de chaque mot de la plage `span` (alignement forcé du texte du corpus,
+    ADR-0010), dans l'ordre ; vide = inconnus. Jamais estimés ici : l'interpolation est faite à
+    la sortie, et déclarée comme telle."""
+    promoted_by: str | None = None
+    """Comment un `UNCERTAIN` est devenu `RECOGNIZED` : `neighbor` = il prolonge le verset reconnu
+    voisin ET l'audio soutient son texte (ADR-0010). None = le score du candidat a suffi."""
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.confidence <= 1.0:

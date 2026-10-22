@@ -8,6 +8,7 @@ est dans docs/evaluation/acoustic-check-2026-10-19.md.
 from __future__ import annotations
 
 import math
+from itertools import pairwise
 
 import pytest
 
@@ -371,3 +372,147 @@ def test_sans_transcription_aucune_suite_n_est_tentee():
     said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
     _out, checks = verifier(_Model(said)).verify(CLIP, BEGUN)
     assert [c for c in checks if c.kind == "continuation"] == []
+
+
+# --- Temps au mot (ADR-0010) : la liste des mots de chaque plage, même ordre que `spans` --------
+def test_un_verset_prouve_seul_porte_le_temps_de_chacun_de_ses_mots():
+    alone = [(window(4), [proven("55:5", 1, 3)])]
+    observations, _checks = verifier(_Model(recited((4, VerseRef(55, 5), 1, 3)))).verify(
+        CLIP, alone
+    )
+    (best,) = observations[0][1]
+    (words,) = best.word_times
+    (time,) = best.times
+    assert len(words) == 3
+    assert words[0].start_s == time.start_s and words[-1].end_s == time.end_s
+    assert [w.start_s for w in words] == pytest.approx([12.4, 12.9, 13.4], abs=FRAME)
+    assert all(a.end_s <= b.start_s + 1e-9 for a, b in pairwise(words))
+
+
+def test_le_maillon_sauve_porte_les_temps_de_ses_mots_dans_sa_fenetre():
+    observations, _checks = verifier(_Model(SAID_55)).verify(CLIP, MUNO_55)
+    rescued = observations[1][1][0]
+    ((first, second),) = rescued.word_times  # « عَلَّمَ » retrouvé, puis « الْقُرْآنَ »
+    assert first.start_s == pytest.approx(3.4, abs=FRAME)
+    assert first.start_s == rescued.times[0].start_s and second.end_s == rescued.times[0].end_s
+    assert window(1).start_s <= first.start_s and second.end_s <= window(1).end_s
+
+
+def test_un_mot_a_cheval_sur_la_fin_de_la_fenetre_est_borne_comme_le_temps_du_verset():
+    said = [w for w in SAID_55 if w[1] != "القرآن"] + [(5.36, "القرآن")]
+    observations, _checks = verifier(_Model(sorted(said))).verify(CLIP, MUNO_55)
+    ((_first, last),) = observations[1][1][0].word_times
+    assert last.end_s <= window(1).end_s
+    assert last.end_s == observations[1][1][0].times[0].end_s
+
+
+def test_sans_temps_au_mot_aucune_liste_de_mots():
+    observations, _checks = verifier(_Model(SAID_55), word_times=False).verify(CLIP, MUNO_55)
+    assert all(not c.word_times for _t, cands in observations for c in cands)
+
+
+def test_la_suite_d_un_verset_commence_porte_aussi_les_temps_de_ses_mots():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    out, _checks = continuation(BEGUN, said)
+    (words,) = out[1][1][0].word_times
+    assert len(words) == 1 and words[0].start_s == pytest.approx(15.4, abs=FRAME)
+
+
+# --- Un candidat seul, soutenu par l'audio (promotion par le voisin, ADR-0010) -------------------
+def test_un_candidat_soutenu_par_l_audio_est_confirme_avec_les_temps_de_l_alignement():
+    candidate = proven("55:5", 1, 3)
+    model = _Model(recited((4, VerseRef(55, 5), 1, 3)))
+    check, confirmed = verifier(model).verify_alone(CLIP, window(4), candidate)
+    assert check.kind == "neighbor" and check.accepted and check.time == window(4)
+    assert check.spans == (WordSpan(VerseRef(55, 5), 1, 3),)
+    assert confirmed is not None and confirmed.span == candidate.span
+    assert confirmed.score >= 0.75 and len(confirmed.word_times[0]) == 3
+    assert confirmed.times[0].start_s == pytest.approx(12.4, abs=FRAME)
+
+
+def test_un_candidat_que_l_audio_ne_soutient_pas_n_est_pas_confirme():  # I3
+    check, confirmed = verifier(_Model(said_other(4, 4))).verify_alone(
+        CLIP, window(4), proven("55:5", 1, 3)
+    )
+    assert not check.accepted and confirmed is None
+    assert check.llr_per_frame is not None and check.llr_per_frame < -0.5
+
+
+def test_un_candidat_dont_le_texte_ne_tient_pas_dans_la_fenetre_n_est_pas_confirme():
+    tiny = TimeSpan(12.0, 12.1)
+    check, confirmed = verifier(_Model([])).verify_alone(CLIP, tiny, proven("55:7", 1, 4))
+    assert not check.accepted and check.llr_per_frame is None and confirmed is None
+
+
+# --- Le début d'un verset dont la suite est reconnue (amorce, ADR-0010) --------------------------
+# Cas réel (lot2-05, récitation avec pauses) : « le récitant commence une partie du verset, fait
+# une pause, continue » ; la fenêtre d'avant la pause reste une abstention, la suite est reconnue.
+HEADED = [(window(4), [weak()]), (window(5), [proven("55:5", 3, 3)])]
+
+
+def heads(observations, said, heard=None, **config):
+    heard = heard_of(observations, said) if heard is None else heard
+    out, checks = verifier(_Model(said), **config).verify(CLIP, observations, heard=heard)
+    return out, [c for c in checks if c.kind == "head"]
+
+
+def test_le_debut_d_un_verset_dont_la_suite_est_reconnue_est_reconnu_sur_l_audio():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    out, (check,) = heads(HEADED, said)
+    assert check.accepted and check.time == window(4) and check.text_similarity is not None
+    head = out[0][1][0]
+    assert head.spans == (WordSpan(VerseRef(55, 5), 1, 2),) and head.score == 0.75
+    (words,) = head.word_times
+    assert len(words) == 2 and words[0].start_s == pytest.approx(12.4, abs=FRAME)
+    assert out[0][1][1].span.ref == VerseRef(2, 185)  # le candidat faible reste, sous le seuil
+
+
+def test_un_debut_que_l_audio_ne_soutient_pas_n_est_jamais_nomme():  # I3 (ex. autre riwaya)
+    said = said_other(4, 4) + recited((5, VerseRef(55, 5), 3, 3))
+    out, (check,) = heads(HEADED, said)
+    assert not check.accepted
+    assert [c.span.ref for c in out[0][1]] == [VerseRef(2, 185)]
+
+
+def test_un_debut_soutenu_par_l_audio_mais_pas_par_la_transcription_n_est_pas_nomme():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    out, (check,) = heads(HEADED, said, heard=["كتاب بيت رجل ماء", "بحسبان"])
+    assert not check.accepted and check.llr_per_frame == pytest.approx(0.0, abs=1e-6)
+    assert check.text_similarity is not None and check.text_similarity < 0.6
+    assert [c.span.ref for c in out[0][1]] == [VerseRef(2, 185)]
+
+
+def test_rien_a_predire_si_la_suite_commence_le_verset_ou_si_l_avant_est_deja_reconnu():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    starts = [(window(4), [weak()]), (window(5), [proven("55:5", 1, 3)])]
+    assert heads(starts, said)[1] == []
+    known = [(window(4), [proven("55:6", 1, 3)]), (window(5), [proven("55:5", 3, 3)])]
+    assert heads(known, said)[1] == []
+
+
+def test_une_formule_avant_la_suite_n_est_jamais_prise_pour_son_debut():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    heard = heard_of(HEADED, said)
+    out, checks = verifier(_Model(said)).verify(CLIP, HEADED, blocked={0}, heard=heard)
+    assert [c for c in checks if c.kind == "head"] == []
+    assert [c.span.ref for c in out[0][1]] == [VerseRef(2, 185)]
+
+
+def test_le_trou_entre_deux_morceaux_reconnus_du_meme_verset_est_comble_sur_l_audio():
+    # cas réel lot2-05 : 4:12 [1-47], pause (mots 48-56 non reconnus), puis [57-88]
+    gap = [
+        (window(3), [proven("55:7", 1, 1)]),
+        (window(4), [weak()]),
+        (window(5), [proven("55:7", 4, 4)]),
+    ]
+    said = recited(
+        (3, VerseRef(55, 7), 1, 1), (4, VerseRef(55, 7), 2, 3), (5, VerseRef(55, 7), 4, 4)
+    )
+    out, (check,) = heads(gap, said, continuation=False)
+    assert check.accepted
+    assert out[1][1][0].spans == (WordSpan(VerseRef(55, 7), 2, 3),)  # ni le mot 1 ni le mot 4
+
+
+def test_l_amorce_se_desactive():
+    said = recited((4, VerseRef(55, 5), 1, 2), (5, VerseRef(55, 5), 3, 3))
+    assert heads(HEADED, said, head=False)[1] == []

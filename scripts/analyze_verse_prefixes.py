@@ -194,10 +194,19 @@ def word_end_time(start: float, end: float, word: int, words: int) -> float:
     return start + (end - start) * word / words
 
 
-def elapsed_until(needed: int | None, start: float, end: float, words: int) -> float | None:
-    """Secondes écoulées depuis le début du verset quand son `needed`-ième mot est dit."""
+def elapsed_until(
+    needed: int | None,
+    start: float,
+    end: float,
+    words: int,
+    word_times: Sequence[Sequence[float]] | None = None,
+) -> float | None:
+    """Secondes écoulées depuis le début du verset quand son `needed`-ième mot est dit : fin mesurée
+    du mot si `word_times` couvre tous les mots (ADR-0010), sinon estimation à débit uniforme."""
     if needed is None or needed > words:
         return None
+    if word_times is not None and len(word_times) == words:
+        return round(float(word_times[needed - 1][1]) - start, 3)
     return round(word_end_time(start, end, needed, words) - start, 3)
 
 
@@ -230,18 +239,20 @@ def replay_document(
         if not usable or ref is None or t is None:
             continue
         start, end = float(t[0]), float(t[1])
+        measured = interval.get("word_times")
 
         rows.append(
             {
                 "ref": f"{surah}:{ayah}",
                 "duration": round(end - start, 3),
-                "t_start": elapsed_until(start_lengths[ref].needed, start, end, words),
+                "t_start": elapsed_until(start_lengths[ref].needed, start, end, words, measured),
                 "t_context": (
-                    elapsed_until(rival_lengths[ref].needed, start, end, words)
+                    elapsed_until(rival_lengths[ref].needed, start, end, words, measured)
                     if consecutive
                     else None
                 ),
                 "with_context": consecutive,
+                "measured_word_times": measured is not None and len(measured) == words,
             }
         )
     return rows

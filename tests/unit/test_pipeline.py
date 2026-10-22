@@ -543,3 +543,121 @@ def test_sans_arbitre_acoustique_pas_de_cascade(corpus, matcher):
     )
     assert second.calls == 0  # I3 : jamais un verset d'un autre moteur sans preuve acoustique
     assert result.cascade is None
+
+
+# --- Début de verset resté « incertain » (session 5014015f, Hud 11:61, ADR-0010) ---------------
+# Le début de 11:61 [1-10] ressemble à celui de 7:73 : deux candidats à égalité, `uncertain`. La
+# fenêtre suivante, contiguë, est 11:61 [10-17] `recognized` : elle prolonge 11:61, pas 7:73.
+def _hud(corpus, matcher, alignment_texts, said, **kwargs):
+    texts = [_verse(corpus, 11, 61, 1, 10), _verse(corpus, 11, 61, 10, 17)]
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, *said))
+    return _pipeline(
+        corpus,
+        matcher,
+        texts,
+        [(0.5, 7.5), (7.7, 13.5)],
+        seconds=16.0,
+        acoustic=kwargs.pop("acoustic", acoustic),
+        **kwargs,
+    )
+
+
+SAID_HUD = ((0.9, "11:61[1-10]"), (8.0, "11:61[10-17]"))
+
+
+def test_sans_l_audio_le_debut_ambigu_reste_incertain(corpus, matcher):
+    result = _pipeline(
+        corpus,
+        matcher,
+        [_verse(corpus, 11, 61, 1, 10), _verse(corpus, 11, 61, 10, 17)],
+        [(0.5, 7.5), (7.7, 13.5)],
+        seconds=16.0,
+    )
+    first, second = _verses(result)
+    assert first.status is Status.UNCERTAIN and VerseRef(7, 73) in first.candidates
+    assert second.status is Status.RECOGNIZED
+
+
+def test_le_debut_ambigu_est_promu_quand_l_audio_soutient_son_texte(
+    corpus, matcher, alignment_texts
+):
+    result = _hud(corpus, matcher, alignment_texts, SAID_HUD)
+    first, second = _verses(result)
+    assert (first.span.ref, first.span.first_word, first.span.last_word) == (
+        VerseRef(11, 61),
+        1,
+        10,
+    )
+    assert first.status is Status.RECOGNIZED and first.candidates == ()
+    assert first.promoted_by == "neighbor" and second.promoted_by is None
+    assert first.time is not None and first.time.start_s == pytest.approx(0.9, abs=0.08)
+    assert len(first.word_times) == 10 and first.word_times[0].start_s == first.time.start_s
+    assert second.status is Status.RECOGNIZED and not second.is_repetition
+    (check,) = [c for c in result.acoustic_checks if c.kind == "neighbor"]
+    assert check.accepted and check.time == TimeSpan(0.5, 7.5)
+
+
+def test_le_debut_ambigu_n_est_pas_promu_si_l_audio_dit_autre_chose(
+    corpus, matcher, alignment_texts
+):
+    # I3 : le voisin est reconnu, mais l'audio de cette fenêtre ne contient pas 11:61 [1-10]
+    said = ((0.9, "2:1"), (8.0, "11:61[10-17]"))
+    result = _hud(corpus, matcher, alignment_texts, said)
+    first, second = _verses(result)
+    assert first.status is Status.UNCERTAIN and first.promoted_by is None
+    assert second.status is Status.RECOGNIZED
+    (check,) = [c for c in result.acoustic_checks if c.kind == "neighbor"]
+    assert not check.accepted
+
+
+def test_promotion_par_le_voisin_desactivee(corpus, matcher, alignment_texts):
+    from aqr.decoding.neighbors import NeighborConfig
+
+    config = PipelineConfig(neighbor=NeighborConfig(enabled=False))
+    result = _hud(corpus, matcher, alignment_texts, SAID_HUD, config=config)
+    assert _verses(result)[0].status is Status.UNCERTAIN
+    assert not [c for c in result.acoustic_checks if c.kind == "neighbor"]
+
+
+# --- Début d'un verset avant une pause, suite reconnue (lot2-05, ADR-0010) ----------------------
+# Cas réel : 17:7 [1-7] mal transcrit par l'ASR (qualité 0,43 < 0,5 : ni le seuil, ni la suite
+# textuelle, ni le sauvetage n'y peuvent rien) ; la fenêtre d'après, 17:7 [8-13], est reconnue.
+GARBLED_17_7 = "ا احسنتم استم لانفسكم وا اساتم فل"
+HEAD_WINDOWS = [(0.5, 6.0), (6.2, 10.6)]
+
+
+def _head(corpus, matcher, alignment_texts, said):
+    texts = [GARBLED_17_7, _verse(corpus, 17, 7, 8, 13)]
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, *said))
+    return _pipeline(corpus, matcher, texts, HEAD_WINDOWS, seconds=16.0, acoustic=acoustic)
+
+
+def test_sans_l_audio_le_debut_mal_transcrit_reste_une_abstention(corpus, matcher):
+    texts = [GARBLED_17_7, _verse(corpus, 17, 7, 8, 13)]
+    result = _pipeline(corpus, matcher, texts, HEAD_WINDOWS, seconds=16.0)
+    (det,) = _verses(result)
+    assert (det.span.first_word, det.span.last_word) == (8, 13)
+    assert any(isinstance(i, AbstentionSpan) for i in result.intervals)
+
+
+def test_le_debut_avant_la_pause_est_reconnu_quand_l_audio_et_la_transcription_le_disent(
+    corpus, matcher, alignment_texts
+):
+    result = _head(corpus, matcher, alignment_texts, ((0.9, "17:7[1-7]"), (6.4, "17:7[8-13]")))
+    (det,) = _verses(result)  # les deux moitiés, séparées par la pause, forment un seul passage
+    assert det.span.ref == VerseRef(17, 7) and (det.span.first_word, det.span.last_word) == (1, 13)
+    assert det.status is Status.RECOGNIZED and det.time is not None
+    assert det.time.start_s == pytest.approx(0.9, abs=0.08)
+    assert [c.kind for c in result.acoustic_checks if c.accepted and c.kind == "head"] == ["head"]
+    assert len(det.word_times) == 13
+    assert not any(isinstance(i, AbstentionSpan) for i in result.intervals)
+
+
+def test_un_debut_que_l_audio_ne_soutient_pas_reste_une_abstention(
+    corpus, matcher, alignment_texts
+):  # I3 : ce que dit l'audio (autre riwaya, autre parole) n'est pas le texte Hafs
+    result = _head(corpus, matcher, alignment_texts, ((0.9, "2:1"), (6.4, "17:7[8-13]")))
+    (det,) = _verses(result)
+    assert (det.span.first_word, det.span.last_word) == (8, 13)
+    assert [c.accepted for c in result.acoustic_checks if c.kind == "head"] == [False]
+    assert any(isinstance(i, AbstentionSpan) for i in result.intervals)
