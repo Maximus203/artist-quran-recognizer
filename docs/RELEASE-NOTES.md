@@ -9,6 +9,46 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-22 — Comptes, audios globaux ou privés, plusieurs testeurs
+Étiquettes : utilisateur, technique, décision
+PR : #70, #72
+
+**Ce qui change.** L'atelier s'ouvre à plusieurs testeurs. Tu crées un compte (pseudonyme et mot de passe, pas d'e-mail ; le premier inscrit est administrateur) puis tu te connectes. Tes audios sont **globaux** par défaut : tous les testeurs les écoutent et voient leurs résultats et leurs performances. Tu peux en marquer certains **privés** à l'import ou plus tard (le cadenas le montre) : personne d'autre ne les voit, administrateur compris. Un signalement porte désormais ton compte (plus de champ « Qui teste ? »), et tu ne modifies pas celui d'un autre testeur. La vérité terrain est réservée aux administrateurs. Un quota de 5 Gio par compte (modifiable) prévient à 80 % et bloque l'import à 100 %.
+
+**Pourquoi / décision.** Le socle serveur (base SQLite, connexion, droits, quota) vient de la PR #70 ; cette PR apporte les écrans (connexion, inscription, menu du compte, portée à l'import et sur la session). Choix du mainteneur : inscription ouverte (interrupteur serveur `AQR_SIGNUP`), l'administrateur ne lit pas le contenu privé d'un autre testeur, plafond de 500 Mo par audio (la vidéo garde 2 Gio). Le mode test distant par jeton (`/access`) reste en place comme couche réseau.
+
+## 2026-10-22 — La liste des sessions passe à l'échelle
+Étiquettes : utilisateur, technique
+PR : #72
+
+**Ce qui change.** La barre de gauche ne liste plus tout : la file d'analyse, tes favoris épinglés, les huit sessions les plus récentes et un bouton « Voir toutes les sessions ». La liste complète vit sur la page **Sessions** : recherche (sans accents), portée (toutes, mes sessions, partagées, favoris, archivées), filtres d'état, de moteur et de date, tri, groupes par date, « Charger plus » par lots de 20, sélection multiple et actions groupées. L'état des filtres est dans l'adresse de la page.
+
+**Pourquoi / décision.** Avec des centaines de sessions, charger toute la liste n'est plus tenable. Le serveur filtre et pagine par curseur ; le navigateur ne relit que ce qui est affiché.
+
+## 2026-10-22 — Documentation et notes de version dans l'atelier
+Étiquettes : utilisateur, technique
+PR : #72
+
+**Ce qui change.** Un onglet **Documentation** affiche les documents du projet (navigation par document, sommaire « Sur cette page », tableaux et schémas défilables, bouton Copier sur les blocs de code). Les **notes de version** y forment une chronologie filtrable par type (utilisateur, technique, décision), avec un lien vers chaque demande de fusion.
+
+**Pourquoi / décision.** Le rendu Markdown n'interprète jamais de HTML brut, n'affiche aucune image distante et ne crée un lien que vers un document de l'index, une ancre ou une adresse `http(s)` ; seuls les documents de `docs/docs-index.json` sont lisibles. Le dépôt des liens se règle par `AQR_REPO_URL`.
+
+## 2026-10-22 — Favoris, archivage et renommage des sessions
+Étiquettes : utilisateur
+PR : #72
+
+**Ce qui change.** Une étoile met une session en favori (elle s'épingle dans la barre de gauche) ; « Archiver » la retire des listes sans la supprimer, avec « Annuler » ; la page Sessions propose une portée « Archivées » où l'on peut restaurer ou supprimer définitivement. Le titre d'une session se renomme au double-clic ou au crayon (Entrée valide, Échap annule). Une ligne « Contenu détecté : Yusuf 12:11–31 » est calculée par le système à partir des versets reconnus.
+
+**Pourquoi / décision.** Les favoris et l'archivage sont propres à chaque testeur : archiver une session globale ne la retire qu'à toi. Seul le propriétaire renomme, change la portée ou supprime. Une session archivée compte toujours dans le quota : seule la suppression libère de l'espace.
+
+## 2026-10-22 — Tes préférences te suivent d'un appareil à l'autre
+Étiquettes : utilisateur, technique
+PR : #72
+
+**Ce qui change.** Le thème, la police et la taille du texte arabe, la traduction, la fenêtre visible de l'onde, le suivi de la lecture, la vitesse, le volume, les panneaux ouverts ou fermés, ton filtre de sessions et la portée de tes nouveaux essais sont enregistrés sur ton compte, et appliqués dès l'affichage de la page, même après une déconnexion ou sur un autre appareil. Tout se règle dans « Compte → Préférences » ; ouvrir ou fermer un panneau, changer la vitesse ou le volume met aussi la préférence à jour. Les boutons « −5 s » et « +5 s » du lecteur deviennent des icônes (flèches ← et → au clavier).
+
+**Pourquoi / décision.** Le serveur pose le thème sur la page avant le premier rendu (aucun clignotement). Si l'enregistrement échoue, l'atelier continue avec ce qui est gardé sur l'appareil, le dit, et réessaie.
+
 ## 2026-10-22 — Documentation vivante et notes de version
 Étiquettes : technique, décision
 PR : #69
