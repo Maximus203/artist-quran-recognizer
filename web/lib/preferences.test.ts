@@ -33,6 +33,7 @@ describe("préférences : défauts centralisés", () => {
         "arabicFont",
         "arabicSize",
         "translation",
+        "liveHighlight",
         "visibleSpanSeconds",
         "followPlayback",
         "leftPanelOpen",
@@ -66,6 +67,26 @@ describe("préférences : fusion partielle", () => {
       volume: "2026-10-22T11:00:00.000Z",
       visibleSpanSeconds: "2026-10-22T11:00:00.000Z",
     });
+  });
+
+  it("« Surligner en direct » : activé par défaut, enregistré côté serveur par compte", () => {
+    expect(readPreferences(db, userId).preferences.liveHighlight).toBe(true);
+    const view = patchPreferences(
+      db,
+      userId,
+      { liveHighlight: false },
+      "2026-10-22T12:00:00.000Z",
+    );
+    expect(view.preferences.liveHighlight).toBe(false);
+    expect(view.updated_at.liveHighlight).toBe("2026-10-22T12:00:00.000Z");
+    const other = createUser(db, { username: "Moussa", passwordHash: "x" }).id;
+    expect(readPreferences(db, other).preferences.liveHighlight).toBe(true);
+    expect(
+      preferencesPatchSchema.safeParse({ liveHighlight: "oui" }).success,
+    ).toBe(false);
+    expect(
+      preferencesPatchSchema.safeParse({ liveHighlight: false }).success,
+    ).toBe(true);
   });
 
   it("accepte null pour une clé automatique, et le conserve", () => {

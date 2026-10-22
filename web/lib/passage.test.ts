@@ -11,6 +11,7 @@ import {
   toArabicIndic,
 } from "./passage";
 import type { Interval } from "./recognition";
+import { INTERVAL_4, INTERVAL_4_LEGACY } from "./__fixtures__/hud-11-61";
 
 const translation = {
   text: "Allah! Point de divinité à part Lui.[1]",
@@ -97,13 +98,16 @@ describe("describePassage", () => {
       badges: ["Reconnu"],
     });
     if (model.type === "verse") {
-      expect(model.translation).toEqual({
+      expect(model.translation).toMatchObject({
         text: "Allah! Point de divinité à part Lui.[1]",
         attribution: "QuranEnc.com — Hamidullah",
         translationId: "french_hameedullah",
         version: "v1",
         partialNote: false,
       });
+      // ancien résultat : ni temps de mots ni découpage, comportement inchangé
+      expect(model.live).toBeNull();
+      expect(model.translation?.display.scope).toBe("verse");
     }
   });
 
@@ -114,6 +118,25 @@ describe("describePassage", () => {
       expect(model.badges).toContain("Passage partiel");
       expect(model.translation?.partialNote).toBe(true);
     }
+  });
+
+  it("passage au fragment : plus de mention « verset entier », le fragment est montré", () => {
+    const model = describePassage(INTERVAL_4);
+    if (model.type !== "verse") throw new Error("verset attendu");
+    expect(model.translation?.partialNote).toBe(false);
+    expect(model.translation?.display.scope).toBe("fragment");
+    expect(model.translation?.display.wordsRange).toEqual([15, 23]);
+    // la traduction QuranEnc reçue reste intacte, le fragment n'écrase rien (I2)
+    expect(model.translation?.text).toContain("Thamûd");
+    expect(model.live?.first).toBe(15);
+    expect(model.badges).toContain("Répétition");
+  });
+
+  it("ancien résultat partiel : traduction du verset entier avec la mention, sans surlignage de mot", () => {
+    const model = describePassage(INTERVAL_4_LEGACY);
+    if (model.type !== "verse") throw new Error("verset attendu");
+    expect(model.translation?.partialNote).toBe(true);
+    expect(model.live).toBeNull();
   });
 
   it("répétition et temps interpolé en badges", () => {

@@ -757,6 +757,11 @@ export default function ReviewApp() {
                     onToggleTranslation={() =>
                       update({ translation: !prefs.translation })
                     }
+                    liveHighlight={prefs.liveHighlight}
+                    onToggleLive={() =>
+                      update({ liveHighlight: !prefs.liveHighlight })
+                    }
+                    onSeek={player.seek}
                     tools={fontTools}
                     onListen={listenPassage}
                   />

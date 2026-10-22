@@ -6,12 +6,39 @@ const span = z
   .tuple([finite.nonnegative(), finite.nonnegative()])
   .refine(([a, b]) => b > a);
 const ref = z.string().regex(/^(?:[1-9]|[1-9]\d|1(?:0\d|1[0-4])):[1-9]\d*$/);
+const wordSpan = z.tuple([
+  z.number().int().positive(),
+  z.number().int().positive(),
+]);
+/**
+ * Traduction QuranEnc, jamais modifiée (`text`). Les champs de découpage sont additifs et TOLÉRANTS :
+ * un champ mal formé retombe sur « absent » (`catch`) au lieu de rendre tout le résultat illisible ;
+ * l'interface montre alors la traduction du verset entier.
+ * - `segments` : la traduction du verset entière, découpée par plages de mots contiguës ;
+ * - `fragment` : la portion qui correspond à la plage de mots affichée en arabe (`scope: "fragment"`),
+ *   avec `approximate` et les points de suspension à ajouter à l'affichage (jamais dans `text`).
+ */
+const translationSegment = z.object({
+  words: wordSpan,
+  text: z.string().min(1),
+});
+const translationFragment = z.object({
+  words: wordSpan,
+  text: z.string().min(1),
+  approximate: z.boolean().optional().catch(undefined),
+  ellipsis_before: z.boolean().optional().catch(undefined),
+  ellipsis_after: z.boolean().optional().catch(undefined),
+});
 const translation = z.object({
   text: z.string(),
   translation_id: z.string(),
   version: z.string(),
   attribution: z.string(),
-  scope: z.literal("verse"),
+  scope: z.enum(["verse", "fragment"]).catch("verse"),
+  segments: z.array(translationSegment).optional().catch(undefined),
+  fragment: translationFragment.nullish().catch(undefined),
+  ellipsis_before: z.boolean().optional().catch(undefined),
+  ellipsis_after: z.boolean().optional().catch(undefined),
 });
 const verse = z
   .object({
@@ -29,6 +56,12 @@ const verse = z
     repetition: z.boolean(),
     text: z.string().nullish(),
     translation: translation.nullish(),
+    /** Temps de chaque mot de `words` : `[début_s, fin_s]`, même ordre ; absents = pas de temps au mot. */
+    word_times: z.array(z.array(z.number())).optional().catch(undefined),
+    word_times_source: z
+      .enum(["ctc-alignment", "interpolated"])
+      .optional()
+      .catch(undefined),
   })
   .refine(
     (v) =>
