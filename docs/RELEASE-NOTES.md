@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-22 — Début de verset retrouvé, et temps de chaque mot
+Étiquettes : utilisateur, technique, décision
+PR : #75
+
+**Ce qui change.** Un début de verset ambigu (le début de 11:61 ressemble à celui de 7:73) n'est plus laissé « incertain » quand le verset reconnu qui le suit le continue et que l'audio soutient son texte : sur la session Hud, l'intervalle 21,5-35,7 s passe en reconnu. De même, quand le récitant commence un verset, fait une pause puis continue, le début d'avant la pause est retrouvé si l'audio et la transcription le confirment ; sinon l'abstention reste (le moteur reste Hafs : un début qui ne correspond pas au texte Hafs n'est jamais forcé). La sortie JSON donne en plus, pour chaque verset reconnu, le temps de chaque mot (`word_times`) et d'où il vient (`word_times_source` : `ctc-alignment` mesuré, `interpolated` estimé) ; l'interface s'en sert pour surligner le mot récité. Champs additifs : `aqr.recognition/1` reste lisible.
+
+**Pourquoi / décision.** Précision d'abord : rien n'est promu sans que l'audio soutienne le texte du corpus (même seuil que les suites). Le « début tardif » signalé à 55,1 s n'était pas un bord de fenêtre : la voix commence à 55,06 s, ce qui précède est une inspiration. ADR-0010, `docs/RECOGNIZE-OUTPUT.md`.
+
 ## 2026-10-22 — Comptes, audios globaux ou privés, plusieurs testeurs
 Étiquettes : utilisateur, technique, décision
 PR : #70, #72

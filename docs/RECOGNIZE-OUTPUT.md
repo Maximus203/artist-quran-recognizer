@@ -16,11 +16,12 @@ impossible) · 2 utilisation impossible (variable manquante, option indisponible
  "source": {"file", "sha256", "duration_s"},
  "engine": {"asr", "segmenter", "matcher", "decoder", "constrained", "corpus", "acoustic"},
  "decoder": {"min_recognized_score", "uncertainty_ratio", "merge_max_gap_s", "infer_max_gap_s",
-             "chain_evidence_words", "acoustic_min_llr_per_frame"?, "acoustic_rescue_min_quality"?},
+             "chain_evidence_words", "acoustic_min_llr_per_frame"?, "acoustic_rescue_min_quality"?,
+             "neighbor_max_overlap_words"?, "neighbor_max_gap_words"?},
  "timing": {"extract_s", "segment_s", "asr_s", "match_s", "acoustic_s"?, "relisten_s"?, "total_s"},
  "windows": N, "warnings": [...],
  "cascade"?: {"secondary": [...], "relistened_windows": N, "rescued_windows": N},
- "acoustic_checks": [{"kind":"chain|continuation|relisten", "t":[a,b], "verses":"55:1[5-5],55:2[1-2]",
+ "acoustic_checks": [{"kind":"chain|continuation|relisten|neighbor|head", "t":[a,b], "verses":"55:1[5-5],55:2[1-2]",
                       "llr_per_frame":-0.43|null, "accepted":true, "text_similarity"?:0.92}],
  "intervals": [ ... ]}      // ordre chronologique
 ```
@@ -31,13 +32,18 @@ commencé, prédite puis alignée sur la fenêtre suivante), son passage, le tex
 `aqr align --verses`), la preuve (`null` : le texte ne tient pas dans le passage), pour une suite de verset la
 similarité avec la transcription de la fenêtre (second témoin exigé), et la décision. `relisten` : un
 candidat proposé par un moteur secondaire de la cascade, gardé seulement si l'audio soutient le texte du
-corpus (ADR-0009). `cascade` (avec `--asr cascade`) nomme les moteurs secondaires, le nombre de fenêtres
+corpus (ADR-0009). `neighbor` : une détection `uncertain` qui prolonge un verset `recognized` voisin, dont le
+texte du corpus est aligné sur sa fenêtre (ADR-0010) ; acceptée, elle devient `recognized` (`promoted_by`). `head` : le début d'un verset dont la
+suite est reconnue (le récitant a commencé, fait une pause, continué), aligné sur la fenêtre d'avant la pause
+et gardé seulement si l'audio ET la transcription le soutiennent ; sinon l'abstention reste (ADR-0010). `cascade` (avec `--asr cascade`) nomme les moteurs secondaires, le nombre de fenêtres
 réécoutées et celles où un candidat a atteint le seuil. Diagnostic : une
 vérification acceptée n'est pas une vérité terrain.
 Trois sortes d'intervalles :
 - `{"kind":"verse","ref":"42:3","words":[1,10],"partial":false,"status":"recognized|inferred|uncertain",
   "t":[a,b]|null,"time_interpolated":false,"confidence":0.97,"candidates":[],"repetition":false,
-  "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse"}|null}`
+  "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse"}|null,
+  "word_times"?:[[a,b],…],"word_times_source"?:"ctc-alignment|interpolated","promoted_by"?:"neighbor"}`
+  (les trois derniers champs sont **additifs** : voir « Temps au mot » ci-dessous)
 - `{"kind":"non_quran","label":"basmala|istiadha|takbir|amin|…","t":[a,b]}` ; champs **additifs** (l'ancien
   format `{kind, label, t}` reste valide, le schéma reste `aqr.recognition/1`) :
   - **basmala** (d'ouverture d'une sourate, ou un 1:1 isolé non suivi de 1:2 ; dans Al-Fatiha entière, 1:1 reste
@@ -80,6 +86,33 @@ Trois sortes d'intervalles :
 - `repetition` : mots redits ; chaque passage garde son propre temps.
 - `partial` : plage de mots ; `text` est la sous-chaîne exacte du Mushaf pour ces mots ; la traduction couvre
   le verset entier (`scope: "verse"`).
+
+## Temps au mot (additif, ADR-0010)
+Pour un verset `recognized`, `word_times` donne l'instant de début et de fin de **chaque mot de `words`**, dans
+l'ordre (`word_times[i]` est le mot `words[0] + i`) : l'interface s'en sert pour surligner le mot récité.
+`word_times_source` dit d'où ils viennent, et l'interface doit en tenir compte :
+- `"ctc-alignment"` : mesurés. Chaque mot a été placé par l'alignement forcé du texte du corpus sur le treillis CTC
+  (trame de 80 ms). Le premier mot commence où commence `t`, le dernier finit où finit `t` ; les mots sont dans
+  l'ordre, sans chevauchement, avec d'éventuelles pauses entre eux (la fin d'un mot est le début du suivant
+  dans un verset, sauf si une pause bornée par l'énergie les sépare). Bornés à la fenêtre du segmenteur,
+  comme `t`.
+- `"interpolated"` : estimés. Seul `t` est mesuré (moteur sans modèle CTC, `--no-acoustic-check`, ou mots
+  non mesurés) ; chaque mot reçoit une part de `t` proportionnelle à sa longueur en lettres dans le corpus.
+  Les bornes sont celles de `t`, les mots sont contigus. À afficher comme une approximation (ex. surlignage
+  sans frontière nette).
+- **champs absents** pour un verset `uncertain` (non nommé) ou `inferred` (jamais entendu) : aucun temps n'est
+  inventé. Une sortie ancienne, sans ces champs, reste valide.
+`time_interpolated` ne change pas de sens : il concerne `t` (verset supposé, coupure interne estimée entre deux
+versets d'une même fenêtre), pas les temps au mot. Les deux moitiés d'un verset fusionnées (fenêtres
+contiguës) mettent leurs temps bout à bout, sauf si un mot manque au raccord (alors `interpolated`).
+
+`promoted_by: "neighbor"` : la détection était `uncertain` (deux versets au début semblable, ex. 11:61 / 7:73) et
+a été promue parce qu'elle prolonge le verset `recognized` voisin ET que l'audio soutient son texte
+(`acoustic_checks[kind="neighbor"]`). Son `status` est `recognized`, sa preuve est la suite plus l'audio, pas le
+seuil du score. Absent sinon. Exemple réel (session 5014015f, Hud 11:61, texte et traduction retirés) :
+```
+{"kind": "verse", "ref": "11:61", "words": [1, 10], "partial": true, "status": "recognized", "t": [21.545, 35.688], "time_interpolated": false, "confidence": 0.8864, "candidates": [], "repetition": false, "word_times": [[21.545, 22.665], [22.665, 24.105], [24.105, 26.025], [26.025, 28.665], [28.665, 29.705], [29.705, 31.465], [31.465, 32.985], [32.985, 34.345], [34.345, 34.985], [34.985, 35.688]], "word_times_source": "ctc-alignment", "promoted_by": "neighbor"}
+```
 
 ## Provenance du texte
 Texte arabe : corpus Tanzil versionné (`data/corpus/LOCK.json`), jamais l'ASR (I1). Traduction : QuranEnc telle

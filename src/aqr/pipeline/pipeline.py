@@ -9,7 +9,9 @@ Garde-fous (I3, I4, I5) :
   l'alignement forcé du texte du corpus quand le modèle CTC est là (ADR-0008) ; les fenêtres sans
   candidat viable font barrière à la fusion de deux moitiés de verset ;
 - avec le modèle CTC, une suite de versets n'est nommée que si l'audio soutient le texte du corpus
-  de la suite (ADR-0008) ; sans lui, la preuve textuelle d'ADR-0007 décide seule.
+  de la suite (ADR-0008) ; sans lui, la preuve textuelle d'ADR-0007 décide seule ;
+- une détection `uncertain` qui PROLONGE un verset reconnu voisin n'est promue que si, de plus,
+  l'audio soutient le texte du corpus de sa plage (ADR-0010) ; sans le modèle CTC, jamais.
 Le texte arabe et la traduction ne sont jamais produits ici : le rendu les lit dans les corpus.
 """
 
@@ -24,13 +26,16 @@ from typing import Protocol
 from aqr.alignment.verification import AcousticVerifier, ChainCheck
 from aqr.corpus.normalize import normalize_arabic
 from aqr.decoding.chains import ChainConfig, promote_chains
+from aqr.decoding.neighbors import NeighborConfig, Promotion, propose_promotions
 from aqr.decoding.viterbi_decoder import DecoderConfig, ViterbiSequenceDecoder
 from aqr.domain.models import (
     Detection,
     NonQuranKind,
     NonQuranSpan,
+    Status,
     TimeSpan,
     VerseRef,
+    WordSpan,
 )
 from aqr.domain.ports import (
     AudioClip,
@@ -75,6 +80,8 @@ class PipelineConfig:
     """Preuve cumulée par la suite (étape B) : des versets courts consécutifs se confirment."""
     cascade: CascadeConfig = field(default_factory=lambda: CascadeConfig())
     """Réécoute des fenêtres douteuses par les moteurs secondaires (avec arbitre acoustique)."""
+    neighbor: NeighborConfig = field(default_factory=NeighborConfig)
+    """Promotion d'un début `uncertain` qui prolonge un verset reconnu voisin (avec l'audio)."""
 
 
 @dataclass(frozen=True)
@@ -166,11 +173,19 @@ class RecognitionPipeline:
             timing["relisten_s"] = self._clock() - mark
 
         mark = self._clock()
-        timeline = self._decoder.decode(self._decide(proven, side))
+        decided = self._decide(proven, side)
+        timeline = self._decoder.decode(decided)
         timing["match_s"] += self._clock() - mark
+
+        mark = self._clock()
+        detections, promotions = self._promote_neighbors(clip, timeline.detections(), decided)
+        if promotions:
+            checks = (*checks, *promotions)
+        if self._acoustic is not None:
+            timing["acoustic_s"] = timing.get("acoustic_s", 0.0) + self._clock() - mark
         timing["total_s"] = self._clock() - started
 
-        intervals = self._assemble(timeline.detections(), side)
+        intervals = self._assemble(detections, side)
         return RecognitionResult(
             source_file=Path(path).name,
             duration_s=duration,
@@ -201,6 +216,60 @@ class RecognitionPipeline:
         proven, checks = self._acoustic.verify(clip, matched, blocked, heard)
         timing["acoustic_s"] = timing.get("acoustic_s", 0.0) + self._clock() - mark
         return proven, checks
+
+    # -- Promotion par le voisin reconnu (ADR-0010) ----------------------------------------------
+    def _promote_neighbors(
+        self,
+        clip: AudioClip,
+        detections: Sequence[Detection],
+        observations: Sequence[tuple[TimeSpan, list[Candidate]]],
+    ) -> tuple[list[Detection], tuple[ChainCheck, ...]]:
+        """Un `uncertain` qui prolonge un verset `recognized` voisin devient `recognized` si l'audio
+        soutient le texte du corpus de sa plage (même seuil que toute suite) ; sinon il reste ce
+        qu'il était (I3). Une promotion peut en permettre une autre, de proche en proche."""
+        out = list(detections)
+        if self._acoustic is None or not self._config.neighbor.enabled:
+            return out, ()
+        floor = self._config.decoder.min_recognized_score
+        barriers = [w for w, cands in observations if not any(c.score >= floor for c in cands)]
+        checks: list[ChainCheck] = []
+        tried: set[tuple[int, WordSpan]] = set()
+        progress = True
+        while progress:
+            progress = False
+            proposals = propose_promotions(
+                out,
+                observations,
+                self._corpus,
+                self._config.neighbor,
+                floor=floor,
+                max_gap_s=self._config.decoder.merge_max_gap_s,
+                barriers=barriers,
+            )
+            for promotion in proposals:
+                key = (promotion.index, promotion.candidate.span)
+                if key in tried:
+                    continue
+                tried.add(key)
+                check, confirmed = self._acoustic.verify_alone(
+                    clip, promotion.window, promotion.candidate
+                )
+                checks.append(check)
+                if confirmed is not None:
+                    out[promotion.index] = self._promoted(promotion, confirmed)
+                    progress = True
+        return out, tuple(checks)
+
+    @staticmethod
+    def _promoted(promotion: Promotion, confirmed: Candidate) -> Detection:
+        return Detection(
+            span=confirmed.span,
+            time=confirmed.times[0] if confirmed.times else promotion.window,
+            status=Status.RECOGNIZED,
+            confidence=confirmed.score,
+            word_times=confirmed.word_times[0] if confirmed.word_times else (),
+            promoted_by="neighbor",
+        )
 
     @staticmethod
     def _blocked(
@@ -316,6 +385,9 @@ class RecognitionPipeline:
             assert check.min_llr_per_frame is not None  # garanti par AcousticVerifier
             out["acoustic_min_llr_per_frame"] = check.min_llr_per_frame
             out["acoustic_rescue_min_quality"] = check.rescue_min_quality
+            if self._config.neighbor.enabled:
+                out["neighbor_max_overlap_words"] = float(self._config.neighbor.max_overlap_words)
+                out["neighbor_max_gap_words"] = float(self._config.neighbor.max_gap_words)
         return out
 
     def _run_warnings(self) -> tuple[str, ...]:
