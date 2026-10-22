@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
-<title>Atelier de revue — prototype « Encre &amp; lapis »</title>
+<title>Recitation fatiha baqara — Atelier de revue</title>
 
 <!--
   PROTOTYPE STATIQUE — données factices. Les tokens viennent de ../tokens.css (source unique).
@@ -18,558 +18,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&family=Scheherazade+New:wght@400;600&display=swap">
 <link rel="stylesheet" href="../tokens.css">
-<style>
-@font-face { font-family: "Noto Naskh Arabic"; src: url("../../../web/public/fonts/NotoNaskhArabic.ttf") format("truetype"); font-weight: 400 700; font-display: swap; }
-
-*, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-md)/var(--lh-ui) var(--font-ui); -webkit-font-smoothing: antialiased; }
-button, input, select, textarea { font: inherit; color: inherit; }
-button { background: none; border: 0; padding: 0; text-align: inherit; }
-h1, h2, h3, h4, p, ul, ol { margin: 0; padding: 0; }
-ul, ol { list-style: none; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-svg.i.fill { fill: currentColor; stroke: none; }
-.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.eyebrow { font-size: var(--fs-xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-3); }
-.muted { color: var(--text-3); }
-
-/* ───────── Boutons ───────── */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-height: var(--h-md); padding: 0 var(--sp-4); border: 1px solid transparent; border-radius: var(--r-sm); font-weight: 600; font-size: var(--fs-md); line-height: 1; white-space: nowrap; transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease), color var(--dur-1) var(--ease); }
-.btn:active:not(:disabled) { transform: translateY(1px); }
-.btn:disabled { opacity: .45; }
-.btn--primary { background: var(--action-bg); color: var(--action-fg); }
-.btn--primary:hover:not(:disabled) { background: var(--action-bg-hover); }
-.btn--secondary { border-color: var(--border-strong); color: var(--text); }
-.btn--secondary:hover:not(:disabled) { background: var(--surface-3); }
-.btn--ghost { color: var(--text-2); }
-.btn--ghost:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
-.btn--danger { border-color: color-mix(in srgb, var(--danger) 60%, transparent); color: var(--danger); }
-.btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 12%, transparent); }
-.btn--sm { min-height: var(--h-sm); padding: 0 var(--sp-3); font-size: var(--fs-sm); }
-.btn--lg { min-height: var(--h-lg); padding: 0 var(--sp-6); font-size: 1rem; }
-.btn--icon { width: var(--h-md); padding: 0; }
-.btn--icon.btn--sm { width: var(--h-sm); }
-.btn--block { width: 100%; }
-.btn .badge-n { min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: var(--r-pill); background: var(--accent); color: var(--on-accent); font: 600 var(--fs-xs)/1 var(--font-mono); }
-
-/* ───────── Champs ───────── */
-.field { display: grid; gap: 6px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-2); }
-.field .opt { font-weight: 400; color: var(--text-3); }
-.input, select.input, textarea.input { width: 100%; min-height: var(--h-md); padding: 0 var(--sp-3); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); font-weight: 400; font-size: var(--fs-md); color: var(--text); }
-textarea.input { padding: var(--sp-3); min-height: 84px; resize: vertical; line-height: var(--lh-ui); }
-.input::placeholder { color: var(--text-3); }
-select.input { appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--text-2) 50%), linear-gradient(135deg, var(--text-2) 50%, transparent 50%); background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
-.input:focus-visible { outline-offset: 1px; border-radius: var(--r-sm); }
-.row { display: flex; gap: var(--sp-3); }
-.row > * { flex: 1; min-width: 0; }
-
-/* ───────── Pastilles de statut des intervalles (mêmes codes partout) ───────── */
-.sw { --edge: var(--accent); --fill: transparent; --pat: none; position: relative; display: inline-block; width: 22px; height: 14px; border-radius: 3px; background: var(--fill); overflow: hidden; flex: none; color: var(--edge); }
-.sw::before { content: ""; position: absolute; inset: 0; background: var(--pat); opacity: .55; }
-.sw::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--bar, var(--edge)); }
-.s-recognized { --edge: var(--seg-recognized-edge); --fill: var(--seg-recognized-fill); }
-.s-inferred   { --edge: var(--seg-inferred-edge);   --fill: var(--seg-inferred-fill);   --pat: var(--hatch); --bar: repeating-linear-gradient(90deg, var(--edge) 0 7px, transparent 7px 11px); }
-.s-uncertain  { --edge: var(--seg-uncertain-edge);  --fill: var(--seg-uncertain-fill);  --pat: var(--dots);  --bar: repeating-linear-gradient(90deg, var(--edge) 0 2px, transparent 2px 5px); }
-.s-formula    { --edge: var(--seg-formula-edge);    --fill: var(--seg-formula-fill);    --bar: linear-gradient(var(--edge) 0 1px, transparent 1px 2px, var(--edge) 2px 3px); }
-.s-abstention { --edge: var(--seg-abstain-edge); --fill: transparent; box-shadow: inset 0 0 0 1px transparent; outline: 1px dashed var(--edge); outline-offset: -1px; }
-.s-abstention::after { display: none; }
-.s-human { --edge: var(--seg-human); }
-.sw.s-human { background: none; width: 14px; }
-.sw.s-human::before, .sw.s-human::after { display: none; }
-.sw.s-human i { position: absolute; left: 2px; top: 1px; width: 10px; height: 10px; background: var(--seg-human); transform: rotate(45deg) scale(.72); }
-
-.badge { display: inline-flex; align-items: center; gap: 8px; min-height: 26px; padding: 0 10px 0 8px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--surface-3); font-size: var(--fs-xs); font-weight: 600; color: var(--text); white-space: nowrap; }
-.badge--plain { padding-left: 10px; }
-.badge--outline { background: none; border-color: var(--border-strong); }
-.badge--ink { background: var(--text); color: var(--bg); border-color: transparent; }
-.badge--ok { color: var(--ok); }
-.badge--warn { color: var(--warn); }
-.badge--danger { color: var(--danger); }
-
-/* ───────── Coque ───────── */
-.app { display: grid; grid-template-rows: var(--header-h) minmax(0, 1fr); min-height: 100dvh; }
-.header { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-3); background: var(--surface-1); border-bottom: 1px solid var(--border); }
-.brand { display: flex; align-items: center; gap: 10px; padding: 0 var(--sp-2); }
-.brand svg { width: 30px; height: 30px; }
-.brand b { font: 400 1.5rem/1 var(--font-display); letter-spacing: -.01em; white-space: nowrap; }
-.brand b em { color: var(--text-3); }
-.nav { display: none; gap: 2px; margin-left: var(--sp-4); }
-.nav button { min-height: 36px; padding: 0 var(--sp-3); border-radius: var(--r-sm); font-weight: 600; color: var(--text-2); position: relative; }
-.nav button:hover { background: var(--surface-3); color: var(--text); }
-.nav button[aria-current="page"] { color: var(--text); }
-.nav button[aria-current="page"]::after { content: ""; position: absolute; left: var(--sp-3); right: var(--sp-3); bottom: -10px; height: 2px; background: var(--text); }
-.spacer { flex: 1; }
-.toggle-panel { position: relative; }
-.toggle-panel .dot { position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface-1); }
-.toggle-panel[aria-expanded="true"] { background: var(--surface-3); color: var(--text); }
-.hide-sm { display: none; }
-
-.workspace { display: grid; grid-template-columns: var(--left, 0) minmax(0, 1fr) var(--right, 0); min-height: 0; transition: grid-template-columns var(--dur-3) var(--ease); }
-.panel { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--surface-1); visibility: hidden; transition: visibility 0s linear var(--dur-3); }
-.panel[data-open="true"] { visibility: visible; transition-delay: 0s; }
-.panel--left { border-right: 1px solid var(--border); }
-.panel--right { border-left: 1px solid var(--border); }
-.panel-in { height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
-.panel--left .panel-in { width: var(--w-left); }
-.panel--right .panel-in { width: var(--w-right); }
-.center { min-width: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
-.scrim { position: fixed; inset: 0; z-index: 39; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease); }
-
-/* Bureau large : trois zones côte à côte, chaque panneau repliable */
-@media (min-width: 1280px) {
-  .app { height: 100dvh; }
-  .workspace { --left: var(--w-left); --right: var(--w-right); }
-  .workspace[data-left="closed"] { --left: 0px; }
-  .workspace[data-right="closed"] { --right: 0px; }
-  .nav { display: flex; }
-  .hide-sm { display: inline; }
-  .only-drawer { display: none !important; }
-}
-/* En dessous : panneaux = tiroirs au-dessus du contenu */
-@media (max-width: 1279px) {
-  .workspace { grid-template-columns: minmax(0, 1fr); }
-  .panel { position: fixed; z-index: 40; top: 0; bottom: 0; width: var(--w-drawer); background: var(--surface-1); box-shadow: var(--shadow-drawer); transition: transform var(--dur-3) var(--ease-out), visibility 0s linear var(--dur-3); }
-  .panel--left { left: 0; transform: translateX(-102%); border-right: 0; }
-  .panel--right { right: 0; transform: translateX(102%); border-left: 0; }
-  .panel[data-open="true"] { transform: none; }
-  .panel .panel-in, .panel--left .panel-in, .panel--right .panel-in { width: 100%; padding-top: env(safe-area-inset-top); }
-  .workspace[data-left="open"] ~ .scrim, .workspace[data-right="open"] ~ .scrim { opacity: 1; pointer-events: auto; }
-  .drawer-head { display: flex !important; }
-}
-@media (min-width: 768px) and (max-width: 1279px) { .nav { display: flex; } .hide-sm { display: inline; } }
-
-.panel-head { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4) var(--sp-4) var(--sp-3); position: sticky; top: 0; background: var(--surface-1); z-index: 2; }
-.panel-head h2 { font: 400 1.5rem/1 var(--font-display); flex: 1; }
-.drawer-head { display: none; }
-.panel-sec { padding: var(--sp-4); border-top: 1px solid var(--border-subtle); }
-
-/* ───────── Liste des sessions ───────── */
-.filters { display: flex; gap: 6px; padding: 0 var(--sp-4) var(--sp-3); flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; gap: 6px; min-height: var(--h-sm); padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--border); font-size: var(--fs-sm); font-weight: 600; color: var(--text-2); transition: background var(--dur-1) var(--ease); }
-.chip:hover { background: var(--surface-3); }
-.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: var(--accent); }
-.chip .n { font-family: var(--font-mono); font-size: var(--fs-xs); opacity: .85; }
-.queue-line { display: flex; align-items: center; gap: 8px; margin: 0 var(--sp-4) var(--sp-3); padding: 8px 12px; border-radius: var(--r-sm); background: var(--surface-2); border: 1px solid var(--border-subtle); font-size: var(--fs-sm); color: var(--text-2); }
-.queue-line b { color: var(--text); font-weight: 600; }
-.group-title { padding: var(--sp-3) var(--sp-4) 6px; }
-.sess { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; width: 100%; min-height: 64px; padding: 12px var(--sp-4); border-left: 3px solid transparent; transition: background var(--dur-1) var(--ease); }
-.sess:hover { background: var(--surface-3); }
-.sess[aria-current="true"] { background: var(--surface-2); border-left-color: var(--text); }
-.sess-glyph { grid-row: 1 / span 3; display: grid; place-items: center; width: 24px; height: 24px; margin-top: 1px; color: var(--text-3); }
-.sess-glyph svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.sess-name { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
-.sess[data-unread="true"] .sess-name { font-weight: 700; }
-.sess-status { font-size: var(--fs-sm); color: var(--text-2); line-height: 1.35; }
-.sess-meta { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-3); }
-.sess-meta svg { width: 14px; height: 14px; }
-.sess-end { grid-column: 3; grid-row: 1 / span 2; display: grid; justify-items: end; align-content: start; gap: 6px; min-width: 38px; font: 400 var(--fs-xs)/1.2 var(--font-mono); color: var(--text-3); }
-.unread { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-.sess[data-state="running"] .sess-status { color: var(--accent); font-weight: 600; }
-.sess[data-state="failed"] .sess-status { color: var(--danger); font-weight: 600; }
-.sess[data-state="failed"] .sess-glyph { color: var(--danger); }
-.sess[data-state="running"] .sess-glyph { color: var(--accent); }
-.sess[data-state="cancelled"] .sess-name { color: var(--text-2); }
-.sess-bar { position: absolute; left: calc(var(--sp-4) + 36px); right: var(--sp-4); bottom: 6px; height: 3px; border-radius: 2px; background: var(--border-subtle); overflow: hidden; }
-.sess-bar i { display: block; height: 100%; width: var(--p, 0%); background: var(--accent); border-radius: 2px; transition: width 600ms var(--ease); }
-.sess[data-state="running"] { padding-bottom: 18px; }
-li.has-retry { position: relative; }
-li.has-retry .sess { padding-bottom: 58px; }
-.retry { position: absolute; left: calc(var(--sp-4) + 36px); bottom: 12px; }
-.ring-track { stroke: var(--border-strong); fill: none; stroke-width: 2; }
-.ring-arc { stroke: var(--accent); fill: none; stroke-width: 2.4; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 12px 12px; }
-.ring-dash { stroke: currentColor; fill: none; stroke-width: 1.6; stroke-dasharray: 2.2 3.2; stroke-linecap: round; }
-.ring-n { font: 600 11px/1 var(--font-mono); fill: currentColor; }
-.sess-foot { padding: var(--sp-4); }
-
-/* ───────── Colonne centrale ───────── */
-.stack { display: flex; flex-direction: column; gap: var(--sp-5); max-width: 1080px; margin: 0 auto; padding: var(--sp-5) var(--gutter) calc(var(--sp-12) + 72px); }
-@media (min-width: 768px) { .stack { padding-bottom: var(--sp-12); } }
-.o-head { order: 0; } .o-passage { order: 1; } .o-console { order: 2; } .o-intervals { order: 3; } .o-diag { order: 4; } .o-foot { order: 5; }
-@media (min-width: 768px) { .o-console { order: 1; } .o-passage { order: 2; } }
-.view { display: none; } .view[data-active="true"] { display: contents; }
-.session-head { display: grid; gap: var(--sp-3); }
-.session-head h1 { font: 600 1.5rem/1.2 var(--font-ui); letter-spacing: -.005em; overflow-wrap: anywhere; }
-.facts { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: var(--fs-sm); color: var(--text-2); }
-.facts .f { display: inline-flex; align-items: center; gap: 6px; }
-.facts svg { width: 16px; height: 16px; }
-.riwaya { color: var(--text-3); text-decoration: underline dotted; text-underline-offset: 3px; }
-.card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--hairline-top); }
-.card-pad { padding: var(--sp-5); }
-.sec-title { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
-.sec-title h2, .sec-title h3 { font-size: var(--fs-md); font-weight: 700; flex: 1; }
-
-/* Console : lecteur + onde + pistes */
-.console { overflow: hidden; }
-.transport { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); }
-.play { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--action-bg); color: var(--action-fg); flex: none; transition: transform var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
-.play:hover { background: var(--action-bg-hover); }
-.play:active { transform: scale(.96); }
-.play svg { width: 22px; height: 22px; }
-.seek { min-width: var(--hit); min-height: var(--hit); display: grid; place-items: center; border-radius: var(--r-sm); font: 600 var(--fs-sm)/1 var(--font-mono); color: var(--text-2); }
-.seek:hover { background: var(--surface-3); color: var(--text); }
-.scrub { flex: 1; display: grid; gap: 4px; min-width: 0; }
-.times { display: flex; justify-content: space-between; font: 400 var(--fs-sm)/1 var(--font-mono); color: var(--text-2); }
-.times b { color: var(--text); font-weight: 600; }
-input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 24px; background: transparent; margin: 0; }
-input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--text) var(--p, 0%), var(--border-strong) var(--p, 0%)); }
-input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--border-strong); }
-input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--text); }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 3px solid var(--surface-2); box-shadow: 0 0 0 1px var(--border-strong); }
-input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 3px solid var(--surface-2); box-shadow: 0 0 0 1px var(--border-strong); }
-.speed { width: 92px; flex: none; }
-.speed select { min-height: 36px; }
-
-.timeline { --gutter-lane: 92px; --pad: 20px; position: relative; padding: 0 var(--pad) var(--sp-4); }
-.tl-row { display: grid; grid-template-columns: var(--gutter-lane) minmax(0, 1fr); align-items: center; }
-.tl-name { font-size: var(--fs-xs); font-weight: 600; color: var(--text-3); letter-spacing: .02em; padding-right: 8px; }
-.tl-name small { display: block; font-weight: 400; font-size: var(--fs-xs); }
-.tl-track { position: relative; }
-.wave-row .tl-track { height: 104px; }
-.wave { position: absolute; inset: 0; width: 100%; height: 100%; }
-.wave .bars { fill: var(--wave); }
-.wave .played { fill: var(--wave-played); }
-.wave-seg { position: absolute; top: 0; bottom: 0; left: var(--l); width: var(--w); background: color-mix(in srgb, var(--fill) 45%, transparent); color: var(--edge); border-radius: 3px; padding: 6px 0 0 4px; overflow: hidden; font: 600 var(--fs-xs)/1 var(--font-mono); }
-.wave-seg::before { content: ""; position: absolute; inset: 0; background: var(--pat); opacity: .5; }
-.wave-seg::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--bar, var(--edge)); }
-.wave-seg.s-abstention { outline: 1px dashed var(--edge); outline-offset: -1px; }
-.wave-seg span { position: relative; white-space: nowrap; color: var(--text); text-shadow: 0 0 3px var(--surface-2), 0 0 6px var(--surface-2); }
-.lanes { margin-top: 4px; }
-.lane { height: 36px; border-top: 1px solid var(--border-subtle); }
-.lane .tl-track { height: 100%; }
-.seg { position: absolute; top: 6px; height: 24px; left: var(--l); width: var(--w); min-width: 3px; border-radius: 4px; background: var(--fill); color: var(--edge); overflow: hidden; }
-.seg::before { content: ""; position: absolute; inset: 0; background: var(--pat); opacity: .5; }
-.seg::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--bar, var(--edge)); }
-.seg.s-abstention { outline: 1px dashed var(--edge); outline-offset: -1px; }
-.seg[aria-pressed="true"], .wave-seg[aria-pressed="true"] { outline: 2px solid var(--playhead); outline-offset: 1px; z-index: 2; }
-.seg:hover, .wave-seg:hover { filter: brightness(1.25); }
-.human { position: absolute; top: 6px; height: 24px; left: var(--l); width: var(--w); min-width: 12px; display: block; }
-.human::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 12px; margin-top: -6px; background: var(--seg-human); transform: rotate(45deg) scale(.78); }
-.human::after { content: ""; position: absolute; left: 6px; right: 0; top: 50%; height: 3px; margin-top: -1.5px; background: var(--seg-human); border-radius: 2px; }
-.human.pt::after { display: none; }
-.playhead { position: absolute; top: 0; bottom: 0; left: calc(var(--pad) + var(--gutter-lane) + (100% - 2 * var(--pad) - var(--gutter-lane)) * var(--t, 0)); width: 2px; margin-left: -1px; background: var(--playhead); z-index: 4; pointer-events: none; }
-.playhead::before { content: ""; position: absolute; top: -1px; left: -5px; width: 12px; height: 8px; background: var(--playhead); clip-path: polygon(0 0, 100% 0, 50% 100%); }
-.ticks { display: grid; grid-template-columns: var(--gutter-lane) minmax(0, 1fr); margin-top: 2px; }
-.ticks div { position: relative; height: 18px; }
-.ticks div span { position: absolute; top: 0; height: 18px; padding: 8px 0 0 4px; border-left: 1px solid var(--border-strong); font: 400 var(--fs-xs)/1 var(--font-mono); color: var(--text-3); white-space: nowrap; }
-.tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle); font-size: var(--fs-sm); color: var(--text-2); }
-.tools label { display: inline-flex; align-items: center; gap: 8px; }
-.tools select { min-height: 34px; width: auto; padding-right: 32px; }
-.tools .vol { width: 110px; }
-.switch { display: inline-flex; align-items: center; gap: 10px; min-height: var(--hit); font-weight: 500; color: var(--text); }
-.switch i { position: relative; width: 38px; height: 22px; border-radius: 11px; background: var(--surface-3); border: 1px solid var(--border-strong); transition: background var(--dur-2) var(--ease); }
-.switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--text-2); transition: transform var(--dur-2) var(--ease), background var(--dur-2) var(--ease); }
-.switch[aria-checked="true"] i { background: var(--text); border-color: var(--text); }
-.switch[aria-checked="true"] i::after { transform: translateX(16px); background: var(--bg); }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: var(--sp-3) var(--sp-5) var(--sp-4); border-top: 1px solid var(--border-subtle); font-size: var(--fs-xs); color: var(--text-2); }
-.legend li { display: inline-flex; align-items: center; gap: 8px; }
-.run-row { display: none; }
-
-/* Carte du passage actif */
-.passage { padding: var(--sp-6) var(--sp-5) var(--sp-5); }
-@media (min-width: 768px) { .passage { padding: var(--sp-8) var(--sp-10) var(--sp-6); } }
-.p-top { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-5); }
-.p-top .eyebrow { flex: 1; min-width: 120px; }
-.p-top .tools-inline { display: flex; gap: 4px; align-items: center; }
-.p-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: var(--sp-4); }
-.p-ref { font: 400 var(--fs-xl)/1 var(--font-display); }
-.arabic { font-family: var(--font-quran); font-size: var(--quran-size); line-height: var(--quran-lh); text-align: center; text-wrap: pretty; padding: var(--sp-2) 0; font-feature-settings: "liga", "calt"; }
-.arabic.basmala { font-size: calc(var(--quran-size) * 1.15); }
-.ayah-end { display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; padding: 0 .12em; margin: 0 .3em; border-radius: 50%; border: 1px solid var(--text-3); box-shadow: 0 0 0 3px var(--surface-2), 0 0 0 4px var(--border); font: 500 .46em/1 var(--font-quran); color: var(--text-2); vertical-align: middle; direction: rtl; }
-.orn { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-3); margin: 0 auto var(--sp-2); }
-.orn::before, .orn::after { content: ""; width: 56px; height: 1px; background: var(--border-strong); }
-.orn i { width: 7px; height: 7px; transform: rotate(45deg); background: var(--text-3); }
-.translation { margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px solid var(--border-subtle); }
-.translation p { font-size: var(--fs-lg); line-height: var(--lh-read); color: var(--text); max-width: 68ch; margin: 0 auto; text-wrap: pretty; }
-.translation sup { font-size: .7em; color: var(--text-3); margin-left: 2px; }
-.translation small { display: block; max-width: 68ch; margin: var(--sp-3) auto 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--text-3); }
-.p-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-5); }
-.p-empty { text-align: center; padding: var(--sp-8) 0; color: var(--text-2); }
-.p-empty .ar-label { font: 400 2.2rem/1.4 var(--font-quran); color: var(--text); margin: var(--sp-3) 0; }
-[hidden] { display: none !important; }
-
-/* Sélecteur de police */
-.pop-wrap { position: relative; }
-.popover { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: min(440px, calc(100vw - 32px)); max-height: min(78vh, 620px); overflow-y: auto; padding: var(--sp-4); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r-md); box-shadow: var(--shadow-pop); text-align: start; }
-.popover h3 { font-size: var(--fs-md); font-weight: 700; }
-.fonts { display: grid; gap: 8px; margin: var(--sp-3) 0; }
-.fopt { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); width: 100%; transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
-.fopt:hover { background: var(--surface-3); }
-.fopt[aria-checked="true"] { border-color: var(--text); background: var(--surface-3); }
-.fopt[aria-disabled="true"] { opacity: .6; }
-.fopt .radio { grid-row: 1 / span 3; width: 18px; height: 18px; margin-top: 3px; border-radius: 50%; border: 1.5px solid var(--border-strong); display: grid; place-items: center; }
-.fopt[aria-checked="true"] .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--text); }
-.fopt .nm { font-weight: 600; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-.fopt .nm small { font-weight: 400; color: var(--text-3); font-size: var(--fs-xs); }
-.fopt .sample { font-size: 1.6rem; line-height: 2.3; padding: 2px 0 6px; text-align: right; direction: rtl; color: var(--text); }
-.fopt .lic { font-size: var(--fs-xs); color: var(--text-3); }
-.size-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--text-2); }
-.size-row input { flex: 1; }
-.size-row output { min-width: 42px; text-align: right; font-family: var(--font-mono); color: var(--text); }
-.popover .foot { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--text-3); }
-
-/* Liste des intervalles */
-.seg-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--sp-3); }
-.irow { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: var(--hit); padding: 8px var(--sp-4); border-top: 1px solid var(--border-subtle); transition: background var(--dur-1) var(--ease); }
-.irow:hover { background: var(--surface-3); }
-.irow[aria-pressed="true"] { background: var(--surface-3); box-shadow: inset 3px 0 0 var(--text); }
-.irow .tm { font: 400 var(--fs-sm)/1 var(--font-mono); color: var(--text-2); }
-.irow .ti { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.irow .ti .ar { font-family: var(--font-quran); font-size: 1.1rem; margin-left: 8px; color: var(--text-2); }
-.irow .st { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-2); justify-content: flex-end; min-width: 96px; }
-@media (max-width: 560px) { .irow { grid-template-columns: 70px minmax(0, 1fr); } .irow .st { grid-column: 2; justify-content: flex-start; } }
-.diag { padding: var(--sp-3) var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); }
-.diag summary, .acc summary { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-weight: 600; color: var(--text); min-height: 36px; }
-.diag summary::-webkit-details-marker, .acc summary::-webkit-details-marker { display: none; }
-.diag summary::after, .acc summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 1.6px solid var(--text-3); border-bottom: 1.6px solid var(--text-3); transform: rotate(45deg); transition: transform var(--dur-2) var(--ease); }
-details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px); }
-.foot-note { font-size: var(--fs-xs); line-height: 1.6; color: var(--text-3); padding-top: var(--sp-2); }
-.foot-note a { color: var(--text-2); }
-
-/* Panneau de revue */
-.acc { border-top: 1px solid var(--border-subtle); padding: 0 var(--sp-4); }
-.acc > summary { padding: 6px 0; min-height: 48px; font-size: var(--fs-md); }
-.acc .acc-body { padding: 0 0 var(--sp-4); display: grid; gap: var(--sp-3); }
-.acc .count { font: 600 var(--fs-xs)/1 var(--font-mono); background: var(--surface-3); border-radius: var(--r-pill); padding: 4px 8px; color: var(--text-2); }
-.hint { font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); }
-.editor { display: grid; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface-2); }
-.editor-head { display: flex; align-items: center; gap: 8px; }
-.editor-head b { flex: 1; font-size: var(--fs-sm); }
-.save { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-3); }
-.rlist { display: grid; }
-.rlist button { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: var(--hit); padding: 8px 4px; border-top: 1px solid var(--border-subtle); font-size: var(--fs-sm); }
-.rlist button:hover { background: var(--surface-3); }
-.rlist .t { font-family: var(--font-mono); color: var(--text-2); }
-.passage-v { display: grid; gap: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
-.passage-v header { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
-.evidence { font-size: var(--fs-xs); line-height: 1.5; color: var(--text-2); display: flex; gap: 6px; align-items: flex-start; }
-.aligned { display: grid; gap: 2px; font-size: var(--fs-sm); }
-.aligned button { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 6px; border-radius: var(--r-sm); color: var(--text); }
-.aligned button:hover { background: var(--surface-3); }
-.aligned svg { width: 14px; height: 14px; }
-.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
-.btnrow > .btn { flex: 1; }
-
-/* Performance */
-.page-title { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
-.page-title h1 { font: 400 var(--fs-2xl)/1.1 var(--font-display); }
-.page-title p { color: var(--text-2); margin-top: 6px; max-width: 60ch; }
-.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
-@media (min-width: 900px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.tile { padding: var(--sp-4) var(--sp-5); }
-.tile .v { font: 400 2.5rem/1 var(--font-display); margin: 8px 0 6px; letter-spacing: -.01em; white-space: nowrap; }
-.tile .v small { font: 400 var(--fs-lg)/1 var(--font-display); color: var(--text-2); margin-left: 4px; }
-.tile .s { font-size: var(--fs-sm); color: var(--text-2); }
-.grid2 { display: grid; gap: var(--sp-5); }
-@media (min-width: 1000px) { .grid2 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
-.bars { display: grid; gap: 14px; margin-top: var(--sp-4); }
-.bar-row { display: grid; grid-template-columns: 128px minmax(0, 1fr) 64px; align-items: center; gap: 12px; font-size: var(--fs-sm); }
-.bar-row .nm { color: var(--text); font-weight: 500; }
-.bar-row .nm small { display: block; font-size: var(--fs-xs); color: var(--text-3); font-weight: 400; }
-.bar-track { height: 18px; background: var(--surface-3); border-radius: 4px; position: relative; }
-.bar-track i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--v); background: var(--accent); border-radius: 0 4px 4px 0; opacity: .9; }
-.bar-track i::after { content: ""; position: absolute; right: -1px; top: 0; bottom: 0; width: 2px; background: var(--text); opacity: .0; }
-.bar-row .val { text-align: right; font: 600 var(--fs-md)/1 var(--font-mono); }
-.axis-note { font-size: var(--fs-xs); color: var(--text-3); margin-top: var(--sp-3); }
-.table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
-.table th { text-align: left; font-size: var(--fs-xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-3); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-.table td { padding: 10px; border-bottom: 1px solid var(--border-subtle); }
-.table td.num, .table th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.scroll-x { overflow-x: auto; }
-.qrow { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border-subtle); }
-.qrow:first-child { border-top: 0; }
-
-/* Nouvel essai */
-.new { max-width: 640px; margin: 0 auto; display: grid; gap: var(--sp-5); width: 100%; }
-.hero-wave { display: block; width: 220px; max-width: 70%; height: auto; margin: 0 auto var(--sp-4); }
-.hero-wave .a { fill: var(--accent); }
-.new h1 { font: 400 var(--fs-2xl)/1.1 var(--font-display); text-align: center; }
-.new .lead { text-align: center; color: var(--text-2); max-width: 46ch; margin: 8px auto 0; }
-.recorder { display: grid; justify-items: center; gap: var(--sp-3); padding: var(--sp-6) var(--sp-5); text-align: center; }
-.rec-ic { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--border-strong); color: var(--text); }
-.rec-ic svg { width: 26px; height: 26px; }
-.recorder[data-phase="recording"] .rec-ic { color: var(--danger); border-color: var(--danger); animation: pulse 1.6s var(--ease) infinite; }
-.recorder strong { font-size: var(--fs-lg); }
-.rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger); flex: none; }
-.rec-sq { width: 12px; height: 12px; border-radius: 2px; background: currentColor; flex: none; }
-.rec-timer { font: 600 1.75rem/1 var(--font-mono); color: var(--danger); }
-.recorder [data-only] { display: none; }
-.recorder[data-phase="idle"] [data-only~="idle"], .recorder[data-phase="recording"] [data-only~="recording"] { display: inline-flex; }
-.recorder[data-phase="recording"] [data-only~="recording"].block { display: block; }
-@keyframes pulse { 50% { opacity: .45; } }
-.or { display: flex; align-items: center; gap: 12px; color: var(--text-3); font-size: var(--fs-xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; }
-.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-.drop { display: grid; justify-items: center; gap: var(--sp-3); padding: var(--sp-8) var(--sp-5); text-align: center; border: 1.5px dashed var(--border-strong); border-radius: var(--r-lg); background: var(--surface-1); transition: background var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease); }
-.drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
-.drop:hover { background: var(--surface-2); border-color: var(--text-2); }
-.drop svg.i { width: 28px; height: 28px; color: var(--text-2); }
-.drop .kinds { display: flex; gap: 14px; color: var(--text-2); font-size: var(--fs-sm); }
-.drop .kinds span { display: inline-flex; gap: 6px; align-items: center; }
-.drop .kinds svg { width: 18px; height: 18px; }
-.auto { display: flex; gap: 12px; padding: var(--sp-4); border: 1px solid var(--border-subtle); border-radius: var(--r-md); background: var(--surface-1); font-size: var(--fs-sm); color: var(--text-2); }
-.auto b { color: var(--text); }
-
-/* Mobile : lecteur ancré en bas, au pouce */
-@media (max-width: 767px) {
-  .transport { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; gap: 6px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: var(--surface-1); border-top: 1px solid var(--border); }
-  .transport .play { width: 48px; height: 48px; }
-  .speed { display: none; }
-  .timeline { --gutter-lane: 64px; --pad: 12px; padding: var(--sp-3) var(--pad); }
-  .tl-name b { display: none; }
-  .tl-name::before { content: attr(data-short); }
-  .wave-row .tl-track { height: 84px; }
-  .tools { padding: var(--sp-2) var(--sp-3); gap: var(--sp-2) var(--sp-4); }
-  .legend { padding: var(--sp-3); }
-  .stack { gap: var(--sp-4); }
-  .tiles .v { font-size: 2.1rem; }
-  .bar-row { grid-template-columns: 96px minmax(0, 1fr) 54px; gap: 8px; }
-  .brand b { font-size: 1.35rem; }
-  .brand b em { display: none; }
-}
-@media (max-width: 767px) { .popover { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); top: auto; width: auto; max-height: 82dvh; z-index: 45; box-shadow: var(--shadow-drawer); } }
-@media (max-width: 767px) { .times .tm-total { display: none; } .times b { font-size: var(--fs-sm); } }
-@media (min-width: 768px) { .transport .compact { display: none; } }
-@media (max-width: 767px) { .transport .compact { display: inline; } }
-.drawer-close { margin-left: auto; }
-
-/* ═════════ Revue humaine : testeur, onglets, parcours, puces, plages sur l'onde ═════════ */
-.tester { padding: 0 var(--sp-4) var(--sp-3); }
-.tester-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 8px 6px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); }
-.tester-row .av { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--text); color: var(--bg); font: 700 var(--fs-sm)/1 var(--font-ui); }
-.tester-row b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tester-form { display: grid; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface-2); }
-.tester-form .err { color: var(--danger); font-size: var(--fs-xs); }
-.recent { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-
-.tabs { display: flex; gap: 0; padding: 0 var(--sp-2); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-.tabs [role="tab"] { display: inline-flex; align-items: center; gap: 6px; min-height: var(--hit); padding: 0 10px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-2); white-space: nowrap; position: relative; }
-.tabs [role="tab"]:hover { color: var(--text); }
-.tabs [role="tab"][aria-selected="true"] { color: var(--text); }
-.tabs [role="tab"][aria-selected="true"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--text); }
-.tabs .tab-adv { margin-left: auto; color: var(--text-3); }
-.tabs .count { font: 600 var(--fs-xs)/1 var(--font-mono); background: var(--surface-3); border-radius: var(--r-pill); padding: 3px 7px; color: var(--text-2); }
-
-.steps { display: flex; gap: 6px; padding: var(--sp-4) var(--sp-4) 0; }
-.steps li { flex: 1; display: grid; gap: 6px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-3); }
-.steps li::before { content: ""; height: 3px; border-radius: 2px; background: var(--border); }
-.steps li[data-s="done"]::before { background: var(--text); }
-.steps li[data-s="current"]::before { background: var(--text); opacity: .5; }
-.steps li[data-s="current"] { color: var(--text); }
-.steps li[data-s="done"] { color: var(--text-2); }
-.steps li span::before { content: attr(data-n) " · "; }
-.steps li[data-s="done"] span::before { content: "✓ "; }
-
-.rcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin: var(--sp-3) var(--sp-4) 0; padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
-.rcard h3 { font-size: var(--fs-md); font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.rcard h3 .n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border-strong); font: 600 var(--fs-xs)/1 var(--font-mono); color: var(--text-2); }
-.rcard.is-locked { opacity: .6; }
-.banner { display: grid; gap: 4px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-3); box-shadow: inset 3px 0 0 var(--text); font-size: var(--fs-sm); line-height: 1.45; }
-.banner b { font-family: var(--font-mono); font-weight: 600; }
-.banner small { color: var(--text-2); font-size: var(--fs-sm); }
-.kbd-hint { display: inline-flex; gap: 6px; align-items: center; }
-kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; color: var(--text-2); background: transparent; }
-.btn--primary kbd { color: var(--action-fg); border-color: color-mix(in srgb, var(--action-fg) 45%, transparent); opacity: .85; }
-@media (pointer: coarse), (max-width: 767px) { kbd { display: none; } }
-.btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
-#markbar { scroll-margin-top: 72px; }
-.btn[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
-.btn[aria-pressed="true"] kbd { color: var(--bg); border-color: color-mix(in srgb, var(--bg) 50%, transparent); }
-
-.range-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-3); font-size: var(--fs-sm); }
-.range-chip .mono { font-weight: 600; color: var(--text); }
-.range-chip .len { color: var(--text-2); margin-left: auto; white-space: nowrap; }
-.nudge { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
-.nudge .ctl { display: grid; grid-template-columns: var(--hit) minmax(0, 1fr) var(--hit); gap: 4px; }
-.nudge .ctl .input { text-align: center; font-family: var(--font-mono); padding: 0 4px; }
-.nudge .ctl .btn { min-height: var(--h-md); padding: 0; font-family: var(--font-mono); font-size: var(--fs-sm); }
-.listen-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.listen-row .ok { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
-.ctx { display: flex; gap: 8px; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.45; }
-.ctx svg { width: 16px; height: 16px; margin-top: 2px; }
-.ctx b { color: var(--text); font-weight: 600; }
-
-.fams { display: grid; margin: 0 calc(-1 * var(--sp-4)); border-top: 1px solid var(--border-subtle); }
-.fam { border-bottom: 1px solid var(--border-subtle); padding: 0 var(--sp-4); }
-.fam > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: var(--hit); font-weight: 600; font-size: var(--fs-sm); }
-.fam > summary::-webkit-details-marker { display: none; }
-.fam > summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 1.6px solid var(--text-3); border-bottom: 1.6px solid var(--text-3); transform: rotate(45deg); transition: transform var(--dur-2) var(--ease); }
-.fam[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px); }
-.fam .sel-n { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 7px; border-radius: var(--r-pill); background: var(--text); color: var(--bg); }
-.fam .fh { font-size: var(--fs-xs); color: var(--text-3); margin: -2px 0 8px; }
-.pchips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 var(--sp-3); }
-.pchip { min-height: var(--h-sm); padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: 500; color: var(--text); line-height: 1.2; text-align: left; transition: background var(--dur-1) var(--ease); }
-.pchip:hover { background: var(--surface-3); }
-.pchip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
-.pchip[aria-pressed="true"]::before { content: "✓"; margin-right: 6px; font-weight: 700; }
-.chosen { display: flex; flex-wrap: wrap; gap: 6px; }
-.chosen .badge { background: var(--text); color: var(--bg); border-color: transparent; }
-.savebar { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: var(--fs-xs); color: var(--text-2); }
-.savebar.err { color: var(--danger); }
-.savebar svg { width: 14px; height: 14px; }
-.done-card { text-align: left; }
-.sw.s-human.draft i { background: transparent; border: 2px solid var(--seg-human); }
-
-/* Liste des signalements */
-.lfilters { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--sp-4) var(--sp-2); }
-.alist { display: grid; padding: 0 0 var(--sp-3); }
-.aitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; border-top: 1px solid var(--border-subtle); }
-.aitem[data-sel="true"] { background: var(--surface-3); box-shadow: inset 3px 0 0 var(--text); }
-.aitem-main { display: grid; gap: 4px; padding: 12px 0 12px var(--sp-4); min-height: 64px; text-align: left; }
-.aitem-main:hover { background: color-mix(in srgb, var(--surface-3) 60%, transparent); }
-.ai-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ai-top .mono { font-weight: 600; font-size: var(--fs-sm); }
-.ai-tags { font-size: var(--fs-sm); color: var(--text); line-height: 1.35; }
-.ai-meta { font-size: var(--fs-xs); color: var(--text-3); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ai-acts { display: flex; flex-direction: column; justify-content: center; padding: 0 var(--sp-2); }
-.ai-acts .btn { width: var(--hit); min-height: var(--hit); }
-.empty-list { padding: var(--sp-8) var(--sp-4); text-align: center; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
-
-/* Barre de marquage sous le lecteur */
-.markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle); }
-.mb-status { flex: 1 1 220px; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.4; }
-.mb-status b { font-family: var(--font-mono); font-weight: 600; color: var(--text); }
-.mark-dock { display: none; }
-@media (max-width: 767px) { .markbar { padding: var(--sp-3); } .mark-dock { display: grid; } }
-
-/* Plages de signalement sur la forme d'onde et sur la piste Revue : mêmes codes
-   confirmé = losange plein + trait plein · brouillon = losange creux + trait pointillé */
-#rv-layer { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-.rv-region { position: absolute; top: 0; bottom: 0; left: var(--l); width: var(--w); background: var(--review-fill); }
-.rv-region::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--seg-human); }
-.rv-region::before { content: ""; position: absolute; left: -6px; top: -4px; width: 12px; height: 12px; background: var(--seg-human); transform: rotate(45deg) scale(.8); z-index: 2; }
-.rv-region.draft, .rv-region.live { background: var(--review-draft-fill); outline: 1.5px dashed var(--seg-human); outline-offset: -1px; }
-.rv-region.draft::after, .rv-region.live::after { background: repeating-linear-gradient(90deg, var(--seg-human) 0 6px, transparent 6px 10px); }
-.rv-region.draft::before, .rv-region.live::before { background: var(--surface-2); border: 2px solid var(--seg-human); }
-.rv-region.pt { width: 0; background: none; outline: 0; }
-.rv-region.pt::after { left: -1px; width: 2px; height: auto; top: 0; bottom: 0; background: var(--seg-human); }
-.rv-region.pt.draft::after { background: repeating-linear-gradient(180deg, var(--seg-human) 0 6px, transparent 6px 10px); }
-.rv-region.sel { box-shadow: 0 0 0 2px var(--playhead); }
-.rv-region.pt.sel::after { box-shadow: 0 0 0 2px var(--playhead); }
-.rv-hit { position: absolute; inset: 0 -12px; min-width: 24px; pointer-events: auto; }
-.rv-region:not(.pt) .rv-hit { inset: 0; }
-.tracing .rv-hit { pointer-events: none; }
-.rv-label { position: absolute; left: 8px; top: 8px; padding: 2px 6px; border-radius: 4px; background: var(--surface-2); color: var(--text); font: 600 var(--fs-xs)/1.2 var(--font-mono); white-space: nowrap; pointer-events: none; box-shadow: 0 0 0 1px var(--border-strong); }
-.rv-h { position: absolute; top: 0; bottom: 0; width: 28px; margin-left: -14px; pointer-events: auto; cursor: ew-resize; touch-action: none; display: grid; place-items: center; z-index: 4; }
-@media (pointer: coarse) { .rv-h { width: var(--hit); margin-left: calc(var(--hit) / -2); } }
-.rv-h i { width: 6px; height: 34px; border-radius: 3px; background: var(--text); box-shadow: 0 0 0 2px var(--surface-2); }
-.rv-h[data-edge="start"] { left: 0; } .rv-h[data-edge="end"] { left: 100%; }
-.rv-h:focus-visible i { box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 4px var(--focus); }
-#wave-track.tracing { cursor: crosshair; touch-action: none; }
-#wave-track.tracing .wave-seg { pointer-events: none; }
-.trace-hint { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); z-index: 5; padding: 6px 12px; border-radius: var(--r-pill); background: var(--text); color: var(--bg); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; pointer-events: none; }
-.human.draft::before { background: var(--surface-2); border: 2px solid var(--seg-human); }
-.human.draft::after { background: repeating-linear-gradient(90deg, var(--seg-human) 0 5px, transparent 5px 8px); }
-.human.sel { outline: 2px solid var(--playhead); outline-offset: 2px; border-radius: 4px; }
-.human { pointer-events: auto; }
-.human.pt { width: 24px; }
-
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px; max-width: min(92vw, 460px); padding: 10px 10px 10px 16px; border-radius: var(--r-sm); background: var(--text); color: var(--bg); font-size: var(--fs-sm); font-weight: 500; box-shadow: var(--shadow-pop); }
-.toast button { min-height: 36px; padding: 0 10px; border-radius: var(--r-xs); font-weight: 700; text-decoration: underline; color: inherit; }
-@media (max-width: 767px) { .toast { bottom: 92px; } }
-.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; font-size: var(--fs-sm); color: var(--text-2); }
-.panel-foot { padding: var(--sp-4); }
-</style>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="phase2.css">
 </head>
 <body>
 
@@ -597,28 +47,39 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2 2 0 0 1 3 3L8 18.5zM14.5 6l3.5 3.5"/></symbol>
   <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5 2-2h4"/></symbol>
+  <symbol id="i-seek-back" viewBox="0 0 24 24"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-seek-fwd" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/></g><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="4.5" rx="1.5"/><path d="M5 9.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V9.5M10 13.5h4"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"/><circle cx="14" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol><symbol id="i-chevron-d" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol><symbol id="i-chevron-r" viewBox="0 0 24 24"><path d="M9.5 6.5l5.5 5.5-5.5 5.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.6 5.3 3.6 8.5s-1 6.1-3.6 8.5c-2.6-2.4-3.6-5.3-3.6-8.5s1-6.1 3.6-8.5z"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.3 3-5 6-5s5.4 1.7 6 5M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.8c2 .5 3.2 2.1 3.5 4.7"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.7-3.7 3.5-5.5 7-5.5s6.3 1.8 7 5.5"/></symbol><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4.5H7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3M14 8l4 4-4 4M18 12H9.5"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5c1.6 0 3 .5 4.2 1.2M21.5 12S18 18.5 12 18.5c-1.6 0-3-.5-4.2-1.2"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4.2 4.2M4 4l16 16"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h10a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M14 3.5v4h4M8.5 12h7M8.5 15.5h7"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M4 14h16M4 14l2-7.5A2 2 0 0 1 7.9 5h8.2A2 2 0 0 1 18 6.5L20 14v3.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M7.5 16.5h.01M11 16.5h.01"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol><symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/><path d="M6 7.5v9M18 16.5V10a3 3 0 0 0-3-3h-2.5M15 4.5l-2.5 2.5L15 9.5"/></symbol><symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 19v-8M12 19V5M19 19v-5"/></symbol><symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 19V5M8 19l-3-3M8 19l3-3M16 5v14M16 5l-3 3M16 5l3 3"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M7 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L5 11l4 4M5 11h9a5 5 0 0 1 0 10h-3"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol><symbol id="i-signpost" viewBox="0 0 24 24"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.2"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.5v5.5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="3.5"/><path d="M10.5 12.5L19 4M16 7l2.5 2.5M13.5 9.5L15 11"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5M6 9.5V19a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V9.5"/></symbol><symbol id="i-filter-x" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></symbol>
 </svg>
 
 <div class="sr" id="aria-live" aria-live="polite" role="status"></div>
 <div class="app">
   <header class="header">
-    <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-left" aria-controls="panel-left" aria-expanded="true" aria-label="Sessions">
-      <svg class="i"><use href="#i-panel-l"/></svg><span class="dot" id="left-dot" aria-hidden="true"></span>
-    </button>
-    <div class="brand">
-      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <b>Atelier <em>de revue</em></b>
-    </div>
-    <nav class="nav" aria-label="Vues">
+    <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-left" aria-controls="panel-left" aria-expanded="true" aria-label="Sessions"><svg class="i" aria-hidden="true"><use href="#i-panel-l"/></svg><span class="dot" id="left-dot" aria-hidden="true"></span></button>
+    <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em>de revue</em></b></a>
+    <nav class="nav" aria-label="Pages">
       <button data-view="revue" aria-current="page">Revue</button>
+      <a href="sessions.html">Sessions</a>
       <button data-view="perf">Performance</button>
+      <a href="docs.html">Documentation<span class="nav-dot" title="Nouveautés depuis ta dernière visite"><span class="sr"> Nouveautés</span></span></a>
     </nav>
     <span class="spacer"></span>
-    <button class="btn btn--primary btn--sm" id="btn-new" aria-label="Nouvel essai"><svg class="i"><use href="#i-plus"/></svg><span class="hide-sm">Nouvel essai</span></button>
-    <button class="btn btn--ghost btn--icon btn--sm" id="btn-theme" aria-label="Basculer le thème clair / sombre"><svg class="i"><use href="#i-sun"/></svg></button>
-    <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-right" aria-controls="panel-right" aria-expanded="true" aria-label="Revue humaine">
-      <svg class="i"><use href="#i-panel-r"/></svg>
-    </button>
+    <button class="btn btn--primary btn--sm" id="btn-new" aria-label="Nouvel essai"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span class="hide-sm">Nouvel essai</span></button>
+    <button class="btn btn--ghost btn--icon btn--sm hide-sm" id="btn-theme" aria-label="Basculer le thème clair / sombre"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <div class="pop-wrap" id="acct-wrap">
+      <button class="acct-btn" id="acct-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="acct-menu"><span class="av" data-i="C" aria-hidden="true"></span><span class="acct-name">cherif</span><span class="sr"> (menu du compte)</span><svg class="i" aria-hidden="true"><use href="#i-chevron-d"/></svg></button>
+      <div class="menu" id="acct-menu" role="menu" aria-label="Compte" hidden>
+        <div class="menu-head"><span class="av av--lg" data-i="C" aria-hidden="true"></span><div><b>cherif</b><small>Administrateur · inscrit le 14 oct. 2026</small></div></div>
+        <div class="menu-only-sm"><div class="menu-sep"></div><p class="eyebrow menu-label">Aller à</p><a role="menuitem" class="menu-item" href="index.html" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg>Revue</a><a role="menuitem" class="menu-item" href="sessions.html"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Sessions</a><a role="menuitem" class="menu-item" href="index.html#view=perf"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg>Performance</a><a role="menuitem" class="menu-item" href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documentation</a></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item" href="compte.html"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+        <a role="menuitem" class="menu-item" href="compte.html#statistiques"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg>Mes statistiques</a>
+        <p class="eyebrow menu-label" id="theme-lbl">Thème</p>
+        <div class="menu-theme" role="group" aria-labelledby="theme-lbl"><button data-theme-set="light" aria-pressed="false">Clair</button><button data-theme-set="dark" aria-pressed="false">Sombre</button><button data-theme-set="" aria-pressed="true">Système</button></div>
+        <div class="menu-quota"><span>Espace utilisé : <b class="mono" style="font-weight:600;color:var(--text)">2,3 Go</b> sur 5 Go · <a href="compte.html#statistiques">détails</a></span><div class="quota-hint"><span class="mini" style="flex:1"><i style="--w:46%"></i></span></div></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item menu-item--danger" href="login.html"><svg class="i" aria-hidden="true"><use href="#i-logout"/></svg>Se déconnecter</a>
+      </div>
+    </div>
+    <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-right" aria-controls="panel-right" aria-expanded="true" aria-label="Revue humaine"><svg class="i" aria-hidden="true"><use href="#i-panel-r"/></svg></button>
   </header>
 
   <div class="workspace" id="ws" data-left="open" data-right="open">
@@ -628,89 +89,94 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
       <div class="panel-in">
         <div class="panel-head">
           <h2>Sessions</h2>
-          <button class="btn btn--ghost btn--icon btn--sm" aria-label="Actualiser la liste"><svg class="i"><use href="#i-refresh"/></svg></button>
-          <button class="btn btn--ghost btn--icon btn--sm drawer-close only-drawer" data-close="left" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button>
+          <button class="btn btn--ghost btn--icon btn--sm" aria-label="Actualiser la liste"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+          <button class="btn btn--ghost btn--icon btn--sm drawer-close only-drawer" data-close="left" aria-label="Fermer"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
         </div>
-        <div class="filters" role="group" aria-label="Filtrer les sessions">
-          <button class="chip" aria-pressed="true" data-f="all">Toutes <span class="n">9</span></button>
-          <button class="chip" aria-pressed="false" data-f="active">En cours <span class="n">2</span></button>
-          <button class="chip" aria-pressed="false" data-f="unread">Non lues <span class="n">2</span></button>
-        </div>
-        <p class="queue-line" role="status"><svg class="i" style="width:16px;height:16px;color:var(--accent)"><use href="#i-wave"/></svg><span><b>1 en cours</b> · 1 en attente · fin estimée dans ≈ 12 min</span></p>
+        <p class="queue-line" role="status"><svg class="i" aria-hidden="true" style="width:16px;height:16px;color:var(--accent)"><use href="#i-wave"/></svg><span><b>1 en cours</b> · 1 en attente · fin estimée dans ≈ 12 min</span></p>
 
-        <h3 class="eyebrow group-title">File d’analyse</h3>
-        <ul id="list-active">
-          <li><button class="sess" data-state="running" data-g="active">
+        <section class="grp" aria-labelledby="g-queue">
+          <h3 class="grp-title"><span class="eyebrow" id="g-queue">File d’analyse</span></h3>
+          <ul id="list-active"><li><button class="sess is-compact" data-state="running" data-g="active">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring-track" cx="12" cy="12" r="9"/><circle class="ring-arc" cx="12" cy="12" r="9" stroke-dasharray="35.1 56.55"/></svg></span>
-            <span class="sess-name">lot1-12.mp3</span>
+            <span class="sess-name"><span class="t">Lot1 12</span></span>
             <span class="sess-end"><span>62 %</span></span>
-            <span class="sess-status">Analyse en cours · ≈ 2 min restantes</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-audio"/></svg>Audio · 18:42 · Cascade</span>
-            <span class="sess-bar" aria-hidden="true"><i style="--p:62%"></i></span>
-          </button></li>
-          <li><button class="sess" data-state="queued" data-g="active">
+            <span class="sess-status">En cours · ≈ 2 min restantes</span><span class="sess-bar" aria-hidden="true"><i style="--p:62%"></i></span>
+          </button></li><li><button class="sess is-compact" data-state="queued" data-g="active">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring-dash" cx="12" cy="12" r="9"/><text class="ring-n" x="12" y="15.6" text-anchor="middle">1</text></svg></span>
-            <span class="sess-name">conf-ramadan-nuit-3.mp4</span>
+            <span class="sess-name"><span class="t">Conf ramadan nuit 3</span></span>
             <span class="sess-end"><span>14:31</span></span>
-            <span class="sess-status">En attente · n° 1 dans la file</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-video"/></svg>Vidéo · 1:12:08 · ≈ 10 min d’analyse</span>
-          </button></li>
-        </ul>
-
-        <h3 class="eyebrow group-title">Terminées</h3>
-        <ul id="list-done">
-          <li><button class="sess" data-state="done" data-unread="true" data-g="unread">
+            <span class="sess-status">En attente · n° 1 · ≈ 10 min</span>
+          </button></li></ul>
+        </section>
+        <section class="grp" aria-labelledby="g-fav">
+          <h3 class="grp-title"><span class="eyebrow" id="g-fav">Favoris</span><span class="more-n">3</span></h3>
+          <ul id="list-fav"><li><button class="sess is-compact" data-state="done" data-g="read" aria-current="true">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="sess-name">khutba-vendredi.mp4</span>
-            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>14:02</span></span>
-            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · 5 min 40 s · ×7,3</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-video"/></svg>Vidéo · 41:15 · Cascade</span>
-          </button></li>
-          <li><button class="sess" data-state="done" data-unread="true" data-g="unread">
-            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="sess-name">sourate-baqara-warsh.webm</span>
-            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>13:48</span></span>
-            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · 4 min 31 s · ×4,7</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-audio"/></svg>Audio · 21:08 · Cascade</span>
-          </button></li>
-          <li><button class="sess" data-state="done" aria-current="true" data-g="read">
-            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="sess-name">recitation-fatiha-baqara.mp3</span>
+            <span class="sess-name"><span class="t">Recitation fatiha baqara</span></span>
             <span class="sess-end"><span>12:20</span></span>
-            <span class="sess-status">Terminé en 26 s · ×7,1</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-audio"/></svg>Audio · 3:04 · Cascade</span>
-          </button></li>
-          <li class="has-retry"><button class="sess" data-state="failed" data-g="read">
+            <span class="sess-status">Terminé · ×7,1</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Récitation Kahf, Yacine</span></span>
+            <span class="sess-end"><span>hier</span></span>
+            <span class="sess-status">par yacine · Terminé · ×9,2</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Ar-Rahman, taraweeh</span></span>
+            <span class="sess-end"><span>19 oct.</span></span>
+            <span class="sess-status">par moussa_d · Terminé · ×7,6</span>
+          </button></li></ul>
+        </section>
+        <section class="grp" aria-labelledby="g-rec">
+          <h3 class="grp-title"><span class="eyebrow" id="g-rec">Récentes</span><span class="more-n">8 sur 52</span></h3>
+          <ul id="list-done"><li><button class="sess is-compact" data-state="done" data-g="unread" data-unread="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><svg class="i i-lock-inline" aria-hidden="true"><use href="#i-lock"/></svg><span class="sr">Privée · </span><span class="t">Enregistrement du 22 oct. à 17:51</span></span>
+            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>17:55</span></span>
+            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · ×8,4</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="unread" data-unread="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Khutba vendredi</span></span>
+            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>14:02</span></span>
+            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · ×7,3</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="unread" data-unread="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Sourate baqara warsh</span></span>
+            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>13:48</span></span>
+            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · ×4,7</span>
+          </button></li><li><button class="sess is-compact" data-state="failed" data-g="read">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert"/></svg></span>
-            <span class="sess-name">micro-55-1-4-muno-nuit.wav</span>
+            <span class="sess-name"><span class="t">Micro 55 1 4 muno nuit</span></span>
             <span class="sess-end"><span>11:05</span></span>
             <span class="sess-status">Échec · moteur indisponible</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-audio"/></svg>Audio · 6:12 · Muno</span>
-            </button>
-          <button class="btn btn--secondary btn--sm retry">Relancer</button></li>
-          <li><button class="sess" data-state="cancelled" data-g="read">
+          </button></li><li><button class="sess is-compact" data-state="cancelled" data-g="read">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 18L18 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
-            <span class="sess-name">lot2-05-warsh.mp3</span>
+            <span class="sess-name"><span class="t">Lot2 05 warsh</span></span>
             <span class="sess-end"><span>hier</span></span>
             <span class="sess-status">Annulé après 2 min 10 s</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-audio"/></svg>Audio · 24:50 · Cascade</span>
-          </button></li>
-          <li><button class="sess" data-state="done" data-g="read">
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="sess-name">test-55.webm</span>
+            <span class="sess-name"><span class="t">Test 55</span></span>
             <span class="sess-end"><span>hier</span></span>
-            <span class="sess-status">Terminé en 1 min 12 s · ×7,1</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-video"/></svg>Vidéo · 8:30 · Cascade</span>
-          </button></li>
-          <li><button class="sess" data-state="done" data-g="read">
+            <span class="sess-status">Terminé · ×7,1</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
             <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="sess-name">wn52Srssjyk.mp3</span>
+            <span class="sess-name"><span class="t">Audio importé le 20 oct. à 11:02</span></span>
             <span class="sess-end"><span>20 oct.</span></span>
-            <span class="sess-status">Terminé en 1 min 41 s · ×7,1</span>
-            <span class="sess-meta"><svg class="i"><use href="#i-audio"/></svg>Audio · 12:02 · FastConformer</span>
-          </button></li>
-        </ul>
-        <div class="sess-foot only-drawer"><button class="btn btn--secondary btn--block" data-view="perf"><svg class="i"><use href="#i-gauge"/></svg>Performance</button></div>
+            <span class="sess-status">Terminé · ×7,1</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Recitation du 20 oct. à 17:58</span></span>
+            <span class="sess-end"><span>20 oct.</span></span>
+            <span class="sess-status">Terminé · ×5,2</span>
+          </button></li></ul>
+        </section>
+        <div class="see-all"><a class="btn btn--secondary btn--block" href="sessions.html">Voir toutes les sessions <span class="n">52</span></a></div>
+        <nav class="panel-nav only-drawer" aria-label="Autres pages">
+          <a href="index.html#view=perf"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg>Performance</a>
+          <a href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documentation</a>
+          <a href="compte.html"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+        </nav>
       </div>
     </aside>
 
@@ -721,13 +187,29 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
       <section class="view" data-view-id="revue" data-active="true">
         <div class="stack">
           <header class="o-head session-head">
-            <h1>recitation-fatiha-baqara.mp3</h1>
+            <div class="title-row" data-default="Recitation fatiha baqara">
+              <h1 title="Double-clic pour renommer">Recitation fatiha baqara</h1>
+              <button class="fav" type="button" data-fav aria-pressed="true" aria-label="Retirer des favoris" data-tip="Retirer des favoris"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg></button>
+              <button class="rename-btn" type="button" aria-label="Renommer la session" data-tip="Renommer"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>
+            </div>
+            <p class="detected"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg><span>Contenu détecté : <b>Al-Fatiha 1:1–7 · Al-Baqara 2:1–5</b></span><button class="btn btn--ghost btn--sm" type="button" id="use-det">Utiliser comme nom</button></p>
             <div class="facts">
-              <span class="f"><svg class="i"><use href="#i-audio"/></svg>Audio · <span class="mono">03:04.700</span></span>
-              <span class="f">Cascade (FastConformer → Whisper, Muno)</span>
+              <span class="f pop-wrap" id="scope-wrap">
+                <button class="btn btn--ghost btn--sm" type="button" id="scope-btn" style="margin:-6px -8px" aria-haspopup="dialog" aria-expanded="false" aria-controls="scope-pop" title="Modifier la portée"><span class="badge badge--global" id="scope-badge"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global</span><svg class="i" aria-hidden="true" style="width:16px;height:16px"><use href="#i-chevron-d"/></svg></button>
+                <div class="scope-pop" id="scope-pop" role="dialog" aria-label="Portée de la session" data-current="global" hidden>
+                  <p class="eyebrow">Qui peut voir cette session ?</p>
+                  <button class="radio-card" type="button" role="radio" data-scope="global" aria-checked="true"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global</b><span class="d">Tous les testeurs l’écoutent et voient ses résultats et ses performances.</span></button>
+                  <button class="radio-card" type="button" role="radio" data-scope="private" aria-checked="false"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Privé</b><span class="d">Toi seul. Il n’apparaît ni dans les listes des autres ni dans leurs statistiques.</span></button>
+                  <div class="scope-confirm" hidden><p class="banner"><small>Tout le monde pourra écouter cet audio et voir ses résultats. Tu pourras le repasser en privé à tout moment.</small></p><div class="btnrow" style="margin-top:8px"><button class="btn btn--primary btn--sm" type="button" data-scope-confirm>Rendre global</button><button class="btn btn--ghost btn--sm" type="button" data-scope-cancel>Annuler</button></div></div>
+                </div>
+              </span>
+              <span class="f" id="owner-fact" hidden><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Propriétaire : <b id="owner-name" style="font-weight:600;color:var(--text)">amina</b></span>
+              <span class="f"><svg class="i" aria-hidden="true"><use href="#i-audio"/></svg>Audio · <span class="mono">03:04.700</span> · <span class="mono">4,2 Mo</span></span>
+              <span class="f m-hide">Cascade (FastConformer → Whisper, Muno)</span>
               <span class="f">Terminé en <b class="mono" style="font-weight:600;color:var(--text)">26 s</b> · ×7,1 temps réel</span>
               <span class="f riwaya" tabindex="0" title="La riwaya n’est pas détectée : Hafs est supposée. Le texte vient du corpus Tanzil (Hafs).">Riwaya Hafs supposée · non vérifiée</span>
-              <span class="f mono muted">SHA-256 8b5ef1d6ebeb…</span>
+              <span class="f mono muted m-hide">SHA-256 8b5ef1d6ebeb…</span>
+              <button class="btn btn--ghost btn--sm" type="button" id="btn-archive" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg><span>Archiver</span></button>
             </div>
           </header>
 
@@ -735,12 +217,12 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
           <section class="card console o-console" aria-label="Écoute et pistes synchronisées">
             <div class="transport" id="transport">
               <button class="play" id="play" aria-label="Lancer la lecture"><svg class="i fill"><use href="#i-play"/></svg></button>
-              <button class="seek" aria-label="Reculer de 5 secondes">−5 s</button>
+              <button class="seek" type="button" data-seek="-5" aria-label="Reculer de 5 secondes" data-tip="Reculer de 5 s  ←"><svg class="i five" aria-hidden="true"><use href="#i-seek-back"/></svg></button>
               <div class="scrub">
                 <div class="times mono"><b id="t-now">01:12.400</b><span class="tm-total">03:04.700</span></div>
                 <input type="range" id="scrubber" min="0" max="184.7" step="0.01" value="72.4" aria-label="Position de lecture" style="--p:39.2%">
               </div>
-              <button class="seek" aria-label="Avancer de 5 secondes">+5 s</button>
+              <button class="seek" type="button" data-seek="5" aria-label="Avancer de 5 secondes" data-tip="Avancer de 5 s  →"><svg class="i five" aria-hidden="true"><use href="#i-seek-fwd"/></svg></button>
               <button class="seek mark-dock" id="dock-mark" aria-label="Marquer le début d’un signalement" style="background:var(--surface-3)"><svg class="i"><use href="#i-flag"/></svg></button>
               <label class="speed"><span class="sr">Vitesse de lecture</span><select class="input"><option>0,5×</option><option>0,75×</option><option selected>1×</option><option>1,25×</option><option>1,5×</option></select></label>
             </div>
@@ -806,8 +288,8 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
                     <div class="foot"><span>Enregistré sur cet appareil</span><button class="btn btn--ghost btn--sm" id="font-reset">Réinitialiser</button></div>
                   </div>
                 </div>
-                <button class="btn btn--ghost btn--icon btn--sm" id="a-minus" aria-label="Réduire le texte arabe"><span style="font-size:.8rem;font-weight:700">A−</span></button>
-                <button class="btn btn--ghost btn--icon btn--sm" id="a-plus" aria-label="Agrandir le texte arabe"><span style="font-size:1rem;font-weight:700">A+</span></button>
+                <button class="btn btn--ghost btn--icon btn--sm" id="a-minus" aria-label="Réduire le texte arabe, A−"><span style="font-size:.8rem;font-weight:700">A−</span></button>
+                <button class="btn btn--ghost btn--icon btn--sm" id="a-plus" aria-label="Agrandir le texte arabe, A+"><span style="font-size:1rem;font-weight:700">A+</span></button>
               </div>
             </div>
             <div id="passage-body"></div>
@@ -843,9 +325,11 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
       <section class="view" data-view-id="perf">
         <div class="stack">
           <header class="page-title">
-            <div><h1>Performance</h1><p>Combien de temps prend une analyse, et à quelle vitesse. Sert à estimer la fin d’une file avant de partir.</p></div>
+            <div><h1>Performance</h1><p id="perf-sub">Combien de temps prend une analyse, et à quelle vitesse. Sert à estimer la fin d’une file avant de partir.</p></div>
+            <div class="seg-ctl" role="group" aria-label="Périmètre" id="perf-scope"><button type="button" data-perf="all" aria-pressed="true">Tous les testeurs</button><button type="button" data-perf="mine" aria-pressed="false">Moi</button></div>
             <div class="seg-filters" style="margin:0" role="group" aria-label="Période"><button class="chip" aria-pressed="true">7 jours</button><button class="chip" aria-pressed="false">30 jours</button><button class="chip" aria-pressed="false">Tout</button></div>
           </header>
+          <div class="perf-global">
           <div class="tiles">
             <div class="card tile"><span class="eyebrow">Durée moyenne</span><div class="v">4<small>min</small> 02<small>s</small></div><div class="s">par analyse · 38 terminées</div></div>
             <div class="card tile"><span class="eyebrow">Vitesse médiane</span><div class="v">×7,1</div><div class="s">temps réel · 1 h d’audio ≈ 8 min</div></div>
@@ -872,20 +356,61 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
             </section>
             <section class="card card-pad">
               <div class="sec-title"><h2>File en cours</h2></div>
-              <div class="qrow"><span class="sess-glyph" style="color:var(--accent)"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><circle class="ring-track" cx="12" cy="12" r="9"/><circle class="ring-arc" cx="12" cy="12" r="9" stroke-dasharray="35.1 56.55"/></svg></span><div><div style="font-weight:600">lot1-12.mp3</div><div class="hint">Cascade · 18:42 · écoulé 2 min 40 s</div></div><div class="mono" style="color:var(--accent);font-weight:600">≈ 2 min</div></div>
-              <div class="qrow"><span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><circle class="ring-dash" cx="12" cy="12" r="9"/><text class="ring-n" x="12" y="15.6" text-anchor="middle">1</text></svg></span><div><div style="font-weight:600">conf-ramadan-nuit-3.mp4</div><div class="hint">Cascade · 1:12:08 · attend la fin de lot1-12</div></div><div class="mono muted">≈ 12 min</div></div>
+              <div class="qrow"><span class="sess-glyph" style="color:var(--accent)"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><circle class="ring-track" cx="12" cy="12" r="9"/><circle class="ring-arc" cx="12" cy="12" r="9" stroke-dasharray="35.1 56.55"/></svg></span><div><div style="font-weight:600">Lot1 12</div><div class="hint">Cascade · 18:42 · écoulé 2 min 40 s</div></div><div class="mono" style="color:var(--accent);font-weight:600">≈ 2 min</div></div>
+              <div class="qrow"><span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><circle class="ring-dash" cx="12" cy="12" r="9"/><text class="ring-n" x="12" y="15.6" text-anchor="middle">1</text></svg></span><div><div style="font-weight:600">Conf ramadan nuit 3</div><div class="hint">Cascade · 1:12:08 · attend la fin de Lot1 12</div></div><div class="mono muted">≈ 12 min</div></div>
               <p class="hint" style="margin-top:var(--sp-3)">Estimation = durée de l’audio ÷ vitesse médiane du moteur sur les analyses récentes, moins le temps déjà écoulé.</p>
             </section>
           </div>
           <section class="card card-pad">
             <div class="sec-title"><h2>Dernières analyses</h2></div>
-            <div class="scroll-x"><table class="table"><thead><tr><th>Session</th><th>Type</th><th class="num">Audio</th><th class="num">Analyse</th><th class="num">× temps réel</th></tr></thead><tbody>
-              <tr><td>khutba-vendredi.mp4</td><td>Vidéo</td><td class="num">41:15</td><td class="num">5:40</td><td class="num">7,3</td></tr>
-              <tr><td>sourate-baqara-warsh.webm</td><td>Audio</td><td class="num">21:08</td><td class="num">4:31</td><td class="num">4,7</td></tr>
-              <tr><td>recitation-fatiha-baqara.mp3</td><td>Audio</td><td class="num">3:04</td><td class="num">0:26</td><td class="num">7,1</td></tr>
-              <tr><td>test-55.webm</td><td>Vidéo</td><td class="num">8:30</td><td class="num">1:12</td><td class="num">7,1</td></tr>
-              <tr><td>wn52Srssjyk.mp3</td><td>Audio</td><td class="num">12:02</td><td class="num">1:41</td><td class="num">7,1</td></tr></tbody></table></div>
+            <div class="scroll-x"><table class="table"><thead><tr><th>Session</th><th>Testeur</th><th>Type</th><th class="num">Audio</th><th class="num">Analyse</th><th class="num">× temps réel</th></tr></thead><tbody>
+              <tr><td>Khutba vendredi</td><td>cherif</td><td>Vidéo</td><td class="num">41:15</td><td class="num">5:40</td><td class="num">7,3</td></tr>
+              <tr><td>Tajwid cours 4</td><td>amina</td><td>Audio</td><td class="num">32:10</td><td class="num">4:40</td><td class="num">6,9</td></tr>
+              <tr><td>Sourate baqara warsh</td><td>cherif</td><td>Audio</td><td class="num">21:08</td><td class="num">4:31</td><td class="num">4,7</td></tr>
+              <tr><td>Récitation Kahf, Yacine</td><td>yacine</td><td>Audio</td><td class="num">10:40</td><td class="num">1:09</td><td class="num">9,2</td></tr>
+              <tr><td>Recitation fatiha baqara</td><td>cherif</td><td>Audio</td><td class="num">3:04</td><td class="num">0:26</td><td class="num">7,1</td></tr></tbody></table></div>
+            <p class="hint" style="margin-top:var(--sp-3)">Seules les sessions globales sont nommées ici. Les sessions privées comptent dans les moyennes, sans nom ni propriétaire.</p>
           </section>
+          <section class="card meter-card" data-state="ok" aria-label="Stockage du serveur">
+            <div class="meter-head"><div><p class="eyebrow">Stockage du serveur</p><p class="big">38,4 <small>Go sur 120 Go</small></p></div><span class="muted" style="font-size:var(--fs-sm)">142 fichiers · 12 testeurs</span></div>
+            <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="120" aria-valuenow="38.4" aria-valuetext="38,4 Go utilisés sur 120 Go" aria-label="Espace utilisé sur le serveur"><span class="m aud" style="--w:20%"></span><span class="m vid" style="--w:12%"></span><span class="tick" aria-hidden="true"></span></div>
+            <ul class="meter-legend" aria-label="Légende du stockage"><li><span><i class="sw s-recognized" aria-hidden="true"></i>Audio · <b class="mono">24,1 Go</b></span></li><li><span><i class="sw s-inferred" aria-hidden="true"></i>Vidéo · <b class="mono">14,3 Go</b></span></li><li><span class="muted">Libre · <b class="mono">81,6 Go</b></span></li></ul>
+          </section>
+          </div>
+          <div class="perf-mine" hidden>
+      <div class="tiles tiles--3" aria-label="Mes chiffres">
+        <div class="card tile"><p class="eyebrow">Tests</p><p class="v">47</p><p class="s">sessions analysées, dont 3 en échec</p></div>
+        <div class="card tile"><p class="eyebrow">Audio analysé</p><p class="v">12 h 40<small>min</small></p><p class="s">sur 47 sessions</p></div>
+        <div class="card tile"><p class="eyebrow">Vitesse moyenne</p><p class="v">×6,8</p><p class="s">fois plus vite que l’audio</p></div>
+        <div class="card tile"><p class="eyebrow">Espace utilisé</p><p class="v" id="tile-space">2,3<small>Go</small></p><p class="s" id="tile-space-s">sur 5 Go de quota</p></div>
+      </div>
+
+      <div class="card meter-card" id="meter-card" data-state="ok">
+        <div class="meter-head"><div><p class="eyebrow">Stockage</p><p class="big"><span id="m-used">2,3</span> <small>Go sur 5 Go</small></p></div><a class="btn btn--secondary btn--sm" href="sessions.html?portee=mine"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Voir mes sessions</a></div>
+        <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="2.3" aria-valuetext="2,3 Go utilisés sur 5 Go" id="meter" aria-label="Espace utilisé"><span class="m aud" style="--w:28%"></span><span class="m vid" style="--w:18%"></span><span class="tick" aria-hidden="true"></span></div>
+        <ul class="meter-legend" aria-label="Légende du stockage"><li><span><i class="sw s-recognized" aria-hidden="true"></i>Audio · <b class="mono" id="m-aud">1,4 Go</b></span></li><li><span><i class="sw s-inferred" aria-hidden="true"></i>Vidéo · <b class="mono" id="m-vid">0,9 Go</b></span></li><li><span class="muted">Libre · <b class="mono" id="m-free">2,7 Go</b></span></li></ul>
+        <div class="meter-alert" role="status"><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><div><b class="when-warn" id="m-alert-t">Espace presque plein : 4,2 Go sur 5 Go.</b><b class="when-full">Quota atteint : les nouveaux imports sont bloqués.</b><br><span class="when-warn">À partir de 5 Go, tu ne pourras plus importer. Archive puis supprime les gros fichiers dont tu n’as plus besoin.</span><span class="when-full">Supprime des sessions archivées pour libérer de la place, ou demande à l’administrateur d’augmenter ton quota.</span><div class="btnrow"><a class="btn btn--secondary btn--sm" href="sessions.html?portee=mine">Trier par taille</a><a class="btn btn--secondary btn--sm" href="sessions.html?portee=arch">Voir les archives</a></div></div></div>
+        <p class="hint when-ok">Les sessions archivées comptent aussi. Seule la suppression définitive libère de l’espace.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="card card-pad bigfiles"><div class="sec-title"><h2>Ce qui prend le plus de place</h2></div>
+          <div class="qrow"><span class="nm">Conf ramadan nuit 3<small>Vidéo · 1:12:08 · global</small></span><span class="sz">332 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Khutba vendredi<small>Vidéo · 41:15 · global</small></span><span class="sz">186 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Micro 55 1 4 muno nuit<small>Audio WAV · 6:12 · global</small></span><span class="sz">63 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Sourate baqara warsh<small>Audio · 21:08 · global</small></span><span class="sz">21 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+        </div>
+        <div class="card card-pad"><div class="sec-title"><h2>Vitesse par moteur</h2></div><p class="hint">Sur mes analyses. Plus la barre est longue, plus le moteur est rapide.</p>
+          <div class="bars">
+            <div class="bar-row"><span class="nm">Cascade<small>31 analyses</small></span><span class="bar-track"><i style="--v:80%"></i></span><span class="val">×7,3</span></div>
+            <div class="bar-row"><span class="nm">FastConformer<small>9 analyses</small></span><span class="bar-track"><i style="--v:100%"></i></span><span class="val">×9,2</span></div>
+            <div class="bar-row"><span class="nm">Whisper<small>4 analyses</small></span><span class="bar-track"><i style="--v:57%"></i></span><span class="val">×5,2</span></div>
+            <div class="bar-row"><span class="nm">Muno<small>3 analyses</small></span><span class="bar-track"><i style="--v:45%"></i></span><span class="val">×4,1</span></div>
+          </div>
+          <p class="axis-note">Échelle commune : ×0 à ×10. Valeurs médianes.</p>
+        </div>
+      </div>
+    </div>
         </div>
       </section>
 
@@ -894,6 +419,16 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
         <div class="stack">
           <div class="new">
             <header><svg class="hero-wave" viewBox="0 0 220 56" role="img" aria-label="Une onde sonore"><g fill="var(--border-strong)"><rect x="4.0" y="25.9" width="2.4" height="4.1" rx="1.2"/><rect x="9.2" y="25.8" width="2.4" height="4.4" rx="1.2"/><rect x="14.4" y="25.6" width="2.4" height="4.7" rx="1.2"/><rect x="19.6" y="25.6" width="2.4" height="4.9" rx="1.2"/><rect x="24.8" y="25.5" width="2.4" height="5.0" rx="1.2"/><rect x="30.0" y="24.8" width="2.4" height="6.3" rx="1.2"/><rect x="35.2" y="24.3" width="2.4" height="7.4" rx="1.2"/><rect x="40.4" y="24.4" width="2.4" height="7.3" rx="1.2"/><rect x="45.6" y="23.7" width="2.4" height="8.7" rx="1.2"/><rect x="50.8" y="21.6" width="2.4" height="12.8" rx="1.2"/><rect x="56.0" y="20.7" width="2.4" height="14.7" rx="1.2"/><rect x="61.2" y="22.0" width="2.4" height="12.0" rx="1.2"/><rect x="66.4" y="18.8" width="2.4" height="18.4" rx="1.2"/><rect x="71.6" y="15.1" width="2.4" height="25.8" rx="1.2"/><rect class="a" x="76.8" y="15.2" width="2.4" height="25.5" rx="1.2"/><rect class="a" x="82.0" y="18.9" width="2.4" height="18.1" rx="1.2"/><rect class="a" x="87.2" y="11.5" width="2.4" height="32.9" rx="1.2"/><rect class="a" x="92.4" y="8.2" width="2.4" height="39.5" rx="1.2"/><rect class="a" x="97.6" y="11.9" width="2.4" height="32.2" rx="1.2"/><rect class="a" x="102.8" y="14.1" width="2.4" height="27.8" rx="1.2"/><rect class="a" x="108.0" y="7.1" width="2.4" height="41.8" rx="1.2"/><rect class="a" x="113.2" y="7.1" width="2.4" height="41.8" rx="1.2"/><rect class="a" x="118.4" y="14.0" width="2.4" height="28.0" rx="1.2"/><rect class="a" x="123.6" y="13.2" width="2.4" height="29.7" rx="1.2"/><rect class="a" x="128.8" y="9.8" width="2.4" height="36.4" rx="1.2"/><rect class="a" x="134.0" y="12.8" width="2.4" height="30.4" rx="1.2"/><rect class="a" x="139.2" y="19.5" width="2.4" height="17.1" rx="1.2"/><rect x="144.4" y="17.1" width="2.4" height="21.9" rx="1.2"/><rect x="149.6" y="16.9" width="2.4" height="22.2" rx="1.2"/><rect x="154.8" y="20.0" width="2.4" height="16.0" rx="1.2"/><rect x="160.0" y="23.0" width="2.4" height="10.0" rx="1.2"/><rect x="165.2" y="22.0" width="2.4" height="12.1" rx="1.2"/><rect x="170.4" y="22.7" width="2.4" height="10.7" rx="1.2"/><rect x="175.6" y="24.2" width="2.4" height="7.5" rx="1.2"/><rect x="180.8" y="24.9" width="2.4" height="6.3" rx="1.2"/><rect x="186.0" y="24.8" width="2.4" height="6.4" rx="1.2"/><rect x="191.2" y="25.2" width="2.4" height="5.6" rx="1.2"/><rect x="196.4" y="25.7" width="2.4" height="4.7" rx="1.2"/><rect x="201.6" y="25.7" width="2.4" height="4.5" rx="1.2"/><rect x="206.8" y="25.8" width="2.4" height="4.5" rx="1.2"/><rect x="212.0" y="25.9" width="2.4" height="4.3" rx="1.2"/></g><path d="M4 52h212" stroke="var(--border)" stroke-width="1"/><path d="M110 48l4 4-4 4-4-4z" fill="var(--text-3)"/></svg><h1>Nouvel essai</h1><p class="lead">Enregistre une récitation ou dépose un audio ou une vidéo. L’analyse part dans la file ; tu peux fermer la page.</p></header>
+            <fieldset class="card visib" style="border:1px solid var(--border);margin:0;min-width:0">
+              <legend class="sr">Qui peut voir cet essai ?</legend>
+              <p style="font-weight:700">Qui peut voir cet essai ?</p>
+              <div class="opts" role="radiogroup" aria-label="Portée de l’essai">
+                <button class="radio-card" type="button" role="radio" data-scope="global" aria-checked="true"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global <span class="badge badge--plain badge--outline" style="min-height:20px;padding:0 6px">par défaut</span></b><span class="d">Tous les testeurs l’écoutent et voient ses résultats et ses performances.</span></button>
+                <button class="radio-card" type="button" role="radio" data-scope="private" aria-checked="false"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Privé</b><span class="d">Toi seul. Il n’apparaît pas dans les listes des autres testeurs.</span></button>
+              </div>
+              <p class="quota-hint"><svg class="i" aria-hidden="true" style="width:16px;height:16px"><use href="#i-drive"/></svg><span>Espace utilisé : <b class="mono" style="font-weight:600;color:var(--text)">2,3 Go</b> sur 5 Go</span><span class="mini"><i style="--w:46%"></i></span></p>
+              <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Taille maximale d’un fichier : 500 Mo.</p>
+            </fieldset>
             <section class="card recorder" data-phase="idle" id="recorder">
               <span class="rec-ic"><svg class="i"><use href="#i-mic"/></svg></span>
               <div><strong>Enregistrer une récitation</strong><p class="hint">Depuis le microphone de cet appareil</p></div>
@@ -901,7 +436,7 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
               <span class="hint" data-only="recording" role="status">Enregistrement en cours</span>
               <button class="btn btn--secondary btn--lg" id="rec-start" data-only="idle"><span class="rec-dot"></span>Démarrer l’enregistrement</button>
               <button class="btn btn--secondary btn--lg" id="rec-stop" data-only="recording"><span class="rec-sq" style="color:var(--danger)"></span>Arrêter</button>
-              <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">L’audio est conservé dans une session privée après analyse.</p>
+              <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">L’audio est conservé après l’analyse, avec la portée choisie ci-dessus.</p>
             </section>
             <div class="or">ou</div>
             <label class="drop" for="file" id="drop">
@@ -1200,12 +735,12 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
   let uid = 10;
   const RV = {
     tab: 'sig', mark: null, draft: null, sel: null, trace: false, changing: false, done: null,
-    tester: hash.tester === 'none' ? null : store.get('tester', 'Awa'), recent: store.get('testers', ['Awa', 'Moussa', 'Cherif']),
+    tester: 'cherif', recent: [],
     fTester: 'all', fState: 'all', listened: {}, loop: false, save: 'saved', testerErr: '',
     annots: [
-      { id: 'a1', start: 31.2, end: null, tags: ['display_offset'], expected: '', comment: 'La voix arrive avant l’affichage.', tester: 'Awa', status: 'confirmed', ts: now - 36 * 60000 },
-      { id: 'a2', start: 101.2, end: 106.4, tags: ['missing_verse', 'start_late'], expected: '2:256', comment: 'Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.', tester: 'Moussa', status: 'confirmed', ts: now - 12 * 60000 },
-      { id: 'a3', start: 140, end: 146.5, tags: ['non_quran_as_quran'], expected: '', comment: '', tester: 'Cherif', status: 'draft', ts: now - 4 * 60000 },
+      { id: 'a1', start: 31.2, end: null, tags: ['display_offset'], expected: '', comment: 'La voix arrive avant l’affichage.', tester: 'amina', status: 'confirmed', ts: now - 36 * 60000 },
+      { id: 'a2', start: 101.2, end: 106.4, tags: ['missing_verse', 'start_late'], expected: '2:256', comment: 'Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.', tester: 'moussa_d', status: 'confirmed', ts: now - 12 * 60000 },
+      { id: 'a3', start: 140, end: 146.5, tags: ['non_quran_as_quran'], expected: '', comment: '', tester: 'cherif', status: 'draft', ts: now - 4 * 60000 },
     ],
   };
   const cur = () => +$('#scrubber').value;
@@ -1247,17 +782,7 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
   /* ── testeur ── */
   function renderTester() {
     const el = $('#tester');
-    if (!RV.tester || RV.changing) {
-      const others = RV.recent.filter(n => n !== RV.tester).slice(0, 5);
-      el.innerHTML = `<form class="tester-form" id="tester-form" novalidate>
-        <label class="field"><span>Qui teste ?</span><input class="input" id="tester-input" maxlength="24" autocomplete="off" placeholder="Ton pseudonyme, ex. awa-tel" value="${esc(RV.tester || '')}" aria-describedby="tester-help tester-err"></label>
-        <p class="hint" id="tester-help" style="font-size:var(--fs-xs)">Un pseudonyme suffit : ni nom complet, ni e-mail. Il est joint à chacun de tes signalements et gardé dans ce navigateur.</p>
-        <p class="err" id="tester-err" role="alert">${esc(RV.testerErr)}</p>
-        ${others.length ? `<div><span class="eyebrow">Testeurs récents sur cet appareil</span><div class="recent">${others.map(n => `<button type="button" class="chip" data-tester="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>` : ''}
-        <div class="btnrow"><button class="btn btn--primary" type="submit">${RV.tester ? 'Enregistrer' : 'Commencer'}</button>${RV.tester ? '<button type="button" class="btn btn--ghost" id="tester-cancel">Annuler</button>' : ''}</div></form>`;
-    } else {
-      el.innerHTML = `<div class="tester-row"><span class="av" aria-hidden="true">${esc(RV.tester[0].toUpperCase())}</span><div style="flex:1;min-width:0"><span class="eyebrow">Testeur</span><b>${esc(RV.tester)}</b></div><button class="btn btn--ghost btn--sm" id="tester-change">Changer</button></div>`;
-    }
+    el.innerHTML = `<div class="tester-row"><span class="av" aria-hidden="true">${esc(RV.tester[0].toUpperCase())}</span><div style="flex:1;min-width:0"><span class="eyebrow">Relecteur</span><b>${esc(RV.tester)} <span class="you">· ton compte</span></b></div></div>`;
   }
   function setTester(name) {
     name = name.trim();
@@ -1543,5 +1068,7 @@ kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px s
   if (hash.scroll) setTimeout(() => document.getElementById(hash.scroll)?.scrollIntoView({ block: 'start' }), 400);
 })();
 </script>
+<script src="phase2.js"></script>
+<script src="index2.js"></script>
 </body>
 </html>
