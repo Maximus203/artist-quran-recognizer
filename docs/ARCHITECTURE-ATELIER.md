@@ -1,8 +1,8 @@
 # Architecture de l'atelier web
 
 > L'atelier (dossier `web/`) est l'application où l'on dépose des audios, on suit leur analyse, on écoute
-> les versets trouvés et on signale les erreurs. Ce document décrit ce qui **existe aujourd'hui**, puis, dans
-> une section à part clairement marquée, ce qui est **en cours de construction** (phase 2).
+> les versets trouvés et on signale les erreurs, à plusieurs testeurs (comptes, audios globaux ou privés,
+> préférences enregistrées côté serveur : §13). Ce document décrit ce qui **existe aujourd'hui**.
 > Source de vérité détaillée : `web/README.md` (contrats d'API, variables) et le code de `web/lib/`.
 > L'architecture du **moteur** (Python) est dans `docs/ARCHITECTURE.md`.
 
@@ -32,7 +32,7 @@ disque de la machine, dans un dossier hors Git ; aucune base de données, aucun 
 
 | Zone | Fichiers | Rôle |
 |---|---|---|
-| Pages | `web/app/page.tsx`, `review-app.tsx`, `app/atelier/*` | Une seule page : barre du haut, panneau Sessions à gauche, console au centre, revue humaine à droite. Un composant par zone. |
+| Pages | `web/app/(app)/*`, `app/login`, `app/register`, `review-app.tsx`, `app/atelier/*` | L'atelier (`/` : barre du haut, panneau Sessions à gauche, console au centre, revue humaine à droite) et les pages Sessions, Performance, Documentation, Compte, plus connexion et inscription. Un composant par zone. |
 | Routes API | `web/app/api/**/route.ts` | Voir §4. Les routes de données exigent un accès local autorisé (§9). |
 | File d'attente | `web/lib/queue.ts` | File FIFO pure (sans disque ni processus). |
 | Lancement | `web/lib/jobs.ts`, `python.ts` | Démarre le processus du moteur, consigne l'issue, annule, reprend après redémarrage. |
@@ -59,7 +59,8 @@ ne font que l'afficher.
 | `GET /api/sessions/<id>/peaks` | Crêtes de la forme d'onde, `aqr.listening-peaks/1`, 50 par seconde. |
 | `GET` / `PUT /api/sessions/<id>/review` | Lire la revue · enregistrer (fusion par identifiant, §7). |
 | `GET /api/sessions/<id>/export` · `…/bundle` | Bilan JSON seul · pack ZIP complet. |
-| `GET` / `POST /api/sessions/<id>/validation` | Vérité terrain (onglet réservé, `?relecteur=1`). |
+| `GET` / `POST /api/sessions/<id>/validation` | Vérité terrain (administrateurs seulement). |
+| `/api/auth/*`, `/api/me*`, `/api/admin/users`, `/api/docs*`, `PATCH /api/sessions/<id>`, `…/favorite`, `POST /api/sessions/bulk` | Comptes, préférences, statistiques, documentation, renommage/portée/archivage, actions groupées : contrat complet dans `web/README.md` (§13 ci-dessous). |
 | `GET /api/stats` | Vitesse par moteur, file en cours, précision de l'estimation. |
 | `GET /api/fonts` · `GET /api/fonts/<nom>` | Polices locales présentes · service de la police Hafs (boucle locale seulement). |
 | `POST /api/access` · page `/access` | Échange du jeton d'accès contre un cookie (mode test distant). |
@@ -223,30 +224,45 @@ La **basmala** est montrée comme un verset (texte du verset 1:1 du corpus, trad
 | `AQR_MAX_CONCURRENT` | analyses simultanées | 1 |
 | `AQR_FFMPEG`, `AQR_FFPROBE` | exécutables ffmpeg / ffprobe | du `PATH` |
 | `AQR_MAX_UPLOAD_BYTES`, `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafonds d'envoi | 500 Mo, 2 Gio |
+| `AQR_USER_QUOTA_BYTES` | quota de stockage par compte (`0` = illimité) | 5 Gio |
+| `AQR_DB_PATH`, `AQR_SIGNUP`, `AQR_SIGNUP_CODE`, `AQR_TRUST_PROXY`, `AQR_TIMEZONE`, `AQR_REPO_URL` | base, inscription, proxy, fuseau des noms, dépôt des liens de notes de version | voir `web/README.md` |
 | `AQR_ALLOWED_HOSTS`, `AQR_ACCESS_TOKEN`, `AQR_ACCESS_TTL_S` | mode test distant | vides, 3 600 s |
 | `AQR_SESSION_TTL_S` | purge des sessions inactives | 0 (désactivée) |
 
-## 13. Comptes, partage et préférences (phase 2) — **en cours de construction**
+## 13. Comptes, partage et préférences (phase 2) — livré
 
-> **Rien de ce qui suit n'existe encore.** Cette section décrit le plan, pour que le prochain contributeur
-> sache où va l'architecture ; elle sera réécrite quand chaque élément sera livré (et chaque livraison aura
-> sa note dans `docs/RELEASE-NOTES.md`).
+Plusieurs testeurs utilisent le même atelier. Tout ce qui suit **existe** (PR #70 pour le socle serveur, PR de
+l'interface de la phase 2 pour les écrans). Le contrat détaillé d'API est dans `web/README.md`, section
+« Comptes, partage et préférences » ; le design dans `docs/design/phase2.md`.
 
-**Situation actuelle (à remplacer).** Il n'y a ni compte ni mot de passe : l'atelier est mono-machine, les
-sessions sont des dossiers, le « testeur » n'est qu'un pseudonyme libre mémorisé dans le navigateur, et les
-préférences d'affichage (thème, police, taille, panneaux) vivent dans le `localStorage` du navigateur.
+**Ce qui est livré**
 
-**Ce qui est prévu :**
-
-| Élément | Intention |
+| Élément | Comment |
 |---|---|
-| **Comptes** | Inscription et connexion. |
-| **Base SQLite** | Premier stockage structuré : comptes, propriété des sessions, préférences, favoris. Les fichiers lourds (audio, prédiction, revue) resteraient sur le disque. |
-| **Audios globaux ou privés** | Par défaut, un audio est visible de tous ; son propriétaire peut le rendre privé. |
-| **Préférences par utilisateur, côté serveur** | Thème, police arabe, taille, panneaux : conservés avec le compte, plus seulement dans un navigateur. |
-| **Favoris et archivage** | Mettre une session en favori ; l'archiver sans la supprimer. |
-| **Pages « Sessions » et « Documentation »** | Une page dédiée à la liste des sessions ; un onglet qui affiche cette documentation (`docs/docs-index.json`). |
+| **Comptes** | Pseudonyme + mot de passe, **aucun compte pré-créé** : le premier inscrit est administrateur. Pages `/login` et `/register` (inscription `open` · `closed` · `code`, interrupteur serveur `AQR_SIGNUP`). Connexion par cookie `HttpOnly` ; mot de passe haché (scrypt). Le mode distant par jeton (`/access`, `AQR_ACCESS_TOKEN`) reste une couche réseau **en plus**. |
+| **Base SQLite** | `AQR_DB_PATH` : comptes, propriété et portée des sessions, préférences, favoris, « non lu ». Les fichiers lourds (audio, prédiction, revue) restent sur le disque. Migrations versionnées. |
+| **Global ou privé** | Un audio est **global** par défaut (visible de tous les testeurs, avec ses performances) ou **privé** (visible de son seul propriétaire, **administrateurs compris** : un privé d'un autre répond `404`). Choix à l'import (carte « Qui peut voir cet essai ? »), modifiable par le propriétaire ; privé → global demande une confirmation. |
+| **Préférences côté serveur** | 14 clés (`web/lib/preferences-schema.ts`, l'unique source) : thème, police et taille arabes, traduction, fenêtre visible, suivi de lecture, panneaux, filtre de la liste, vitesse, volume, raccourcis, onglet de revue, portée des nouveaux essais. Lues dans `app/layout.tsx` et posées sur `<html>` **avant le premier rendu** (aucun clignotement, sur tout appareil). Écrites par `PATCH` groupé (anti-rebond 600 ms) ; `localStorage` ne garde que le cache de la page de connexion et ce qui n'a pas pu partir. |
+| **Sessions à l'échelle** | `GET /api/sessions` pagine par curseur et filtre côté serveur. Barre de gauche allégée (file, 5 favoris, 8 récentes, « Voir toutes les sessions ») ; page `/sessions` : recherche, portée, filtres état/moteur/date (dans l'adresse), tri, groupes par date, « Charger plus » (20 par lot), sélection multiple et actions groupées. |
+| **Favoris, archivage, renommage** | Étoile par utilisateur ; archivage réversible (toast « Annuler ») ; renommage au double-clic ou au crayon ; nom par défaut calculé par le serveur et ligne « Contenu détecté ». |
+| **Revue multi-testeurs** | L'auteur d'un signalement est le **compte** (plus de saisie libre). Un testeur ne modifie pas le signalement d'un autre (l'interface le grise, le serveur le refuse : `rejected`). La **vérité terrain** est réservée aux administrateurs. |
+| **Documentation** | `/docs` et `/docs/<slug>` : navigation par document (liste blanche `docs/docs-index.json`), sommaire, rendu Markdown **sans HTML brut** (`react-markdown`, GFM), liens `.md` réécrits ; `/docs/release-notes` : chronologie lue dans `docs/RELEASE-NOTES.md`. |
+| **Statistiques et stockage** | `/compte/statistiques` et `/performance?vue=moi` : mes tests, mon audio, ma vitesse, mon espace ; `/performance` global ajoute la colonne « Testeur » et le stockage du serveur. Quota par compte (5 Gio par défaut) avec alerte à 80 %, import refusé avant l'envoi s'il dépasse l'espace libre. |
+| **Page Compte** | `/compte` (préférences, enregistrées toutes seules, avec pastille annoncée aux lecteurs d'écran), `/compte/statistiques`, `/compte/securite` (changer le mot de passe ; les autres connexions sont fermées). |
 
-**Ce que cela changera pour la sécurité** (à traiter avant livraison, non décidé) : mots de passe, sessions
-d'authentification, séparation entre utilisateurs, et l'exposition au-delà de la boucle locale, qui
-supposera la même rigueur que le mode test distant (§9) et davantage.
+**Pages** (`web/app/(app)/…` : le fournisseur du compte reste monté d'une page à l'autre) : `/` (atelier : revue de la
+session `?session=<id>` ou Nouvel essai), `/sessions`, `/performance`, `/docs`, `/compte`. Hors du groupe :
+`/login`, `/register`, `/access`.
+
+**Découpage du code côté navigateur** : `lib/api-client.ts` (erreurs lisibles, 401 → connexion) · `lib/prefs-sync.ts`
+(anti-rebond, reprise, cache) · `lib/sessions-filter.ts` (filtre ↔ adresse ↔ API) · `lib/session-feed.ts` et
+`session-groups.ts` (liste paginée qui vit, groupes par date) · `lib/storage-meter.ts` (jauge, refus avant envoi) ·
+`lib/docs-view.ts` et `release-notes.ts` (documentation) · `lib/review-access.ts` (qui peut modifier quoi).
+
+**Limites connues**
+
+- Pas de page d'administration des comptes (`/api/admin/users` existe, sans écran) ni de réinitialisation de mot de
+  passe par l'interface ; pas de suppression de compte.
+- La barre de stockage ne distingue pas audio et vidéo (le serveur ne mesure que le total).
+- Les limiteurs de débit vivent en mémoire d'un seul processus (voir `web/README.md`).
+- « Récentes » = les plus récentes importées (le serveur ne garde pas encore la date de dernière ouverture).

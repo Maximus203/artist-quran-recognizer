@@ -338,6 +338,17 @@ export function SessionsPage({ search }: { search: string }) {
     [feed.items, filter.sort],
   );
   const counts = feed.counts;
+  // La synthèse du haut décrit TOUTES mes sessions : elle ne suit pas la recherche ni les dates.
+  const overall = useRef(counts);
+  if (
+    counts &&
+    !filter.q.trim() &&
+    !filter.from &&
+    !filter.to &&
+    filter.engines.length === 0
+  )
+    overall.current = counts;
+  const summary = overall.current ?? counts;
   const noSessionAtAll =
     feed.status === "ready" &&
     feed.items.length === 0 &&
@@ -361,8 +372,8 @@ export function SessionsPage({ search }: { search: string }) {
         <div>
           <h1>Sessions</h1>
           <p aria-live="polite" data-testid="summary">
-            {counts
-              ? `${plural(counts.scopes.all, "session", "sessions")} · ${counts.scopes.mine} à toi · ${formatBytesFr(quota.used_bytes)} utilisés`
+            {summary
+              ? `${plural(summary.scopes.all, "session", "sessions")} · ${summary.scopes.mine} à toi · ${formatBytesFr(quota.used_bytes)} utilisés`
               : "Chargement…"}
           </p>
         </div>

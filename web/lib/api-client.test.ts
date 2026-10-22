@@ -73,14 +73,12 @@ describe("api", () => {
     vi.stubGlobal("location", { pathname: "/sessions", search: "", assign });
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          respond(401, {
-            error: "Connexion requise.",
-            code: "unauthenticated",
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        respond(401, {
+          error: "Connexion requise.",
+          code: "unauthenticated",
+        }),
+      ),
     );
     const error = await api<never>("/x").catch((e: ApiError) => e);
     expect(error.status).toBe(401);
@@ -92,14 +90,12 @@ describe("api", () => {
     vi.stubGlobal("location", { pathname: "/login", search: "", assign });
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          respond(401, {
-            error: "Identifiants incorrects.",
-            code: "bad_credentials",
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        respond(401, {
+          error: "Identifiants incorrects.",
+          code: "bad_credentials",
+        }),
+      ),
     );
     const error = await api<never>("/api/auth/login", { method: "POST" }).catch(
       (e: ApiError) => e,

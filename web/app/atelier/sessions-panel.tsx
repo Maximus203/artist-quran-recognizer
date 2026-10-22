@@ -35,9 +35,10 @@ function Row({
   onRetry: () => void;
 }) {
   const running = row.glyph === "running";
-  const status = session.mine
-    ? row.status
-    : `par ${session.owner?.username ?? "—"} · ${row.status}`;
+  const status =
+    session.mine || !session.owner
+      ? row.status
+      : `par ${session.owner?.username ?? "—"} · ${row.status}`;
   return (
     <li className={row.canRetry && session.can_edit ? "has-retry" : undefined}>
       <button

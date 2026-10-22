@@ -31,7 +31,7 @@ Le lecteur ne joue pas le fichier importé mais sa **copie d'écoute** : le mêm
 
 ## Tester un audio
 
-1. **Nouvel essai** (bouton de la barre du haut) : déposer ou choisir **plusieurs** audios et vidéos d'un coup (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 300 Mo maximum par défaut — MP4, MKV, MOV, AVI, M4V ou WebM ; 2 Gio maximum par défaut, seule la piste sonore est analysée). Chaque fichier est importé dès qu'il est choisi et **mis dans la file d'analyse** (`autorun`) ; un glisser-déposer n'importe où dans la page fait la même chose. Un seul fichier s'ouvre tout seul ; plusieurs restent dans la file, visible dans le panneau des sessions. Ou « Enregistrer une récitation » : autoriser l’accès au micro sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer ; « Analyser cette récitation » importe les octets originaux WebM/OGG/M4A et met l'analyse en file. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.
+1. **Nouvel essai** (bouton de la barre du haut) : déposer ou choisir **plusieurs** audios et vidéos d'un coup (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 500 Mo maximum par défaut — MP4, MKV, MOV, AVI, M4V ou WebM ; 2 Gio maximum par défaut, seule la piste sonore est analysée). Chaque fichier est importé dès qu'il est choisi et **mis dans la file d'analyse** (`autorun`) ; un glisser-déposer n'importe où dans la page fait la même chose. Un seul fichier s'ouvre tout seul ; plusieurs restent dans la file, visible dans le panneau des sessions. Ou « Enregistrer une récitation » : autoriser l’accès au micro sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer ; « Analyser cette récitation » importe les octets originaux WebM/OGG/M4A et met l'analyse en file. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.
 2. Facultatif (accordéon « Importer aussi un résultat existant ») : un JSON `aqr.recognition/1` du **même audio**. Le hash SHA-256 est contrôlé ; la prédiction importée garde ses octets d'origine ; le moteur ne tourne pas.
 3. Le panneau des sessions montre l'état de chaque analyse : en attente (rang dans la file), en cours (estimation du temps restant), terminée non lue (point), lue, en échec, annulée. Ouvrir une session terminée efface son point.
 4. Utiliser l'onde, les pistes, la liste des intervalles et le lecteur pour écouter. Les hypothèses déduites et les abstentions ont leurs propres affichages. « Sans temps » ne déplace pas le lecteur.
@@ -42,7 +42,7 @@ Le lecteur ne joue pas le fichier importé mais sa **copie d'écoute** : le mêm
 
 Direction « Encre & lapis » (`docs/design/atelier-direction.md`, tokens dans `docs/design/tokens.css`). `app/tokens.css` en est la copie, **identique** (un test le vérifie) ; aucune feuille ne porte de valeur visuelle en dur. Chaque zone a son composant (`app/atelier/*`) ; la logique pure vit dans `lib/` et est testée.
 
-- **Thème** : suit le système, bascule mémorisée (`aqr.ui.v1` dans le `localStorage`). Un petit script dans `<head>` pose thème, police arabe et taille **avant** le premier rendu (pas de flash).
+- **Thème** : suit le système ou le choix du compte (préférence `theme`, enregistrée côté serveur). `app/layout.tsx` pose thème, police arabe et taille sur `<html>` **côté serveur**, avant le premier rendu (pas de flash) ; sur les pages sans compte (connexion), un petit script reprend le thème mémorisé par le navigateur (`aqr.prefs.v2`).
 - **Panneaux** : sessions à gauche, revue humaine à droite, repliables (état mémorisé). Sous 1280 px ce sont des tiroirs (focus piégé, Échap, voile). La pastille du bouton de gauche signale du non lu ou une analyse en cours panneau fermé ; le titre de l'onglet porte le total non lu. Le panneau de revue n'existe que sur une session ouverte.
 - **Mobile (375 px)** : le passage actif passe avant la console, le lecteur est ancré en bas, le bouton drapeau du lecteur pose le début/la fin d'un signalement sans ouvrir le tiroir.
 - **Rafraîchissement** : la liste est sondée toutes les 3 s onglet visible avec une analyse active (10 s sinon, 15 s en arrière-plan) et au retour de l'onglet. Le point « non lu » ne disparaît que lorsqu'on **ouvre** le résultat (`POST /api/sessions/<id>/viewed`), jamais par le sondage.
@@ -149,7 +149,7 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 
 Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonyme + mot de passe), ses **préférences** (côté serveur, elles le suivent d'un appareil à l'autre), ses **favoris** et son **non lu**. Les audios importés sont **globaux** par défaut (visibles et écoutables par tous les testeurs connectés, avec leurs performances) ou **privés** (visibles de leur seul propriétaire).
 
-> **Pour l'interface (état du contrat : `web/lib/**` et `web/app/api/**` sont livrés, les écrans restent à brancher).** Toute l'API sauf `/api/auth/*`, `/api/access` et `/api/fonts*` exige une connexion : sans cookie valide, `401 { error, code: "unauthenticated" }`. Une page protégée appelle `requirePageUser()` (`lib/page-auth.ts`, composant serveur : redirige vers `/login?next=…`) ; `/login` et `/register` appellent `redirectIfSignedIn()`. **Il reste à écrire** les pages `/login` et `/register` (aucun écran n'existe encore pour elles) et à retirer `?relecteur=1` : l'onglet « Vérité terrain » devient `user.role === "admin"` (voir plus bas).
+> **Interface (livrée).** Toute l'API sauf `/api/auth/*`, `/api/access` et `/api/fonts*` exige une connexion : sans cookie valide, `401 { error, code: "unauthenticated" }`. Une page protégée appelle `requirePageUser()` (`lib/page-auth.ts`, composant serveur : redirige vers `/login?next=…`) ; `/login` et `/register` appellent `redirectIfSignedIn()`. Pages : `/` (atelier), `/sessions`, `/performance` (`?vue=moi`), `/docs`, `/docs/<slug>`, `/compte`, `/compte/statistiques`, `/compte/securite`, `/login`, `/register`, `/access`. Côté navigateur, `lib/api-client.ts` renvoie vers `/login` sur un `401` et rend toute erreur lisible. L'onglet « Vérité terrain » est réservé aux administrateurs (`user.role === "admin"`). La page `/access` (jeton du mode test distant) reste en vigueur : c'est la couche réseau, l'identité vient en plus.
 
 ### Variables
 
@@ -164,6 +164,7 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `AQR_REGISTER_PER_HOUR` | inscriptions par IP et par heure | `10` |
 | `AQR_USER_QUOTA_BYTES` | quota d'envoi par utilisateur (octets de fichiers importés, tous ses audios, archivés et privés compris) ; `0` = illimité ; une valeur invalide retombe sur le défaut | 5 Gio |
 | `AQR_TIMEZONE` | fuseau des noms horodatés (« Enregistrement du 22 oct. à 17:51 »), nom IANA | celui de la machine |
+| `AQR_REPO_URL` | adresse du dépôt, pour les liens « Demande de fusion n° NN » des notes de version | `https://github.com/Maximus203/artist-quran-recognizer` |
 
 ### Authentification
 
@@ -216,8 +217,9 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `volume` | nombre 0–1 | `1` |
 | `shortcutsEnabled` | booléen | `true` |
 | `reviewTab` | `sig` · `list` · `truth` | `sig` |
+| `defaultVisibility` | `global` · `private` : portée proposée à l'import et à l'enregistrement | `global` |
 
-Appliquer les préférences : lire `GET /api/me` au démarrage (une requête), écrire par `PATCH` au changement (anti-rebond côté client). Le script d'amorçage de `<head>` ne peut pas attendre le réseau : il garde `localStorage` (`aqr.ui.v1`) comme **cache de premier rendu** (pas de flash), réconcilié avec le serveur dès que `/api/me` répond ; le serveur fait foi.
+Appliquer les préférences : le serveur les lit dans `app/layout.tsx` et les pose sur `<html>` (thème, police, taille) ; le navigateur les reçoit en props (`ShellProvider`, `app/atelier/shell.tsx`) et écrit par `PATCH` groupé au changement (anti-rebond 600 ms, reprise après échec). `localStorage` (`aqr.prefs.v2`) ne sert que de cache pour la page de connexion et pour les changements qui n'ont pas pu partir ; le serveur fait foi.
 
 ### Sessions à l'échelle (`GET /api/sessions`)
 
@@ -325,7 +327,7 @@ Le schéma commenté ligne à ligne est dans `db/migrations/001_comptes_et_sessi
 - Les limiteurs de débit vivent en mémoire d'un seul processus : un redémarrage les remet à zéro, et plusieurs instances du serveur ne les partagent pas.
 - Sans `AQR_TRUST_PROXY=1`, toutes les requêtes comptent comme une même IP : derrière un reverse proxy, **l'activer**, sinon un testeur qui se trompe verrouille les autres.
 - Le quota est vérifié à l'import ; deux imports simultanés du même compte peuvent le dépasser d'un fichier.
-- `npm run smoke:browser` (`e2e/browser-smoke.mjs`) n'a pas encore de compte : il échouera en `401` tant que l'étape de connexion n'y est pas ajoutée.
+- `npm run smoke:browser` (`e2e/browser-smoke.mjs`) crée un compte jetable par l'écran d'inscription (base vide lancée par le smoke) ou se connecte avec `AQR_SMOKE_USER` / `AQR_SMOKE_PASSWORD` sur un serveur déjà lancé (`AQR_SMOKE_URL`).
 
 ## Performance
 

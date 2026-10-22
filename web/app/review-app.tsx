@@ -210,12 +210,14 @@ export default function ReviewApp() {
   }, [currentId, currentView?.unread, detail, visible, patch, sidebar]);
 
   /* ── forme d'onde : crêtes de la copie d'écoute, calculées par le serveur ── */
+  // Seulement une fois la session connue : une session absente ou privée n'a pas de forme d'onde.
+  const detailId = detail?.session.id ?? null;
   useEffect(() => {
-    if (!currentId) return;
+    if (!detailId) return;
     let cancelled = false;
     setPeaks(null);
     setListening("pending");
-    fetch(`/api/sessions/${currentId}/peaks`, { cache: "no-store" })
+    fetch(`/api/sessions/${detailId}/peaks`, { cache: "no-store" })
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error);
@@ -233,7 +235,7 @@ export default function ReviewApp() {
     return () => {
       cancelled = true;
     };
-  }, [currentId]);
+  }, [detailId]);
 
   /* ── revue humaine : l'auteur est le compte connecté ── */
   const targetAt = useCallback((time: number) => {
