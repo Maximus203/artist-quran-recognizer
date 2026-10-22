@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-22 — La traduction suit le passage entendu et se surligne en direct
 Étiquettes : utilisateur, technique
-PR : -
+PR : #73
 
 **Ce qui change.** La carte « Passage actif » ne montre plus que la traduction de ce qui est affiché en arabe : quand le moteur a découpé la traduction, tu lis « Traduction du passage (mots 15–23) », avec « … » aux bords si le passage commence ou finit au milieu du verset. Quand le récitant s'arrête, revient en arrière ou répète, la traduction repart exactement là où la reprise démarre. Pendant la lecture, le mot arabe récité et le fragment de traduction qui lui correspond sont surlignés en même temps (fond teinté et trait, pas seulement la couleur) ; à l'arrêt, un clic sur un mot arabe place le lecteur à son début. Un interrupteur « Surligner en direct » (carte du passage et page Compte, activé par défaut, enregistré avec ton compte) coupe le surlignage.
 
