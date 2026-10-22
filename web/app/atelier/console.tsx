@@ -61,7 +61,7 @@ function Transport({
       <button
         type="button"
         className="seek"
-        aria-label="Reculer de 5 secondes"
+        aria-label="−5 s, reculer de 5 secondes"
         onClick={() => player.skip(-5)}
       >
         −5 s
@@ -86,7 +86,7 @@ function Transport({
       <button
         type="button"
         className="seek"
-        aria-label="Avancer de 5 secondes"
+        aria-label="+5 s, avancer de 5 secondes"
         onClick={() => player.skip(5)}
       >
         +5 s

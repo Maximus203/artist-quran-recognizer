@@ -394,6 +394,10 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       [duration, step],
     );
 
+    // Les segments des pistes sont des raccourcis au pointeur : à l'échelle d'un fichier entier ils
+    // font quelques pixels. Hors de l'ordre de tabulation et masqués aux lecteurs d'écran, car la liste
+    // des intervalles (lignes de 44 px, au clavier) fait exactement la même chose (WCAG 2.5.8 : contrôle
+    // équivalent sur la même page).
     const waveSegs = intervals.map((item, index) =>
       item.t ? (
         <button
@@ -401,6 +405,8 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
           type="button"
           data-testid="wave-seg"
           data-index={index}
+          tabIndex={-1}
+          aria-hidden="true"
           className={`wave-seg s-${intervalStyle(item)}`}
           style={
             {
@@ -431,6 +437,8 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
             type="button"
             data-testid="lane-seg"
             data-index={index}
+            tabIndex={-1}
+            aria-hidden="true"
             className={`seg s-${intervalStyle(item)}`}
             style={
               {
@@ -466,6 +474,7 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
             type="button"
             className="rv-hit"
             tabIndex={-1}
+            aria-hidden="true"
             aria-label={`Signalement de ${a.tester} à ${formatTenths(a.start_s)}`}
             onClick={() => props.onSelectAnnotation(a.id)}
           />
@@ -515,6 +524,8 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
         key={a.id}
         type="button"
         data-testid="review-lane-item"
+        tabIndex={-1}
+        aria-hidden="true"
         className={`human${a.status === "draft" ? " draft" : ""}${a.end_s === null ? " pt" : ""}${selectedAnnotationId === a.id ? " sel" : ""}`}
         style={
           {

@@ -43,6 +43,7 @@ import { useStoreValue } from "./atelier/hooks";
 
 type Peaks = { duration: number; peaks: number[] };
 const TOAST_MS = 6000;
+const VIEWED_RETRY_MS = 4000;
 
 export default function ReviewApp() {
   const { prefs, ready, update } = usePrefs();
@@ -80,7 +81,7 @@ export default function ReviewApp() {
   const rightPanel = useRef<HTMLElement>(null);
   const leftButton = useRef<HTMLButtonElement>(null);
   const rightButton = useRef<HTMLButtonElement>(null);
-  const viewedSent = useRef(new Set<string>());
+  const viewedSent = useRef(new Map<string, number>());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentView = views.find((v) => v.id === currentId) ?? null;
@@ -169,8 +170,11 @@ export default function ReviewApp() {
   /* « Non lu » disparaît quand on OUVRE le résultat, jamais par simple sondage. */
   useEffect(() => {
     if (!currentId || !currentView?.unread || !detail || !visible) return;
-    if (viewedSent.current.has(currentId)) return;
-    viewedSent.current.add(currentId);
+    // Une session affichée est lue. Si le serveur la redonne « non lue » juste après (fin tardive du
+    // processus du moteur qui réécrit l'issue), on le redit, sans jamais marteler le serveur.
+    const last = viewedSent.current.get(currentId);
+    if (last !== undefined && Date.now() - last < VIEWED_RETRY_MS) return;
+    viewedSent.current.set(currentId, Date.now());
     markViewed(currentId)
       .then(refresh)
       .catch(() => viewedSent.current.delete(currentId));
@@ -709,7 +713,7 @@ export default function ReviewApp() {
       {detail ? (
         <audio
           key={detail.session.id}
-          ref={player.audioRef}
+          ref={player.attach}
           src={`/api/sessions/${detail.session.id}/audio`}
           preload="metadata"
           aria-label="Lecteur audio"

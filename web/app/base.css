@@ -256,6 +256,11 @@ input[type="range"] {
   background: transparent;
   margin: 0;
 }
+@media (pointer: coarse) {
+  input[type="range"] {
+    height: var(--hit);
+  }
+}
 input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
@@ -360,7 +365,6 @@ input[type="range"]::-moz-range-thumb {
 .chip .n {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  opacity: 0.85;
 }
 
 /* ───────── Pastilles de statut des intervalles (mêmes codes partout) ───────── */

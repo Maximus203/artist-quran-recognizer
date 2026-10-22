@@ -61,23 +61,22 @@ function Body({
       return (
         <>
           <div className="p-meta">
-            {model.badges.map((label, i) => (
-              <span
-                className="badge"
-                key={label}
-                data-testid={i === 0 ? "badges" : undefined}
-              >
-                {i === 0 ? <span className="sw s-recognized" /> : null}
-                {label}
-              </span>
-            ))}
+            <span className="badges" data-testid="badges">
+              {model.badges.map((label, i) => (
+                <span className="badge" key={label}>
+                  {i === 0 ? <span className="sw s-recognized" /> : null}
+                  {label}
+                </span>
+              ))}
+            </span>
             <span className="p-ref ref" data-testid="ref">
               {model.ref}
             </span>
             <Range range={model.range} />
           </div>
           <p className="arabic" lang="ar" dir="rtl" data-testid="arabic">
-            {model.arabic}
+            {/* Le texte du corpus seul ; le médaillon de fin de verset est un décor, hors du texte. */}
+            <span data-testid="arabic-text">{model.arabic}</span>
             {model.ayahNumber ? (
               <span className="ayah-end" aria-hidden="true">
                 {model.ayahNumber}

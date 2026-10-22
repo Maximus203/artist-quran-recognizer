@@ -207,7 +207,12 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
               </p>
               <details className="diag" style={{ padding: "var(--sp-3) 0 0" }}>
                 <summary>Voir en tableau</summary>
-                <div className="scroll-x">
+                <div
+                  className="scroll-x"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Vitesse par moteur, en tableau"
+                >
                   <table className="table">
                     <thead>
                       <tr>
@@ -313,7 +318,12 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
         {model.recent.length === 0 ? (
           <p className="hint">Aucune analyse terminée sur cette période.</p>
         ) : (
-          <div className="scroll-x">
+          <div
+            className="scroll-x"
+            tabIndex={0}
+            role="region"
+            aria-label="Dernières analyses, en tableau"
+          >
             <table className="table">
               <thead>
                 <tr>

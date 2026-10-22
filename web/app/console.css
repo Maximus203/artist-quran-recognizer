@@ -566,10 +566,13 @@
 }
 .trace-hint {
   position: absolute;
-  left: 50%;
+  left: 0;
+  right: 0;
   top: 6px;
-  transform: translateX(-50%);
-  max-width: 92%;
+  width: max-content;
+  max-width: calc(100% - var(--sp-4));
+  margin: 0 auto;
+  text-align: center;
   z-index: 5;
   padding: 6px 12px;
   border-radius: var(--r-pill);
