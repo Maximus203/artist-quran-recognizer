@@ -181,6 +181,7 @@ class ViterbiSequenceDecoder:
         est mesuré."""
         spans = candidate.spans
         if len(candidate.times) == len(spans):
+            words = candidate.word_times if len(candidate.word_times) == len(spans) else ()
             return [
                 Detection(
                     span=span,
@@ -188,8 +189,9 @@ class ViterbiSequenceDecoder:
                     status=status,
                     confidence=candidate.score,
                     candidates=candidates,
+                    word_times=words[n] if words else (),
                 )
-                for span, measured in zip(spans, candidate.times, strict=True)
+                for n, (span, measured) in enumerate(zip(spans, candidate.times, strict=True))
             ]
         if len(spans) == 1:
             return [
@@ -263,6 +265,7 @@ class ViterbiSequenceDecoder:
                     status=Status.RECOGNIZED,
                     confidence=min(prev.confidence, det.confidence),
                     is_repetition=prev.is_repetition,
+                    word_times=_joined_word_times(prev, det),
                 )
             else:
                 merged.append(det)
@@ -308,3 +311,11 @@ class ViterbiSequenceDecoder:
             confidence=0.0,
             time_interpolated=interpolated,
         )
+
+
+def _joined_word_times(first: Detection, second: Detection) -> tuple[TimeSpan, ...]:
+    """Temps au mot de deux moitiés fusionnées : bout à bout, seulement si les deux en ont et si
+    elles se touchent (un mot sans temps au raccord ne se comble pas : jamais un temps inventé)."""
+    if first.span.last_word + 1 != second.span.first_word:
+        return ()
+    return (*first.word_times, *second.word_times) if first.word_times and second.word_times else ()

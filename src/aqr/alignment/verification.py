@@ -13,7 +13,8 @@ bords des fenêtres compris) sur le treillis CTC de ses fenêtres (`PassageAlign
   toujours au moins le score que le matcher lui a donné seul.
 
 Un verset prouvé seul (une fenêtre, assez de mots) reçoit aussi les temps de l'alignement si l'audio
-le soutient ; sinon il garde les bords de sa fenêtre.
+le soutient ; sinon il garde les bords de sa fenêtre. Les temps sont donnés mot par mot
+(`Candidate.word_times`, ADR-0010) : le temps d'une plage est celui de son premier mot au dernier.
 
 Un verset commencé est toujours récité jusqu'au bout (le récitant peut respirer, ou reprendre
 quelques mots en arrière). Après un candidat retenu dont la plage s'arrête avant la fin du verset,
@@ -42,7 +43,14 @@ from aqr.alignment.forced import (
 )
 from aqr.corpus.alignment_text import AlignmentTexts, recited_span
 from aqr.corpus.normalize import normalize_arabic
-from aqr.decoding.chains import Chain, ChainConfig, Observation, chain_spans, find_chains
+from aqr.decoding.chains import (
+    Chain,
+    ChainConfig,
+    Observation,
+    chain_spans,
+    find_chains,
+    recited_start,
+)
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import AudioClip, Candidate, CtcAcousticModel, CtcLattice
 
@@ -67,6 +75,9 @@ class AcousticCheckConfig:
     """Similarité (Dice des lettres normalisées) exigée entre la transcription de la fenêtre et le
     texte aligné. Provisoire : 0,6 écarte toutes les fausses suites relevées sur le lot 1 dev
     (2026-10-20), au prix de quelques reprises mal transcrites."""
+    head: bool = True
+    """Prédire puis vérifier le DÉBUT d'un verset dont la suite est reconnue (ADR-0010) : le
+    récitant commence, fait une pause, continue ; la fenêtre d'avant la pause reste muette."""
     continuation_following_verses: int = 1
     """Versets suivants ajoutés au texte attendu (le reste du verset peut finir tôt dans la
     fenêtre) ; l'alignement à fin libre dit jusqu'où l'audio va."""
@@ -82,12 +93,17 @@ class ChainCheck:
     """None : le texte ne tient pas dans le passage (trop de symboles pour ses trames)."""
     accepted: bool
     kind: str = "chain"
-    """`chain` : suite de versets vérifiée ; `continuation` : suite d'un verset commencé."""
+    """`chain` : suite de versets vérifiée ; `continuation` : suite d'un verset commencé ;
+    `neighbor` : détection `uncertain` qui prolonge un verset reconnu voisin ; `head` : début
+    d'un verset dont la suite est reconnue (ADR-0010)."""
     text_similarity: float | None = None
     """Suite d'un verset : similarité entre la transcription de la fenêtre et le texte aligné."""
 
 
 Link = tuple[int, int]
+
+_EDGE_S = 0.001
+"""Durée d'un mot que l'alignement place hors de la fenêtre et qu'on ramène à son bord."""
 
 
 class _Words(Protocol):
@@ -137,6 +153,26 @@ class AcousticVerifier:
         result = self._aligner.align(self._lattice(clip, window), list(spans))
         return None if result is None else result.evidence.llr_per_frame
 
+    def verify_alone(
+        self, clip: AudioClip, window: TimeSpan, candidate: Candidate
+    ) -> tuple[ChainCheck, Candidate | None]:
+        """Un candidat de la fenêtre, soutenu ou non par l'audio (promotion par le voisin reconnu,
+        ADR-0010). Soutenu (même seuil que toute suite) : le candidat prend au moins le seuil du
+        décodeur, avec les mots et les temps de l'alignement du texte du corpus (I1) ; sinon None,
+        rien n'est promu (I3)."""
+        result = self._aligner.align(self._lattice(clip, window), list(candidate.spans))
+        llr = None if result is None else result.evidence.llr_per_frame
+        accepted = result is not None and llr is not None and llr >= self._threshold
+        check = ChainCheck(window, candidate.spans, llr, accepted, kind="neighbor")
+        if not accepted or result is None:
+            return check, None
+        confirmed = replace(
+            candidate, score=max(candidate.score, candidate.quality or 0.0, self._floor)
+        )
+        if not self._config.word_times:
+            return check, confirmed
+        return check, _with_words(confirmed, [w for a in result.spans for w in a.words], window)
+
     def verify(
         self,
         clip: AudioClip,
@@ -164,7 +200,105 @@ class AcousticVerifier:
             out.append((time, decided))
         if self._config.continuation and heard is not None:
             checks.extend(self._continue(clip, out, set(blocked), heard))
+        if self._config.head and heard is not None:
+            checks.extend(self._precede(clip, out, set(blocked), heard))
         return out, tuple(checks)
+
+    # -- Début d'un verset dont la suite est reconnue ---------------------------------------------
+    def _precede(
+        self,
+        clip: AudioClip,
+        observations: list[Observation],
+        blocked: set[int],
+        heard: Sequence[str],
+    ) -> list[ChainCheck]:
+        """Fenêtre sans verset retenu JUSTE AVANT un candidat retenu qui ne commence pas son
+        verset : le début manquant (récitant qui s'arrête au milieu du verset) est prédit puis
+        vérifié sur l'audio ET la transcription de la fenêtre, comme la suite d'un verset commencé.
+        Sans soutien (autre riwaya, parole non coranique), l'abstention reste."""
+        checks: list[ChainCheck] = []
+        for i in range(1, len(observations)):
+            prior = i - 1
+            window, candidates = observations[prior]
+            if prior in blocked or any(c.score >= self._floor for c in candidates):
+                continue
+            found: list[Candidate] = []
+            for candidate in observations[i][1]:
+                first = candidate.span
+                if candidate.score < self._floor or first.first_word <= recited_start(first.ref):
+                    continue
+                before = self._known_before(observations, prior, first)
+                check, head = self._head(clip, window, first, before, heard[prior])
+                if check is not None:
+                    checks.append(check)
+                if head is not None:
+                    found.append(head)
+            if found:
+                observations[prior] = (window, [*found, *candidates])
+        return checks
+
+    def _known_before(
+        self, observations: Sequence[Observation], prior: int, after: WordSpan
+    ) -> int:
+        """Dernier mot du même verset déjà retenu dans la fenêtre qui précède celle à prédire (le
+        trou est alors au milieu du verset, pas à son début) ; 0 s'il n'y en a pas."""
+        if prior < 1:
+            return 0
+        lasts = [
+            c.spans[-1].last_word
+            for c in observations[prior - 1][1]
+            if c.score >= self._floor
+            and c.spans[-1].ref == after.ref
+            and c.spans[-1].last_word < after.first_word
+        ]
+        return max(lasts, default=0)
+
+    def _head(
+        self, clip: AudioClip, window: TimeSpan, begun: WordSpan, known: int, heard: str
+    ) -> tuple[ChainCheck | None, Candidate | None]:
+        """Le début du verset (ou, si `known` mots en sont déjà retenus dans la fenêtre d'avant, le
+        trou qui sépare les deux morceaux), repris de `continuation_reprise_words` mots en arrière
+        et poussé jusqu'à autant de mots après la coupure : la suite peut les reprendre. Aligné,
+        fin libre, sur la fenêtre. Il doit atteindre le mot qui précède la suite (à `word_slack`
+        près) : sinon le milieu du verset n'a aucune preuve."""
+        total = len(self._corpus.words(begun.ref))
+        reprise = self._config.continuation_reprise_words
+        first = recited_start(begun.ref)
+        end = min(total, begun.first_word - 1 + reprise)
+        starts = [first]
+        if known:  # le récitant a pu reprendre quelques mots avant la coupure : le meilleur départ
+            starts = list(range(known + 1, max(first, known + 1 - reprise) - 1, -1))
+        lattice = self._lattice(clip, window)
+        best: tuple[float, PassageAlignment, WordSpan] | None = None
+        for start in (s for s in starts if s <= end):
+            span = WordSpan(begun.ref, start, end)
+            tried = self._aligner.align(lattice, [span], free_end=True)
+            if tried is not None and (best is None or tried.evidence.llr_per_frame > best[0]):
+                best = (tried.evidence.llr_per_frame, tried, span)
+        if best is None:
+            if all(s > end for s in starts):
+                return None, None
+            return ChainCheck(
+                window, (WordSpan(begun.ref, starts[-1], end),), None, False, kind="head"
+            ), None
+        _llr, result, _span = best
+        aligned = tuple(a.span for a in result.spans if isinstance(a.span, WordSpan))
+        llr = result.evidence.llr_per_frame
+        similarity = self._similarity(aligned, heard)
+        reaches = aligned[-1].last_word >= begun.first_word - 1 - self._chain.word_slack
+        accepted = (
+            reaches
+            and llr >= self._threshold
+            and similarity >= self._config.continuation_min_text_similarity
+        )
+        check = ChainCheck(window, aligned, llr, accepted, "head", round(similarity, 4))
+        if not accepted:
+            return check, None
+        words = [w for a in result.spans for w in a.words]
+        seed = Candidate(span=aligned[0], score=self._floor, explained=float(len(words)))
+        if not self._config.word_times:
+            return check, seed
+        return check, _with_words(seed, words, window)
 
     # -- Suite d'un verset commencé ---------------------------------------------------------------
     def _continue(
@@ -324,7 +458,16 @@ class AcousticVerifier:
         result = self._aligner.align(self._lattice(clip, window), list(candidate.spans))
         if result is None or result.evidence.llr_per_frame < self._threshold:
             return candidate
-        return replace(candidate, times=tuple(aligned.time for aligned in result.spans))
+        words = tuple(tuple(w.time for w in aligned.words) for aligned in result.spans)
+        complete = all(
+            len(group) == span.last_word - span.first_word + 1
+            for group, span in zip(words, candidate.spans, strict=True)
+        )
+        return replace(
+            candidate,
+            times=tuple(aligned.time for aligned in result.spans),
+            word_times=words if complete else (),
+        )
 
 
 def _with_words(candidate: Candidate, words: Sequence[AlignedWord], window: TimeSpan) -> Candidate:
@@ -332,7 +475,8 @@ def _with_words(candidate: Candidate, words: Sequence[AlignedWord], window: Time
 
     Le temps reste dans la fenêtre : au-delà, le segmenteur n'a pas entendu de voix (l'énergie
     d'une pause ou d'une respiration prolongeait sinon la fin jusqu'au verset suivant : +2,7 s
-    mesurés sur EveryAyah, Husary 67:4)."""
+    mesurés sur EveryAyah, Husary 67:4). Le temps de chaque mot est borné de la même façon, si bien
+    que le temps d'une plage est exactement celui de son premier mot au dernier (ADR-0010)."""
     groups: list[list[AlignedWord]] = []
     for word in words:
         if groups and groups[-1][0].ref == word.ref:
@@ -341,15 +485,42 @@ def _with_words(candidate: Candidate, words: Sequence[AlignedWord], window: Time
             groups.append([word])
     spans: list[WordSpan] = []
     times: list[TimeSpan] = []
+    per_word: list[tuple[TimeSpan, ...]] = []
+    complete = True
     for group in groups:
         ref = group[0].ref
         assert ref is not None  # une suite ne contient que des versets
         spans.append(WordSpan(ref, group[0].word, group[-1].word))
-        start = max(group[0].time.start_s, window.start_s)
-        end = min(group[-1].time.end_s, window.end_s)
-        if end <= start:  # mot placé hors de toute fenêtre : le temps de l'alignement fait foi
-            start, end = group[0].time.start_s, group[-1].time.end_s
-        times.append(TimeSpan(start, end))
+        inside = _within(group, window)
+        times.append(TimeSpan(inside[0].start_s, inside[-1].end_s))
+        per_word.append(tuple(inside))
+        complete = complete and [w.word for w in group] == list(
+            range(group[0].word, group[-1].word + 1)
+        )
     return replace(
-        candidate, span=spans[0], continuation=tuple(spans[1:]), query_counts=(), times=tuple(times)
+        candidate,
+        span=spans[0],
+        continuation=tuple(spans[1:]),
+        query_counts=(),
+        times=tuple(times),
+        word_times=tuple(per_word) if complete else (),
     )
+
+
+def _within(group: Sequence[AlignedWord], window: TimeSpan) -> list[TimeSpan]:
+    """Temps des mots d'un verset bornés à la fenêtre. Un mot entièrement hors de la fenêtre y est
+    ramené à son bord (durée `_EDGE_S`) ; si tous le sont, le temps de l'alignement fait foi."""
+    clamped = [
+        (max(w.time.start_s, window.start_s), min(w.time.end_s, window.end_s)) for w in group
+    ]
+    if all(end <= start for start, end in clamped):
+        return [w.time for w in group]
+    out: list[TimeSpan] = []
+    for w, (start, end) in zip(group, clamped, strict=True):
+        if end > start:
+            out.append(TimeSpan(start, end))
+        elif w.time.start_s >= window.end_s:
+            out.append(TimeSpan(window.end_s - _EDGE_S, window.end_s))
+        else:
+            out.append(TimeSpan(window.start_s, window.start_s + _EDGE_S))
+    return out
