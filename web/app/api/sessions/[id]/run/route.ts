@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { launch, cancel, ensureQueueRecovered } from "@/lib/jobs";
 import { httpError } from "@/lib/errors";
-import { isLocalRequest } from "@/lib/local-request";
+import { apiError, json } from "@/lib/http";
+import { sessionAccess } from "@/lib/route-guard";
 import { parseAsrChoice } from "@/lib/asr-choice";
 export const runtime = "nodejs";
 
@@ -22,34 +22,38 @@ async function requestedAsr(request: Request) {
   return "asr" in body ? parseAsrChoice(body.asr) : undefined;
 }
 
-/** Met l'analyse en file : `{ state: "running" | "queued", queue_position }`. */
+/** Met l'analyse en file : `{ state: "running" | "queued", queue_position }`. Propriétaire ou administrateur. */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request, true))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "run", {
+    mutation: true,
+  });
+  if (!access.ok) return access.response;
   try {
     const asr = await requestedAsr(request);
     await ensureQueueRecovered().catch(() => []);
-    return NextResponse.json(await launch((await params).id, asr));
+    return json(await launch(access.id, asr));
   } catch (e) {
     const { status, message } = httpError(e, "Démarrage impossible");
-    return NextResponse.json({ error: message }, { status });
+    return apiError(status, message);
   }
 }
-/** Annule l'analyse : retirée de la file si elle attend, processus tué si elle tourne. */
+/** Annule l'analyse : retirée de la file si elle attend, processus tué si elle tourne. Propriétaire ou administrateur. */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request, true))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "run", {
+    mutation: true,
+  });
+  if (!access.ok) return access.response;
   try {
-    await cancel((await params).id);
-    return NextResponse.json({ state: "cancelled" });
+    await cancel(access.id);
+    return json({ state: "cancelled" });
   } catch (e) {
     const { status, message } = httpError(e, "Annulation impossible");
-    return NextResponse.json({ error: message }, { status });
+    return apiError(status, message);
   }
 }

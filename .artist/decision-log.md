@@ -1154,3 +1154,52 @@
   vérifie que le texte de la basmala est exactement `repo.text(1:1)` et que `label_ar` est la constante du label.
 - **Mesuré** : cascade réelle sur `test-55.webm` (55:1-4 précédé de la basmala) : intervalle basmala 1,29-4,33 s avec
   texte et traduction ; `corpus_check --surah 55` OK.
+
+## 2026-10-22 — Phase 2 « multi-testeurs » : comptes, partage et préférences (socle backend)
+- **Besoin** : plusieurs testeurs utilisent l'atelier sur la machine de Cherif, bientôt sur un hébergement : chacun
+  son compte, des audios globaux (partagés avec leurs performances) ou privés, des préférences par utilisateur
+  côté serveur, une liste de sessions qui passe à l'échelle (curseur, recherche, favoris, archives), des quotas.
+- **Décision** : SQLite via `node:sqlite` (Node 24, aucune dépendance native), un fichier `aqr.sqlite` dans le
+  dossier de données (`AQR_DB_PATH`), mode WAL, clés étrangères, migrations versionnées immuables
+  (`web/db/migrations`). Les fichiers lourds restent sur disque ; `session.json` reste la source de vérité de
+  l'état d'une analyse et la base en garde un **miroir** (recopié par un crochet de `saveSession`, motif
+  Observer : `store.ts` ne connaît pas la base). Couches : routes (`app/api`) → garde (`route-guard.ts`) →
+  autorisations pures (`access.ts`) → services (`session-service.ts`, `auth.ts`) → dépôts SQL (`session-index.ts`,
+  `users.ts`, `preferences.ts`). Patterns : Repository (SQL), Observer (crochets de session), Strategy implicite
+  (portée → SQL dans `session-query.ts`), Factory (`createLimiters`, `openDatabase`), dépendances injectées pour
+  tester sans serveur.
+- **Écartés** :
+  - *PostgreSQL* : un service de plus à installer, sauvegarder et sécuriser pour quelques testeurs sur une
+    machine ; SQLite en WAL tient très largement la charge visée et se déplace avec le dossier de données.
+    La couche « dépôts » isole le SQL : un portage reste possible si l'hébergement public l'exige.
+  - *JWT sans état* : non révocable (déconnexion, désactivation d'un compte, changement de mot de passe) sans
+    liste de révocation, donc un état serveur de toute façon. Jeton opaque de 256 bits, **seul son SHA-256** en
+    base : une fuite de la base ne donne aucune connexion.
+  - *Argon2 (module natif)* : demande un binaire par plateforme (Windows + Linux) alors que `node:crypto.scrypt`
+    est intégré, mémoire-dur, et ses paramètres voyagent dans l'empreinte (`needsRehash` permet de les durcir).
+  - *Better-sqlite3 / ORM (Prisma, Drizzle)* : dépendance native ou générateur de code pour ~6 tables ; le SQL
+    paramétré direct est court et testé.
+  - *Rate-limit en base* : un verrou qui survit au redémarrage ne vaut pas la complexité ici (et un
+    redémarrage est un événement visible de l'administrateur) ; limiteurs en mémoire, injectables, testés avec
+    une horloge simulée. Limite assumée et documentée.
+  - *Archiver par utilisateur* : la spécification place `archived_at` sur la session ; archivé = pour tous.
+  - *Administrateur qui voit les privés des autres* : refusé, un privé l'est pour tous (404) ; l'administrateur
+    modifie ce qu'il VOIT. Évite qu'un compte « root » lise des enregistrements que leur auteur a protégés.
+  - *Renommer automatiquement une session avec son `content_label`* : un nom qui change seul surprend ; le nom
+    reste (choisi ou dérivé du fichier), l'étiquette est un champ à part que l'interface montre en sous-titre.
+- **Choix** :
+  - Premier compte = administrateur, décidé DANS l'instruction d'insertion (atomique). `AQR_SIGNUP=closed` laisse
+    quand même créer le tout premier compte (amorçage), sinon une base vide ne pourrait jamais avoir d'administrateur.
+  - Un privé est `404` (pas `403`) ; `403` seulement pour « visible mais non modifiable ».
+  - « Non lu » par utilisateur : seul le propriétaire d'une session terminée la voit non lue, jusqu'à ce qu'il
+    l'ouvre ; une relance redevient non lue (comparaison `viewed_at` ≥ `finished_at`).
+  - Signalements : l'auteur est toujours le compte connecté ; un testeur ne modifie ni ne supprime le signalement
+    d'un autre (administrateurs exceptés), refus renvoyés dans `rejected`. Plus strict que l'ancien comportement
+    (édition libre) pour que l'attribution ne soit pas falsifiable.
+  - Vérité terrain réservée aux administrateurs ; le relecteur écrit dans le manifeste est leur pseudonyme.
+  - Sessions existantes importées au premier démarrage : sans propriétaire, globales, nom par défaut dérivé du
+    nom de fichier (au lieu du nom brut) pour que les horodatages d'enregistreur deviennent lisibles.
+  - Journal `analysis_log` séparé : « le nombre de tests » survit à la suppression d'une session.
+- **Risques connus** : perdre `aqr.sqlite` rend globales à la réimportation les sessions qui étaient privées
+  (sauvegarder la base avec le dossier de données) ; limiteurs en mémoire ; quota vérifié à l'import (deux
+  imports simultanés peuvent le dépasser d'un fichier).
