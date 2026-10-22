@@ -37,6 +37,17 @@ Socle serveur (contrat d'API : `web/README.md`, « File d'attente, vidéos, « n
 - `viewed` sur une session non terminée ne la marque pas (`viewed_at` reste `null`).
 - Une analyse dont l'audio a disparu finit `failed` avec un message ; elle ne bloque pas la file.
 - Aucune session en attente n'est purgée par `AQR_SESSION_TTL_S`.
+- **Suppression en même temps qu'un lancement ou une annulation** (deux onglets) : jamais de dossier fantôme
+  (un `session.json` seul, sans audio) ; la suppression d'une analyse qui vient de partir est refusée aussitôt (`400`),
+  elle n'attend pas la fin du moteur ; `annuler`/`relancer` après une suppression : `404`.
+- Session inconnue ou identifiant invalide sur `run`, `DELETE run`, `DELETE session`, `viewed` : `404 Session introuvable`,
+  jamais un chemin local ni `ENOENT` dans le message ; idem dans `session.error` (« Fichier introuvable sur le disque… »).
+- `POST …/run` avec un corps JSON illisible, `[]` ou `null` : `400` (et non un lancement avec le moteur par défaut).
+- Fichier audio ou vidéo **illisible** (en-tête corrompu) : `422` à l'import ; nom réduit à `.mp3` ou à des espaces :
+  `400 « Le nom du fichier est vide »` ; nom de plus de 255 caractères : tronqué en gardant l'extension ; résultat joint
+  invalide : message français court, jamais la trace de l'analyseur.
+- `queued_at` est strictement croissant le long de la file, même avec des lancements simultanés.
+- MKV/WebM : `audio_duration_s` à l'import est la durée de la piste audio (étiquette `DURATION`), pas celle du conteneur.
 - Aucun rejet non géré : suppression d'une session en attente, annulation pendant le lancement, interpréteur absent.
 
 ## Scénarios d'écran (à jouer quand l'interface sera refaite sur ce contrat)
