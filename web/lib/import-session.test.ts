@@ -12,8 +12,10 @@ import {
   sanitizeName,
   uploadLimitFor,
   type ImportDeps,
+  type ImportOwner,
 } from "./import-session";
 import { MediaRejected } from "./media-probe";
+import type { NewMeta } from "./session-index";
 import { readSession, sessionDir } from "./store";
 
 let tmp: string;
@@ -27,9 +29,13 @@ afterEach(async () => {
 });
 
 const prepared: string[] = [];
+const claimed: NewMeta[] = [];
+const released: string[] = [];
 const deps = (over: Partial<ImportDeps> = {}): ImportDeps => ({
   probe: async () => ({ duration_s: 321.5, probed: true }),
   prepareListening: (dir) => void prepared.push(dir),
+  claim: (meta) => void claimed.push(meta),
+  release: (id) => void released.push(id),
   ...over,
 });
 function streamOf(...chunks: Buffer[]): ReadableStream<Uint8Array> {

@@ -5,6 +5,9 @@
  */
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // Base d'abord : elle suit les écritures de session.json que la reprise de file va provoquer.
+  const { ready } = await import("./lib/server-init");
+  await ready().catch(() => undefined); // l'erreur est journalisée ; la requête suivante réessaie
   const { ensureQueueRecovered } = await import("./lib/jobs");
   await ensureQueueRecovered().catch(() => []);
 }

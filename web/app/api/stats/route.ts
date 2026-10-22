@@ -1,18 +1,18 @@
-import { NextResponse } from "next/server";
 import { ensureQueueRecovered } from "@/lib/jobs";
-import { isLocalRequest } from "@/lib/local-request";
-import { readStats } from "@/lib/session-view";
+import { json } from "@/lib/http";
+import { requireUser } from "@/lib/route-guard";
+import { statsForUser } from "@/lib/session-service";
 export const runtime = "nodejs";
 /**
- * Performance du moteur d'après les sessions déjà sur le disque : par moteur, nombre d'analyses,
- * facteur temps réel (médiane, p90, moyenne), durées totales et modèle d'estimation ; file courante
- * et dernières analyses. Calcul pur, aucune donnée nouvelle.
+ * Performance du moteur d'après les sessions VISIBLES de l'utilisateur (les globales et les
+ * siennes — jamais le privé d'un autre) : par moteur, nombre d'analyses, facteur temps réel
+ * (médiane, p90, moyenne), durées totales et modèle d'estimation ; file courante, dernières
+ * analyses, `totals` (sessions, taille des audios, heures) et `disk` (espace utilisé par ces
+ * sessions, espace libre et total du volume). Calcul pur sur l'index, aucune donnée nouvelle.
  */
 export async function GET(request: Request) {
-  if (!isLocalRequest(request))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const auth = await requireUser(request);
+  if (!auth.ok) return auth.response;
   await ensureQueueRecovered().catch(() => []);
-  return NextResponse.json(await readStats(), {
-    headers: { "Cache-Control": "no-store" },
-  });
+  return json(await statsForUser(auth.db, auth.user));
 }

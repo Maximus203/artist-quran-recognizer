@@ -4,20 +4,21 @@ import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { audioPath, readSession, sessionDir } from "@/lib/store";
 import { ensureListening, mediaType } from "@/lib/listening";
-import { isLocalRequest } from "@/lib/local-request";
+import { sessionAccess } from "@/lib/route-guard";
 export const runtime = "nodejs";
 /**
  * Audio du lecteur : la copie d'écoute (PCM décodé comme le moteur, positionnement exact).
  * Repli sur l'original si ffmpeg échoue, signalé par `X-AQR-Listening: original`.
+ * Lisible par tout testeur qui voit la session (privée : seul son propriétaire, sinon 404).
  */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "view");
+  if (!access.ok) return access.response;
   try {
-    const { id } = await params,
+    const id = access.id,
       source = await audioPath(id);
     let file = source,
       type = mediaType((await readSession(id)).extension),
