@@ -933,9 +933,9 @@ async function main() {
         surface: "API",
         title: "Documentation servie aux testeurs connectés",
         action:
-          "`GET /api/docs` puis `GET /api/docs/architecture` (index temporaire `docs/docs-index.json`).",
+          "`GET /api/docs` puis `GET /api/docs/<slug>` du premier document de `docs/docs-index.json`.",
         expected:
-          "Index sans chemin de fichier ; contenu en `text/markdown` ; `401` sans connexion.",
+          "Index sans chemin de fichier (`file` absent) ; contenu en `text/markdown` ; `401` sans connexion.",
       },
       async () => {
         status(await anon.get("/api/docs"), 401, "docs anonyme");
@@ -943,17 +943,18 @@ async function main() {
         status(index, 200, "index");
         check(
           index.data.docs.length >= 1 &&
-            !JSON.stringify(index.data).includes(".md"),
-          `index ${JSON.stringify(index.data)}`,
+            index.data.docs.every((d) => !("file" in d) && d.slug && d.title),
+          `index ${JSON.stringify(index.data).slice(0, 200)}`,
         );
-        const doc = await bou.get("/api/docs/architecture");
+        const first = index.data.docs[0];
+        const doc = await bou.get(`/api/docs/${first.slug}`);
         status(doc, 200, "document");
         check(
           /text\/markdown/.test(doc.headers.get("content-type")) &&
             doc.text.length > 100,
           "type / contenu",
         );
-        return `${index.data.docs.length} document(s) listé(s) sans chemin ; /architecture en text/markdown (${doc.text.length} caractères)`;
+        return `${index.data.docs.length} document(s) listé(s) sans chemin ; /${first.slug} en text/markdown (${doc.text.length} caractères)`;
       },
     );
 

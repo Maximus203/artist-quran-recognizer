@@ -1,5 +1,5 @@
 # Phase 2 — partage, autorisations et préférences : refus, isolation, quota, débit
-> Surfaces : [API] · Statut : ✅ · Build : feat/comptes-et-partage @6b471a7 · Testé : 2026-10-22
+> Surfaces : [API] · Statut : ✅ · Build : feat/comptes-et-partage @8adc223 · Testé : 2026-10-22
 > Périmètre : Isolation du privé (16 routes), droits propriétaire/administrateur, attribution des signalements, vérité terrain admin, préférences strictes, authentification hostile, administration, code d'invitation, quota et débit.
 > Environnement : `next start` (build de production) sur 127.0.0.1, dossier de données de TEST (copie de 2 sessions réelles en lecture seule, jamais les données de Cherif), client HTTP avec un cookie par testeur ; serveur A (inscription ouverte) et serveur B (code d'invitation, quota 100 000 octets, 4 inscriptions/heure).
 > Données : aucun compte pré-créé — les comptes (Cherif = premier = administrateur, Awa, Bou…) sont créés par l'API d'inscription, les audios par l'API d'import.
@@ -35,7 +35,7 @@
 **Technique** : erreur
 **Action** : Sur une session d'avant les comptes, Bou crée un signalement en envoyant `tester: "Usurpateur"` ; Awa tente de le modifier puis de le supprimer ; Cherif (administrateur) le modifie.
 **Attendu** : Le signalement de Bou porte `tester: "Bou"` ; la tentative d'Awa renvoie son `id` dans `rejected` et n'a aucun effet ; Cherif le modifie : `tester` reste « Bou », `updated_by: "Cherif"`.
-**Observé** : auteur forcé à « Bou » malgré « Usurpateur » ; Awa : rejected [b898304d…], signalement intact ; administrateur : tester Bou, updated_by Cherif
+**Observé** : auteur forcé à « Bou » malgré « Usurpateur » ; Awa : rejected [7e0e9424…], signalement intact ; administrateur : tester Bou, updated_by Cherif
 **Verdict** : ✅
 **Issue** : —
 

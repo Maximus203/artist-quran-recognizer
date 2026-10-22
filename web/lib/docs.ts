@@ -17,6 +17,8 @@ const entrySchema = z.object({
   slug: z.string().regex(SLUG),
   title: z.string().min(1).max(200),
   section: z.string().min(1).max(100),
+  /** Une ou deux phrases pour la liste (facultatif). */
+  summary: z.string().max(600).optional(),
   file: z
     .string()
     .min(1)
@@ -84,10 +86,16 @@ function safeJson(text: string): unknown {
   }
 }
 
-export const summarize = ({ slug, title, section }: DocEntry): DocSummary => ({
+export const summarize = ({
   slug,
   title,
   section,
+  summary,
+}: DocEntry): DocSummary => ({
+  slug,
+  title,
+  section,
+  ...(summary === undefined ? {} : { summary }),
 });
 
 /** Contenu Markdown d'une entrée de l'index, ou `null` (slug inconnu, fichier absent ou hors du dépôt). */

@@ -1,8 +1,16 @@
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadDocsIndex, readDoc, summarize } from "./docs";
+import { REPO } from "./store";
 
 let repo: string;
 let outside: string;
@@ -121,5 +129,21 @@ describe("documentation servie (liste blanche)", () => {
     }
     await index([entry("lien", "docs/lien.md")]);
     expect(await readDoc("lien", repo)).toBeNull();
+  });
+});
+
+// Garde-fou : l index réellement versionné doit rester servable par l API (chaque entrée valide et lisible).
+describe("docs/docs-index.json du dépôt", () => {
+  it("est entièrement accepté par la liste blanche et chaque document se lit", async () => {
+    const raw = JSON.parse(
+      await readFile(path.join(REPO, "docs", "docs-index.json"), "utf8"),
+    ) as unknown[];
+    const entries = await loadDocsIndex();
+    expect(entries).toHaveLength(raw.length);
+    for (const item of entries) {
+      const text = await readDoc(item.slug);
+      expect(text, item.slug).not.toBeNull();
+      expect((text as string).length, item.slug).toBeGreaterThan(0);
+    }
   });
 });

@@ -1,5 +1,5 @@
 # Phase 2 — parcours normal : inscription, import global/privé, préférences, liste paginée
-> Surfaces : [API] · Statut : ✅ · Build : feat/comptes-et-partage @6b471a7 · Testé : 2026-10-22
+> Surfaces : [API] · Statut : ✅ · Build : feat/comptes-et-partage @8adc223 · Testé : 2026-10-22
 > Périmètre : Comptes (inscription, connexion, déconnexion), import (global, privé, nom par défaut), liste paginée par curseur, favoris/archives/renommage, préférences persistées, non lu, statistiques, documentation.
 > Environnement : `next start` (build de production) sur 127.0.0.1, dossier de données de TEST (copie de 2 sessions réelles en lecture seule, jamais les données de Cherif), client HTTP avec un cookie par testeur ; serveur A (inscription ouverte) et serveur B (code d'invitation, quota 100 000 octets, 4 inscriptions/heure).
 > Données : aucun compte pré-créé — les comptes (Cherif = premier = administrateur, Awa, Bou…) sont créés par l'API d'inscription, les audios par l'API d'import.
@@ -62,7 +62,7 @@
 **Technique** : partition-équivalence
 **Action** : Awa envoie `?visibility=private&name=Mon secret`, puis un fichier `2026-10-22T17-51-03-120.webm` avec `x-aqr-source-kind: microphone`.
 **Attendu** : Le privé garde `name: "Mon secret"`, `name_source: "user"`, `visibility: "private"`. L'enregistrement micro est nommé « Enregistrement du … à hh:mm » (UTC ici).
-**Observé** : privé « Mon secret » (name_source user) ; micro « Enregistrement du 22 oct. à 19:00 »
+**Observé** : privé « Mon secret » (name_source user) ; micro « Enregistrement du 22 oct. à 19:05 »
 **Verdict** : ✅
 **Issue** : —
 
@@ -107,7 +107,7 @@
 **Technique** : transition-état
 **Action** : Cherif liste `state=unread`, appelle `POST …/viewed` sur une session d'avant les comptes puis sur une session prête ; Awa importe un résultat joint (JSON `aqr.recognition/1` du même audio).
 **Attendu** : `unread` faux pour les sessions sans propriétaire ; `viewed` sur une session non terminée ne change rien (`viewed_at: null`) ; un résultat joint à l'import n'est pas « non lu » ; `counts.states.unread` = 0.
-**Observé** : viewed sur « prête » sans effet ; idempotent (2026-10-22T19:00:37.033Z) ; résultat joint importé « Ar-Rahman 55:1–4 » : déjà vu
+**Observé** : viewed sur « prête » sans effet ; idempotent (2026-10-22T19:05:34.789Z) ; résultat joint importé « Ar-Rahman 55:1–4 » : déjà vu
 **Verdict** : ✅
 **Issue** : —
 
@@ -116,16 +116,16 @@
 **Technique** : nominal
 **Action** : Awa supprime l'import avec résultat puis lit `GET /api/me/stats` ; Bou lit `GET /api/stats` et `GET /api/me/stats`.
 **Attendu** : `204` puis `404` ; l'espace d'Awa baisse ; `/api/stats` de Bou ne compte pas le privé d'Awa et porte `disk` et `totals` ; `tests: 0` (aucune analyse lancée par l'atelier) ; la liste de Bou ne contient plus la session.
-**Observé** : espace d'Awa 1123685 → 864396 octets ; /api/stats de Bou : 9 sessions visibles, disque 1821822 octets, libre 63608692736
+**Observé** : espace d'Awa 1123685 → 864396 octets ; /api/stats de Bou : 9 sessions visibles, disque 1821822 octets, libre 63759716352
 **Verdict** : ✅
 **Issue** : —
 
 ### N.13 — [API] Documentation servie aux testeurs connectés
 **Priorité** : normal
 **Technique** : nominal
-**Action** : `GET /api/docs` puis `GET /api/docs/architecture` (index temporaire `docs/docs-index.json`).
-**Attendu** : Index sans chemin de fichier ; contenu en `text/markdown` ; `401` sans connexion.
-**Observé** : 1 document(s) listé(s) sans chemin ; /architecture en text/markdown (9996 caractères)
+**Action** : `GET /api/docs` puis `GET /api/docs/<slug>` du premier document de `docs/docs-index.json`.
+**Attendu** : Index sans chemin de fichier (`file` absent) ; contenu en `text/markdown` ; `401` sans connexion.
+**Observé** : 31 document(s) listé(s) sans chemin ; /systeme-en-bref en text/markdown (10970 caractères)
 **Verdict** : ✅
 **Issue** : —
 
@@ -134,6 +134,6 @@
 **Technique** : transition-état
 **Action** : Awa envoie en flux l'audio d'une session de référence avec `?autorun=1` (global, enregistrement micro), attend la fin de la cascade réelle, puis Bou et Awa ouvrent le résultat.
 **Attendu** : `state: done` ; `content_label` calculé (« Ar-Rahman 55:1–4 ») ; `unread: true` pour Awa seule (Bou : `false`, et son ouverture ne change rien pour Awa) ; `POST …/viewed` d'Awa l'efface ; `GET /api/me/stats` : `tests: 1`, RTF et moteur renseignés ; `GET /api/stats` compte l'analyse ; journal du serveur sans erreur.
-**Observé** : fin en 40 s (moteur cascade, 16.08 s d'audio en 40.209 s) ; « Ar-Rahman 55:1–4 » ; non lu pour Awa seule, effacé par SON ouverture ; /api/me/stats : tests 1, RTF moyen 2.50
+**Observé** : fin en 32 s (moteur cascade, 16.08 s d'audio en 30.493 s) ; « Ar-Rahman 55:1–4 » ; non lu pour Awa seule, effacé par SON ouverture ; /api/me/stats : tests 1, RTF moyen 1.90
 **Verdict** : ✅
 **Issue** : —
