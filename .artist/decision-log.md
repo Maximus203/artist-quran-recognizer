@@ -1203,3 +1203,80 @@
 - **Risques connus** : perdre `aqr.sqlite` rend globales à la réimportation les sessions qui étaient privées
   (sauvegarder la base avec le dossier de données) ; limiteurs en mémoire ; quota vérifié à l'import (deux
   imports simultanés peuvent le dépasser d'un fichier).
+
+## 2026-10-23 — Direction produit : non commercial, Hafs seul, détection en direct sans plage (ADR-0010 proposé)
+- **Décisions du mainteneur** :
+  - **Usage non commercial uniquement.** Le projet sera **publié en open source sous une licence non
+    commerciale** (question réglée, ne plus la reposer) ; les modèles et jeux non commerciaux (Tadabur
+    CC BY-NC, Muno NPL-1.1…) restent admissibles.
+  - **Hafs uniquement** : ni Warsh ni autre riwaya. Un verset d'une autre lecture éventuellement reconnu
+    reçoit simplement sa traduction ; aucune détection de riwaya (la mesure `riwaya-2026-10-20.md` reste
+    une note de fond).
+  - **Direction** : l'analyse de fichiers d'abord ; l'**objectif** est la **détection en direct sur flux
+    WebSocket, sans plage déclarée** (le passage peut venir de n'importe où dans le Coran ; pas de mode
+    « plage déclarée » façon Tarteel).
+  - **Budget de la cascade** conditionnel au temps disponible (conçu dans l'ADR-0010 §7, pas codé).
+  - **Comptes** : le mainteneur est administrateur ; relecteur et écrans d'administration plus tard.
+- **Conception** : `docs/adr/0010-detection-en-direct-sans-plage.md` (statut **proposé**). L'idée du
+  mainteneur (garder les candidats ouverts, n'afficher que le sûr, basculer vers la source exacte dès
+  qu'un mot départage, supposer la suite, détecter le saut) est formalisée en suivi d'hypothèses de
+  position avec quatre classes d'a priori, quatre niveaux d'affichage et un protocole `aqr.live/1`.
+- **Preuve chiffrée** (`scripts/analyze_verse_prefixes.py`, corpus Hafs, mots exacts = borne basse) :
+  médiane de 2 mots (p90 5, max 18) pour distinguer un début de verset ; 54,1 % des versets en ≤ 2 mots,
+  74,3 % en ≤ 3 ; **25,7 % exigent plus de 3 mots, 11,8 % plus de 5** ; **289 versets (4,6 %) sans préfixe
+  unique** (278 sosies exacts en 97 groupes, 11 débuts stricts d'un verset plus long) ; avec la sourate
+  comme contexte, 82,7 % en ≤ 2 mots et 164 des 289 deviennent uniques ; **125 restent ambigus même dans
+  leur sourate** (refrains des sourates 26, 55, 37, 77, 54, 2) : seule la position les nomme. Rejeu de 30
+  sorties EveryAyah (flux simulé, débit uniforme) : verset unique après 3,1 s en médiane sans contexte,
+  1,5 s avec la suite attendue (versets de 7,8 s en médiane).
+- **Trois décisions techniques recommandées** :
+  1. *Candidats ≠ verrou* : un état transitoire « ambigu : n candidats » (distinct de `UNCERTAIN`, qui est
+     final) et un verrou qui exige `min_words_lock` mots **quel que soit le posterior** — un a priori fort
+     fait trouver la suite avec un seul mot, ce qui est juste en théorie et fragile en pratique (I3).
+  2. *`INFERRED` étendu* par `identity_basis: "context"` quand seuls des sosies exacts se départagent par
+     la position : texte entendu, référence déduite. **À valider par le mainteneur** (étend I5) ; sinon ces
+     versets restent `UNCERTAIN` jusqu'à la clôture.
+  3. *Le lot reste la référence* : `aqr.live/1` reprend les champs de `aqr.recognition/1` pour un verset
+     verrouillé, `FINAL` est le document du lot, et le mode dégradé **durcit** la règle de verrou quand un
+     palier de vérification est sauté, il ne l'assouplit jamais.
+- **Écartés** : plage déclarée ; diffusion de jetons ASR comme résultat (I1, I3) ; attendre la fin du
+  verset ; verrouillage dès que l'a priori le permet ; LLM ou base vectorielle (ADR-0001, 0003).
+- **Traduction « partielle »** : impossible sans modifier QuranEnc (I2). Règle proposée : arabe sûr du
+  corpus avant le verrou ; traduction avant le verrou seulement si tous les candidats restants ont la
+  même ; sinon à la demande, entière et étiquetée.
+- **Publication open source non commerciale — écarts à traiter avant de publier** (rien n'est modifié ici,
+  le choix de licence est celui du mainteneur) :
+  1. *Licence du code* : `LICENSE` est **MIT** (autorise l'usage commercial) et le README annonce « Code :
+     MIT » ; `pyproject.toml` n'a aucun champ de licence, `web/package.json` est `private` sans licence.
+     À choisir (PolyForm Noncommercial 1.0.0, Prosperity, ou autre) puis à reporter dans `LICENSE`, le
+     README, `pyproject.toml`, `web/package.json`. Une licence qui interdit l'usage commercial n'est **pas
+     « open source » au sens de l'OSI** (code publié, usage restreint) : le dire clairement dans le README.
+     Toute version déjà publiée sous MIT reste sous MIT pour ceux qui l'ont reçue.
+  2. *Attributions manquantes* : aucun fichier `NOTICE`/`CREDITS`. À créer : Tanzil (CC-BY-3.0, lien
+     tanzil.net, texte non modifié), QuranEnc (restitution sans modification, mention de la source),
+     modèles (FastConformer-Quran CC-BY-4.0, Muno NPL-1.1, Whisper base Quran Apache-2.0,
+     recitations-segmenter MIT, silero-vad), jeux (Common Voice 17 CC0, FLEURS CC-BY-4.0, Tadabur
+     CC-BY-NC-4.0). Les polices du dossier `web/public/fonts` ont déjà leur texte OFL ; la police Hafs V30
+     est hors Git (licence sans redistribution) : conforme.
+  3. *Modèles et jeux tiers* : aucun poids ni jeu dans Git (`models/*`, `data/*` ignorés, seuls les
+     `LOCK.json`). Compatibles avec une publication non commerciale ; Muno impose un accès Hugging Face
+     approuvé et interdit le commercial ; un modèle réentraîné sur Tadabur (CC BY-NC) serait lui-même non
+     commercial et attribué (à confirmer avant toute diffusion de poids).
+  4. *Données de personnes et de tiers dans Git* : `tests/fixtures/audio/manifest.yaml`,
+     `docs/data-lots/lot-1.yaml` et `lot-2.yaml` versionnent des **adresses YouTube** (près de cinquante
+     occurrences avec le test du manifeste), des empreintes sha256, des **pseudonymes de locuteurs** et la
+     mention « usage interne d'évaluation uniquement » ; `docs/evaluation/riwaya-2026-10-20.md` cite des
+     identifiants de locuteurs. À retirer ou à anonymiser, et surtout **l'historique Git les contient
+     déjà** : publier un dépôt neuf issu d'un état nettoyé, ou réécrire l'historique (décision du
+     mainteneur). **Point le plus sensible** : `docs/data-lots/RIGHTS.md` (KI-2) constate qu'un dataset
+     Hugging Face des 12 audios du lot 1, nommé « private », est **public** alors que ces enregistrements de
+     tiers (voix identifiables) sont marqués « jamais redistribué » ; les trois décisions de ce document
+     (visibilité, retrait des enregistrements aux droits non établis, mention de droits) restent à prendre
+     **avant** toute publication du dépôt, qui y renvoie.
+  5. *Texte coranique versionné* : le corpus Tanzil n'est pas dans Git ; mais `tests/fixtures/asr/*_everyayah.json`
+     (transcriptions de récitations de tiers) et quelques chaînes de tests contiennent de longues
+     séquences arabes (9 fichiers suivis en ont au moins une de 9 mots ou plus) ; `docs/KNOWN-ISSUES.md`
+     (KI-1) cite deux phrases de traduction QuranEnc. À décider : garder, raccourcir ou régénérer à la demande.
+  6. *Dépendances du dossier `web/`* : licences npm à auditer (`license-checker` ou équivalent).
+  7. *Documentation d'agents* (`.artist/`, `docs/prompts/`, `CLAUDE.md`, `AGENTS.md`) : à décider si elle
+     est publiée telle quelle.
