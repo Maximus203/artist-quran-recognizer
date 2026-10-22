@@ -162,4 +162,6 @@ complément (métriques Words F1, Repeats F1).
 - **V2** : traduction anglaise (nouveau `translation_id`, zéro changement de code).
 - **V2+** : sous-titrage automatique de vidéos (Timeline → SRT/ASS stylé → incrustation
   ffmpeg, polices arabes). Nouveau cas d'usage dans `app/`, aucune brique existante modifiée.
-- **V2+** : mode temps réel (streaming) : B2–B7 en fenêtres glissantes.
+- **Détection en direct sur flux WebSocket, sans plage déclarée** (direction produit du 2026-10-23) :
+  conception dans `docs/adr/0010-detection-en-direct-sans-plage.md` (proposé) ; remplace l'ancienne idée
+  « B2–B7 en fenêtres glissantes ».
