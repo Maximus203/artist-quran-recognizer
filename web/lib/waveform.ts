@@ -31,7 +31,11 @@ export function barHeights(
     const to = Math.ceil((t0 + (i + 1) * width) * perSecond);
     if (to <= 0 || from >= peaks.length) continue;
     let max = 0;
-    for (let j = Math.max(0, from); j < Math.min(peaks.length, Math.max(to, from + 1)); j++)
+    for (
+      let j = Math.max(0, from);
+      j < Math.min(peaks.length, Math.max(to, from + 1));
+      j++
+    )
       if (peaks[j] > max) max = peaks[j];
     heights[i] = Math.min(1, max / norm);
   }

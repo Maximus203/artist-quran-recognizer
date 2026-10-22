@@ -1,8 +1,4 @@
-import {
-  QURAN_FONTS,
-  isQuranFontId,
-  type QuranFontId,
-} from "./quran-fonts";
+import { QURAN_FONTS, isQuranFontId, type QuranFontId } from "./quran-fonts";
 import { sanitizeRecent, validateTester } from "./tester";
 
 /**
@@ -82,8 +78,7 @@ export function parsePrefs(raw: string | null | undefined): UiPrefs {
   };
 }
 
-export const serializePrefs = (prefs: UiPrefs): string =>
-  JSON.stringify(prefs);
+export const serializePrefs = (prefs: UiPrefs): string => JSON.stringify(prefs);
 
 export const effectiveTheme = (
   pref: ThemePref,

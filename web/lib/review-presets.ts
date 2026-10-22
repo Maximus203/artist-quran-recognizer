@@ -31,7 +31,11 @@ export const REVIEW_PRESETS: readonly PresetFamily[] = [
     defaultOpen: true,
     items: [
       { id: "wrong_verse", label: "Verset faux", legacy: "wrong_verse" },
-      { id: "missing_verse", label: "Verset manquant", legacy: "missing_verse" },
+      {
+        id: "missing_verse",
+        label: "Verset manquant",
+        legacy: "missing_verse",
+      },
       { id: "extra_verse", label: "Verset en trop", legacy: "other" },
       {
         id: "repetition_missed",

@@ -56,7 +56,10 @@ export function updateReview(id: string, body: unknown): Promise<Review> {
       annotations,
       updated_at: new Date().toISOString(),
     };
-    if (previous && JSON.stringify(previous.annotations) === JSON.stringify(annotations))
+    if (
+      previous &&
+      JSON.stringify(previous.annotations) === JSON.stringify(annotations)
+    )
       return previous;
     if (previous)
       await atomicJson(

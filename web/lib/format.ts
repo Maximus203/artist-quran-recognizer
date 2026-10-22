@@ -68,7 +68,8 @@ export function formatRealtimeFactor(
     !(processingSeconds > 0)
   )
     return null;
-  return `×${formatSecondsFr(audioSeconds / processingSeconds)}`;
+  const factor = audioSeconds / processingSeconds;
+  return `×${formatSecondsFr(factor, factor < 1 ? 2 : 1)}`;
 }
 
 /** Ancienneté d'une date ISO : « à l'instant », « il y a 12 min », « hier », « 20 oct. ». */

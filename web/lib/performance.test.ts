@@ -106,7 +106,11 @@ describe("buildPerformance", () => {
   it("regroupe par moteur, du plus rapide au plus lent, avec des barres relatives", () => {
     const model = buildPerformance(
       [
-        done({ engine: "fastconformer", audio_duration_s: 1000, duration_s: 50 }), // ×20
+        done({
+          engine: "fastconformer",
+          audio_duration_s: 1000,
+          duration_s: 50,
+        }), // ×20
         done({ engine: "cascade", audio_duration_s: 600, duration_s: 100 }), // ×6
         done({ engine: "cascade", audio_duration_s: 600, duration_s: 100 }),
         done({ engine: "whisper", audio_duration_s: 400, duration_s: 100 }), // ×4

@@ -88,7 +88,10 @@ describe("fontAvailability", () => {
 describe("serveFont", () => {
   it("sert le fichier à la boucle locale, sans le mettre en cache partagé", async () => {
     await writeFile(path.join(dir, "KFGQPC-Hafs-V30.ttf"), "fonte");
-    const response = await serveFont(request("kfgqpc-hafs-v30"), "kfgqpc-hafs-v30");
+    const response = await serveFont(
+      request("kfgqpc-hafs-v30"),
+      "kfgqpc-hafs-v30",
+    );
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("font/ttf");
     expect(response.headers.get("cache-control")).toMatch(/private/);
@@ -96,7 +99,10 @@ describe("serveFont", () => {
     expect(await response.text()).toBe("fonte");
   });
   it("répond 404 si le fichier n'est pas installé", async () => {
-    const response = await serveFont(request("kfgqpc-hafs-v30"), "kfgqpc-hafs-v30");
+    const response = await serveFont(
+      request("kfgqpc-hafs-v30"),
+      "kfgqpc-hafs-v30",
+    );
     expect(response.status).toBe(404);
   });
   it("répond 404 pour un nom hors liste blanche", async () => {

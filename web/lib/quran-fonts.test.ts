@@ -18,7 +18,9 @@ describe("QURAN_FONTS", () => {
     ]);
   });
   it("marque Hafs V30 comme locale et les trois autres comme embarquées", () => {
-    const sources = Object.fromEntries(QURAN_FONTS.map((f) => [f.id, f.source]));
+    const sources = Object.fromEntries(
+      QURAN_FONTS.map((f) => [f.id, f.source]),
+    );
     expect(sources).toEqual({
       "kfgqpc-hafs": "local",
       "amiri-quran": "bundled",
@@ -27,9 +29,9 @@ describe("QURAN_FONTS", () => {
     });
   });
   it("a pour défaut une police embarquée (OFL)", () => {
-    expect(
-      QURAN_FONTS.find((f) => f.id === DEFAULT_QURAN_FONT)?.source,
-    ).toBe("bundled");
+    expect(QURAN_FONTS.find((f) => f.id === DEFAULT_QURAN_FONT)?.source).toBe(
+      "bundled",
+    );
   });
 });
 

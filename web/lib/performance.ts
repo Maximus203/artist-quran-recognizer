@@ -76,14 +76,16 @@ const positive = (value: number | null | undefined): value is number =>
   typeof value === "number" && Number.isFinite(value) && value > 0;
 
 /** Pour les grands chiffres : 242 s → « 4 min 02 s » ; 3720 s → « 1 h 02 ». */
-export function splitDuration(
-  seconds: number,
-): { n: string; u: string }[] {
+export function splitDuration(seconds: number): { n: string; u: string }[] {
   const total = Math.round(seconds);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (h) return [{ n: String(h), u: "h" }, { n: String(m).padStart(2, "0"), u: "" }];
+  if (h)
+    return [
+      { n: String(h), u: "h" },
+      { n: String(m).padStart(2, "0"), u: "" },
+    ];
   if (m)
     return [
       { n: String(m), u: "min" },
@@ -151,9 +153,14 @@ export function buildPerformance(
   return {
     analyses: usable.length,
     meanDurationS:
-      usable.length > 0 ? mean(usable.map((s) => s.duration_s as number)) : null,
+      usable.length > 0
+        ? mean(usable.map((s) => s.duration_s as number))
+        : null,
     medianFactor,
-    audioTotalS: usable.reduce((sum, s) => sum + (s.audio_duration_s as number), 0),
+    audioTotalS: usable.reduce(
+      (sum, s) => sum + (s.audio_duration_s as number),
+      0,
+    ),
     videoAudioS: usable
       .filter(isVideo)
       .reduce((sum, s) => sum + (s.audio_duration_s as number), 0),

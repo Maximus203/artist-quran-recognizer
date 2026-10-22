@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  activeIndex,
   describePassage,
   filterIntervals,
   intervalLabel,
   intervalStateLabel,
   intervalStyle,
+  shownIndex,
   splitNoteMarkers,
   toArabicIndic,
 } from "./passage";
@@ -33,8 +35,10 @@ const verse = (over: Record<string, unknown> = {}): Interval =>
     translation,
     ...over,
   }) as Interval;
-const nonQuran = (label: string, over: Record<string, unknown> = {}): Interval =>
-  ({ kind: "non_quran", label, t: [0, 4.2], ...over }) as Interval;
+const nonQuran = (
+  label: string,
+  over: Record<string, unknown> = {},
+): Interval => ({ kind: "non_quran", label, t: [0, 4.2], ...over }) as Interval;
 const abstention = (reason: string): Interval =>
   ({
     kind: "abstention",
@@ -53,14 +57,14 @@ describe("toArabicIndic", () => {
 
 describe("splitNoteMarkers (présentation seulement, la chaîne n'est jamais modifiée)", () => {
   it("isole les marqueurs de note [n]", () => {
-    expect(splitNoteMarkers("Au nom d’Allah.[1] Le Miséricordieux.[2]")).toEqual(
-      [
-        { text: "Au nom d’Allah.", note: false },
-        { text: "[1]", note: true },
-        { text: " Le Miséricordieux.", note: false },
-        { text: "[2]", note: true },
-      ],
-    );
+    expect(
+      splitNoteMarkers("Au nom d’Allah.[1] Le Miséricordieux.[2]"),
+    ).toEqual([
+      { text: "Au nom d’Allah.", note: false },
+      { text: "[1]", note: true },
+      { text: " Le Miséricordieux.", note: false },
+      { text: "[2]", note: true },
+    ]);
   });
   it("recompose exactement la chaîne d'origine", () => {
     const original = "A [12] b[3]c [x] d";
@@ -121,14 +125,16 @@ describe("describePassage", () => {
   });
 
   it("verset reconnu sans texte dans le résultat", () => {
-    expect(describePassage(verse({ text: null, translation: null }))).toMatchObject(
-      { type: "verse_no_text", ref: "2:255" },
-    );
+    expect(
+      describePassage(verse({ text: null, translation: null })),
+    ).toMatchObject({ type: "verse_no_text", ref: "2:255" });
   });
 
   it("hypothèse : jamais entendue, pas de texte", () => {
     expect(
-      describePassage(verse({ status: "inferred", text: null, translation: null })),
+      describePassage(
+        verse({ status: "inferred", text: null, translation: null }),
+      ),
     ).toMatchObject({ type: "hypothesis", ref: "2:255" });
   });
 
@@ -211,7 +217,13 @@ describe("libellés des intervalles", () => {
   it("intervalLabel", () => {
     expect(intervalLabel(verse())).toBe("2:255");
     expect(
-      intervalLabel(verse({ status: "uncertain", ref: null, candidates: ["2:256", "2:257"] })),
+      intervalLabel(
+        verse({
+          status: "uncertain",
+          ref: null,
+          candidates: ["2:256", "2:257"],
+        }),
+      ),
     ).toBe("Références possibles : 2:256 · 2:257");
     expect(intervalLabel(nonQuran("[isti'adha]"))).toBe("Isti’adha");
     expect(intervalLabel(nonQuran("[french]"))).toBe("[french]");
@@ -225,7 +237,9 @@ describe("libellés des intervalles", () => {
     expect(intervalStateLabel(verse({ status: "inferred" }))).toBe(
       "Déduit · non entendu",
     );
-    expect(intervalStateLabel(verse({ status: "uncertain" }))).toBe("Incertain");
+    expect(intervalStateLabel(verse({ status: "uncertain" }))).toBe(
+      "Incertain",
+    );
     expect(intervalStateLabel(nonQuran("[takbir]"))).toBe("Formule");
     expect(intervalStateLabel(abstention("silence"))).toBe("Abstention");
     expect(intervalStyle(verse())).toBe("recognized");
@@ -233,6 +247,43 @@ describe("libellés des intervalles", () => {
     expect(intervalStyle(verse({ status: "uncertain" }))).toBe("uncertain");
     expect(intervalStyle(nonQuran("[takbir]"))).toBe("formula");
     expect(intervalStyle(abstention("silence"))).toBe("abstention");
+  });
+});
+
+describe("activeIndex / shownIndex (quel intervalle la carte affiche)", () => {
+  const list = [
+    nonQuran("[isti'adha]", { t: [0, 4] }),
+    verse({ t: [4, 12] }),
+    abstention("silence"),
+    verse({ t: [20, 30], ref: "2:256" }),
+  ];
+  it("trouve l'intervalle qui couvre l'instant, formules comprises", () => {
+    expect(activeIndex(list, 1)).toBe(0);
+    expect(activeIndex(list, 5)).toBe(1);
+    expect(activeIndex(list, 25)).toBe(3);
+  });
+  it("renvoie -1 hors de tout intervalle, et ignore ceux sans temps", () => {
+    expect(activeIndex(list, 15)).toBe(-1);
+    expect(activeIndex(list, 99)).toBe(-1);
+    const noTime = [{ ...verse(), t: null } as unknown as Interval];
+    expect(activeIndex(noTime, 1)).toBe(-1);
+  });
+  it("la fin d'un intervalle est exclue (pas de chevauchement avec le suivant)", () => {
+    expect(activeIndex(list, 4)).toBe(1);
+  });
+  it("shownIndex garde l'intervalle choisi tant que la lecture est dedans", () => {
+    expect(shownIndex(list, 3, 25)).toBe(3);
+  });
+  it("shownIndex suit la lecture dès qu'elle sort de l'intervalle choisi", () => {
+    expect(shownIndex(list, 3, 5)).toBe(1);
+  });
+  it("un intervalle choisi sans temps reste affiché", () => {
+    const noTime = [{ ...verse(), t: null } as unknown as Interval];
+    expect(shownIndex(noTime, 0, 50)).toBe(0);
+  });
+  it("sans choix : l'intervalle courant, ou -1", () => {
+    expect(shownIndex(list, null, 5)).toBe(1);
+    expect(shownIndex(list, null, 15)).toBe(-1);
   });
 });
 

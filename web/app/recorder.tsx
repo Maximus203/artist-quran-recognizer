@@ -7,6 +7,7 @@ import {
   recordingExtension,
   supportedRecordingType,
 } from "@/lib/recording";
+import { Icon } from "./atelier/icons";
 
 type Phase = "idle" | "requesting" | "recording" | "preparing" | "preview";
 
@@ -173,62 +174,67 @@ export default function Recorder({
   }
 
   return (
-    <div className={`recorder is-${phase}`}>
-      <div className="recorder-heading">
-        <span className="recorder-symbol" aria-hidden="true">
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="icon">
-            <rect x="9" y="3" width="6" height="11" rx="3" />
-            <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7" />
-          </svg>
-        </span>
-        <div>
-          <strong>Enregistrer une récitation</strong>
-          <small>Depuis le microphone de cet appareil</small>
-        </div>
-        {(phase === "recording" || phase === "preparing") && (
-          <output
-            className="recorder-timer"
-            aria-label="Durée de l’enregistrement"
-          >
-            {formatTime(seconds)}
-          </output>
-        )}
+    <section
+      className="card recorder"
+      data-phase={phase}
+      data-testid="recorder"
+      aria-label="Enregistrer une récitation"
+    >
+      <span className="rec-ic" aria-hidden="true">
+        <Icon name="mic" />
+      </span>
+      <div>
+        <strong>Enregistrer une récitation</strong>
+        <p className="hint">Depuis le microphone de cet appareil</p>
       </div>
+      {(phase === "recording" || phase === "preparing") && (
+        <output
+          className="rec-timer mono"
+          data-testid="rec-timer"
+          aria-label="Durée de l’enregistrement"
+        >
+          {formatTime(seconds)}
+        </output>
+      )}
       {phase === "idle" && (
         <button
-          className="outline recorder-start"
+          className="btn btn--secondary btn--lg"
           type="button"
+          data-testid="rec-start"
           onClick={() => void begin()}
         >
-          <span className="record-dot" aria-hidden="true" />
+          <span className="rec-dot" aria-hidden="true" />
           Démarrer l’enregistrement
         </button>
       )}
       {phase === "requesting" && (
-        <p className="recorder-note">
+        <p className="hint" role="status">
           Autorise l’accès au microphone dans le navigateur…
         </p>
       )}
       {phase === "recording" && (
-        <div className="recorder-actions">
-          <span className="recorder-live" role="status">
+        <div className="rec-actions">
+          <span className="hint" role="status">
             Enregistrement en cours
           </span>
           <button
-            className="outline recorder-stop"
+            className="btn btn--secondary btn--lg"
             type="button"
+            data-testid="rec-stop"
             onClick={stop}
           >
-            <span className="stop-square" aria-hidden="true" />
+            <span className="rec-sq" aria-hidden="true" />
             Arrêter
           </button>
         </div>
       )}
       {phase === "preparing" && (
-        <p className="recorder-note">Préparation de la réécoute…</p>
+        <p className="hint" role="status">
+          Préparation de la réécoute…
+        </p>
       )}
       {phase === "preview" && preview && (
-        <>
+        <div className="rec-preview">
           <audio
             ref={playback}
             src={preview.url}
@@ -252,9 +258,17 @@ export default function Recorder({
               )
             }
           />
-          <div className="recorder-preview">
+          <div
+            className="transport"
+            style={{
+              position: "static",
+              padding: 0,
+              border: 0,
+              background: "none",
+            }}
+          >
             <button
-              className="recorder-play"
+              className="play"
               type="button"
               aria-label={
                 playing
@@ -273,10 +287,10 @@ export default function Recorder({
                 else node.pause();
               }}
             >
-              {playing ? "Ⅱ" : "▶"}
+              <Icon name={playing ? "pause" : "play"} fill />
             </button>
-            <div className="recorder-preview-track">
-              <div>
+            <div className="scrub">
+              <div className="times mono">
                 <span>{formatTime(position)}</span>
                 <span>{formatTime(duration || seconds)}</span>
               </div>
@@ -287,6 +301,11 @@ export default function Recorder({
                 step="0.01"
                 value={Math.min(position, duration || seconds || 1)}
                 aria-label="Position de réécoute"
+                style={
+                  {
+                    "--p": `${(duration || seconds) > 0 ? (position / (duration || seconds)) * 100 : 0}%`,
+                  } as React.CSSProperties
+                }
                 onChange={(event) => {
                   if (playback.current)
                     playback.current.currentTime = Number(event.target.value);
@@ -294,34 +313,36 @@ export default function Recorder({
               />
             </div>
           </div>
-          <div className="recorder-actions">
+          <div className="btnrow">
             <button
-              className="quiet recorder-retry"
+              className="btn btn--ghost"
               type="button"
+              data-testid="rec-retry"
               disabled={uploading}
               onClick={() => void begin()}
             >
               Recommencer
             </button>
             <button
-              className="primary"
+              className="btn btn--primary"
               type="button"
+              data-testid="rec-analyze"
               disabled={uploading}
               onClick={() => void analyze()}
             >
-              {uploading ? "Import et lancement…" : "Analyser l’audio ↗"}
+              {uploading ? "Import et lancement…" : "Analyser cette récitation"}
             </button>
           </div>
-        </>
+        </div>
       )}
       {error && (
-        <p className="recorder-error" role="alert">
+        <p className="notice notice--error" role="alert">
           {error}
         </p>
       )}
-      <p className="recorder-note">
-        L’audio choisi est conservé dans une session privée après analyse.
+      <p className="hint hint--faint">
+        L’audio est conservé dans une session privée après analyse.
       </p>
-    </div>
+    </section>
   );
 }

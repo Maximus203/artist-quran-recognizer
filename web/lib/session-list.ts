@@ -145,7 +145,10 @@ export function buildRow(view: SessionView, now: number): SessionRow {
         row.status = "Analyse en cours · plus long que prévu";
         row.tone = "warn";
         row.indeterminate = true;
-      } else if (typeof view.eta_s === "number" && typeof elapsed === "number") {
+      } else if (
+        typeof view.eta_s === "number" &&
+        typeof elapsed === "number"
+      ) {
         row.status = `Analyse en cours · ${waitingFor(view.eta_s)}`;
         row.tone = "accent";
         const total = elapsed + view.eta_s;
@@ -170,7 +173,11 @@ export function buildRow(view: SessionView, now: number): SessionRow {
       const head = row.unread ? "Résultat prêt" : "Terminé";
       const parts: string[] = [];
       if (spent !== null)
-        parts.push(row.unread ? formatDurationFr(spent) : `en ${formatDurationFr(spent)}`);
+        parts.push(
+          row.unread
+            ? formatDurationFr(spent)
+            : `en ${formatDurationFr(spent)}`,
+        );
       if (factor) parts.push(factor);
       row.status =
         parts.length === 0
@@ -227,7 +234,8 @@ export function groupViews(views: readonly SessionView[]): SessionGroups {
   return { queue, ready, done };
 }
 
-const isActive = (v: SessionView) => v.state === "running" || v.state === "queued";
+const isActive = (v: SessionView) =>
+  v.state === "running" || v.state === "queued";
 
 export function filterViews(
   views: readonly SessionView[],

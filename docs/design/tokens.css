@@ -19,41 +19,81 @@
   color-scheme: dark light;
 
   /* ── Surfaces (de la plus profonde à la plus haute) ───────────────────────── */
-  --bg:         light-dark(#f4f0e6, #0e1013); /* fond de page : papier / encre de nuit */
-  --surface-1:  light-dark(#faf7f0, #14171b); /* panneaux latéraux, barre du haut */
-  --surface-2:  light-dark(#fdfbf7, #1a1e23); /* cartes, console, champs */
-  --surface-3:  light-dark(#ece6d9, #232830); /* survol, éléments enfoncés */
-  --scrim:      light-dark(rgb(27 28 32 / 0.42), rgb(0 0 0 / 0.62)); /* voile des tiroirs */
+  --bg: light-dark(
+    #f4f0e6,
+    #0e1013
+  ); /* fond de page : papier / encre de nuit */
+  --surface-1: light-dark(
+    #faf7f0,
+    #14171b
+  ); /* panneaux latéraux, barre du haut */
+  --surface-2: light-dark(#fdfbf7, #1a1e23); /* cartes, console, champs */
+  --surface-3: light-dark(#ece6d9, #232830); /* survol, éléments enfoncés */
+  --scrim: light-dark(
+    rgb(27 28 32 / 0.42),
+    rgb(0 0 0 / 0.62)
+  ); /* voile des tiroirs */
 
   /* ── Bordures ─────────────────────────────────────────────────────────────── */
-  --border-subtle: light-dark(#e3ddcf, #232830); /* séparateurs décoratifs (non porteurs de sens) */
-  --border:        light-dark(#d2cab8, #2f3640); /* contour de carte */
-  --border-strong: light-dark(#8a8575, #68717e); /* contour de champ / bouton : ≥ 3:1 (WCAG 1.4.11) */
+  --border-subtle: light-dark(
+    #e3ddcf,
+    #232830
+  ); /* séparateurs décoratifs (non porteurs de sens) */
+  --border: light-dark(#d2cab8, #2f3640); /* contour de carte */
+  --border-strong: light-dark(
+    #8a8575,
+    #68717e
+  ); /* contour de champ / bouton : ≥ 3:1 (WCAG 1.4.11) */
 
   /* ── Texte ────────────────────────────────────────────────────────────────── */
-  --text:   light-dark(#1b1c20, #eeeae0); /* texte principal (ivoire en sombre) */
+  --text: light-dark(#1b1c20, #eeeae0); /* texte principal (ivoire en sombre) */
   --text-2: light-dark(#4b4e57, #bdbab1); /* texte secondaire */
-  --text-3: light-dark(#5f626b, #9096a0); /* méta, aides — ≥ 4,5:1 sur toutes les surfaces */
+  --text-3: light-dark(
+    #5f626b,
+    #9096a0
+  ); /* méta, aides — ≥ 4,5:1 sur toutes les surfaces */
 
   /* ── L'unique accent : lapis ──────────────────────────────────────────────── */
-  --accent:      light-dark(#2447b8, #78a0ff); /* texte, icônes, traits, voix du moteur */
-  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent); /* fond de puce, de survol */
-  --on-accent:   light-dark(#ffffff, #0a1024); /* texte posé sur un aplat d'accent */
-  --focus:       light-dark(#1a37a0, #a9c2ff); /* anneau de focus : ≥ 7:1 */
+  --accent: light-dark(
+    #2447b8,
+    #78a0ff
+  ); /* texte, icônes, traits, voix du moteur */
+  --accent-soft: color-mix(
+    in srgb,
+    var(--accent) 16%,
+    transparent
+  ); /* fond de puce, de survol */
+  --on-accent: light-dark(
+    #ffffff,
+    #0a1024
+  ); /* texte posé sur un aplat d'accent */
+  --focus: light-dark(#1a37a0, #a9c2ff); /* anneau de focus : ≥ 7:1 */
 
   /* ── Action principale : l'encre (jamais l'accent) ────────────────────────── */
-  --action-bg:       light-dark(#1b1c20, #eeeae0);
+  --action-bg: light-dark(#1b1c20, #eeeae0);
   --action-bg-hover: light-dark(#34363d, #ffffff);
-  --action-fg:       light-dark(#f4f0e6, #0e1013);
+  --action-fg: light-dark(#f4f0e6, #0e1013);
 
   /* ── Couleurs sémantiques : réservées aux STATUTS, jamais décoratives ──────── */
-  --ok:        light-dark(#2f7552, #7cc49c); /* validé, terminé avec succès (texte/icône) */
-  --warn:      light-dark(#8a5a00, #e6ae45); /* incertain, attention (texte/icône) */
-  --warn-edge: light-dark(#b97a10, #e6ae45); /* trait / aplat incertain (non-texte ≥ 3:1) */
-  --danger:    light-dark(#b3392f, #f2837a); /* échec, destructif */
-  --slate:     light-dark(#566377, #9aa6b8); /* formule non coranique (texte/icône) */
-  --slate-edge:light-dark(#7a879b, #9aa6b8);
-  --ink-human: light-dark(#1b1c20, #eeeae0); /* correction humaine : l'encre du relecteur */
+  --ok: light-dark(
+    #2f7552,
+    #7cc49c
+  ); /* validé, terminé avec succès (texte/icône) */
+  --warn: light-dark(#8a5a00, #e6ae45); /* incertain, attention (texte/icône) */
+  --warn-edge: light-dark(
+    #b97a10,
+    #e6ae45
+  ); /* trait / aplat incertain (non-texte ≥ 3:1) */
+  --danger: light-dark(#b3392f, #f2837a); /* échec, destructif */
+  --slate: light-dark(
+    #566377,
+    #9aa6b8
+  ); /* formule non coranique (texte/icône) */
+  --slate-edge: light-dark(#7a879b, #9aa6b8);
+  --ink-human: light-dark(
+    #1b1c20,
+    #eeeae0
+  ); /* correction humaine : l'encre du relecteur */
 
   /* ── Codage des intervalles — LA règle : jamais la couleur seule ──────────────
    * reconnu    : aplat + trait plein        déduit  : hachures 45° + trait pointillé long
@@ -62,38 +102,47 @@
    */
   --seg-recognized-fill: color-mix(in srgb, var(--accent) 26%, transparent);
   --seg-recognized-edge: var(--accent);
-  --seg-inferred-fill:   color-mix(in srgb, var(--accent) 14%, transparent);
-  --seg-inferred-edge:   var(--accent);
-  --seg-uncertain-fill:  color-mix(in srgb, var(--warn-edge) 20%, transparent);
-  --seg-uncertain-edge:  var(--warn-edge);
-  --seg-formula-fill:    color-mix(in srgb, var(--slate-edge) 22%, transparent);
-  --seg-formula-edge:    var(--slate-edge);
-  --seg-abstain-edge:    var(--text-3);
-  --seg-human:           var(--ink-human);
+  --seg-inferred-fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  --seg-inferred-edge: var(--accent);
+  --seg-uncertain-fill: color-mix(in srgb, var(--warn-edge) 20%, transparent);
+  --seg-uncertain-edge: var(--warn-edge);
+  --seg-formula-fill: color-mix(in srgb, var(--slate-edge) 22%, transparent);
+  --seg-formula-edge: var(--slate-edge);
+  --seg-abstain-edge: var(--text-3);
+  --seg-human: var(--ink-human);
   /* Signalements humains sur l'onde : confirmé = losange plein + trait plein ; brouillon = losange creux + pointillé */
-  --review-fill:         color-mix(in srgb, var(--ink-human) 11%, transparent);
-  --review-draft-fill:   color-mix(in srgb, var(--ink-human) 6%, transparent);
-  --hatch: repeating-linear-gradient(45deg, currentColor 0 1.5px, transparent 1.5px 6px);
-  --dots:  radial-gradient(currentColor 1.1px, transparent 1.5px) 0 0 / 6px 6px;
+  --review-fill: color-mix(in srgb, var(--ink-human) 11%, transparent);
+  --review-draft-fill: color-mix(in srgb, var(--ink-human) 6%, transparent);
+  --hatch: repeating-linear-gradient(
+    45deg,
+    currentColor 0 1.5px,
+    transparent 1.5px 6px
+  );
+  --dots: radial-gradient(currentColor 1.1px, transparent 1.5px) 0 0 / 6px 6px;
 
   /* ── Forme d'onde ─────────────────────────────────────────────────────────── */
-  --wave:        light-dark(#a9a392, #4a525e);
+  --wave: light-dark(#a9a392, #4a525e);
   --wave-played: light-dark(#1b1c20, #d9d5ca);
-  --playhead:    light-dark(#1b1c20, #eeeae0);
+  --playhead: light-dark(#1b1c20, #eeeae0);
 
   /* ── Typographie ──────────────────────────────────────────────────────────── */
-  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-ui:      "Atkinson Hyperlegible Next", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono:    "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display:
+    "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-ui:
+    "Atkinson Hyperlegible Next", "Segoe UI", system-ui, -apple-system,
+    sans-serif;
+  --font-mono:
+    "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", Consolas,
+    monospace;
 
   /* Échelle (px → rem, base 16) : 12 est le plancher, jamais en dessous. */
-  --fs-xs: 0.75rem;    /* 12 — méta, étiquettes de statut */
-  --fs-sm: 0.8125rem;  /* 13 — listes denses */
-  --fs-md: 0.9375rem;  /* 15 — interface par défaut */
-  --fs-lg: 1.0625rem;  /* 17 — texte de lecture (traduction) */
-  --fs-xl: 1.375rem;   /* 22 — titre de carte */
-  --fs-2xl: 1.875rem;  /* 30 — titre de session (Instrument Serif) */
-  --fs-3xl: 2.75rem;   /* 44 — grands nombres du tableau Performance */
+  --fs-xs: 0.75rem; /* 12 — méta, étiquettes de statut */
+  --fs-sm: 0.8125rem; /* 13 — listes denses */
+  --fs-md: 0.9375rem; /* 15 — interface par défaut */
+  --fs-lg: 1.0625rem; /* 17 — texte de lecture (traduction) */
+  --fs-xl: 1.375rem; /* 22 — titre de carte */
+  --fs-2xl: 1.875rem; /* 30 — titre de session (Instrument Serif) */
+  --fs-3xl: 2.75rem; /* 44 — grands nombres du tableau Performance */
   --lh-tight: 1.2;
   --lh-ui: 1.45;
   --lh-read: 1.6;
@@ -105,63 +154,134 @@
    */
   --quran-size: 40px;
   --quran-lh: 2.15;
-  --font-quran: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  --font-quran:
+    "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic",
+    "Traditional Arabic", serif;
 }
-:root[data-quran-font="amiri-quran"]  { --font-quran: "Amiri Quran", "Noto Naskh Arabic", serif; --quran-lh: 2.15; }
-:root[data-quran-font="scheherazade"] { --font-quran: "Scheherazade New", "Noto Naskh Arabic", serif; --quran-lh: 2; }
-:root[data-quran-font="noto-naskh"]   { --font-quran: "Noto Naskh Arabic", serif; --quran-lh: 2.05; }
-:root[data-quran-font="kfgqpc-hafs"]  { --font-quran: "KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Noto Naskh Arabic", serif; --quran-lh: 2.2; }
+:root[data-quran-font="amiri-quran"] {
+  --font-quran: "Amiri Quran", "Noto Naskh Arabic", serif;
+  --quran-lh: 2.15;
+}
+:root[data-quran-font="scheherazade"] {
+  --font-quran: "Scheherazade New", "Noto Naskh Arabic", serif;
+  --quran-lh: 2;
+}
+:root[data-quran-font="noto-naskh"] {
+  --font-quran: "Noto Naskh Arabic", serif;
+  --quran-lh: 2.05;
+}
+:root[data-quran-font="kfgqpc-hafs"] {
+  --font-quran:
+    "KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Noto Naskh Arabic", serif;
+  --quran-lh: 2.2;
+}
 
-:root[data-theme="dark"]  { color-scheme: dark; }
-:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
 
 :root {
   /* ── Espacements (échelle de 4 px) ────────────────────────────────────────── */
-  --sp-1: 0.25rem;  --sp-2: 0.5rem;   --sp-3: 0.75rem;  --sp-4: 1rem;
-  --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-8: 2rem;     --sp-10: 2.5rem;  --sp-12: 3rem;
-  --gutter: 1rem;                       /* 16 px mobile */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --gutter: 1rem; /* 16 px mobile */
 
   /* ── Rayons ───────────────────────────────────────────────────────────────── */
-  --r-xs: 4px;   /* segments, puces carrées */
-  --r-sm: 8px;   /* champs, boutons */
-  --r-md: 12px;  /* cartes */
-  --r-lg: 18px;  /* console, tiroirs */
+  --r-xs: 4px; /* segments, puces carrées */
+  --r-sm: 8px; /* champs, boutons */
+  --r-md: 12px; /* cartes */
+  --r-lg: 18px; /* console, tiroirs */
   --r-pill: 999px;
 
   /* ── Ombres : presque aucune, la hiérarchie vient des surfaces et des filets ─ */
-  --shadow-pop:    0 10px 30px -8px light-dark(rgb(27 28 32 / 0.22), rgb(0 0 0 / 0.6)); /* menus, popovers */
-  --shadow-drawer: 0 0 0 1px var(--border), 0 24px 60px -12px light-dark(rgb(27 28 32 / 0.3), rgb(0 0 0 / 0.7));
-  --hairline-top:  inset 0 1px 0 light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.04)); /* liseré de carte */
+  --shadow-pop: 0 10px 30px -8px
+    light-dark(rgb(27 28 32 / 0.22), rgb(0 0 0 / 0.6)); /* menus, popovers */
+  --shadow-drawer:
+    0 0 0 1px var(--border),
+    0 24px 60px -12px light-dark(rgb(27 28 32 / 0.3), rgb(0 0 0 / 0.7));
+  --hairline-top: inset 0 1px 0
+    light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.04)); /* liseré de carte */
 
   /* ── Contrôles ────────────────────────────────────────────────────────────── */
-  --h-sm: 32px;  --h-md: 40px;  --h-lg: 48px;  /* bureau */
-  --hit: 44px;                                   /* cible tactile minimale (WCAG 2.5.5) */
-  --w-left: 300px;  --w-right: 360px;            /* panneaux repliables (bureau) */
-  --w-drawer: min(92vw, 380px);                  /* tiroirs mobiles */
+  --h-sm: 32px;
+  --h-md: 40px;
+  --h-lg: 48px; /* bureau */
+  --hit: 44px; /* cible tactile minimale (WCAG 2.5.5) */
+  --w-left: 300px;
+  --w-right: 360px; /* panneaux repliables (bureau) */
+  --w-drawer: min(92vw, 380px); /* tiroirs mobiles */
   --header-h: 56px;
 
   /* ── Mouvement : transform/opacity seulement ──────────────────────────────── */
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-1: 120ms;  --dur-2: 200ms;  --dur-3: 320ms;
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
 }
-@media (min-width: 768px)  { :root { --gutter: 1.5rem; } }
-@media (max-width: 767px)  { :root { --quran-size: 32px; } }                /* lecture mobile : 32 px par défaut */
-@media (pointer: coarse)   { :root { --h-sm: 44px; --h-md: 44px; --h-lg: 52px; } }
+@media (min-width: 768px) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+@media (max-width: 767px) {
+  :root {
+    --quran-size: 32px;
+  }
+} /* lecture mobile : 32 px par défaut */
+@media (pointer: coarse) {
+  :root {
+    --h-sm: 44px;
+    --h-md: 44px;
+    --h-lg: 52px;
+  }
+}
 
 /* ── Règles globales (une seule fois, jamais recopiées par composant) ─────────── */
-button, [role="button"], a, label[for], summary, select, input[type="checkbox"], input[type="range"], input[type="radio"] {
+button,
+[role="button"],
+a,
+label[for],
+summary,
+select,
+input[type="checkbox"],
+input[type="range"],
+input[type="radio"] {
   cursor: pointer;
 }
-:disabled, [aria-disabled="true"] { cursor: not-allowed; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-xs); }
+:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 @media (forced-colors: active) {
   /* les hachures/points/glyphes portent déjà le sens : on garde les contours système */
-  :root { --border: CanvasText; --border-strong: CanvasText; }
+  :root {
+    --border: CanvasText;
+    --border-strong: CanvasText;
+  }
 }

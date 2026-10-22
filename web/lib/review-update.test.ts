@@ -148,7 +148,10 @@ describe("updateReview : fusion par identifiant", () => {
     const revisions = await readdir(path.join(sessionDir(ID), "revisions"));
     expect(revisions).toHaveLength(1);
     const saved = JSON.parse(
-      await readFile(path.join(sessionDir(ID), "revisions", revisions[0]), "utf8"),
+      await readFile(
+        path.join(sessionDir(ID), "revisions", revisions[0]),
+        "utf8",
+      ),
     );
     expect(saved.annotations).toHaveLength(1);
   });

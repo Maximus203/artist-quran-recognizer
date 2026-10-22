@@ -29,7 +29,14 @@ describe("barHeights", () => {
     expect(bars[11]).toBeCloseTo(0.2);
   });
   it("normalise par le plus grand pic du fichier", () => {
-    const bars = barHeights([0.25, 0.25, 0.25, 0.25], 4 / 50, 0, 4 / 50, 2, 0.5);
+    const bars = barHeights(
+      [0.25, 0.25, 0.25, 0.25],
+      4 / 50,
+      0,
+      4 / 50,
+      2,
+      0.5,
+    );
     expect(bars).toEqual([0.5, 0.5]);
   });
   it("ne rend que la fenêtre visible", () => {

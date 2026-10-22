@@ -1,0 +1,346 @@
+/* ───────── Carte du passage actif, sélecteur de police, liste des intervalles ───────── */
+.passage {
+  padding: var(--sp-6) var(--sp-5) var(--sp-5);
+}
+@media (min-width: 768px) {
+  .passage {
+    padding: var(--sp-8) var(--sp-10) var(--sp-6);
+  }
+}
+.p-top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-5);
+}
+.p-top .eyebrow {
+  flex: 1;
+  min-width: 120px;
+}
+.p-top .tools-inline {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.p-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: var(--sp-4);
+}
+.p-ref {
+  font: 400 var(--fs-xl) / 1 var(--font-display);
+}
+.p-ref--ar {
+  font: 400 1.5rem / 1.2 var(--font-quran);
+}
+.arabic {
+  font-family: var(--font-quran);
+  font-size: var(--quran-size);
+  line-height: var(--quran-lh);
+  text-align: center;
+  text-wrap: pretty;
+  padding: var(--sp-2) 0;
+  font-feature-settings: "liga", "calt";
+}
+.arabic.basmala {
+  font-size: calc(var(--quran-size) * 1.15);
+}
+.ayah-end {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5em;
+  height: 1.5em;
+  padding: 0 0.12em;
+  margin: 0 0.3em;
+  border-radius: 50%;
+  border: 1px solid var(--text-3);
+  box-shadow:
+    0 0 0 3px var(--surface-2),
+    0 0 0 4px var(--border);
+  font: 500 0.46em / 1 var(--font-quran);
+  color: var(--text-2);
+  vertical-align: middle;
+  direction: rtl;
+}
+.orn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-3);
+  margin: 0 auto var(--sp-2);
+}
+.orn::before,
+.orn::after {
+  content: "";
+  width: 56px;
+  height: 1px;
+  background: var(--border-strong);
+}
+.orn i {
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: var(--text-3);
+}
+.translation {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border-subtle);
+}
+.translation p {
+  font-size: var(--fs-lg);
+  line-height: var(--lh-read);
+  color: var(--text);
+  max-width: 68ch;
+  margin: 0 auto;
+  text-wrap: pretty;
+}
+.translation sup {
+  font-size: 0.7em;
+  color: var(--text-3);
+  margin-left: 2px;
+}
+.translation small {
+  display: block;
+  max-width: 68ch;
+  margin: var(--sp-3) auto 0;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.formula-note {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.p-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: var(--sp-5);
+}
+.p-empty {
+  text-align: center;
+  padding: var(--sp-8) 0;
+  color: var(--text-2);
+}
+.p-empty .ar-label {
+  font: 400 2.2rem / 1.4 var(--font-quran);
+  color: var(--text);
+  margin: var(--sp-3) 0;
+}
+.p-empty .formula-ar {
+  font: 400 calc(var(--quran-size) * 0.9) / var(--quran-lh) var(--font-quran);
+  color: var(--text);
+  margin: var(--sp-2) 0;
+}
+
+/* Sélecteur de police arabe */
+.pop-wrap {
+  position: relative;
+}
+.popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(78vh, 620px);
+  overflow-y: auto;
+  padding: var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  text-align: start;
+}
+.popover h3 {
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.pop-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pop-head h3 {
+  flex: 1;
+}
+.fonts {
+  display: grid;
+  gap: 8px;
+  margin: var(--sp-3) 0;
+}
+.fopt {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 2px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  width: 100%;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease);
+}
+.fopt:hover {
+  background: var(--surface-3);
+}
+.fopt[aria-checked="true"] {
+  border-color: var(--text);
+  background: var(--surface-3);
+}
+.fopt[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.fopt .radio {
+  grid-row: 1 / span 3;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+}
+.fopt[aria-checked="true"] .radio::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text);
+}
+.fopt .nm {
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.fopt .nm small {
+  font-weight: 400;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.fopt .sample {
+  font-size: 1.6rem;
+  line-height: 2.3;
+  padding: 2px 0 6px;
+  text-align: right;
+  direction: rtl;
+  color: var(--text);
+}
+.fopt .lic {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.size-row input {
+  flex: 1;
+}
+.size-row output {
+  min-width: 42px;
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+.popover .foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+@media (max-width: 767px) {
+  .popover {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    top: auto;
+    width: auto;
+    max-height: 82dvh;
+    z-index: 45;
+    box-shadow: var(--shadow-drawer);
+  }
+}
+
+/* Liste des intervalles */
+.seg-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.irow {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--hit);
+  padding: 8px var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+  transition: background var(--dur-1) var(--ease);
+}
+.irow:hover {
+  background: var(--surface-3);
+}
+.irow[aria-pressed="true"] {
+  background: var(--surface-3);
+  box-shadow: inset 3px 0 0 var(--text);
+}
+.irow .tm {
+  font: 400 var(--fs-sm) / 1 var(--font-mono);
+  color: var(--text-2);
+}
+.irow .ti {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.irow .ti .ar {
+  font-family: var(--font-quran);
+  font-size: 1.1rem;
+  margin-left: 8px;
+  color: var(--text-2);
+}
+.irow .st {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+  justify-content: flex-end;
+  min-width: 96px;
+}
+@media (max-width: 560px) {
+  .irow {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+  .irow .st {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+.intervals-list {
+  max-height: 560px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
