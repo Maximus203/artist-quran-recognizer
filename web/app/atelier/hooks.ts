@@ -1,22 +1,7 @@
 "use client";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Store } from "@/lib/mini-store";
-import {
-  DEFAULT_PREFS,
-  UI_STORAGE_KEY,
-  clampQuranSize,
-  effectiveTheme,
-  parsePrefs,
-  serializePrefs,
-  type UiPrefs,
-} from "@/lib/ui-prefs";
-import { resolveQuranFont, type QuranFontId } from "@/lib/quran-fonts";
+import { effectiveTheme, type ThemePref } from "@/lib/ui-prefs";
 
 /** Valeur dérivée d'un magasin : le composant ne se redessine que si la valeur choisie change. */
 export function useStoreValue<T, S>(
@@ -55,88 +40,10 @@ export function usePageVisible(): boolean {
   return visible;
 }
 
-/**
- * Préférences d'interface mémorisées (`aqr.ui.v1`). Lues après le montage (jamais pendant le rendu
- * serveur) ; un stockage bloqué (fenêtre privée) ne casse rien : on garde les valeurs en mémoire.
- */
-export function usePrefs() {
-  const [prefs, setPrefs] = useState<UiPrefs>(DEFAULT_PREFS);
-  const [ready, setReady] = useState(false);
-  const loaded = useRef(false);
-  useEffect(() => {
-    try {
-      setPrefs(parsePrefs(window.localStorage.getItem(UI_STORAGE_KEY)));
-    } catch {
-      /* stockage indisponible : valeurs par défaut */
-    }
-    loaded.current = true;
-    setReady(true);
-  }, []);
-  const update = useCallback((patch: Partial<UiPrefs>) => {
-    setPrefs((current) => {
-      const next = { ...current, ...patch };
-      try {
-        window.localStorage.setItem(UI_STORAGE_KEY, serializePrefs(next));
-      } catch {
-        /* non bloquant */
-      }
-      return next;
-    });
-  }, []);
-  return { prefs, ready, update };
-}
-
-/** Polices sous licence installées sur ce poste (`GET /api/fonts`). */
-export function useFontAvailability() {
-  const [availability, setAvailability] = useState<
-    Partial<Record<QuranFontId, boolean>>
-  >({});
-  const [checked, setChecked] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/fonts", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { fonts: [] }))
-      .then((data: { fonts?: { id: QuranFontId; available: boolean }[] }) => {
-        if (cancelled) return;
-        setAvailability(
-          Object.fromEntries(
-            (data.fonts ?? []).map((f) => [f.id, f.available]),
-          ),
-        );
-      })
-      .catch(() => undefined)
-      .finally(() => !cancelled && setChecked(true));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return { availability, checked };
-}
-
-/** Applique thème, police arabe et taille sur <html> (le script d'amorçage a déjà posé les valeurs initiales). */
-export function useAppearance(
-  prefs: UiPrefs,
-  availability: Partial<Record<QuranFontId, boolean>>,
-  ready: boolean,
-) {
-  const font = resolveQuranFont(prefs.font, availability);
-  useEffect(() => {
-    if (!ready) return;
-    const root = document.documentElement;
-    if (prefs.theme === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", prefs.theme);
-    root.setAttribute("data-quran-font", font);
-    if (prefs.size === null) root.style.removeProperty("--quran-size");
-    else
-      root.style.setProperty("--quran-size", `${clampQuranSize(prefs.size)}px`);
-  }, [prefs.theme, prefs.size, font, ready]);
-  return font;
-}
-
-/** Thème réellement affiché (pour l'icône du bouton). */
-export function useEffectiveTheme(prefs: UiPrefs): "light" | "dark" {
+/** Thème réellement affiché (pour l'icône du bouton) : le choix, ou celui du système. */
+export function useEffectiveTheme(pref: ThemePref): "light" | "dark" {
   const systemDark = useMedia("(prefers-color-scheme: dark)");
-  return effectiveTheme(prefs.theme, systemDark);
+  return effectiveTheme(pref, systemDark);
 }
 
 /** Ids de focus : piège de focus pour un tiroir ouvert, Échap, retour du focus au bouton. */

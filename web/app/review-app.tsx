@@ -1,76 +1,84 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { bindMediaDrop } from "@/lib/audio-upload";
+import { bindMediaDrop, isVideoName } from "@/lib/audio-upload";
 import { listenWindow } from "@/lib/marking";
 import { activeIndex, intervalLabel, intervalStateLabel } from "@/lib/passage";
-import { isSessionId } from "@/lib/session-id";
-import { attentionCount, pageTitle } from "@/lib/session-list";
-import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
-import { rememberTester } from "@/lib/tester";
+import type { Preferences } from "@/lib/preferences-schema";
+import { canModifyAnnotation } from "@/lib/review-access";
 import type { Annotation } from "@/lib/review";
-import { Console, type ListeningState } from "./atelier/console";
+import { isSessionId } from "@/lib/session-id";
+import { pageTitle } from "@/lib/session-list";
+import { canImport } from "@/lib/storage-meter";
+import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
+import { Console, SKIP_SECONDS, type ListeningState } from "./atelier/console";
 import { FontPicker, FONT_SAMPLE } from "./atelier/font-picker";
-import { Header, type View } from "./atelier/header";
-import { HeroWave } from "./atelier/hero-wave";
+import { Header } from "./atelier/header";
 import {
-  useAppearance,
-  useEffectiveTheme,
   useFocusTrap,
-  useFontAvailability,
   useMedia,
   usePageVisible,
-  usePrefs,
+  useStoreValue,
 } from "./atelier/hooks";
-import { IconSprite } from "./atelier/icons";
 import { IntervalsList } from "./atelier/intervals-list";
 import { NewTrial } from "./atelier/new-trial";
 import { LivePassage } from "./atelier/passage-card";
-import { PerfView } from "./atelier/perf-view";
 import { ReviewPanel, type ReviewTab } from "./atelier/review-panel";
 import { SessionHead } from "./atelier/session-head";
 import { SessionsPanel } from "./atelier/sessions-panel";
+import { useShell } from "./atelier/shell";
 import type { TimelineHandle } from "./atelier/timeline";
 import { usePlayer } from "./atelier/use-player";
 import { useReviewController, type ToastAction } from "./atelier/use-review";
 import {
   cancelSession,
   markViewed,
+  patchSession,
   runSession,
+  setFavorite,
   useImporter,
   useSessionDetail,
-  useSessionList,
+  useSidebarSessions,
+  type Visibility,
 } from "./atelier/use-sessions";
-import { useStoreValue } from "./atelier/hooks";
 
 type Peaks = { duration: number; peaks: number[] };
+type View = "revue" | "new";
 const TOAST_MS = 6000;
 const VIEWED_RETRY_MS = 4000;
 
 export default function ReviewApp() {
-  const { prefs, ready, update } = usePrefs();
-  const { availability } = useFontAvailability();
-  const font = useAppearance(prefs, availability, ready);
-  const theme = useEffectiveTheme(prefs);
+  const {
+    prefs,
+    update,
+    user,
+    quota,
+    refreshQuota,
+    font,
+    fontAvailability,
+    mounted,
+  } = useShell();
+  const ready = mounted;
   const wide = useMedia("(min-width: 1280px)");
   const narrow = useMedia("(max-width: 767px)");
   const visible = usePageVisible();
-  const { views, loaded, refresh } = useSessionList();
+  const sidebar = useSidebarSessions();
+  const admin = user.role === "admin";
+  const me = useMemo(
+    () => ({ username: user.username, admin }),
+    [user.username, admin],
+  );
 
-  const [view, setView] = useState<View>("revue");
+  const [view, setView] = useState<View>("new");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<"left" | "right" | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [follow, setFollow] = useState(true);
-  const [span, setSpan] = useState<number | null>(null);
-  const [tab, setTab] = useState<ReviewTab>("sig");
-  const [relecteur, setRelecteur] = useState(false);
+  const [follow, setFollow] = useState(prefs.followPlayback);
   const [message, setMessage] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [toast, setToast] = useState<{
     text: string;
     action?: ToastAction;
   } | null>(null);
-  const [testerFocus, setTesterFocus] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [runBusy, setRunBusy] = useState(false);
   const [peaks, setPeaks] = useState<Peaks | null>(null);
@@ -85,12 +93,14 @@ export default function ReviewApp() {
   const viewedSent = useRef(new Map<string, number>());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const currentView = views.find((v) => v.id === currentId) ?? null;
-  const { detail, error: detailError } = useSessionDetail(
-    currentId,
-    currentView?.state,
-    currentView?.prediction_sha256,
-  );
+  const {
+    detail,
+    error: detailError,
+    notFound,
+    patch,
+    reload,
+  } = useSessionDetail(currentId);
+  const currentView = detail?.session ?? null;
   const intervals = useMemo(() => detail?.result?.intervals ?? [], [detail]);
   const intervalsRef = useRef(intervals);
   intervalsRef.current = intervals;
@@ -110,27 +120,33 @@ export default function ReviewApp() {
   const player = usePlayer(currentId, {
     onError: setMessage,
     onPlay: () => setSelectedIndex(null),
+    rate: prefs.playbackRate,
+    volume: prefs.volume,
+    onRate: (playbackRate) => update({ playbackRate }),
+    onVolume: (volume) => update({ volume }),
   });
   const playerDuration = useStoreValue(player.store, (s) => s.duration);
   const duration =
     playerDuration || peaks?.duration || detail?.result?.source.duration_s || 0;
 
-  /* ── panneaux : bureau = mémorisés, en dessous = tiroirs ── */
-  const rightAvailable = view === "revue" && currentId !== null;
-  const leftOpen = wide ? prefs.left !== false : drawer === "left";
+  /* ── panneaux : bureau = préférences du compte, en dessous = tiroirs ── */
+  const showingNew = view === "new" || currentId === null;
+  const rightAvailable = !showingNew;
+  const leftOpen = wide ? prefs.leftPanelOpen !== false : drawer === "left";
   const rightOpen =
-    rightAvailable && (wide ? prefs.right !== false : drawer === "right");
+    rightAvailable &&
+    (wide ? prefs.rightPanelOpen !== false : drawer === "right");
   const toggleLeft = () =>
     wide
-      ? update({ left: !leftOpen })
+      ? update({ leftPanelOpen: !leftOpen })
       : setDrawer(drawer === "left" ? null : "left");
   const toggleRight = () =>
     wide
-      ? update({ right: !rightOpen })
+      ? update({ rightPanelOpen: !rightOpen })
       : setDrawer(drawer === "right" ? null : "right");
   const closeDrawer = useCallback(() => setDrawer(null), []);
   const openRight = useCallback(() => {
-    if (wide) update({ right: true });
+    if (wide) update({ rightPanelOpen: true });
     else setDrawer("right");
   }, [wide, update]);
   useEffect(() => {
@@ -145,24 +161,33 @@ export default function ReviewApp() {
   );
 
   /* ── ouverture d'une session ── */
-  const open = useCallback((id: string) => {
-    setCurrentId(id);
-    setView("revue");
-    setSelectedIndex(null);
-    setMessage("");
-    setFollow(true);
+  const open = useCallback(
+    (id: string) => {
+      setCurrentId(id);
+      setView("revue");
+      setSelectedIndex(null);
+      setMessage("");
+      setFollow(prefs.followPlayback);
+      setDrawer(null);
+      history.replaceState(null, "", `?session=${id}`);
+    },
+    [prefs.followPlayback],
+  );
+  const showNew = useCallback(() => {
+    setView("new");
     setDrawer(null);
-    const params = new URLSearchParams();
-    params.set("session", id);
-    if (new URLSearchParams(location.search).get("relecteur") === "1")
-      params.set("relecteur", "1");
-    history.replaceState(null, "", `?${params}`);
+    history.replaceState(null, "", "?vue=new");
   }, []);
+  const showReview = useCallback(() => {
+    setDrawer(null);
+    if (currentId) {
+      setView("revue");
+      history.replaceState(null, "", `?session=${currentId}`);
+    } else showNew();
+  }, [currentId, showNew]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    setRelecteur(params.get("relecteur") === "1");
-    const id = params.get("session");
+    const id = new URLSearchParams(location.search).get("session");
     if (isSessionId(id)) open(id);
     // une seule fois, au montage
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,17 +202,22 @@ export default function ReviewApp() {
     if (last !== undefined && Date.now() - last < VIEWED_RETRY_MS) return;
     viewedSent.current.set(currentId, Date.now());
     markViewed(currentId)
-      .then(refresh)
+      .then(() => {
+        patch({ unread: false });
+        return sidebar.refresh();
+      })
       .catch(() => viewedSent.current.delete(currentId));
-  }, [currentId, currentView?.unread, detail, visible, refresh]);
+  }, [currentId, currentView?.unread, detail, visible, patch, sidebar]);
 
   /* ── forme d'onde : crêtes de la copie d'écoute, calculées par le serveur ── */
+  // Seulement une fois la session connue : une session absente ou privée n'a pas de forme d'onde.
+  const detailId = detail?.session.id ?? null;
   useEffect(() => {
-    if (!currentId) return;
+    if (!detailId) return;
     let cancelled = false;
     setPeaks(null);
     setListening("pending");
-    fetch(`/api/sessions/${currentId}/peaks`, { cache: "no-store" })
+    fetch(`/api/sessions/${detailId}/peaks`, { cache: "no-store" })
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error);
@@ -205,22 +235,21 @@ export default function ReviewApp() {
     return () => {
       cancelled = true;
     };
-  }, [currentId]);
+  }, [detailId]);
 
-  /* ── revue humaine ── */
-  const needTester = useCallback(() => {
-    setTab("sig");
-    if (wide) update({ right: true });
-    else setDrawer("right");
-    setTesterFocus((n) => n + 1);
-    showToast("Indique d’abord qui teste.");
-  }, [showToast, update, wide]);
-
+  /* ── revue humaine : l'auteur est le compte connecté ── */
   const targetAt = useCallback((time: number) => {
     if (selectedRef.current !== null) return selectedRef.current;
     const index = activeIndex(intervalsRef.current, time);
     return index >= 0 ? index : null;
   }, []);
+
+  const tab: ReviewTab =
+    prefs.reviewTab === "truth" && !admin ? "sig" : prefs.reviewTab;
+  const setTab = useCallback(
+    (next: ReviewTab) => update({ reviewTab: next }),
+    [update],
+  );
 
   const review = useReviewController({
     session: detail
@@ -231,13 +260,13 @@ export default function ReviewApp() {
         }
       : null,
     initial: detail?.review?.annotations ?? null,
-    tester: prefs.tester,
+    tester: user.username,
+    canModify: (annotation) => canModifyAnnotation(annotation, me),
     duration,
     getPosition: player.position,
     targetAt,
     announce: say,
     toast: showToast,
-    needTester,
     reveal: () => {
       setTab("sig");
       openRight();
@@ -245,11 +274,6 @@ export default function ReviewApp() {
   });
   const reviewRef = useRef(review);
   reviewRef.current = review;
-
-  const setTester = (name: string) => {
-    update({ tester: name, testers: rememberTester(prefs.testers, name) });
-    say(`Testeur : ${name}`);
-  };
 
   const listen = useCallback(
     (a: Annotation) => {
@@ -307,34 +331,74 @@ export default function ReviewApp() {
   };
 
   /* ── import (audio et vidéo, plusieurs fichiers) ── */
-  const importer = useImporter(() => void refresh());
+  const visibility: Visibility = prefs.defaultVisibility;
+  const importer = useImporter(() => {
+    void sidebar.refresh();
+    void refreshQuota();
+  });
+
+  /** Refuse AVANT l'envoi ce qui dépasse la taille permise ou l'espace libre. */
+  const admissible = useCallback(
+    (files: File[]): { ok: File[]; refusal: string } => {
+      const ok: File[] = [];
+      let refusal = "";
+      let used = quota.used_bytes;
+      for (const file of files) {
+        const check = canImport(
+          file.size,
+          { used_bytes: used, limit_bytes: quota.limit_bytes },
+          isVideoName(file.name) ? quota.max_video_bytes : quota.max_file_bytes,
+        );
+        if (check.ok) {
+          ok.push(file);
+          used += file.size;
+        } else if (!refusal) refusal = check.message;
+      }
+      return { ok, refusal };
+    },
+    [quota],
+  );
+
   const importMedia = useCallback(
     async (files: File[]) => {
       setImportNotice("");
-      const { ids, errors } = await importer.importFiles(files);
-      await refresh();
+      const { ok, refusal } = admissible(files);
+      if (refusal) setImportNotice(refusal);
+      if (ok.length === 0) return;
+      const { ids, errors } = await importer.importFiles(ok, { visibility });
+      await sidebar.refresh();
       if (ids.length === 1) open(ids[0]);
       else if (ids.length > 1)
         showToast(`${ids.length} fichiers ajoutés à la file d’analyse`, {
           label: "Voir la file",
-          run: () => (wide ? update({ left: true }) : setDrawer("left")),
+          run: () =>
+            wide ? update({ leftPanelOpen: true }) : setDrawer("left"),
         });
-      if (errors.length && ids.length <= 1) setImportNotice(errors[0]);
+      if (errors.length && ids.length <= 1 && !refusal)
+        setImportNotice(errors[0]);
     },
-    [importer, open, refresh, showToast, update, wide],
+    [admissible, importer, visibility, sidebar, open, showToast, update, wide],
   );
   const importWithResult = async (audio: File, result: File) => {
     setImportNotice("");
-    const { ids, errors } = await importer.importFiles([audio], { result });
-    await refresh();
+    const { ok, refusal } = admissible([audio]);
+    if (ok.length === 0) return setImportNotice(refusal);
+    const { ids, errors } = await importer.importFiles(ok, {
+      result,
+      visibility,
+    });
+    await sidebar.refresh();
     if (ids.length === 1) open(ids[0]);
     else if (errors.length) setImportNotice(errors[0]);
   };
   const analyzeRecording = async (file: File) => {
-    const { ids, errors } = await importer.importFiles([file], {
+    const { ok, refusal } = admissible([file]);
+    if (ok.length === 0) throw new Error(refusal);
+    const { ids, errors } = await importer.importFiles(ok, {
       source: "microphone",
+      visibility,
     });
-    await refresh();
+    await sidebar.refresh();
     if (ids.length === 0) throw new Error(errors[0] ?? "Import impossible");
     if (errors.length)
       setMessage(
@@ -352,11 +416,11 @@ export default function ReviewApp() {
     [importMedia],
   );
 
-  const act = async (task: () => Promise<void>) => {
+  const act = async (task: () => Promise<unknown>) => {
     setRunBusy(true);
     try {
       await task();
-      await refresh();
+      await Promise.all([sidebar.refresh(), reload()]);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Action impossible");
     } finally {
@@ -364,13 +428,79 @@ export default function ReviewApp() {
     }
   };
 
+  /* ── gestes sur la session ouverte : renommer, favori, portée, archiver ── */
+  const rename = async (name: string | null) => {
+    if (!currentView) return;
+    try {
+      const { session } = await patchSession(currentView.id, { name });
+      patch({ name: session.name, name_source: session.name_source });
+      say(
+        name === null
+          ? "Nom par défaut rétabli"
+          : `Nom enregistré : ${session.name}`,
+      );
+      void sidebar.refresh();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Renommage impossible");
+    }
+  };
+  const toggleFavorite = async () => {
+    if (!currentView) return;
+    const on = !currentView.favorite;
+    patch({ favorite: on });
+    try {
+      await setFavorite(currentView.id, on);
+      say(on ? "Ajouté aux favoris" : "Retiré des favoris");
+      void sidebar.refresh();
+    } catch (e) {
+      patch({ favorite: !on });
+      showToast(e instanceof Error ? e.message : "Favori impossible");
+    }
+  };
+  const changeVisibility = async (next: Visibility) => {
+    if (!currentView) return;
+    const before = currentView.visibility;
+    patch({ visibility: next });
+    try {
+      await patchSession(currentView.id, { visibility: next });
+      say(
+        next === "global" ? "Session rendue globale" : "Session rendue privée",
+      );
+      void sidebar.refresh();
+    } catch (e) {
+      patch({ visibility: before });
+      showToast(e instanceof Error ? e.message : "Changement impossible");
+    }
+  };
+  const archive = async (archived: boolean) => {
+    if (!currentView) return;
+    const before = currentView.archived_at;
+    patch({ archived_at: archived ? new Date().toISOString() : null });
+    try {
+      await patchSession(currentView.id, { archived });
+      void sidebar.refresh();
+      showToast(archived ? "Session archivée" : "Session restaurée", {
+        label: "Annuler",
+        run: () => {
+          patch({ archived_at: before });
+          void patchSession(currentView.id, { archived: !archived }).then(() =>
+            sidebar.refresh(),
+          );
+        },
+      });
+    } catch (e) {
+      patch({ archived_at: before });
+      showToast(e instanceof Error ? e.message : "Archivage impossible");
+    }
+  };
+
   /* ── raccourcis clavier : jamais dans un champ, désactivables (WCAG 2.1.4) ── */
-  const latest = useRef({ prefs, view, detail });
-  latest.current = { prefs, view, detail };
+  const latest = useRef({ prefs, showingNew, detail });
+  latest.current = { prefs, showingNew, detail };
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const { prefs: p, view: v, detail: d } = latest.current;
-      if (v !== "revue" || !d) return;
+      const { prefs: p, showingNew: onNew, detail: d } = latest.current;
+      if (onNew || !d) return;
       const target = event.target as HTMLElement;
       const typing = target.matches?.(
         "input,textarea,select,[contenteditable]",
@@ -389,7 +519,19 @@ export default function ReviewApp() {
         else if (r.trace) r.setTrace(false);
         return;
       }
-      if (!p.shortcuts) return;
+      if (
+        (event.key === "ArrowLeft" || event.key === "ArrowRight") &&
+        !target.closest?.(
+          "[role=slider],[role=tab],[role=radio],[role=menuitem],[role=switch],[role=dialog]",
+        )
+      ) {
+        event.preventDefault();
+        const back = event.key === "ArrowLeft";
+        player.skip(back ? -SKIP_SECONDS : SKIP_SECONDS);
+        say(back ? "Reculé de 5 secondes" : "Avancé de 5 secondes");
+        return;
+      }
+      if (!p.shortcutsEnabled) return;
       const key = event.key.toLowerCase();
       if (key === "m") {
         event.preventDefault();
@@ -415,14 +557,14 @@ export default function ReviewApp() {
   }, []);
 
   /* ── titre de l'onglet : total des résultats non lus ── */
-  const unread = views.filter((v) => v.unread).length;
+  const unread = sidebar.counts?.states.unread ?? 0;
   useEffect(() => {
     document.title = pageTitle(unread);
   }, [unread]);
 
   /* ── police arabe ── */
   const defaultSize = narrow ? 32 : QURAN_SIZE.fallback;
-  const appliedSize = clampQuranSize(prefs.size ?? defaultSize);
+  const appliedSize = clampQuranSize(prefs.arabicSize ?? defaultSize);
   const sample = useMemo(() => {
     const first = intervals.find(
       (i) => i.kind === "verse" && typeof i.text === "string" && i.text,
@@ -434,22 +576,21 @@ export default function ReviewApp() {
   const fontTools = (
     <FontPicker
       font={font}
-      availability={availability}
-      size={prefs.size}
+      availability={fontAvailability}
+      size={prefs.arabicSize}
       appliedSize={appliedSize}
       sample={sample}
-      onFont={(id) => update({ font: id })}
-      onSize={(px) => update({ size: clampQuranSize(px) })}
-      onReset={() => update({ font: null, size: null })}
+      onFont={(id) => update({ arabicFont: id })}
+      onSize={(px) => update({ arabicSize: clampQuranSize(px) })}
+      onReset={() => update({ arabicFont: null, arabicSize: null })}
     />
   );
 
-  const attention = attentionCount(views);
+  const attention = unread + sidebar.queue.filter((s) => s.mine).length;
   const showRightPanel = rightAvailable;
 
   return (
     <div className="app" data-ready={ready} data-testid="app" data-view={view}>
-      <IconSprite />
       <div
         className="sr"
         aria-live="polite"
@@ -467,23 +608,21 @@ export default function ReviewApp() {
         </div>
       )}
       <Header
-        view={view}
-        onView={(next) => {
-          setView(next);
-          setDrawer(null);
+        active="revue"
+        onRevue={showReview}
+        onNew={showNew}
+        left={{
+          open: leftOpen,
+          onToggle: toggleLeft,
+          buttonRef: leftButton,
+          attention,
         }}
-        leftOpen={leftOpen}
-        rightOpen={rightOpen}
-        rightAvailable={rightAvailable}
-        onToggleLeft={toggleLeft}
-        onToggleRight={toggleRight}
-        attention={attention}
-        theme={theme}
-        onToggleTheme={() =>
-          update({ theme: theme === "dark" ? "light" : "dark" })
-        }
-        leftButton={leftButton}
-        rightButton={rightButton}
+        right={{
+          open: rightOpen,
+          onToggle: toggleRight,
+          buttonRef: rightButton,
+          available: rightAvailable,
+        }}
       />
       <div
         className="workspace"
@@ -504,24 +643,17 @@ export default function ReviewApp() {
           inert={ready && !leftOpen}
         >
           <SessionsPanel
-            views={views}
-            loaded={loaded}
+            data={sidebar}
             currentId={currentId}
             onOpen={open}
-            onRefresh={() => void refresh()}
+            onRefresh={() => void sidebar.refresh()}
             onRetry={(id) => void act(() => runSession(id))}
             onClose={closeDrawer}
-            onPerf={() => {
-              setView("perf");
-              setDrawer(null);
-            }}
           />
         </aside>
 
         <main className="center" id="center" data-testid="center">
-          {view === "perf" ? (
-            <PerfView views={views} />
-          ) : view === "new" ? (
+          {showingNew ? (
             <NewTrial
               busy={importer.busy}
               items={importer.items}
@@ -530,31 +662,14 @@ export default function ReviewApp() {
               onFileWithResult={(a, r) => void importWithResult(a, r)}
               onRecording={analyzeRecording}
               onClear={importer.clear}
+              visibility={visibility}
+              onVisibility={(next) => update({ defaultVisibility: next })}
+              quota={quota}
               onSeeQueue={() => {
-                setView("revue");
-                if (wide) update({ left: true });
+                if (wide) update({ leftPanelOpen: true });
                 else setDrawer("left");
               }}
             />
-          ) : !currentId ? (
-            <div className="stack">
-              <div className="empty-state" data-testid="empty-state">
-                <HeroWave />
-                <h2>Le temps de l’écoute</h2>
-                <p>
-                  Choisis une session dans la liste pour ouvrir le lecteur, la
-                  carte arabe et les pistes synchronisées, ou lance un nouvel
-                  essai.
-                </p>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={() => setView("new")}
-                >
-                  Nouvel essai
-                </button>
-              </div>
-            </div>
           ) : (
             <div className="stack" data-testid="review-view">
               {message ? (
@@ -567,9 +682,24 @@ export default function ReviewApp() {
                 </p>
               ) : null}
               {detailError && !detail ? (
-                <p className="notice notice--error o-head" role="alert">
-                  {detailError}
-                </p>
+                <div
+                  className="notice notice--error o-head"
+                  role="alert"
+                  data-testid="detail-error"
+                >
+                  <p>{detailError}</p>
+                  {notFound ? (
+                    <p style={{ marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--sm"
+                        onClick={showNew}
+                      >
+                        Nouvel essai
+                      </button>
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
               {currentView ? (
                 <SessionHead
@@ -578,12 +708,16 @@ export default function ReviewApp() {
                   busy={runBusy}
                   onRun={() => void act(() => runSession(currentView.id))}
                   onCancel={() => void act(() => cancelSession(currentView.id))}
+                  onRename={rename}
+                  onFavorite={() => void toggleFavorite()}
+                  onVisibility={(next) => void changeVisibility(next)}
+                  onArchive={(archived) => void archive(archived)}
                 />
-              ) : (
+              ) : !detailError ? (
                 <header className="o-head session-head">
                   <p className="muted">Chargement de la session…</p>
                 </header>
-              )}
+              ) : null}
               {detail ? (
                 <>
                   <Console
@@ -595,13 +729,20 @@ export default function ReviewApp() {
                     selectedIndex={selectedIndex}
                     onSelectInterval={selectInterval}
                     timelineRef={timelineRef}
-                    span={span}
-                    onSpan={setSpan}
+                    span={prefs.visibleSpanSeconds}
+                    onSpan={(span) =>
+                      update({
+                        visibleSpanSeconds:
+                          span as Preferences["visibleSpanSeconds"],
+                      })
+                    }
                     follow={follow}
                     onFollow={setFollow}
+                    onFollowToggle={(on) => {
+                      setFollow(on);
+                      update({ followPlayback: on });
+                    }}
                     review={review}
-                    testerKnown={Boolean(prefs.tester)}
-                    onNeedTester={needTester}
                     onSelectAnnotation={(id) => {
                       review.select(id);
                       setTab("list");
@@ -680,13 +821,10 @@ export default function ReviewApp() {
             <ReviewPanel
               sessionId={detail.session.id}
               review={review}
-              tester={prefs.tester}
-              recentTesters={prefs.testers}
-              onTester={setTester}
-              testerFocus={testerFocus}
+              me={me}
               tab={tab}
               onTab={setTab}
-              showTruth={relecteur}
+              showTruth={admin}
               store={player.store}
               duration={duration}
               getPosition={player.position}
@@ -703,8 +841,8 @@ export default function ReviewApp() {
               resultReady={
                 detail.session.state === "done" && Boolean(detail.result)
               }
-              shortcuts={prefs.shortcuts}
-              onShortcuts={(on) => update({ shortcuts: on })}
+              shortcuts={prefs.shortcutsEnabled}
+              onShortcuts={(on) => update({ shortcutsEnabled: on })}
               onClose={closeDrawer}
             />
           ) : null}

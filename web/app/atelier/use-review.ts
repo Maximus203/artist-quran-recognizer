@@ -8,6 +8,7 @@ import {
   roundTenth,
   type Selection,
 } from "@/lib/marking";
+import { rejectedMessage } from "@/lib/review-access";
 import { REVIEW_SCHEMA, newAnnotation, type Annotation } from "@/lib/review";
 import {
   addDraft,
@@ -48,15 +49,16 @@ type Options = {
   } | null;
   /** Signalements connus du serveur à l'ouverture de la session. */
   initial: readonly Annotation[] | null;
-  tester: string | null;
+  /** Pseudonyme du compte connecté : l'auteur de chaque signalement posé ici. */
+  tester: string;
+  /** Un signalement de quelqu'un d'autre ne se modifie pas (sauf administrateur) : le serveur le refuse. */
+  canModify: (annotation: Annotation) => boolean;
   duration: number;
   getPosition: () => number;
   /** Index de l'intervalle du moteur à cet instant (cible du signalement). */
   targetAt: (time: number) => number | null;
   announce: (text: string) => void;
   toast: (text: string, action?: ToastAction) => void;
-  /** Demande à saisir le pseudonyme (aucune pose sans testeur). */
-  needTester: () => void;
   /** Un signalement vient d'être posé : ouvre le panneau. */
   reveal: () => void;
 };
@@ -101,7 +103,7 @@ export function useReviewController(options: Options) {
   const ctx = useCallback(
     () => ({
       now: new Date().toISOString(),
-      editor: opts.current.tester ?? "inconnu",
+      editor: opts.current.tester,
     }),
     [],
   );
@@ -126,6 +128,10 @@ export function useReviewController(options: Options) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Sauvegarde impossible");
+      const refused = rejectedMessage(
+        Array.isArray(data.rejected) ? data.rejected.length : 0,
+      );
+      if (refused) opts.current.toast(refused);
       return { writes, merged: data.review.annotations as Annotation[] };
     },
     [],
@@ -216,10 +222,6 @@ export function useReviewController(options: Options) {
 
   const draftNow = useCallback((start: number, end: number | null) => {
     const o = opts.current;
-    if (!o.tester) {
-      o.needTester();
-      return;
-    }
     const annotation = newAnnotation({
       tester: o.tester,
       start,
@@ -239,10 +241,6 @@ export function useReviewController(options: Options) {
 
   const press = useCallback(() => {
     const o = opts.current;
-    if (!o.tester) {
-      o.needTester();
-      return;
-    }
     const outcome = pressMark(stateRef.current.mark, o.getPosition());
     if (outcome.kind === "start") {
       setState((current) => startMark(current, outcome.start));
@@ -254,10 +252,6 @@ export function useReviewController(options: Options) {
 
   const point = useCallback(() => {
     const o = opts.current;
-    if (!o.tester) {
-      o.needTester();
-      return;
-    }
     setState((current) => cancelMark(current));
     draftNow(roundTenth(o.getPosition()), null);
   }, [draftNow]);
@@ -276,31 +270,41 @@ export function useReviewController(options: Options) {
   );
 
   const setTrace = useCallback((on: boolean) => {
-    if (on && !opts.current.tester) {
-      opts.current.needTester();
-      return;
-    }
     setTraceState(on);
     opts.current.announce(on ? "Mode tracé activé" : "Mode tracé désactivé");
   }, []);
 
+  /** Vrai si l'utilisateur peut modifier ce signalement ; sinon le dit (et ne fait rien). */
+  const allowed = useCallback((id: string): boolean => {
+    const a = stateRef.current.annotations.find((x) => x.id === id);
+    if (!a || opts.current.canModify(a)) return true;
+    opts.current.toast(
+      `Ce signalement est celui de ${a.tester} : seul son auteur (ou un administrateur) peut le modifier.`,
+    );
+    return false;
+  }, []);
+
   const patch = useCallback(
-    (id: string, change: Parameters<typeof patchAnnotation>[2]) =>
-      setState((current) => patchAnnotation(current, id, change, ctx())),
-    [ctx],
+    (id: string, change: Parameters<typeof patchAnnotation>[2]) => {
+      if (!allowed(id)) return;
+      setState((current) => patchAnnotation(current, id, change, ctx()));
+    },
+    [ctx, allowed],
   );
 
   const toggle = useCallback(
-    (id: string, tag: string) =>
-      setState((current) => toggleTag(current, id, tag, ctx())),
-    [ctx],
+    (id: string, tag: string) => {
+      if (!allowed(id)) return;
+      setState((current) => toggleTag(current, id, tag, ctx()));
+    },
+    [ctx, allowed],
   );
 
   const edge = useCallback(
     (id: string, which: "start" | "end", time: number) =>
       setState((current) => {
         const a = current.annotations.find((x) => x.id === id);
-        if (!a) return current;
+        if (!a || !opts.current.canModify(a)) return current;
         const next = moveEdge(
           { start: a.start_s, end: a.end_s },
           which,
@@ -321,7 +325,7 @@ export function useReviewController(options: Options) {
     (id: string, which: "start" | "end", delta: number) =>
       setState((current) => {
         const a = current.annotations.find((x) => x.id === id);
-        if (!a) return current;
+        if (!a || !opts.current.canModify(a)) return current;
         const next = nudgeEdge(
           { start: a.start_s, end: a.end_s },
           which,
@@ -362,31 +366,38 @@ export function useReviewController(options: Options) {
     opts.current.toast("Brouillon gardé : retrouve-le dans Signalements.");
   }, []);
 
-  const remove = useCallback((id: string) => {
-    const { state: next, removed } = removeAnnotation(stateRef.current, id);
-    if (!removed) return;
-    setState(next);
-    setLoop(false);
-    const commit = () => {
-      undoTimers.current.delete(id);
-      immediate.current = true;
-      setState((current) => commitRemoval(current, id));
-    };
-    undoTimers.current.set(id, setTimeout(commit, UNDO_MS));
-    opts.current.toast("Signalement supprimé", {
-      label: "Annuler",
-      run: () => {
-        const pending = undoTimers.current.get(id);
-        if (pending) clearTimeout(pending);
+  const remove = useCallback(
+    (id: string) => {
+      if (!allowed(id)) return;
+      const { state: next, removed } = removeAnnotation(stateRef.current, id);
+      if (!removed) return;
+      setState(next);
+      setLoop(false);
+      const commit = () => {
         undoTimers.current.delete(id);
-        setState((current) => undoRemoval(current, id));
-      },
-    });
-  }, []);
+        immediate.current = true;
+        setState((current) => commitRemoval(current, id));
+      };
+      undoTimers.current.set(id, setTimeout(commit, UNDO_MS));
+      opts.current.toast("Signalement supprimé", {
+        label: "Annuler",
+        run: () => {
+          const pending = undoTimers.current.get(id);
+          if (pending) clearTimeout(pending);
+          undoTimers.current.delete(id);
+          setState((current) => undoRemoval(current, id));
+        },
+      });
+    },
+    [allowed],
+  );
 
   const edit = useCallback(
-    (id: string) => setState((current) => editAnnotation(current, id)),
-    [],
+    (id: string) => {
+      if (!allowed(id)) return;
+      setState((current) => editAnnotation(current, id));
+    },
+    [allowed],
   );
   const select = useCallback(
     (id: string | null) => setState((current) => selectAnnotation(current, id)),

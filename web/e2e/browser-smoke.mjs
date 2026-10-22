@@ -17,6 +17,9 @@
  *   AQR_SMOKE_CHROMIUM  exécutable Chromium (défaut /opt/pw-browsers/chromium)
  *   AQR_SMOKE_URL       serveur déjà lancé ; sinon `next start` est lancé (npm run build requis)
  *   AQR_SMOKE_TOKEN     jeton d'accès si le serveur est en mode test distant
+ *   AQR_SMOKE_USER / AQR_SMOKE_PASSWORD  compte de test d'un serveur déjà lancé (AQR_SMOKE_URL) ;
+ *                       sans eux, le smoke CRÉE un compte jetable par l'écran d'inscription (la base
+ *                       lancée par le smoke est vide : le premier inscrit est administrateur)
  *   AQR_SMOKE_TIMEOUT_S délai max du moteur (défaut 900) ; une session `failed` échoue aussitôt
  * Le moteur lit AQR_PYTHON (interpréteur du moteur : le venv NeMo pour fastconformer),
  * AQR_MODELS_DIR, AQR_CORPUS_DIR et AQR_ASR. Choix du moteur : AQR_SMOKE_ASR (même nom que le smoke
@@ -24,6 +27,7 @@
  * au même moteur.
  */
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { accessSync, constants, existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import net from "node:net";
@@ -202,9 +206,26 @@ try {
   page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
   // Les hooks de test sont des data-testid (jamais des libellés ni des classes de style).
-  await page.goto(base, { waitUntil: "domcontentloaded" });
-  await page.getByTestId("new-trial").waitFor();
-  ok("page chargée");
+  // Connexion : un compte de test fourni, sinon un compte jetable créé par l'écran d'inscription.
+  const smokeUser = process.env.AQR_SMOKE_USER;
+  const smokePassword = process.env.AQR_SMOKE_PASSWORD;
+  if (smokeUser && smokePassword) {
+    await page.goto(`${base}/login`, { waitUntil: "domcontentloaded" });
+    await page.getByLabel("Pseudonyme").fill(smokeUser);
+    await page.getByLabel("Mot de passe", { exact: true }).fill(smokePassword);
+    await page.getByTestId("login-submit").click();
+  } else {
+    await page.goto(`${base}/register`, { waitUntil: "domcontentloaded" });
+    await page
+      .getByLabel("Pseudonyme")
+      .fill(`smoke-${Date.now().toString(36)}`);
+    await page
+      .getByLabel("Mot de passe", { exact: true })
+      .fill(`${randomBytes(12).toString("base64url")}-aA1`);
+    await page.getByTestId("register-submit").click();
+  }
+  await page.getByTestId("new-trial").waitFor({ timeout: 30_000 });
+  ok("compte connecté, page chargée");
 
   // « Nouvel essai » : le fichier est importé dès qu'il est choisi et mis en file (autorun) ;
   // la session s'ouvre toute seule.

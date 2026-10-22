@@ -2,12 +2,14 @@
 import { formatRelative, formatTenths } from "@/lib/format";
 import { presetLabel } from "@/lib/review-presets";
 import type { Annotation } from "@/lib/review";
+import { canModifyAnnotation, type Me } from "@/lib/review-access";
 import { Icon } from "./icons";
 import type { ReviewController } from "./use-review";
 
 type Props = {
   review: ReviewController;
   sessionId: string;
+  me: Me;
   onJump: (a: Annotation) => void;
   onListen: (a: Annotation) => void;
   onEdit: (a: Annotation) => void;
@@ -16,6 +18,7 @@ type Props = {
 export function ListTab({
   review,
   sessionId,
+  me,
   onJump,
   onListen,
   onEdit,
@@ -145,15 +148,28 @@ export function ListTab({
                 >
                   <Icon name="play" fill />
                 </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--icon"
-                  data-testid="report-edit"
-                  aria-label="Modifier ce signalement"
-                  onClick={() => onEdit(a)}
-                >
-                  <Icon name="edit" />
-                </button>
+                {canModifyAnnotation(a, me) ? (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--icon"
+                    data-testid="report-edit"
+                    aria-label="Modifier ce signalement"
+                    onClick={() => onEdit(a)}
+                  >
+                    <Icon name="edit" />
+                  </button>
+                ) : (
+                  <span
+                    className="muted"
+                    data-testid="report-readonly"
+                    title={`Signalement de ${a.tester} : lecture seule`}
+                  >
+                    <Icon name="lock" size={16} />
+                    <span className="sr">
+                      Signalement de {a.tester}, lecture seule
+                    </span>
+                  </span>
+                )}
               </div>
             </li>
           ))

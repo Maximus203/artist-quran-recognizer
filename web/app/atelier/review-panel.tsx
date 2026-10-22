@@ -1,12 +1,12 @@
 "use client";
 import { useRef } from "react";
+import type { Me } from "@/lib/review-access";
 import type { Annotation } from "@/lib/review";
 import type { Store } from "@/lib/mini-store";
 import ValidationPanel from "../validation-panel";
 import { Icon } from "./icons";
 import { ListTab } from "./list-tab";
 import { SignalTab } from "./signal-tab";
-import { TesterBar } from "./tester-bar";
 import type { ReviewController } from "./use-review";
 import type { PlayerState } from "./use-player";
 
@@ -15,13 +15,11 @@ export type ReviewTab = "sig" | "list" | "truth";
 type Props = {
   sessionId: string;
   review: ReviewController;
-  tester: string | null;
-  recentTesters: readonly string[];
-  onTester: (name: string) => void;
-  testerFocus: number;
+  /** Le compte connecté : l'auteur des signalements posés ici. */
+  me: Me;
   tab: ReviewTab;
   onTab: (tab: ReviewTab) => void;
-  /** Onglet « Vérité terrain » : seulement avec `?relecteur=1`. */
+  /** Onglet « Vérité terrain » : administrateurs seulement. */
   showTruth: boolean;
   store: Store<PlayerState>;
   duration: number;
@@ -74,12 +72,25 @@ export function ReviewPanel(props: Props) {
           <Icon name="x" />
         </button>
       </div>
-      <TesterBar
-        tester={props.tester}
-        recent={props.recentTesters}
-        onTester={props.onTester}
-        focusSignal={props.testerFocus}
-      />
+      <section
+        className="tester"
+        aria-label="Auteur des signalements"
+        data-testid="tester"
+      >
+        <div className="tester-row">
+          <span
+            className="av av--sm"
+            data-i={props.me.username.charAt(0).toLocaleUpperCase()}
+            aria-hidden="true"
+          />
+          <div className="who">
+            <span className="eyebrow">Tu signales en tant que</span>
+            <b data-testid="tester-name">
+              {props.me.username} <span className="you">(ton compte)</span>
+            </b>
+          </div>
+        </div>
+      </section>
       <div
         ref={list}
         className="tabs"
@@ -119,7 +130,7 @@ export function ReviewPanel(props: Props) {
       >
         <SignalTab
           review={props.review}
-          tester={props.tester}
+          tester={props.me.username}
           store={props.store}
           getPosition={props.getPosition}
           contextAt={props.contextAt}
@@ -173,6 +184,7 @@ export function ReviewPanel(props: Props) {
         <ListTab
           review={props.review}
           sessionId={props.sessionId}
+          me={props.me}
           onJump={props.onJump}
           onListen={props.onListen}
           onEdit={props.onEdit}

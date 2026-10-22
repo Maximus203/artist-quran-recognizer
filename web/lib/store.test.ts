@@ -202,11 +202,11 @@ describe("persistance des sessions", () => {
 });
 
 describe("plafond d'upload", () => {
-  it("300 Mo par défaut, AQR_MAX_UPLOAD_BYTES ajuste, valeur invalide ignorée", () => {
-    expect(uploadLimitBytes(undefined)).toBe(300 * 1024 * 1024);
+  it("500 Mo par défaut, AQR_MAX_UPLOAD_BYTES ajuste, valeur invalide ignorée", () => {
+    expect(uploadLimitBytes(undefined)).toBe(500 * 1024 * 1024);
     expect(uploadLimitBytes("1024")).toBe(1024);
     for (const bad of ["", "0", "-1", "abc", "NaN"])
-      expect(uploadLimitBytes(bad)).toBe(300 * 1024 * 1024);
+      expect(uploadLimitBytes(bad)).toBe(500 * 1024 * 1024);
   });
 });
 

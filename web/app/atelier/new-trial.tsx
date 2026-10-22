@@ -1,10 +1,12 @@
 "use client";
 import { useRef, useState } from "react";
 import { acceptedMediaFiles, mediaAccept } from "@/lib/audio-upload";
+import { formatBytesFr } from "@/lib/format";
+import { storageState, type Quota } from "@/lib/storage-meter";
 import Recorder from "../recorder";
 import { HeroWave } from "./hero-wave";
 import { Icon } from "./icons";
-import type { ImportItem } from "./use-sessions";
+import type { ImportItem, Visibility } from "./use-sessions";
 
 type Props = {
   busy: boolean;
@@ -15,6 +17,10 @@ type Props = {
   onClear: () => void;
   onSeeQueue: () => void;
   error: string;
+  /** Portée de l'essai (micro et import) : choisie ici, enregistrée comme préférence. */
+  visibility: Visibility;
+  onVisibility: (visibility: Visibility) => void;
+  quota: Quota & { max_file_bytes: number; max_video_bytes: number };
 };
 
 const stateLabel: Record<ImportItem["state"], string> = {
@@ -30,6 +36,7 @@ export function NewTrial(props: Props) {
   const result = useRef<HTMLInputElement>(null);
   const [pairError, setPairError] = useState("");
   const doneItems = props.items.filter((i) => i.state !== "sending");
+  const space = storageState(props.quota);
   return (
     <div className="stack" data-testid="new-view">
       <div className="new">
@@ -41,6 +48,105 @@ export function NewTrial(props: Props) {
             fichier part dans la file d’analyse ; tu peux fermer la page.
           </p>
         </header>
+        <fieldset
+          className="card visib"
+          style={{ border: "1px solid var(--border)", margin: 0, minWidth: 0 }}
+          data-testid="visibility"
+        >
+          <legend className="sr">Qui peut voir cet essai ?</legend>
+          <p style={{ fontWeight: 700 }}>Qui peut voir cet essai ?</p>
+          <div
+            className="opts"
+            role="radiogroup"
+            aria-label="Portée de l’essai"
+          >
+            <button
+              className="radio-card"
+              type="button"
+              role="radio"
+              data-testid="visibility-global"
+              aria-checked={props.visibility === "global"}
+              onClick={() => props.onVisibility("global")}
+            >
+              <span className="radio" aria-hidden="true" />
+              <b>
+                <Icon name="globe" />
+                Global{" "}
+                <span
+                  className="badge badge--plain badge--outline"
+                  style={{ minHeight: 20, padding: "0 6px" }}
+                >
+                  par défaut
+                </span>
+              </b>
+              <span className="d">
+                Tous les testeurs l’écoutent et voient ses résultats et ses
+                performances.
+              </span>
+            </button>
+            <button
+              className="radio-card"
+              type="button"
+              role="radio"
+              data-testid="visibility-private"
+              aria-checked={props.visibility === "private"}
+              onClick={() => props.onVisibility("private")}
+            >
+              <span className="radio" aria-hidden="true" />
+              <b>
+                <Icon name="lock" />
+                Privé
+              </b>
+              <span className="d">
+                Toi seul. Il n’apparaît pas dans les listes des autres testeurs.
+              </span>
+            </button>
+          </div>
+          <p
+            className="quota-hint"
+            data-testid="quota-hint"
+            data-state={space.state}
+          >
+            <Icon name="drive" size={16} />
+            <span>
+              Espace utilisé :{" "}
+              <b
+                className="mono"
+                style={{ fontWeight: 600, color: "var(--text)" }}
+              >
+                {formatBytesFr(props.quota.used_bytes)}
+              </b>
+              {props.quota.limit_bytes
+                ? ` sur ${formatBytesFr(props.quota.limit_bytes)}`
+                : ""}
+            </span>
+            {props.quota.limit_bytes ? (
+              <span className="mini">
+                <i
+                  style={{ "--w": `${space.percent}%` } as React.CSSProperties}
+                />
+              </span>
+            ) : null}
+          </p>
+          {space.state !== "ok" ? (
+            <p className="notice notice--error" role="alert">
+              {space.state === "full"
+                ? "Quota atteint : les nouveaux imports sont bloqués. Supprime des sessions archivées pour libérer de la place."
+                : "Espace presque plein : archive puis supprime les gros fichiers dont tu n’as plus besoin."}
+            </p>
+          ) : null}
+          <p
+            className="hint"
+            style={{ fontSize: "var(--fs-xs)", color: "var(--text-3)" }}
+          >
+            Taille maximale d’un fichier :{" "}
+            {formatBytesFr(props.quota.max_file_bytes)}
+            {props.quota.max_video_bytes !== props.quota.max_file_bytes
+              ? ` (audio), ${formatBytesFr(props.quota.max_video_bytes)} (vidéo)`
+              : ""}
+            .
+          </p>
+        </fieldset>
         <Recorder onAnalyze={props.onRecording} />
         <div className="or">ou</div>
         <label className="drop" htmlFor="media-input" data-testid="drop-zone">
