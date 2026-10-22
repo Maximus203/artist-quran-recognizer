@@ -246,3 +246,71 @@ def test_sans_temps_mesures_le_partage_au_prorata_reste_estime():
     dets = _decoder().decode([(TimeSpan(0.0, 4.0), [cand])]).detections()
     assert [d.time for d in dets] == [TimeSpan(0.0, 2.0), TimeSpan(2.0, 4.0)]
     assert all(d.time_interpolated for d in dets)
+    assert all(not d.word_times for d in dets)  # jamais de temps au mot inventé
+
+
+# --- Temps au mot (ADR-0010) --------------------------------------------------------------------
+def _timed(ref: VerseRef, first: int, last: int, start: float, step: float = 0.5) -> Candidate:
+    """Candidat dont l'alignement a mesuré chaque mot (`step` secondes par mot)."""
+    words = tuple(
+        TimeSpan(start + n * step, start + (n + 1) * step) for n in range(last - first + 1)
+    )
+    return Candidate(
+        span=WordSpan(ref, first, last),
+        score=0.9,
+        times=(TimeSpan(words[0].start_s, words[-1].end_s),),
+        word_times=(words,),
+    )
+
+
+def test_les_temps_au_mot_mesures_passent_dans_la_detection():
+    obs = [(TimeSpan(0.0, 4.0), [_timed(VerseRef(55, 5), 1, 3, 0.4)])]
+    (det,) = _decoder().decode(obs).detections()
+    assert det.word_times == (TimeSpan(0.4, 0.9), TimeSpan(0.9, 1.4), TimeSpan(1.4, 1.9))
+    assert det.time == TimeSpan(0.4, 1.9)
+
+
+def test_les_temps_au_mot_d_un_candidat_a_plusieurs_versets_vont_a_chaque_verset():
+    cand = Candidate(
+        span=WordSpan(VerseRef(55, 2), 1, 2),
+        score=0.9,
+        continuation=(WordSpan(VerseRef(55, 3), 1, 2),),
+        times=(TimeSpan(6.7, 7.7), TimeSpan(9.6, 10.6)),
+        word_times=(
+            (TimeSpan(6.7, 7.2), TimeSpan(7.2, 7.7)),
+            (TimeSpan(9.6, 10.1), TimeSpan(10.1, 10.6)),
+        ),
+    )
+    first, second = _decoder().decode([(TimeSpan(6.0, 11.0), [cand])]).detections()
+    assert [len(d.word_times) for d in (first, second)] == [2, 2]
+    assert second.word_times[0] == TimeSpan(9.6, 10.1)
+
+
+def test_deux_moities_contigues_fusionnees_mettent_leurs_temps_au_mot_bout_a_bout():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_timed(VerseRef(2, 255), 1, 6, 0.0)]),
+        (TimeSpan(3.2, 6.0), [_timed(VerseRef(2, 255), 7, 12, 3.2)]),
+    ]
+    (det,) = _decoder().decode(obs).detections()
+    assert (det.span.first_word, det.span.last_word) == (1, 12)
+    assert len(det.word_times) == 12
+    assert det.word_times[0].start_s == det.time.start_s
+    assert det.word_times[-1].end_s == det.time.end_s
+
+
+def test_une_fusion_avec_un_mot_perdu_au_raccord_ne_garde_aucun_temps_au_mot():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_timed(VerseRef(2, 255), 1, 6, 0.0)]),
+        (TimeSpan(3.2, 6.0), [_timed(VerseRef(2, 255), 8, 12, 3.2)]),  # le mot 7 n'a pas de temps
+    ]
+    (det,) = _decoder().decode(obs).detections()
+    assert (det.span.first_word, det.span.last_word) == (1, 12) and det.word_times == ()
+
+
+def test_une_fusion_dont_une_moitie_n_a_pas_de_temps_au_mot_n_en_garde_aucun():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_timed(VerseRef(2, 255), 1, 6, 0.0)]),
+        (TimeSpan(3.2, 6.0), [_cand(VerseRef(2, 255), first=7, last=12)]),
+    ]
+    (det,) = _decoder().decode(obs).detections()
+    assert det.word_times == ()

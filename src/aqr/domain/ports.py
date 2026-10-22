@@ -58,6 +58,10 @@ class Candidate:
     times: tuple[TimeSpan, ...] = ()
     """Temps MESURÉS de chaque span (même ordre que `spans`) par alignement forcé du texte du
     corpus (ADR-0008) ; vide = inconnus, le décodeur prend les bords de la fenêtre."""
+    word_times: tuple[tuple[TimeSpan, ...], ...] = ()
+    """Temps MESURÉS de chaque mot de chaque span (même ordre que `spans`, un temps par mot de la
+    plage), par le même alignement forcé (ADR-0010) ; vide = inconnus, jamais estimés ici. Le
+    premier mot d'un span commence où commence son temps, le dernier finit où il finit."""
 
     @property
     def spans(self) -> tuple[WordSpan, ...]:
