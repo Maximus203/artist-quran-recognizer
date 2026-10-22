@@ -5,8 +5,24 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$here/signature-pattern.sh"
 zero="0000000000000000000000000000000000000000"
 bad=0
+
+# Rappel NON bloquant : jamais un refus, jamais un effet sur le code de sortie. Si les commits poussés
+# (ceux absents de tout remote) touchent src/ ou web/ sans toucher docs/RELEASE-NOTES.md, on rappelle
+# la règle « Documentation vivante » d'AGENTS.md. Toute erreur ici est ignorée.
+remind_release_notes() {
+  local files
+  files=$(git log --name-only --format= "$1" --not --remotes 2>/dev/null | sort -u) || return 0
+  # Here-strings (pas de tube) : avec pipefail, un grep -q qui sort tôt ferait échouer le tube.
+  if grep -qE '^(src|web)/' <<<"$files" && ! grep -qx 'docs/RELEASE-NOTES.md' <<<"$files"; then
+    echo "pre-push (rappel, ne bloque pas) : src/ ou web/ change sans docs/RELEASE-NOTES.md." >&2
+    echo "  Si le comportement visible, l'architecture ou une décision change : python scripts/new_release_note.py" >&2
+  fi
+  return 0
+}
+
 while read -r _ local_sha _ remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
+  remind_release_notes "$local_sha" || true
   # Seuls les commits absents de TOUT remote sont contrôlés : un merge de develop ne doit pas
   # faire relire l'historique déjà publié (qu'on ne peut pas réécrire ici).
   range="$local_sha --not --remotes"
