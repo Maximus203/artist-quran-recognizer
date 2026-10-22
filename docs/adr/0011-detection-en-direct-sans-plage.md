@@ -1,4 +1,4 @@
-# ADR-0010 — Détection en direct sur flux, sans plage déclarée
+# ADR-0011 — Détection en direct sur flux, sans plage déclarée
 
 - Statut : **proposé** — 2026-10-23 (conception ; rien n'est codé hors du script d'analyse)
 - Précise : ADR-0004 (recherche sur le flux continu), ADR-0007 (preuve cumulée), ADR-0008

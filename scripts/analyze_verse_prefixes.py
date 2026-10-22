@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Combien de mots faut-il entendre du début d'un verset pour le distinguer des autres ? (ADR-0010)
+"""Combien de mots faut-il entendre du début d'un verset pour le distinguer des autres ? (ADR-0011)
 
 Analyse du corpus Hafs (Tanzil, jamais redistribué) avec la même normalisation que le matcher
 (`normalize_arabic` + dictionnaire Uthmani -> imla'i, basmala du verset 1 retirée du flux). Aucune
