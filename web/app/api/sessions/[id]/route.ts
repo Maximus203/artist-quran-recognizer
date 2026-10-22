@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import {
-  ReviewWorkError,
-  deleteSession,
-  readResult,
-  readReview,
-} from "@/lib/store";
-import { ensureQueueRecovered } from "@/lib/jobs";
+import { ReviewWorkError, readResult, readReview } from "@/lib/store";
+import { httpError } from "@/lib/errors";
+import { ensureQueueRecovered, removeSession } from "@/lib/jobs";
 import { isLocalRequest } from "@/lib/local-request";
 import { readSessionView } from "@/lib/session-view";
 export const runtime = "nodejs";
@@ -38,14 +34,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
   try {
     const force = new URL(request.url).searchParams.get("force") === "1";
-    await deleteSession((await params).id, { force });
+    await removeSession((await params).id, { force });
     return new Response(null, { status: 204 });
   } catch (e) {
     if (e instanceof ReviewWorkError)
       return NextResponse.json({ error: e.message }, { status: 409 });
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Suppression impossible" },
-      { status: 400 },
-    );
+    const { status, message } = httpError(e, "Suppression impossible");
+    return NextResponse.json({ error: message }, { status });
   }
 }

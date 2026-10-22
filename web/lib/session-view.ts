@@ -4,7 +4,7 @@
  * `buildStats` sont des fonctions pures (testables sans serveur) ; seuls `listSessionViews`,
  * `readSessionView` et `readStats` touchent au disque.
  */
-import { maxConcurrent } from "./jobs";
+import { maxConcurrent, pendingEngines } from "./jobs";
 import {
   fitEngine,
   predictTotal,
@@ -54,6 +54,8 @@ export type ViewContext = {
   concurrency: number;
   /** État de la file de ce serveur ; null si elle n'existe pas encore (rien n'a été lancé). */
   queue: { active: string[]; waiting: string[] } | null;
+  /** Moteur demandé des analyses lancées dont `session.json` ne le porte pas encore. */
+  pendingEngines?: Record<string, string>;
 };
 
 type Total = {
@@ -125,7 +127,7 @@ export function buildViews(
   const total = (s: Session): Total => {
     let t = totals.get(s.id);
     if (!t) {
-      const engine = engineOf(s);
+      const engine = engineOf(s) ?? ctx.pendingEngines?.[s.id] ?? null;
       t = engine
         ? totalFor(s, fitFor(engine))
         : { total_s: null, low_s: null, high_s: null, reason: "no_history" };
@@ -263,23 +265,25 @@ const RECENT = 10;
 export function buildStats(sessions: Session[], ctx: ViewContext): Stats {
   const views = buildViews(sessions, ctx);
   const points = historyPoints(sessions);
+  // Une analyse = lancée par l'atelier (`started_at`) ; un résultat importé à la main n'en est pas une.
+  const ran = (s: Session, state: Session["state"]) =>
+    s.state === state && (state === "failed" || s.started_at !== null);
   const engines = new Set<string>();
   for (const s of sessions)
-    if ((s.state === "done" || s.state === "failed") && engineOf(s))
+    if ((ran(s, "done") || ran(s, "failed")) && engineOf(s))
       engines.add(engineOf(s) as string);
   const perEngine: EngineStats[] = [...engines].map((engine) => {
     const mine = points.filter((p) => p.engine === engine);
     const fit = fitEngine(mine);
     return {
       engine,
-      analyses: sessions.filter(
-        (s) => s.state === "done" && engineOf(s) === engine,
-      ).length,
+      analyses: sessions.filter((s) => ran(s, "done") && engineOf(s) === engine)
+        .length,
       failures: sessions.filter(
-        (s) => s.state === "failed" && engineOf(s) === engine,
+        (s) => ran(s, "failed") && engineOf(s) === engine,
       ).length,
       audio_total_s: sessions
-        .filter((s) => s.state === "done" && engineOf(s) === engine)
+        .filter((s) => ran(s, "done") && engineOf(s) === engine)
         .reduce(
           (sum, s) =>
             sum + (positive(s.audio_duration_s) ? s.audio_duration_s : 0),
@@ -313,7 +317,7 @@ export function buildStats(sessions: Session[], ctx: ViewContext): Stats {
     );
   const finishedAt = (s: Session) => s.finished_at ?? s.created_at;
   const recent = views
-    .filter((v) => v.state === "done" || v.state === "failed")
+    .filter((v) => ran(v, "done") || ran(v, "failed"))
     .sort((a, b) => finishedAt(b).localeCompare(finishedAt(a)))
     .slice(0, RECENT)
     .map((v) => ({
@@ -362,6 +366,7 @@ export function currentContext(): ViewContext {
     now: Date.now(),
     concurrency: maxConcurrent(),
     queue: peekQueue()?.snapshot() ?? null,
+    pendingEngines: pendingEngines(),
   };
 }
 

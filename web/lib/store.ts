@@ -130,8 +130,14 @@ export function sessionDir(id: string): string {
 /** Refus passagers de Windows quand le fichier remplacé est ouvert en lecture au même instant. */
 const TRANSIENT_RENAME = new Set(["EPERM", "EBUSY", "EACCES"]);
 const RENAME_ATTEMPTS = 8;
-export async function atomicJson(file: string, value: unknown): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
+/** Option de `saveSession` pour mettre à jour une session existante sans jamais la recréer. */
+export const UPDATE = { create: false } as const;
+export async function atomicJson(
+  file: string,
+  value: unknown,
+  { createDir = true }: { createDir?: boolean } = {},
+): Promise<void> {
+  if (createDir) await mkdir(path.dirname(file), { recursive: true });
   const temp = `${file}.${randomUUID()}.tmp`;
   await writeFile(temp, JSON.stringify(value, null, 2) + "\n", "utf8");
   // Sans cette reprise, une lecture concurrente (sondage de la liste) pouvait faire perdre la
@@ -185,7 +191,7 @@ export async function readSession(id: string): Promise<Session> {
       value.prediction_sha256 = sha(raw);
       recordOutcome(value, parsed, new Date().toISOString());
       value.pid = null;
-      await saveSession(value);
+      await saveSession(value, UPDATE);
       return value;
     }
   } catch {
@@ -199,13 +205,24 @@ export async function readSession(id: string): Promise<Session> {
       value.error = "Le traitement s’est arrêté avant de produire un résultat.";
       recordOutcome(value, null, new Date().toISOString());
       value.pid = null;
-      await saveSession(value);
+      await saveSession(value, UPDATE);
     }
   }
   return value;
 }
-export async function saveSession(value: Session): Promise<void> {
-  await atomicJson(path.join(sessionDir(value.id), "session.json"), value);
+/**
+ * Écrit `session.json`. `create: false` pour toute mise à jour d'une session qui existe déjà : si le
+ * dossier a été supprimé entre-temps (suppression depuis un autre onglet), l'écriture échoue au
+ * lieu de ressusciter un dossier creux avec un seul `session.json`. L'import (création) garde le
+ * défaut.
+ */
+export async function saveSession(
+  value: Session,
+  { create = true }: { create?: boolean } = {},
+): Promise<void> {
+  await atomicJson(path.join(sessionDir(value.id), "session.json"), value, {
+    createDir: create,
+  });
 }
 const locks = new Map<string, Promise<unknown>>();
 /** Sérialise les lecture-modification-écriture de `session.json` faites par ce serveur. */
@@ -234,7 +251,7 @@ export async function markViewed(
     if (session.state !== "done" && session.state !== "failed") return session;
     if (typeof session.viewed_at === "string") return session;
     session.viewed_at = now.toISOString();
-    await saveSession(session);
+    await saveSession(session, UPDATE);
     return session;
   });
 }
@@ -267,7 +284,7 @@ export async function backfillDerived(session: Session): Promise<Session> {
       fresh.finished_at,
     );
     try {
-      await saveSession(fresh);
+      await saveSession(fresh, UPDATE);
     } catch {
       /* lecture seule : la valeur calculée est quand même renvoyée */
     }
@@ -385,9 +402,10 @@ export async function deleteSession(
   const dir = sessionDir(id);
   const session = await readSession(id);
   const queue = peekQueue();
-  // Actif dans la file sans processus ni annulation : le lancement est en train de se faire.
-  const starting =
-    queue?.isActive(id) && !jobs.has(id) && session.state !== "cancelled";
+  // Actif dans la file (processus lancé ou en train de l'être, `running` pas encore écrit) et pas
+  // annulé : refus tout de suite. Attendre la fin du moteur ici bloquerait la requête pendant toute
+  // l'analyse puis effacerait le résultat.
+  const starting = queue?.isActive(id) && session.state !== "cancelled";
   if (session.state === "running" || starting)
     throw new Error("Traitement en cours : annule-le avant de supprimer.");
   if (!force && (await hasReviewWork(dir))) throw new ReviewWorkError();

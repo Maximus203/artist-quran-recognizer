@@ -9,6 +9,7 @@ import {
   importFromBytes,
   importFromStream,
   parseUploadName,
+  sanitizeName,
   uploadLimitFor,
   type ImportDeps,
 } from "./import-session";
@@ -63,6 +64,34 @@ describe("parseUploadName", () => {
       ".mp3.exe",
     ])
       expect(() => parseUploadName(bad)).toThrow(ImportError);
+  });
+  it("un nom trop long est tronqué à 255 caractères en gardant son extension", () => {
+    const parsed = parseUploadName(
+      encodeURIComponent(`${"a".repeat(300)}.MP3`),
+    );
+    expect(parsed.name).toHaveLength(255);
+    expect(parsed.name.endsWith(".MP3")).toBe(true);
+    expect(parsed.extension).toBe(".mp3");
+  });
+  it("un nom réduit à l'extension ou à des espaces est refusé avec un message précis", () => {
+    for (const bad of [".mp3", "   .mp3", " \t .mkv"]) {
+      const error = (() => {
+        try {
+          sanitizeName(bad);
+        } catch (e) {
+          return e as ImportError;
+        }
+      })();
+      expect(error).toBeInstanceOf(ImportError);
+      expect(error?.status).toBe(400);
+      expect(error?.message).toMatch(/nom du fichier est vide/);
+    }
+  });
+  it("l'extension inconnue garde son message de format", () => {
+    expect(() => sanitizeName("a.txt")).toThrow(/Format non accepté/);
+  });
+  it("retire les espaces autour du nom et les caractères de contrôle", () => {
+    expect(sanitizeName("  cours\u0007 un .mp3 ").name).toBe("cours un.mp3");
   });
 });
 
@@ -301,6 +330,25 @@ describe("importFromBytes — formulaire multipart (audio, avec résultat facult
     expect(session.audio_duration_s).toBe(12.5);
     expect(session.engine).toBe("whisper");
     expect(session.duration_s ?? null).toBeNull(); // pas de durée de traitement inventée
+  });
+  it("résultat joint illisible ou d'un autre format : message en français, sans trace de l'analyseur", async () => {
+    for (const bad of ["{ pas du json", JSON.stringify({ hello: "monde" })]) {
+      const error = await importFromBytes(
+        {
+          name: "a.mp3",
+          bytes: Buffer.from("audio"),
+          sourceKind: null,
+          prediction: Buffer.from(bad),
+        },
+        deps(),
+      ).catch((e) => e);
+      expect(error).toBeInstanceOf(ImportError);
+      expect(error.status).toBe(400);
+      expect(error.message).toMatch(/résultat joint/);
+      expect(error.message).not.toMatch(/Expected|expected|received|\[\s*\{/);
+      expect(error.message.length).toBeLessThan(200);
+    }
+    expect(await sessionIds()).toEqual([]);
   });
   it("résultat d'un autre audio : 400, rien conservé", async () => {
     const prediction = Buffer.from(
