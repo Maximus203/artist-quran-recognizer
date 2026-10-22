@@ -12,9 +12,12 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import type { AsrChoice } from "./asr-choice";
 import { LISTENING } from "./listening";
+import { peekQueue } from "./queue";
 import { parseRecognition, type Recognition } from "./recognition";
 import { reviewSchema, type Review } from "./review";
+import { realDurationSeconds, sessionEngine } from "./session-meta";
 
 /** Dossier de données par défaut : AppData seulement sous Windows, XDG ailleurs. */
 export function defaultReviewDir(
@@ -42,6 +45,21 @@ export function uploadLimitBytes(
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : DEFAULT_UPLOAD_BYTES;
 }
+const DEFAULT_VIDEO_UPLOAD_BYTES = 2 * 1024 ** 3;
+/**
+ * Plafond d'une vidéo envoyée en flux (`AQR_MAX_VIDEO_UPLOAD_BYTES`, 2 Gio par défaut). Plus haut
+ * que celui de l'audio parce qu'on garde l'image alors que seule la piste sonore sert : 2 Gio
+ * couvrent une heure et demie de 1080p courant. Un flux va directement sur le disque ; le
+ * formulaire multipart, lui, est lu en mémoire et reste soumis à `uploadLimitBytes`.
+ */
+export function videoUploadLimitBytes(
+  raw: string | undefined = process.env.AQR_MAX_VIDEO_UPLOAD_BYTES,
+): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0
+    ? value
+    : DEFAULT_VIDEO_UPLOAD_BYTES;
+}
 /** Rejet précoce d'après `Content-Length` (marge pour l'enveloppe multipart). */
 export function exceedsUploadLimit(
   contentLength: string | null,
@@ -65,7 +83,11 @@ export type Job = { child: ChildProcess; settled: Promise<void> };
  * Traitements en cours dans ce serveur. Tant qu'un id y figure, seul le gestionnaire
  * `close` de `jobs.ts` consigne l'issue : `readSession` ne sonde pas le processus.
  */
-export const jobs = new Map<string, Job>();
+const JOBS_KEY = Symbol.for("aqr.jobs");
+/** Sur `globalThis` : une seule table par processus serveur, même si le module est chargé deux fois. */
+export const jobs: Map<string, Job> = ((
+  globalThis as { [JOBS_KEY]?: Map<string, Job> }
+)[JOBS_KEY] ??= new Map<string, Job>());
 export type Session = {
   id: string;
   name: string;
@@ -73,14 +95,28 @@ export type Session = {
   audio_sha256: string;
   size: number;
   source_kind?: "file" | "microphone";
-  asr?: "cascade" | "fastconformer" | "whisper" | "muno-streaming";
+  asr?: AsrChoice;
   created_at: string;
-  state: "ready" | "running" | "done" | "failed" | "cancelled";
+  /** `queued` : en attente de la file (voir `queue.ts`) ; `running` : le processus tourne. */
+  state: "ready" | "queued" | "running" | "done" | "failed" | "cancelled";
   error: string | null;
+  /** Mise en file (reste renseignée après le départ : sert d'ordre FIFO au redémarrage). */
+  queued_at?: string | null;
   started_at: string | null;
   finished_at: string | null;
   prediction_sha256: string | null;
   pid: number | null;
+  /** Moteur de l'analyse (`cascade`, `fastconformer`…), identique à `asr` pour les nouvelles sessions. */
+  engine?: AsrChoice | null;
+  /** Durée de l'audio en secondes : sonde à l'import, puis valeur du moteur à la fin. */
+  audio_duration_s?: number | null;
+  /** Durée réelle du traitement (fin − départ) ; sert à estimer les analyses suivantes. */
+  duration_s?: number | null;
+  /**
+   * Date d'ouverture du résultat. `null` = terminé mais jamais ouvert (non lu) ; champ absent =
+   * session d'avant le suivi, considérée lue.
+   */
+  viewed_at?: string | null;
 };
 const SESSION_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -91,11 +127,52 @@ export function sessionDir(id: string): string {
   if (!SESSION_ID.test(id)) throw new Error("Identifiant invalide");
   return path.join(reviewRoot(), "sessions", id);
 }
-export async function atomicJson(file: string, value: unknown): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
+/** Refus passagers de Windows quand le fichier remplacé est ouvert en lecture au même instant. */
+const TRANSIENT_RENAME = new Set(["EPERM", "EBUSY", "EACCES"]);
+const RENAME_ATTEMPTS = 8;
+/** Option de `saveSession` pour mettre à jour une session existante sans jamais la recréer. */
+export const UPDATE = { create: false } as const;
+export async function atomicJson(
+  file: string,
+  value: unknown,
+  { createDir = true }: { createDir?: boolean } = {},
+): Promise<void> {
+  if (createDir) await mkdir(path.dirname(file), { recursive: true });
   const temp = `${file}.${randomUUID()}.tmp`;
   await writeFile(temp, JSON.stringify(value, null, 2) + "\n", "utf8");
-  await rename(temp, file);
+  // Sans cette reprise, une lecture concurrente (sondage de la liste) pouvait faire perdre la
+  // fin d'une analyse : la session restait « en attente » ou « en cours » pour toujours.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await rename(temp, file);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? "";
+      if (attempt >= RENAME_ATTEMPTS || !TRANSIENT_RENAME.has(code)) {
+        await rm(temp, { force: true }).catch(() => undefined);
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10 * attempt));
+    }
+  }
+}
+/**
+ * Consigne l'issue d'une analyse : fin, durée réelle, durée de l'audio et moteur d'après la sortie
+ * du moteur (la valeur du moteur remplace la sonde de l'import), et résultat « non lu ».
+ * Partagé par le gestionnaire `close` (jobs.ts) et par l'adoption d'une sortie trouvée sur le disque.
+ */
+export function recordOutcome(
+  value: Session,
+  parsed: Recognition | null,
+  finishedAt: string,
+): void {
+  value.finished_at = finishedAt;
+  value.duration_s = realDurationSeconds(value.started_at, finishedAt);
+  if (parsed) {
+    value.audio_duration_s = parsed.source.duration_s;
+    value.engine = sessionEngine(value, parsed.engine.asr);
+  }
+  value.viewed_at = null;
 }
 export async function readSession(id: string): Promise<Session> {
   const value = JSON.parse(
@@ -112,9 +189,9 @@ export async function readSession(id: string): Promise<Session> {
       await writeFile(target, raw);
       value.state = "done";
       value.prediction_sha256 = sha(raw);
-      value.finished_at = new Date().toISOString();
+      recordOutcome(value, parsed, new Date().toISOString());
       value.pid = null;
-      await saveSession(value);
+      await saveSession(value, UPDATE);
       return value;
     }
   } catch {
@@ -126,15 +203,93 @@ export async function readSession(id: string): Promise<Session> {
     } catch {
       value.state = "failed";
       value.error = "Le traitement s’est arrêté avant de produire un résultat.";
-      value.finished_at = new Date().toISOString();
+      recordOutcome(value, null, new Date().toISOString());
       value.pid = null;
-      await saveSession(value);
+      await saveSession(value, UPDATE);
     }
   }
   return value;
 }
-export async function saveSession(value: Session): Promise<void> {
-  await atomicJson(path.join(sessionDir(value.id), "session.json"), value);
+/**
+ * Écrit `session.json`. `create: false` pour toute mise à jour d'une session qui existe déjà : si le
+ * dossier a été supprimé entre-temps (suppression depuis un autre onglet), l'écriture échoue au
+ * lieu de ressusciter un dossier creux avec un seul `session.json`. L'import (création) garde le
+ * défaut.
+ */
+export async function saveSession(
+  value: Session,
+  { create = true }: { create?: boolean } = {},
+): Promise<void> {
+  await atomicJson(path.join(sessionDir(value.id), "session.json"), value, {
+    createDir: create,
+  });
+}
+const locks = new Map<string, Promise<unknown>>();
+/** Sérialise les lecture-modification-écriture de `session.json` faites par ce serveur. */
+function withSessionLock<T>(id: string, task: () => Promise<T>): Promise<T> {
+  const previous = locks.get(id) ?? Promise.resolve();
+  const next = previous.then(task, task);
+  const tail = next.catch(() => undefined);
+  locks.set(id, tail);
+  void tail.then(() => {
+    if (locks.get(id) === tail) locks.delete(id);
+  });
+  return next;
+}
+/**
+ * L'utilisateur a ouvert le résultat : pose `viewed_at` (première ouverture seulement, l'appel est
+ * idempotent). Sans effet tant que la session n'est ni terminée ni en échec : rien à lire encore.
+ * Un simple `GET` ne passe jamais par ici (le sondage de la liste ne doit pas effacer le point).
+ */
+export async function markViewed(
+  id: string,
+  now = new Date(),
+): Promise<Session> {
+  sessionDir(id); // identifiant invalide : refus avant toute file d'attente
+  return withSessionLock(id, async () => {
+    const session = await readSession(id);
+    if (session.state !== "done" && session.state !== "failed") return session;
+    if (typeof session.viewed_at === "string") return session;
+    session.viewed_at = now.toISOString();
+    await saveSession(session, UPDATE);
+    return session;
+  });
+}
+/**
+ * Migration paresseuse d'une session terminée avant le suivi des durées : renseigne la durée de
+ * l'audio, le moteur et la durée réelle une seule fois (`audio_duration_s` passe de `undefined` à
+ * un nombre ou `null`). `viewed_at` n'est pas touché : absent = lu. Ne fait jamais échouer l'appelant.
+ */
+export async function backfillDerived(session: Session): Promise<Session> {
+  if (session.state !== "done" || session.audio_duration_s !== undefined)
+    return session;
+  return withSessionLock(session.id, async () => {
+    const fresh = await readSession(session.id).catch(() => null);
+    if (
+      !fresh ||
+      fresh.state !== "done" ||
+      fresh.audio_duration_s !== undefined
+    )
+      return fresh ?? session;
+    let parsed: Recognition | null = null;
+    try {
+      parsed = (await readResult(fresh.id))?.parsed ?? null;
+    } catch {
+      /* prédiction illisible : la session reste sans durée, sans casser la liste */
+    }
+    fresh.audio_duration_s = parsed?.source.duration_s ?? null;
+    fresh.engine = sessionEngine(fresh, parsed?.engine.asr);
+    fresh.duration_s ??= realDurationSeconds(
+      fresh.started_at,
+      fresh.finished_at,
+    );
+    try {
+      await saveSession(fresh, UPDATE);
+    } catch {
+      /* lecture seule : la valeur calculée est quand même renvoyée */
+    }
+    return fresh;
+  });
 }
 export async function readResult(
   id: string,
@@ -246,9 +401,16 @@ export async function deleteSession(
 ): Promise<void> {
   const dir = sessionDir(id);
   const session = await readSession(id);
-  if (session.state === "running")
+  const queue = peekQueue();
+  // Actif dans la file (processus lancé ou en train de l'être, `running` pas encore écrit) et pas
+  // annulé : refus tout de suite. Attendre la fin du moteur ici bloquerait la requête pendant toute
+  // l'analyse puis effacerait le résultat.
+  const starting = queue?.isActive(id) && session.state !== "cancelled";
+  if (session.state === "running" || starting)
     throw new Error("Traitement en cours : annule-le avant de supprimer.");
   if (!force && (await hasReviewWork(dir))) throw new ReviewWorkError();
+  // En attente : on la retire de la file avant de supprimer, sinon elle démarrerait sans dossier.
+  queue?.remove(id);
   // Session annulée dont `close` n'est pas encore passé : il relirait un dossier supprimé.
   await jobs.get(id)?.settled;
   await rm(dir, { recursive: true, force: true });
@@ -333,12 +495,14 @@ export async function cleanupSessions(
   for (const id of ids) {
     try {
       // Traitement encore possédé par ce serveur (y compris launch → première écriture).
-      if (jobs.has(id)) continue;
+      if (jobs.has(id) || peekQueue()?.has(id)) continue;
       const dir = sessionDir(id);
       const active = async () =>
         now - (await lastActivityMs(dir, now)) < maxAgeSeconds * 1000;
       if (await active()) continue;
-      if ((await readSession(id)).state === "running") continue;
+      // Une session en attente n'est pas inactive : elle attend son tour dans la file.
+      const state = (await readSession(id)).state;
+      if (state === "running" || state === "queued") continue;
       // Un PUT de revue a pu écrire depuis la première lecture : relecture juste avant rm.
       if (await active()) continue;
       await rm(dir, { recursive: true, force: true });

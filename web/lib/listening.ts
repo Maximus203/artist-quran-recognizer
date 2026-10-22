@@ -150,6 +150,11 @@ const MEDIA_TYPES: Record<string, string> = {
   ".oga": "audio/ogg",
   ".flac": "audio/flac",
   ".webm": "audio/webm",
+  // Conteneurs vidéo : le lecteur n'en joue que la piste sonore (repli quand ffmpeg échoue).
+  ".mkv": "video/x-matroska",
+  ".mov": "video/quicktime",
+  ".avi": "video/x-msvideo",
+  ".m4v": "video/x-m4v",
 };
 /** Type MIME du fichier original (repli quand la copie d'écoute est impossible). */
 export function mediaType(extension: string): string {

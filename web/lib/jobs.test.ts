@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync } from "node:fs";
 import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { cancel, jobSettled, launch } from "./jobs";
+import { cancel, jobQueue, jobSettled, launch } from "./jobs";
+import { resetSharedQueue } from "./queue";
 import {
   deleteSession,
   jobs,
@@ -16,6 +18,27 @@ import {
 vi.mock("./store", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./store")>();
   return { ...actual, saveSession: vi.fn(actual.saveSession) };
+});
+// Faux moteur portable : le script du test est lancé par Node (`process.execPath`), pas comme
+// exécutable (un script à shebang échoue en `spawn EFTYPE` sous Windows). Les arguments reçus par
+// le script sont exactement ceux que recevrait `python`. Un interpréteur absent reste tel quel.
+vi.mock("./python", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./python")>();
+  return {
+    ...actual,
+    recognizeCommand: (
+      ...input: Parameters<typeof actual.recognizeCommand>
+    ) => {
+      const run = actual.recognizeCommand(...input);
+      return run.command.endsWith("fake-python.cjs")
+        ? {
+            ...run,
+            command: process.execPath,
+            args: [run.command, ...run.args],
+          }
+        : run;
+    },
+  };
 });
 
 // Faux interpréteur Python : un script node exécutable qui imite `aqr recognize`.
@@ -63,6 +86,8 @@ afterEach(async () => {
   // Aucun gestionnaire `close` ne doit survivre au test (écritures dans un dossier supprimé
   // ou dans la session du test suivant, qui partage le même identifiant).
   await jobSettled(ID);
+  await jobQueue().idle();
+  resetSharedQueue();
   vi.unstubAllEnvs();
   await rm(tmp, { recursive: true, force: true });
 });
@@ -171,7 +196,7 @@ describe("lancement du moteur", () => {
     expect(args[args.indexOf("--models-dir") + 1]).toBe(
       path.join(tmp, "models"),
     );
-    expect(["fastconformer", "whisper", "muno-streaming"]).toContain(
+    expect(["cascade", "fastconformer", "whisper", "muno-streaming"]).toContain(
       args[args.indexOf("--asr") + 1],
     );
   });
@@ -264,6 +289,41 @@ describe("robustesse du lancement", () => {
     const out = await readSession(ID);
     expect(out.state).toBe("failed");
     expect(out.error).toContain("disque plein");
+  });
+  it("supprimer une session dont le processus vient de partir (état « running » pas encore écrit) est refusé aussitôt", async () => {
+    vi.stubEnv("FAKE_MODE", "sleep");
+    await seed();
+    const real = await vi.importActual<typeof import("./store")>("./store");
+    vi.mocked(saveSession).mockImplementationOnce(async (value, options) => {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await real.saveSession(value, options);
+    });
+    const launching = launch(ID);
+    await vi.waitFor(() => expect(jobs.has(ID)).toBe(true));
+    const before = Date.now();
+    // Sans ce refus, la suppression attendait la fin du moteur (plus d'une minute) puis effaçait un résultat.
+    await expect(deleteSession(ID)).rejects.toThrow(/en cours/);
+    expect(Date.now() - before).toBeLessThan(300);
+    await launching;
+    await cancel(ID);
+    await jobSettled(ID);
+  });
+  it("une session supprimée pendant le lancement n'est pas recréée par une écriture tardive", async () => {
+    vi.stubEnv("FAKE_MODE", "sleep");
+    await seed();
+    const real = await vi.importActual<typeof import("./store")>("./store");
+    let pid: number | null = null;
+    vi.mocked(saveSession).mockImplementationOnce(async (value, options) => {
+      pid = value.pid;
+      await rm(sessionDir(ID), { recursive: true, force: true }); // suppression concurrente
+      await real.saveSession(value, options);
+    });
+    await expect(launch(ID)).rejects.toThrow();
+    await settledWithin(3000);
+    expect(pid).not.toBeNull();
+    await untilProcessGone(pid as unknown as number);
+    expect(existsSync(sessionDir(ID))).toBe(false); // aucun dossier fantôme avec un seul session.json
+    expect(jobs.has(ID)).toBe(false);
   });
   it("deux lancements simultanés : un seul démarre", async () => {
     await seed();

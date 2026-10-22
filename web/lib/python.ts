@@ -28,6 +28,39 @@ export function engineArgs(models: string): string[] {
   ];
 }
 
+export type EngineCommand = {
+  command: string;
+  args: string[];
+  env: NodeJS.ProcessEnv;
+};
+
+/** Ligne de commande de `aqr recognize` pour une session (un seul endroit : jobs.ts et les tests). */
+export function recognizeCommand(
+  source: string,
+  outDir: string,
+  asr: string,
+  models: string,
+): EngineCommand {
+  const { python, env } = pythonCommand();
+  return {
+    command: python,
+    env,
+    args: [
+      "-m",
+      "aqr.cli",
+      "recognize",
+      source,
+      "--out-dir",
+      outDir,
+      "--asr",
+      asr,
+      "--format",
+      "json",
+      ...engineArgs(models),
+    ],
+  };
+}
+
 export type PythonRun = { code: number | null; stdout: string; stderr: string };
 export type PythonRunner = (args: string[]) => Promise<PythonRun>;
 
