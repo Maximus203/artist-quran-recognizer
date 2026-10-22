@@ -116,7 +116,12 @@ def test_verset_incertain_non_nomme_et_infere_marque(corpus, renderer):
 
 def test_abstention_et_formule_explicites(corpus, renderer):
     doc = build_json(_result(corpus), renderer, None, source_sha256="00")
-    assert doc["intervals"][0] == {"kind": "non_quran", "label": "istiadha", "t": [0.5, 2.0]}
+    assert doc["intervals"][0] == {
+        "kind": "non_quran",
+        "label": "istiadha",
+        "t": [0.5, 2.0],
+        "label_ar": "أعوذ بالله من الشيطان الرجيم",
+    }
     assert doc["intervals"][2] == {
         "kind": "abstention",
         "reason": "below_threshold",
@@ -221,3 +226,91 @@ def test_la_cascade_est_tracee_seulement_quand_elle_a_tourne(corpus, renderer): 
     doc = build_json(replace(base, cascade=cascade), renderer, None, source_sha256="00")
     assert doc["cascade"] == cascade
     assert "cascade" not in build_json(base, renderer, None, source_sha256="00")
+
+
+# --- Basmala affichée comme un verset (texte du Mushaf 1:1, jamais d'un modèle : I1, I2) ---------
+
+
+def _formulas_result():
+    intervals = (
+        NonQuranSpan(TimeSpan(0.5, 2.0), NonQuranKind.ISTIADHA),
+        NonQuranSpan(TimeSpan(2.5, 5.0), NonQuranKind.BASMALA),
+        NonQuranSpan(TimeSpan(6.0, 7.0), NonQuranKind.TAKBIR),
+        NonQuranSpan(TimeSpan(8.0, 9.0), NonQuranKind.AMIN),
+        NonQuranSpan(TimeSpan(10.0, 12.0), NonQuranKind.FRENCH),
+    )
+    return RecognitionResult(
+        source_file="x.mp3",
+        duration_s=30.0,
+        intervals=intervals,
+        engine=EngineInfo("asr@rev", "seg", "flow", "viterbi-v2", corpus="tanzil"),
+        timing={},
+        decoder_config={},
+        windows=1,
+    )
+
+
+def test_la_basmala_porte_le_texte_du_corpus_1_1_et_sa_traduction(corpus, renderer):
+    doc = build_json(_formulas_result(), renderer, "french_hameedullah", source_sha256="00")
+    basmala = doc["intervals"][1]
+    assert basmala == {
+        "kind": "non_quran",
+        "label": "basmala",
+        "t": [2.5, 5.0],
+        "basmala": True,
+        "ref": "1:1",
+        "text": corpus.text(VerseRef(1, 1)),  # I1 : le Mushaf, pas un modèle
+        "translation": {
+            "text": "traduction de 1:1",  # I2 : restituée telle quelle, avec sa provenance
+            "translation_id": "french_hameedullah",
+            "version": "v-test",
+            "attribution": "attribution",
+            "scope": "verse",
+        },
+    }
+    assert len(corpus.words(VerseRef(1, 1))) == 4  # la basmala des autres sourates : quatre mots
+
+
+def test_la_basmala_sans_traduction_demandee_garde_son_texte(corpus, renderer):
+    doc = build_json(_formulas_result(), renderer, None, source_sha256="00")
+    basmala = doc["intervals"][1]
+    assert basmala["text"] == corpus.text(VerseRef(1, 1))
+    assert basmala["translation"] is None
+
+
+def test_les_autres_formules_n_ont_pas_de_texte_du_coran_seulement_un_libelle(corpus, renderer):
+    doc = build_json(_formulas_result(), renderer, "french_hameedullah", source_sha256="00")
+    labels = {i["label"]: i for i in doc["intervals"]}
+    assert labels["istiadha"]["label_ar"] == "أعوذ بالله من الشيطان الرجيم"
+    assert labels["takbir"]["label_ar"] == "الله أكبر"
+    assert labels["amin"]["label_ar"] == "آمين"
+    for kind in ("istiadha", "takbir", "amin"):
+        item = labels[kind]
+        # hors corpus : ni texte, ni traduction, ni référence de verset, et pas une basmala
+        assert not {"text", "translation", "ref", "basmala"} & item.keys()
+        assert set(item) == {"kind", "label", "t", "label_ar"}
+
+
+def test_une_zone_non_coranique_ordinaire_reste_inchangee(corpus, renderer):
+    doc = build_json(_formulas_result(), renderer, "french_hameedullah", source_sha256="00")
+    assert doc["intervals"][4] == {"kind": "non_quran", "label": "french", "t": [10.0, 12.0]}
+
+
+def test_la_basmala_expurgee_perd_texte_et_traduction_mais_garde_sa_reference(corpus, renderer):
+    from aqr.pipeline.output import redact_document
+
+    doc = build_json(_formulas_result(), renderer, "french_hameedullah", source_sha256="00")
+    light = redact_document(doc)["intervals"][1]
+    assert light == {
+        "kind": "non_quran",
+        "label": "basmala",
+        "t": [2.5, 5.0],
+        "basmala": True,
+        "ref": "1:1",
+    }
+    assert "text" in doc["intervals"][1]  # l'original n'est pas modifié
+
+
+def test_les_sous_titres_gardent_le_libelle_de_la_basmala(corpus, renderer):
+    srt = render_srt(_formulas_result(), renderer)
+    assert "[basmala]" in srt and corpus.text(VerseRef(1, 1)) not in srt
