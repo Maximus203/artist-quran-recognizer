@@ -8,8 +8,9 @@ candidats) ; un `INFERRED` est marqué comme tel ; une abstention est un interva
 from __future__ import annotations
 
 from aqr.alignment.verification import ChainCheck
-from aqr.domain.models import Detection, NonQuranKind, NonQuranSpan, TimeSpan
+from aqr.domain.models import Detection, NonQuranKind, NonQuranSpan, Status, TimeSpan
 from aqr.pipeline.result import AbstentionSpan, Interval, RecognitionResult
+from aqr.pipeline.word_times import CTC_ALIGNMENT, INTERPOLATED, interpolate
 from aqr.rendering.formula_labels import FORMULA_LABELS_AR
 from aqr.rendering.home_renderer import HomeRenderer, format_range
 
@@ -32,6 +33,25 @@ _LABEL_CAPTION = {
 
 def _span(time: TimeSpan | None) -> list[float] | None:
     return None if time is None else [round(time.start_s, 3), round(time.end_s, 3)]
+
+
+def _word_fields(item: Detection, renderer: HomeRenderer) -> dict[str, object]:
+    """Temps de chaque mot affiché (ADR-0010) : mesurés par l'alignement s'ils couvrent exactement
+    la plage `words`, sinon estimés au prorata de la longueur des mots, bornés à l'intervalle. Rien
+    pour un verset non nommé (`uncertain`) ou jamais entendu (`inferred`)."""
+    if item.status is not Status.RECOGNIZED or item.time is None:
+        return {}
+    shown = item.span.last_word - item.span.first_word + 1
+    if len(item.word_times) == shown:
+        return {
+            "word_times": [_span(t) for t in item.word_times],
+            "word_times_source": CTC_ALIGNMENT,
+        }
+    estimated = interpolate(renderer.word_weights(item), item.time)
+    return {
+        "word_times": [_span(t) for t in estimated],
+        "word_times_source": INTERPOLATED,
+    }
 
 
 def _non_quran_json(
@@ -65,6 +85,8 @@ def _interval_json(
             "repetition": rendered["repetition"],
             "text": rendered["text"],
             "translation": rendered["translation"],
+            **_word_fields(item, renderer),
+            **({} if item.promoted_by is None else {"promoted_by": item.promoted_by}),
         }
     if isinstance(item, NonQuranSpan):
         return _non_quran_json(item, renderer, translation_id)
@@ -112,8 +134,9 @@ def build_json(
 
 
 def _check_json(check: ChainCheck) -> dict[str, object]:
-    """Une vérification sur l'audio (ADR-0008) : suite de versets (`chain`) ou suite d'un verset
-    commencé (`continuation`) ; passage, texte du corpus aligné (syntaxe de `aqr align --verses`),
+    """Une vérification sur l'audio (ADR-0008) : suite de versets (`chain`), suite d'un verset
+    commencé (`continuation`) ou détection incertaine qui prolonge son voisin (`neighbor`) ;
+    passage, texte du corpus aligné (syntaxe de `aqr align --verses`),
     preuve et décision."""
     return {
         "kind": check.kind,

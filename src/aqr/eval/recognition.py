@@ -3,7 +3,9 @@
 Schéma lu (voir docs/EVALUATION-METRICS.md) : `source`, `engine`, `decoder`, `timing`,
 `intervals` (chronologiques) de trois sortes :
 - `verse` : ref, words [a, b], status recognized|inferred|uncertain, t [début, fin] ou null,
-  time_interpolated, confidence, candidates ;
+  time_interpolated, confidence, candidates ; champs additifs (ADR-0010) : `word_times` (un
+  [début, fin] par mot de `words`, dans l'ordre) avec `word_times_source` (`ctc-alignment` mesuré,
+  `interpolated` estimé), `promoted_by` ;
 - `non_quran` : label, t ; la basmala porte en plus `basmala: true`, `ref` (1:1), `text` (corpus)
   et `translation` ; isti'adha, takbir et amin un libellé `label_ar` (pas un texte du Mushaf) ;
 - `abstention` : reason, t, best_score (absence de décision, jamais un verset).
@@ -39,6 +41,12 @@ class VerseInterval:
     time_interpolated: bool = False
     confidence: float = 0.0
     candidates: tuple[VerseRef, ...] = ()
+    word_times: tuple[tuple[float, float], ...] | None = None
+    """Temps de chaque mot de `words` ; None = non fourni (ancien format, verset non nommé)."""
+    word_times_source: str | None = None
+    """`ctc-alignment` (mesuré) ou `interpolated` (estimé) : obligatoire avec `word_times`."""
+    promoted_by: str | None = None
+    """`neighbor` : `uncertain` promu parce qu'il prolonge un verset reconnu voisin (ADR-0010)."""
 
 
 @dataclass(frozen=True)
@@ -85,6 +93,42 @@ def _span(raw: object, where: str) -> tuple[float, float]:
 
 
 _BASMALA_REF = VerseRef(1, 1)
+_WORD_TIME_TOLERANCE_S = 0.002
+"""Arrondi des temps à la milliseconde dans la sortie : les bornes d'un mot peuvent s'écarter de `t`
+d'autant."""
+
+
+def _parse_word_times(
+    raw: Mapping[str, Any], first: int, last: int, t: tuple[float, float] | None, where: str
+) -> tuple[tuple[tuple[float, float], ...] | None, str | None]:
+    """`word_times` : un [début, fin] par mot de `words`, croissants, sans recouvrement, dans t."""
+    if raw.get("word_times") is None:
+        if raw.get("word_times_source") is not None:
+            raise RecognitionError(f"{where} : word_times_source sans word_times")
+        return None, None
+    source = raw.get("word_times_source")
+    if source not in ("ctc-alignment", "interpolated"):
+        raise RecognitionError(
+            f"{where} : word_times_source {source!r} inconnu (ctc-alignment, interpolated)"
+        )
+    items = raw["word_times"]
+    if not isinstance(items, Sequence) or isinstance(items, str):
+        raise RecognitionError(f"{where} : word_times doit être une liste")
+    if len(items) != last - first + 1:
+        raise RecognitionError(
+            f"{where} : word_times a {len(items)} temps pour {last - first + 1} mots"
+        )
+    times: list[tuple[float, float]] = []
+    for n, pair in enumerate(items):
+        start, end = _span(pair, f"{where}.word_times[{n}]")  # refuse un mot vide
+        if times and start < times[-1][1] - _WORD_TIME_TOLERANCE_S:
+            raise RecognitionError(f"{where} : word_times[{n}] chevauche le mot précédent")
+        times.append((start, end))
+    if t is not None and (
+        times[0][0] < t[0] - _WORD_TIME_TOLERANCE_S or times[-1][1] > t[1] + _WORD_TIME_TOLERANCE_S
+    ):
+        raise RecognitionError(f"{where} : word_times hors de l'intervalle t {list(t)}")
+    return tuple(times), str(source)
 
 
 def _parse_non_quran(raw: Mapping[str, Any], where: str) -> NonQuranInterval:
@@ -132,6 +176,7 @@ def _parse_one(raw: object, index: int) -> Interval:
             first, last = int(words[0]), int(words[1])
             if first < 1 or last < first:
                 raise RecognitionError(f"{where} : words invalide {words!r}")
+            word_times, word_times_source = _parse_word_times(raw, first, last, t, where)
             return VerseInterval(
                 ref=VerseRef.parse(str(raw["ref"])),
                 first_word=first,
@@ -141,6 +186,9 @@ def _parse_one(raw: object, index: int) -> Interval:
                 time_interpolated=bool(raw.get("time_interpolated", False)),
                 confidence=float(raw.get("confidence", 0.0)),
                 candidates=tuple(VerseRef.parse(str(c)) for c in raw.get("candidates") or ()),
+                word_times=word_times,
+                word_times_source=word_times_source,
+                promoted_by=None if raw.get("promoted_by") is None else str(raw["promoted_by"]),
             )
         if kind == "non_quran":
             return _parse_non_quran(raw, where)
