@@ -9,6 +9,8 @@ import { LEGACY_TESTER, TESTER_PATTERN } from "./tester";
  */
 export const REVIEW_SCHEMA = "aqr.review/2";
 const LEGACY_SCHEMA = "aqr.review/1";
+/** Verset attendu : `sourate:verset` (« 2:255 »). Une seule définition pour le formulaire et le schéma. */
+export const EXPECTED_REF_PATTERN = /^\d{1,3}:\d{1,3}$/;
 const MAX_TAGS = 30;
 const MAX_DELETED = 500;
 
@@ -35,10 +37,7 @@ export const annotationSchema = z
     /** Type historique d'aqr.review/1, dérivé du premier tag (exports inchangés). */
     type: legacyType,
     description: z.string().max(3000),
-    expected_ref: z
-      .string()
-      .regex(/^\d{1,3}:\d{1,3}$/)
-      .nullable(),
+    expected_ref: z.string().regex(EXPECTED_REF_PATTERN).nullable(),
     target_index: z.number().int().nonnegative().nullable(),
     status: z.enum(["draft", "confirmed"]),
     /** Pseudonyme du testeur, copié à la création : le changer ensuite ne réécrit pas l'historique. */
@@ -120,7 +119,6 @@ export const reviewUpdateSchema = z.preprocess(
 
 export type Annotation = z.infer<typeof annotationSchema>;
 export type Review = z.infer<typeof reviewObject>;
-export type ReviewUpdate = z.infer<typeof reviewUpdateSchema>;
 
 /** Un signalement se confirme avec au moins une puce OU un commentaire non vide. */
 export function canConfirm(a: {

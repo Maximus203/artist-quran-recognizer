@@ -1,15 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import { formatSecondsFr, formatTenths } from "@/lib/format";
+import { STEP_S } from "@/lib/marking";
 import { REVIEW_PRESETS } from "@/lib/review-presets";
-import { canConfirm, type Annotation } from "@/lib/review";
+import {
+  EXPECTED_REF_PATTERN,
+  canConfirm,
+  type Annotation,
+} from "@/lib/review";
 import type { Store } from "@/lib/mini-store";
 import { Icon } from "./icons";
 import { useStoreValue } from "./hooks";
 import type { ReviewController } from "./use-review";
 import type { PlayerState } from "./use-player";
-
-const EXPECTED = /^\d{1,3}:\d{1,3}$/;
 
 type Props = {
   review: ReviewController;
@@ -101,7 +104,7 @@ function Edge({
             className="btn btn--secondary"
             data-testid={`${edge}-minus`}
             aria-label={`${word} 0,1 s plus tôt`}
-            onClick={() => review.nudge(id, edge, -0.1)}
+            onClick={() => review.nudge(id, edge, -STEP_S)}
           >
             −
           </button>
@@ -117,7 +120,7 @@ function Edge({
             className="btn btn--secondary"
             data-testid={`${edge}-plus`}
             aria-label={`${word} 0,1 s plus tard`}
-            onClick={() => review.nudge(id, edge, 0.1)}
+            onClick={() => review.nudge(id, edge, STEP_S)}
           >
             +
           </button>
@@ -469,7 +472,7 @@ export function SignalTab(props: Props) {
                   if (text.trim() === "") {
                     setExpectedError(false);
                     review.patch(a.id, { expected_ref: null });
-                  } else if (EXPECTED.test(text.trim())) {
+                  } else if (EXPECTED_REF_PATTERN.test(text.trim())) {
                     setExpectedError(false);
                     review.patch(a.id, { expected_ref: text.trim() });
                   } else setExpectedError(true);

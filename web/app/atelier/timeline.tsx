@@ -9,7 +9,12 @@ import {
   useState,
 } from "react";
 import { formatTenths } from "@/lib/format";
-import { traceToSelection, type Selection } from "@/lib/marking";
+import {
+  STEP_LARGE_S,
+  STEP_S,
+  traceToSelection,
+  type Selection,
+} from "@/lib/marking";
 import {
   intervalLabel,
   intervalStateLabel,
@@ -372,7 +377,8 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       event.preventDefault();
       const step =
-        (event.key === "ArrowRight" ? 1 : -1) * (event.shiftKey ? 1 : 0.1);
+        (event.key === "ArrowRight" ? 1 : -1) *
+        (event.shiftKey ? STEP_LARGE_S : STEP_S);
       latest.current.onNudge(
         handle.dataset.id,
         handle.dataset.edge === "end" ? "end" : "start",

@@ -7,6 +7,8 @@
 export const MIN_RANGE_S = 0.2;
 /** Pas des boutons − / + et des flèches du clavier. */
 export const STEP_S = 0.1;
+/** Pas avec Maj (flèches du clavier sur une poignée). */
+export const STEP_LARGE_S = 1;
 /** Un point s'écoute ± 2 s autour de lui. */
 export const POINT_WINDOW_S = 2;
 /** Glissement minimal (px) pour que le tracé soit une plage et pas un simple toucher. */
