@@ -46,7 +46,7 @@ export const ffprobeRunner: ProbeRunner = async (file) => {
     ffprobeCommand(),
     [
       "-v", "error",
-      "-show_entries", "format=duration:stream=codec_type,duration",
+      "-show_entries", "format=duration:stream=codec_type,duration:stream_tags=DURATION",
       "-of", "json",
       file,
     ], // prettier-ignore
@@ -55,9 +55,24 @@ export const ffprobeRunner: ProbeRunner = async (file) => {
   return stdout;
 };
 
+/** Étiquette `DURATION` (`hh:mm:ss.ffffff`) des pistes Matroska/WebM, dont `duration` vaut `N/A`. */
+function tagDuration(tags: Record<string, string> | undefined): number | null {
+  const match = /^(\d+):(\d{2}):(\d{2}(?:\.\d+)?)$/.exec(
+    tags?.DURATION ?? tags?.duration ?? "",
+  );
+  if (!match) return null;
+  const seconds =
+    Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+  return seconds > 0 ? seconds : null;
+}
+
 export function parseProbe(stdout: string): MediaProbe {
   let value: {
-    streams?: Array<{ codec_type?: string; duration?: string }>;
+    streams?: Array<{
+      codec_type?: string;
+      duration?: string;
+      tags?: Record<string, string>;
+    }>;
     format?: { duration?: string };
   };
   try {
@@ -74,7 +89,10 @@ export function parseProbe(stdout: string): MediaProbe {
   return {
     // La piste audio d'abord : dans une vidéo, le conteneur peut durer plus longtemps que le son
     // (mesuré : 10,3 s de conteneur pour 4,6 s d'audio), et seul le son est analysé.
-    duration_s: positive(audio?.duration) ?? positive(value.format?.duration),
+    duration_s:
+      positive(audio?.duration) ??
+      tagDuration(audio?.tags) ??
+      positive(value.format?.duration),
     has_audio: audio !== undefined,
     has_video: streams.some((s) => s.codec_type === "video"),
   };
@@ -84,7 +102,7 @@ const VIDEO_ONLY = new Set([".mp4", ".mkv", ".mov", ".avi", ".m4v"]);
 
 /**
  * Contrôle d'un fichier déjà écrit sur le disque. Renvoie la durée sondée (`null` si inconnue).
- * `probed: false` = rien n'a pu être vérifié (ffprobe absent, ou audio illisible accepté comme avant).
+ * `probed: false` = rien n'a pu être vérifié (ffprobe absent) : accepté sans durée.
  */
 export async function inspectUpload(
   file: string,
@@ -103,11 +121,13 @@ export async function inspectUpload(
       (error as { killed?: boolean }).killed === true ||
       (error instanceof Error && error.message === "Sortie ffprobe illisible");
     if (!unreadable) throw error;
-    if (isVideo)
-      throw new MediaRejected(
-        "Cette vidéo est illisible ou corrompue : impossible d'en extraire l'audio.",
-      );
-    return { duration_s: null, probed: false };
+    // ffprobe a tourné et n'a rien pu lire : ffmpeg ne le décodera pas non plus. Refus tout de suite
+    // plutôt qu'un échec de l'analyse quelques secondes (ou minutes) plus tard.
+    throw new MediaRejected(
+      isVideo
+        ? "Cette vidéo est illisible ou corrompue : impossible d'en extraire l'audio."
+        : "Ce fichier audio est illisible ou corrompu : impossible de l'analyser.",
+    );
   }
   if (!probe.has_audio)
     throw new MediaRejected(

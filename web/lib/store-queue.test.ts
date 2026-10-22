@@ -7,6 +7,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { JobQueue, resetSharedQueue, sharedQueue } from "./queue";
@@ -282,6 +283,33 @@ describe("atomicJson — remplacement pendant une lecture (Windows : EPERM / EBU
     );
     expect(calls).toBe(1);
     vi.mocked(rename).mockImplementation(real.rename);
+  });
+});
+
+describe("saveSession — mise à jour d'une session qui existe", () => {
+  it("sans création : refuse d'écrire dans une session supprimée et ne recrée pas son dossier", async () => {
+    await saveSession(session());
+    await rm(sessionDir(ID), { recursive: true, force: true });
+    await expect(
+      saveSession(session({ state: "failed" }), { create: false }),
+    ).rejects.toThrow(/ENOENT/);
+    expect(existsSync(sessionDir(ID))).toBe(false);
+  });
+  it("sans création : met à jour normalement une session présente", async () => {
+    await saveSession(session());
+    await saveSession(session({ state: "failed" }), { create: false });
+    expect((await readSession(ID)).state).toBe("failed");
+  });
+  it("par défaut (import, tests) : crée le dossier", async () => {
+    await saveSession(session());
+    expect(existsSync(sessionDir(ID))).toBe(true);
+  });
+  it("markViewed, interrompu par une suppression, ne ressuscite pas la session", async () => {
+    await saveSession(session({ state: "done", viewed_at: null }));
+    const marking = markViewed(ID);
+    await rm(sessionDir(ID), { recursive: true, force: true });
+    await marking.catch(() => undefined);
+    expect(existsSync(sessionDir(ID))).toBe(false);
   });
 });
 

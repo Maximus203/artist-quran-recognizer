@@ -78,17 +78,28 @@ const tooLarge = (extension: string) =>
 
 /** Nom de fichier sûr (sans chemin, 255 caractères au plus) et extension reconnue. */
 export function sanitizeName(raw: string): { name: string; extension: string } {
-  const name = path
+  const base = path
     .basename(raw.replaceAll("\\", "/"))
     .replace(/[\u0000-\u001f]/g, "")
-    .slice(0, 255);
-  const extension = path.extname(name).toLowerCase();
+    .trim();
+  const dot = base.lastIndexOf(".");
+  const extension = dot >= 0 ? base.slice(dot).toLowerCase() : "";
   if (!acceptedMediaExtensions.has(extension))
     throw new ImportError(
       400,
       "Format non accepté : choisis un audio (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC, WebM) ou une vidéo (MP4, MKV, MOV, AVI, M4V).",
     );
-  return { name, extension };
+  const stem = base.slice(0, dot).trim();
+  if (stem === "")
+    throw new ImportError(
+      400,
+      "Le nom du fichier est vide : seule l'extension est présente.",
+    );
+  // Tronqué sur le nom, jamais sur l'extension (sinon un fichier valide devient « format non accepté »).
+  return {
+    name: `${stem.slice(0, 255 - extension.length)}${base.slice(dot)}`,
+    extension,
+  };
 }
 
 /** Nom reçu dans l'en-tête `x-aqr-filename` (encodé en pourcentage, UTF-8). */
@@ -130,7 +141,17 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
   try {
     let parsed: Recognition | null = null;
     if (landed.prediction) {
-      parsed = parseRecognition(JSON.parse(landed.prediction.toString("utf8")));
+      try {
+        parsed = parseRecognition(
+          JSON.parse(landed.prediction.toString("utf8")),
+        );
+      } catch {
+        // Ni la trace de l'analyseur JSON, ni le tableau d'erreurs de zod : l'utilisateur n'en fait rien.
+        throw new ImportError(
+          400,
+          "Le résultat joint n'est pas un JSON aqr.recognition/1 valide.",
+        );
+      }
       if (parsed.source.sha256.toLowerCase() !== landed.hash)
         throw new ImportError(
           400,

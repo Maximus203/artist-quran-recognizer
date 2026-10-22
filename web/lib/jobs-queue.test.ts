@@ -12,6 +12,7 @@ import {
   launch,
   maxConcurrent,
   recoverQueue,
+  removeSession,
   resetQueueRecovery,
 } from "./jobs";
 import { resetSharedQueue } from "./queue";
@@ -184,6 +185,24 @@ describe("file FIFO : une analyse à la fois", () => {
     expect(await startedIds()).toEqual([A]);
   });
 
+  it("queued_at et rang dans la file disent la même chose, même avec des lancements simultanés", async () => {
+    const ids = [A, B, C, D, ID(5), ID(6), ID(7), ID(8)];
+    for (const id of ids) await seed(id);
+    await Promise.all(ids.map((id) => launch(id)));
+    const snapshot = jobQueue().snapshot();
+    const order = [...snapshot.active, ...snapshot.waiting];
+    expect(order).toHaveLength(ids.length);
+    const stamped = await Promise.all(
+      order.map(async (id) => (await readSession(id)).queued_at as string),
+    );
+    // Strictement croissants le long de la file : après un redémarrage, l'ordre reconstruit
+    // (queued_at) est exactement l'ordre vécu, sans égalité à la milliseconde.
+    for (let i = 1; i < stamped.length; i++)
+      expect(stamped[i] > stamped[i - 1]).toBe(true);
+    for (const id of ids) await release(id);
+    for (const id of ids) await finished(id);
+  });
+
   it("jamais deux moteurs en même temps, démarrage dans l'ordre, chacun fini avant le suivant", async () => {
     await seed(A);
     await seed(B);
@@ -294,6 +313,49 @@ describe("annulation et suppression dans la file", () => {
     expect(await startedIds()).toEqual([A, C]);
     expect(await state(B)).toBe("cancelled");
   });
+
+  it("annuler une analyse en attente consigne la date d'annulation (finished_at)", async () => {
+    await seed(A);
+    await seed(B);
+    await launch(A);
+    await launch(B);
+    await cancel(B);
+    const cancelled = await readSession(B);
+    expect(cancelled.state).toBe("cancelled");
+    expect(cancelled.finished_at).toEqual(expect.any(String));
+    expect(cancelled.started_at).toBeNull();
+    expect(cancelled.viewed_at ?? null).toBeNull();
+  });
+
+  it("annulations en rafale (analyse en cours puis celle qui la suit) : aucune annulée ne démarre", async () => {
+    for (let round = 0; round < 12; round++) {
+      const [W, X, Y] = [
+        ID(10 + round * 3),
+        ID(11 + round * 3),
+        ID(12 + round * 3),
+      ];
+      await seed(W);
+      await seed(X, "ok");
+      await seed(Y, "ok");
+      await launch(W);
+      await launch(X);
+      await launch(Y);
+      await until(async () => (await startedIds()).includes(W));
+      // Sans pause : l'annulation de W libère la place, X est promue pendant qu'on l'annule.
+      const delay = round % 4;
+      await Promise.all([
+        cancel(W),
+        new Promise((resolve) => setTimeout(resolve, delay)).then(() =>
+          cancel(X),
+        ),
+      ]);
+      expect(await state(X)).toBe("cancelled");
+      expect((await finished(Y)).state).toBe("done");
+      await jobQueue().idle();
+      expect(await startedIds()).not.toContain(X);
+      expect(await state(X)).toBe("cancelled");
+    }
+  }, 120000);
 
   it("annuler l'analyse en cours démarre la suivante", async () => {
     await seed(A);
@@ -429,6 +491,89 @@ describe("reprise après redémarrage", () => {
     expect(failed.error).toBeTruthy();
     expect((await finished(B)).state).toBe("done");
   });
+});
+
+describe("course aléatoire : lancer, annuler, supprimer en même temps", () => {
+  // Générateur déterministe : un échec se rejoue avec la même graine.
+  const prng = (seed: number) => () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  it.each([1, 2, 3])(
+    "graine %i : jamais deux moteurs, aucune session fantôme, aucune annulée ne redémarre",
+    async (seed) => {
+      const random = prng(seed);
+      const ids = [A, B, C, D];
+      for (const id of ids) await seed_(id);
+      const lastOp = new Map<string, { op: string; done: number }>();
+      const apply = async (id: string, op: "launch" | "cancel" | "delete") => {
+        try {
+          if (op === "launch") await launch(id);
+          else if (op === "cancel") await cancel(id);
+          else await removeSession(id, { force: true });
+          lastOp.set(id, { op, done: Date.now() });
+        } catch {
+          // Refus normal (déjà en file, inconnue, en cours…) : la course reste valide.
+        }
+      };
+      for (let step = 0; step < 14; step++) {
+        const group = Array.from(
+          { length: 1 + Math.floor(random() * 3) },
+          () => ({
+            id: ids[Math.floor(random() * ids.length)],
+            op: (["launch", "launch", "cancel", "delete"] as const)[
+              Math.floor(random() * 4)
+            ],
+          }),
+        );
+        await Promise.all(
+          group.map(({ id, op }, i) =>
+            new Promise((resolve) =>
+              setTimeout(resolve, i * Math.floor(random() * 3)),
+            ).then(() => apply(id, op)),
+          ),
+        );
+        if (random() < 0.5)
+          await new Promise((r) => setTimeout(r, Math.floor(random() * 40)));
+      }
+      for (const id of ids) await release(id);
+      await jobQueue().idle();
+      await new Promise((r) => setTimeout(r, 60));
+
+      const log = await events();
+      // 1. Jamais deux moteurs en même temps (AQR_MAX_CONCURRENT = 1).
+      let live = 0;
+      for (const e of log) {
+        live += e.event === "start" ? 1 : -1;
+        expect(live).toBeLessThanOrEqual(1);
+      }
+      // 2. Rien ne reste « en attente » ou « en cours » ; la file est vide.
+      expect(jobQueue().snapshot()).toEqual({ active: [], waiting: [] });
+      for (const id of ids) {
+        if (!existsSync(sessionDir(id))) continue;
+        const session = await readSession(id);
+        expect(["ready", "done", "failed", "cancelled"]).toContain(
+          session.state,
+        );
+        // 3. Aucune session fantôme : un dossier sans audio (seul session.json) est un résidu.
+        expect(existsSync(path.join(sessionDir(id), "source.mp3"))).toBe(true);
+      }
+      // 4. Une annulation actée n'est suivie d'aucun démarrage (sauf relance demandée après).
+      for (const [id, { op, done }] of lastOp) {
+        if (op !== "cancel") continue;
+        const late = log.filter(
+          (e) => e.id === id && e.event === "start" && e.at > done,
+        );
+        expect(late).toEqual([]);
+      }
+    },
+    60000,
+  );
+
+  const seed_ = (id: string) => seed(id, "hold");
 });
 
 describe("robustesse", () => {
