@@ -70,7 +70,9 @@ export const isEmptyDraft = (a: Annotation): boolean =>
   a.expected_ref === null;
 
 /** Ouverture d'une session : on repart de ce que le serveur a. */
-export const loadReview = (annotations: readonly Annotation[]): ReviewState => ({
+export const loadReview = (
+  annotations: readonly Annotation[],
+): ReviewState => ({
   ...emptyReview(),
   annotations: ordered([...annotations]),
 });
@@ -92,7 +94,10 @@ function dropEmptyDraft(state: ReviewState): ReviewState {
   };
 }
 
-export const startMark = (state: ReviewState, position: number): ReviewState => ({
+export const startMark = (
+  state: ReviewState,
+  position: number,
+): ReviewState => ({
   ...state,
   mark: position,
 });
@@ -102,7 +107,10 @@ export const cancelMark = (state: ReviewState): ReviewState => ({
 });
 
 /** Nouveau brouillon : ouvert, sélectionné, enregistré dès la pose. */
-export function addDraft(state: ReviewState, annotation: Annotation): ReviewState {
+export function addDraft(
+  state: ReviewState,
+  annotation: Annotation,
+): ReviewState {
   const cleaned = dropEmptyDraft(state);
   return bump(
     {
@@ -143,11 +151,12 @@ export function patchAnnotation(
   if (patch.tags)
     next.type = patch.tags.length > 0 ? legacyTypeOf(patch.tags) : "other";
   if (current.tester !== context.editor) next.updated_by = context.editor;
-  const rangeMoved =
-    patch.start_s !== undefined || patch.end_s !== undefined;
+  const rangeMoved = patch.start_s !== undefined || patch.end_s !== undefined;
   const updated: ReviewState = {
     ...state,
-    annotations: ordered(state.annotations.map((a) => (a.id === id ? next : a))),
+    annotations: ordered(
+      state.annotations.map((a) => (a.id === id ? next : a)),
+    ),
     listened: rangeMoved ? { ...state.listened, [id]: false } : state.listened,
   };
   return bump(updated, id);
@@ -256,7 +265,9 @@ export function commitRemoval(state: ReviewState, id: string): ReviewState {
   return {
     ...state,
     trash: state.trash.filter((a) => a.id !== id),
-    deleted: state.deleted.includes(id) ? state.deleted : [...state.deleted, id],
+    deleted: state.deleted.includes(id)
+      ? state.deleted
+      : [...state.deleted, id],
   };
 }
 
@@ -315,7 +326,10 @@ export function applyServer(
   };
 }
 
-export type ReviewFilters = { tester: string; state: "all" | "draft" | "confirmed" };
+export type ReviewFilters = {
+  tester: string;
+  state: "all" | "draft" | "confirmed";
+};
 
 export function visibleAnnotations(
   state: ReviewState,

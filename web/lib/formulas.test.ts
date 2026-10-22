@@ -3,7 +3,9 @@ import { FORMULAS, FORMULA_NOTICE, formulaFromLabel } from "./formulas";
 
 describe("FORMULAS (constantes hors Mushaf)", () => {
   it("porte les textes validés pour isti'adha, takbir et âmîn", () => {
-    expect(FORMULAS.istiadha.arabic).toBe("أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ");
+    expect(FORMULAS.istiadha.arabic).toBe(
+      "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+    );
     expect(FORMULAS.istiadha.translation).toBe(
       "Je cherche refuge auprès d’Allah contre Satan le banni.",
     );

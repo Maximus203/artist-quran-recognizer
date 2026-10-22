@@ -1,0 +1,359 @@
+/* ───────── Performance et « Nouvel essai » ───────── */
+.page-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.page-title h1 {
+  font: 400 var(--fs-2xl) / 1.1 var(--font-display);
+}
+.page-title p {
+  color: var(--text-2);
+  margin-top: 6px;
+  max-width: 60ch;
+}
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+@media (min-width: 900px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.tile {
+  padding: var(--sp-4) var(--sp-5);
+}
+.tile .v {
+  font: 400 2.5rem / 1 var(--font-display);
+  margin: 8px 0 6px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.tile .v small {
+  font: 400 var(--fs-lg) / 1 var(--font-display);
+  color: var(--text-2);
+  margin-left: 4px;
+}
+.tile .s {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.grid2 {
+  display: grid;
+  gap: var(--sp-5);
+}
+@media (min-width: 1000px) {
+  .grid2 {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+}
+.bars {
+  display: grid;
+  gap: 14px;
+  margin-top: var(--sp-4);
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-sm);
+}
+.bar-row .nm {
+  color: var(--text);
+  font-weight: 500;
+}
+.bar-row .nm small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-weight: 400;
+}
+.bar-track {
+  height: 18px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  position: relative;
+}
+.bar-track i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--v);
+  background: var(--accent);
+  border-radius: 0 4px 4px 0;
+  opacity: 0.9;
+}
+.bar-row .val {
+  text-align: right;
+  font: 600 var(--fs-md) / 1 var(--font-mono);
+}
+.axis-note {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  margin-top: var(--sp-3);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.table th {
+  text-align: left;
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.table td.num,
+.table th.num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.qrow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.qrow:first-child {
+  border-top: 0;
+}
+.qrow .sess-glyph {
+  grid-row: auto;
+  margin-top: 0;
+}
+@media (max-width: 767px) {
+  .tiles .v {
+    font-size: 2.1rem;
+  }
+  .bar-row {
+    grid-template-columns: 96px minmax(0, 1fr) 54px;
+    gap: 8px;
+  }
+}
+
+/* Nouvel essai : l'enregistreur est conservé, centré */
+.new {
+  max-width: 640px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--sp-5);
+  width: 100%;
+}
+.hero-wave {
+  display: block;
+  width: 220px;
+  max-width: 70%;
+  height: auto;
+  margin: 0 auto var(--sp-4);
+}
+.hero-wave .a {
+  fill: var(--accent);
+}
+.new h1 {
+  font: 400 var(--fs-2xl) / 1.1 var(--font-display);
+  text-align: center;
+}
+.new .lead {
+  text-align: center;
+  color: var(--text-2);
+  max-width: 46ch;
+  margin: 8px auto 0;
+}
+.recorder {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-5);
+  text-align: center;
+}
+.rec-ic {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+.rec-ic svg {
+  width: 26px;
+  height: 26px;
+}
+.recorder[data-phase="recording"] .rec-ic {
+  color: var(--danger);
+  border-color: var(--danger);
+  animation: pulse 1.6s var(--ease) infinite;
+}
+.recorder strong {
+  font-size: var(--fs-lg);
+}
+.rec-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex: none;
+}
+.rec-sq {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--danger);
+  flex: none;
+}
+.rec-timer {
+  font: 600 1.75rem / 1 var(--font-mono);
+  color: var(--danger);
+}
+.rec-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.rec-preview {
+  width: 100%;
+  display: grid;
+  gap: var(--sp-3);
+  text-align: left;
+}
+.rec-preview audio {
+  display: none;
+}
+/* Le lecteur de réécoute reste dans la carte, même sur mobile (où le lecteur de l'atelier est ancré en bas) */
+.rec-preview .transport {
+  position: static;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recorder[data-phase="recording"] .rec-ic {
+    animation: none;
+  }
+}
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.or::before,
+.or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.drop {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-5);
+  text-align: center;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  transition:
+    background var(--dur-2) var(--ease),
+    border-color var(--dur-2) var(--ease);
+}
+.drop:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.drop:hover {
+  background: var(--surface-2);
+  border-color: var(--text-2);
+}
+.drop svg.i {
+  width: 28px;
+  height: 28px;
+  color: var(--text-2);
+}
+.drop .kinds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.drop .kinds span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.drop .kinds svg {
+  width: 18px;
+  height: 18px;
+}
+.auto {
+  display: flex;
+  gap: 12px;
+  padding: var(--sp-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.auto b {
+  color: var(--text);
+}
+.auto svg {
+  color: var(--accent);
+  flex: none;
+}
+.import-queue {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm);
+}
+.import-queue li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+.import-queue li[data-state="error"] {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+}
+.import-queue .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -162,7 +162,9 @@ describe("keepDraft / editAnnotation / selectAnnotation", () => {
     expect(state.annotations).toEqual([]);
   });
   it("modifier ouvre un signalement existant sans le dé-confirmer", () => {
-    let state = loadReview([make(1, "Awa", { status: "confirmed", description: "x" })]);
+    let state = loadReview([
+      make(1, "Awa", { status: "confirmed", description: "x" }),
+    ]);
     state = editAnnotation(state, uuid(1));
     expect(state.draftId).toBe(uuid(1));
     expect(state.annotations[0].status).toBe("confirmed");
@@ -202,10 +204,7 @@ describe("suppression annulable", () => {
     expect(pendingWrites(committed).deleted).toEqual([uuid(1)]);
   });
   it("tout valider d'un coup (fermeture de la page)", () => {
-    let { state } = removeAnnotation(
-      loadReview([make(1), make(2)]),
-      uuid(1),
-    );
+    let { state } = removeAnnotation(loadReview([make(1), make(2)]), uuid(1));
     state = removeAnnotation(state, uuid(2)).state;
     expect(pendingWrites(commitAllRemovals(state)).deleted.sort()).toEqual(
       [uuid(1), uuid(2)].sort(),
@@ -245,10 +244,17 @@ describe("pendingWrites / applyServer (plusieurs testeurs)", () => {
   it("une modification faite PENDANT l'envoi reste à envoyer et n'est pas écrasée", () => {
     let state = addDraft(loadReview([]), make(3, "Awa"));
     const writes = pendingWrites(state);
-    state = patchAnnotation(state, uuid(3), { description: "plus tard" }, ctx());
+    state = patchAnnotation(
+      state,
+      uuid(3),
+      { description: "plus tard" },
+      ctx(),
+    );
     state = applyServer(state, [make(3, "Awa")], writes);
     expect(state.annotations[0].description).toBe("plus tard");
-    expect(pendingWrites(state).annotations.map((a) => a.id)).toEqual([uuid(3)]);
+    expect(pendingWrites(state).annotations.map((a) => a.id)).toEqual([
+      uuid(3),
+    ]);
   });
 
   it("un signalement supprimé par un autre testeur disparaît ici aussi", () => {
@@ -282,7 +288,11 @@ describe("pendingWrites / applyServer (plusieurs testeurs)", () => {
 
   it("referme le brouillon ou la sélection dont le signalement a disparu", () => {
     let state = editAnnotation(loadReview([make(1, "Moussa")]), uuid(1));
-    state = applyServer(state, [], { annotations: [], deleted: [], versions: {} });
+    state = applyServer(state, [], {
+      annotations: [],
+      deleted: [],
+      versions: {},
+    });
     expect(state.draftId).toBeNull();
     expect(state.selectedId).toBeNull();
   });
@@ -296,15 +306,21 @@ describe("visibleAnnotations (filtres testeur et état)", () => {
   ]);
   it("trie par instant de début", () => {
     expect(
-      visibleAnnotations(state, { tester: "all", state: "all" }).map((a) => a.id),
+      visibleAnnotations(state, { tester: "all", state: "all" }).map(
+        (a) => a.id,
+      ),
     ).toEqual([uuid(1), uuid(2), uuid(3)]);
   });
   it("filtre par testeur et par état", () => {
     expect(
-      visibleAnnotations(state, { tester: "Moussa", state: "all" }).map((a) => a.id),
+      visibleAnnotations(state, { tester: "Moussa", state: "all" }).map(
+        (a) => a.id,
+      ),
     ).toEqual([uuid(2)]);
     expect(
-      visibleAnnotations(state, { tester: "all", state: "draft" }).map((a) => a.id),
+      visibleAnnotations(state, { tester: "all", state: "draft" }).map(
+        (a) => a.id,
+      ),
     ).toEqual([uuid(3)]);
     expect(
       visibleAnnotations(state, { tester: "Awa", state: "draft" }),

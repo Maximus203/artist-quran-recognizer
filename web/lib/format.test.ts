@@ -77,6 +77,10 @@ describe("formatRealtimeFactor", () => {
     expect(formatRealtimeFactor(184.7, 26)).toBe("×7,1");
     expect(formatRealtimeFactor(2475, 340)).toBe("×7,3");
   });
+  it("garde deux décimales quand l'analyse est plus lente que l'audio", () => {
+    expect(formatRealtimeFactor(3, 132)).toBe("×0,02");
+    expect(formatRealtimeFactor(30, 60)).toBe("×0,50");
+  });
   it("renvoie null sans durées exploitables", () => {
     expect(formatRealtimeFactor(0, 26)).toBeNull();
     expect(formatRealtimeFactor(100, 0)).toBeNull();

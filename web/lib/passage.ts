@@ -198,6 +198,34 @@ export const intervalStateLabel = (item: Interval): string =>
   STATE_LABELS[intervalStyle(item)];
 export const STYLE_LABELS = STATE_LABELS;
 
+/** Indice de l'intervalle qui couvre l'instant (formules et abstentions comprises), -1 sinon. */
+export function activeIndex(
+  intervals: readonly Interval[],
+  time: number,
+): number {
+  return intervals.findIndex(
+    (item) => item.t !== null && item.t[0] <= time && time < item.t[1],
+  );
+}
+
+/**
+ * Intervalle montré par la carte : celui qu'on a choisi tant que la lecture est dedans (ou qu'il n'a
+ * pas de temps), sinon celui qui couvre l'instant, sinon -1.
+ */
+export function shownIndex(
+  intervals: readonly Interval[],
+  selected: number | null,
+  time: number,
+): number {
+  const chosen = selected !== null ? intervals[selected] : undefined;
+  if (
+    chosen &&
+    (chosen.t === null || (chosen.t[0] <= time && time < chosen.t[1]))
+  )
+    return selected as number;
+  return activeIndex(intervals, time);
+}
+
 /** Filtres de la liste des intervalles ; l'indice d'origine est conservé (clic, sélection). */
 export function filterIntervals(
   intervals: readonly Interval[],

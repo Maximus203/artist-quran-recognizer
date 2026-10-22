@@ -32,8 +32,7 @@ export function pressMark(
   markStart: number | null,
   position: number,
 ): MarkPress {
-  if (markStart === null)
-    return { kind: "start", start: roundTenth(position) };
+  if (markStart === null) return { kind: "start", start: roundTenth(position) };
   const end = roundTenth(position);
   if (end - markStart < MIN_RANGE_S - EPSILON) return { kind: "too_short" };
   return { kind: "range", start: markStart, end };
@@ -88,11 +87,7 @@ export function moveEdge(
     };
   return {
     start: bounds.start,
-    end: clamp(
-      roundTenth(target),
-      roundTenth(bounds.start + MIN_RANGE_S),
-      top,
-    ),
+    end: clamp(roundTenth(target), roundTenth(bounds.start + MIN_RANGE_S), top),
   };
 }
 

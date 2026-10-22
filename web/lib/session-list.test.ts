@@ -181,7 +181,10 @@ describe("buildRow : états de la liste (spec §7)", () => {
   });
 
   it("terminé lu : pas de point", () => {
-    const row = buildRow(view({ duration_s: 26, audio_duration_s: 184.7 }), NOW);
+    const row = buildRow(
+      view({ duration_s: 26, audio_duration_s: 184.7 }),
+      NOW,
+    );
     expect(row.unread).toBe(false);
     expect(row.status).toBe("Terminé en 26 s · ×7,1");
   });
@@ -220,7 +223,10 @@ describe("buildRow : états de la liste (spec §7)", () => {
   });
 
   it("échec : tronque un motif trop long", () => {
-    const row = buildRow(view({ state: "failed", error: "x".repeat(200) }), NOW);
+    const row = buildRow(
+      view({ state: "failed", error: "x".repeat(200) }),
+      NOW,
+    );
     expect(row.status.length).toBeLessThan(70);
     expect(row.status.endsWith("…")).toBe(true);
   });
@@ -268,12 +274,33 @@ describe("buildRow : états de la liste (spec §7)", () => {
 });
 
 describe("groupViews / filterViews / sessionCounts", () => {
-  const running = view({ state: "running", started_at: at(22, 14, 50), finished_at: null });
-  const queued1 = view({ state: "queued", queue_position: 1, finished_at: null });
-  const queued2 = view({ state: "queued", queue_position: 2, finished_at: null });
-  const unread = view({ unread: true, viewed_at: null, finished_at: at(22, 14, 2) });
+  const running = view({
+    state: "running",
+    started_at: at(22, 14, 50),
+    finished_at: null,
+  });
+  const queued1 = view({
+    state: "queued",
+    queue_position: 1,
+    finished_at: null,
+  });
+  const queued2 = view({
+    state: "queued",
+    queue_position: 2,
+    finished_at: null,
+  });
+  const unread = view({
+    unread: true,
+    viewed_at: null,
+    finished_at: at(22, 14, 2),
+  });
   const read = view({ finished_at: at(22, 12, 20) });
-  const failed = view({ state: "failed", unread: true, viewed_at: null, finished_at: at(22, 11, 5) });
+  const failed = view({
+    state: "failed",
+    unread: true,
+    viewed_at: null,
+    finished_at: at(22, 11, 5),
+  });
   const ready = view({ state: "ready", finished_at: null });
   const all = [read, queued2, failed, ready, unread, queued1, running];
 
@@ -294,12 +321,16 @@ describe("groupViews / filterViews / sessionCounts", () => {
 
   it("filtre Toutes / En cours / Non lues", () => {
     expect(filterViews(all, "all")).toHaveLength(7);
-    expect(filterViews(all, "active").map((v) => v.id).sort()).toEqual(
-      [running.id, queued1.id, queued2.id].sort(),
-    );
-    expect(filterViews(all, "unread").map((v) => v.id).sort()).toEqual(
-      [unread.id, failed.id].sort(),
-    );
+    expect(
+      filterViews(all, "active")
+        .map((v) => v.id)
+        .sort(),
+    ).toEqual([running.id, queued1.id, queued2.id].sort());
+    expect(
+      filterViews(all, "unread")
+        .map((v) => v.id)
+        .sort(),
+    ).toEqual([unread.id, failed.id].sort());
   });
 
   it("compte pour les pastilles de filtre", () => {
@@ -311,7 +342,12 @@ describe("queueSummary", () => {
   it("résume la file en une ligne", () => {
     const list = [
       view({ state: "running", eta_s: 100, finished_at: null }),
-      view({ state: "queued", queue_position: 1, eta_s: 700, finished_at: null }),
+      view({
+        state: "queued",
+        queue_position: 1,
+        eta_s: 700,
+        finished_at: null,
+      }),
     ];
     expect(queueSummary(list)).toBe(
       "1 en cours · 1 en attente · fin estimée dans ≈ 12 min",
@@ -320,7 +356,12 @@ describe("queueSummary", () => {
   it("n'invente pas de fin quand une estimation manque", () => {
     const list = [
       view({ state: "running", eta_s: null, finished_at: null }),
-      view({ state: "queued", queue_position: 1, eta_s: null, finished_at: null }),
+      view({
+        state: "queued",
+        queue_position: 1,
+        eta_s: null,
+        finished_at: null,
+      }),
     ];
     expect(queueSummary(list)).toBe("1 en cours · 1 en attente");
   });
@@ -337,9 +378,9 @@ describe("pageTitle / attentionCount", () => {
   it("signale quelque chose à voir : non lu ou analyse active", () => {
     expect(attentionCount([view()])).toBe(0);
     expect(attentionCount([view({ unread: true })])).toBe(1);
-    expect(attentionCount([view({ state: "running", finished_at: null })])).toBe(
-      1,
-    );
+    expect(
+      attentionCount([view({ state: "running", finished_at: null })]),
+    ).toBe(1);
     expect(
       attentionCount([
         view({ unread: true }),

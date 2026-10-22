@@ -50,9 +50,8 @@ describe("aqr.review/2", () => {
   });
   it("accepte une puce inconnue (liste modifiée depuis) mais pas plus de 30", () => {
     expect(
-      reviewSchema.safeParse(
-        review([annotation({ tags: ["ancienne_puce"] })]),
-      ).success,
+      reviewSchema.safeParse(review([annotation({ tags: ["ancienne_puce"] })]))
+        .success,
     ).toBe(true);
     const many = Array.from({ length: 31 }, (_, i) => `tag_${i}`);
     expect(
@@ -99,9 +98,8 @@ describe("aqr.review/2", () => {
     const empty = annotation({ tags: [], description: "   " });
     expect(reviewSchema.safeParse(review([empty])).success).toBe(false);
     expect(
-      reviewSchema.safeParse(
-        review([{ ...empty, status: "draft" as const }]),
-      ).success,
+      reviewSchema.safeParse(review([{ ...empty, status: "draft" as const }]))
+        .success,
     ).toBe(true);
     expect(
       reviewSchema.safeParse(

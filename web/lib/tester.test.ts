@@ -61,9 +61,10 @@ describe("rememberTester", () => {
 
 describe("sanitizeRecent (lu depuis le stockage du navigateur)", () => {
   it("ignore tout ce qui n'est pas un pseudonyme valide", () => {
-    expect(
-      sanitizeRecent(["Awa", 12, "a@b.c", null, "Moussa", "x"]),
-    ).toEqual(["Awa", "Moussa"]);
+    expect(sanitizeRecent(["Awa", 12, "a@b.c", null, "Moussa", "x"])).toEqual([
+      "Awa",
+      "Moussa",
+    ]);
   });
   it("renvoie une liste vide pour une valeur inattendue", () => {
     expect(sanitizeRecent("Awa")).toEqual([]);
