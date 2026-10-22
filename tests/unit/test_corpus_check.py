@@ -258,6 +258,94 @@ def test_every_window_agrees_with_home_renderer_on_the_real_corpus(ref: VerseRef
             assert assert_matches_corpus(_doc(entry), real, surah=ref.surah).checked == 1
 
 
+BASMALA_REF = VerseRef(1, 1)
+
+
+def _basmala(repo: FakeCorpus, **over: Any) -> dict[str, Any]:
+    return {
+        "kind": "non_quran",
+        "label": "basmala",
+        "t": [0.0, 1.0],
+        "basmala": True,
+        "ref": "1:1",
+        "text": repo.text(BASMALA_REF),
+        "translation": None,
+        **over,
+    }
+
+
+def test_basmala_text_from_the_corpus_passes_and_is_not_counted_as_a_verse() -> None:
+    repo = FakeCorpus({**FakeCorpus()._texts, BASMALA_REF: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ"})
+    report = assert_matches_corpus(
+        _doc(_basmala(repo), _verse(REF, repo)), repo, surah=112, min_recognized=1
+    )
+    assert report.checked == 1  # la basmala n'est pas un verset reconnu : elle ne prouve rien (I5)
+    assert report.recognized == (REF,)
+
+
+@pytest.mark.parametrize(
+    ("patch", "needle"),
+    [
+        ({"text": "نص من نموذج"}, "texte"),  # texte qui ne vient pas du corpus (I1)
+        ({"text": None}, "texte"),
+        ({"ref": "2:255"}, "1:1"),
+        ({"basmala": False}, "basmala"),
+    ],
+)
+def test_basmala_not_matching_the_corpus_is_rejected(patch: dict[str, Any], needle: str) -> None:
+    repo = FakeCorpus({**FakeCorpus()._texts, BASMALA_REF: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ"})
+    with pytest.raises(CorpusMismatch, match=needle):
+        assert_matches_corpus(_doc(_basmala(repo, **patch), _verse(REF, repo)), repo, surah=112)
+
+
+_TRANSLATION = {
+    "text": "Au nom d'Allah",
+    "translation_id": "french_hameedullah",
+    "version": "quranenc.com",
+    "attribution": "QuranEnc.com",
+    "scope": "verse",
+}
+
+
+def test_basmala_translation_keeps_its_provenance() -> None:
+    repo = FakeCorpus({**FakeCorpus()._texts, BASMALA_REF: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ"})
+    assert_matches_corpus(
+        _doc(_basmala(repo, translation=_TRANSLATION), _verse(REF, repo)), repo, surah=112
+    )
+    for bad in (
+        {**_TRANSLATION, "text": ""},
+        {**_TRANSLATION, "translation_id": ""},
+        {**_TRANSLATION, "version": None},
+        {**_TRANSLATION, "attribution": ""},
+        {**_TRANSLATION, "scope": "words"},
+        "Au nom d'Allah",  # du texte nu : ni id, ni version, ni attribution (I2)
+    ):
+        with pytest.raises(CorpusMismatch, match="traduction"):
+            assert_matches_corpus(
+                _doc(_basmala(repo, translation=bad), _verse(REF, repo)), repo, surah=112
+            )
+
+
+def test_a_formula_never_carries_a_translation(repo: FakeCorpus) -> None:
+    takbir = {
+        "kind": "non_quran",
+        "label": "takbir",
+        "t": [0.0, 1.0],
+        "label_ar": "الله أكبر",
+        "translation": _TRANSLATION,
+    }
+    with pytest.raises(CorpusMismatch, match="traduction"):
+        assert_matches_corpus(_doc(takbir, _verse(REF, repo)), repo, surah=112)
+
+
+def test_formula_carries_a_label_never_corpus_text(repo: FakeCorpus) -> None:
+    amin = {"kind": "non_quran", "label": "amin", "t": [0.0, 1.0], "label_ar": "آمين"}
+    assert assert_matches_corpus(_doc(amin, _verse(REF, repo)), repo, surah=112).checked == 1
+    for bad in ({"text": "آمين"}, {"ref": "1:1"}, {"label_ar": "نص آخر"}):
+        with pytest.raises(CorpusMismatch):
+            assert_matches_corpus(_doc({**amin, **bad}, _verse(REF, repo)), repo, surah=112)
+
+
 def test_cli_returns_one_and_names_the_problem(
     repo: FakeCorpus,
     tmp_path: Path,
