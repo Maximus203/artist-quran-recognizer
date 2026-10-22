@@ -1,33 +1,28 @@
 import { publicUser, type PublicUser } from "./auth-response";
 import { readPreferences, type Preferences } from "./preferences";
-import { userQuotaBytes } from "./quota";
+import { quotaView, type QuotaView } from "./quota-view";
 import { ready } from "./server-init";
-import { usedBytes } from "./session-index";
 import type { User } from "./users";
 
 /**
  * Ce que toute page connectée reçoit du serveur AVANT le premier rendu : le compte, ses préférences
- * (donc le thème, la police, les panneaux : aucun clignotement) et son quota. Les mêmes valeurs
+ * (donc le thème, la police, les panneaux : aucun clignotement) et son stockage. Les mêmes valeurs
  * que `GET /api/me`, lues directement (une seule fois par requête).
  */
 export type ShellData = {
   user: PublicUser;
   preferences: Preferences;
-  quota: { used_bytes: number; limit_bytes: number | null };
+  quota: QuotaView;
   /** Adresse du dépôt (liens des notes de version). */
   repoUrl: string;
 };
 
 export async function loadShellData(user: User): Promise<ShellData> {
   const db = await ready();
-  const limit = userQuotaBytes();
   return {
     user: publicUser(user),
     preferences: readPreferences(db, user.id).preferences,
-    quota: {
-      used_bytes: usedBytes(db, user.id),
-      limit_bytes: limit || null,
-    },
+    quota: quotaView(db, user.id),
     repoUrl: repoUrl(),
   };
 }

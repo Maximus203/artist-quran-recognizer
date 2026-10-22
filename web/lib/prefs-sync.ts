@@ -67,7 +67,10 @@ export function parseCache(
   if (typeof record.pending === "object" && record.pending !== null) {
     for (const [key, value] of Object.entries(record.pending)) {
       const shape = (
-        preferencesShape as Record<string, { safeParse: (v: unknown) => { success: boolean } }>
+        preferencesShape as Record<
+          string,
+          { safeParse: (v: unknown) => { success: boolean } }
+        >
       )[key];
       if (shape?.safeParse(value).success)
         (pending as Record<string, unknown>)[key] = value;
@@ -91,7 +94,9 @@ export function appearanceOf(prefs: Preferences): Appearance {
     theme: prefs.theme === "system" ? null : prefs.theme,
     font: prefs.arabicFont ?? DEFAULT_QURAN_FONT,
     quranSize:
-      prefs.arabicSize === null ? null : `${clampQuranSize(prefs.arabicSize)}px`,
+      prefs.arabicSize === null
+        ? null
+        : `${clampQuranSize(prefs.arabicSize)}px`,
   };
 }
 

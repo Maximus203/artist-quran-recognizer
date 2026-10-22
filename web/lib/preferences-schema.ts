@@ -47,6 +47,7 @@ export const preferencesShape = {
   volume: z.number().min(0).max(1),
   shortcutsEnabled: z.boolean(),
   reviewTab: z.enum(REVIEW_TABS),
+  defaultVisibility: z.enum(["global", "private"]),
 } as const;
 
 export type Preferences = {
@@ -69,14 +70,16 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   volume: 1,
   shortcutsEnabled: true,
   reviewTab: "sig",
+  defaultVisibility: "global",
 };
 
-export const PREFERENCE_KEYS = Object.keys(
-  preferencesShape,
-) as PreferenceKey[];
+export const PREFERENCE_KEYS = Object.keys(preferencesShape) as PreferenceKey[];
 
 /** Corps d'une mise à jour : clés connues seulement (les autres sont REFUSÉES), fusion partielle. */
-export const preferencesPatchSchema = z.object(preferencesShape).partial().strict();
+export const preferencesPatchSchema = z
+  .object(preferencesShape)
+  .partial()
+  .strict();
 
 export type PreferencesPatch = z.infer<typeof preferencesPatchSchema>;
 

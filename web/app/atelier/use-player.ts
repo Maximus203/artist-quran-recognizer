@@ -21,7 +21,15 @@ export type RangeOptions = {
  */
 export function usePlayer(
   sessionId: string | null,
-  handlers: { onError: (message: string) => void; onPlay: () => void },
+  handlers: {
+    onError: (message: string) => void;
+    onPlay: () => void;
+    /** Vitesse et volume viennent des préférences du compte ; le lecteur les applique et les remonte. */
+    rate: number;
+    volume: number;
+    onRate: (rate: number) => void;
+    onVolume: (volume: number) => void;
+  },
 ) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // L'élément <audio> n'existe qu'une fois la session chargée : les écouteurs s'attachent quand il
@@ -41,8 +49,16 @@ export function usePlayer(
   const raf = useRef(0);
   const events = useRef(handlers);
   events.current = handlers;
-  const [rate, setRate] = useState(1);
-  const [volume, setVolume] = useState(1);
+  const rate = handlers.rate;
+  const volume = handlers.volume;
+  const setRate = useCallback(
+    (value: number) => events.current.onRate(value),
+    [],
+  );
+  const setVolume = useCallback(
+    (value: number) => events.current.onVolume(value),
+    [],
+  );
 
   useEffect(() => {
     store.set({ time: 0, duration: 0, playing: false });

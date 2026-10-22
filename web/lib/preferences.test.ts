@@ -42,6 +42,7 @@ describe("préférences : défauts centralisés", () => {
         "volume",
         "shortcutsEnabled",
         "reviewTab",
+        "defaultVisibility",
       ].sort(),
     );
   });

@@ -173,7 +173,7 @@ L'atelier est conçu pour un **usage local de confiance** : il n'écoute que `12
 | Contrôle de l'**origine** | Les écritures (`POST`, `PUT`, `DELETE`) exigent une origine identique ou un hôte autorisé de même protocole et port. |
 | Mode test distant (optionnel) | `AQR_ALLOWED_HOSTS` ajoute des hôtes, **acceptés seulement si** `AQR_ACCESS_TOKEN` est défini (refus par défaut). Le jeton se présente par en-tête, `Bearer`, ou cookie `HttpOnly` signé (HMAC, avec expiration, `AQR_ACCESS_TTL_S`) obtenu sur `/access`. Comparaison à temps constant. |
 | Identifiants de session | UUID stricts ; tout chemin (`..`, séparateurs) est rejeté. |
-| Plafonds d'envoi | `AQR_MAX_UPLOAD_BYTES` (audio, 300 Mo par défaut), `AQR_MAX_VIDEO_UPLOAD_BYTES` (vidéo, 2 Gio) ; `413` dès l'en-tête. |
+| Plafonds d'envoi | `AQR_MAX_UPLOAD_BYTES` (audio, 500 Mo par défaut), `AQR_MAX_VIDEO_UPLOAD_BYTES` (vidéo, 2 Gio) ; `413` dès l'en-tête. |
 | Messages d'erreur | Aucun chemin local ni code système brut n'est montré à l'utilisateur. |
 | Purge optionnelle | `AQR_SESSION_TTL_S` supprime les sessions **inactives** ; une revue enregistrée récemment garde la session et son historique ; une session en cours ou en attente n'est jamais purgée. |
 
@@ -222,7 +222,7 @@ La **basmala** est montrée comme un verset (texte du verset 1:1 du corpus, trad
 | `AQR_ASR` | force un moteur seul (mesure) | cascade |
 | `AQR_MAX_CONCURRENT` | analyses simultanées | 1 |
 | `AQR_FFMPEG`, `AQR_FFPROBE` | exécutables ffmpeg / ffprobe | du `PATH` |
-| `AQR_MAX_UPLOAD_BYTES`, `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafonds d'envoi | 300 Mo, 2 Gio |
+| `AQR_MAX_UPLOAD_BYTES`, `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafonds d'envoi | 500 Mo, 2 Gio |
 | `AQR_ALLOWED_HOSTS`, `AQR_ACCESS_TOKEN`, `AQR_ACCESS_TTL_S` | mode test distant | vides, 3 600 s |
 | `AQR_SESSION_TTL_S` | purge des sessions inactives | 0 (désactivée) |
 

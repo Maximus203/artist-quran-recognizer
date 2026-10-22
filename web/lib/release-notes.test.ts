@@ -64,14 +64,18 @@ describe("parseReleaseNotes", () => {
   });
 
   it("ignore une étiquette inconnue et ne plante pas sur un fichier vide", () => {
-    const [entry] = parseReleaseNotes("## 2026-01-02 — T\nÉtiquettes : magie\nPR : -\n\nx");
+    const [entry] = parseReleaseNotes(
+      "## 2026-01-02 — T\nÉtiquettes : magie\nPR : -\n\nx",
+    );
     expect(entry.tags).toEqual([]);
     expect(parseReleaseNotes("")).toEqual([]);
     expect(parseReleaseNotes("# Notes de version\n\nrien")).toEqual([]);
   });
 
   it("n'accepte qu'un numéro de PR strictement positif", () => {
-    const [entry] = parseReleaseNotes("## 2026-01-02 — T\nÉtiquettes : technique\nPR : #0, #x, #12\n\nx");
+    const [entry] = parseReleaseNotes(
+      "## 2026-01-02 — T\nÉtiquettes : technique\nPR : #0, #x, #12\n\nx",
+    );
     expect(entry.prs).toEqual([12]);
   });
 });

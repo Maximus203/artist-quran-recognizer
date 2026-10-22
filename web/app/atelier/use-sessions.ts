@@ -19,8 +19,7 @@ export type Detail = {
 const isActive = (state: ApiSession["state"]) =>
   state === "running" || state === "queued";
 
-const fetchPage = (query: string) =>
-  api<SessionPage>(`/api/sessions?${query}`);
+const fetchPage = (query: string) => api<SessionPage>(`/api/sessions?${query}`);
 
 /* ───────────────────────── Liste paginée (page « Sessions ») ───────────────────────── */
 
@@ -177,7 +176,11 @@ export function useSessionFeed(filter: SessionsFilter, pageSize = 20) {
       setFeed((f) => {
         const gone = new Set(ids);
         const items = f.items.filter((item) => !gone.has(item.id));
-        return { ...f, items, total: Math.max(0, f.total - (f.items.length - items.length)) };
+        return {
+          ...f,
+          items,
+          total: Math.max(0, f.total - (f.items.length - items.length)),
+        };
       }),
     [],
   );
@@ -316,8 +319,7 @@ export function useSessionDetail(id: string | null) {
         setError(
           "Cette session n’existe pas ou n’est pas visible avec ton compte.",
         );
-      } else
-        setError(e instanceof Error ? e.message : "Session indisponible");
+      } else setError(e instanceof Error ? e.message : "Session indisponible");
       return null;
     }
   }, []);

@@ -143,6 +143,22 @@ describe("buildPerformance", () => {
     expect(model.recent[0].factor).toBe(6);
   });
 
+  it("nomme le testeur d'une analyse, sans jamais en inventer un", () => {
+    const model = buildPerformance(
+      [
+        done({ name: "a.mp3", owner: { id: 2, username: "yacine" } }),
+        done({ name: "b.mp3", owner: null, finished_at: day(3) }),
+        done({ name: "c.mp3", finished_at: day(4) }),
+      ],
+      "all",
+      NOW,
+    );
+    const byName = Object.fromEntries(
+      model.recent.map((r) => [r.name, r.owner]),
+    );
+    expect(byName).toEqual({ "a.mp3": "yacine", "b.mp3": null, "c.mp3": null });
+  });
+
   it("estime la durée d'une heure d'audio", () => {
     const model = buildPerformance(
       [done({ audio_duration_s: 600, duration_s: 100 })],

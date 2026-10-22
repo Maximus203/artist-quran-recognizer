@@ -59,8 +59,6 @@ type Props = {
   mark: number | null;
   trace: boolean;
   /** Le tracé exige un testeur : appelé quand un geste de tracé démarre sans testeur. */
-  canTrace: boolean;
-  onNeedTester: () => void;
   onTrace: (selection: Selection) => void;
   onEdge: (id: string, edge: "start" | "end", seconds: number) => void;
   onNudge: (id: string, edge: "start" | "end", delta: number) => void;
@@ -322,10 +320,6 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       }
       if (!(latest.current.trace || event.shiftKey)) return;
       if (event.button !== 0) return;
-      if (!latest.current.canTrace) {
-        latest.current.onNeedTester();
-        return;
-      }
       event.preventDefault();
       row.setPointerCapture(event.pointerId);
       gesture.current = {

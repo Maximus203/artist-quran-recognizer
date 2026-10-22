@@ -60,9 +60,7 @@ export async function api<T = unknown>(
     ) as Record<string, unknown>;
     const code = typeof record.code === "string" ? record.code : undefined;
     if (response.status === 401 && code === "unauthenticated")
-      location.assign(
-        loginUrl(location.pathname, location.search),
-      );
+      location.assign(loginUrl(location.pathname, location.search));
     throw new ApiError(
       typeof record.error === "string" ? record.error : SERVER_MESSAGE,
       response.status,

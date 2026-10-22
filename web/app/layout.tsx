@@ -14,6 +14,7 @@ import "./passage.css";
 import "./review.css";
 import "./perf.css";
 import "./phase2.css";
+import "./pages.css";
 
 export const metadata: Metadata = {
   title: "Atelier de revue",

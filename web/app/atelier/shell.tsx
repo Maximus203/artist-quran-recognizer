@@ -1,4 +1,5 @@
 "use client";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -30,9 +31,11 @@ import { Icon, IconSprite } from "./icons";
  * groupé (anti-rebond). Si le serveur est injoignable, l'interface continue avec le cache et le dit.
  */
 const SAVE_DELAY_MS = 600;
-const SAVED_VISIBLE_MS = 2200;
+const RETRY_AFTER_MS = 5000;
+const RETRIES = 3;
 
-export type Quota = { used_bytes: number; limit_bytes: number | null };
+import type { QuotaView } from "@/lib/quota-view";
+export type Quota = QuotaView;
 
 type ShellValue = {
   user: PublicUser;
@@ -106,7 +109,8 @@ export function ShellProvider(props: Props) {
     () =>
       new PrefsSync({
         delayMs: SAVE_DELAY_MS,
-        send: (patch) => api("/api/me/preferences", { method: "PATCH", json: patch }),
+        send: (patch) =>
+          api("/api/me/preferences", { method: "PATCH", json: patch }),
         onStatus: setStatus,
       }),
     [],
@@ -158,6 +162,18 @@ export function ShellProvider(props: Props) {
   }, [sync, writeCache]);
 
   const retry = useCallback(() => void sync.retry(), [sync]);
+
+  // Échec : trois nouvelles tentatives, espacées de 5 s, puis on attend un geste de l'utilisateur.
+  const attempts = useRef(0);
+  useEffect(() => {
+    if (status === "saved") attempts.current = 0;
+    if (status !== "error" || attempts.current >= RETRIES) return;
+    const timer = setTimeout(() => {
+      attempts.current += 1;
+      void sync.retry();
+    }, RETRY_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [status, sync]);
 
   // Retour du réseau ou de l'onglet : on renvoie ce qui était resté en attente.
   useEffect(() => {
@@ -259,9 +275,9 @@ export function ShellProvider(props: Props) {
 }
 
 /**
- * Confirmation discrète de l'enregistrement des préférences : annoncée aux lecteurs d'écran
- * (aria-live), visible un instant ; en cas d'échec elle reste, dit que les choix sont gardés sur
- * cet appareil, et propose de réessayer.
+ * Échec d'enregistrement des préférences : visible partout (sauf sur la page Compte, qui a sa propre
+ * pastille), il dit que les choix sont gardés sur cet appareil et propose de réessayer. Le succès,
+ * lui, reste silencieux hors de la page Compte.
  */
 function PrefsNotice({
   status,
@@ -270,22 +286,9 @@ function PrefsNotice({
   status: SyncStatus;
   onRetry: () => void;
 }) {
-  const [showSaved, setShowSaved] = useState(false);
-  useEffect(() => {
-    if (status !== "saved") {
-      setShowSaved(false);
-      return;
-    }
-    setShowSaved(true);
-    const timer = setTimeout(() => setShowSaved(false), SAVED_VISIBLE_MS);
-    return () => clearTimeout(timer);
-  }, [status]);
-  const error = status === "error";
-  const message = error
-    ? "Préférences gardées sur cet appareil : enregistrement impossible pour l’instant."
-    : status === "saved"
-      ? "Préférences enregistrées."
-      : "";
+  const pathname = usePathname();
+  const onAccount = pathname.startsWith("/compte");
+  const error = status === "error" && !onAccount;
   return (
     <div
       className="prefs-notice"
@@ -293,21 +296,22 @@ function PrefsNotice({
       aria-live="polite"
       data-testid="prefs-status"
       data-state={status}
-      data-visible={error || showSaved}
+      data-visible={error}
     >
-      {message ? (
+      {error ? (
         <>
-          <Icon name={error ? "alert" : "check"} />
-          <span>{message}</span>
-          {error ? (
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={onRetry}
-            >
-              Réessayer
-            </button>
-          ) : null}
+          <Icon name="alert" />
+          <span>
+            Préférences gardées sur cet appareil : enregistrement impossible
+            pour l’instant.
+          </span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={onRetry}
+          >
+            Réessayer
+          </button>
         </>
       ) : null}
     </div>
