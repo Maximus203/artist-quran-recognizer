@@ -1203,3 +1203,24 @@
 - **Risques connus** : perdre `aqr.sqlite` rend globales à la réimportation les sessions qui étaient privées
   (sauvegarder la base avec le dossier de données) ; limiteurs en mémoire ; quota vérifié à l'import (deux
   imports simultanés peuvent le dépasser d'un fichier).
+
+## 2026-10-22 — Début incertain promu par son voisin, début avant pause, temps au mot (ADR-0010)
+- **Contexte** : session 5014015f (Hud 11:61-90). L'intervalle 21,5-35,7 s restait `uncertain` (début de 11:61
+  semblable à 7:73) alors que la fenêtre contiguë, 11:61 [10-17], est `recognized`. Cause : l'incertitude du
+  décodeur se mesure sur le score avant d'une couche, et la chaîne d'ADR-0007 ne relie pas deux plages qui
+  partagent un mot (`last_word < first_word`). Cherif signale aussi, sur `lot2-05` (récitation à pauses),
+  « une partie du verset commencée, pause, suite » dont la partie commencée n'est jamais reconnue.
+- **Décisions** :
+  - Promotion par le voisin (`aqr.decoding.neighbors`, pur) PUIS preuve acoustique obligatoire
+    (`AcousticVerifier.verify_alone`, même seuil −1,0). Sans modèle CTC, jamais. Le décodeur n'est pas modifié.
+  - Début avant pause (`head`) : miroir de la suite d'un verset commencé (ADR-0008 6-8), mêmes deux témoins
+    (audio + transcription ≥ 0,6). Trou au milieu d'un verset comblé de la même façon. **Hafs uniquement**
+    (décision de Cherif) : si l'audio ne soutient pas le texte Hafs, l'abstention reste.
+  - Temps au mot additif dans `aqr.recognition/1` (`word_times`, `word_times_source` ctc-alignment|interpolated),
+    rien pour `uncertain`/`inferred`. La fusion de deux moitiés met les temps bout à bout, sauf mot manquant.
+  - « Début tardif » à 55,1 s : mesuré, ce n'est pas le bord de fenêtre ; RMS à 55,06 s, ce que Cherif entend à
+    54,8 s est une inspiration (≈ 2 % de la voix). Aucune marge de treillis ajoutée (même résultat à +1,5 s).
+- **Écartés** : corriger l'incertitude dans le décodeur (max-marginals) — la décision échapperait à l'audio ;
+  élargir les plages tolérées (chevauchement > 2 mots) — ce serait une reprise (i'ada), pas un raccord.
+- **Risques connus** : seuils provisoires (étape A) ; un `head` accepté sur de la parole proche du texte (Dice 0,6)
+  reste possible, il est tracé dans `acoustic_checks[kind=head]` ; non validé à l'oreille.
