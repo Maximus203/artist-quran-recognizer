@@ -64,8 +64,8 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
   });
   ```
 - **Formulaire multipart** (compatibilité) : champ `audio` (ou `media`), `result` facultatif (JSON `aqr.recognition/1` du même audio), `source_kind`, `autorun=1`. Lu en mémoire : plafond `AQR_MAX_UPLOAD_BYTES` pour tous les types.
-- `?autorun=1` (ou le champ `autorun=1`) met l'analyse en file dès l'import ; la réponse est alors la session déjà `queued` ou `running`. Si la mise en file échoue (moteur non configuré…), l'import n'est pas perdu : la session reste `ready` et la réponse porte `autorun_error`.
-- Réponses : `201` + session ; `400` format non accepté / fichier vide / flux interrompu / résultat d'un autre audio ; `413` au-delà du plafond ; `422` **vidéo sans piste audio** ou illisible (rien n'est conservé) ; `403` hors accès local.
+- `?autorun=1` (ou `true` ; ou le champ `autorun` du formulaire) met l'analyse en file dès l'import ; la réponse est alors la session déjà `queued` ou `running`. Si la mise en file échoue (moteur non configuré…), l'import n'est pas perdu : la session reste `ready` et la réponse porte `autorun_error`.
+- Réponses : `201` + session ; `400` format non accepté / fichier vide / flux interrompu / résultat d'un autre audio ; `413` au-delà du plafond ; `422` **fichier sans piste audio** (vidéo muette) ou **illisible/corrompu** (audio comme vidéo : refus à l'import, pas un échec de l'analyse plus tard), dans les deux cas rien n'est conservé ; `403` hors accès local.
 - Formats : audio MP3, M4A, WAV, OGG, OPUS, FLAC, AAC, WebM ; vidéo MP4, MKV, MOV, AVI, M4V (et WebM). ffprobe sonde le fichier à l'import (piste audio présente, durée de la **piste audio**, pas du conteneur) ; sans ffprobe le fichier est accepté sans durée (et sans estimation) et c'est le moteur qui refusera un fichier sans audio. Helpers côté client : `lib/audio-upload.ts` (`mediaAccept`, `isAcceptedMediaName`, `isVideoName`, `acceptedMediaFiles`, `bindMediaDrop` pour un dépôt multiple).
 
 ### États et champs d'une session (`GET /api/sessions`, `GET /api/sessions/<id>` → `session`)
@@ -76,8 +76,8 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 | --- | --- | --- |
 | `state` | `ready` · `queued` · `running` · `done` · `failed` · `cancelled` | `queued` = en attente de la file |
 | `queue_position` | entier ≥ 1 ou `null` | rang dans l'attente (1 = la prochaine) ; calculé à la lecture, `null` hors attente |
-| `queued_at` | ISO ou `null` | mise en file ; ordre FIFO durable (reste renseigné après le départ) |
-| `started_at` / `finished_at` | ISO ou `null` | départ réel du processus / fin (réussite, échec ou annulation) |
+| `queued_at` | ISO ou `null` | mise en file ; strictement croissant dans l'ordre de la file, c'est l'ordre FIFO durable (reste renseigné après le départ) |
+| `started_at` / `finished_at` | ISO ou `null` | départ réel du processus / fin (réussite, échec ou annulation, y compris d'une analyse annulée avant d'avoir démarré : `started_at` reste `null`) |
 | `duration_s` | secondes ou `null` | durée **réelle** du traitement (fin − départ) |
 | `audio_duration_s` | secondes ou `null` | durée de l'audio : sonde à l'import, puis valeur exacte du moteur (`source.duration_s`) à la fin |
 | `engine` | `cascade` · `fastconformer` · `whisper` · `muno-streaming` ou `null` | moteur de l'analyse |
@@ -97,14 +97,15 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 
 ### Routes
 
-- `POST /api/sessions/<id>/run` — met en file : `200 { state: "running" | "queued", queue_position }` ; `400` si la session tourne, attend déjà, a déjà un résultat, ou si `AQR_MODELS_DIR` manque. Corps facultatif `{ "asr": "…" }` ; sans moteur, celui de l'atelier (`AQR_ASR`, cascade par défaut).
-- `DELETE /api/sessions/<id>/run` — annule : une analyse **en attente quitte la file** sans jamais démarrer, une analyse en cours voit son processus tué ; la suivante démarre. `400` s'il n'y a rien à annuler.
-- `DELETE /api/sessions/<id>` — supprime aussi une session **en attente** (retirée de la file) ; refus tant qu'elle tourne.
+- `POST /api/sessions/<id>/run` — met en file : `200 { state: "running" | "queued", queue_position }` ; `400` si la session tourne, attend déjà, a déjà un résultat, ou si `AQR_MODELS_DIR` manque. Corps facultatif `{ "asr": "…" }` ; sans moteur, celui de l'atelier (`AQR_ASR`, cascade par défaut) ; un corps illisible ou qui n'est pas un objet JSON est refusé (`400`) au lieu d'être ignoré. `404` si la session n'existe pas.
+- `DELETE /api/sessions/<id>/run` — annule : une analyse **en attente quitte la file** sans jamais démarrer, une analyse en cours voit son processus tué ; la suivante démarre. `400` s'il n'y a rien à annuler, `404` si la session n'existe pas.
+- `DELETE /api/sessions/<id>` — supprime aussi une session **en attente** (retirée de la file) ; refus (`400`) tant qu'elle tourne, `404` si inconnue. Les lancements, annulations et suppressions sont traités dans l'ordre d'arrivée : jamais de session fantôme recréée par une écriture tardive.
 - `POST /api/sessions/<id>/viewed` — idempotent, accès local requis (même garde que les autres mutations) : `200 { id, state, viewed_at, unread }` ; sans effet (`viewed_at` reste `null`) tant que la session n'est ni `done` ni `failed` ; `404` si inconnue.
-- `GET /api/stats` — par moteur : `analyses`, `failures`, `audio_total_s`, `processing_total_s`, `rtf` (`median`, `p90`, `mean`, `min`, `max`), `estimate` (`overhead_s`, `seconds_per_audio_s`, `samples`, `audio_max_s`, `loo_median_rel_error`) ou `estimate_unavailable` (raison) ; `queue` (`concurrency`, `running`, `waiting` avec `eta_s`) ; `recent` (10 dernières analyses terminées, avec leur `rtf`). Pur calcul sur les sessions, aucune donnée nouvelle.
+- `GET /api/stats` — par moteur : `analyses`, `failures`, `audio_total_s`, `processing_total_s`, `rtf` (`median`, `p90`, `mean`, `min`, `max`), `estimate` (`overhead_s`, `seconds_per_audio_s`, `samples`, `audio_max_s`, `loo_median_rel_error`) ou `estimate_unavailable` (raison) ; `queue` (`concurrency`, `running`, `waiting` avec `eta_s`) ; `recent` (10 dernières analyses terminées, avec leur `rtf`). Une « analyse » est une session lancée par l'atelier (`started_at`) ; un résultat importé à la main n'en est pas une. Pur calcul sur les sessions, aucune donnée nouvelle.
 
 ### Robustesse
 
+- **Erreurs lisibles** : aucun message d'API ni `session.error` ne contient de chemin local ni de code système brut (« Fichier introuvable sur le disque… », « Session introuvable » en `404`).
 - **Redémarrage** : au démarrage du serveur (`instrumentation.ts`, et à la première requête sinon), les sessions `queued` sans traitement reprennent leur place dans l'ordre de `queued_at`. Une session `running` dont le processus est mort passe `failed` (« Le traitement s'est arrêté… », non lue). Un processus d'un serveur précédent encore vivant garde sa place : la file attend sa fin avant de lancer la suivante.
 - **Sans course** : deux lancements simultanés (même session ou sessions différentes) ne démarrent jamais deux fois le moteur au-delà de `AQR_MAX_CONCURRENT` ; l'issue d'une analyse n'est jamais écrasée par un écrasement tardif de `session.json` (écritures atomiques, reprise des refus passagers de Windows `EPERM`/`EBUSY` quand un autre lecteur ouvre le fichier).
 - **Purge** (`AQR_SESSION_TTL_S`) : une session en attente n'est jamais purgée.

@@ -35,6 +35,45 @@ describe("parseProbe", () => {
       ).duration_s,
     ).toBe(4.601);
   });
+  it("Matroska/WebM : la durée de la piste est dans l'étiquette DURATION quand duration vaut N/A", () => {
+    expect(
+      parseProbe(
+        json({
+          streams: [
+            { codec_type: "video" },
+            {
+              codec_type: "audio",
+              duration: "N/A",
+              tags: { DURATION: "00:00:04.601000000" },
+            },
+          ],
+          format: { duration: "10.3" },
+        }),
+      ).duration_s,
+    ).toBe(4.601);
+    expect(
+      parseProbe(
+        json({
+          streams: [
+            { codec_type: "audio", tags: { DURATION: "01:02:03.500000000" } },
+          ],
+          format: { duration: "9" },
+        }),
+      ).duration_s,
+    ).toBe(3723.5);
+  });
+  it("étiquette DURATION absurde : repli sur le conteneur", () => {
+    expect(
+      parseProbe(
+        json({
+          streams: [
+            { codec_type: "audio", tags: { DURATION: "n'importe quoi" } },
+          ],
+          format: { duration: "9" },
+        }),
+      ).duration_s,
+    ).toBe(9);
+  });
   it("repli sur le conteneur quand la piste audio n'annonce pas de durée", () => {
     expect(
       parseProbe(
@@ -133,14 +172,13 @@ describe("inspectUpload — vérifier le fichier avant de le garder", () => {
       ),
     ).rejects.toThrow(/aucune piste audio/);
   });
-  it("vidéo illisible : refus ; audio illisible : accepté sans durée (comportement historique)", async () => {
+  it("fichier illisible (vidéo ou audio) : refus clair à l'import, pas un échec 6 secondes plus tard", async () => {
     await expect(inspectUpload("/x/a.mkv", ".mkv", broken)).rejects.toThrow(
-      /illisible/,
+      /vidéo est illisible/,
     );
-    expect(await inspectUpload("/x/a.mp3", ".mp3", broken)).toEqual({
-      duration_s: null,
-      probed: false,
-    });
+    const audio = inspectUpload("/x/a.mp3", ".mp3", broken);
+    await expect(audio).rejects.toBeInstanceOf(MediaRejected);
+    await expect(audio).rejects.toThrow(/audio est illisible/);
   });
   it("ffprobe absent : on n'invente rien, on accepte sans durée", async () => {
     expect(await inspectUpload("/x/a.mp4", ".mp4", missing)).toEqual({

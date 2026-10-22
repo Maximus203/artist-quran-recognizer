@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
   try {
     await cleanupSessions(sessionTtlSeconds()).catch(() => []);
-    let autorun = new URL(request.url).searchParams.get("autorun") === "1";
+    const wantsAutorun = (value: unknown) => value === "1" || value === "true";
+    let autorun = wantsAutorun(
+      new URL(request.url).searchParams.get("autorun"),
+    );
     const multipart = (request.headers.get("content-type") ?? "")
       .toLowerCase()
       .startsWith("multipart/form-data");
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
         );
       const imported = form.get("result");
       const kind = form.get("source_kind");
-      autorun = autorun || form.get("autorun") === "1";
+      autorun = autorun || wantsAutorun(form.get("autorun"));
       created = await importFromBytes({
         name: file.name,
         bytes: Buffer.from(await file.arrayBuffer()),

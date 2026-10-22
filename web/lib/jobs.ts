@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseAsrChoice, type AsrChoice } from "./asr-choice";
+import { describeFailure, isMissingSession } from "./errors";
 import { recognizeCommand } from "./python";
 import {
   JobQueue,
@@ -14,6 +15,7 @@ import { parseRecognition, type Recognition } from "./recognition";
 import {
   REPO,
   audioPath,
+  deleteSession,
   jobs,
   listSessions,
   readSession,
@@ -21,6 +23,7 @@ import {
   saveSession,
   sessionDir,
   sha,
+  UPDATE,
   type Session,
 } from "./store";
 
@@ -41,12 +44,64 @@ export function maxConcurrent(
   return Number.isInteger(value) && value >= 1 ? value : 1;
 }
 
-/** Moteur demandé pour une analyse qui n'a pas encore démarré (relu de `session.asr` sinon). */
-const requestedAsr = new Map<string, AsrChoice>();
-/** Lancements en cours de validation : ferme la course entre deux `launch` du même identifiant. */
-const launching = new Set<string>();
-/** Annulations arrivées entre « sorti de la file » et « processus lancé ». */
-const cancelRequests = new Set<string>();
+/**
+ * État mutable des lancements, partagé par tout le processus serveur (sur `globalThis`, comme la
+ * file et la table des traitements) : Next peut charger ce module dans plusieurs bundles (routes et
+ * `instrumentation.ts`) alors que la file n'exécute qu'avec la copie qui l'a créée.
+ */
+type Shared = {
+  /** Moteur demandé pour une analyse qui n'a pas encore démarré (relu de `session.asr` sinon). */
+  requestedAsr: Map<string, AsrChoice>;
+  /** Mise en file demandée, pas encore exécutée (valeur de `queued_at` décidée au lancement). */
+  requestedQueuedAt: Map<string, string>;
+  /** Lancements en cours de validation : la reprise après redémarrage ne doit pas les doubler. */
+  launching: Set<string>;
+  /** Annulations arrivées entre « sorti de la file » et « processus lancé ». */
+  cancelRequests: Set<string>;
+  /**
+   * Processus d'un serveur précédent encore vivants : ils tiennent la carte graphique sans que la
+   * file les possède. Ils comptent comme des places occupées jusqu'à leur fin.
+   */
+  orphanPids: Set<number>;
+  orphanTimer?: ReturnType<typeof setInterval>;
+  launchTail: Promise<unknown>;
+  lastQueuedAt: number;
+};
+const SHARED = Symbol.for("aqr.job-state");
+function shared(): Shared {
+  const holder = globalThis as { [SHARED]?: Shared };
+  return (holder[SHARED] ??= {
+    requestedAsr: new Map(),
+    requestedQueuedAt: new Map(),
+    launching: new Set(),
+    cancelRequests: new Set(),
+    orphanPids: new Set(),
+    launchTail: Promise.resolve(),
+    lastQueuedAt: 0,
+  });
+}
+
+/** Moteur demandé des analyses lancées pas encore écrites dans `session.json` (lecture seule). */
+export function pendingEngines(): Record<string, string> {
+  return Object.fromEntries(shared().requestedAsr);
+}
+
+/** Exécute `task` après tous les lancements précédents (FIFO), qu'ils réussissent ou non. */
+function serialized<T>(task: () => Promise<T>): Promise<T> {
+  const state = shared();
+  const result = state.launchTail.then(task, task);
+  state.launchTail = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+/** Horodatage de mise en file strictement croissant (sans égalité à la milliseconde). */
+function nextQueuedAt(): string {
+  const state = shared();
+  state.lastQueuedAt = Math.max(Date.now(), state.lastQueuedAt + 1);
+  return new Date(state.lastQueuedAt).toISOString();
+}
 
 function isAlive(pid: number): boolean {
   try {
@@ -56,27 +111,23 @@ function isAlive(pid: number): boolean {
     return false;
   }
 }
-/**
- * Processus d'un serveur précédent encore vivants : ils tiennent la carte graphique sans que cette
- * file les possède. Ils comptent comme des places occupées jusqu'à leur fin (sondés à chaque démarrage).
- */
-const orphanPids = new Set<number>();
-let orphanTimer: ReturnType<typeof setInterval> | undefined;
 function liveOrphans(): number {
+  const { orphanPids } = shared();
   for (const pid of orphanPids) if (!isAlive(pid)) orphanPids.delete(pid);
   return orphanPids.size;
 }
 function watchOrphans(pids: number[]): void {
-  for (const pid of pids) orphanPids.add(pid);
-  if (orphanTimer || orphanPids.size === 0) return;
-  orphanTimer = setInterval(() => {
+  const state = shared();
+  for (const pid of pids) state.orphanPids.add(pid);
+  if (state.orphanTimer || state.orphanPids.size === 0) return;
+  state.orphanTimer = setInterval(() => {
     if (liveOrphans() === 0) {
-      clearInterval(orphanTimer);
-      orphanTimer = undefined;
+      clearInterval(state.orphanTimer);
+      state.orphanTimer = undefined;
     }
     peekQueue()?.pump();
   }, 5000);
-  orphanTimer.unref();
+  state.orphanTimer.unref();
 }
 
 /** Marque en échec une analyse dont le démarrage a échoué avant toute issue (jamais une annulée). */
@@ -85,11 +136,10 @@ async function markFailed(id: string, error: unknown): Promise<void> {
     const session = await readSession(id);
     if (session.state !== "queued" && session.state !== "running") return;
     session.state = "failed";
-    session.error =
-      error instanceof Error ? error.message : "Lancement impossible";
+    session.error = describeFailure(error, "Lancement impossible");
     session.pid = null;
     recordOutcome(session, null, new Date().toISOString());
-    await saveSession(session);
+    await saveSession(session, UPDATE);
   } catch {
     /* session supprimée entre-temps : rien à consigner */
   }
@@ -123,42 +173,55 @@ export async function launch(
   requestedEngine?: AsrChoice,
 ): Promise<LaunchResult> {
   const asr = parseAsrChoice(requestedEngine ?? ASR_ENGINE);
-  const session = await readSession(id);
-  if (session.state === "running") throw new Error("Traitement déjà en cours");
-  if (session.state === "done")
-    throw new Error("Un résultat existe déjà ; crée une nouvelle session.");
-  if (!process.env.AQR_MODELS_DIR)
-    throw new Error(
-      "AQR_MODELS_DIR absent : les poids du moteur ne sont pas configurés sur cette machine.",
-    );
-  await audioPath(id); // l'audio doit exister avant de promettre une place
   const queue = jobQueue();
-  // Synchrone jusqu'à l'entrée dans la file : deux lancements simultanés ne passent pas ensemble,
-  // et une session annulée n'est relançable qu'une fois son `close` passé.
-  if (jobs.has(id) || queue.has(id) || launching.has(id))
-    throw new Error(
-      "Traitement déjà en cours ou en file d'attente : réessaie dans un instant.",
-    );
-  launching.add(id);
-  let entry: QueueEntry;
-  try {
-    requestedAsr.set(id, asr);
-    if (!queue.wouldStartNow()) {
-      // Persisté avant d'entrer dans la file : l'ordre survit à un redémarrage du serveur.
-      session.state = "queued";
-      session.asr = asr;
-      session.engine = asr;
-      session.error = null;
-      session.queued_at = new Date().toISOString();
-      await saveSession(session);
+  // Un lancement à la fois, dans l'ordre d'arrivée : `queued_at` (ordre durable) et le rang dans la
+  // file se décident au même endroit, donc ne peuvent pas se contredire. Deux lancements du même
+  // identifiant ne passent pas ensemble ; une session annulée n'est relançable qu'après son `close`.
+  const entry = await serialized(async (): Promise<QueueEntry> => {
+    const session = await readSession(id);
+    if (session.state === "running")
+      throw new Error("Traitement déjà en cours");
+    if (session.state === "done")
+      throw new Error("Un résultat existe déjà ; crée une nouvelle session.");
+    if (!process.env.AQR_MODELS_DIR)
+      throw new Error(
+        "AQR_MODELS_DIR absent : les poids du moteur ne sont pas configurés sur cette machine.",
+      );
+    // L'audio doit exister avant de promettre une place (la session, elle, vient d'être lue).
+    await audioPath(id).catch((error) => {
+      throw isMissingSession(error)
+        ? new Error(
+            "Le fichier audio de cette session est introuvable sur le disque.",
+          )
+        : error;
+    });
+    if (jobs.has(id) || queue.has(id))
+      throw new Error(
+        "Traitement déjà en cours ou en file d'attente : réessaie dans un instant.",
+      );
+    shared().launching.add(id);
+    try {
+      const queuedAt = nextQueuedAt();
+      shared().requestedAsr.set(id, asr);
+      shared().requestedQueuedAt.set(id, queuedAt);
+      if (!queue.wouldStartNow()) {
+        // Persisté avant d'entrer dans la file : l'ordre survit à un redémarrage du serveur.
+        session.state = "queued";
+        session.asr = asr;
+        session.engine = asr;
+        session.error = null;
+        session.queued_at = queuedAt;
+        await saveSession(session, UPDATE);
+      }
+      return queue.enqueue(id);
+    } catch (error) {
+      shared().requestedAsr.delete(id);
+      shared().requestedQueuedAt.delete(id);
+      throw error;
+    } finally {
+      shared().launching.delete(id);
     }
-    entry = queue.enqueue(id);
-  } catch (error) {
-    requestedAsr.delete(id);
-    throw error;
-  } finally {
-    launching.delete(id);
-  }
+  });
   if (!queue.isActive(id))
     return { state: "queued", queue_position: queue.position(id) };
   await entry.started;
@@ -173,8 +236,9 @@ async function execute(id: string, signal: JobSignal): Promise<void> {
   try {
     await run(id, signal);
   } finally {
-    requestedAsr.delete(id);
-    cancelRequests.delete(id);
+    shared().requestedAsr.delete(id);
+    shared().requestedQueuedAt.delete(id);
+    shared().cancelRequests.delete(id);
   }
 }
 
@@ -182,7 +246,9 @@ async function run(id: string, signal: JobSignal): Promise<void> {
   const session = await readSession(id);
   // Une analyse terminée ou déjà lancée ne repart pas ; prête, en échec ou annulée, oui.
   if (session.state === "done" || session.state === "running") return;
-  const asr = parseAsrChoice(requestedAsr.get(id) ?? session.asr ?? ASR_ENGINE);
+  const asr = parseAsrChoice(
+    shared().requestedAsr.get(id) ?? session.asr ?? ASR_ENGINE,
+  );
   const models = process.env.AQR_MODELS_DIR;
   if (!models)
     throw new Error(
@@ -190,11 +256,11 @@ async function run(id: string, signal: JobSignal): Promise<void> {
     );
   const source = await audioPath(id),
     output = sessionDir(id);
-  if (cancelRequests.has(id)) {
+  if (shared().cancelRequests.has(id)) {
     // Annulée entre la sortie de file et le lancement : rien à tuer, on consigne seulement.
     session.state = "cancelled";
     session.pid = null;
-    await saveSession(session);
+    await saveSession(session, UPDATE);
     return;
   }
   const { command, args, env } = recognizeCommand(source, output, asr, models);
@@ -217,13 +283,14 @@ async function run(id: string, signal: JobSignal): Promise<void> {
   session.asr = asr;
   session.engine = asr;
   session.error = null;
-  session.queued_at ??= new Date().toISOString();
+  session.queued_at =
+    shared().requestedQueuedAt.get(id) ?? session.queued_at ?? nextQueuedAt();
   session.started_at = new Date().toISOString();
   session.finished_at = null;
   session.duration_s = null;
   session.pid = child.pid || null;
   // Écrit avant toute issue : `close` l'attend, sinon il pourrait être écrasé par « running ».
-  const started = saveSession(session);
+  const started = saveSession(session, UPDATE);
   // Écouteurs posés avant tout `await` : un `error` de spawn (interpréteur introuvable)
   // arrive au tick suivant et serait sinon une exception non interceptée.
   child.stdout?.on("data", (chunk: Buffer) => {
@@ -264,16 +331,15 @@ async function run(id: string, signal: JobSignal): Promise<void> {
         current.error = `Reconnaissance interrompue avant la production d’un résultat. ${detail || "Vérifie les modèles, le corpus et le format audio."}`;
       }
       recordOutcome(current, parsed, finishedAt);
-      await saveSession(current);
+      await saveSession(current, UPDATE);
     } catch (error) {
       try {
         const current = await readSession(id);
         current.state = "failed";
-        current.error =
-          error instanceof Error ? error.message : "Résultat invalide";
+        current.error = describeFailure(error, "Résultat invalide");
         current.pid = null;
         recordOutcome(current, null, new Date().toISOString());
-        await saveSession(current);
+        await saveSession(current, UPDATE);
       } catch {
         /* session supprimée entre-temps : rien à consigner */
       }
@@ -289,11 +355,10 @@ async function run(id: string, signal: JobSignal): Promise<void> {
     aborted = true;
     child.kill();
     session.state = "failed";
-    session.error =
-      error instanceof Error ? error.message : "Lancement impossible";
+    session.error = describeFailure(error, "Lancement impossible");
     session.pid = null;
     recordOutcome(session, null, new Date().toISOString());
-    await saveSession(session).catch(() => undefined);
+    await saveSession(session, UPDATE).catch(() => undefined);
     if (jobs.get(id)?.child === child) jobs.delete(id);
     settle();
     throw error;
@@ -311,7 +376,12 @@ export function jobSettled(id: string): Promise<void> {
  * Annule une analyse : en attente, elle quitte la file sans jamais démarrer ; en cours, son
  * processus est tué. Une annulation n'est jamais écrasée par la fin du processus.
  */
-export async function cancel(id: string): Promise<void> {
+export function cancel(id: string): Promise<void> {
+  // Dans l'ordre des lancements : un « annule » puis un « relance » (ou l'inverse) se lisent comme ils
+  // ont été envoyés, jamais entremêlés.
+  return serialized(() => cancelNow(id));
+}
+async function cancelNow(id: string): Promise<void> {
   const queue = peekQueue();
   if (queue?.remove(id)) {
     await markCancelled(id);
@@ -320,7 +390,7 @@ export async function cancel(id: string): Promise<void> {
   const job = jobs.get(id);
   if (!job) {
     if (queue?.isActive(id)) {
-      cancelRequests.add(id);
+      shared().cancelRequests.add(id);
       return;
     }
     // « queued » sur le disque, mais inconnue de la file (serveur redémarré, pas encore reprise).
@@ -334,14 +404,23 @@ export async function cancel(id: string): Promise<void> {
   session.state = "cancelled";
   session.pid = null;
   session.finished_at = new Date().toISOString();
-  await saveSession(session);
+  await saveSession(session, UPDATE);
   job.child.kill();
 }
 async function markCancelled(id: string): Promise<void> {
   const session = await readSession(id);
   session.state = "cancelled";
   session.pid = null;
-  await saveSession(session);
+  session.finished_at = new Date().toISOString();
+  await saveSession(session, UPDATE);
+}
+
+/** Supprime une session dans l'ordre des lancements (voir `cancel`) ; mêmes refus que le stockage. */
+export function removeSession(
+  id: string,
+  options: { force?: boolean } = {},
+): Promise<void> {
+  return serialized(() => deleteSession(id, options));
 }
 
 /**
@@ -362,7 +441,10 @@ export async function recoverQueue(): Promise<string[]> {
   const queue = jobQueue();
   const waiting = sessions
     .filter(
-      (s) => s.state === "queued" && !queue.has(s.id) && !launching.has(s.id),
+      (s) =>
+        s.state === "queued" &&
+        !queue.has(s.id) &&
+        !shared().launching.has(s.id),
     )
     .sort(
       (a, b) =>

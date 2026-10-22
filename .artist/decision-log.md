@@ -1017,6 +1017,25 @@
   EFTYPE` sous Windows : 11 échecs hors de la file) ; le faux moteur est maintenant lancé par Node via
   `recognizeCommand` (une seule définition de la ligne de commande du moteur, `python.ts`). Les 19 tests de `jobs`
   passent sous Windows. Restent les 5 échecs de `e2e/smoke-support.test.mjs` (chemins Linux absolus), non liés.
+- **Passe Cherif QA (22 octobre)** — trouvé et corrigé, chaque point avec un test rouge d'abord :
+  - *Sessions fantômes* : une écriture tardive de `session.json` (fin de processus, `markFailed`, annulation) recréait
+    le dossier d'une session supprimée depuis un autre onglet (un `session.json` seul). `saveSession(…, { create:
+    false })` pour toute mise à jour ; l'import seul crée.
+  - *Suppression bloquée pendant toute l'analyse* : `deleteSession` d'une analyse dont le processus venait de partir
+    (état « running » pas encore écrit) attendait la fin du moteur (> 80 s) puis effaçait un résultat. Refus immédiat.
+  - *Ordre* : lancements, annulations et suppressions passent par une section sérialisée (FIFO) ; `queued_at` est
+    décidé au même endroit que le rang (strictement croissant) ; l'« annulation acquittée mais l'analyse tourne »
+    d'une occurrence sur ~25 n'a pas été reproduite (course aléatoire à graine fixe ajoutée), durcie par cet ordre.
+  - Durée sondée : la piste audio (étiquette `DURATION` pour Matroska/WebM), pas le conteneur (10,3 s pour 4,6 s de
+    son) ; fichier illisible refusé à l'import ; `404` et messages sans chemin local ; corps `/run` illisible refusé ;
+    noms (255 caractères, extension seule) ; `analyses` ne compte plus un résultat importé à la main.
+  - *Écarté* : refuser à l'import tout audio sans durée. Une capture micro WebM n'en a pas ; un fichier d'octets
+    aléatoires que ffprobe croit lire n'échoue qu'à l'analyse (rare, accepté).
+  - *Constaté, hors de ce lot* : `isLocalRequest` valide l'hôte de l'URL construite par Next, pas l'en-tête `Host`
+    (`Host: evil.example` sur `127.0.0.1` passe en lecture ; les mutations sont couvertes par `Origin`). Risque de
+    DNS rebinding pour tout le serveur, antérieur à cette PR : à traiter dans une PR de sécurité à part.
+  - *Coût de la sonde* : ffprobe met ≈ 1,8 s par fichier sur cette machine (démarrage du binaire, mesuré hors serveur) ;
+    les imports se font donc à ≈ 2 s l'un, indépendamment de la taille.
 - **Risque ouvert** : l'estimation dépend de l'historique d'une même machine ; un changement de modèle ou de GPU la
   fausse jusqu'à ce que de nouvelles analyses la rattrapent (la médiane robuste limite l'effet des premières).
   Les durées passées ont parfois été mesurées avec des analyses en parallèle (22:17 le 19 octobre) : trop lentes,

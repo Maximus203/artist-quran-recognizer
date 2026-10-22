@@ -246,6 +246,42 @@ describe("estimation", () => {
     const clean = byId(buildViews([...history, run], ctx()), run);
     expect(withNoise.eta_s).toBe(clean.eta_s);
   });
+  it("une analyse tout juste lancée (moteur pas encore écrit) utilise le moteur demandé : pas de trou d'estimation", () => {
+    const starting = make({
+      state: "ready",
+      audio_duration_s: 1800,
+      queued_at: iso(1),
+    });
+    const next = make({
+      state: "queued",
+      engine: "cascade",
+      asr: "cascade",
+      audio_duration_s: 600,
+      queued_at: iso(0.5),
+    });
+    const views = buildViews(
+      [...history, starting, next],
+      ctx({
+        queue: { active: [starting.id], waiting: [next.id] },
+        pendingEngines: { [starting.id]: "cascade" },
+      }),
+    );
+    expect(byId(views, starting).eta_s).toBeCloseTo(81, 0); // 45 + 0,02 × 1800
+    expect(byId(views, next).eta_s).toBeCloseTo(81 + 57, 0);
+    expect(byId(views, next).eta_reason).toBeNull();
+  });
+  it("sans moteur demandé connu, l'estimation reste indisponible, avec sa raison", () => {
+    const starting = make({ state: "ready", audio_duration_s: 1800 });
+    const view = byId(
+      buildViews(
+        [...history, starting],
+        ctx({ queue: { active: [starting.id], waiting: [] } }),
+      ),
+      starting,
+    );
+    expect(view.eta_s).toBeNull();
+    expect(view.eta_reason).toBe("no_history");
+  });
   it("les sessions terminées n'ont ni estimation ni raison", () => {
     const done = make({ state: "done", viewed_at: null });
     const v = byId(buildViews([done], ctx()), done);
@@ -284,6 +320,23 @@ describe("buildStats — performance par moteur", () => {
     expect(fast.estimate).toBeNull();
     expect(fast.estimate_unavailable).toBe("insufficient_history");
     expect(stats.engines[0].engine).toBe("cascade"); // le plus utilisé d'abord
+  });
+  it("un résultat importé à la main (jamais lancé ici) n'est pas une analyse du moteur", () => {
+    const imported = make({
+      state: "done",
+      engine: "cascade",
+      asr: "cascade",
+      audio_duration_s: 600,
+      started_at: null,
+      duration_s: null,
+      viewed_at: iso(5),
+    });
+    const stats = buildStats([...history, imported], ctx());
+    const cascade = stats.engines.find((e) => e.engine === "cascade")!;
+    expect(cascade.analyses).toBe(5);
+    expect(cascade.audio_total_s).toBe(120 + 600 + 1800 + 3600 + 7200);
+    const onlyImported = buildStats([imported], ctx());
+    expect(onlyImported.engines).toEqual([]);
   });
   it("file courante et dernières analyses, sans données hors session", () => {
     const run = make({
