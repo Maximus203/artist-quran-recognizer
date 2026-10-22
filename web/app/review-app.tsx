@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bindMediaDrop } from "@/lib/audio-upload";
 import { listenWindow } from "@/lib/marking";
 import { activeIndex, intervalLabel, intervalStateLabel } from "@/lib/passage";
+import { isSessionId } from "@/lib/session-id";
 import { attentionCount, pageTitle } from "@/lib/session-list";
 import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
 import { rememberTester } from "@/lib/tester";
@@ -162,7 +163,7 @@ export default function ReviewApp() {
     const params = new URLSearchParams(location.search);
     setRelecteur(params.get("relecteur") === "1");
     const id = params.get("session");
-    if (id) open(id);
+    if (isSessionId(id)) open(id);
     // une seule fois, au montage
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -7,7 +7,7 @@
  * constantes que l'interface déclare hors Mushaf. INVARIANT I2 : la traduction QuranEnc est rendue
  * sans modification ; `splitNoteMarkers` ne fait que la découper pour styler les `[n]` à l'affichage.
  */
-import { FORMULAS, formulaFromLabel, type Formula } from "./formulas";
+import { formulaFromLabel, type Formula } from "./formulas";
 import type { Interval } from "./recognition";
 
 export type TranslationView = {
@@ -186,7 +186,6 @@ const STATE_LABELS: Record<IntervalStyle, string> = {
 };
 export const intervalStateLabel = (item: Interval): string =>
   STATE_LABELS[intervalStyle(item)];
-export const STYLE_LABELS = STATE_LABELS;
 
 /** Indice de l'intervalle qui couvre l'instant (formules et abstentions comprises), -1 sinon. */
 export function activeIndex(
@@ -233,5 +232,3 @@ export function filterIntervals(
             : item.kind === filter,
     );
 }
-
-export const FORMULA_LIST = Object.values(FORMULAS);
