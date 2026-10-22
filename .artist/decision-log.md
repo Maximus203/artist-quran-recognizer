@@ -1082,3 +1082,75 @@
   fausse jusqu'à ce que de nouvelles analyses la rattrapent (la médiane robuste limite l'effet des premières).
   Les durées passées ont parfois été mesurées avec des analyses en parallèle (22:17 le 19 octobre) : trop lentes,
   sans effet sur la droite robuste, visibles dans le p90 du RTF.
+
+## 2026-10-22 — Atelier : redesign « Encre & lapis » (shell, revue humaine v2, Performance)
+- **Source de vérité** : `docs/design/*` (validé par Cherif). Aucune valeur visuelle en dur : `web/app/tokens.css`
+  est la copie **identique** de `docs/design/tokens.css` (un test le vérifie ; le fichier du design a été passé à
+  Prettier pour que les deux restent comparables octet pour octet).
+- **Arbitrages de Cherif appliqués** : 5 puces ajoutées conservées ; onglet « Vérité terrain » **seulement** avec
+  `?relecteur=1` (il écrit dans le manifeste de test) ; écoute avant confirmation **indicative** ; modifier le
+  signalement d'un autre testeur permis avec encart (`updated_by`) ; pseudonyme libre 2–24 caractères, e-mail refusé ;
+  raccourcis `M`, `P`, `L` désactivables et inactifs dans un champ ; police arabe KFGQPC Hafs V30.
+- **Onde sans wavesurfer** : l'onde est dessinée sur `canvas` à partir des crêtes du serveur, uniquement pour la
+  fenêtre visible, dans le **même conteneur défilant** que les trois pistes, la règle et la tête de lecture. Un seul
+  repère temporel : plus de synchronisation entre deux échelles (cause du décalage corrigé en #60), les calques de
+  signalement (plages, poignées, tracé) sont de simples éléments positionnés en %, sans DOM fantôme. wavesurfer
+  n'est plus utilisé par l'interface.
+- **Police Hafs V30** : licence « tous droits réservés ». Servie par `GET /api/fonts/kfgqpc-hafs-v30` depuis
+  `AQR_FONTS_DIR` (défaut explicite `%LOCALAPPDATA%\aqr-fonts` / `~/.local/share/aqr-fonts`, jamais le dossier de
+  revue), liste blanche de noms, **boucle locale seulement** (même avec jeton et hôte autorisé : ce serait de la
+  redistribution), jamais dans Git ni `public/` (`.gitignore` + test). Absente : option grisée, repli Amiri Quran.
+  L'aperçu du sélecteur n'utilise **pas** de texte du Mushaf codé en dur (I1) : début du passage affiché (corpus) ou
+  lettres arabes non coraniques.
+- **Formules (isti'adha, takbir, âmîn)** : constantes de `web/lib/formulas.ts`, jamais présentées comme du corpus ou de
+  QuranEnc (mention « Formule — hors Mushaf, traduction indicative (non QuranEnc) » sur la carte). **À VALIDER PAR
+  CHERIF** : traductions « Je cherche refuge auprès d'Allah contre Satan le banni. », « Allah est le plus grand. »,
+  « Exauce-nous. » (indicatives, rédigées par le mainteneur, pas par QuranEnc).
+- **Basmala** : l'interface affiche la basmala comme un verset (arabe du corpus + traduction + attribution, badge
+  « Basmala », ornement, pas de médaillon) d'après le contrat de `feat/basmala-affichee` (`non_quran`, `basmala: true`,
+  `ref: "1:1"`, `text`, `translation`) ; pour un résultat ancien (étiquette seule) elle explique que le texte n'est pas
+  dans ce résultat. Les `[n]` des traductions sont mis en exposant **à l'affichage seulement** (chaîne intacte, I2).
+- **Deux sources pour isti'adha/takbir/âmîn** : le moteur émet maintenant `label_ar` (libellé arabe constant, sans
+  voyelles) ; l'interface affiche ses propres constantes (`lib/formulas.ts`, avec voyelles + traduction française +
+  mention hors Mushaf) et **ignore `label_ar`** pour ne pas avoir deux textes qui dérivent. À trancher : garder
+  `label_ar` côté moteur (sous-titres, exports) ou le retirer.
+- **Revue `aqr.review/2` et écriture multi-testeurs** : un `PUT` qui remplaçait la liste faisait perdre le travail
+  quand deux testeurs écrivaient. Désormais le client n'envoie que ses signalements modifiés et ses suppressions
+  (`deleted_ids`), le serveur fusionne **par identifiant sous verrou** (dernier `updated_at` gagne, `tester` et
+  `created_at` immuables) et renvoie la revue fusionnée. Un numéro de version local par signalement protège une
+  modification faite pendant un envoi. Suppression annulable 6 s : réellement envoyée seulement après le délai (ou à
+  la fermeture de la page). Lecture v1 rétro-compatible ; `type` historique dérivé du premier tag, donc les exports
+  existants (pack ZIP, bilan JSON, `verify_review_bundle.py`) sont inchangés : le pack traite `review.json` comme des
+  octets opaques (test Python ajouté avec une revue v2 à deux testeurs).
+- **Performance** : tuiles, barres par moteur et tableau calculés côté client sur les sessions terminées de la période
+  choisie (7 j · 30 j · tout), car `GET /api/stats` agrège sur tout l'historique ; la file en cours et la précision de
+  l'estimation viennent de `GET /api/stats`. Facteur « ×N » = durée de l'audio ÷ durée de l'analyse (deux décimales
+  quand l'analyse est plus lente que l'audio : « ×0,02 »).
+- **Rafraîchissement** : 3 s onglet visible avec une analyse active, 10 s sinon, 15 s en arrière-plan. Le point
+  « non lu » s'efface à l'**ouverture** du résultat (`POST …/viewed`), jamais par le sondage.
+- **Cibles tactiles** : tous les boutons font ≥ 44 px au tactile, **sauf** les segments des pistes (quelques pixels à
+  l'échelle d'un fichier entier) : ils sont doublés par la liste des intervalles (lignes de 44 px) qui fait la même
+  chose. Exception assumée (WCAG 2.5.8, alternative équivalente).
+
+## 2026-10-22 — La basmala est restituée comme un verset (texte du corpus 1:1 + traduction)
+- **Besoin** : l'atelier montrait `[basmala]` seul ; Cherif veut le texte et la traduction, comme pour un verset.
+- **Décision** : l'intervalle `non_quran` de label `basmala` porte `basmala: true`, `ref: "1:1"`, `text` (lu dans
+  le corpus par `HomeRenderer.render_basmala`, jamais d'un modèle : I1) et `translation` (QuranEnc, id + version
+  + attribution : I2). Champs additifs : `aqr.recognition/1` ne change pas, l'ancien format reste lisible
+  (lecteur Python, schéma zod). Isti'adha, takbir, amin n'ont pas de texte du Mushaf : seulement un libellé
+  arabe constant `label_ar`, clairement distinct d'un texte de verset.
+- **Écartés** :
+  - *Une nouvelle sorte d'intervalle (`kind: "basmala"`)* : casserait tous les lecteurs (`kind` est
+    discriminant) ; un champ additif sur `non_quran` n'en casse aucun.
+  - *Faire de la basmala un `verse` 1:1* : la basmala d'une sourate n'est pas une récitation du verset 1:1 d'Al-Fatiha
+    (I3/I4 : ne jamais nommer un verset qu'on n'a pas entendu) ; elle reste une zone non coranique, juste
+    habillée comme un verset à l'affichage.
+  - *Réutiliser `FORMULA_TEXTS` (graphie imla'i de l'alignement) pour `label_ar`* : ces formes servent à aligner ce
+    que l'ASR écrit, pas à être montrées ; `aqr.rendering.formula_labels` porte les libellés d'affichage.
+  - *Texte de la basmala dans les sous-titres SRT/VTT* : hors besoin exprimé, et l'atelier lit le JSON ; `[basmala]`
+    inchangé.
+- **Contrôles** : le lecteur Python et le schéma web refusent une zone incohérente (`basmala` hors 1:1, texte
+  sur une formule, `label_ar` sur la basmala) ; `tests/support/corpus_check.py` (déjà appelé par les smokes)
+  vérifie que le texte de la basmala est exactement `repo.text(1:1)` et que `label_ar` est la constante du label.
+- **Mesuré** : cascade réelle sur `test-55.webm` (55:1-4 précédé de la basmala) : intervalle basmala 1,29-4,33 s avec
+  texte et traduction ; `corpus_check --surah 55` OK.

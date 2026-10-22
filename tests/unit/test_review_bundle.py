@@ -121,6 +121,66 @@ def test_bundle_keeps_original_bytes_and_revisions(tmp_path: Path) -> None:
         )
 
 
+def test_bundle_carries_review_v2_with_every_tester_byte_for_byte(tmp_path: Path) -> None:
+    """`aqr.review/2` réunit les signalements de plusieurs testeurs (pseudonymes, puces) : le pack
+    et son vérificateur le traitent comme les octets opaques qu'ils sont, sans le réécrire."""
+    review = {
+        "schema": "aqr.review/2",
+        "session_id": "case-id",
+        "audio_sha256": AUDIO_SHA,
+        "prediction_sha256": None,
+        "updated_at": "2026-10-22T10:00:00.000Z",
+        "annotations": [
+            {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "mode": "range",
+                "start_s": 61.0,
+                "end_s": 63.0,
+                "tags": ["missing_verse", "start_late"],
+                "type": "missing_verse",
+                "description": "Le lecteur enchaîne sur 2:256.",
+                "expected_ref": "2:256",
+                "target_index": None,
+                "status": "confirmed",
+                "tester": "Awa",
+                "created_at": "2026-10-22T09:00:00.000Z",
+                "updated_at": "2026-10-22T09:05:00.000Z",
+            },
+            {
+                "id": "00000000-0000-4000-8000-000000000002",
+                "mode": "point",
+                "start_s": 120.0,
+                "end_s": None,
+                "tags": ["noise"],
+                "type": "other",
+                "description": "",
+                "expected_ref": None,
+                "target_index": None,
+                "status": "draft",
+                "tester": "Moussa",
+                "updated_by": "Awa",
+                "created_at": "2026-10-22T09:10:00.000Z",
+                "updated_at": "2026-10-22T09:12:00.000Z",
+            },
+        ],
+    }
+    payload = json.dumps(review, ensure_ascii=False, indent=2).encode("utf-8")
+    session = _make_session(tmp_path, prediction=_prediction())
+    (session / "review.json").write_bytes(payload)
+    target = tmp_path / "pack.zip"
+    build_bundle(session, target)
+    with zipfile.ZipFile(target) as archive:
+        assert archive.read("reviews/current.review.json") == payload
+        manifest = json.loads(archive.read("manifest.json"))
+        digest = hashlib.sha256(payload).hexdigest()
+        assert manifest["files"]["reviews/current.review.json"] == digest
+    reference = tmp_path / "reference.mp3"
+    reference.write_bytes(AUDIO)
+    summary = verify_bundle(target, source=reference)
+    assert summary["session_id"] == "case-id"
+    assert "reviews/current.review.json" in summary["entries"]
+
+
 def test_bundle_refuses_changed_audio(tmp_path: Path) -> None:
     session = tmp_path / "session"
     session.mkdir()
