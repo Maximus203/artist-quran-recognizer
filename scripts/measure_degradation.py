@@ -53,6 +53,7 @@ from aqr.eval.degradation_curve import (
     ScoreRecord,
     TruthVerse,
     build_conditions,
+    build_exploratory_conditions,
     conditions_by_id,
     file_id,
     load_scores,
@@ -112,8 +113,13 @@ def _ffmpeg_version() -> str:
     return done.stdout.splitlines()[0] if done.stdout else "ffmpeg introuvable"
 
 
-def _select_conditions(ids: Sequence[str] | None, only_cascade: bool = False) -> list[Condition]:
-    chosen = conditions_by_id(ids) if ids else list(build_conditions())
+def _select_conditions(
+    ids: Sequence[str] | None, only_cascade: bool = False, exploratory: bool = False
+) -> list[Condition]:
+    """Les conditions du cahier par défaut ; `--exploratory` : celles ajoutées après coup."""
+    if ids:  # des identifiants explicites sont toujours respectés (cascade comprise)
+        return conditions_by_id(ids)
+    chosen = list(build_exploratory_conditions() if exploratory else build_conditions())
     return [c for c in chosen if c.cascade or not only_cascade]
 
 
@@ -156,7 +162,7 @@ def cmd_prepare(args: argparse.Namespace) -> int:
 
     method: dict[str, Any] = {}
     digests: dict[str, dict[str, str]] = {}
-    for cond in _select_conditions(args.conditions):
+    for cond in _select_conditions(args.conditions, exploratory=args.exploratory):
         digests[cond.id] = {}
         commands: list[str] = []
         for index, (reciter, surah) in enumerate(SELECTION):
@@ -181,16 +187,16 @@ def cmd_prepare(args: argparse.Namespace) -> int:
             else None,
             "commands": commands,
         }
+    path = args.out_dir / "methode.json"
+    previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     document = {
         "git": _git_sha(),
         "ffmpeg": _ffmpeg_version(),
         "files": [file_id(r, s) for r, s in SELECTION],
-        "conditions": method,
-        "audio_sha256": digests,
+        "conditions": {**previous.get("conditions", {}), **method},
+        "audio_sha256": {**previous.get("audio_sha256", {}), **digests},
     }
-    _write_atomic(
-        args.out_dir / "methode.json", json.dumps(document, ensure_ascii=False, indent=1) + "\n"
-    )
+    _write_atomic(path, json.dumps(document, ensure_ascii=False, indent=1) + "\n")
     _log(f"méthode écrite : {args.out_dir / 'methode.json'}")
     return 0
 
@@ -250,7 +256,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     from aqr.pipeline.output import build_json
 
     truth_doc = json.loads((args.derived_dir / "truth.json").read_text(encoding="utf-8"))
-    conditions = _select_conditions(args.conditions, only_cascade=args.mode == "cascade")
+    conditions = _select_conditions(
+        args.conditions, only_cascade=args.mode == "cascade", exploratory=args.exploratory
+    )
     files = [f for f in (file_id(r, s) for r, s in SELECTION) if not args.files or f in args.files]
     todo = [
         (c, f)
@@ -380,7 +388,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         p.add_argument("--out-dir", type=Path, required=True)
         if derived:
             p.add_argument("--derived-dir", type=Path, required=True)
-        p.add_argument("--conditions", nargs="*", help="identifiants (défaut : toutes)")
+        p.add_argument("--conditions", nargs="*", help="identifiants (défaut : celles du cahier)")
+        p.add_argument(
+            "--exploratory",
+            action="store_true",
+            help="les conditions ajoutées après le résultat principal (au-delà du cahier)",
+        )
 
     prepare = sub.add_parser("prepare", help="sourates propres, vérité, audio dégradé")
     common(prepare)

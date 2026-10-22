@@ -15,6 +15,7 @@ from aqr.eval.degradation_curve import (
     Decision,
     FamilyVerdict,
     ScoreRecord,
+    all_conditions,
     ascii_bar,
     build_conditions,
     decide,
@@ -35,7 +36,7 @@ def _number(value: float | None, digits: int = 1) -> str:
 
 
 def _measured(campaign: Campaign) -> list[Condition]:
-    return [c for c in build_conditions() if c.id in campaign]
+    return [c for c in all_conditions() if c.id in campaign]
 
 
 def render_table(solo: Campaign, cascade: Campaign | None = None) -> str:
@@ -59,8 +60,9 @@ def render_table(solo: Campaign, cascade: Campaign | None = None) -> str:
         cas_total = summarize(cas.values()).score if cas else None
         cascade_recall = format_percent(cas_total.recall) if cas_total else "-"
         cascade_false = str(cas_total.false_recognized) if cas_total else "-"
+        label = f"{cond.label} †" if cond.exploratory else cond.label
         lines.append(
-            f"| {cond.label} | {recall} | {placed} | {total.false_recognized} | {total.inferred} "
+            f"| {label} | {recall} | {placed} | {total.false_recognized} | {total.inferred} "
             f"| {total.uncertain} | {total.missed} | {total.abstentions} | {format_percent(s.wer)} "
             f"| {format_percent(s.cer)} | {_number(s.rtf, 3)} "
             f"| {cascade_recall} | {cascade_false} |"
@@ -73,7 +75,7 @@ def render_curves(solo: Campaign, cascade: Campaign | None = None) -> str:
     cascade = cascade or {}
     clean = next(c for c in build_conditions() if c.id == CLEAN_ID)
     blocks: list[str] = []
-    families = dict.fromkeys(c.family for c in build_conditions() if c.family != "propre")
+    families = dict.fromkeys(c.family for c in all_conditions() if c.family != "propre")
     for family in families:
         members = [c for c in _measured(solo) if c.family == family]
         if not members:
@@ -81,8 +83,10 @@ def render_curves(solo: Campaign, cascade: Campaign | None = None) -> str:
         lines = [f"### {family}", "", "```"]
         for cond in [clean, *members] if CLEAN_ID in solo else members:
             s = summarize(solo[cond.id].values())
+            level = f"{cond.level} †" if cond.exploratory else cond.level
             row = (
-                f"{cond.level:<38} {ascii_bar(s.score.recall)} {format_percent(s.score.recall):>8}"
+                f"{level:<38} {ascii_bar(s.score.recall)} {format_percent(s.score.recall):>8}"
+                f"   WER {format_percent(s.wer):>7}"
             )
             if cond.id in cascade:
                 cas = summarize(cascade[cond.id].values()).score.recall
