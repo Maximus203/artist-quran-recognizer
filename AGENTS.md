@@ -39,6 +39,33 @@ mypy
 ```
 Les tests qui exigent le corpus sont sautés (pas en échec) tant qu'il n'est pas téléchargé.
 
+## Documentation vivante (affichée dans l'onglet « Documentation » de l'atelier)
+La documentation suit le code : elle est mise à jour **dans la PR qui change les choses**, pas après.
+- Toute PR qui change le **comportement visible**, l'**architecture** ou une **décision** DOIT ajouter une
+  entrée en tête de `docs/RELEASE-NOTES.md` ET mettre à jour le document concerné
+  (`docs/SYSTEME-EN-BREF.md`, `docs/ARCHITECTURE.md`, `docs/ARCHITECTURE-ATELIER.md`, contrat de sortie…).
+  Squelette de l'entrée : `python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr NN`
+  (étiquettes : `utilisateur`, `technique`, `décision` ; format strict décrit en tête du fichier).
+  Modèle :
+  ```
+  ## AAAA-MM-JJ — Titre court
+  Étiquettes : utilisateur, technique, décision
+  PR : #NN
+
+  **Ce qui change.** Deux ou trois phrases, du point de vue de celui qui utilise ou lit le système.
+
+  **Pourquoi / décision.** Motif, chiffres mesurés avec leur source, renvoi à l'ADR.
+  ```
+- Toute nouvelle **ADR** ou tout nouveau **rapport d'évaluation majeur** est ajouté à `docs/docs-index.json`
+  (un document par ligne : `slug`, `title`, `section`, `file`, `summary`). N'y mettre aucun fichier qui
+  contient du texte coranique long, un identifiant de personne ou un secret.
+- Aucun chiffre ni aucune fonctionnalité inventés : chaque affirmation cite sa source (fichier ou PR). Ce qui
+  n'existe pas encore est marqué « en cours de construction », jamais décrit comme livré.
+- Contrôle : `python scripts/check_docs_index.py` (index, ADR, format des notes de version). La description de
+  la PR suit `docs/templates/pull-request.md` (case « Notes de version / documentation mises à jour »).
+  Le hook `pre-push` rappelle la règle, sans bloquer, quand `src/` ou `web/` change sans note de version :
+  c'est un rappel, pas une autorisation de s'en passer.
+
 ## Signature des commits et PR (règle du mainteneur)
 - **Aucune signature d'IA** dans l'historique : ni `Co-Authored-By: Claude …`, ni
   `Claude-Session:`, ni « Generated with Claude Code » (commits, descriptions de PR,
