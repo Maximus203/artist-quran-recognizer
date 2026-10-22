@@ -35,11 +35,34 @@ const verse = z
       v.status === "uncertain" ? !v.text && !v.translation : v.ref !== null,
     "Statut et texte incohérents",
   );
-const nonQuran = z.object({
-  kind: z.literal("non_quran"),
-  label: z.string(),
-  t: span,
-});
+/**
+ * Zone non coranique. Champs additifs (l'ancien `{ kind, label, t }` reste valide) :
+ * - la basmala est le verset 1:1 : `basmala: true`, `ref: "1:1"`, `text` lu dans le corpus (I1) et
+ *   `translation` QuranEnc avec sa provenance (I2), absents d'une copie expurgée ;
+ * - isti'adha, takbir et amin n'ont aucun texte du Mushaf : seulement un libellé arabe constant
+ *   `label_ar`, à ne jamais présenter comme le texte du Coran.
+ */
+const nonQuran = z
+  .object({
+    kind: z.literal("non_quran"),
+    label: z.string(),
+    t: span,
+    basmala: z.boolean().optional(),
+    ref: ref.optional(),
+    text: z.string().nullish(),
+    translation: translation.nullish(),
+    label_ar: z.string().min(1).optional(),
+  })
+  .refine(
+    (z) =>
+      z.basmala === true
+        ? z.label === "basmala" &&
+          z.ref === "1:1" &&
+          z.label_ar === undefined &&
+          (z.text == null || z.text.length > 0)
+        : z.text == null && z.ref === undefined && z.translation == null,
+    "Zone non coranique incohérente : seule la basmala (1:1) porte du texte et une traduction",
+  );
 const abstention = z.object({
   kind: z.literal("abstention"),
   reason: z.enum([

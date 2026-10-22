@@ -108,6 +108,77 @@ describe("contrat recognition", () => {
       }),
     ).toThrow();
   });
+  describe("zones non coraniques : basmala affichée comme un verset", () => {
+    const basmala = {
+      kind: "non_quran",
+      label: "basmala",
+      t: [2, 5],
+      basmala: true,
+      ref: "1:1",
+      text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
+      translation: {
+        text: "Au nom d'Allah",
+        translation_id: "french_hameedullah",
+        version: "1",
+        attribution: "QuranEnc",
+        scope: "verse",
+      },
+    };
+    const parse = (...intervals: unknown[]) =>
+      parseRecognition({ ...base, intervals });
+
+    it("lit la basmala avec son texte, sa référence 1:1 et sa traduction", () => {
+      const item = parse(basmala).intervals[0];
+      expect(item).toMatchObject({
+        kind: "non_quran",
+        basmala: true,
+        ref: "1:1",
+        text: basmala.text,
+      });
+      expect(
+        item.kind === "non_quran" && item.translation?.translation_id,
+      ).toBe("french_hameedullah");
+    });
+    it("lit une basmala expurgée (sans texte ni traduction) et l'ancien format", () => {
+      const { text, translation, ...light } = basmala;
+      void text;
+      void translation;
+      expect(parse(light).intervals[0]).toMatchObject({ basmala: true });
+      const old = parse({ kind: "non_quran", label: "takbir", t: [1, 2] })
+        .intervals[0];
+      expect(old).toEqual({ kind: "non_quran", label: "takbir", t: [1, 2] });
+    });
+    it("lit le libellé arabe d'une formule", () => {
+      const item = parse({
+        kind: "non_quran",
+        label: "amin",
+        t: [1, 2],
+        label_ar: "آمين",
+      }).intervals[0];
+      expect(item).toMatchObject({ label_ar: "آمين" });
+      expect(item.kind === "non_quran" && item.text).toBeUndefined();
+    });
+    it("rejette une zone incohérente : seule la basmala 1:1 porte un texte du Mushaf (I1)", () => {
+      const bad = [
+        { ...basmala, ref: "2:255" },
+        { ...basmala, label: "takbir" },
+        { ...basmala, basmala: false },
+        { ...basmala, label_ar: "آمين" },
+        { kind: "non_quran", label: "takbir", t: [1, 2], text: "الله أكبر" },
+        { kind: "non_quran", label: "amin", t: [1, 2], ref: "1:1" },
+        { ...basmala, text: "" },
+        { ...basmala, basmala: "oui" },
+        { kind: "non_quran", label: "amin", t: [1, 2], label_ar: "" },
+        {
+          kind: "non_quran",
+          label: "takbir",
+          t: [1, 2],
+          translation: basmala.translation,
+        },
+      ];
+      for (const item of bad) expect(() => parse(item)).toThrow();
+    });
+  });
   it("formate la frontière de minute", () => {
     expect(formatTime(59.999)).toBe("00:59.999");
     expect(formatTime(60)).toBe("01:00.000");

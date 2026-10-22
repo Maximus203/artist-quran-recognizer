@@ -38,7 +38,30 @@ Trois sortes d'intervalles :
 - `{"kind":"verse","ref":"42:3","words":[1,10],"partial":false,"status":"recognized|inferred|uncertain",
   "t":[a,b]|null,"time_interpolated":false,"confidence":0.97,"candidates":[],"repetition":false,
   "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse"}|null}`
-- `{"kind":"non_quran","label":"basmala|istiadha|takbir|amin","t":[a,b]}`
+- `{"kind":"non_quran","label":"basmala|istiadha|takbir|amin|…","t":[a,b]}` ; champs **additifs** (l'ancien
+  format `{kind, label, t}` reste valide, le schéma reste `aqr.recognition/1`) :
+  - **basmala** (d'ouverture d'une sourate, ou un 1:1 isolé non suivi de 1:2 ; dans Al-Fatiha entière, 1:1 reste
+    un verset) : `"basmala":true`, `"ref":"1:1"`, `"text"` (le verset 1:1 lu **dans le
+    corpus**, I1) et `"translation"` (QuranEnc, même forme que pour un verset : `text`, `translation_id`,
+    `version`, `attribution`, `scope:"verse"` ; `null` avec `--translation none`). Exemple réel (cascade, 55:1-4
+    précédé de la basmala) :
+    `{"kind":"non_quran","label":"basmala","t":[1.29,4.33],"basmala":true,"ref":"1:1","text":"بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ","translation":{"text":"Au nom d’Allah, le Tout Miséricordieux, le Très Miséricordieux.[1]","translation_id":"french_hameedullah","version":"quranenc.com","attribution":"QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)","scope":"verse"}}` ;
+  - **isti'adha, takbir, amin** : aucun texte du Mushaf (hors corpus), ni `ref`, ni traduction ; un libellé arabe
+    constant `"label_ar"` (`أعوذ بالله من الشيطان الرجيم`, `الله أكبر`, `آمين`), à afficher comme un libellé et
+    jamais comme le texte du Coran ;
+  - les autres zones (`french`, `silence`…) restent `{kind, label, t}`. La copie expurgée (`redact_document`)
+    retire `text` et `translation` de la basmala comme de tout verset, et garde `basmala` et `ref`.
+  - **`ref: "1:1"` sur une zone `non_quran` n'est pas un verset reconnu** : tout consommateur qui compte ou
+    cite des versets doit filtrer sur `kind == "verse"`. La zone ne porte pas de statut de preuve : le moteur
+    la pose quand la fenêtre ne contient que la basmala (qui est aussi le début du verset 1 de chaque sourate,
+    donc toujours ambiguë comme verset). Le texte affiché est celui de la basmala, pas la preuve d'un verset.
+  - La traduction de la basmala peut porter sa note de bas de page telle que QuranEnc la livre
+    (`…Miséricordieux.[1]`) : elle n'est pas nettoyée (I2), l'affichage décide.
+  - Contrôles : le lecteur Python et le schéma web refusent une zone incohérente (`basmala` non booléen ou hors
+    1:1, texte/référence/traduction sur une autre zone, `label_ar` sur la basmala) ; seul
+    `tests/support/corpus_check.py`, qui charge le corpus, vérifie que `text` est exactement celui de 1:1, que
+    `label_ar` est la constante du libellé et que la traduction garde sa provenance (id, version, attribution,
+    `scope: "verse"`). Le contenu de la traduction n'est pas comparé (comme pour les versets).
 - `{"kind":"abstention","reason":"silence|empty_transcript|no_candidate|below_threshold","t":[a,b],"best_score":0.6}`
 
 ## Ce que chaque statut AFFIRME (I3, I5)
@@ -66,7 +89,7 @@ connues : `docs/KNOWN-ISSUES.md` KI-1.
 ## SRT / VTT
 Une ligne par verset (texte du corpus), `[incertain : 55:13 | 55:16]` pour un verset ambigu, `[déduit] …` pour
 un verset supposé, `[isti'adha]`, `[takbir]`, `[amin]`, `[basmala]` pour les formules. Les abstentions n'ont
-pas de sous-titre.
+pas de sous-titre. La basmala garde son libellé `[basmala]` (son texte est dans le JSON).
 
 ## Ce qui n'est pas fait
 - Décodage contraint sur treillis CTC (`--constrained`, ADR-0005) : la reconnaissance vérifie et horodate les

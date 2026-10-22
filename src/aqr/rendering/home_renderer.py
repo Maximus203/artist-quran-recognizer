@@ -8,9 +8,14 @@ modification, avec identifiant, version et attribution (invariant I2).
 
 from __future__ import annotations
 
+from typing import Final
+
 from aqr.corpus.normalize import normalize_arabic
-from aqr.domain.models import Detection, Status, Timeline, TimeSpan
+from aqr.domain.models import Detection, Status, Timeline, TimeSpan, VerseRef
 from aqr.domain.ports import BatchOptions, CorpusRepository, RenderedBatch, TranslationRepository
+
+BASMALA_REF: Final = VerseRef(1, 1)
+"""La basmala est le verset 1:1 : texte et traduction se lisent là, dans le corpus (I1, I2)."""
 
 
 class HomeRenderer:
@@ -78,14 +83,38 @@ class HomeRenderer:
         total = len(self._corpus.words(det.span.ref))
         return not (det.span.first_word == 1 and det.span.last_word >= total)
 
+    def _translation_json(
+        self, ref: VerseRef, translation_id: str | None
+    ) -> dict[str, object] | None:
+        """Traduction du verset entier, restituée sans modification, avec sa provenance (I2)."""
+        if not translation_id:
+            return None
+        translation = self._translations.get(ref, translation_id)
+        if translation is None:
+            return None
+        return {
+            "text": translation.text,
+            "translation_id": translation.translation_id,
+            "version": translation.version,
+            "attribution": translation.attribution,
+            "scope": "verse",  # la traduction QuranEnc couvre le verset entier
+        }
+
+    def render_basmala(self, translation_id: str | None) -> dict[str, object]:
+        """La basmala d'une zone non coranique : le verset 1:1, lu dans le corpus comme n'importe
+        quel verset (I1), avec sa traduction QuranEnc (I2). Jamais un texte venu d'un modèle."""
+        return {
+            "basmala": True,
+            "ref": str(BASMALA_REF),
+            "text": self._corpus.text(BASMALA_REF),
+            "translation": self._translation_json(BASMALA_REF, translation_id),
+        }
+
     def render_item(self, det: Detection, translation_id: str | None) -> dict[str, object]:
         """Item JSON d'une détection. Un verset `UNCERTAIN` n'est jamais nommé par son texte ni sa
         traduction (seulement ses candidats) ; `translation_id=None` : pas de traduction."""
         ref = det.span.ref
         named = det.status is not Status.UNCERTAIN
-        translation = (
-            self._translations.get(ref, translation_id) if named and translation_id else None
-        )
         return {
             "ref": str(ref),
             "status": det.status.value,
@@ -93,17 +122,7 @@ class HomeRenderer:
             "partial": self._is_partial(det),
             "repetition": det.is_repetition,
             "text": self.span_text(det) if named else None,
-            "translation": (
-                {
-                    "text": translation.text,
-                    "translation_id": translation.translation_id,
-                    "version": translation.version,
-                    "attribution": translation.attribution,
-                    "scope": "verse",  # la traduction QuranEnc couvre le verset entier
-                }
-                if translation is not None
-                else None
-            ),
+            "translation": self._translation_json(ref, translation_id) if named else None,
             "time": (
                 {
                     "start_s": det.time.start_s,
