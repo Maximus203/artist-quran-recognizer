@@ -46,7 +46,7 @@ export function LiveArabic({
         ) : (
           <span
             key={i}
-            className="w"
+            className="aw"
             data-w={part.word}
             aria-current={part.word === active ? "true" : undefined}
           >
@@ -101,7 +101,7 @@ export function LiveTranslation({
           <Fragment key={i}>
             {i > 0 ? " " : null}
             <span
-              className="seg"
+              className="tr-seg"
               data-seg={part.segment ?? undefined}
               aria-current={i === active ? "true" : undefined}
             >
