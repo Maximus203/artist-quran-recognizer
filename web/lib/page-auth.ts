@@ -1,6 +1,8 @@
-import { cookies } from "next/headers";
+import { cache } from "react";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { authConfig, resolveLogin, sessionToken, SESSION_COOKIE } from "./auth";
+import { hasAccessCredential } from "./local-request";
 import { ready } from "./server-init";
 import type { User } from "./users";
 
@@ -10,14 +12,25 @@ import type { User } from "./users";
  *
  *   const user = await requirePageUser("/");        // page protégée : redirige si anonyme
  *   await redirectIfSignedIn("/");                   // /login et /register : déjà connecté → accueil
+ *
+ * `pageUser` est mémorisé le temps d'une requête : la mise en page et la page le demandent tous
+ * deux sans doubler l'accès à la base.
  */
-export async function pageUser(): Promise<User | null> {
+export const pageUser = cache(async (): Promise<User | null> => {
   const db = await ready();
   const jar = await cookies();
   const token = sessionToken(
     `${SESSION_COOKIE}=${jar.get(SESSION_COOKIE)?.value ?? ""}`,
   );
   return token ? resolveLogin(db, token, authConfig()) : null;
+});
+
+/** Mode test distant : sans jeton d'accès valide, toute page mène au formulaire d'accès. */
+export async function requirePageAccess(): Promise<void> {
+  const request = new Request("http://localhost/", {
+    headers: await headers(),
+  });
+  if (!hasAccessCredential(request)) redirect("/access");
 }
 
 /** Chemin de retour sûr : relatif au site, jamais une adresse extérieure ni `//hôte`. */
@@ -31,11 +44,13 @@ export function safeNext(
 }
 
 export async function requirePageUser(next = "/"): Promise<User> {
+  await requirePageAccess();
   const user = await pageUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(safeNext(next))}`);
   return user;
 }
 
 export async function redirectIfSignedIn(to = "/"): Promise<void> {
+  await requirePageAccess();
   if (await pageUser()) redirect(safeNext(to));
 }

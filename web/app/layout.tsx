@@ -1,4 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { readPreferences } from "@/lib/preferences";
+import { appearanceOf } from "@/lib/prefs-sync";
+import { pageUser } from "@/lib/page-auth";
+import { ready } from "@/lib/server-init";
 import { BOOTSTRAP_INLINE } from "@/lib/ui-bootstrap";
 import "./tokens.css";
 import "./fonts.css";
@@ -9,6 +13,8 @@ import "./console.css";
 import "./passage.css";
 import "./review.css";
 import "./perf.css";
+import "./phase2.css";
+import "./pages.css";
 
 export const metadata: Metadata = {
   title: "Atelier de revue",
@@ -22,15 +28,32 @@ export const viewport: Viewport = {
   colorScheme: "dark light",
 };
 
-export default function Layout({
+export default async function Layout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Connecté : les préférences DU COMPTE posent thème, police et taille dans le HTML lui-même
+  // (aucun clignotement, quel que soit l'appareil). Anonyme (connexion, inscription) : seul le
+  // thème mémorisé par le navigateur est repris, par un petit script avant le premier rendu.
+  const user = await pageUser();
+  const appearance = user
+    ? appearanceOf(readPreferences(await ready(), user.id).preferences)
+    : null;
   return (
-    // Le script d'amorçage pose thème, police arabe et taille AVANT le premier rendu : sans lui la
-    // page s'afficherait dans le thème du système puis « sauterait » (d'où suppressHydrationWarning).
-    <html lang="fr" data-quran-font="amiri-quran" suppressHydrationWarning>
+    <html
+      lang="fr"
+      data-theme={appearance?.theme ?? undefined}
+      data-quran-font={appearance?.font ?? "amiri-quran"}
+      style={
+        appearance?.quranSize
+          ? ({ "--quran-size": appearance.quranSize } as React.CSSProperties)
+          : undefined
+      }
+      suppressHydrationWarning
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: BOOTSTRAP_INLINE }} />
+        {user ? null : (
+          <script dangerouslySetInnerHTML={{ __html: BOOTSTRAP_INLINE }} />
+        )}
       </head>
       <body>{children}</body>
     </html>

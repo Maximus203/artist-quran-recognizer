@@ -1,45 +1,49 @@
 "use client";
-import { useMemo, useState } from "react";
-import {
-  buildRow,
-  filterViews,
-  groupViews,
-  queueSummary,
-  sessionCounts,
-  type SessionFilter,
-  type SessionRow,
-} from "@/lib/session-list";
-import type { SessionView } from "@/lib/session-view";
+import Link from "next/link";
+import { useMemo } from "react";
+import type { ApiSession } from "@/lib/api-types";
+import { buildRow, queueSummary, type SessionRow } from "@/lib/session-list";
 import { Icon, SessionGlyph } from "./icons";
+import {
+  SIDEBAR_FAVORITES,
+  SIDEBAR_RECENT,
+  type Sidebar,
+} from "./use-sessions";
 
 type Props = {
-  views: readonly SessionView[];
-  loaded: boolean;
+  data: Sidebar;
   currentId: string | null;
   onOpen: (id: string) => void;
   onRefresh: () => void;
   onRetry: (id: string) => void;
   onClose: () => void;
-  onPerf: () => void;
 };
 
+const QUEUE_SHOWN = 3;
+
 function Row({
+  session,
   row,
   current,
   onOpen,
   onRetry,
 }: {
+  session: ApiSession;
   row: SessionRow;
   current: boolean;
   onOpen: () => void;
   onRetry: () => void;
 }) {
   const running = row.glyph === "running";
+  const status =
+    session.mine || !session.owner
+      ? row.status
+      : `par ${session.owner?.username ?? "—"} · ${row.status}`;
   return (
-    <li className={row.canRetry ? "has-retry" : undefined}>
+    <li className={row.canRetry && session.can_edit ? "has-retry" : undefined}>
       <button
         type="button"
-        className="sess"
+        className="sess is-compact"
         data-testid="session-row"
         data-id={row.id}
         data-state={row.glyph}
@@ -56,7 +60,13 @@ function Row({
           />
         </span>
         <span className="sess-name" title={row.name}>
-          {row.name}
+          {session.visibility === "private" ? (
+            <>
+              <Icon name="lock" className="i-lock-inline" />
+              <span className="sr">Privée · </span>
+            </>
+          ) : null}
+          <span className="t">{row.name}</span>
         </span>
         <span className="sess-end">
           {row.unread ? (
@@ -70,11 +80,7 @@ function Row({
         </span>
         <span className="sess-status">
           {row.unread ? <span className="sr">Non lue · </span> : null}
-          {row.status}
-        </span>
-        <span className="sess-meta">
-          <Icon name={row.mediaKind === "video" ? "video" : "audio"} />
-          {row.meta}
+          {status}
         </span>
         {running ? (
           <span
@@ -94,7 +100,7 @@ function Row({
           </span>
         ) : null}
       </button>
-      {row.canRetry ? (
+      {row.canRetry && session.can_edit ? (
         <button
           type="button"
           className="btn btn--secondary btn--sm retry"
@@ -108,37 +114,43 @@ function Row({
   );
 }
 
-export function SessionsPanel(props: Props) {
-  const [filter, setFilter] = useState<SessionFilter>("all");
+/**
+ * Barre de gauche : elle raccourcit, elle ne liste plus. La file d'analyse, quelques favoris
+ * épinglés, les huit plus récentes, puis un bouton vers la page « Sessions » (la liste complète).
+ */
+export function SessionsPanel({
+  data,
+  currentId,
+  onOpen,
+  onRefresh,
+  onRetry,
+  onClose,
+}: Props) {
   const now = Date.now();
-  const counts = useMemo(() => sessionCounts(props.views), [props.views]);
-  const summary = useMemo(() => queueSummary(props.views), [props.views]);
-  const shown = useMemo(
-    () => filterViews(props.views, filter),
-    [props.views, filter],
+  const mineQueue = useMemo(
+    () => data.queue.filter((s) => s.mine),
+    [data.queue],
   );
-  const groups = useMemo(() => groupViews(shown), [shown]);
-  const chip = (id: SessionFilter, label: string, n: number) => (
-    <button
-      type="button"
-      className="chip"
-      data-testid={`filter-${id}`}
-      aria-pressed={filter === id}
-      onClick={() => setFilter(id)}
-    >
-      {label} <span className="n">{n}</span>
-    </button>
-  );
-  const list = (items: SessionView[]) =>
-    items.map((view) => (
+  const summary = useMemo(() => queueSummary(mineQueue), [mineQueue]);
+  const favoritesTotal = data.counts?.scopes.favorites ?? data.favorites.length;
+  const total = data.counts?.scopes.all ?? data.total;
+  const render = (items: ApiSession[]) =>
+    items.map((s) => (
       <Row
-        key={view.id}
-        row={buildRow(view, now)}
-        current={props.currentId === view.id}
-        onOpen={() => props.onOpen(view.id)}
-        onRetry={() => props.onRetry(view.id)}
+        key={s.id}
+        session={s}
+        row={buildRow(s, now)}
+        current={currentId === s.id}
+        onOpen={() => onOpen(s.id)}
+        onRetry={() => onRetry(s.id)}
       />
     ));
+  const empty =
+    data.loaded &&
+    !data.error &&
+    mineQueue.length === 0 &&
+    data.favorites.length === 0 &&
+    data.recent.length === 0;
   return (
     <div className="panel-in">
       <div className="panel-head">
@@ -148,7 +160,7 @@ export function SessionsPanel(props: Props) {
           className="btn btn--ghost btn--icon btn--sm"
           data-testid="refresh"
           aria-label="Actualiser la liste"
-          onClick={props.onRefresh}
+          onClick={onRefresh}
         >
           <Icon name="refresh" />
         </button>
@@ -156,15 +168,10 @@ export function SessionsPanel(props: Props) {
           type="button"
           className="btn btn--ghost btn--icon btn--sm drawer-close only-drawer"
           aria-label="Fermer la liste des sessions"
-          onClick={props.onClose}
+          onClick={onClose}
         >
           <Icon name="x" />
         </button>
-      </div>
-      <div className="filters" role="group" aria-label="Filtrer les sessions">
-        {chip("all", "Toutes", counts.all)}
-        {chip("active", "En cours", counts.active)}
-        {chip("unread", "Non lues", counts.unread)}
       </div>
       {summary ? (
         <p className="queue-line" role="status" data-testid="queue-line">
@@ -172,46 +179,97 @@ export function SessionsPanel(props: Props) {
           <span>{summary}</span>
         </p>
       ) : null}
-      {props.views.length === 0 ? (
-        <p className="sess-empty">
-          {props.loaded
-            ? "Aucun essai local. Dépose un audio ou une vidéo, ou enregistre une récitation."
-            : "Chargement…"}
+      {data.error ? (
+        <p className="sess-empty" role="alert">
+          {data.error}
         </p>
-      ) : shown.length === 0 ? (
-        <p className="sess-empty">Aucune session ne correspond à ce filtre.</p>
+      ) : !data.loaded ? (
+        <p className="sess-empty">Chargement…</p>
+      ) : empty ? (
+        <p className="sess-empty">
+          Aucune session. Dépose un audio ou une vidéo, ou enregistre une
+          récitation.
+        </p>
       ) : (
         <>
-          {groups.queue.length > 0 ? (
-            <>
-              <h3 className="eyebrow group-title">File d’analyse</h3>
-              <ul data-testid="list-queue">{list(groups.queue)}</ul>
-            </>
+          {mineQueue.length > 0 ? (
+            <section className="grp" aria-labelledby="g-queue">
+              <h3 className="grp-title">
+                <span className="eyebrow" id="g-queue">
+                  File d’analyse
+                </span>
+                {mineQueue.length > QUEUE_SHOWN ? (
+                  <span className="more-n">
+                    + {mineQueue.length - QUEUE_SHOWN}
+                  </span>
+                ) : null}
+              </h3>
+              <ul data-testid="list-queue">
+                {render(mineQueue.slice(0, QUEUE_SHOWN))}
+              </ul>
+            </section>
           ) : null}
-          {groups.ready.length > 0 ? (
-            <>
-              <h3 className="eyebrow group-title">Prêtes à analyser</h3>
-              <ul data-testid="list-ready">{list(groups.ready)}</ul>
-            </>
+          {data.favorites.length > 0 ? (
+            <section className="grp" aria-labelledby="g-fav">
+              <h3 className="grp-title">
+                <span className="eyebrow" id="g-fav">
+                  Favoris
+                </span>
+                <span className="more-n">{favoritesTotal}</span>
+              </h3>
+              <ul data-testid="list-favorites">
+                {render(data.favorites.slice(0, SIDEBAR_FAVORITES - 1))}
+              </ul>
+              {favoritesTotal > SIDEBAR_FAVORITES - 1 ? (
+                <div className="see-all">
+                  <Link
+                    className="btn btn--ghost btn--sm btn--block"
+                    href="/sessions?portee=fav"
+                  >
+                    Voir les {favoritesTotal} favoris
+                  </Link>
+                </div>
+              ) : null}
+            </section>
           ) : null}
-          {groups.done.length > 0 ? (
-            <>
-              <h3 className="eyebrow group-title">Terminées</h3>
-              <ul data-testid="list-done">{list(groups.done)}</ul>
-            </>
+          {data.recent.length > 0 ? (
+            <section className="grp" aria-labelledby="g-rec">
+              <h3 className="grp-title">
+                <span className="eyebrow" id="g-rec">
+                  Récentes
+                </span>
+                <span className="more-n">
+                  {Math.min(SIDEBAR_RECENT, data.recent.length)} sur {total}
+                </span>
+              </h3>
+              <ul data-testid="list-recent">{render(data.recent)}</ul>
+            </section>
           ) : null}
         </>
       )}
-      <div className="sess-foot only-drawer">
-        <button
-          type="button"
+      <div className="see-all">
+        <Link
           className="btn btn--secondary btn--block"
-          onClick={props.onPerf}
+          href="/sessions"
+          data-testid="see-all"
         >
+          Voir toutes les sessions <span className="n">{total}</span>
+        </Link>
+      </div>
+      <nav className="panel-nav only-drawer" aria-label="Autres pages">
+        <Link href="/performance">
           <Icon name="gauge" />
           Performance
-        </button>
-      </div>
+        </Link>
+        <Link href="/docs">
+          <Icon name="book" />
+          Documentation
+        </Link>
+        <Link href="/compte">
+          <Icon name="sliders" />
+          Préférences
+        </Link>
+      </nav>
     </div>
   );
 }

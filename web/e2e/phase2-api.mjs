@@ -237,6 +237,7 @@ async function main() {
   const A = await startServer("A", await freePort(PORT), {
     __fixtures: true,
     AQR_SIGNUP: "open",
+    AQR_USER_QUOTA_BYTES: "0",
     AQR_REGISTER_PER_HOUR: "100",
   });
   const B = await startServer("B", await freePort(PORT + 1), {
@@ -358,7 +359,7 @@ async function main() {
           `me : ${JSON.stringify(me.data)}`,
         );
         state.cherifId = res.data.user.id;
-        return `201 admin (id ${res.data.user.id}), cookie HttpOnly+Lax+Path=/ sans Secure ; /api/me : thème « system », quota illimité`;
+        return `201 admin (id ${res.data.user.id}), cookie HttpOnly+Lax+Path=/ sans Secure ; /api/me : thème « system », quota illimité (AQR_USER_QUOTA_BYTES=0)`;
       },
     );
 

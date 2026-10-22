@@ -17,8 +17,8 @@ Il se présente de deux façons :
 
 - une **ligne de commande** (`aqr recognize fichier.mp3`) qui produit un fichier JSON (et des sous-titres
   SRT/VTT) : contrat dans `docs/RECOGNIZE-OUTPUT.md` ;
-- un **atelier web** local (dossier `web/`) où l'on dépose des audios et vidéos, on écoute, on voit les
-  versets sur une ligne de temps et on signale ce qui est faux : voir `docs/ARCHITECTURE-ATELIER.md`.
+- un **atelier web** local (dossier `web/`) où plusieurs testeurs (comptes, audios globaux ou privés) déposent des audios et vidéos, écoutent, voient les
+  versets sur une ligne de temps et signalent ce qui est faux : voir `docs/ARCHITECTURE-ATELIER.md`.
 
 Usage prévu : **non commercial**, en local, hors ligne une fois les modèles téléchargés (décision de Cherif
 du 2026-10-19, `docs/PLAN.md`).
