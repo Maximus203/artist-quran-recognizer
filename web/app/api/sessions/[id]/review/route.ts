@@ -1,42 +1,55 @@
-import { NextResponse } from "next/server";
-import { isLocalRequest } from "@/lib/local-request";
-import { updateReview } from "@/lib/review-update";
+import { apiError, json, readJson, safe } from "@/lib/http";
+import { sessionAccess } from "@/lib/route-guard";
+import { updateReviewAs } from "@/lib/review-update";
 import { readReview } from "@/lib/store";
 export const runtime = "nodejs";
 
 /** La revue d'une session (tous testeurs confondus) : sert au rafraîchissement du panneau. */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "review");
+  if (!access.ok) return access.response;
   try {
-    const { id } = await params;
-    return NextResponse.json({ review: await readReview(id) });
+    return json({ review: await readReview(access.id) });
   } catch {
-    return NextResponse.json({ error: "Session introuvable" }, { status: 404 });
+    return apiError(404, "Session introuvable", { code: "not_found" });
   }
 }
 
 /**
- * Enregistre les signalements d'un testeur : fusion par identifiant avec ceux des autres (jamais un
- * remplacement de la liste). Réponse : la revue fusionnée.
+ * Enregistre les signalements du testeur connecté : fusion par identifiant avec ceux des autres
+ * (jamais un remplacement de la liste). L'AUTEUR est le compte connecté — le champ `tester` envoyé
+ * par le client est ignoré. Un signalement d'un autre testeur ne se modifie ni ne se supprime
+ * (administrateurs exceptés) : ces identifiants reviennent dans `rejected`.
+ * Réponse : `{ saved: true, review, rejected: string[] }`.
  */
-export async function PUT(
+async function handlePUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request, true))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "review", {
+    mutation: true,
+  });
+  if (!access.ok) return access.response;
   try {
-    const { id } = await params;
-    const review = await updateReview(id, await request.json());
-    return NextResponse.json({ saved: true, review });
+    const { review, rejected } = await updateReviewAs(
+      access.id,
+      await readJson(request),
+      {
+        username: access.user.username,
+        admin: access.user.role === "admin",
+      },
+    );
+    return json({ saved: true, review, rejected });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Sauvegarde impossible" },
-      { status: 400 },
+    return apiError(
+      400,
+      e instanceof Error ? e.message : "Sauvegarde impossible",
     );
   }
 }
+
+export const GET = safe(handleGET);
+export const PUT = safe(handlePUT);

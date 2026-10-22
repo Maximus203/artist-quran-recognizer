@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { NextResponse } from "next/server";
 import {
   readResult,
@@ -5,16 +6,17 @@ import {
   readReviewHistory,
   readSession,
 } from "@/lib/store";
-import { isLocalRequest } from "@/lib/local-request";
+import { sessionAccess } from "@/lib/route-guard";
 export const runtime = "nodejs";
-export async function GET(
+/** Export JSON d'une session (résultat, revue, historique) : testeurs qui la voient ; privée = propriétaire seul. */
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "view");
+  if (!access.ok) return access.response;
   try {
-    const { id } = await params,
+    const id = access.id,
       session = await readSession(id),
       result = await readResult(id),
       review = await readReview(id),
@@ -55,3 +57,5 @@ export async function GET(
     return NextResponse.json({ error: "Export impossible" }, { status: 404 });
   }
 }
+
+export const GET = safe(handleGET);

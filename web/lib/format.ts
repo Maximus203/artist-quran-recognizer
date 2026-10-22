@@ -90,6 +90,21 @@ export function formatRelative(iso: string, now: number): string {
   });
 }
 
+/** Taille lisible en français : « 59 Ko », « 1,5 Mo », « 2,0 Go » (base 1024). */
+export function formatBytesFr(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "—";
+  if (bytes < 1024) return `${Math.round(bytes)} o`;
+  const units = ["Ko", "Mo", "Go", "To"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const digits = value >= 100 ? 0 : 1;
+  return `${value.toFixed(digits).replace(".", ",")} ${units[unit]}`;
+}
+
 /** Heure locale `HH:MM` (colonne de droite de la liste des sessions). */
 export function formatHourMinute(iso: string): string {
   const at = new Date(iso);

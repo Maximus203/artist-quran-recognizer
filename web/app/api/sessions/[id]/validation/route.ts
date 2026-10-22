@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -7,7 +8,7 @@ import {
   saveValidation,
   writeManifest,
 } from "@/lib/align";
-import { isLocalRequest } from "@/lib/local-request";
+import { sessionAccess } from "@/lib/route-guard";
 import { addPassage, editPassage } from "@/lib/validation";
 export const runtime = "nodejs";
 
@@ -34,18 +35,22 @@ const action = z.discriminatedUnion("action", [
     action: z.literal("align"),
     ids: z.array(z.string().uuid()).min(1),
   }),
-  z.object({ action: z.literal("manifest"), reviewed_by: z.string().max(64) }),
+  // `reviewed_by` n'est plus lu : le relecteur est le compte administrateur connecté.
+  z.object({
+    action: z.literal("manifest"),
+    reviewed_by: z.string().max(64).optional(),
+  }),
 ]);
 
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "truth");
+  if (!access.ok) return access.response;
   try {
     return NextResponse.json({
-      validation: await readValidation((await params).id),
+      validation: await readValidation(access.id),
     });
   } catch (e) {
     return NextResponse.json(
@@ -56,14 +61,16 @@ export async function GET(
 }
 
 /** Propose, modifie, aligne (modèle réel, peut durer) ou écrit dans le manifeste. */
-export async function POST(
+async function handlePOST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(request, true))
-    return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
+  const access = await sessionAccess(request, params, "truth", {
+    mutation: true,
+  });
+  if (!access.ok) return access.response;
   try {
-    const id = (await params).id;
+    const id = access.id;
     const input = action.parse(await request.json());
     if (input.action === "propose")
       return NextResponse.json({ validation: await proposeValidation(id) });
@@ -72,7 +79,11 @@ export async function POST(
         validation: await alignValidation(id, input.ids),
       });
     if (input.action === "manifest") {
-      const { validation, report } = await writeManifest(id, input.reviewed_by);
+      // Relecteur = le compte administrateur connecté, jamais un nom envoyé par le client.
+      const { validation, report } = await writeManifest(
+        id,
+        access.user.username,
+      );
       return NextResponse.json({ validation, report });
     }
     const current = await readValidation(id);
@@ -92,3 +103,6 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
+
+export const GET = safe(handleGET);
+export const POST = safe(handlePOST);
