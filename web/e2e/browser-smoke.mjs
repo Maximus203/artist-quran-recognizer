@@ -191,6 +191,7 @@ try {
   }
   browser = await chromium.launch({ executablePath, headless: true });
   const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
     acceptDownloads: true,
     extraHTTPHeaders: process.env.AQR_SMOKE_TOKEN
       ? { "x-aqr-token": process.env.AQR_SMOKE_TOKEN }
@@ -200,27 +201,29 @@ try {
   const consoleErrors = [];
   page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
+  // Les hooks de test sont des data-testid (jamais des libellés ni des classes de style).
   await page.goto(base, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Importer dans l’atelier/ }).waitFor();
+  await page.getByTestId("new-trial").waitFor();
   ok("page chargée");
 
-  await page.locator('input[type="file"]').first().setInputFiles(audio);
+  // « Nouvel essai » : le fichier est importé dès qu'il est choisi et mis en file (autorun) ;
+  // la session s'ouvre toute seule.
+  await page.getByTestId("new-trial").click();
   const created = page.waitForResponse(
     (r) =>
       new URL(r.url()).pathname === "/api/sessions" &&
       r.request().method() === "POST",
   );
-  await page.getByRole("button", { name: /Importer dans l’atelier/ }).click();
+  await page.getByTestId("media-input").setInputFiles(audio);
   const creation = await created;
   assert(creation.status() === 201, `import refusé (${creation.status()})`);
-  const sessionId = (await creation.json()).id;
-  const run = page.getByRole("button", {
-    name: /Lancer le vrai moteur Python/,
-  });
-  await run.waitFor({ timeout: 60_000 });
-  ok(`audio importé (session ${sessionId})`);
+  await page.getByTestId("session-title").waitFor({ timeout: 60_000 });
+  // L'identifiant se lit dans l'adresse (la session s'ouvre toute seule) : le corps d'un envoi en flux
+  // n'est plus toujours disponible dans l'inspecteur une fois la page passée à autre chose.
+  const sessionId = new URL(page.url()).searchParams.get("session");
+  assert(sessionId, `session non ouverte après l'import (${page.url()})`);
+  ok(`audio importé et mis en file (session ${sessionId})`);
 
-  await run.click();
   const detail = await waitForSession({
     timeoutMs,
     fetchDetail: async () => {
@@ -264,28 +267,28 @@ try {
     `aucun verset RECOGNIZED de la sourate ${surah} à afficher`,
   );
   for (const { index, interval } of recognized) {
-    await page.locator(`button.segment[data-index="${index}"]`).click();
-    const card = page.locator(".verse-card");
+    await page
+      .locator(`[data-testid="interval-row"][data-index="${index}"]`)
+      .click();
+    const card = page.getByTestId("passage");
     // La carte suit l'événement « seeked » du lecteur : on attend la bonne référence au lieu de
     // lire aussitôt le passage précédent.
-    const prefix = `${interval.ref} ·`;
     await page
       .waitForFunction(
         (expected) =>
           document
-            .querySelector(".verse-card .ref")
-            ?.textContent?.trim()
-            .startsWith(expected),
-        prefix,
+            .querySelector('[data-testid="passage"] [data-testid="ref"]')
+            ?.textContent?.trim() === expected,
+        interval.ref,
         { timeout: 15_000 },
       )
       .catch(async () => {
-        const shownRef = (await card.locator(".ref").innerText()).trim();
+        const shownRef = (await card.getByTestId("ref").innerText()).trim();
         throw new Error(
           `référence affichée « ${shownRef} » au lieu de ${interval.ref}`,
         );
       });
-    const badges = await card.locator(".badges").innerText();
+    const badges = await card.getByTestId("badges").innerText();
     assert(
       /Reconnu/.test(badges),
       `${interval.ref} : badge « ${badges} » sans « Reconnu »`,
@@ -294,7 +297,10 @@ try {
       !interval.partial || /Passage partiel/.test(badges),
       `${interval.ref} : verset partiel sans badge « Passage partiel » (${badges})`,
     );
-    const arabic = (await card.locator(".arabic").textContent())?.trim();
+    // Le texte seul (le médaillon de fin de verset est un décor, hors de ce nœud).
+    const arabic = (
+      await card.getByTestId("arabic-text").textContent()
+    )?.trim();
     assert(
       arabic === interval.text.trim(),
       `${interval.ref} : texte affiché « ${arabic} » ≠ interval.text « ${interval.text} »`,
@@ -305,7 +311,8 @@ try {
   );
 
   const download = page.waitForEvent("download", { timeout: 120_000 });
-  await page.locator("a.export").click();
+  await page.getByTestId("tab-list").click();
+  await page.getByTestId("export-bundle").click();
   const file = await download;
   const zipPath = path.join(work, "bundle.zip");
   await file.saveAs(zipPath);

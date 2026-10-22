@@ -1,0 +1,356 @@
+/* ───────── Coque : barre du haut, deux panneaux repliables, colonne centrale ───────── */
+.app {
+  display: grid;
+  grid-template-rows: var(--header-h) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--sp-2);
+}
+.brand svg {
+  width: 30px;
+  height: 30px;
+}
+.brand b {
+  font: 400 1.5rem / 1 var(--font-display);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.brand b em {
+  color: var(--text-3);
+}
+.nav {
+  display: none;
+  gap: 2px;
+  margin-left: var(--sp-4);
+}
+.nav button {
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-sm);
+  font-weight: 600;
+  color: var(--text-2);
+  position: relative;
+}
+.nav button:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.nav button[aria-current="page"] {
+  color: var(--text);
+}
+.nav button[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: var(--sp-3);
+  right: var(--sp-3);
+  bottom: -10px;
+  height: 2px;
+  background: var(--text);
+}
+.spacer {
+  flex: 1;
+}
+.toggle-panel {
+  position: relative;
+}
+.toggle-panel .dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface-1);
+}
+.toggle-panel[aria-expanded="true"] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.hide-sm {
+  display: none;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: var(--left, 0) minmax(0, 1fr) var(--right, 0);
+  min-height: 0;
+}
+.app[data-ready="true"] .workspace {
+  transition: grid-template-columns var(--dur-3) var(--ease);
+}
+.panel {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface-1);
+}
+.panel--left {
+  border-right: 1px solid var(--border);
+}
+.panel--right {
+  border-left: 1px solid var(--border);
+}
+.panel-in {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.panel--left .panel-in {
+  width: var(--w-left);
+}
+.panel--right .panel-in {
+  width: var(--w-right);
+}
+.center {
+  min-width: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: var(--scrim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease);
+}
+
+/* Bureau large : trois zones côte à côte, chaque panneau repliable */
+@media (min-width: 1280px) {
+  .app {
+    height: 100dvh;
+  }
+  .workspace {
+    --left: var(--w-left);
+    --right: var(--w-right);
+  }
+  .workspace[data-left="closed"] {
+    --left: 0px;
+  }
+  .workspace[data-right="closed"] {
+    --right: 0px;
+  }
+  .panel[data-open="false"] {
+    visibility: hidden;
+    transition: visibility 0s linear var(--dur-3);
+  }
+  .nav {
+    display: flex;
+  }
+  .hide-sm {
+    display: inline;
+  }
+  .only-drawer {
+    display: none !important;
+  }
+}
+/* En dessous : les panneaux deviennent des tiroirs au-dessus du contenu */
+@media (max-width: 1279px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel {
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    bottom: 0;
+    width: var(--w-drawer);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-drawer);
+    visibility: hidden;
+    transition:
+      transform var(--dur-3) var(--ease-out),
+      visibility 0s linear var(--dur-3);
+  }
+  .panel--left {
+    left: 0;
+    transform: translateX(-102%);
+    border-right: 0;
+  }
+  .panel--right {
+    right: 0;
+    transform: translateX(102%);
+    border-left: 0;
+  }
+  .panel[data-open="true"] {
+    transform: none;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .panel .panel-in,
+  .panel--left .panel-in,
+  .panel--right .panel-in {
+    width: 100%;
+    padding-top: env(safe-area-inset-top);
+  }
+  .workspace[data-left="open"] ~ .scrim,
+  .workspace[data-right="open"] ~ .scrim {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .nav {
+    display: flex;
+  }
+  .hide-sm {
+    display: inline;
+  }
+}
+@media (max-width: 767px) {
+  .brand b {
+    font-size: 1.35rem;
+  }
+  .brand b em {
+    display: none;
+  }
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+  z-index: 2;
+}
+.panel-head h2 {
+  font: 400 1.5rem / 1 var(--font-display);
+  flex: 1;
+}
+.panel-sec {
+  padding: var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+}
+.panel-foot {
+  padding: var(--sp-4);
+}
+.drawer-close {
+  margin-left: auto;
+}
+
+/* ───────── Colonne centrale ───────── */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--gutter) calc(var(--sp-12) + 72px);
+}
+@media (min-width: 768px) {
+  .stack {
+    padding-bottom: var(--sp-12);
+  }
+}
+/* Bureau : titre, console, passage. Mobile : titre, passage, console (la lecture d'abord). */
+.o-head {
+  order: 0;
+}
+.o-passage {
+  order: 1;
+}
+.o-console {
+  order: 2;
+}
+.o-intervals {
+  order: 3;
+}
+.o-diag {
+  order: 4;
+}
+.o-foot {
+  order: 5;
+}
+@media (min-width: 768px) {
+  .o-console {
+    order: 1;
+  }
+  .o-passage {
+    order: 2;
+  }
+}
+@media (max-width: 767px) {
+  .stack {
+    gap: var(--sp-4);
+  }
+}
+.session-head {
+  display: grid;
+  gap: var(--sp-3);
+}
+.session-head h1 {
+  font: 600 1.5rem / 1.2 var(--font-ui);
+  letter-spacing: -0.005em;
+  overflow-wrap: anywhere;
+}
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.facts .f {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.facts svg {
+  width: 16px;
+  height: 16px;
+}
+.riwaya {
+  color: var(--text-3);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-12) var(--sp-4);
+  text-align: center;
+  color: var(--text-2);
+}
+.empty-state h2 {
+  font: 400 var(--fs-2xl) / 1.1 var(--font-display);
+  color: var(--text);
+}
+.empty-state p {
+  max-width: 46ch;
+}
+.diag {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.diag pre {
+  overflow-x: auto;
+  font: 400 var(--fs-xs) / 1.5 var(--font-mono);
+  color: var(--text-2);
+}
