@@ -54,6 +54,84 @@ describe("frontière locale", () => {
   });
 });
 
+describe("en-tête Host (DNS rebinding)", () => {
+  // Le serveur lie 127.0.0.1 : l'URL reconstruite par Next porte cet hôte quoi que le client
+  // annonce. Seul l'en-tête Host dit à quel nom le navigateur a cru parler.
+  const get = (host: string | null, extra: Record<string, string> = {}) =>
+    new Request("http://127.0.0.1:3097/api/sessions", {
+      headers: { ...(host === null ? {} : { host }), ...extra },
+    });
+  it("refuse un nom de domaine qui résout vers la boucle locale", () => {
+    expect(isLocalRequest(get("evil.example:3097"))).toBe(false);
+    expect(isLocalRequest(get("evil.example"))).toBe(false);
+    expect(isLocalRequest(get("127.0.0.1.evil.example:3097"))).toBe(false);
+    expect(isLocalRequest(get("localhost.evil.example"))).toBe(false);
+  });
+  it("accepte les trois noms de la boucle locale, avec ou sans port", () => {
+    for (const host of [
+      "127.0.0.1:3097",
+      "localhost:3097",
+      "[::1]:3097",
+      "LOCALHOST:3097",
+      "127.0.0.1",
+    ])
+      expect(isLocalRequest(get(host))).toBe(true);
+  });
+  it("refuse aussi les écritures sous un Host étranger, même avec une origine locale", () => {
+    expect(
+      isLocalRequest(
+        new Request("http://127.0.0.1:3097/api/sessions", {
+          method: "POST",
+          headers: {
+            host: "evil.example:3097",
+            origin: "http://127.0.0.1:3097",
+          },
+        }),
+        true,
+      ),
+    ).toBe(false);
+  });
+  it("refuse un X-Forwarded-Host étranger", () => {
+    expect(
+      isLocalRequest(
+        get("127.0.0.1:3097", { "x-forwarded-host": "evil.example" }),
+      ),
+    ).toBe(false);
+    expect(
+      isLocalRequest(
+        get("127.0.0.1:3097", { "x-forwarded-host": "localhost:3097" }),
+      ),
+    ).toBe(true);
+  });
+  it("refuse un Host mal formé ou ambigu", () => {
+    for (const host of [
+      "",
+      "evil.example:3097, 127.0.0.1",
+      "a b",
+      "127.0.0.1:abc",
+      "@evil",
+    ])
+      expect(isLocalRequest(get(host))).toBe(false);
+  });
+  it("sans en-tête Host (appel interne), la vérification de l'URL reste seule", () => {
+    expect(isLocalRequest(get(null))).toBe(true);
+    expect(
+      isLocalRequest(new Request("http://attacker.test:3097/api/sessions")),
+    ).toBe(false);
+  });
+  it("mode distant : le Host doit être un hôte autorisé ET l'URL aussi", () => {
+    vi.stubEnv("AQR_ALLOWED_HOSTS", "atelier.exemple.test");
+    vi.stubEnv("AQR_ACCESS_TOKEN", "s3cret-token-value-0123456789");
+    const remote = (host: string) =>
+      new Request("http://atelier.exemple.test/api/sessions", {
+        headers: { host, "x-aqr-token": "s3cret-token-value-0123456789" },
+      });
+    expect(isLocalRequest(remote("atelier.exemple.test"))).toBe(true);
+    expect(isLocalRequest(remote("evil.example"))).toBe(false);
+    vi.unstubAllEnvs();
+  });
+});
+
 const TOKEN = "s3cret-token-value-0123456789";
 const post = (url: string, headers: Record<string, string> = {}) =>
   new Request(url, { method: "POST", headers });
