@@ -1064,9 +1064,14 @@
   QuranEnc (mention « Formule — hors Mushaf, traduction indicative (non QuranEnc) » sur la carte). **À VALIDER PAR
   CHERIF** : traductions « Je cherche refuge auprès d'Allah contre Satan le banni. », « Allah est le plus grand. »,
   « Exauce-nous. » (indicatives, rédigées par le mainteneur, pas par QuranEnc).
-- **Basmala** : l'interface sait afficher la basmala comme un verset (arabe + traduction + badge) dès que la sortie JSON
-  porte `text`/`translation`/`basmala` ; pour un résultat ancien (étiquette seule) elle explique que le texte n'est pas
+- **Basmala** : l'interface affiche la basmala comme un verset (arabe du corpus + traduction + attribution, badge
+  « Basmala », ornement, pas de médaillon) d'après le contrat de `feat/basmala-affichee` (`non_quran`, `basmala: true`,
+  `ref: "1:1"`, `text`, `translation`) ; pour un résultat ancien (étiquette seule) elle explique que le texte n'est pas
   dans ce résultat. Les `[n]` des traductions sont mis en exposant **à l'affichage seulement** (chaîne intacte, I2).
+- **Deux sources pour isti'adha/takbir/âmîn** : le moteur émet maintenant `label_ar` (libellé arabe constant, sans
+  voyelles) ; l'interface affiche ses propres constantes (`lib/formulas.ts`, avec voyelles + traduction française +
+  mention hors Mushaf) et **ignore `label_ar`** pour ne pas avoir deux textes qui dérivent. À trancher : garder
+  `label_ar` côté moteur (sous-titres, exports) ou le retirer.
 - **Revue `aqr.review/2` et écriture multi-testeurs** : un `PUT` qui remplaçait la liste faisait perdre le travail
   quand deux testeurs écrivaient. Désormais le client n'envoie que ses signalements modifiés et ses suppressions
   (`deleted_ids`), le serveur fusionne **par identifiant sous verrou** (dernier `updated_at` gagne, `tester` et

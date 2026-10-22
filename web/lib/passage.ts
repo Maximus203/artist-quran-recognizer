@@ -83,42 +83,32 @@ export function splitNoteMarkers(
   return parts.length ? parts : [{ text, note: false }];
 }
 
-type Loose = {
-  kind: string;
-  t?: [number, number] | null;
-  text?: string | null;
-  translation?: {
-    text: string;
-    attribution: string;
-    translation_id: string;
-    version: string;
-  } | null;
-  basmala?: boolean;
-  label?: string;
-};
-const loose = (item: Interval): Loose => item as unknown as Loose;
+type Translation = NonNullable<
+  Extract<Interval, { kind: "verse" }>["translation"]
+>;
 
-/** Basmala : un verset marqué `basmala`, ou une étiquette `[basmala]` (anciens résultats). */
+/**
+ * Basmala : une zone `non_quran` marquée `basmala: true` (le verset 1:1, texte et traduction du
+ * corpus), ou l'étiquette `basmala` seule d'un ancien résultat (sans texte).
+ */
 export function isBasmala(item: Interval): boolean {
-  const value = loose(item);
-  if (value.basmala === true) return true;
   return (
-    value.kind === "non_quran" &&
-    (value.label ?? "").replace(/[^a-z]/gi, "").toLowerCase() === "basmala"
+    item.kind === "non_quran" &&
+    (item.basmala === true ||
+      item.label.replace(/[^a-z]/gi, "").toLowerCase() === "basmala")
   );
 }
 
 function translationView(
-  item: Interval,
+  translation: Translation | null | undefined,
   partial: boolean,
 ): TranslationView | null {
-  const t = loose(item).translation;
-  return t
+  return translation
     ? {
-        text: t.text,
-        attribution: t.attribution,
-        translationId: t.translation_id,
-        version: t.version,
+        text: translation.text,
+        attribution: translation.attribution,
+        translationId: translation.translation_id,
+        version: translation.version,
         partialNote: partial,
       }
     : null;
@@ -127,13 +117,13 @@ function translationView(
 export function describePassage(item: Interval | null): PassageModel {
   if (!item) return { type: "empty" };
   const range = item.t ?? null;
-  if (isBasmala(item))
+  if (item.kind === "non_quran" && isBasmala(item))
     return {
       type: "basmala",
-      ref: item.kind === "verse" ? item.ref : null,
+      ref: item.ref ?? null,
       range,
-      arabic: loose(item).text || null,
-      translation: translationView(item, false),
+      arabic: item.text || null,
+      translation: translationView(item.translation, false),
     };
   if (item.kind === "verse") {
     if (item.status === "uncertain")
@@ -154,7 +144,7 @@ export function describePassage(item: Interval | null): PassageModel {
       ayahNumber: item.partial
         ? null
         : toArabicIndic(item.ref.split(":")[1] ?? ""),
-      translation: translationView(item, item.partial),
+      translation: translationView(item.translation, item.partial),
       badges,
     };
   }

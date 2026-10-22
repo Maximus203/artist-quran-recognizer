@@ -179,27 +179,35 @@ describe("describePassage", () => {
     });
   });
 
-  it("basmala portée par un non_quran qui contient le texte du corpus", () => {
+  it("basmala restituée comme un verset 1:1 : texte et traduction du corpus, avec attribution", () => {
     const model = describePassage(
-      nonQuran("[basmala]", {
+      nonQuran("basmala", {
         basmala: true,
+        ref: "1:1",
         text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
         translation: { ...translation, text: "Au nom d’Allah.[1]" },
       }),
     );
     expect(model).toMatchObject({
       type: "basmala",
+      ref: "1:1",
       arabic: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
     });
-    if (model.type === "basmala")
+    if (model.type === "basmala") {
       expect(model.translation?.text).toBe("Au nom d’Allah.[1]");
+      expect(model.translation?.attribution).toBe("QuranEnc.com — Hamidullah");
+    }
   });
 
-  it("basmala portée par un verset (champ basmala) : même carte, sans médaillon", () => {
+  it("isti'adha, takbir, amin : le libellé arabe du moteur (label_ar) n'est jamais pris pour du texte de verset", () => {
     const model = describePassage(
-      verse({ ref: "1:1", basmala: true, text: "بِسْمِ ٱللَّهِ" }),
+      nonQuran("istiadha", { label_ar: "أعوذ بالله من الشيطان الرجيم" }),
     );
-    expect(model).toMatchObject({ type: "basmala", arabic: "بِسْمِ ٱللَّهِ" });
+    expect(model.type).toBe("formula");
+    if (model.type === "formula")
+      expect(model.formula.arabic).toBe(
+        "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+      );
   });
 
   it("abstention : motif lisible", () => {
@@ -230,7 +238,9 @@ describe("libellés des intervalles", () => {
     expect(intervalLabel(abstention("no_candidate"))).toBe(
       "Aucune correspondance",
     );
-    expect(intervalLabel(verse({ basmala: true, ref: "1:1" }))).toBe("Basmala");
+    expect(
+      intervalLabel(nonQuran("basmala", { basmala: true, ref: "1:1" })),
+    ).toBe("Basmala");
   });
   it("intervalStateLabel et intervalStyle suivent les mêmes codes que la légende", () => {
     expect(intervalStateLabel(verse())).toBe("Reconnu");
