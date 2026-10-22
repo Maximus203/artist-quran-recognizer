@@ -299,7 +299,7 @@ export function PassageCard(props: Props) {
       aria-label="Passage actif"
     >
       <div className="p-top">
-        <span className="eyebrow">Passage actif</span>
+        <h2 className="eyebrow">Passage actif</h2>
         <div className="tools-inline">{props.tools}</div>
       </div>
       <Body model={model} showTranslation={props.showTranslation} />
