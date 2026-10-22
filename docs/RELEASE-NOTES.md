@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-22 — La traduction suit le passage entendu et se surligne en direct
+Étiquettes : utilisateur, technique
+PR : #73
+
+**Ce qui change.** La carte « Passage actif » ne montre plus que la traduction de ce qui est affiché en arabe : quand le moteur a découpé la traduction, tu lis « Traduction du passage (mots 15–23) », avec « … » aux bords si le passage commence ou finit au milieu du verset. Quand le récitant s'arrête, revient en arrière ou répète, la traduction repart exactement là où la reprise démarre. Pendant la lecture, le mot arabe récité et le fragment de traduction qui lui correspond sont surlignés en même temps (fond teinté et trait, pas seulement la couleur) ; à l'arrêt, un clic sur un mot arabe place le lecteur à son début. Un interrupteur « Surligner en direct » (carte du passage et page Compte, activé par défaut, enregistré avec ton compte) coupe le surlignage.
+
+**Pourquoi / décision.** Pour un verset partiel, l'arabe montrait les mots entendus mais la traduction était celle du verset entier, qui ne commençait pas au début de la lecture. L'atelier ne devine rien : sans temps de mots dans le résultat, ou si le texte ne s'aligne pas sur la plage de mots, il ne surligne aucun mot et marque seulement le passage entier ; sans découpage de la traduction, il garde « Traduction du verset entier ». Le texte arabe (corpus) et la traduction (QuranEnc) ne sont jamais modifiés. Les champs lus (`word_times`, `translation.segments`, `translation.fragment`) sont ceux du contrat de sortie ; un ancien résultat s'affiche comme avant.
+
 ## 2026-10-22 — Début de verset retrouvé, et temps de chaque mot
 Étiquettes : utilisateur, technique, décision
 PR : #75
