@@ -177,7 +177,9 @@ def _check_translation_shape(translation: object, where: str) -> None:
         value = translation.get(key)
         if not isinstance(value, str) or not value:
             raise CorpusMismatch(f"{where} : traduction sans {key} (I2)")
-    if translation.get("scope") != "verse":
+    # `text` reste le verset entier ; `fragment` (portée « fragment ») et `segments` s'y ajoutent
+    # (docs/RECOGNIZE-OUTPUT.md) : leur cohérence est celle du lecteur (aqr.eval.recognition).
+    if translation.get("scope") not in ("verse", "fragment"):
         raise CorpusMismatch(f"{where} : traduction de portée {translation.get('scope')!r}")
 
 
