@@ -1019,3 +1019,66 @@
     version, attribution, `scope: "verse"`, I2 sur la forme).
   - *Écarté* : comparer le contenu de la traduction dans `corpus_check` (le dépôt de traductions n'y est pas
     chargé ; même limite que pour les versets). Noté pour l'interface : la note `[1]` de la traduction.
+
+## 2026-10-22 — Atelier : file d'attente des analyses, vidéos, « non lu », durées et estimation
+- **Besoin** (Cherif) : lancer plusieurs analyses (audios et vidéos) et revenir plus tard ; la carte graphique
+  n'aime pas le parallèle ; voir ce qui est terminé et pas encore ouvert ; savoir combien de temps ça prend.
+- **Décision** : file FIFO côté serveur (`web/lib/queue.ts`, sans dépendance : seul l'ordonnanceur), exécuteur
+  `jobs.ts` (un processus Python par analyse, place gardée jusqu'à sa fin), `AQR_MAX_CONCURRENT` (défaut 1). Vues
+  calculées à la lecture (`session-view.ts` : position, non lu, estimation) ; rien de calculé n'est écrit sur le disque.
+- **Écartés** :
+  - *File en mémoire seule* : perdue au redémarrage, sessions `queued` orphelines. *File sur disque à part*
+    (`queue.json`) : deux sources de vérité à garder synchrones. Retenu : l'ordre durable est `queued_at` dans
+    `session.json` (une écriture atomique par session) ; la file mémoire n'est qu'un ordonnanceur reconstruit au
+    démarrage (`instrumentation.ts`, repli à la première requête).
+  - *BullMQ / processus ouvrier séparé* : infrastructure sans objet pour un serveur local à un utilisateur.
+  - *Facteur temps réel (RTF) médian*, formulation initiale de l'estimation : le chargement des modèles (≈ 50 s
+    fixes) rend le RTF dépendant de la durée (3,2 pour 18 s, 0,03 pour 1 h). Validation croisée (leave-one-out) sur les
+    33 analyses FastConformer du disque : erreur relative médiane **38 %** (RTF médian) contre **11 %** (durée =
+    chargement + coût × audio, Theil–Sen pondérée), p90 28 % ; Muno (7 analyses) 32 % contre 8 %. Whisper (3) et
+    cascade (2) : trop peu d'analyses pour être évalués (refusés, pas devinés). Le RTF reste exposé (`/api/stats`,
+    médiane, p90, moyenne, min/max) pour que la dispersion se voie.
+  - *Estimer avec 1-2 analyses ou en extrapolant* : une droite sur deux points ne dit rien de sa propre erreur, et des
+    audios de 3 à 30 s ne disent rien d'un fichier d'une heure. Refus explicite (`insufficient_history`,
+    `out_of_range` au-delà de 2× le plus long audio connu) : jamais un chiffre inventé. Coût : tant qu'un moteur n'a
+    pas 3 analyses, pas d'estimation (la cascade, par défaut depuis ADR-0009, n'en a que 2 sur le disque).
+  - *Vidéo par formulaire multipart* : le corps est lu entièrement en mémoire (2 à 3× la taille). Retenu : envoi en
+    flux (en-tête `x-aqr-filename`) écrit directement sur le disque, empreinte au vol ; plafond vidéo distinct
+    (`AQR_MAX_VIDEO_UPLOAD_BYTES`, 2 Gio : l'image est conservée alors que seul le son sert). Le multipart reste pour
+    l'audio avec résultat joint.
+  - *Marquer « vu » au `GET`* : le sondage de la liste effacerait le point. Retenu : `POST …/viewed`, idempotent.
+  - *Dater les anciennes sessions à « maintenant »* pour la migration : inventerait une date. Retenu : champ
+    `viewed_at` **absent** = lu ; `null` = terminé et jamais ouvert (posé à la fin de chaque analyse).
+  - *Ignorer les processus d'un serveur précédent* : après un redémarrage, ils tiennent encore la carte graphique.
+    Retenu : ils comptent comme places occupées jusqu'à leur fin (sondés, `process.kill(pid, 0)`).
+- **Trouvé en route (corrigé)** : sous Windows, `rename` d'un `session.json` pendant qu'un autre lecteur l'ouvre
+  échoue en `EPERM`/`EBUSY` ; la fin d'une analyse pouvait donc être perdue (session « en attente » ou « en cours »
+  pour toujours). `atomicJson` réessaie (8 essais) ; test rouge d'abord. Aussi : `POST …/run` sans moteur ignorait
+  `AQR_ASR` (cascade forcée) alors que l'import `autorun` le respecte ; les deux passent maintenant par `launch`.
+- **Tests d'environnement** : les tests du lancement utilisaient un script à shebang comme faux Python (`spawn
+  EFTYPE` sous Windows : 11 échecs hors de la file) ; le faux moteur est maintenant lancé par Node via
+  `recognizeCommand` (une seule définition de la ligne de commande du moteur, `python.ts`). Les 19 tests de `jobs`
+  passent sous Windows. Restent les 5 échecs de `e2e/smoke-support.test.mjs` (chemins Linux absolus), non liés.
+- **Passe Cherif QA (22 octobre)** — trouvé et corrigé, chaque point avec un test rouge d'abord :
+  - *Sessions fantômes* : une écriture tardive de `session.json` (fin de processus, `markFailed`, annulation) recréait
+    le dossier d'une session supprimée depuis un autre onglet (un `session.json` seul). `saveSession(…, { create:
+    false })` pour toute mise à jour ; l'import seul crée.
+  - *Suppression bloquée pendant toute l'analyse* : `deleteSession` d'une analyse dont le processus venait de partir
+    (état « running » pas encore écrit) attendait la fin du moteur (> 80 s) puis effaçait un résultat. Refus immédiat.
+  - *Ordre* : lancements, annulations et suppressions passent par une section sérialisée (FIFO) ; `queued_at` est
+    décidé au même endroit que le rang (strictement croissant) ; l'« annulation acquittée mais l'analyse tourne »
+    d'une occurrence sur ~25 n'a pas été reproduite (course aléatoire à graine fixe ajoutée), durcie par cet ordre.
+  - Durée sondée : la piste audio (étiquette `DURATION` pour Matroska/WebM), pas le conteneur (10,3 s pour 4,6 s de
+    son) ; fichier illisible refusé à l'import ; `404` et messages sans chemin local ; corps `/run` illisible refusé ;
+    noms (255 caractères, extension seule) ; `analyses` ne compte plus un résultat importé à la main.
+  - *Écarté* : refuser à l'import tout audio sans durée. Une capture micro WebM n'en a pas ; un fichier d'octets
+    aléatoires que ffprobe croit lire n'échoue qu'à l'analyse (rare, accepté).
+  - *Constaté, hors de ce lot* : `isLocalRequest` valide l'hôte de l'URL construite par Next, pas l'en-tête `Host`
+    (`Host: evil.example` sur `127.0.0.1` passe en lecture ; les mutations sont couvertes par `Origin`). Risque de
+    DNS rebinding pour tout le serveur, antérieur à cette PR : à traiter dans une PR de sécurité à part.
+  - *Coût de la sonde* : ffprobe met ≈ 1,8 s par fichier sur cette machine (démarrage du binaire, mesuré hors serveur) ;
+    les imports se font donc à ≈ 2 s l'un, indépendamment de la taille.
+- **Risque ouvert** : l'estimation dépend de l'historique d'une même machine ; un changement de modèle ou de GPU la
+  fausse jusqu'à ce que de nouvelles analyses la rattrapent (la médiane robuste limite l'effet des premières).
+  Les durées passées ont parfois été mesurées avec des analyses en parallèle (22:17 le 19 octobre) : trop lentes,
+  sans effet sur la droite robuste, visibles dans le p90 du RTF.
