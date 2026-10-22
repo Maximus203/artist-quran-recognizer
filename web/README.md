@@ -209,6 +209,7 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `arabicFont` | `kfgqpc-hafs` · `amiri-quran` · `scheherazade` · `noto-naskh` · `null` | `null` (Hafs V30 si installée) |
 | `arabicSize` | entier 28–72, multiple de 4, ou `null` | `null` (taille du thème) |
 | `translation` | booléen | `true` |
+| `liveHighlight` | booléen : surligner en lecture le mot arabe récité et le fragment de traduction correspondant | `true` |
 | `visibleSpanSeconds` | `600` · `120` · `30` · `10` · `null` (fichier entier) | `null` |
 | `followPlayback` | booléen | `true` |
 | `leftPanelOpen` · `rightPanelOpen` | booléen ou `null` | `null` (selon la largeur d'écran) |

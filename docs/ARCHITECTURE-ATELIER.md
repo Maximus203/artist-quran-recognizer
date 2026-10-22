@@ -211,6 +211,39 @@ proxy ; les audios déposés restent des données privées.
 La **basmala** est montrée comme un verset (texte du verset 1:1 du corpus, traduction QuranEnc, badge
 « Basmala », PR #65). Seuls les intervalles de nature « verset » comptent comme versets reconnus.
 
+### Traduction du passage et surlignage en direct
+
+La carte « Passage actif » montre la traduction **de la plage de mots affichée en arabe**, pas du verset entier,
+et surligne en lecture le mot arabe récité et le segment de traduction qui le contient. Tout vient de champs
+**additifs** du résultat (`docs/RECOGNIZE-OUTPUT.md`) ; sans eux, l'atelier garde son comportement d'avant.
+
+```
+  résultat (par verset) : words [a,b] · text (corpus) · word_times [[début,fin]…] + word_times_source
+                          translation { text (QuranEnc, intact), scope, segments[], fragment{words,text,…} }
+                                 │
+   lib/translation-fragment.ts ──┤ scope "fragment" et fragment valide → on montre le fragment seul, découpé en
+                                 │ segments SEULEMENT si les segments le recomposent exactement (aux espaces près) ;
+                                 │ sinon (scope "verse", champ absent ou mal formé) → verset entier + étiquette
+                                 │ « Traduction du verset entier » ; les « … » aux bords sont un décor d'affichage
+   lib/live-highlight.ts ────────┤ word_times validés (un couple par mot, débuts qui ne reculent pas) ET texte arabe
+                                 │ qui contient autant de mots que `words` (un signe de pause ۖ ۚ n'est pas un mot) ;
+                                 │ sinon aucun mot n'est surligné
+   temps de lecture (store) ─────┘ mot en cours = dernier mot dont le début ≤ t (recherche binaire, sans mémoire :
+                                   un retour en arrière, une boucle ou une reprise se recale à l'image suivante)
+```
+
+- **Honnêteté** : sans temps de mots valides, ou si le texte ne s'aligne pas, **aucun faux mot** : seul le passage
+  entier est teinté pendant la lecture. Avec `word_times_source: "interpolated"`, une note dit que le surlignage est
+  estimé. Le texte arabe et la traduction ne sont jamais modifiés ; seuls des `<span>` les découpent à l'affichage.
+- **Reprise dans un même verset** : l'intervalle de la reprise (`repetition: true`) a sa propre plage de mots ; quand
+  le temps revient en arrière, la carte change d'intervalle et la traduction repart là où la reprise démarre.
+- **Accessibilité** : le mot et le segment en cours portent `aria-current` (fond teinté **et** trait sous le texte,
+  jamais la couleur seule ; contours système en mode contraste forcé) ; changer d'attribut n'est pas annoncé par les
+  lecteurs d'écran. Aucun défilement automatique ni animation sous `prefers-reduced-motion`.
+- **Interaction** : lecture à l'arrêt, un clic sur un mot arabe place le lecteur au début de ce mot (jamais pendant
+  une sélection de texte). Interrupteur « Surligner en direct » sur la carte et dans le compte (`liveHighlight`,
+  enregistré côté serveur, activé par défaut).
+
 ## 12. Variables d'environnement
 
 | Variable | Rôle | Défaut |
@@ -242,7 +275,7 @@ l'interface de la phase 2 pour les écrans). Le contrat détaillé d'API est dan
 | **Comptes** | Pseudonyme + mot de passe, **aucun compte pré-créé** : le premier inscrit est administrateur. Pages `/login` et `/register` (inscription `open` · `closed` · `code`, interrupteur serveur `AQR_SIGNUP`). Connexion par cookie `HttpOnly` ; mot de passe haché (scrypt). Le mode distant par jeton (`/access`, `AQR_ACCESS_TOKEN`) reste une couche réseau **en plus**. |
 | **Base SQLite** | `AQR_DB_PATH` : comptes, propriété et portée des sessions, préférences, favoris, « non lu ». Les fichiers lourds (audio, prédiction, revue) restent sur le disque. Migrations versionnées. |
 | **Global ou privé** | Un audio est **global** par défaut (visible de tous les testeurs, avec ses performances) ou **privé** (visible de son seul propriétaire, **administrateurs compris** : un privé d'un autre répond `404`). Choix à l'import (carte « Qui peut voir cet essai ? »), modifiable par le propriétaire ; privé → global demande une confirmation. |
-| **Préférences côté serveur** | 14 clés (`web/lib/preferences-schema.ts`, l'unique source) : thème, police et taille arabes, traduction, fenêtre visible, suivi de lecture, panneaux, filtre de la liste, vitesse, volume, raccourcis, onglet de revue, portée des nouveaux essais. Lues dans `app/layout.tsx` et posées sur `<html>` **avant le premier rendu** (aucun clignotement, sur tout appareil). Écrites par `PATCH` groupé (anti-rebond 600 ms) ; `localStorage` ne garde que le cache de la page de connexion et ce qui n'a pas pu partir. |
+| **Préférences côté serveur** | 15 clés (`web/lib/preferences-schema.ts`, l'unique source) : thème, police et taille arabes, traduction, surlignage en direct, fenêtre visible, suivi de lecture, panneaux, filtre de la liste, vitesse, volume, raccourcis, onglet de revue, portée des nouveaux essais. Lues dans `app/layout.tsx` et posées sur `<html>` **avant le premier rendu** (aucun clignotement, sur tout appareil). Écrites par `PATCH` groupé (anti-rebond 600 ms) ; `localStorage` ne garde que le cache de la page de connexion et ce qui n'a pas pu partir. |
 | **Sessions à l'échelle** | `GET /api/sessions` pagine par curseur et filtre côté serveur. Barre de gauche allégée (file, 5 favoris, 8 récentes, « Voir toutes les sessions ») ; page `/sessions` : recherche, portée, filtres état/moteur/date (dans l'adresse), tri, groupes par date, « Charger plus » (20 par lot), sélection multiple et actions groupées. |
 | **Favoris, archivage, renommage** | Étoile par utilisateur ; archivage réversible (toast « Annuler ») ; renommage au double-clic ou au crayon ; nom par défaut calculé par le serveur et ligne « Contenu détecté ». |
 | **Revue multi-testeurs** | L'auteur d'un signalement est le **compte** (plus de saisie libre). Un testeur ne modifie pas le signalement d'un autre (l'interface le grise, le serveur le refuse : `rejected`). La **vérité terrain** est réservée aux administrateurs. |
