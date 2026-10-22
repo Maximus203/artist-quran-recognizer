@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Une traduction qui suit les mots récités
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Quand le récitant ne dit qu'une partie d'un verset, la traduction n'affiche plus le verset entier : elle commence là où la lecture commence et s'arrête où elle s'arrête (avec des « … » aux bords coupés). La sortie JSON gagne, dans `translation`, les `segments` du verset (chaque tranche de traduction avec la plage de mots arabes qu'elle traduit, pour le surlignage en direct), le `fragment` correspondant à la plage affichée et un `scope` (`fragment` ou `verse`). Sur 732 passages partiels de 53 sessions réelles, 75 % reçoivent un fragment (41 % exactement aux mots affichés), 25 % gardent la traduction du verset entier, étiquetée comme telle. Les anciennes sorties restent lisibles.
+
+**Pourquoi / décision.** La traduction QuranEnc n'est jamais réécrite : elle est seulement découpée en tranches consécutives (6 236 versets sur 6 236 reconstitués à l'identique). Le découpage est calculé hors ligne par un algorithme déterministe (IBM-1 dans les deux sens, longueur, signes de pause), sans modèle génératif ; il ne garde une frontière que si elle est sûre à un mot près, et le repli est toujours le verset entier (ADR-0010). Mesure sur 169 frontières relues : 153 justes, 15 à un mot près, 1 fausse (une inversion d'ordre du français) ; 69,5 % des versets sont découpés. Voir `docs/evaluation/traduction-par-passage-2026-10-23.md`. Le fichier de frontières ne contient aucun texte (indices, offsets, empreintes) ; si la traduction change, le verset retombe sur la traduction entière.
+
 ## 2026-10-22 — Comptes, audios globaux ou privés, plusieurs testeurs
 Étiquettes : utilisateur, technique, décision
 PR : #70, #72

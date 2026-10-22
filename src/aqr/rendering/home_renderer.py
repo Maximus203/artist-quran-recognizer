@@ -12,16 +12,36 @@ from typing import Final
 
 from aqr.corpus.normalize import normalize_arabic
 from aqr.domain.models import Detection, Status, Timeline, TimeSpan, VerseRef
-from aqr.domain.ports import BatchOptions, CorpusRepository, RenderedBatch, TranslationRepository
+from aqr.domain.ports import (
+    BatchOptions,
+    CorpusRepository,
+    RenderedBatch,
+    Translation,
+    TranslationRepository,
+)
+from aqr.rendering.translation_segments import (
+    FragmentPolicy,
+    Segment,
+    SegmentLibrary,
+    select_fragment,
+)
 
 BASMALA_REF: Final = VerseRef(1, 1)
 """La basmala est le verset 1:1 : texte et traduction se lisent là, dans le corpus (I1, I2)."""
 
 
 class HomeRenderer:
-    def __init__(self, corpus: CorpusRepository, translations: TranslationRepository) -> None:
+    def __init__(
+        self,
+        corpus: CorpusRepository,
+        translations: TranslationRepository,
+        segments: SegmentLibrary | None = None,
+        fragment_policy: FragmentPolicy | None = None,
+    ) -> None:
         self._corpus = corpus
         self._translations = translations
+        self._segments = segments
+        self._policy = fragment_policy or FragmentPolicy()
 
     def render(
         self, timeline: Timeline, translation_id: str, options: BatchOptions
@@ -83,22 +103,62 @@ class HomeRenderer:
         total = len(self._corpus.words(det.span.ref))
         return not (det.span.first_word == 1 and det.span.last_word >= total)
 
+    def _segments_of(self, translation: Translation) -> tuple[Segment, ...] | None:
+        """Découpage de la traduction du verset, ou None s'il n'est pas disponible ou périmé."""
+        if self._segments is None:
+            return None
+        store = self._segments.store(translation.translation_id)
+        if store is None:
+            return None
+        words = len(self._corpus.words(translation.ref))
+        return store.segments(translation.ref, translation.text, words)
+
     def _translation_json(
-        self, ref: VerseRef, translation_id: str | None
+        self,
+        ref: VerseRef,
+        translation_id: str | None,
+        words: tuple[int, int] | None = None,
     ) -> dict[str, object] | None:
-        """Traduction du verset entier, restituée sans modification, avec sa provenance (I2)."""
+        """Traduction du verset entier, restituée sans modification, avec sa provenance (I2).
+
+        Quand un découpage fiable existe : `segments` (tranches consécutives du texte d'origine,
+        alignées sur des plages de mots) et, pour un passage partiel `words`, le `fragment` qui
+        correspond aux mots affichés (`scope: "fragment"`). Sinon `scope: "verse"` : la traduction
+        entière, honnêtement étiquetée.
+        """
         if not translation_id:
             return None
         translation = self._translations.get(ref, translation_id)
         if translation is None:
             return None
-        return {
+        out: dict[str, object] = {
             "text": translation.text,
             "translation_id": translation.translation_id,
             "version": translation.version,
             "attribution": translation.attribution,
             "scope": "verse",  # la traduction QuranEnc couvre le verset entier
         }
+        segments = self._segments_of(translation)
+        if segments is None:
+            return out
+        out["segments"] = [
+            {"words": [s.first_word, s.last_word], "text": translation.text[s.start : s.end]}
+            for s in segments
+        ]
+        if words is not None:
+            fragment = select_fragment(
+                segments, translation.text, words[0], words[1], segments[-1].last_word, self._policy
+            )
+            if fragment is not None:
+                out["scope"] = "fragment"
+                out["fragment"] = {
+                    "words": [fragment.first_word, fragment.last_word],
+                    "text": fragment.text,
+                    "approximate": fragment.approximate,
+                    "ellipsis_before": fragment.ellipsis_before,
+                    "ellipsis_after": fragment.ellipsis_after,
+                }
+        return out
 
     def render_basmala(self, translation_id: str | None) -> dict[str, object]:
         """La basmala d'une zone non coranique : le verset 1:1, lu dans le corpus comme n'importe
@@ -115,14 +175,23 @@ class HomeRenderer:
         traduction (seulement ses candidats) ; `translation_id=None` : pas de traduction."""
         ref = det.span.ref
         named = det.status is not Status.UNCERTAIN
+        partial = self._is_partial(det)
         return {
             "ref": str(ref),
             "status": det.status.value,
             "words": [det.span.first_word, det.span.last_word],
-            "partial": self._is_partial(det),
+            "partial": partial,
             "repetition": det.is_repetition,
             "text": self.span_text(det) if named else None,
-            "translation": self._translation_json(ref, translation_id) if named else None,
+            "translation": (
+                self._translation_json(
+                    ref,
+                    translation_id,
+                    (det.span.first_word, det.span.last_word) if partial else None,
+                )
+                if named
+                else None
+            ),
             "time": (
                 {
                     "start_s": det.time.start_s,

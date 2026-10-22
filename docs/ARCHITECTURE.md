@@ -61,6 +61,10 @@ que toute implémentation doit passer.
 | — | `TranslationRepository` | `VerseRef`, `translation_id` → texte + version | QuranEnc (Hamidullah/KFC, Rachid Maach, Nûr) | oui |
 | B9 | `Renderer` | `Timeline` + options de lot → JSON / SRT / VTT | maison | **oui (pur)** |
 
+> B9 et les traductions partielles (ADR-0010) : `translation.segments` / `translation.fragment` viennent de
+> `data/translation-segments/<id>.json` (calculé hors ligne par `src/aqr/translation_align/`, lu en Python pur par
+> `aqr.rendering.translation_segments`). Le renderer ne découpe jamais à l'exécution ; il vérifie l'empreinte.
+
 **Conséquence TDD** : le cœur de l'intelligence (B5, B6, B7, normalisation arabe,
 rendu) est **pur et déterministe** → on l'écrit test d'abord, sans modèle, en
 millisecondes. Les modèles lourds (B2–B4) sont derrière des ports ; en test on
