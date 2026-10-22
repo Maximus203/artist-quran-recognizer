@@ -23,7 +23,14 @@ export function usePlayer(
   sessionId: string | null,
   handlers: { onError: (message: string) => void; onPlay: () => void },
 ) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // L'élément <audio> n'existe qu'une fois la session chargée : les écouteurs s'attachent quand il
+  // apparaît (ref callback + état), pas au premier rendu où il est encore absent.
+  const [node, setNode] = useState<HTMLAudioElement | null>(null);
+  const attach = useCallback((element: HTMLAudioElement | null) => {
+    audioRef.current = element;
+    setNode(element);
+  }, []);
   const store = useMemo(
     () => createStore<PlayerState>({ time: 0, duration: 0, playing: false }),
     [],
@@ -45,14 +52,12 @@ export function usePlayer(
   }, [sessionId, store]);
 
   useEffect(() => {
-    const node = audioRef.current;
     if (!node) return;
     node.volume = volume;
     node.playbackRate = rate;
-  }, [sessionId, volume, rate]);
+  }, [node, volume, rate]);
 
   useEffect(() => {
-    const node = audioRef.current;
     if (!node) return;
     const finish = () => {
       const callback = done.current;
@@ -132,7 +137,7 @@ export function usePlayer(
       node.removeEventListener("durationchange", onDuration);
       document.removeEventListener("visibilitychange", onSeek);
     };
-  }, [sessionId, store]);
+  }, [node, store]);
 
   const play = useCallback(() => {
     const node = audioRef.current;
@@ -202,7 +207,7 @@ export function usePlayer(
   );
 
   return {
-    audioRef,
+    attach,
     store,
     rate,
     setRate,

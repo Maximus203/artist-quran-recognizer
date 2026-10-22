@@ -173,7 +173,7 @@ export function FontPicker(props: Props) {
         type="button"
         className="btn btn--ghost btn--icon btn--sm"
         data-testid="font-smaller"
-        aria-label="Réduire le texte arabe"
+        aria-label="A−, réduire le texte arabe"
         onClick={() => props.onSize(stepQuranSize(size, -1))}
       >
         <span style={{ fontSize: ".8rem", fontWeight: 700 }}>A−</span>
@@ -182,7 +182,7 @@ export function FontPicker(props: Props) {
         type="button"
         className="btn btn--ghost btn--icon btn--sm"
         data-testid="font-larger"
-        aria-label="Agrandir le texte arabe"
+        aria-label="A+, agrandir le texte arabe"
         onClick={() => props.onSize(stepQuranSize(size, 1))}
       >
         <span style={{ fontSize: "1rem", fontWeight: 700 }}>A+</span>

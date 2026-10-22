@@ -31,12 +31,47 @@ Le lecteur ne joue pas le fichier importé mais sa **copie d'écoute** : le mêm
 
 ## Tester un audio
 
-1. Choisir un audio local (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 300 Mo maximum par défaut) ou une vidéo (MP4, MKV, MOV, AVI, M4V ou WebM ; 2 Gio maximum par défaut, seule la piste sonore est analysée), ou cliquer « Enregistrer une récitation ». Pour le micro, autoriser l’accès sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer si nécessaire. « Analyser cette récitation » importe alors les octets originaux WebM/OGG/M4A et lance le moteur réel. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.
-2. Facultatif : ajouter un JSON `aqr.recognition/1` existant du **même audio**. Le hash SHA-256 est contrôlé ; la prédiction importée garde ses octets d'origine.
-3. Pour un fichier choisi, cliquer « Importer dans l'atelier », puis « Lancer le vrai moteur Python » si aucun JSON n'a été joint. Le bouton « Analyser cette récitation » du micro effectue ces deux étapes.
-4. Utiliser la piste, la liste et le lecteur pour écouter. Les hypothèses déduites et les abstentions ont leurs propres affichages. « Sans temps » ne déplace pas le lecteur.
-5. « Signaler ici » pour un point, « Sélectionner une plage » pour une durée. Décrire le problème, écouter, confirmer. La revue se sauvegarde localement ; vérifier l'indicateur « Enregistré localement ».
-6. Télécharger le pack ZIP complet pour le transférer dans un environnement cloud autorisé. Il contient l'audio, la prédiction originale, la revue courante, ses révisions et un manifeste d'empreintes SHA-256. Le bilan JSON seul est aussi disponible. Le stockage cloud, les droits sur des voix tierces et une vérité terrain exhaustive restent à établir avant d'annoncer des métriques.
+1. **Nouvel essai** (bouton de la barre du haut) : déposer ou choisir **plusieurs** audios et vidéos d'un coup (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 300 Mo maximum par défaut — MP4, MKV, MOV, AVI, M4V ou WebM ; 2 Gio maximum par défaut, seule la piste sonore est analysée). Chaque fichier est importé dès qu'il est choisi et **mis dans la file d'analyse** (`autorun`) ; un glisser-déposer n'importe où dans la page fait la même chose. Un seul fichier s'ouvre tout seul ; plusieurs restent dans la file, visible dans le panneau des sessions. Ou « Enregistrer une récitation » : autoriser l’accès au micro sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer ; « Analyser cette récitation » importe les octets originaux WebM/OGG/M4A et met l'analyse en file. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.
+2. Facultatif (accordéon « Importer aussi un résultat existant ») : un JSON `aqr.recognition/1` du **même audio**. Le hash SHA-256 est contrôlé ; la prédiction importée garde ses octets d'origine ; le moteur ne tourne pas.
+3. Le panneau des sessions montre l'état de chaque analyse : en attente (rang dans la file), en cours (estimation du temps restant), terminée non lue (point), lue, en échec, annulée. Ouvrir une session terminée efface son point.
+4. Utiliser l'onde, les pistes, la liste des intervalles et le lecteur pour écouter. Les hypothèses déduites et les abstentions ont leurs propres affichages. « Sans temps » ne déplace pas le lecteur.
+5. **Signaler** (panneau de droite) : donner un pseudonyme, délimiter le passage (voir « Revue humaine »), choisir des puces, confirmer. La revue se sauvegarde sur cet ordinateur ; vérifier l'indicateur « Enregistré sur cet ordinateur ».
+6. Télécharger le pack ZIP complet (onglet « Signalements ») pour le transférer dans un environnement cloud autorisé. Il contient l'audio, la prédiction originale, la revue courante (tous les testeurs), ses révisions et un manifeste d'empreintes SHA-256. Le bilan JSON seul est aussi disponible. Le stockage cloud, les droits sur des voix tierces et une vérité terrain exhaustive restent à établir avant d'annoncer des métriques.
+
+## Interface : design, panneaux, polices
+
+Direction « Encre & lapis » (`docs/design/atelier-direction.md`, tokens dans `docs/design/tokens.css`). `app/tokens.css` en est la copie, **identique** (un test le vérifie) ; aucune feuille ne porte de valeur visuelle en dur. Chaque zone a son composant (`app/atelier/*`) ; la logique pure vit dans `lib/` et est testée.
+
+- **Thème** : suit le système, bascule mémorisée (`aqr.ui.v1` dans le `localStorage`). Un petit script dans `<head>` pose thème, police arabe et taille **avant** le premier rendu (pas de flash).
+- **Panneaux** : sessions à gauche, revue humaine à droite, repliables (état mémorisé). Sous 1280 px ce sont des tiroirs (focus piégé, Échap, voile). La pastille du bouton de gauche signale du non lu ou une analyse en cours panneau fermé ; le titre de l'onglet porte le total non lu. Le panneau de revue n'existe que sur une session ouverte.
+- **Mobile (375 px)** : le passage actif passe avant la console, le lecteur est ancré en bas, le bouton drapeau du lecteur pose le début/la fin d'un signalement sans ouvrir le tiroir.
+- **Rafraîchissement** : la liste est sondée toutes les 3 s onglet visible avec une analyse active (10 s sinon, 15 s en arrière-plan) et au retour de l'onglet. Le point « non lu » ne disparaît que lorsqu'on **ouvre** le résultat (`POST /api/sessions/<id>/viewed`), jamais par le sondage.
+- **Raccourcis** : `M` (début puis fin), `P` (point), `L` (boucle), `Échap` (annuler la pose), `Ctrl+Entrée` (confirmer), `Espace` (lecture). Inactifs dans un champ de saisie, désactivables dans « Raccourcis clavier ».
+
+### Polices
+
+- **Latines (SIL OFL 1.1), embarquées** dans `public/fonts/` avec leur texte de licence : Instrument Serif, Atkinson Hyperlegible Next et Mono (woff2, sous-ensemble latin). Aucune requête vers un service de polices : l'atelier fonctionne hors ligne. Repli défini dans les tokens si un fichier manque.
+- **Arabes (SIL OFL 1.1), embarquées** : Amiri Quran, Scheherazade New, Noto Naskh Arabic.
+- **KFGQPC Uthmanic Hafs V30** (choix du mainteneur) : fichier sous licence « tous droits réservés » du Complexe du Roi Fahd. **Jamais dans Git ni dans `public/`** (le dépôt l'ignore, un test le garantit). Il est servi par `GET /api/fonts/kfgqpc-hafs-v30` depuis le dossier **`AQR_FONTS_DIR`** (défaut explicite : `%LOCALAPPDATA%\aqr-fonts` sous Windows, `$XDG_DATA_HOME/aqr-fonts` ou `~/.local/share/aqr-fonts` ailleurs), nom de fichier `KFGQPC-Hafs-V30.ttf`, liste blanche stricte de noms (aucun chemin n'est construit à partir de la requête), **boucle locale seulement** : même en mode test distant avec jeton, un hôte autorisé ne reçoit jamais la police. Absente, l'option est grisée avec l'explication et la pile retombe sur Amiri Quran. Sans choix mémorisé, Hafs V30 est préférée quand elle est installée. `GET /api/fonts` dit quelles polices locales sont présentes.
+- Le sélecteur (« Police arabe » dans la carte du passage) règle police et taille (28 à 72 px par pas de 4), avec aperçu en direct, mémorisé. L'aperçu utilise le début du passage affiché (texte du corpus) ou des lettres arabes qui ne sont pas du Coran.
+
+### Formules et basmala (invariant I1)
+
+La carte du passage montre la **basmala** comme un verset (arabe du corpus, traduction QuranEnc, badge « Basmala ») dès que la sortie JSON porte son texte. **Isti'adha, takbir et âmîn** sont des constantes de l'interface (`lib/formulas.ts` : arabe + traduction française) affichées avec la mention « Formule — hors Mushaf, traduction indicative (non QuranEnc) » : elles ne viennent ni du corpus ni de QuranEnc et ne sont jamais présentées comme telles. Les `[1]` des traductions sont stylés en exposant **à l'affichage seulement** (la chaîne n'est jamais modifiée, I2).
+
+## Revue humaine (`aqr.review/2`)
+
+Trois onglets : **Signaler**, **Signalements** et, avec `?relecteur=1` seulement, **Vérité terrain** (il écrit dans le manifeste de test : les testeurs qui utilisent la machine n'y touchent pas).
+
+- **Délimiter** : un seul bouton « Marquer le début » puis « Marquer la fin » (`M`), un point (`P`), ou **tracer sur l'onde** (mode « Tracer sur l'onde » ou `Maj` + glisser : glisser = plage, toucher = point ; `touch-action: none` en mode tracé). Une plage dure au moins 0,2 s ; les valeurs sont au dixième de seconde. Les poignées de la plage s'ajustent à la souris, au doigt ou aux flèches (0,1 s ; `Maj` : 1 s), ou avec − / + / « caler sur la lecture ».
+- **Brouillon** enregistré dès la pose (puis 500 ms après chaque frappe), écoute de la plage (en boucle possible ; l'écoute est **indicative**, elle ne bloque pas la confirmation), 23 puces en 7 familles (`lib/review-presets.ts`, la seule source des libellés), verset attendu (`sourate:verset`, vérifié), commentaire (3 000 caractères). Un signalement se confirme avec au moins une puce ou un commentaire.
+- **Suppression** sans boîte de dialogue : « Annuler » pendant 6 s, ensuite elle devient réelle.
+- **Testeur** : pseudonyme libre de 2 à 24 caractères (lettres, chiffres, espace, `- _ .`, jamais une adresse e-mail), mémorisé avec les 8 derniers, copié dans chaque signalement. Modifier le signalement d'un autre testeur est permis avec un encart ; son nom reste (`updated_by` note le modificateur).
+- **Liste** : filtres testeur et état (ils valent aussi sur l'onde et la piste Revue), clic = saut à l'instant et surlignage de la plage ; losange plein = confirmé, creux = brouillon.
+
+**Modèle.** `aqr.review/2` ajoute à chaque annotation `tags` (puces, ids stables), `tester`, `updated_by?`, `created_at` ; `type` (historique d'`aqr.review/1`) est dérivé du premier tag pour ne pas changer les exports. La lecture est rétro-compatible : une revue `aqr.review/1` se lit avec des `tags` dérivés de `type` et `tester: "inconnu"` (le fichier n'est réécrit qu'au premier enregistrement).
+
+**Écriture multi-testeurs.** `GET /api/sessions/<id>/review` renvoie la revue complète. `PUT /api/sessions/<id>/review` ne **remplace** plus la liste : le client n'envoie que ce qu'il a modifié (`annotations`) et ce qu'il supprime (`deleted_ids`), le serveur **fusionne par `id`** sous verrou (lecture, fusion, écriture) — le dernier `updated_at` gagne par identifiant, `tester` et `created_at` ne changent jamais après la création — et répond `{ saved, review }` avec la revue fusionnée. Le client la rafraîchit aussi toutes les 15 s. Une révision de l'état précédent est conservée à chaque changement réel.
 
 ## File d'attente, vidéos, « non lu » et durées (contrat d'API)
 
@@ -110,7 +145,11 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 - **Sans course** : deux lancements simultanés (même session ou sessions différentes) ne démarrent jamais deux fois le moteur au-delà de `AQR_MAX_CONCURRENT` ; l'issue d'une analyse n'est jamais écrasée par un écrasement tardif de `session.json` (écritures atomiques, reprise des refus passagers de Windows `EPERM`/`EBUSY` quand un autre lecteur ouvre le fichier).
 - **Purge** (`AQR_SESSION_TTL_S`) : une session en attente n'est jamais purgée.
 
-## Construire la vérité terrain (panneau « 07 / VÉRITÉ TERRAIN »)
+## Performance
+
+L'onglet « Performance » (barre du haut ; pied du tiroir de gauche sur mobile) dit combien de temps prend une analyse et à quelle vitesse : durée moyenne, vitesse médiane (« ×7,1 » = 7 fois plus vite que l'audio), audio traité (dont vidéo), file d'attente, vitesse par moteur (barres d'une seule teinte, nommées et chiffrées, avec une vue en tableau), file en cours avec estimation et dernières analyses. Les tuiles, les moteurs et le tableau sont calculés sur les sessions terminées de la **période choisie** (7 jours, 30 jours, tout) à partir de `GET /api/sessions` ; la file en cours et la précision de l'estimation viennent de `GET /api/stats` (rafraîchi toutes les 5 s onglet visible). Aucun chiffre n'est inventé : une analyse sans durée mesurée n'entre dans aucune moyenne.
+
+## Construire la vérité terrain (onglet « Vérité terrain », `?relecteur=1`)
 
 Une fois la reconnaissance terminée (ou une prédiction importée) sur un fichier **dev** du manifeste :
 
