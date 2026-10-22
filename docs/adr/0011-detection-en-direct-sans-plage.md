@@ -2,7 +2,8 @@
 
 - Statut : **proposé** — 2026-10-23 (conception ; rien n'est codé hors du script d'analyse)
 - Précise : ADR-0004 (recherche sur le flux continu), ADR-0007 (preuve cumulée), ADR-0008
-  (vérification acoustique), ADR-0009 (cascade). Remplace la ligne « V2+ : mode temps réel » de
+  (vérification acoustique), ADR-0009 (cascade), ADR-0010 (promotion par le voisin reconnu et temps au
+  mot). Remplace la ligne « V2+ : mode temps réel » de
   `docs/ARCHITECTURE.md`.
 - Décisions produit qui la fondent : voir `.artist/decision-log.md` (2026-10-23) et
   `docs/SYSTEME-EN-BREF.md` (« Direction produit »).
@@ -29,7 +30,9 @@ des centaines de cas (invariant I3). L'idée du mainteneur, à formaliser :
 
 Briques déjà disponibles : un ASR streaming (Muno FastConformer ONNX, `adapters/muno_streaming.py` —
 aujourd'hui rejoué fenêtre par fenêtre, caches remis à zéro, pas encore branché sur un flux), le matcher
-de flux (ADR-0004), la vérification acoustique d'un texte connu (ADR-0008) et la cascade (ADR-0009).
+de flux (ADR-0004), la vérification acoustique d'un texte connu (ADR-0008) et la cascade (ADR-0009). L'ADR-0010 ajoute aux versets reconnus un temps par mot (`word_times`, issu de
+l'alignement CTC ou interpolé, `word_times_source`) : c'est la mesure du moment où chaque mot est dit, donc
+celle qu'il faut pour chiffrer la latence d'un verrou.
 
 ## Exigences
 1. **Précision d'abord (I3).** Afficher des *candidats* n'est pas nommer un verset. Un verset n'est
@@ -128,7 +131,7 @@ médiane 2 mots, p90 5, max 9 ; 17 n'ont aucun préfixe unique (ouvertures par l
 `--replay` rejoue 30 sorties `aqr.recognition/1` d'enregistrements EveryAyah déjà produites
 (3 récitants × 10 sourates courtes ou moyennes ; 206 versets entiers, environ 70 distincts) comme un
 flux : le temps de chaque mot est estimé à débit uniforme dans le verset reconnu (approximation grossière :
-les allongements du tajwid la faussent), mots exacts, aucune latence d'ASR.
+les allongements du tajwid la faussent ; ces sorties datent d'avant `word_times`), mots exacts, aucune latence d'ASR.
 
 | | versets | jamais uniques | médiane | p90 | max | part du verset (médiane) |
 |---|---|---|---|---|---|---|
@@ -144,7 +147,8 @@ de studio, sourates courtes, Hafs). À refaire sur des audios réels dès que l'
 Mots exacts (pas d'erreur d'ASR) ; normalisation du matcher (deux graphies Uthmani différentes qui se
 confondent comptent comme identiques, comme pour le moteur) ; tous les versets pèsent pareil (pas de
 pondération par la fréquence d'usage) ; le début de verset est supposé (B donne le cas milieu de verset) ;
-le rejeu est un petit échantillon à débit uniforme.
+le rejeu est un petit échantillon à débit uniforme. Le script utilise déjà `word_times` quand une sortie
+récente le porte : refaire la mesure avec les temps réels est la première tâche de l'étape 1.
 
 ## Décision proposée
 
