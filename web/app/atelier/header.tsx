@@ -1,54 +1,71 @@
 "use client";
+import Link from "next/link";
 import type { RefObject } from "react";
+import { useEffectiveTheme } from "./hooks";
 import { Icon } from "./icons";
+import { AccountMenu } from "./account-menu";
+import { useShell } from "./shell";
 
-export type View = "revue" | "perf" | "new";
+export type NavId = "revue" | "sessions" | "perf" | "docs" | "account";
 
-type Props = {
-  view: View;
-  onView: (view: View) => void;
-  leftOpen: boolean;
-  rightOpen: boolean;
-  /** Le panneau de revue n'a de sens que sur une session ouverte, dans la vue Revue. */
-  rightAvailable: boolean;
-  onToggleLeft: () => void;
-  onToggleRight: () => void;
-  /** Non lus + analyses actives : la pastille reste visible panneau fermé. */
-  attention: number;
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
-  leftButton: RefObject<HTMLButtonElement | null>;
-  rightButton: RefObject<HTMLButtonElement | null>;
+type PanelToggle = {
+  open: boolean;
+  onToggle: () => void;
+  buttonRef: RefObject<HTMLButtonElement | null>;
 };
 
-export function Header(props: Props) {
-  const { view } = props;
+type Props = {
+  /** Page courante (soulignée dans la navigation). */
+  active: NavId;
+  /** Atelier seulement : panneau Sessions (à gauche), avec la pastille « à voir ». */
+  left?: PanelToggle & { attention: number };
+  /** Atelier seulement : panneau Revue humaine (à droite), absent hors session ouverte. */
+  right?: PanelToggle & { available: boolean };
+  /** Sur l'atelier, « Revue » reste sur la page : on change de vue sans recharger. */
+  onRevue?: () => void;
+  /** « Nouvel essai » : un geste sur l'atelier, un lien ailleurs. */
+  onNew?: () => void;
+};
+
+const NAV: { id: NavId; href: string; label: string }[] = [
+  { id: "revue", href: "/", label: "Revue" },
+  { id: "sessions", href: "/sessions", label: "Sessions" },
+  { id: "perf", href: "/performance", label: "Performance" },
+  { id: "docs", href: "/docs", label: "Documentation" },
+];
+
+/** Barre du haut commune à toutes les pages connectées. */
+export function Header({ active, left, right, onRevue, onNew }: Props) {
+  const { prefs, update } = useShell();
+  const dark = useEffectiveTheme(prefs.theme) === "dark";
   return (
     <header className="header">
-      <button
-        ref={props.leftButton}
-        type="button"
-        className="btn btn--ghost btn--icon toggle-panel"
-        data-testid="toggle-left"
-        aria-controls="panel-left"
-        aria-expanded={props.leftOpen}
-        aria-label={
-          props.attention > 0
-            ? `Sessions, ${props.attention} à voir`
-            : "Sessions"
-        }
-        onClick={props.onToggleLeft}
-      >
-        <Icon name="panel-l" />
-        {props.attention > 0 ? (
-          <span
-            className="dot"
-            data-testid="attention-dot"
-            aria-hidden="true"
-          />
-        ) : null}
-      </button>
-      <div className="brand">
+      {left ? (
+        <button
+          ref={left.buttonRef}
+          type="button"
+          className="btn btn--ghost btn--icon toggle-panel"
+          data-testid="toggle-left"
+          aria-controls="panel-left"
+          aria-expanded={left.open}
+          aria-label={
+            left.attention > 0
+              ? `Sessions, ${left.attention} à voir`
+              : "Sessions"
+          }
+          onClick={left.onToggle}
+        >
+          <Icon name="panel-l" />
+          {left.attention > 0 ? (
+            <span
+              className="dot"
+              data-testid="attention-dot"
+              aria-hidden="true"
+            />
+          ) : null}
+        </button>
+      ) : null}
+      <Link className="brand" href="/" aria-label="Atelier de revue, accueil">
         <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <circle
             cx="16"
@@ -67,58 +84,73 @@ export function Header(props: Props) {
         <b>
           Atelier <em>de revue</em>
         </b>
-      </div>
-      <nav className="nav" aria-label="Vues">
-        <button
-          type="button"
-          data-testid="nav-revue"
-          aria-current={view === "revue" ? "page" : undefined}
-          onClick={() => props.onView("revue")}
-        >
-          Revue
-        </button>
-        <button
-          type="button"
-          data-testid="nav-perf"
-          aria-current={view === "perf" ? "page" : undefined}
-          onClick={() => props.onView("perf")}
-        >
-          Performance
-        </button>
+      </Link>
+      <nav className="nav" aria-label="Pages">
+        {NAV.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            data-testid={`nav-${item.id}`}
+            aria-current={active === item.id ? "page" : undefined}
+            onClick={(event) => {
+              if (item.id === "revue" && onRevue) {
+                event.preventDefault();
+                onRevue();
+              }
+            }}
+          >
+            {item.label}
+          </Link>
+        ))}
       </nav>
       <span className="spacer" />
+      {onNew ? (
+        <button
+          type="button"
+          className="btn btn--primary btn--sm"
+          data-testid="new-trial"
+          aria-label="Nouvel essai"
+          onClick={onNew}
+        >
+          <Icon name="plus" />
+          <span className="hide-sm">Nouvel essai</span>
+        </button>
+      ) : (
+        <Link
+          className="btn btn--primary btn--sm"
+          data-testid="new-trial"
+          aria-label="Nouvel essai"
+          href="/?vue=new"
+        >
+          <Icon name="plus" />
+          <span className="hide-sm">Nouvel essai</span>
+        </Link>
+      )}
       <button
         type="button"
-        className="btn btn--primary btn--sm"
-        data-testid="new-trial"
-        aria-label="Nouvel essai"
-        onClick={() => props.onView("new")}
-      >
-        <Icon name="plus" />
-        <span className="hide-sm">Nouvel essai</span>
-      </button>
-      <button
-        type="button"
-        className="btn btn--ghost btn--icon btn--sm"
+        className="btn btn--ghost btn--icon btn--sm hide-sm"
         data-testid="toggle-theme"
         aria-label="Basculer le thème clair / sombre"
-        onClick={props.onToggleTheme}
+        onClick={() => update({ theme: dark ? "light" : "dark" })}
       >
-        <Icon name={props.theme === "dark" ? "sun" : "moon"} />
+        <Icon name={dark ? "sun" : "moon"} />
       </button>
-      <button
-        ref={props.rightButton}
-        type="button"
-        className="btn btn--ghost btn--icon toggle-panel"
-        data-testid="toggle-right"
-        aria-controls="panel-right"
-        aria-expanded={props.rightOpen}
-        aria-label="Revue humaine"
-        disabled={!props.rightAvailable}
-        onClick={props.onToggleRight}
-      >
-        <Icon name="panel-r" />
-      </button>
+      <AccountMenu active={active} />
+      {right ? (
+        <button
+          ref={right.buttonRef}
+          type="button"
+          className="btn btn--ghost btn--icon toggle-panel"
+          data-testid="toggle-right"
+          aria-controls="panel-right"
+          aria-expanded={right.open}
+          aria-label="Revue humaine"
+          disabled={!right.available}
+          onClick={right.onToggle}
+        >
+          <Icon name="panel-r" />
+        </button>
+      ) : null}
     </header>
   );
 }

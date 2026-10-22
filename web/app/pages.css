@@ -1,0 +1,93 @@
+/* ───────── Pages hors atelier (Sessions, Documentation, Compte, Performance) et authentification ─────────
+ * Ajouts propres à l'implémentation : les composants viennent de phase2.css (prototype de Sofia).
+ * Aucune valeur visuelle en dur : tout vient de tokens.css. */
+.pg-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: var(--header-h) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+}
+.pg-shell > .header {
+  grid-row: 1;
+}
+.pg-main {
+  grid-row: 2;
+  min-width: 0;
+}
+.auth-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--bg);
+}
+.auth-shell .auth {
+  min-height: 0;
+}
+.auth-top .brand {
+  padding: 0;
+}
+/* Voile du menu du compte : invisible sur grand écran (le clic dehors ferme), voile sur téléphone. */
+.menu-scrim {
+  background: transparent;
+}
+@media (max-width: 767px) {
+  .menu-scrim {
+    background: var(--scrim);
+  }
+}
+button.menu-item {
+  text-align: left;
+  background: none;
+  border: 0;
+}
+/* Confirmation discrète de l'enregistrement des préférences. */
+.prefs-notice {
+  position: fixed;
+  z-index: 55;
+  left: 50%;
+  bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
+  transform: translate(-50%, 8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  max-width: calc(100vw - 32px);
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-2) var(--ease),
+    transform var(--dur-2) var(--ease);
+}
+.prefs-notice[data-visible="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+.prefs-notice[data-state="saved"] svg.i {
+  color: var(--ok);
+}
+.prefs-notice[data-state="error"] {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.prefs-notice[data-state="error"] svg.i {
+  color: var(--danger);
+}
+@media (prefers-reduced-motion: reduce) {
+  .prefs-notice {
+    transition: none;
+  }
+}
+/* Lien-bouton sans soulignement dans les pages */
+a.btn,
+a.menu-item {
+  text-decoration: none;
+}

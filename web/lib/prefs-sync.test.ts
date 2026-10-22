@@ -12,9 +12,9 @@ import {
 
 describe("mergePatch / applyPatch", () => {
   it("la modification la plus récente d'une clé gagne, les autres clés restent", () => {
-    expect(mergePatch({ theme: "dark", volume: 0.5 }, { theme: "light" })).toEqual(
-      { theme: "light", volume: 0.5 },
-    );
+    expect(
+      mergePatch({ theme: "dark", volume: 0.5 }, { theme: "light" }),
+    ).toEqual({ theme: "light", volume: 0.5 });
   });
 
   it("applyPatch ne touche que les clés fournies et ne modifie pas l'original", () => {
@@ -27,7 +27,12 @@ describe("mergePatch / applyPatch", () => {
   });
 
   it("une valeur null est une vraie valeur (retour à l'automatique)", () => {
-    expect(applyPatch({ ...PREFERENCE_DEFAULTS, arabicSize: 48 }, { arabicSize: null }).arabicSize).toBeNull();
+    expect(
+      applyPatch(
+        { ...PREFERENCE_DEFAULTS, arabicSize: 48 },
+        { arabicSize: null },
+      ).arabicSize,
+    ).toBeNull();
   });
 });
 
@@ -48,7 +53,12 @@ describe("cache local", () => {
     expect(parseCache("{pas du json", 1)).toBeNull();
     expect(
       parseCache(
-        JSON.stringify({ v: 1, user: 1, prefs: { theme: "rose" }, pending: {} }),
+        JSON.stringify({
+          v: 1,
+          user: 1,
+          prefs: { theme: "rose" },
+          pending: {},
+        }),
         1,
       ),
     ).toBeNull();
@@ -68,17 +78,23 @@ describe("cache local", () => {
 
 describe("appearanceOf", () => {
   it("thème clair/sombre explicite, ou automatique (null)", () => {
-    expect(appearanceOf({ ...PREFERENCE_DEFAULTS, theme: "dark" }).theme).toBe("dark");
+    expect(appearanceOf({ ...PREFERENCE_DEFAULTS, theme: "dark" }).theme).toBe(
+      "dark",
+    );
     expect(appearanceOf(PREFERENCE_DEFAULTS).theme).toBeNull();
   });
 
   it("taille arabe en px bornée, ou null pour la valeur du thème", () => {
-    expect(appearanceOf({ ...PREFERENCE_DEFAULTS, arabicSize: 48 }).quranSize).toBe("48px");
+    expect(
+      appearanceOf({ ...PREFERENCE_DEFAULTS, arabicSize: 48 }).quranSize,
+    ).toBe("48px");
     expect(appearanceOf(PREFERENCE_DEFAULTS).quranSize).toBeNull();
   });
 
   it("police arabe : le choix, sinon la police par défaut", () => {
-    expect(appearanceOf({ ...PREFERENCE_DEFAULTS, arabicFont: "scheherazade" }).font).toBe("scheherazade");
+    expect(
+      appearanceOf({ ...PREFERENCE_DEFAULTS, arabicFont: "scheherazade" }).font,
+    ).toBe("scheherazade");
     expect(appearanceOf(PREFERENCE_DEFAULTS).font).toBe("amiri-quran");
   });
 });

@@ -10,6 +10,8 @@ import type { usePlayer } from "./use-player";
 import { Timeline, type TimelineHandle } from "./timeline";
 
 type Player = ReturnType<typeof usePlayer>;
+/** Pas de saut du lecteur : valeur centrale unique, non réglable. */
+export const SKIP_SECONDS = 5;
 export type ListeningState = "pending" | "ready" | "fallback";
 
 const LISTENING_BADGE: Record<
@@ -61,10 +63,12 @@ function Transport({
       <button
         type="button"
         className="seek"
-        aria-label="−5 s, reculer de 5 secondes"
-        onClick={() => player.skip(-5)}
+        data-testid="seek-back"
+        aria-label="Reculer de 5 secondes"
+        data-tip="Reculer de 5 s  ←"
+        onClick={() => player.skip(-SKIP_SECONDS)}
       >
-        −5 s
+        <Icon name="seek-back" className="five" />
       </button>
       <div className="scrub">
         <div className="times mono">
@@ -86,10 +90,12 @@ function Transport({
       <button
         type="button"
         className="seek"
-        aria-label="+5 s, avancer de 5 secondes"
-        onClick={() => player.skip(5)}
+        data-testid="seek-forward"
+        aria-label="Avancer de 5 secondes"
+        data-tip="Avancer de 5 s  →"
+        onClick={() => player.skip(SKIP_SECONDS)}
       >
-        +5 s
+        <Icon name="seek-fwd" className="five" />
       </button>
       <button
         type="button"
@@ -139,9 +145,9 @@ type Props = {
   onSpan: (span: number | null) => void;
   follow: boolean;
   onFollow: (follow: boolean) => void;
+  /** Choix explicite de l'utilisateur (l'interrupteur) : c'est lui qui devient une préférence. */
+  onFollowToggle: (follow: boolean) => void;
   review: ReviewController;
-  testerKnown: boolean;
-  onNeedTester: () => void;
   /** Clic sur un signalement de l'onde ou de la piste Revue : le sélectionne et ouvre la liste. */
   onSelectAnnotation: (id: string) => void;
 };
@@ -149,9 +155,7 @@ type Props = {
 export function Console(props: Props) {
   const { review, player } = props;
   const marking = review.state.mark !== null;
-  const status = !props.testerKnown ? (
-    "Indique d’abord qui teste, dans le panneau Revue humaine."
-  ) : marking ? (
+  const status = marking ? (
     <>
       Début posé à <b>{formatTenths(review.state.mark as number)}</b> — appuie
       pour poser la fin.
@@ -194,7 +198,6 @@ export function Console(props: Props) {
           type="button"
           className={`btn btn--sm ${review.draft ? "btn--secondary" : "btn--primary"}`}
           data-testid="mark-button"
-          aria-disabled={!props.testerKnown}
           onClick={review.press}
         >
           <Icon name="flag" />
@@ -240,8 +243,6 @@ export function Console(props: Props) {
         draftId={review.state.draftId}
         mark={review.state.mark}
         trace={review.trace}
-        canTrace={props.testerKnown}
-        onNeedTester={props.onNeedTester}
         onTrace={review.traceSelect}
         onEdge={review.edge}
         onNudge={review.nudge}
@@ -273,7 +274,7 @@ export function Console(props: Props) {
           role="switch"
           data-testid="follow-switch"
           aria-checked={props.follow}
-          onClick={() => props.onFollow(!props.follow)}
+          onClick={() => props.onFollowToggle(!props.follow)}
         >
           <i />
           Suivre la lecture

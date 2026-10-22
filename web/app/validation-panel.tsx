@@ -12,7 +12,7 @@ import { Icon } from "./atelier/icons";
 /**
  * Vérité terrain semi-automatique (étape A, ADR-0006) : tu dis ce qui est récité, l'alignement
  * forcé pose les temps, tu écoutes chaque verset puis tu valides ou exclus le passage. Seuls les
- * passages validés sont écrits dans le manifeste. Onglet réservé au relecteur (`?relecteur=1`) :
+ * passages validés sont écrits dans le manifeste. Onglet réservé aux administrateurs (le relecteur est le compte connecté) :
  * il écrit dans le manifeste de test, les testeurs n'y touchent pas.
  */
 const statusLabel: Record<Passage["status"], string> = {
@@ -42,7 +42,6 @@ export default function ValidationPanel({
     [working, setWorking] = useState(""),
     [error, setError] = useState(""),
     [report, setReport] = useState(""),
-    [reviewer, setReviewer] = useState("rel-01"),
     [drafts, setDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -110,9 +109,9 @@ export default function ValidationPanel({
     >
       <p className="banner">
         <small>
-          <b className="name">Réservé au relecteur.</b> Cette section sert à
-          valider des passages complets pour la vérité terrain. Pour signaler
-          une erreur, reste dans l’onglet « Signaler ».
+          <b className="name">Réservé aux administrateurs.</b> Cette section
+          sert à valider des passages complets pour la vérité terrain. Pour
+          signaler une erreur, reste dans l’onglet « Signaler ».
         </small>
       </p>
       <p className="hint">
@@ -343,23 +342,16 @@ export default function ValidationPanel({
           </button>
           {passages.length > 0 && (
             <>
-              <label className="field">
-                Relecteur (identifiant anonyme, jamais un nom)
-                <input
-                  className="input mono"
-                  value={reviewer}
-                  onChange={(e) => setReviewer(e.target.value)}
-                />
-              </label>
+              <p className="hint">
+                Le relecteur inscrit dans le manifeste est ton compte
+                administrateur.
+              </p>
               <button
                 type="button"
                 className="btn btn--primary btn--block"
                 disabled={busy || !validated.length}
                 onClick={() =>
-                  act(
-                    { action: "manifest", reviewed_by: reviewer.trim() },
-                    "Écriture dans le manifeste…",
-                  )
+                  act({ action: "manifest" }, "Écriture dans le manifeste…")
                 }
               >
                 Écrire {validated.length} passage(s) validé(s) dans le manifeste

@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { api } from "@/lib/api-client";
+import type { ApiSession, SessionPage } from "@/lib/api-types";
 import {
+  formatBytesFr,
   formatClockLength,
   formatDurationFr,
   formatEtaFr,
@@ -11,10 +14,13 @@ import {
   splitDuration,
   type Period,
 } from "@/lib/performance";
-import type { SessionView, Stats } from "@/lib/session-view";
+import type { Stats } from "@/lib/session-view";
+import type { VisibleStats } from "@/lib/session-service";
 import { engineLabel } from "@/lib/session-list";
+import { storageState } from "@/lib/storage-meter";
 import { SessionGlyph } from "./icons";
 import { usePageVisible } from "./hooks";
+import { MyStats } from "./my-stats";
 
 const PERIODS: { id: Period; label: string }[] = [
   { id: "7d", label: "7 jours" },
@@ -36,18 +42,131 @@ function Big({ parts }: { parts: { n: string; u: string }[] }) {
   );
 }
 
-/** Le tableau de bord Performance : des durées réelles, mesurées ; aucun chiffre inventé. */
-export function PerfView({ views }: { views: readonly SessionView[] }) {
-  const [period, setPeriod] = useState<Period>("7d");
-  const [stats, setStats] = useState<Stats | null>(null);
+/** Au plus 5 pages de 100 : de quoi calculer les moyennes sans charger toute la base. */
+const PERF_PAGES = 5;
+const PERIOD_DAYS: Record<Period, number | null> = {
+  "7d": 7,
+  "30d": 30,
+  all: null,
+};
+
+/**
+ * Les analyses terminées que l'utilisateur voit (les globales et les siennes), sur la période :
+ * c'est la matière des moyennes. Le serveur filtre et pagine, on ne charge jamais tout.
+ */
+function useDoneSessions(period: Period) {
+  const [sessions, setSessions] = useState<ApiSession[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const visible = usePageVisible();
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
+    const days = PERIOD_DAYS[period];
+    const load = async () => {
+      const found: ApiSession[] = [];
+      let cursor: string | null = null;
+      for (let page = 0; page < PERF_PAGES; page += 1) {
+        const params = new URLSearchParams({
+          scope: "all",
+          state: "done",
+          sort: "recent",
+          limit: "100",
+        });
+        if (days !== null)
+          params.set(
+            "from",
+            new Date(Date.now() - days * 86_400_000).toISOString(),
+          );
+        if (cursor) params.set("cursor", cursor);
+        const result: SessionPage = await api<SessionPage>(
+          `/api/sessions?${params}`,
+        );
+        found.push(...result.items);
+        cursor = result.next_cursor;
+        if (!cursor) break;
+      }
+      if (!cancelled) {
+        setSessions(found);
+        setLoaded(true);
+      }
+    };
+    const run = () => void load().catch(() => !cancelled && setLoaded(true));
+    run();
+    const timer = setInterval(run, 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [period, visible]);
+  return { sessions, loaded };
+}
+
+/** Stockage du serveur : même barre que celle du compte, sans détail par compte. */
+function ServerStorage({ stats }: { stats: VisibleStats | null }) {
+  if (!stats) return null;
+  const { disk, totals } = stats;
+  const total = disk.total_bytes;
+  const state =
+    total && total > 0
+      ? storageState({ used_bytes: disk.used_bytes, limit_bytes: total })
+      : null;
+  return (
+    <section
+      className="card card-pad storage-line"
+      data-testid="server-storage"
+    >
+      <div className="sec-title">
+        <h2>Stockage du serveur</h2>
+      </div>
+      <p>
+        <b className="mono">{formatBytesFr(disk.used_bytes)}</b>
+        {total ? ` sur ${formatBytesFr(total)}` : ""} · {totals.sessions}{" "}
+        fichier{totals.sessions > 1 ? "s" : ""}
+      </p>
+      {state ? (
+        <div className="meter-card" data-state="ok" style={{ padding: 0 }}>
+          <div
+            className="meter"
+            role="meter"
+            aria-label="Espace occupé sur le disque du serveur"
+            aria-valuemin={0}
+            aria-valuemax={total ?? 0}
+            aria-valuenow={Math.min(disk.used_bytes, total ?? 0)}
+            aria-valuetext={`${formatBytesFr(disk.used_bytes)} occupés sur ${formatBytesFr(total ?? 0)}`}
+          >
+            <span
+              className="m aud"
+              style={
+                {
+                  "--w": `${Math.max(1, state.percent)}%`,
+                } as React.CSSProperties
+              }
+            />
+          </div>
+        </div>
+      ) : null}
+      {disk.free_bytes !== null ? (
+        <p className="hint">
+          Libre sur le disque : {formatBytesFr(disk.free_bytes)}.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+/** Le tableau de bord Performance : des durées réelles, mesurées ; aucun chiffre inventé. */
+export function PerfView({ initialMine = false }: { initialMine?: boolean }) {
+  const [mine, setMine] = useState(initialMine);
+  const [period, setPeriod] = useState<Period>("7d");
+  const [stats, setStats] = useState<VisibleStats | null>(null);
+  const visible = usePageVisible();
+  const { sessions, loaded } = useDoneSessions(period);
+  useEffect(() => {
+    if (!visible || mine) return;
+    let cancelled = false;
     const load = () =>
-      fetch("/api/stats", { cache: "no-store" })
-        .then((r) => (r.ok ? (r.json() as Promise<Stats>) : null))
-        .then((value) => !cancelled && value && setStats(value))
+      api<VisibleStats>("/api/stats")
+        .then((value) => !cancelled && setStats(value))
         .catch(() => undefined);
     void load();
     const timer = setInterval(load, 5000);
@@ -55,12 +174,12 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [visible]);
+  }, [visible, mine]);
   const model = useMemo(
-    () => buildPerformance(views, period, Date.now()),
-    [views, period],
+    () => buildPerformance(sessions, period, Date.now()),
+    [sessions, period],
   );
-  const queue = stats?.queue;
+  const queue = (stats as Stats | null)?.queue;
   const running = queue?.running ?? [];
   const waiting = queue?.waiting ?? [];
   const etas = [...running, ...waiting].map((q) => q.eta_s);
@@ -69,10 +188,53 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
       ? Math.max(...etas)
       : null;
   const quality = stats?.engines.find((e) => e.estimate)?.estimate;
+  const switcher = (
+    <div className="seg-ctl" role="group" aria-label="Quelles analyses ?">
+      <button
+        type="button"
+        data-testid="perf-global"
+        aria-pressed={!mine}
+        onClick={() => {
+          setMine(false);
+          history.replaceState(null, "", "/performance");
+        }}
+      >
+        Tous les testeurs
+      </button>
+      <button
+        type="button"
+        data-testid="perf-mine"
+        aria-pressed={mine}
+        onClick={() => {
+          setMine(true);
+          history.replaceState(null, "", "/performance?vue=moi");
+        }}
+      >
+        Moi
+      </button>
+    </div>
+  );
+  if (mine)
+    return (
+      <div className="page" data-testid="perf-view">
+        <div className="pg-title">
+          <div>
+            <h1>Performance</h1>
+            <p>Mes analyses et mon espace.</p>
+          </div>
+          {switcher}
+        </div>
+        <MyStats />
+      </div>
+    );
   const empty = model.analyses === 0;
   return (
-    <div className="stack" data-testid="perf-view">
-      <header className="page-title">
+    <div
+      className="page"
+      data-testid="perf-view"
+      style={{ display: "grid", gap: "var(--sp-5)" }}
+    >
+      <header className="pg-title">
         <div>
           <h1>Performance</h1>
           <p>
@@ -80,6 +242,7 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
             estimer la fin d’une file avant de partir.
           </p>
         </div>
+        {switcher}
         <div
           className="seg-filters"
           style={{ margin: 0 }}
@@ -311,11 +474,21 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
         </section>
       </div>
 
+      <ServerStorage stats={stats} />
+
       <section className="card card-pad" data-testid="recent-table">
         <div className="sec-title">
           <h2>Dernières analyses</h2>
         </div>
-        {model.recent.length === 0 ? (
+        <p className="hint" style={{ marginBottom: "var(--sp-3)" }}>
+          Seules les sessions globales sont nommées ici ; les privées d’un autre
+          testeur ne sont ni visibles ni comptées.
+        </p>
+        {!loaded ? (
+          <p className="hint" role="status">
+            Chargement des analyses…
+          </p>
+        ) : model.recent.length === 0 ? (
           <p className="hint">Aucune analyse terminée sur cette période.</p>
         ) : (
           <div
@@ -328,6 +501,7 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
               <thead>
                 <tr>
                   <th>Session</th>
+                  <th>Testeur</th>
                   <th>Type</th>
                   <th className="num">Audio</th>
                   <th className="num">Analyse</th>
@@ -338,6 +512,7 @@ export function PerfView({ views }: { views: readonly SessionView[] }) {
                 {model.recent.map((r) => (
                   <tr key={r.id}>
                     <td>{r.name}</td>
+                    <td>{r.owner ?? "—"}</td>
                     <td>{r.kind === "video" ? "Vidéo" : "Audio"}</td>
                     <td className="num">{formatClockLength(r.audioS)}</td>
                     <td className="num">{formatClockLength(r.processingS)}</td>

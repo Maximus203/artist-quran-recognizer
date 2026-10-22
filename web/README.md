@@ -81,7 +81,7 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 | --- | --- | --- |
 | `AQR_MAX_CONCURRENT` | analyses exécutées en même temps (entier ≥ 1 ; invalide = 1). Lue à chaque démarrage d'analyse | `1` |
 | `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafond d'une **vidéo** envoyée en flux (`413` au-delà). Une vidéo garde son image sur le disque alors que seul le son sert : 2 Gio couvrent 1 h 30 de 1080p courant | 2 Gio |
-| `AQR_MAX_UPLOAD_BYTES` | plafond d'un **audio** en flux, et de tout envoi par formulaire multipart (lu en mémoire) | 300 Mo |
+| `AQR_MAX_UPLOAD_BYTES` | plafond d'un **audio** en flux, et de tout envoi par formulaire multipart (lu en mémoire) | 500 Mo |
 | `AQR_FFPROBE` | exécutable ffprobe (défaut : voisin de `AQR_FFMPEG`, sinon `ffprobe` du PATH, comme le moteur) | — |
 
 ### Importer (`POST /api/sessions`)
@@ -162,7 +162,7 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `AQR_LOGIN_MAX_DAYS` | durée **absolue** : une connexion ne glisse jamais au-delà | `180` |
 | `AQR_TRUST_PROXY` | `1` derrière un reverse proxy de confiance : IP lue dans le dernier `X-Forwarded-For`, HTTPS lu dans `X-Forwarded-Proto` (cookie `Secure`). Sans lui, toutes les requêtes comptent comme une seule IP « local » | absent |
 | `AQR_REGISTER_PER_HOUR` | inscriptions par IP et par heure | `10` |
-| `AQR_USER_QUOTA_BYTES` | quota d'envoi par utilisateur (octets de fichiers importés, tous ses audios, archivés et privés compris) ; `0` = illimité | `0` |
+| `AQR_USER_QUOTA_BYTES` | quota d'envoi par utilisateur (octets de fichiers importés, tous ses audios, archivés et privés compris) ; `0` = illimité ; une valeur invalide retombe sur le défaut | 5 Gio |
 | `AQR_TIMEZONE` | fuseau des noms horodatés (« Enregistrement du 22 oct. à 17:51 »), nom IANA | celui de la machine |
 
 ### Authentification
@@ -365,7 +365,7 @@ Par défaut l'atelier n'accepte que la boucle locale (`127.0.0.1`, `localhost`, 
 | `AQR_ALLOWED_HOSTS` | noms d'hôte supplémentaires acceptés, séparés par des virgules (sans port) | vide |
 | `AQR_ACCESS_TOKEN` | jeton d'accès, **obligatoire** pour qu'un hôte supplémentaire soit accepté ; une fois défini il protège aussi le loopback. Choisir ≥ 24 caractères aléatoires | absent |
 | `AQR_ACCESS_TTL_S` | durée de vie (s) du cookie d'accès délivré par `/access` (1 à 604800) | 3600 |
-| `AQR_MAX_UPLOAD_BYTES` | plafond d'upload d'un audio ou d'un formulaire (refus `413` dès l'en-tête `Content-Length`) ; les vidéos ont `AQR_MAX_VIDEO_UPLOAD_BYTES` (voir « File d'attente ») | 300 Mo |
+| `AQR_MAX_UPLOAD_BYTES` | plafond d'upload d'un audio ou d'un formulaire (refus `413` dès l'en-tête `Content-Length`) ; les vidéos ont `AQR_MAX_VIDEO_UPLOAD_BYTES` (voir « File d'attente ») | 500 Mo |
 | `AQR_SESSION_TTL_S` | supprime à chaque import les sessions **inactives** depuis plus de N secondes (jamais celles en cours) ; voir « Règle d'activité » ci-dessous | `0` = désactivé |
 
 Le jeton se présente par l'en-tête `x-aqr-token`, `Authorization: Bearer …` (scripts, tests) ou par un cookie `HttpOnly` signé (HMAC, expiration incluse) obtenu en saisissant le jeton sur `/access` ; la comparaison est à temps constant. Sans jeton valide, l'API répond `403` et la page redirige vers `/access`. Les mutations (`POST`/`DELETE`) exigent en plus une origine identique ou un hôte autorisé de même protocole et port.

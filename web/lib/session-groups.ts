@@ -29,23 +29,45 @@ const dayStart = (time: number): number => {
   return d.getTime();
 };
 
-/** Libellé de groupe d'une date (cadre : jour local du navigateur). */
+/** Lundi de la semaine de `time`, à minuit local. */
+const weekStart = (time: number): number => {
+  const d = new Date(dayStart(time));
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+};
+
+/**
+ * Groupe d'une date (jour local du navigateur) : Aujourd'hui · Hier · Cette semaine (du lundi à
+ * avant-hier) · Ce mois · Plus ancien. `byMonth` remplace « Plus ancien » par un titre par mois.
+ */
 export function dateGroupOf(
   iso: string,
   now: number,
+  byMonth = false,
 ): { key: string; label: string } {
   const at = Date.parse(iso);
   if (!Number.isFinite(at)) return { key: "unknown", label: "Date inconnue" };
   const days = Math.round((dayStart(now) - dayStart(at)) / 86_400_000);
   if (days <= 0) return { key: "today", label: "Aujourd’hui" };
   if (days === 1) return { key: "yesterday", label: "Hier" };
-  if (days < 7) return { key: "week", label: "Cette semaine" };
+  if (dayStart(at) >= weekStart(now))
+    return { key: "week", label: "Cette semaine" };
   const date = new Date(at);
+  const current = new Date(now);
+  if (
+    date.getFullYear() === current.getFullYear() &&
+    date.getMonth() === current.getMonth()
+  )
+    return { key: "month", label: "Ce mois" };
+  if (!byMonth) return { key: "older", label: "Plus ancien" };
   return {
     key: `m-${date.getFullYear()}-${date.getMonth()}`,
     label: `${MONTHS[date.getMonth()]} ${date.getFullYear()}`,
   };
 }
+
+/** Au-delà de ce nombre de lignes, « Plus ancien » est découpé par mois. */
+export const MONTH_GROUPS_FROM = 50;
 
 export function groupByDate<T extends { created_at: string }>(
   items: readonly T[],
@@ -55,9 +77,10 @@ export function groupByDate<T extends { created_at: string }>(
   if (items.length === 0) return [];
   if (sort !== "recent" && sort !== "oldest")
     return [{ key: "all", label: null, items: [...items] }];
+  const byMonth = items.length > MONTH_GROUPS_FROM;
   const groups: DateGroup<T>[] = [];
   for (const item of items) {
-    const { key, label } = dateGroupOf(item.created_at, now);
+    const { key, label } = dateGroupOf(item.created_at, now, byMonth);
     const last = groups[groups.length - 1];
     if (last && last.key === key) last.items.push(item);
     else groups.push({ key, label, items: [item] });

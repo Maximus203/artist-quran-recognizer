@@ -399,8 +399,8 @@ export function SignalTab(props: Props) {
               <div className="banner" data-testid="other-tester-banner">
                 <small>
                   Signalement de <b className="name">{a.tester}</b> : tu le
-                  modifies en tant que <b className="name">{tester}</b>. Son nom
-                  reste sur le signalement.
+                  modifies en tant qu’administrateur ({tester}). Son nom reste
+                  sur le signalement.
                 </small>
               </div>
             ) : null}

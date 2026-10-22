@@ -38,8 +38,8 @@ export function reviewRoot(): string {
       defaultReviewDir(process.platform, os.homedir(), process.env),
   );
 }
-const DEFAULT_UPLOAD_BYTES = 300 * 1024 * 1024;
-/** Plafond d'upload en octets (`AQR_MAX_UPLOAD_BYTES`, 300 Mo par défaut). */
+const DEFAULT_UPLOAD_BYTES = 500 * 1024 * 1024;
+/** Plafond d'upload en octets (`AQR_MAX_UPLOAD_BYTES`, 500 Mo par défaut). */
 export function uploadLimitBytes(
   raw: string | undefined = process.env.AQR_MAX_UPLOAD_BYTES,
 ): number {

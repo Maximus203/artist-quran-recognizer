@@ -17,6 +17,8 @@ export type PerfSession = {
   audio_duration_s?: number | null;
   duration_s?: number | null;
   finished_at: string | null;
+  /** Propriétaire : seules les sessions globales sont nommées dans les « dernières analyses ». */
+  owner?: { id: number; username: string } | null;
 };
 
 export type EnginePerf = {
@@ -38,6 +40,8 @@ export type RecentAnalysis = {
   processingS: number;
   factor: number;
   finishedAt: string;
+  /** Pseudonyme du testeur, ou null (session d'avant les comptes). */
+  owner: string | null;
 };
 
 export type PerfModel = {
@@ -147,6 +151,7 @@ export function buildPerformance(
         processingS: s.duration_s as number,
         factor: factorOf(s),
         finishedAt: s.finished_at as string,
+        owner: s.owner?.username ?? null,
       }),
     );
 

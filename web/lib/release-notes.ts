@@ -27,10 +27,7 @@ const HEADING = /^##\s+(\d{4}-\d{2}-\d{2})\s*[—–-]\s*(.+?)\s*$/;
 const COMMENT = /<!--[\s\S]*?-->/g;
 
 const strip = (text: string): string =>
-  text
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const lineValue = (line: string, label: string): string | null => {
   const match = new RegExp(`^${label}\\s*:\\s*(.*)$`, "i").exec(strip(line));
