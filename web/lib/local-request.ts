@@ -100,6 +100,39 @@ export function hasAccessCredential(
   return !token || tokenAuthorized(request, token, now);
 }
 
+/**
+ * Nom d'hôte d'une valeur d'en-tête `Host` / `X-Forwarded-Host`, ou `null` si elle est
+ * mal formée ou ambiguë (liste, espaces, identifiants, port non numérique). Le nom reste
+ * tel quel (minuscules) : `localhost.` ou `127.0.0.1.evil.example` ne sont jamais acceptés.
+ */
+export function hostHeaderName(value: string): string | null {
+  const match = /^(\[[0-9a-f:.]+\]|[a-z0-9._-]+)(?::(\d{1,5}))?$/i.exec(
+    value.trim(),
+  );
+  if (!match || value !== value.trim()) return null;
+  return match[1].toLowerCase();
+}
+
+/**
+ * Le serveur est lié à 127.0.0.1 : l'URL que Next reconstruit porte cet hôte quoi que le client
+ * annonce, donc `new URL(request.url).hostname` ne prouve rien (DNS rebinding : une page tierce
+ * dont le nom résout vers la boucle locale arrive avec `Host: evil.example`). L'en-tête Host
+ * (et X-Forwarded-Host derrière un proxy) est le nom réellement utilisé par le navigateur :
+ * il doit lui aussi être un hôte autorisé. Absent (appel interne sans en-tête), seule l'URL compte.
+ */
+function forwardedHostsAllowed(
+  request: Request,
+  allowed: (host: string) => boolean,
+): boolean {
+  for (const name of ["host", "x-forwarded-host"]) {
+    const value = request.headers.get(name);
+    if (value === null) continue;
+    const host = hostHeaderName(value);
+    if (host === null || !allowed(host)) return false;
+  }
+  return true;
+}
+
 export function isLocalRequest(
   request: Request,
   mutation = false,
@@ -111,6 +144,7 @@ export function isLocalRequest(
     LOOPBACK.includes(host) || extra.includes(host);
   const url = new URL(request.url);
   if (!allowed(url.hostname)) return false;
+  if (!forwardedHostsAllowed(request, allowed)) return false;
   if (token && !tokenAuthorized(request, token, now)) return false;
   const origin = request.headers.get("origin");
   if (!mutation || !origin || origin === url.origin) return true;
