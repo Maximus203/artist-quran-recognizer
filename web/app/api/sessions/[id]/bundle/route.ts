@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { createReadStream } from "node:fs";
@@ -11,7 +12,7 @@ import { sessionAccess } from "@/lib/route-guard";
 export const runtime = "nodejs";
 const exec = promisify(execFile);
 /** Pack de revue (ZIP) d'une session : réservé aux testeurs qui la voient (privée : son propriétaire). */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -49,3 +50,5 @@ export async function GET(
     );
   }
 }
+
+export const GET = safe(handleGET);

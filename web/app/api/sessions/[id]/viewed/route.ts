@@ -1,4 +1,4 @@
-import { apiError, json } from "@/lib/http";
+import { apiError, json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { markViewedBy, viewState } from "@/lib/session-index";
 import { readSession } from "@/lib/store";
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  * un autre testeur peut l'ouvrir sans rien changer pour lui. Un `GET` ne marque jamais comme vu.
  * Sans effet tant que la session n'est pas terminée.
  */
-export async function POST(
+async function handlePOST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -37,3 +37,5 @@ export async function POST(
     return apiError(404, "Session introuvable", { code: "not_found" });
   }
 }
+
+export const POST = safe(handlePOST);

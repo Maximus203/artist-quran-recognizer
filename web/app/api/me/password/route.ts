@@ -1,10 +1,10 @@
 import { changePassword } from "@/lib/auth";
-import { apiError, readJson } from "@/lib/http";
+import { apiError, readJson, safe } from "@/lib/http";
 import { authDeps, clientIp, requireUser } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
 /** Changement de mot de passe : `{ current, next }` → `204`. Les autres connexions du compte sont révoquées. */
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   const auth = await requireUser(request, { mutation: true });
   if (!auth.ok) return auth.response;
   const body = (await readJson(request)) as
@@ -30,3 +30,5 @@ export async function POST(request: Request) {
     });
   return new Response(null, { status: 204 });
 }
+
+export const POST = safe(handlePOST);

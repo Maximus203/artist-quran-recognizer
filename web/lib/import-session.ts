@@ -19,6 +19,7 @@ import { pipeline } from "node:stream/promises";
 import type { Visibility } from "./access";
 import { acceptedMediaExtensions, isVideoName } from "./audio-upload";
 import { getDb } from "./db";
+import { formatBytesFr } from "./format";
 import { ensureListening } from "./listening";
 import { inspectUpload, MediaRejected } from "./media-probe";
 import { parseRecognition, type Recognition } from "./recognition";
@@ -148,7 +149,7 @@ class QuotaExceeded extends Error {}
 const quotaRefusal = (quota: { limit: number; used: number }) =>
   new ImportError(
     413,
-    `Quota atteint : tu utilises ${mb(quota.used)} sur ${mb(quota.limit)}. Supprime des sessions pour libérer de la place.`,
+    `Quota atteint : tu utilises ${formatBytesFr(quota.used)} sur ${formatBytesFr(quota.limit)}. Supprime des sessions pour libérer de la place.`,
   );
 const remainingBytes = (owner: ImportOwner | undefined): number =>
   owner?.quota

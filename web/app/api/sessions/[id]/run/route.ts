@@ -1,6 +1,6 @@
 import { launch, cancel, ensureQueueRecovered } from "@/lib/jobs";
 import { httpError } from "@/lib/errors";
-import { apiError, json } from "@/lib/http";
+import { apiError, json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { parseAsrChoice } from "@/lib/asr-choice";
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ async function requestedAsr(request: Request) {
 }
 
 /** Met l'analyse en file : `{ state: "running" | "queued", queue_position }`. Propriétaire ou administrateur. */
-export async function POST(
+async function handlePOST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -41,7 +41,7 @@ export async function POST(
   }
 }
 /** Annule l'analyse : retirée de la file si elle attend, processus tué si elle tourne. Propriétaire ou administrateur. */
-export async function DELETE(
+async function handleDELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -57,3 +57,6 @@ export async function DELETE(
     return apiError(status, message);
   }
 }
+
+export const POST = safe(handlePOST);
+export const DELETE = safe(handleDELETE);

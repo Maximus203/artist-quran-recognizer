@@ -376,7 +376,7 @@ AQR_ACCESS_TTL_S=1800 AQR_SESSION_TTL_S=86400 \
 npx next start --hostname 0.0.0.0 --port 3097
 ```
 
-À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : pas de limitation de débit intégrée, et les audios déposés restent des données privées. Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
+À placer derrière HTTPS (le cookie est `Secure` quand l'URL est en `https:`). Ne pas exposer sur Internet sans reverse proxy : la limitation de débit intégrée ne couvre que l'authentification (voir « Comptes, partage et préférences »), pas le reste de l'API, et les audios déposés restent des données privées. Avec des comptes, ce jeton d'accès reste la porte d'entrée réseau : les testeurs se connectent ensuite avec leur pseudonyme. Les identifiants de session doivent être des UUID : toute autre forme (`..`, séparateurs) est rejetée.
 
 ### Règle d'activité et suppression
 

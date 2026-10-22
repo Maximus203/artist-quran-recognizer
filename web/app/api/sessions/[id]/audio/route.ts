@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
  * Repli sur l'original si ffmpeg échoue, signalé par `X-AQR-Listening: original`.
  * Lisible par tout testeur qui voit la session (privée : seul son propriétaire, sinon 404).
  */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -57,3 +58,5 @@ export async function GET(
     return NextResponse.json({ error: "Audio introuvable" }, { status: 404 });
   }
 }
+
+export const GET = safe(handleGET);

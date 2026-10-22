@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { httpError } from "@/lib/errors";
-import { apiError, json, notFound, readJson } from "@/lib/http";
+import { apiError, json, notFound, readJson, safe } from "@/lib/http";
 import { ensureQueueRecovered, removeSession } from "@/lib/jobs";
 import { sessionAccess } from "@/lib/route-guard";
 import { deleteMeta, updateMeta } from "@/lib/session-index";
@@ -10,7 +10,7 @@ import { ReviewWorkError, readResult, readReview } from "@/lib/store";
 export const runtime = "nodejs";
 
 /** `{ session, result, review }` : la session (avec son propriétaire, sa portée, ses droits), son résultat et sa revue. */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -44,7 +44,7 @@ const patchSchema = z
  * Renomme (`name` ; `null` = nom par défaut dérivé du fichier), change la portée
  * (`visibility`) ou archive (`archived`). Propriétaire ou administrateur.
  */
-export async function PATCH(
+async function handlePATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -90,7 +90,7 @@ export async function PATCH(
   return session ? json({ session }) : notFound();
 }
 
-export async function DELETE(
+async function handleDELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -112,3 +112,7 @@ export async function DELETE(
     return apiError(status, message);
   }
 }
+
+export const GET = safe(handleGET);
+export const PATCH = safe(handlePATCH);
+export const DELETE = safe(handleDELETE);

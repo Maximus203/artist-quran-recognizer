@@ -1,11 +1,11 @@
-import { json } from "@/lib/http";
+import { json, safe } from "@/lib/http";
 import { requireAdmin } from "@/lib/route-guard";
 import { ownedTotals } from "@/lib/session-index";
 import { listUsers } from "@/lib/users";
 export const runtime = "nodejs";
 
 /** Liste des comptes (administrateurs seulement) avec leur usage : sessions, octets, tests. */
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
   const tests = new Map(
@@ -34,3 +34,5 @@ export async function GET(request: Request) {
     }),
   });
 }
+
+export const GET = safe(handleGET);

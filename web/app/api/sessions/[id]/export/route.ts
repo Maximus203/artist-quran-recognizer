@@ -1,3 +1,4 @@
+import { safe } from "@/lib/http";
 import { NextResponse } from "next/server";
 import {
   readResult,
@@ -8,7 +9,7 @@ import {
 import { sessionAccess } from "@/lib/route-guard";
 export const runtime = "nodejs";
 /** Export JSON d'une session (résultat, revue, historique) : testeurs qui la voient ; privée = propriétaire seul. */
-export async function GET(
+async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -56,3 +57,5 @@ export async function GET(
     return NextResponse.json({ error: "Export impossible" }, { status: 404 });
   }
 }
+
+export const GET = safe(handleGET);

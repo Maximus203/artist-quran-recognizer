@@ -1,6 +1,6 @@
 import { registerAccount, type Registration } from "@/lib/auth";
 import { authResponse } from "@/lib/auth-response";
-import { apiError, readJson } from "@/lib/http";
+import { apiError, readJson, safe } from "@/lib/http";
 import { authDeps, authenticate, clientIp } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  * Le premier compte de l'atelier est administrateur. `400` (champ fautif dans `field`), `403`
  * (inscriptions fermées / code invalide), `409` (pseudonyme pris), `429` (trop d'essais).
  */
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   const guard = await authenticate(request, {
     mutation: true,
     anonymous: true,
@@ -26,3 +26,5 @@ export async function POST(request: Request) {
   );
   return authResponse(request, deps.cfg, result, 201);
 }
+
+export const POST = safe(handlePOST);
