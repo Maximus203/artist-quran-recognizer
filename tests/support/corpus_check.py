@@ -27,9 +27,10 @@ from typing import Any
 
 from aqr.corpus.checksums import CorpusChecksumError
 from aqr.corpus.normalize import normalize_arabic
-from aqr.domain.models import VerseRef
+from aqr.domain.models import NonQuranKind, VerseRef
 from aqr.domain.ports import CorpusRepository
 from aqr.pipeline.output import SCHEMA
+from aqr.rendering.formula_labels import FORMULA_LABELS_AR
 
 # Tanzil place la basmala (4 mots) au début du verset 1 des sourates qui en portent une.
 BASMALA_WORDS = 4
@@ -84,6 +85,9 @@ def assert_matches_corpus(
     recognized: list[VerseRef] = []
     checked = partial_count = 0
     for index, item in enumerate(intervals):
+        if isinstance(item, dict) and item.get("kind") == "non_quran":
+            _check_non_quran(item, repo, f"intervalle #{index}")
+            continue
         if not isinstance(item, dict) or item.get("kind") != "verse":
             continue
         where = f"intervalle #{index}"
@@ -118,6 +122,46 @@ def assert_matches_corpus(
             f"({checked} nommé(s) au total ; un INFERRED ne prouve rien)"
         )
     return CorpusReport(checked=checked, recognized=tuple(recognized), partial=partial_count)
+
+
+_BASMALA_REF = VerseRef(1, 1)
+
+
+def _check_non_quran(item: dict[str, Any], repo: CorpusRepository, where: str) -> None:
+    """Zone non coranique : seule la basmala (verset 1:1) porte du texte du Mushaf, et il vient du
+    corpus (I1) ; isti'adha, takbir et amin n'ont qu'un libellé arabe constant. La forme d'avant
+    (`basmala` sans texte) reste acceptée."""
+    label = item.get("label")
+    if item.get("basmala") is True:
+        if label != "basmala":
+            raise CorpusMismatch(f"{where} : basmala: true sur le libellé {label!r}")
+        if item.get("ref") != str(_BASMALA_REF):
+            raise CorpusMismatch(
+                f"{where} : la basmala est le verset {_BASMALA_REF}, pas {item.get('ref')!r}"
+            )
+        if item.get("label_ar") is not None:
+            raise CorpusMismatch(f"{where} : un libellé n'est pas le texte de la basmala")
+        text = item.get("text")
+        if not isinstance(text, str) or not text:
+            raise CorpusMismatch(f"{where} : texte de la basmala absent (il vient du corpus, I1)")
+        full = repo.text(_BASMALA_REF)
+        if text != full:
+            raise CorpusMismatch(
+                f"{where} : texte de la basmala différent du corpus ({_first_gap(text, full)})"
+            )
+        return
+    if item.get("text") is not None or item.get("ref") is not None:
+        raise CorpusMismatch(
+            f"{where} : texte ou référence sur une zone {label!r} qui n'est pas la basmala (I1)"
+        )
+    label_ar = item.get("label_ar")
+    if label_ar is not None:
+        try:
+            expected = FORMULA_LABELS_AR.get(NonQuranKind(str(label)))
+        except ValueError:
+            expected = None
+        if label_ar != expected:
+            raise CorpusMismatch(f"{where} : libellé arabe inattendu pour {label!r} : {label_ar!r}")
 
 
 def _check_complete(ref: VerseRef, first: int, last: int, total: int) -> None:
