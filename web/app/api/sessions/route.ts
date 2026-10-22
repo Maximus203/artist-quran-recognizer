@@ -1,109 +1,110 @@
-import { randomUUID } from "node:crypto";
-import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  ImportError,
+  importFromBytes,
+  importFromStream,
+} from "@/lib/import-session";
+import { ensureQueueRecovered, launch } from "@/lib/jobs";
+import { isLocalRequest } from "@/lib/local-request";
+import { listSessionViews, readSessionView } from "@/lib/session-view";
 import {
   cleanupSessions,
   exceedsUploadLimit,
-  listSessions,
-  saveSession,
-  sessionDir,
   sessionTtlSeconds,
-  sha,
   uploadLimitBytes,
-  type Session,
 } from "@/lib/store";
-import { parseRecognition } from "@/lib/recognition";
-import { ensureListening } from "@/lib/listening";
-import { isLocalRequest } from "@/lib/local-request";
-import { acceptedAudioExtensions } from "@/lib/audio-upload";
 
 export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   if (!isLocalRequest(request))
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
-  return NextResponse.json(await listSessions());
+  await ensureQueueRecovered().catch(() => []);
+  return NextResponse.json(await listSessionViews());
 }
+
+/**
+ * Import d'un audio ou d'une vidéo.
+ *
+ * - Flux brut (recommandé, seul adapté à une vidéo volumineuse) : corps = octets du fichier,
+ *   en-tête `x-aqr-filename` (nom encodé en pourcentage), `x-aqr-source-kind` facultatif.
+ * - Formulaire multipart (champ `audio`, résultat `result` facultatif) : lu en mémoire, audio seulement
+ *   dans la pratique (plafond `AQR_MAX_UPLOAD_BYTES`).
+ * `?autorun=1` (ou le champ `autorun=1` du formulaire) met l'analyse en file dès l'import.
+ */
 export async function POST(request: NextRequest) {
   if (!isLocalRequest(request, true))
     return NextResponse.json({ error: "Accès local requis" }, { status: 403 });
-  const maxBytes = uploadLimitBytes();
-  if (exceedsUploadLimit(request.headers.get("content-length"), maxBytes))
-    return NextResponse.json(
-      { error: "Envoi trop volumineux." },
-      { status: 413 },
-    );
   try {
     await cleanupSessions(sessionTtlSeconds()).catch(() => []);
-    const form = await request.formData();
-    const file = form.get("audio");
-    if (!(file instanceof File))
-      return NextResponse.json({ error: "Choisis un audio." }, { status: 400 });
-    const extension = path.extname(file.name).toLowerCase();
-    if (
-      !acceptedAudioExtensions.has(extension) ||
-      file.size === 0 ||
-      file.size > maxBytes
-    )
-      return NextResponse.json(
-        { error: "Format ou taille non accepté (maximum 300 Mo par défaut)." },
-        { status: 400 },
-      );
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const audio_sha256 = sha(bytes);
-    const source_kind = form.get("source_kind");
-    if (
-      source_kind !== null &&
-      source_kind !== "file" &&
-      source_kind !== "microphone"
-    )
-      return NextResponse.json(
-        { error: "Origine audio invalide." },
-        { status: 400 },
-      );
-    const imported = form.get("result");
-    let prediction: Buffer | null = null;
-    if (imported instanceof File && imported.size) {
-      prediction = Buffer.from(await imported.arrayBuffer());
-      const parsed = parseRecognition(JSON.parse(prediction.toString("utf8")));
-      if (parsed.source.sha256.toLowerCase() !== audio_sha256)
+    let autorun = new URL(request.url).searchParams.get("autorun") === "1";
+    const multipart = (request.headers.get("content-type") ?? "")
+      .toLowerCase()
+      .startsWith("multipart/form-data");
+    let created;
+    if (multipart) {
+      if (
+        exceedsUploadLimit(
+          request.headers.get("content-length"),
+          uploadLimitBytes(),
+        )
+      )
         return NextResponse.json(
-          { error: "Le SHA-256 du résultat ne correspond pas à l’audio." },
+          { error: "Envoi trop volumineux." },
+          { status: 413 },
+        );
+      const form = await request.formData();
+      const file = form.get("audio") ?? form.get("media");
+      if (!(file instanceof File))
+        return NextResponse.json(
+          { error: "Choisis un audio ou une vidéo." },
           { status: 400 },
         );
+      const imported = form.get("result");
+      const kind = form.get("source_kind");
+      autorun = autorun || form.get("autorun") === "1";
+      created = await importFromBytes({
+        name: file.name,
+        bytes: Buffer.from(await file.arrayBuffer()),
+        sourceKind: typeof kind === "string" ? kind : null,
+        prediction:
+          imported instanceof File && imported.size
+            ? Buffer.from(await imported.arrayBuffer())
+            : null,
+      });
+    } else {
+      if (!request.body)
+        return NextResponse.json(
+          { error: "Corps de requête vide." },
+          { status: 400 },
+        );
+      created = await importFromStream({
+        stream: request.body,
+        filename: request.headers.get("x-aqr-filename"),
+        sourceKind: request.headers.get("x-aqr-source-kind"),
+        contentLength: request.headers.get("content-length"),
+      });
     }
-    const id = randomUUID(),
-      dir = sessionDir(id);
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, `source${extension}`), bytes);
-    if (prediction)
-      await writeFile(
-        path.join(dir, "prediction.recognition.json"),
-        prediction,
-      );
-    const value: Session = {
-      id,
-      name: path.basename(file.name.replaceAll("\\", "/")).slice(0, 255),
-      extension,
-      audio_sha256,
-      size: file.size,
-      source_kind: source_kind === "microphone" ? "microphone" : "file",
-      created_at: new Date().toISOString(),
-      state: prediction ? "done" : "ready",
-      error: null,
-      started_at: null,
-      finished_at: prediction ? new Date().toISOString() : null,
-      prediction_sha256: prediction ? sha(prediction) : null,
-      pid: null,
-    };
-    await saveSession(value);
-    // Copie d'écoute préparée en tâche de fond : le lecteur s'ouvre sans attendre ffmpeg.
-    // Un échec est retenté (et signalé) à la première écoute.
-    void ensureListening(dir, path.join(dir, `source${extension}`)).catch(
-      () => {},
+    // Un échec de mise en file ne perd pas l'import : la session reste « prête » et le dit.
+    let autorunError: string | null = null;
+    if (autorun && created.state === "ready") {
+      try {
+        await ensureQueueRecovered();
+        await launch(created.id);
+      } catch (e) {
+        autorunError =
+          e instanceof Error ? e.message : "Mise en file impossible";
+      }
+    }
+    return NextResponse.json(
+      {
+        ...(await readSessionView(created.id)),
+        ...(autorunError ? { autorun_error: autorunError } : {}),
+      },
+      { status: 201 },
     );
-    return NextResponse.json(value, { status: 201 });
   } catch (e) {
+    if (e instanceof ImportError)
+      return NextResponse.json({ error: e.message }, { status: e.status });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Import impossible" },
       { status: 400 },

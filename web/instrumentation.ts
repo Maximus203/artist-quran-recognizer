@@ -1,0 +1,10 @@
+/**
+ * Au démarrage du serveur : remet en file les analyses « en attente » laissées par l'instance
+ * précédente (dans l'ordre de `queued_at`) et repère les processus encore vivants qui tiennent la
+ * carte graphique. Sans cela, la file ne repartirait qu'à la première requête.
+ */
+export async function register(): Promise<void> {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  const { ensureQueueRecovered } = await import("./lib/jobs");
+  await ensureQueueRecovered().catch(() => []);
+}
