@@ -22,10 +22,15 @@ ces champs ; ses scénarios d'écran sont à la fin.
 ## Must-fail
 
 - Le texte de la basmala ne vient jamais d'un modèle : un document dont le `text` de la basmala diffère du corpus
-  (ou est absent, ou dont `ref` n'est pas `1:1`, ou dont `basmala` est faux alors qu'un texte est présent) est
-  rejeté par `corpus_check` et par le lecteur.
-- Une formule hors Mushaf (takbir, amin, isti'adha) portant un `text` ou une `ref` est rejetée (I1, I4) ; `label_ar`
-  sur la basmala est rejeté ; `label_ar` différent de la constante du label est rejeté par `corpus_check`.
+  (ou est absent) est rejeté par `corpus_check` (seul à charger le corpus) ; un `ref` qui n'est pas `1:1`, un
+  `basmala` non booléen ou faux alors qu'un texte est présent sont rejetés par `corpus_check`, le lecteur Python et
+  le schéma web.
+- Une formule hors Mushaf (takbir, amin, isti'adha) portant un `text`, une `ref` ou une `translation` est rejetée
+  (I1, I4) par les trois ; `label_ar` sur la basmala est rejeté par les trois ; `label_ar` différent de la
+  constante du label est rejeté par `corpus_check` ; une traduction de basmala sans id, version, attribution ou de
+  portée autre que `verse` est rejetée par `corpus_check` (I2, forme seulement).
+- Hors ligne et sourate 1 absente du cache de traductions : `aqr recognize` écrit quand même les sous-titres, n'écrit
+  pas de JSON à moitié, et dit de réessayer avec le réseau ou `--translation none` (message, code 1, pas de trace).
 - Les sous-titres SRT/VTT gardent `[basmala]` : aucun texte du Mushaf n'y est ajouté par cette brique.
 
 ## Scénarios d'écran (à jouer quand l'interface sera refaite sur ce contrat)

@@ -30,7 +30,7 @@ class NonQuranKind(StrEnum):
     OTHER_LANGUAGE = "other_language"
     ARABIC_SPEECH = "arabic_speech"  # hadith, dou'a, khutba, arabe courant
     ISTIADHA = "istiadha"
-    BASMALA = "basmala"  # hors Al-Fatiha 1:1
+    BASMALA = "basmala"  # d'ouverture d'une sourate, ou 1:1 isolé (non suivi de 1:2) : même texte
     TAKBIR = "takbir"
     AMIN = "amin"
 

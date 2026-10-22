@@ -90,8 +90,13 @@ _BASMALA_REF = VerseRef(1, 1)
 def _parse_non_quran(raw: Mapping[str, Any], where: str) -> NonQuranInterval:
     label = str(raw.get("label", "unclassified"))
     t = _span(raw.get("t"), where)
-    basmala = bool(raw.get("basmala", False))
+    flag = raw.get("basmala", False)
+    if not isinstance(flag, bool):  # « false », 1, « oui » : un drapeau n'est pas du texte
+        raise RecognitionError(f"{where} : basmala doit être un booléen, pas {flag!r}")
+    basmala = flag
     label_ar = raw.get("label_ar")
+    if label_ar is not None and (not isinstance(label_ar, str) or not label_ar):
+        raise RecognitionError(f"{where} : label_ar doit être un texte non vide")
     if basmala:
         if label != "basmala":
             raise RecognitionError(f"{where} : basmala: true sur le libellé {label!r}")
@@ -102,12 +107,14 @@ def _parse_non_quran(raw: Mapping[str, Any], where: str) -> NonQuranInterval:
         if label_ar is not None:
             raise RecognitionError(f"{where} : un libellé n'est pas le texte de la basmala")
         return NonQuranInterval(label, t, basmala=True, ref=_BASMALA_REF, text=raw.get("text"))
-    if raw.get("text") is not None or raw.get("ref") is not None:
-        # Seule la basmala (verset 1:1) porte du texte du Mushaf dans une zone non coranique.
+    if any(raw.get(key) is not None for key in ("text", "ref", "translation")):
+        # Seule la basmala (verset 1:1) porte du texte du Mushaf, et sa traduction, dans une zone
+        # non coranique ; `basmala: true` est ce qui l'annonce.
         raise RecognitionError(
-            f"{where} : texte ou référence sur une zone qui n'est pas la basmala"
+            f"{where} : texte, référence ou traduction sur une zone sans `basmala: true` "
+            f"(libellé {label!r})"
         )
-    return NonQuranInterval(label, t, label_ar=None if label_ar is None else str(label_ar))
+    return NonQuranInterval(label, t, label_ar=label_ar)
 
 
 def _parse_one(raw: object, index: int) -> Interval:
