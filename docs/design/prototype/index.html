@@ -432,6 +432,143 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
 @media (min-width: 768px) { .transport .compact { display: none; } }
 @media (max-width: 767px) { .transport .compact { display: inline; } }
 .drawer-close { margin-left: auto; }
+
+/* ═════════ Revue humaine : testeur, onglets, parcours, puces, plages sur l'onde ═════════ */
+.tester { padding: 0 var(--sp-4) var(--sp-3); }
+.tester-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 8px 6px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); }
+.tester-row .av { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--text); color: var(--bg); font: 700 var(--fs-sm)/1 var(--font-ui); }
+.tester-row b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tester-form { display: grid; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface-2); }
+.tester-form .err { color: var(--danger); font-size: var(--fs-xs); }
+.recent { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+.tabs { display: flex; gap: 0; padding: 0 var(--sp-2); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.tabs [role="tab"] { display: inline-flex; align-items: center; gap: 6px; min-height: var(--hit); padding: 0 10px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-2); white-space: nowrap; position: relative; }
+.tabs [role="tab"]:hover { color: var(--text); }
+.tabs [role="tab"][aria-selected="true"] { color: var(--text); }
+.tabs [role="tab"][aria-selected="true"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--text); }
+.tabs .tab-adv { margin-left: auto; color: var(--text-3); }
+.tabs .count { font: 600 var(--fs-xs)/1 var(--font-mono); background: var(--surface-3); border-radius: var(--r-pill); padding: 3px 7px; color: var(--text-2); }
+
+.steps { display: flex; gap: 6px; padding: var(--sp-4) var(--sp-4) 0; }
+.steps li { flex: 1; display: grid; gap: 6px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-3); }
+.steps li::before { content: ""; height: 3px; border-radius: 2px; background: var(--border); }
+.steps li[data-s="done"]::before { background: var(--text); }
+.steps li[data-s="current"]::before { background: var(--text); opacity: .5; }
+.steps li[data-s="current"] { color: var(--text); }
+.steps li[data-s="done"] { color: var(--text-2); }
+.steps li span::before { content: attr(data-n) " · "; }
+.steps li[data-s="done"] span::before { content: "✓ "; }
+
+.rcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin: var(--sp-3) var(--sp-4) 0; padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.rcard h3 { font-size: var(--fs-md); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.rcard h3 .n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border-strong); font: 600 var(--fs-xs)/1 var(--font-mono); color: var(--text-2); }
+.rcard.is-locked { opacity: .6; }
+.banner { display: grid; gap: 4px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-3); box-shadow: inset 3px 0 0 var(--text); font-size: var(--fs-sm); line-height: 1.45; }
+.banner b { font-family: var(--font-mono); font-weight: 600; }
+.banner small { color: var(--text-2); font-size: var(--fs-sm); }
+.kbd-hint { display: inline-flex; gap: 6px; align-items: center; }
+kbd { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 6px; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; color: var(--text-2); background: transparent; }
+.btn--primary kbd { color: var(--action-fg); border-color: color-mix(in srgb, var(--action-fg) 45%, transparent); opacity: .85; }
+@media (pointer: coarse), (max-width: 767px) { kbd { display: none; } }
+.btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+#markbar { scroll-margin-top: 72px; }
+.btn[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn[aria-pressed="true"] kbd { color: var(--bg); border-color: color-mix(in srgb, var(--bg) 50%, transparent); }
+
+.range-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-3); font-size: var(--fs-sm); }
+.range-chip .mono { font-weight: 600; color: var(--text); }
+.range-chip .len { color: var(--text-2); margin-left: auto; white-space: nowrap; }
+.nudge { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+.nudge .ctl { display: grid; grid-template-columns: var(--hit) minmax(0, 1fr) var(--hit); gap: 4px; }
+.nudge .ctl .input { text-align: center; font-family: var(--font-mono); padding: 0 4px; }
+.nudge .ctl .btn { min-height: var(--h-md); padding: 0; font-family: var(--font-mono); font-size: var(--fs-sm); }
+.listen-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.listen-row .ok { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
+.ctx { display: flex; gap: 8px; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.45; }
+.ctx svg { width: 16px; height: 16px; margin-top: 2px; }
+.ctx b { color: var(--text); font-weight: 600; }
+
+.fams { display: grid; margin: 0 calc(-1 * var(--sp-4)); border-top: 1px solid var(--border-subtle); }
+.fam { border-bottom: 1px solid var(--border-subtle); padding: 0 var(--sp-4); }
+.fam > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: var(--hit); font-weight: 600; font-size: var(--fs-sm); }
+.fam > summary::-webkit-details-marker { display: none; }
+.fam > summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 1.6px solid var(--text-3); border-bottom: 1.6px solid var(--text-3); transform: rotate(45deg); transition: transform var(--dur-2) var(--ease); }
+.fam[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px); }
+.fam .sel-n { font: 600 var(--fs-xs)/1 var(--font-mono); padding: 3px 7px; border-radius: var(--r-pill); background: var(--text); color: var(--bg); }
+.fam .fh { font-size: var(--fs-xs); color: var(--text-3); margin: -2px 0 8px; }
+.pchips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 var(--sp-3); }
+.pchip { min-height: var(--h-sm); padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: 500; color: var(--text); line-height: 1.2; text-align: left; transition: background var(--dur-1) var(--ease); }
+.pchip:hover { background: var(--surface-3); }
+.pchip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
+.pchip[aria-pressed="true"]::before { content: "✓"; margin-right: 6px; font-weight: 700; }
+.chosen { display: flex; flex-wrap: wrap; gap: 6px; }
+.chosen .badge { background: var(--text); color: var(--bg); border-color: transparent; }
+.savebar { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: var(--fs-xs); color: var(--text-2); }
+.savebar.err { color: var(--danger); }
+.savebar svg { width: 14px; height: 14px; }
+.done-card { text-align: left; }
+.sw.s-human.draft i { background: transparent; border: 2px solid var(--seg-human); }
+
+/* Liste des signalements */
+.lfilters { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--sp-4) var(--sp-2); }
+.alist { display: grid; padding: 0 0 var(--sp-3); }
+.aitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; border-top: 1px solid var(--border-subtle); }
+.aitem[data-sel="true"] { background: var(--surface-3); box-shadow: inset 3px 0 0 var(--text); }
+.aitem-main { display: grid; gap: 4px; padding: 12px 0 12px var(--sp-4); min-height: 64px; text-align: left; }
+.aitem-main:hover { background: color-mix(in srgb, var(--surface-3) 60%, transparent); }
+.ai-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ai-top .mono { font-weight: 600; font-size: var(--fs-sm); }
+.ai-tags { font-size: var(--fs-sm); color: var(--text); line-height: 1.35; }
+.ai-meta { font-size: var(--fs-xs); color: var(--text-3); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-acts { display: flex; flex-direction: column; justify-content: center; padding: 0 var(--sp-2); }
+.ai-acts .btn { width: var(--hit); min-height: var(--hit); }
+.empty-list { padding: var(--sp-8) var(--sp-4); text-align: center; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+
+/* Barre de marquage sous le lecteur */
+.markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle); }
+.mb-status { flex: 1 1 220px; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.4; }
+.mb-status b { font-family: var(--font-mono); font-weight: 600; color: var(--text); }
+.mark-dock { display: none; }
+@media (max-width: 767px) { .markbar { padding: var(--sp-3); } .mark-dock { display: grid; } }
+
+/* Plages de signalement sur la forme d'onde et sur la piste Revue : mêmes codes
+   confirmé = losange plein + trait plein · brouillon = losange creux + trait pointillé */
+#rv-layer { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.rv-region { position: absolute; top: 0; bottom: 0; left: var(--l); width: var(--w); background: var(--review-fill); }
+.rv-region::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--seg-human); }
+.rv-region::before { content: ""; position: absolute; left: -6px; top: -4px; width: 12px; height: 12px; background: var(--seg-human); transform: rotate(45deg) scale(.8); z-index: 2; }
+.rv-region.draft, .rv-region.live { background: var(--review-draft-fill); outline: 1.5px dashed var(--seg-human); outline-offset: -1px; }
+.rv-region.draft::after, .rv-region.live::after { background: repeating-linear-gradient(90deg, var(--seg-human) 0 6px, transparent 6px 10px); }
+.rv-region.draft::before, .rv-region.live::before { background: var(--surface-2); border: 2px solid var(--seg-human); }
+.rv-region.pt { width: 0; background: none; outline: 0; }
+.rv-region.pt::after { left: -1px; width: 2px; height: auto; top: 0; bottom: 0; background: var(--seg-human); }
+.rv-region.pt.draft::after { background: repeating-linear-gradient(180deg, var(--seg-human) 0 6px, transparent 6px 10px); }
+.rv-region.sel { box-shadow: 0 0 0 2px var(--playhead); }
+.rv-region.pt.sel::after { box-shadow: 0 0 0 2px var(--playhead); }
+.rv-hit { position: absolute; inset: 0 -12px; min-width: 24px; pointer-events: auto; }
+.rv-region:not(.pt) .rv-hit { inset: 0; }
+.tracing .rv-hit { pointer-events: none; }
+.rv-label { position: absolute; left: 8px; top: 8px; padding: 2px 6px; border-radius: 4px; background: var(--surface-2); color: var(--text); font: 600 var(--fs-xs)/1.2 var(--font-mono); white-space: nowrap; pointer-events: none; box-shadow: 0 0 0 1px var(--border-strong); }
+.rv-h { position: absolute; top: 0; bottom: 0; width: 28px; margin-left: -14px; pointer-events: auto; cursor: ew-resize; touch-action: none; display: grid; place-items: center; z-index: 4; }
+@media (pointer: coarse) { .rv-h { width: var(--hit); margin-left: calc(var(--hit) / -2); } }
+.rv-h i { width: 6px; height: 34px; border-radius: 3px; background: var(--text); box-shadow: 0 0 0 2px var(--surface-2); }
+.rv-h[data-edge="start"] { left: 0; } .rv-h[data-edge="end"] { left: 100%; }
+.rv-h:focus-visible i { box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 4px var(--focus); }
+#wave-track.tracing { cursor: crosshair; touch-action: none; }
+#wave-track.tracing .wave-seg { pointer-events: none; }
+.trace-hint { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); z-index: 5; padding: 6px 12px; border-radius: var(--r-pill); background: var(--text); color: var(--bg); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; pointer-events: none; }
+.human.draft::before { background: var(--surface-2); border: 2px solid var(--seg-human); }
+.human.draft::after { background: repeating-linear-gradient(90deg, var(--seg-human) 0 5px, transparent 5px 8px); }
+.human.sel { outline: 2px solid var(--playhead); outline-offset: 2px; border-radius: 4px; }
+.human { pointer-events: auto; }
+.human.pt { width: 24px; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px; max-width: min(92vw, 460px); padding: 10px 10px 10px 16px; border-radius: var(--r-sm); background: var(--text); color: var(--bg); font-size: var(--fs-sm); font-weight: 500; box-shadow: var(--shadow-pop); }
+.toast button { min-height: 36px; padding: 0 10px; border-radius: var(--r-xs); font-weight: 700; text-decoration: underline; color: inherit; }
+@media (max-width: 767px) { .toast { bottom: 92px; } }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; font-size: var(--fs-sm); color: var(--text-2); }
+.panel-foot { padding: var(--sp-4); }
 </style>
 </head>
 <body>
@@ -457,9 +594,12 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
   <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0M12 16l4-5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2 2 0 0 1 3 3L8 18.5zM14.5 6l3.5 3.5"/></symbol>
   <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5 2-2h4"/></symbol>
 </svg>
 
+<div class="sr" id="aria-live" aria-live="polite" role="status"></div>
 <div class="app">
   <header class="header">
     <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-left" aria-controls="panel-left" aria-expanded="true" aria-label="Sessions">
@@ -601,16 +741,23 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
                 <input type="range" id="scrubber" min="0" max="184.7" step="0.01" value="72.4" aria-label="Position de lecture" style="--p:39.2%">
               </div>
               <button class="seek" aria-label="Avancer de 5 secondes">+5 s</button>
+              <button class="seek mark-dock" id="dock-mark" aria-label="Marquer le début d’un signalement" style="background:var(--surface-3)"><svg class="i"><use href="#i-flag"/></svg></button>
               <label class="speed"><span class="sr">Vitesse de lecture</span><select class="input"><option>0,5×</option><option>0,75×</option><option selected>1×</option><option>1,25×</option><option>1,5×</option></select></label>
             </div>
 
+            <div class="markbar" id="markbar">
+              <button class="btn btn--primary btn--sm" id="mb-mark"></button>
+              <button class="btn btn--secondary btn--sm" id="mb-trace" aria-pressed="false">Tracer sur l’onde</button>
+              <button class="btn btn--ghost btn--sm" id="mb-cancel" hidden>Annuler <kbd>Échap</kbd></button>
+              <p class="mb-status" id="mb-status" role="status"></p>
+            </div>
             <div class="timeline" id="timeline" style="--t:.392">
               <div class="playhead" aria-hidden="true"></div>
               <div class="tl-row wave-row">
                 <div class="tl-name" data-short="Onde"><b>Onde</b><small>copie du moteur</small></div>
                 <div class="tl-track" id="wave-track">
                   <svg class="wave" viewBox="0 0 1000 104" preserveAspectRatio="none" aria-label="Forme d’onde ; cliquer pour se déplacer dans l’audio" role="img"><g class="bars" id="bars"></g><g class="played" id="bars-played" clip-path="url(#clip-played)"></g><defs><clipPath id="clip-played"><rect x="0" y="0" width="392" height="104"/></clipPath></defs></svg>
-                  <div id="wave-segs"></div>
+                  <div id="wave-segs"></div><div id="rv-layer"></div><div class="trace-hint" id="trace-hint" hidden>Glisse pour une plage · touche pour un point · Échap pour sortir</div>
                 </div>
               </div>
               <div class="lanes" id="lanes">
@@ -634,7 +781,8 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
               <li><span class="sw s-uncertain"></span>Incertain</li>
               <li><span class="sw s-formula"></span>Formule</li>
               <li><span class="sw s-abstention"></span>Abstention</li>
-              <li><span class="sw s-human"><i></i></span>Correction humaine</li>
+              <li><span class="sw s-human"><i></i></span>Signalement confirmé</li>
+              <li><span class="sw s-human draft"><i></i></span>Brouillon</li>
             </ul>
           </section>
 
@@ -777,30 +925,40 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
           <h2>Revue humaine</h2>
           <button class="btn btn--ghost btn--icon btn--sm drawer-close only-drawer" data-close="right" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button>
         </div>
-        <div class="panel-sec" style="border-top:0;padding-top:0;display:grid;gap:var(--sp-3)">
-          <p class="hint">Note ce qui est faux. Un signalement ne devient pas une vérité terrain complète.</p>
-          <div class="btnrow"><button class="btn btn--secondary"><svg class="i"><use href="#i-flag"/></svg>Signaler ici</button><button class="btn btn--secondary">Choisir une plage</button></div>
-          <div class="editor" id="editor">
-            <div class="editor-head"><span class="sw s-human"><i></i></span><b>Brouillon · plage 01:41 – 01:46</b><button class="btn btn--ghost btn--icon btn--sm" aria-label="Fermer le brouillon"><svg class="i"><use href="#i-x"/></svg></button></div>
-            <label class="field">Type d’erreur<select class="input"><option>Verset manquant</option><option>Mauvais verset</option><option>Répétition</option><option>Décalage</option><option>Autre</option></select></label>
-            <div class="row"><label class="field">Début (s)<input class="input mono" value="101.200"></label><label class="field">Fin (s)<input class="input mono" value="106.400"></label></div>
-            <label class="field">Description<textarea class="input" placeholder="Qu’as-tu entendu ? Que faut-il corriger ?">Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.</textarea></label>
-            <label class="field"><span>Référence attendue <span class="opt">· facultatif</span></span><input class="input mono" placeholder="ex. 2:255" value="2:256"></label>
-            <button class="switch" role="switch" aria-checked="false"><i></i>Écouter la plage en boucle</button>
-            <button class="btn btn--primary btn--block">Confirmer après écoute</button>
-            <div class="row" style="align-items:center"><span class="save"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg>Enregistré localement</span><button class="btn btn--ghost btn--sm" style="color:var(--danger);flex:none">Annuler ce signalement</button></div>
+        <section class="tester" id="tester" aria-label="Testeur"></section>
+        <div class="tabs" role="tablist" aria-label="Revue humaine">
+          <button role="tab" id="tab-sig" data-tab="sig" aria-selected="true" aria-controls="pn-sig">Signaler</button>
+          <button role="tab" id="tab-list" data-tab="list" aria-selected="false" tabindex="-1" aria-controls="pn-list">Signalements <span class="count" id="cnt">3</span></button>
+          <button role="tab" id="tab-truth" data-tab="truth" class="tab-adv" aria-selected="false" tabindex="-1" aria-controls="pn-truth">Vérité terrain</button>
+        </div>
+
+        <div role="tabpanel" id="pn-sig" data-tab="sig" aria-labelledby="tab-sig">
+          <ol class="steps" id="steps" aria-label="Étapes du signalement"></ol>
+          <div id="sig-body"></div>
+          <div class="panel-foot">
+            <details class="acc" style="padding:0;border-top:1px solid var(--border-subtle)"><summary>Raccourcis clavier</summary>
+              <div class="acc-body"><button class="switch" role="switch" aria-checked="true" id="sw-keys"><i></i>Raccourcis à une touche</button><div class="keys"><kbd>M</kbd><span>Poser le début, puis (même touche) la fin</span><kbd>P</kbd><span>Signaler un point à la position de lecture</span><kbd>L</kbd><span>Écouter la plage en boucle</span><kbd>Échap</kbd><span>Annuler la pose en cours</span><kbd>Ctrl ↵</kbd><span>Confirmer le signalement</span><kbd>Espace</kbd><span>Lecture / pause</span></div></div></details>
           </div>
         </div>
-        <details class="acc" open>
-          <summary>Signalements <span class="count">2</span></summary>
-          <div class="acc-body"><div class="rlist">
-            <button><span class="t">00:31.200</span><strong style="font-weight:600">Décalage</strong><span class="badge badge--outline"><span class="sw s-human"><i></i></span>Confirmé</span></button>
-            <button><span class="t">01:41 – 01:46</span><strong style="font-weight:600">Verset manquant</strong><span class="badge badge--outline">Brouillon</span></button>
-          </div></div>
-        </details>
-        <details class="acc" open>
-          <summary>Vérité terrain <span class="count">1 / 2</span></summary>
-          <div class="acc-body">
+
+        <div role="tabpanel" id="pn-list" data-tab="list" aria-labelledby="tab-list" hidden>
+          <div class="lfilters">
+            <label class="field"><span>Testeur</span><select class="input" id="f-tester"></select></label>
+            <div class="seg-filters" style="margin:0" role="group" aria-label="Filtrer par état" id="f-state"><button class="chip" data-state="all" aria-pressed="true">Tous</button><button class="chip" data-state="draft" aria-pressed="false">Brouillons</button><button class="chip" data-state="confirmed" aria-pressed="false">Confirmés</button></div>
+            <p class="hint" style="font-size:var(--fs-xs)">Le filtre s’applique aussi à la forme d’onde et à la piste Revue.</p>
+          </div>
+          <ul class="alist" id="alist"></ul>
+          <div class="panel-sec" style="display:grid;gap:var(--sp-2)">
+            <button class="btn btn--secondary btn--block"><svg class="i"><use href="#i-download"/></svg>Pack complet (ZIP)</button>
+            <button class="btn btn--ghost btn--block">Exporter le bilan JSON</button>
+            <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Le ZIP contient audio, prédiction et signalements, avec le pseudonyme de chaque testeur. Aucun envoi cloud automatique.</p>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="pn-truth" data-tab="truth" aria-labelledby="tab-truth" hidden>
+          <div class="panel-sec" style="display:grid;gap:var(--sp-3);border-top:0">
+            <p class="banner"><small><b style="font-family:inherit">Réservé au relecteur.</b> Cette section sert à valider des passages complets pour la vérité terrain. Pour signaler une erreur, reste dans l’onglet « Signaler ».</small></p>
+            
             <p class="hint">Dis ce qui est récité, l’outil pose les temps, écoute chaque verset puis valide. Seul un passage validé à l’oreille devient une vérité terrain.</p>
             <article class="passage-v">
               <header><button class="btn btn--ghost btn--sm" style="padding-left:6px"><svg class="i fill" style="width:14px;height:14px"><use href="#i-play"/></svg><span class="mono">00:04 – 00:47</span></button><span class="badge badge--plain">Aligné · à écouter</span></header>
@@ -818,16 +976,9 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
             <label class="field">Relecteur (identifiant anonyme, jamais un nom)<input class="input mono" value="rel-01"></label>
             <button class="btn btn--primary btn--block">Écrire 1 passage validé dans le manifeste</button>
             <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Fichiers de développement seulement. Chaque passage validé devient une fenêtre annotée ; hors fenêtre, rien n’est vérité terrain.</p>
+          
           </div>
-        </details>
-        <details class="acc">
-          <summary>Exports</summary>
-          <div class="acc-body">
-            <button class="btn btn--secondary btn--block"><svg class="i"><use href="#i-download"/></svg>Pack complet (ZIP)</button>
-            <button class="btn btn--ghost btn--block">Exporter le bilan JSON</button>
-            <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Le ZIP contient audio, prédiction et révisions avec leurs empreintes. Aucun envoi cloud automatique.</p>
-          </div>
-        </details>
+        </div>
       </div>
     </aside>
   </div>
@@ -978,7 +1129,6 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
     const seg = (i, n) => `<button class="seg ${sw(i)}" style="--l:${pct(i.t[0])};--w:${pct(i.t[1] - i.t[0])}" data-i="${n}" title="${i.ref || i.title} · ${mmss(i.t[0])}" aria-label="${(i.ref || i.title)} ${stLabel(i)}"></button>`;
     $('#lane-main').innerHTML = I.map((i, n) => i.s === 'inferred' ? '' : seg(i, n)).join('');
     $('#lane-inf').innerHTML = I.map((i, n) => i.s === 'inferred' ? seg(i, n) : '').join('');
-    $('#lane-rev').innerHTML = `<span class="human pt" style="--l:${pct(31.2)}" title="Décalage · 00:31.200"></span><span class="human" style="--l:${pct(101.2)};--w:${pct(5.2)}" title="Verset manquant · brouillon"></span>`;
     let ticks = ''; const tickStep = matchMedia("(max-width: 767px)").matches ? 60 : 30; for (let s = 0; s <= 150; s += tickStep) ticks += `<span style="left:${pct(s)}">${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}</span>`;
     $('#ticks').innerHTML = ticks;
     $('#irows').innerHTML = I.map((i, n) => `<button class="irow" data-i="${n}" aria-pressed="false"><span class="tm">${mmss(i.t[0]).slice(0, 8)}</span><span class="ti">${i.k === 'verse' ? (i.basmala ? 'Basmala' : (i.ref || i.title)) : i.k === 'formula' ? i.title + '<span class="ar" lang="ar" dir="rtl">' + i.ar + '</span>' : i.title}${i.basmala ? ' <span class="muted" style="font-weight:400">· ' + i.ref + '</span>' : ''}${i.s === 'uncertain' ? '' : ''}</span><span class="st"><span class="sw ${sw(i)}"></span>${stLabel(i)}</span></button>`).join('');
@@ -1018,10 +1168,376 @@ details[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px)
   scr.addEventListener('input', () => { const v = +scr.value; scr.style.setProperty('--p', (v / T * 100) + '%'); $('#timeline').style.setProperty('--t', v / T); $('#clip-played rect').setAttribute('width', v / T * 1000); $('#t-now').textContent = mmss(v); });
   let playing = false, raf;
   $('#play').addEventListener('click', () => { playing = !playing; $('#play').innerHTML = `<svg class="i fill"><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`; $('#play').setAttribute('aria-label', playing ? 'Mettre en pause' : 'Lancer la lecture'); if (playing) { let last = performance.now(); const step = now => { scr.value = Math.min(T, +scr.value + (now - last) / 1000); last = now; scr.dispatchEvent(new Event('input')); const j = I.findIndex(i => i.k === 'verse' && +scr.value >= i.t[0] && +scr.value < i.t[1]); if (j >= 0 && j !== current) render(j); if (playing && +scr.value < T) raf = requestAnimationFrame(step); }; raf = requestAnimationFrame(step); } else cancelAnimationFrame(raf); });
-  $('#wave-track').addEventListener('click', e => { if (e.target.closest('[data-i]')) return; const r = e.currentTarget.getBoundingClientRect(); scr.value = (e.clientX - r.left) / r.width * T; scr.dispatchEvent(new Event('input')); });
+  $('#wave-track').addEventListener('click', e => { if (e.target.closest('[data-i],.rv-region,.rv-h') || RV.trace || e.shiftKey) return; const r = e.currentTarget.getBoundingClientRect(); scr.value = (e.clientX - r.left) / r.width * T; scr.dispatchEvent(new Event('input')); });
+
+
+  /* ═════════ Revue humaine (prototype) ═════════
+   * REVIEW_PRESETS = la liste de configuration centralisée (en production : web/lib/review-presets.ts).
+   * Les libellés ne sont écrits qu'ici ; le reste de l'interface ne fait que les lire.
+   */
+  const REVIEW_PRESETS = [
+    { id: 'verse', label: 'Verset', hint: 'Ce que le moteur affiche est faux ou incomplet.', items: [
+      ['wrong_verse', 'Verset faux'], ['missing_verse', 'Verset manquant'], ['extra_verse', 'Verset en trop'], ['repetition_missed', 'Répétition non détectée'] ] },
+    { id: 'bounds', label: 'Limites et synchronisation', hint: 'Le verset est bon, mais pas ses bornes.', items: [
+      ['start_early', 'Début trop tôt'], ['start_late', 'Début trop tard'], ['end_early', 'Fin trop tôt'], ['end_late', 'Fin trop tard'], ['display_offset', 'Affichage décalé de la voix'] ] },
+    { id: 'detection', label: 'Coran ou pas Coran', hint: 'Le moteur se trompe sur la nature de la parole.', items: [
+      ['non_quran_as_quran', 'Parole non coranique prise pour du Coran'], ['quran_undetected', 'Coran non détecté'], ['abstention_wrong', 'Abstention à tort (le verset était audible)'] ] },
+    { id: 'formula', label: 'Formules', hint: 'Basmala, isti’adha, takbir, âmîn.', items: [
+      ['basmala_missing', 'Basmala manquante'], ['basmala_extra', 'Basmala en trop'], ['istiadha_missing', 'Isti’adha manquante'], ['istiadha_extra', 'Isti’adha en trop'], ['takbir_amin', 'Takbir ou âmîn manquant / en trop'] ] },
+    { id: 'recitation', label: 'Récitation', hint: 'Ce qui tient au lecteur plutôt qu’au moteur.', items: [
+      ['riwaya', 'Mauvaise récitation / lecture (riwaya)'], ['reciter_error', 'Le lecteur se trompe (le moteur a raison)'] ] },
+    { id: 'audio', label: 'Qualité de l’audio', hint: '', items: [
+      ['inaudible', 'Audio inaudible'], ['noise', 'Bruit ou parasites'], ['overlap', 'Plusieurs voix en même temps'] ] },
+    { id: 'other', label: 'Autre', hint: '', items: [ ['other', 'Autre (précise en commentaire)'] ] },
+  ];
+  const PRESET_LABEL = Object.fromEntries(REVIEW_PRESETS.flatMap(f => f.items));
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const fmt1 = s => { const m = Math.floor(s / 60); return String(m).padStart(2, '0') + ':' + (s - m * 60).toFixed(1).padStart(4, '0'); };
+  const fr1 = n => n.toFixed(1).replace('.', ',');
+  const ico = (id, cls = '') => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+  const ago = a => { const m = Math.round((Date.now() - a.ts) / 60000); return m < 1 ? 'à l’instant' : m < 60 ? `il y a ${m} min` : `il y a ${Math.round(m / 60)} h`; };
+  const now = Date.now();
+  let uid = 10;
+  const RV = {
+    tab: 'sig', mark: null, draft: null, sel: null, trace: false, changing: false, done: null,
+    tester: hash.tester === 'none' ? null : store.get('tester', 'Awa'), recent: store.get('testers', ['Awa', 'Moussa', 'Cherif']),
+    fTester: 'all', fState: 'all', listened: {}, loop: false, save: 'saved', testerErr: '',
+    annots: [
+      { id: 'a1', start: 31.2, end: null, tags: ['display_offset'], expected: '', comment: 'La voix arrive avant l’affichage.', tester: 'Awa', status: 'confirmed', ts: now - 36 * 60000 },
+      { id: 'a2', start: 101.2, end: 106.4, tags: ['missing_verse', 'start_late'], expected: '2:256', comment: 'Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.', tester: 'Moussa', status: 'confirmed', ts: now - 12 * 60000 },
+      { id: 'a3', start: 140, end: 146.5, tags: ['non_quran_as_quran'], expected: '', comment: '', tester: 'Cherif', status: 'draft', ts: now - 4 * 60000 },
+    ],
+  };
+  const cur = () => +$('#scrubber').value;
+  const annot = id => RV.annots.find(a => a.id === id);
+  const draftObj = () => RV.draft ? annot(RV.draft) : null;
+  const visible = () => RV.annots.filter(a => (RV.fTester === 'all' || a.tester === RV.fTester) && (RV.fState === 'all' || a.status === RV.fState));
+  const live = $('#aria-live');
+  const say = t => { live.textContent = ''; setTimeout(() => live.textContent = t, 30); };
+
+  /* ── toasts ── */
+  let toastTimer;
+  function toast(text, action) {
+    $('#toast')?.remove(); clearTimeout(toastTimer);
+    const el = document.createElement('div'); el.className = 'toast'; el.id = 'toast'; el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${esc(text)}</span>${action ? `<button>${esc(action.label)}</button>` : ''}`;
+    document.body.append(el);
+    el.querySelector('button')?.addEventListener('click', () => { action.fn(); el.remove(); });
+    toastTimer = setTimeout(() => el.remove(), 6000);
+  }
+
+  /* ── sauvegarde simulée ── */
+  let saveTimer;
+  function touchSave() { RV.save = 'saving'; paintSave(); clearTimeout(saveTimer); saveTimer = setTimeout(() => { RV.save = 'saved'; paintSave(); }, 600); }
+  function paintSave() {
+    const el = $('#savebar'); if (!el) return;
+    el.className = 'savebar' + (RV.save === 'error' ? ' err' : '');
+    el.innerHTML = RV.save === 'saving' ? 'Enregistrement…' : RV.save === 'error' ? `${ico('alert')} Échec de l’enregistrement. <button class="btn btn--ghost btn--sm" data-act="retry-save">Réessayer</button>` : `${ico('check')} Enregistré sur cet ordinateur`;
+  }
+
+  /* ── onglets ── */
+  function setTab(name) {
+    RV.tab = name;
+    $$('.tabs [role=tab]').forEach(t => { const on = t.dataset.tab === name; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+    $$('[role=tabpanel]', $('#panel-right')).forEach(p => p.hidden = p.dataset.tab !== name);
+  }
+  $('.tabs').addEventListener('click', e => { const t = e.target.closest('[role=tab]'); if (t) setTab(t.dataset.tab); });
+  $('.tabs').addEventListener('keydown', e => { const tabs = $$('.tabs [role=tab]'), i = tabs.indexOf(document.activeElement); if (i < 0 || !['ArrowRight', 'ArrowLeft'].includes(e.key)) return; const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); setTab(n.dataset.tab); });
+
+  /* ── testeur ── */
+  function renderTester() {
+    const el = $('#tester');
+    if (!RV.tester || RV.changing) {
+      const others = RV.recent.filter(n => n !== RV.tester).slice(0, 5);
+      el.innerHTML = `<form class="tester-form" id="tester-form" novalidate>
+        <label class="field"><span>Qui teste ?</span><input class="input" id="tester-input" maxlength="24" autocomplete="off" placeholder="Ton pseudonyme, ex. awa-tel" value="${esc(RV.tester || '')}" aria-describedby="tester-help tester-err"></label>
+        <p class="hint" id="tester-help" style="font-size:var(--fs-xs)">Un pseudonyme suffit : ni nom complet, ni e-mail. Il est joint à chacun de tes signalements et gardé dans ce navigateur.</p>
+        <p class="err" id="tester-err" role="alert">${esc(RV.testerErr)}</p>
+        ${others.length ? `<div><span class="eyebrow">Testeurs récents sur cet appareil</span><div class="recent">${others.map(n => `<button type="button" class="chip" data-tester="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>` : ''}
+        <div class="btnrow"><button class="btn btn--primary" type="submit">${RV.tester ? 'Enregistrer' : 'Commencer'}</button>${RV.tester ? '<button type="button" class="btn btn--ghost" id="tester-cancel">Annuler</button>' : ''}</div></form>`;
+    } else {
+      el.innerHTML = `<div class="tester-row"><span class="av" aria-hidden="true">${esc(RV.tester[0].toUpperCase())}</span><div style="flex:1;min-width:0"><span class="eyebrow">Testeur</span><b>${esc(RV.tester)}</b></div><button class="btn btn--ghost btn--sm" id="tester-change">Changer</button></div>`;
+    }
+  }
+  function setTester(name) {
+    name = name.trim();
+    if (!/^[\p{L}\p{N} _.\-]{2,24}$/u.test(name) || name.includes('@')) { RV.testerErr = '2 à 24 caractères : lettres, chiffres, espace, - _ . (pas d’adresse e-mail).'; renderTester(); $('#tester-input')?.focus(); return; }
+    RV.tester = name; RV.testerErr = ''; RV.changing = false;
+    RV.recent = [name, ...RV.recent.filter(n => n !== name)].slice(0, 8);
+    store.set('tester', name); store.set('testers', RV.recent);
+    renderAll(); say(`Testeur : ${name}`);
+  }
+
+  /* ── pose début / fin, point, plage ── */
+  function needTester() { if (RV.tester) return false; setTab('sig'); if (!wide.matches) panel('right', true, false); $('#tester-input')?.focus(); toast('Indique d’abord qui teste.'); return true; }
+  function markPress() {
+    if (needTester()) return;
+    if (!RV.mark) { RV.mark = { start: +cur().toFixed(1) }; RV.draft = RV.draft; say(`Début posé à ${fmt1(RV.mark.start)}`); renderAll(); return; }
+    const end = +cur().toFixed(1);
+    if (end - RV.mark.start < 0.2) { toast('Avance un peu l’écoute avant de poser la fin.'); return; }
+    newDraft(RV.mark.start, end);
+  }
+  function pointPress() { if (needTester()) return; RV.mark = null; newDraft(+cur().toFixed(1), null); }
+  function cancelMark() { RV.mark = null; renderAll(); say('Pose annulée'); }
+  /* un brouillon vide (ni puce, ni commentaire, ni verset attendu) disparaît quand on passe à autre chose */
+  function dropEmptyDraft() { const d = draftObj(); if (d && d.status === 'draft' && !d.tags.length && !d.comment.trim() && !d.expected.trim()) { RV.annots.splice(RV.annots.indexOf(d), 1); if (RV.sel === d.id) RV.sel = null; } RV.draft = null; }
+  function newDraft(s, e) {
+    dropEmptyDraft();
+    const a = { id: 'a' + (++uid), start: s, end: e, tags: [], expected: '', comment: '', tester: RV.tester, status: 'draft', ts: Date.now() };
+    RV.annots.push(a); RV.draft = a.id; RV.sel = a.id; RV.mark = null; RV.done = null; RV.listened[a.id] = false;
+    setTab('sig'); if (!wide.matches) panel('right', true, false);
+    renderAll(); touchSave(); say(e == null ? `Point posé à ${fmt1(s)}` : `Plage de ${fmt1(s)} à ${fmt1(e)}`);
+  }
+  function confirmDraft() {
+    const a = draftObj(); if (!a) return;
+    if (!a.tags.length && !a.comment.trim()) { toast('Choisis au moins une puce ou écris un commentaire.'); return; }
+    a.status = 'confirmed'; a.ts = Date.now(); RV.done = a.id; RV.draft = null; RV.sel = a.id; stopSim();
+    renderAll(); touchSave(); say('Signalement enregistré');
+  }
+  function removeAnnot(id) {
+    const i = RV.annots.findIndex(a => a.id === id); if (i < 0) return; const [a] = RV.annots.splice(i, 1);
+    if (RV.draft === id) RV.draft = null; if (RV.sel === id) RV.sel = null; if (RV.done === id) RV.done = null; stopSim();
+    renderAll(); toast('Signalement supprimé', { label: 'Annuler', fn: () => { RV.annots.splice(i, 0, a); renderAll(); } });
+  }
+  function jump(id, edit) {
+    const a = annot(id); if (!a) return; RV.sel = id; RV.mark = null;
+    scr.value = a.start; scr.dispatchEvent(new Event('input'));
+    if (edit) { dropEmptyDraft(); RV.draft = id; RV.done = null; setTab('sig'); if (!wide.matches) panel('right', true, false); }
+    renderAll(); $('#wave-track').scrollIntoView({ block: 'nearest' });
+  }
+  function setRange(a, s, e) {
+    s = Math.max(0, Math.min(T, +s.toFixed(1))); if (e != null) e = Math.max(0, Math.min(T, +e.toFixed(1)));
+    if (e != null && e - s < 0.2) { if (a._edge === 'end') s = +(e - 0.2).toFixed(1); else e = +(s + 0.2).toFixed(1); }
+    a.start = s; a.end = e; RV.listened[a.id] = false; touchSave();
+  }
+
+  /* ── écoute simulée de la plage (boucle possible) ── */
+  let sim;
+  function stopSim() { clearInterval(sim); sim = null; }
+  function playRange(a) {
+    stopSim(); const s = a.end == null ? Math.max(0, a.start - 2) : a.start, e = a.end == null ? Math.min(T, a.start + 2) : a.end;
+    scr.value = s; scr.dispatchEvent(new Event('input'));
+    sim = setInterval(() => {
+      let v = +scr.value + 0.08;
+      if (v >= e) { RV.listened[a.id] = true; if (RV.loop) v = s; else { stopSim(); renderSig(); return; } renderSig(); }
+      scr.value = v; scr.dispatchEvent(new Event('input'));
+    }, 80);
+  }
+
+  /* ── rendu : barre de marquage ── */
+  function renderMarkbar() {
+    const m = RV.mark, lock = !RV.tester;
+    const b = $('#mb-mark'); b.innerHTML = `${ico('flag')}${m ? 'Marquer la fin' : 'Marquer le début'} <kbd>M</kbd>`; b.disabled = false; b.setAttribute('aria-disabled', String(lock));
+    $('#dock-mark').setAttribute('aria-label', m ? 'Marquer la fin du signalement' : 'Marquer le début d’un signalement');
+    $('#dock-mark').dataset.state = m ? 'end' : 'start';
+    $('#mb-cancel').hidden = !m;
+    const tr = $('#mb-trace'); tr.setAttribute('aria-pressed', String(RV.trace));
+    $('#mb-status').innerHTML = lock ? 'Indique d’abord qui teste, dans le panneau Revue humaine.'
+      : m ? `Début posé à <b>${fmt1(m.start)}</b> — appuie pour poser la fin.`
+      : RV.trace ? 'Glisse sur l’onde pour tracer une plage, touche pour un point.'
+      : 'Appuie à la position de lecture, ou trace directement sur l’onde.';
+    $('#wave-track').classList.toggle('tracing', RV.trace);
+    $('#trace-hint').hidden = !RV.trace;
+  }
+
+  /* ── rendu : onglet Signaler ── */
+  function ctxLine(a) {
+    const i = I.find(x => a.start >= x.t[0] && a.start < x.t[1]); if (!i) return 'Aucun intervalle du moteur ici.';
+    const what = i.k === 'verse' ? (i.s === 'uncertain' ? 'Identification ambiguë' : (i.basmala ? 'Basmala' : i.ref)) + ' · ' + stLabel(i) : i.k === 'formula' ? 'Formule ' + i.title : 'Abstention';
+    return `Sur cette plage, le moteur affiche <b>${esc(what)}</b>.`;
+  }
+  function renderSig() {
+    const a = draftObj(), m = RV.mark, lock = !RV.tester, done = RV.done ? annot(RV.done) : null;
+    const tags = a?.tags.length || a?.comment.trim();
+    const steps = [['Délimiter', !!a || !!done], ['Écouter', !!a && RV.listened[a.id] || !!done], ['Décrire', !!done]];
+    const curStep = steps.findIndex(s => !s[1]);
+    $('#steps').innerHTML = steps.map((s, i) => `<li data-s="${s[1] ? 'done' : i === curStep ? 'current' : 'todo'}"><span data-n="${i + 1}">${s[0]}</span></li>`).join('');
+    // 1 — Délimiter
+    let s1;
+    if (a) s1 = `<h3><span class="n">1</span>Plage à signaler</h3><div class="range-chip">${ico('flag')}<span class="mono">${fmt1(a.start)}${a.end == null ? '' : ' → ' + fmt1(a.end)}</span><span class="len">${a.end == null ? 'point' : fr1(a.end - a.start) + ' s'}</span></div>
+      <p class="ctx">${ico('info')}<span>${ctxLine(a)}</span></p>
+      <div class="btnrow"><button class="btn btn--ghost btn--sm" data-act="restart" style="justify-content:flex-start;padding-left:0">Tout recommencer</button></div>`;
+    else if (done) s1 = `<h3><span class="n">✓</span>Signalement enregistré</h3><div class="range-chip"><span class="sw s-human"><i></i></span><span class="mono">${fmt1(done.start)}${done.end == null ? '' : ' → ' + fmt1(done.end)}</span><span class="len">${esc(done.tester)}</span></div>
+      <div class="btnrow"><button class="btn btn--primary" data-act="mark">${ico('flag')}Signaler autre chose <kbd>M</kbd></button><button class="btn btn--secondary" data-act="tab-list">Voir la liste</button></div>`;
+    else if (m) s1 = `<h3><span class="n">1</span>Délimiter</h3><div class="banner"><span>Début posé à <b>${fmt1(m.start)}</b></span><small>Avance l’écoute jusqu’à la fin du problème, puis appuie pour poser la fin.</small><small>Longueur provisoire : <b>${fr1(Math.max(0, cur() - m.start))} s</b></small></div>
+      <div class="btnrow"><button class="btn btn--primary btn--lg" data-act="mark">${ico('flag')}Marquer la fin <kbd>M</kbd></button><button class="btn btn--ghost btn--lg" data-act="cancel" style="flex:none">Annuler</button></div>`;
+    else s1 = `<h3><span class="n">1</span>Où est le problème ?</h3>
+      <div class="btnrow" style="flex-direction:column"><button class="btn btn--primary btn--lg" data-act="mark" ${lock ? 'aria-disabled="true"' : ''}>${ico('flag')}Marquer le début <kbd>M</kbd></button><button class="btn btn--secondary" data-act="point" ${lock ? 'aria-disabled="true"' : ''}>Signaler un point ici <kbd>P</kbd></button></div>
+      <p class="hint">${lock ? 'Indique d’abord qui teste (ci-dessus).' : 'Écoute, appuie quand le problème commence, puis une seconde fois quand il finit. Ou trace-le directement sur la forme d’onde : « Tracer sur l’onde », puis glisse pour une plage, touche pour un point.'}</p>`;
+    // 2 — Écouter
+    let s2 = '';
+    if (a) {
+      const heard = RV.listened[a.id];
+      s2 = `<h3><span class="n">2</span>Écouter et affiner</h3>
+        <div class="nudge"><div class="field"><span>Début</span><div class="ctl"><button class="btn btn--secondary" data-act="nudge" data-edge="start" data-d="-0.1" aria-label="Début 0,1 s plus tôt">−</button><input class="input" value="${fmt1(a.start)}" aria-label="Début de la plage" readonly><button class="btn btn--secondary" data-act="nudge" data-edge="start" data-d="0.1" aria-label="Début 0,1 s plus tard">+</button></div></div><button class="btn btn--ghost btn--icon" data-act="snap" data-edge="start" aria-label="Caler le début sur la lecture" title="Caler sur la lecture"><svg class="i"><use href="#i-target"/></svg></button></div>
+        ${a.end == null ? '' : `<div class="nudge"><div class="field"><span>Fin</span><div class="ctl"><button class="btn btn--secondary" data-act="nudge" data-edge="end" data-d="-0.1" aria-label="Fin 0,1 s plus tôt">−</button><input class="input" value="${fmt1(a.end)}" aria-label="Fin de la plage" readonly><button class="btn btn--secondary" data-act="nudge" data-edge="end" data-d="0.1" aria-label="Fin 0,1 s plus tard">+</button></div></div><button class="btn btn--ghost btn--icon" data-act="snap" data-edge="end" aria-label="Caler la fin sur la lecture" title="Caler sur la lecture"><svg class="i"><use href="#i-target"/></svg></button></div>`}
+        <div class="listen-row"><button class="btn btn--secondary" data-act="listen">${ico('play', 'fill')} ${a.end == null ? 'Écouter autour du point' : 'Écouter la plage'}</button>
+          <button class="switch" role="switch" aria-checked="${RV.loop}" data-act="loop"><i></i>En boucle <kbd>L</kbd></button>
+          <span class="ok">${heard ? ico('check') + ' Écoutée' : 'Pas encore écoutée'}</span></div>
+        <p class="hint" style="font-size:var(--fs-xs)">Tu peux aussi déplacer les poignées sur la forme d’onde (flèches du clavier : 0,1 s, avec Maj : 1 s).</p>`;
+    }
+    // 3 — Décrire
+    let s3 = '';
+    if (a) {
+      const fams = REVIEW_PRESETS.map((f, fi) => {
+        const n = f.items.filter(([id]) => a.tags.includes(id)).length;
+        return `<details class="fam" ${fi < 2 || n ? 'open' : ''}><summary>${esc(f.label)}${n ? `<span class="sel-n" aria-label="${n} choisie${n > 1 ? 's' : ''}">${n}</span>` : ''}</summary>${f.hint ? `<p class="fh">${esc(f.hint)}</p>` : ''}<div class="pchips" role="group" aria-label="${esc(f.label)}">${f.items.map(([id, l]) => `<button class="pchip" aria-pressed="${a.tags.includes(id)}" data-act="tag" data-tag="${id}">${esc(l)}</button>`).join('')}</div></details>`;
+      }).join('');
+      const other = a.tester !== RV.tester ? `<div class="banner"><small>Signalement de <b style="font-family:inherit">${esc(a.tester)}</b> : tu le modifies en tant que <b style="font-family:inherit">${esc(RV.tester)}</b>. Son nom reste sur le signalement.</small></div>` : '';
+      s3 = `<h3><span class="n">3</span>Décrire le souci</h3>${other}
+        <div><p class="hint" style="margin-bottom:4px">Choisis une ou plusieurs puces, ou écris un commentaire.</p></div>
+        <div class="fams">${fams}</div>
+        <label class="field"><span>Verset attendu <span class="opt">· facultatif</span></span><input class="input mono" data-f="expected" value="${esc(a.expected)}" placeholder="ex. 2:256" inputmode="text" maxlength="7" aria-describedby="exp-help"><span class="opt" id="exp-help" style="font-weight:400;font-size:var(--fs-xs)">Sourate:verset, par exemple 2:255.</span></label>
+        <label class="field"><span>Commentaire <span class="opt">· ${a.tags.length ? 'facultatif' : 'obligatoire sans puce'}</span></span><textarea class="input" data-f="comment" maxlength="3000" placeholder="Qu’as-tu entendu ? Que faut-il corriger ?">${esc(a.comment)}</textarea></label>
+        <div class="btnrow" style="flex-direction:column"><button class="btn btn--primary btn--lg" data-act="confirm" ${tags ? '' : 'aria-disabled="true"'}>${a.status === 'confirmed' ? 'Enregistrer les modifications' : 'Confirmer le signalement'} <kbd>Ctrl ↵</kbd></button>
+        <div class="row" style="align-items:center"><button class="btn btn--ghost" data-act="keep" style="justify-content:flex-start">Garder en brouillon</button><button class="btn btn--ghost" data-act="del" style="color:var(--danger)">Supprimer</button></div></div>
+        <div class="savebar" id="savebar"></div>`;
+    }
+    $('#sig-body').innerHTML = `<section class="rcard ${lock && !a ? 'is-locked' : ''}">${s1}</section>${a ? `<section class="rcard">${s2}</section><section class="rcard">${s3}</section>` : ''}`;
+    paintSave();
+  }
+
+  /* ── rendu : onglet Signalements ── */
+  function renderList() {
+    const all = RV.annots, list = visible().sort((x, y) => x.start - y.start);
+    $('#cnt').textContent = all.length;
+    const testers = [...new Set(all.map(a => a.tester))];
+    $('#f-tester').innerHTML = `<option value="all">Tous les testeurs</option>` + testers.map(t => `<option ${RV.fTester === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+    $$('#f-state .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.state === RV.fState)));
+    $('#alist').innerHTML = list.length ? list.map(a => `<li class="aitem" data-id="${a.id}" data-sel="${RV.sel === a.id}"><button class="aitem-main" data-act="jump" data-id="${a.id}" aria-label="Aller à ${fmt1(a.start)}">
+      <span class="ai-top"><span class="sw s-human ${a.status === 'draft' ? 'draft' : ''}"><i></i></span><span class="mono">${fmt1(a.start)}${a.end == null ? '' : ' – ' + fmt1(a.end)}</span><span class="badge ${a.status === 'draft' ? 'badge--outline' : ''}">${a.status === 'draft' ? 'Brouillon' : 'Confirmé'}</span></span>
+      <span class="ai-tags">${a.tags.length ? esc(PRESET_LABEL[a.tags[0]]) + (a.tags.length > 1 ? ` <span class="muted">+ ${a.tags.length - 1}</span>` : '') : '<span class="muted">Commentaire seul</span>'}</span>
+      <span class="ai-meta">${esc(a.tester)} · ${ago(a)}${a.comment ? ' · ' + esc(a.comment) : ''}</span></button>
+      <div class="ai-acts"><button class="btn btn--ghost btn--icon" data-act="listen-id" data-id="${a.id}" aria-label="Écouter ce signalement">${ico('play', 'fill')}</button><button class="btn btn--ghost btn--icon" data-act="edit" data-id="${a.id}" aria-label="Modifier ce signalement">${ico('edit')}</button></div></li>`).join('')
+      : `<li class="empty-list">${all.length ? 'Aucun signalement ne correspond à ce filtre.' : 'Aucun signalement pour l’instant. Ils apparaîtront ici, sur la forme d’onde et sur la piste Revue.'}</li>`;
+  }
+
+  /* ── rendu : forme d'onde + piste Revue ── */
+  function renderWave() {
+    const layer = $('#rv-layer'), lane = $('#lane-rev'), list = visible(); let h = '', l = '';
+    list.forEach(a => {
+      const pt = a.end == null, sel = RV.sel === a.id, edit = RV.draft === a.id;
+      const cls = `rv-region ${a.status} ${pt ? 'pt' : ''} ${sel ? 'sel' : ''}`;
+      const w = pt ? '' : `;--w:${pct(a.end - a.start)}`;
+      h += `<div class="${cls}" style="--l:${pct(a.start)}${w}" data-id="${a.id}"><button class="rv-hit" data-act="jump" data-id="${a.id}" tabindex="-1" aria-label="Signalement ${fmt1(a.start)}"></button>${sel && !edit ? `<span class="rv-label">${esc(a.tester)}</span>` : ''}${edit ? `<span class="rv-h" data-edge="start" role="slider" tabindex="0" aria-label="Début de la plage" aria-valuemin="0" aria-valuemax="${T}" aria-valuenow="${a.start}" aria-valuetext="${fmt1(a.start)}"><i></i></span>${pt ? '' : `<span class="rv-h" data-edge="end" role="slider" tabindex="0" aria-label="Fin de la plage" aria-valuemin="0" aria-valuemax="${T}" aria-valuenow="${a.end}" aria-valuetext="${fmt1(a.end)}"><i></i></span>`}` : ''}</div>`;
+      l += `<button class="human ${a.status === 'draft' ? 'draft' : ''} ${pt ? 'pt' : ''} ${sel ? 'sel' : ''}" style="--l:${pct(a.start)}${w}" data-act="jump" data-id="${a.id}" title="${esc(a.tester)} · ${fmt1(a.start)} · ${a.status === 'draft' ? 'brouillon' : 'confirmé'}" aria-label="Signalement de ${esc(a.tester)} à ${fmt1(a.start)}"></button>`;
+    });
+    h += `<div class="rv-region live" id="rv-live" hidden></div>`;
+    layer.innerHTML = h; lane.innerHTML = l; paintLive();
+  }
+  function paintLive() {
+    const el = $('#rv-live'); if (!el) return;
+    if (RV.mark) { const e = Math.max(cur(), RV.mark.start); el.hidden = false; el.style.setProperty('--l', pct(RV.mark.start)); el.style.setProperty('--w', pct(e - RV.mark.start)); el.innerHTML = `<span class="rv-label">Début ${fmt1(RV.mark.start)}</span>`; }
+    else if (!g) el.hidden = true;
+  }
+  function renderAll() { renderTester(); renderMarkbar(); renderSig(); renderList(); renderWave(); }
+
+  /* ── tracer directement sur la forme d'onde ── */
+  const wt = $('#wave-track'); let g = null;
+  const tOf = e => { const r = wt.getBoundingClientRect(); return Math.max(0, Math.min(T, (e.clientX - r.left) / r.width * T)); };
+  wt.addEventListener('pointerdown', e => {
+    const hd = e.target.closest('.rv-h');
+    if (hd) { const a = draftObj(); if (!a) return; e.preventDefault(); hd.setPointerCapture(e.pointerId); g = { handle: hd.dataset.edge, a }; return; }
+    if (!(RV.trace || e.shiftKey)) return;
+    if (needTester()) return;
+    e.preventDefault(); wt.setPointerCapture(e.pointerId); g = { x0: e.clientX, t0: tOf(e), moved: false };
+  });
+  wt.addEventListener('pointermove', e => {
+    if (!g) return; const t = tOf(e);
+    if (g.handle) { const a = g.a; a._edge = g.handle; if (g.handle === 'start') setRange(a, Math.min(t, a.end ?? t), a.end); else setRange(a, a.start, Math.max(t, a.start)); renderWave(); return; }
+    if (Math.abs(e.clientX - g.x0) > 6) g.moved = true;
+    if (g.moved) { const a = Math.min(g.t0, t), b = Math.max(g.t0, t), el = $('#rv-live'); el.hidden = false; el.style.setProperty('--l', pct(a)); el.style.setProperty('--w', pct(b - a)); el.innerHTML = `<span class="rv-label">${fmt1(a)} → ${fmt1(b)}</span>`; }
+  });
+  wt.addEventListener('pointerup', e => {
+    if (!g) return; const k = g; g = null;
+    if (k.handle) { renderSig(); renderList(); return; }
+    const t = tOf(e), a = Math.min(k.t0, t), b = Math.max(k.t0, t);
+    $('#rv-live').hidden = true;
+    scr.value = a; scr.dispatchEvent(new Event('input'));
+    if (!k.moved || b - a < 0.2) newDraft(+k.t0.toFixed(1), null); else newDraft(+a.toFixed(1), +b.toFixed(1));
+  });
+  wt.addEventListener('keydown', e => {
+    const hd = e.target.closest('.rv-h'); if (!hd || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    e.preventDefault(); const a = draftObj(), d = (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 0.1); a._edge = hd.dataset.edge;
+    if (hd.dataset.edge === 'start') setRange(a, a.start + d, a.end); else setRange(a, a.start, a.end + d);
+    renderAll(); $(`.rv-h[data-edge="${hd.dataset.edge}"]`)?.focus();
+  });
+  $('#mb-trace').addEventListener('click', () => { RV.trace = !RV.trace; renderMarkbar(); say(RV.trace ? 'Mode tracé activé' : 'Mode tracé désactivé'); });
+  $('#mb-mark').addEventListener('click', markPress);
+  $('#dock-mark').addEventListener('click', markPress);
+  $('#mb-cancel').addEventListener('click', cancelMark);
+  scr.addEventListener('input', () => { paintLive(); if (RV.mark) { const b = $('#sig-body .banner b:last-of-type'); if (b) b.textContent = fr1(Math.max(0, cur() - RV.mark.start)) + ' s'; } });
+
+  /* ── délégation des clics du panneau ── */
+  const rp = $('#panel-right');
+  rp.addEventListener('submit', e => { if (e.target.id === 'tester-form') { e.preventDefault(); setTester($('#tester-input').value); } });
+  rp.addEventListener('input', e => {
+    const f = e.target.dataset.f, a = draftObj(); if (!f || !a) return;
+    a[f] = e.target.value; a.ts = a.status === 'draft' ? a.ts : Date.now(); touchSave();
+    if (f === 'comment') { const b = $('[data-act=confirm]'); if (b) b.setAttribute('aria-disabled', String(!(a.tags.length || a.comment.trim()))); }
+  });
+  rp.addEventListener('change', e => { if (e.target.id === 'f-tester') { RV.fTester = e.target.value; renderList(); renderWave(); } });
+  rp.addEventListener('click', e => {
+    const t = e.target.closest('[data-act],[data-tester],#tester-change,#tester-cancel,#f-state .chip'); if (!t) return;
+    if (t.dataset.tester) return setTester(t.dataset.tester);
+    if (t.id === 'tester-change') { RV.changing = true; renderTester(); return $('#tester-input').focus(); }
+    if (t.id === 'tester-cancel') { RV.changing = false; renderTester(); return; }
+    if (t.classList.contains('chip') && t.dataset.state) { RV.fState = t.dataset.state; renderList(); renderWave(); return; }
+    const a = draftObj(), act = t.dataset.act;
+    switch (act) {
+      case 'mark': markPress(); break;
+      case 'point': pointPress(); break;
+      case 'cancel': cancelMark(); break;
+      case 'restart': if (a) removeAnnot(a.id); break;
+      case 'tag': { const i = a.tags.indexOf(t.dataset.tag); i < 0 ? a.tags.push(t.dataset.tag) : a.tags.splice(i, 1); touchSave(); renderSig(); renderList(); break; }
+      case 'nudge': a._edge = t.dataset.edge; if (t.dataset.edge === 'start') setRange(a, a.start + +t.dataset.d, a.end); else setRange(a, a.start, a.end + +t.dataset.d); renderAll(); break;
+      case 'snap': a._edge = t.dataset.edge; if (t.dataset.edge === 'start') setRange(a, cur(), a.end); else setRange(a, a.start, cur()); renderAll(); break;
+      case 'listen': playRange(a); break;
+      case 'loop': RV.loop = !RV.loop; renderSig(); break;
+      case 'confirm': if (t.getAttribute('aria-disabled') === 'true') { toast('Choisis au moins une puce ou écris un commentaire.'); } else confirmDraft(); break;
+      case 'keep': dropEmptyDraft(); stopSim(); renderAll(); toast('Brouillon gardé : retrouve-le dans Signalements.'); break;
+      case 'del': removeAnnot(a.id); break;
+      case 'jump': jump(t.dataset.id, false); break;
+      case 'edit': jump(t.dataset.id, true); break;
+      case 'listen-id': { const x = annot(t.dataset.id); RV.sel = x.id; renderAll(); playRange(x); break; }
+      case 'tab-list': setTab('list'); break;
+      case 'retry-save': touchSave(); break;
+    }
+  });
+  /* clic sur une plage ou un losange de la forme d'onde / de la piste Revue */
+  document.addEventListener('click', e => { const t = e.target.closest('#rv-layer [data-act=jump], #lane-rev [data-act=jump]'); if (t) { jump(t.dataset.id, false); setTab('list'); } });
+
+  /* ── raccourcis clavier ── */
+  document.addEventListener('keydown', e => {
+    const tg = e.target, typing = tg.matches?.('input,textarea,select,[contenteditable]');
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { if (draftObj()) { e.preventDefault(); confirmDraft(); } return; }
+    if (e.ctrlKey || e.metaKey || e.altKey || typing) return;
+    if (e.key === 'Escape') { if (RV.mark) cancelMark(); else if (RV.trace) { RV.trace = false; renderMarkbar(); } return; }
+    if ($('#sw-keys').getAttribute('aria-checked') !== 'true') return;
+    const k = e.key.toLowerCase();
+    if (k === 'm') { e.preventDefault(); markPress(); }
+    else if (k === 'p') { e.preventDefault(); pointPress(); }
+    else if (k === 'l' && draftObj()) { RV.loop = !RV.loop; renderSig(); }
+    else if (k === ' ' && !tg.closest?.('button,[role=tab],summary')) { e.preventDefault(); $('#play').click(); }
+    else if (e.key === 'Escape') { if (RV.mark) cancelMark(); else if (RV.trace) { RV.trace = false; renderMarkbar(); } }
+  });
+
+  setTab(hash.tab || 'sig');
+  renderAll();
+  /* états de démonstration pour les captures : #rev=start | draft | tags | done  */
+  if (hash.rev === 'start') { scr.value = 104.6; scr.dispatchEvent(new Event('input')); RV.mark = { start: 101.2 }; renderAll(); paintLive(); }
+  if (hash.rev === 'draft' || hash.rev === 'tags' || hash.rev === 'done') {
+    newDraft(101.2, 106.4); const a = draftObj(); a.expected = '2:256'; RV.listened[a.id] = true;
+    if (hash.rev !== 'draft') { a.tags = ['missing_verse', 'start_late']; a.comment = 'Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.'; }
+    if (hash.rev === 'done') confirmDraft();
+    renderAll(); if (hash.rev === 'tags') setTimeout(() => $('#sig-body .rcard:nth-of-type(3)')?.scrollIntoView({ block: 'start' }), 300);
+  }
+  if (hash.trace) { RV.trace = true; renderMarkbar(); }
+  if (hash.listsel) { RV.sel = hash.listsel; renderAll(); }
 
   /* ── Démarrage ── */
   initPanels(); updateDot();
+  if (hash.rev && hash.rev !== 'start' && !wide.matches) panel('right', true, false);
   if (hash.view) view(hash.view);
   if (hash.sel) render(+hash.sel);
   if (hash.scroll) setTimeout(() => document.getElementById(hash.scroll)?.scrollIntoView({ block: 'start' }), 400);
