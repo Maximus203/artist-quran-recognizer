@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-22 — Documentation vivante et notes de version
 Étiquettes : technique, décision
-PR : -
+PR : #69
 
 **Ce qui change.** La documentation du projet devient une documentation vivante : une page « Le système en bref »
 (`docs/SYSTEME-EN-BREF.md`), l'architecture de l'atelier web (`docs/ARCHITECTURE-ATELIER.md`), ces notes de
