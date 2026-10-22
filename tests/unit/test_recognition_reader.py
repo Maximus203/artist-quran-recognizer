@@ -64,6 +64,35 @@ def test_une_zone_incoherente_est_refusee(patch: dict) -> None:
         parse_intervals([{**_BASMALA, **patch}])
 
 
+@pytest.mark.parametrize("flag", ["false", "true", "oui", 1, 0, [], {}])
+def test_le_drapeau_basmala_doit_etre_un_vrai_booleen(flag: object) -> None:
+    with pytest.raises(RecognitionError, match="booléen"):
+        parse_intervals([{**_BASMALA, "basmala": flag}])
+
+
+@pytest.mark.parametrize("label_ar", ["", 1, ["آمين"]])
+def test_label_ar_doit_etre_un_texte_non_vide(label_ar: object) -> None:
+    with pytest.raises(RecognitionError, match="label_ar"):
+        parse_intervals(
+            [{"kind": "non_quran", "label": "amin", "t": [1.0, 2.0], "label_ar": label_ar}]
+        )
+
+
+def test_une_traduction_sur_une_zone_autre_que_la_basmala_est_refusee() -> None:
+    translation = {"text": "x", "translation_id": "t", "version": "1", "scope": "verse"}
+    for label in ("takbir", "silence", "french"):
+        with pytest.raises(RecognitionError, match="traduction"):
+            parse_intervals(
+                [{"kind": "non_quran", "label": label, "t": [1.0, 2.0], "translation": translation}]
+            )
+
+
+def test_un_texte_sans_le_drapeau_basmala_est_signale_comme_tel() -> None:
+    raw = {k: v for k, v in _BASMALA.items() if k != "basmala"}
+    with pytest.raises(RecognitionError, match="sans `basmala: true`"):
+        parse_intervals([raw])
+
+
 def test_un_texte_sur_une_formule_est_refuse() -> None:
     with pytest.raises(RecognitionError):
         parse_intervals(

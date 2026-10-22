@@ -1000,3 +1000,22 @@
   vérifie que le texte de la basmala est exactement `repo.text(1:1)` et que `label_ar` est la constante du label.
 - **Mesuré** : cascade réelle sur `test-55.webm` (55:1-4 précédé de la basmala) : intervalle basmala 1,29-4,33 s avec
   texte et traduction ; `corpus_check --surah 55` OK.
+- **Passe Cherif QA (22 octobre)** :
+  - *Zone basmala issue d'un verset UNCERTAIN/INFERRED* (signalée ❌) : **gardée, par construction**. La basmala est
+    aussi le début du verset 1 de chacune des 113 autres sourates : une fenêtre qui ne contient qu'elle est
+    toujours ambiguë (UNCERTAIN) ; c'est précisément ce que `_relabel_basmala` rattrape. Restreindre la
+    relabellisation aux seuls RECOGNIZED (essayé : `test_basmala_d_ouverture_non_coranique_puis_le_verset`
+    échoue) supprimerait la fonction. Le texte montré est celui de la basmala, pas la preuve d'un verset : documenté
+    (`ref: "1:1"` hors `kind: "verse"`, à filtrer par les consommateurs, tous le font déjà).
+  - *1:1 isolé (001001.mp3) sort en basmala* : règle d'avant (« 1:1 non suivi de 1:2 »), inchangée ; le texte et la
+    traduction sont exactement ceux de 1:1, donc justes. Doc et commentaire de `NonQuranKind` corrigés (ils disaient
+    « hors Al-Fatiha 1:1 »). Al-Fatiha entière reste en versets.
+  - *Hors ligne, traduction de la sourate 1 absente du cache* : `build_json` plantait en trace d'appels après le
+    calcul, sans aucun fichier (déjà vrai pour tout verset d'une sourate non cachée ; la basmala ajoute la sourate 1).
+    `aqr recognize` écrit maintenant les sous-titres d'abord, puis le JSON dans un `try` : message actionnable, code 1,
+    pas de JSON à moitié écrit.
+  - Lecteur Python : `basmala` strictement booléen (« false » était lu vrai), `label_ar` non vide, traduction refusée
+    hors basmala ; schéma web : mêmes règles. `corpus_check` : provenance de la traduction de la basmala (id,
+    version, attribution, `scope: "verse"`, I2 sur la forme).
+  - *Écarté* : comparer le contenu de la traduction dans `corpus_check` (le dépôt de traductions n'y est pas
+    chargé ; même limite que pour les versets). Noté pour l'interface : la note `[1]` de la traduction.

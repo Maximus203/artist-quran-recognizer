@@ -40,7 +40,8 @@ Trois sortes d'intervalles :
   "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse"}|null}`
 - `{"kind":"non_quran","label":"basmala|istiadha|takbir|amin|…","t":[a,b]}` ; champs **additifs** (l'ancien
   format `{kind, label, t}` reste valide, le schéma reste `aqr.recognition/1`) :
-  - **basmala** (hors Al-Fatiha 1:1) : `"basmala":true`, `"ref":"1:1"`, `"text"` (le verset 1:1 lu **dans le
+  - **basmala** (d'ouverture d'une sourate, ou un 1:1 isolé non suivi de 1:2 ; dans Al-Fatiha entière, 1:1 reste
+    un verset) : `"basmala":true`, `"ref":"1:1"`, `"text"` (le verset 1:1 lu **dans le
     corpus**, I1) et `"translation"` (QuranEnc, même forme que pour un verset : `text`, `translation_id`,
     `version`, `attribution`, `scope:"verse"` ; `null` avec `--translation none`). Exemple réel (cascade, 55:1-4
     précédé de la basmala) :
@@ -50,6 +51,17 @@ Trois sortes d'intervalles :
     jamais comme le texte du Coran ;
   - les autres zones (`french`, `silence`…) restent `{kind, label, t}`. La copie expurgée (`redact_document`)
     retire `text` et `translation` de la basmala comme de tout verset, et garde `basmala` et `ref`.
+  - **`ref: "1:1"` sur une zone `non_quran` n'est pas un verset reconnu** : tout consommateur qui compte ou
+    cite des versets doit filtrer sur `kind == "verse"`. La zone ne porte pas de statut de preuve : le moteur
+    la pose quand la fenêtre ne contient que la basmala (qui est aussi le début du verset 1 de chaque sourate,
+    donc toujours ambiguë comme verset). Le texte affiché est celui de la basmala, pas la preuve d'un verset.
+  - La traduction de la basmala peut porter sa note de bas de page telle que QuranEnc la livre
+    (`…Miséricordieux.[1]`) : elle n'est pas nettoyée (I2), l'affichage décide.
+  - Contrôles : le lecteur Python et le schéma web refusent une zone incohérente (`basmala` non booléen ou hors
+    1:1, texte/référence/traduction sur une autre zone, `label_ar` sur la basmala) ; seul
+    `tests/support/corpus_check.py`, qui charge le corpus, vérifie que `text` est exactement celui de 1:1, que
+    `label_ar` est la constante du libellé et que la traduction garde sa provenance (id, version, attribution,
+    `scope: "verse"`). Le contenu de la traduction n'est pas comparé (comme pour les versets).
 - `{"kind":"abstention","reason":"silence|empty_transcript|no_candidate|below_threshold","t":[a,b],"best_score":0.6}`
 
 ## Ce que chaque statut AFFIRME (I3, I5)
