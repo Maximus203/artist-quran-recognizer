@@ -1,0 +1,219 @@
+[
+  {
+    "slug": "systeme-en-bref",
+    "title": "Le système en bref",
+    "section": "Vue d'ensemble",
+    "file": "docs/SYSTEME-EN-BREF.md",
+    "summary": "À quoi sert le système, ce qui se passe de bout en bout pour un audio, les règles qui ne bougent jamais, l'avancement réel (A → B → C → D), les chiffres mesurés avec leurs limites."
+  },
+  {
+    "slug": "release-notes",
+    "title": "Notes de version",
+    "section": "Vue d'ensemble",
+    "file": "docs/RELEASE-NOTES.md",
+    "summary": "Ce qui a changé et pourquoi, en ordre chronologique inverse, avec les étiquettes utilisateur, technique et décision."
+  },
+  {
+    "slug": "plan",
+    "title": "Plan de réalisation",
+    "section": "Vue d'ensemble",
+    "file": "docs/PLAN.md",
+    "summary": "Les phases du projet, leur statut, et la direction du 2026-10-19 : vérité terrain (A), décision acoustique (B), fine-tuning (C), détecteur parole / récitation (D)."
+  },
+  {
+    "slug": "specification-v1",
+    "title": "Spécification de la version 1",
+    "section": "Vue d'ensemble",
+    "file": "docs/spec-v1.md",
+    "summary": "Objectif, périmètre, exigences fonctionnelles et non fonctionnelles de la première version."
+  },
+  {
+    "slug": "defauts-connus",
+    "title": "Défauts connus",
+    "section": "Vue d'ensemble",
+    "file": "docs/KNOWN-ISSUES.md",
+    "summary": "Les limites observées dans les sources externes et l'environnement (traduction de la sourate 42, droits des audios, repli Silero) et ce que le dépôt en fait."
+  },
+  {
+    "slug": "architecture-moteur",
+    "title": "Architecture du moteur",
+    "section": "Architecture",
+    "file": "docs/ARCHITECTURE.md",
+    "summary": "Les invariants I1 à I7, le pipeline B1 à B9, les contrats de chaque brique, les pièges connus et l'organisation du code Python."
+  },
+  {
+    "slug": "architecture-atelier",
+    "title": "Architecture de l'atelier web",
+    "section": "Architecture",
+    "file": "docs/ARCHITECTURE-ATELIER.md",
+    "summary": "L'application Next.js : routes, file d'attente, copie d'écoute, revue humaine, stockage, sécurité, polices, et le plan (non réalisé) des comptes de la phase 2."
+  },
+  {
+    "slug": "sortie-recognize",
+    "title": "Contrat de sortie de la reconnaissance",
+    "section": "Architecture",
+    "file": "docs/RECOGNIZE-OUTPUT.md",
+    "summary": "Le format JSON aqr.recognition/1 produit par aqr recognize, ce que chaque statut affirme, les sous-titres SRT et VTT."
+  },
+  {
+    "slug": "sortie-alignement",
+    "title": "Alignement forcé et vérité terrain",
+    "section": "Architecture",
+    "file": "docs/ALIGN-OUTPUT.md",
+    "summary": "Le parcours qui fabrique une vérité terrain : le moteur propose, l'humain déclare, l'alignement pose les temps, l'humain écoute et valide."
+  },
+  {
+    "slug": "adr-0001",
+    "title": "ADR-0001 — Pas d'entraînement de zéro, pas de LLM génératif",
+    "section": "Décisions",
+    "file": "docs/adr/0001-pas-de-llm-generatif.md",
+    "summary": "Assembler des briques plutôt qu'entraîner un modèle de zéro ou un LLM : le texte et la traduction sont consultés dans le corpus, jamais générés."
+  },
+  {
+    "slug": "adr-0002",
+    "title": "ADR-0002 — Rejet de l'arabe non coranique par double transcription",
+    "section": "Décisions",
+    "file": "docs/adr/0002-rejet-arabe-non-coranique.md",
+    "summary": "Comment éviter qu'un modèle spécialisé voie du Coran dans n'importe quel arabe (statut : proposé, à valider par benchmark)."
+  },
+  {
+    "slug": "adr-0003",
+    "title": "ADR-0003 — Recherche lexicale contrainte, pas de base vectorielle",
+    "section": "Décisions",
+    "file": "docs/adr/0003-recherche-lexicale-contrainte-pas-de-base-vectorielle.md",
+    "summary": "Pourquoi la recherche de versets reste lexicale et déterministe, sans base vectorielle ni LangChain."
+  },
+  {
+    "slug": "adr-0004",
+    "title": "ADR-0004 — Recherche sur le flux continu du Coran",
+    "section": "Décisions",
+    "file": "docs/adr/0004-recherche-sur-flux-continu.md",
+    "summary": "Le Coran vu comme un flux de mots : passages partiels et multi-versets retrouvés sans jamais nommer un faux verset."
+  },
+  {
+    "slug": "adr-0005",
+    "title": "ADR-0005 — Décodage contraint : preuve acoustique sur le treillis CTC",
+    "section": "Décisions",
+    "file": "docs/adr/0005-decodage-contraint-preuve-acoustique.md",
+    "summary": "Mesurer, pour chaque candidat du matcher, à quel point l'audio soutient le texte du corpus (chemin contraint contre chemin libre sur le treillis CTC)."
+  },
+  {
+    "slug": "adr-0006",
+    "title": "ADR-0006 — Alignement forcé du texte du corpus",
+    "section": "Décisions",
+    "file": "docs/adr/0006-alignement-force-texte-du-corpus.md",
+    "summary": "Aligner le texte du corpus (pas une transcription) sur l'audio pour obtenir le temps de chaque mot et une preuve acoustique ; base de la vérité terrain."
+  },
+  {
+    "slug": "adr-0007",
+    "title": "ADR-0007 — Preuve cumulée par la suite",
+    "section": "Décisions",
+    "file": "docs/adr/0007-preuve-cumulee-par-la-suite.md",
+    "summary": "Les versets courts qui s'enchaînent dans le Mushaf se confirment entre eux : EveryAyah 71,8 % → 91,2 % de versets reconnus, sans faux verset."
+  },
+  {
+    "slug": "adr-0008",
+    "title": "ADR-0008 — Vérification acoustique des suites et temps au mot",
+    "section": "Décisions",
+    "file": "docs/adr/0008-verification-acoustique-des-suites.md",
+    "summary": "Une suite de versets n'est nommée que si l'audio soutient le texte du corpus ; temps mesurés au mot ; suite d'un verset commencé."
+  },
+  {
+    "slug": "adr-0009",
+    "title": "ADR-0009 — Cascade multi-modèles arbitrée par l'audio",
+    "section": "Décisions",
+    "file": "docs/adr/0009-cascade-multi-modeles-arbitre-acoustique.md",
+    "summary": "Trois moteurs de reconnaissance en cascade : seules les fenêtres douteuses sont réécoutées, et l'audio arbitre."
+  },
+  {
+    "slug": "metriques-evaluation",
+    "title": "Métriques d'évaluation",
+    "section": "Évaluation",
+    "file": "docs/EVALUATION-METRICS.md",
+    "summary": "Les définitions exactes des métriques (rappel, précision, faux verset, omissions, erreurs de limites) et comment elles sont calculées."
+  },
+  {
+    "slug": "protocole-reglage-evaluation",
+    "title": "Protocole réglage et évaluation",
+    "section": "Évaluation",
+    "file": "docs/evaluation/protocole-reglage-evaluation.md",
+    "summary": "Comment on s'assure qu'aucun chiffre présenté comme une performance n'a servi à régler le système (séparation dev / test)."
+  },
+  {
+    "slug": "reproductibilite",
+    "title": "Reproductibilité",
+    "section": "Évaluation",
+    "file": "docs/REPRODUCIBILITY.md",
+    "summary": "Ce qui a réellement été exécuté, avec versions et durées, pour refaire les mesures."
+  },
+  {
+    "slug": "rapport-reel-2026-10-09",
+    "title": "Évaluation réelle du 2026-10-09",
+    "section": "Évaluation",
+    "file": "docs/evaluation/rapport-reel-2026-10-09.md",
+    "summary": "Premier rapport sur de l'audio réel : 52,6 % de versets retrouvés par FastConformer, aucun faux verset, constat que la décision est le goulot."
+  },
+  {
+    "slug": "asr-comparaison",
+    "title": "Whisper-Tarteel contre FastConformer",
+    "section": "Évaluation",
+    "file": "docs/evaluation/asr-comparison.md",
+    "summary": "Accord entre deux moteurs sur un extrait : une mesure d'accord, pas d'exactitude."
+  },
+  {
+    "slug": "repli-silero",
+    "title": "Repli Silero VAD",
+    "section": "Évaluation",
+    "file": "docs/evaluation/silero-fallback.md",
+    "summary": "Mesure de fond du découpeur de secours : pourquoi il n'est pas fiable par défaut."
+  },
+  {
+    "slug": "alignement-2026-10-19",
+    "title": "Alignement forcé : mesures du 2026-10-19",
+    "section": "Évaluation",
+    "file": "docs/evaluation/alignment-2026-10-19.md",
+    "summary": "Ce que l'alignement forcé mesure sur EveryAyah et sur une prière réelle, et ce qu'il ne prouve pas encore."
+  },
+  {
+    "slug": "preuve-par-la-suite-2026-10-19",
+    "title": "Preuve cumulée par la suite : mesures du 2026-10-19",
+    "section": "Évaluation",
+    "file": "docs/evaluation/chain-proof-2026-10-19.md",
+    "summary": "Comparaison avec et sans la preuve par la suite : voix au micro et EveryAyah (71,8 % → 91,2 %, aucun faux verset)."
+  },
+  {
+    "slug": "alignement-unk-2026-10-20",
+    "title": "L'aligneur n'exige plus le symbole inconnu",
+    "section": "Évaluation",
+    "file": "docs/evaluation/alignment-unk-2026-10-20.md",
+    "summary": "Mesures avant et après la correction de l'aligneur, sur les mêmes transcriptions."
+  },
+  {
+    "slug": "cascade-2026-10-20",
+    "title": "Cascade multi-modèles contre FastConformer seul",
+    "section": "Évaluation",
+    "file": "docs/evaluation/cascade-2026-10-20.md",
+    "summary": "Mesure de la cascade : aucun verset perdu, EveryAyah 216/216, coût en temps multiplié par 2,85."
+  },
+  {
+    "slug": "riwaya-2026-10-20",
+    "title": "Détecter une autre riwaya que le Hafs",
+    "section": "Évaluation",
+    "file": "docs/evaluation/riwaya-2026-10-20.md",
+    "summary": "Deux signaux testés pour détecter le Warsh, tous deux négatifs ; origine de l'avertissement « riwaya supposée Hafs »."
+  },
+  {
+    "slug": "corpus-de-test",
+    "title": "Corpus de test audio",
+    "section": "Données",
+    "file": "docs/TEST-CORPUS.md",
+    "summary": "Les catégories d'audio de test, chacune ciblant un risque, et le protocole de la vérité terrain (aucun audio n'est versionné)."
+  },
+  {
+    "slug": "atelier-direction-artistique",
+    "title": "Direction artistique de l'atelier",
+    "section": "Interface",
+    "file": "docs/design/atelier-direction.md",
+    "summary": "La direction « Encre & lapis » : principes visuels, composants, thème clair et sombre, polices."
+  }
+]

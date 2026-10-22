@@ -4,6 +4,9 @@
 - [ ] `pytest`, `ruff check src tests scripts`, `ruff format --check src tests scripts`, `mypy` verts (sorties jointes)
 - [ ] Surface visible (si applicable) vérifiée dans le navigateur
 
+## Documentation vivante (docs/templates/pull-request.md)
+- [ ] Notes de version / documentation mises à jour (`docs/RELEASE-NOTES.md`, le document concerné, `docs/docs-index.json` pour une nouvelle ADR ou un nouveau rapport), ou sans objet (dire pourquoi)
+
 ## Invariants du projet (docs/ARCHITECTURE.md §1)
 - [ ] Aucun texte arabe ni aucune traduction n'est produit par un modèle (I1, I2)
 - [ ] Nouveaux cas de test : must-pass ET must-fail
