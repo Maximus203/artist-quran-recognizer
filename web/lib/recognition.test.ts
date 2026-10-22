@@ -166,6 +166,15 @@ describe("contrat recognition", () => {
         { ...basmala, label_ar: "آمين" },
         { kind: "non_quran", label: "takbir", t: [1, 2], text: "الله أكبر" },
         { kind: "non_quran", label: "amin", t: [1, 2], ref: "1:1" },
+        { ...basmala, text: "" },
+        { ...basmala, basmala: "oui" },
+        { kind: "non_quran", label: "amin", t: [1, 2], label_ar: "" },
+        {
+          kind: "non_quran",
+          label: "takbir",
+          t: [1, 2],
+          translation: basmala.translation,
+        },
       ];
       for (const item of bad) expect(() => parse(item)).toThrow();
     });

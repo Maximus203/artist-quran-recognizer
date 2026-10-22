@@ -149,10 +149,14 @@ def _check_non_quran(item: dict[str, Any], repo: CorpusRepository, where: str) -
             raise CorpusMismatch(
                 f"{where} : texte de la basmala différent du corpus ({_first_gap(text, full)})"
             )
+        translation = item.get("translation")
+        if translation is not None:
+            _check_translation_shape(translation, where)
         return
-    if item.get("text") is not None or item.get("ref") is not None:
+    if any(item.get(key) is not None for key in ("text", "ref", "translation")):
         raise CorpusMismatch(
-            f"{where} : texte ou référence sur une zone {label!r} qui n'est pas la basmala (I1)"
+            f"{where} : texte, référence ou traduction sur une zone {label!r} qui n'est pas la "
+            "basmala (I1)"
         )
     label_ar = item.get("label_ar")
     if label_ar is not None:
@@ -162,6 +166,19 @@ def _check_non_quran(item: dict[str, Any], repo: CorpusRepository, where: str) -
             expected = None
         if label_ar != expected:
             raise CorpusMismatch(f"{where} : libellé arabe inattendu pour {label!r} : {label_ar!r}")
+
+
+def _check_translation_shape(translation: object, where: str) -> None:
+    """I2 : une traduction restituée garde sa provenance (id, version, attribution) et couvre le
+    verset entier. Le contenu n'est pas comparable ici (dépôt de traductions non chargé)."""
+    if not isinstance(translation, dict):
+        raise CorpusMismatch(f"{where} : traduction sans provenance (objet attendu)")
+    for key in ("text", "translation_id", "version", "attribution"):
+        value = translation.get(key)
+        if not isinstance(value, str) or not value:
+            raise CorpusMismatch(f"{where} : traduction sans {key} (I2)")
+    if translation.get("scope") != "verse":
+        raise CorpusMismatch(f"{where} : traduction de portée {translation.get('scope')!r}")
 
 
 def _check_complete(ref: VerseRef, first: int, last: int, total: int) -> None:

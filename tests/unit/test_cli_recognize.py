@@ -114,6 +114,42 @@ def test_ecrit_json_puis_srt(tmp_path, audio, corpus, matcher):
     assert "cours.recognition.json" in out and "cours.srt" in out
 
 
+class _OfflineTranslations:
+    def get(self, ref, translation_id):
+        from urllib.error import URLError
+
+        raise URLError("réseau indisponible")
+
+
+def test_traduction_indisponible_ne_perd_pas_les_sous_titres_et_dit_quoi_faire(
+    tmp_path, audio, corpus, matcher
+):
+    """Hors ligne, la traduction d'une sourate absente du cache lève : le calcul (plus d'une minute)
+    ne doit pas finir en trace d'appels sans aucun fichier."""
+    out, err = io.StringIO(), io.StringIO()
+
+    def build(options, env):
+        engine = EngineInfo("fake-asr", "fake-seg", "flow", "viterbi-v2", corpus="tanzil")
+        pipeline = RecognitionPipeline(
+            _Extractor(), _Segmenter(), _ASR(corpus), matcher, corpus, engine
+        )
+        return Recognizer(pipeline, HomeRenderer(corpus, _OfflineTranslations()))
+
+    out_dir = tmp_path / "off"
+    code = main(
+        ["recognize", str(audio), "--out-dir", str(out_dir), "--format", "json,srt"],
+        env={},
+        out=out,
+        err=err,
+        recognizer_factory=build,
+    )
+    assert code == 1
+    assert "--translation none" in err.getvalue() and "réseau indisponible" in err.getvalue()
+    assert "Traceback" not in err.getvalue()
+    assert (out_dir / "cours.srt").exists()  # les sous-titres n'ont pas besoin de traduction
+    assert not (out_dir / "cours.recognition.json").exists()  # jamais un JSON à moitié écrit
+
+
 def test_formats_choisis_et_sans_traduction(tmp_path, audio, corpus, matcher):
     out_dir = tmp_path / "o"
     code, _, err = _run(

@@ -291,15 +291,25 @@ def _recognize(
         return 1
     args.out_dir.mkdir(parents=True, exist_ok=True)
     renderer = recognizer.renderer
-    if "json" in targets:
-        document = build_json(result, renderer, translation, _sha256_of(args.file))
-        targets["json"].write_text(
-            json.dumps(document, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
-        )
+    # Sous-titres d'abord : ils n'ont besoin d'aucune traduction, et le JSON (qui en a besoin, par
+    # verset et pour la basmala) peut échouer hors ligne après plus d'une minute de calcul.
     if "srt" in targets:
         targets["srt"].write_text(render_srt(result, renderer), encoding="utf-8")
     if "vtt" in targets:
         targets["vtt"].write_text(render_vtt(result, renderer), encoding="utf-8")
+    if "json" in targets:
+        try:
+            document = build_json(result, renderer, translation, _sha256_of(args.file))
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(
+                f"ERREUR rendu du JSON impossible : {exc}. La traduction (QuranEnc) est peut-être "
+                "indisponible : réessayer avec le réseau, ou avec --translation none.",
+                file=err,
+            )
+            return 1
+        targets["json"].write_text(
+            json.dumps(document, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
+        )
     for warning in result.warnings:
         print(f"AVERTISSEMENT {warning}", file=err)
     verses = result.detections()
