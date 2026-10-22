@@ -31,12 +31,83 @@ Le lecteur ne joue pas le fichier importé mais sa **copie d'écoute** : le mêm
 
 ## Tester un audio
 
-1. Choisir un audio local (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 300 Mo maximum par défaut), ou cliquer « Enregistrer une récitation ». Pour le micro, autoriser l’accès sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer si nécessaire. « Analyser cette récitation » importe alors les octets originaux WebM/OGG/M4A et lance le moteur réel. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.
+1. Choisir un audio local (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC ou WebM ; 300 Mo maximum par défaut) ou une vidéo (MP4, MKV, MOV, AVI, M4V ou WebM ; 2 Gio maximum par défaut, seule la piste sonore est analysée), ou cliquer « Enregistrer une récitation ». Pour le micro, autoriser l’accès sur `127.0.0.1`, démarrer, surveiller la durée, arrêter, réécouter et recommencer si nécessaire. « Analyser cette récitation » importe alors les octets originaux WebM/OGG/M4A et lance le moteur réel. Un refus d’accès ou un micro indisponible affiche une erreur ; aucun fichier n’est créé avant le choix d’analyser.
 2. Facultatif : ajouter un JSON `aqr.recognition/1` existant du **même audio**. Le hash SHA-256 est contrôlé ; la prédiction importée garde ses octets d'origine.
 3. Pour un fichier choisi, cliquer « Importer dans l'atelier », puis « Lancer le vrai moteur Python » si aucun JSON n'a été joint. Le bouton « Analyser cette récitation » du micro effectue ces deux étapes.
 4. Utiliser la piste, la liste et le lecteur pour écouter. Les hypothèses déduites et les abstentions ont leurs propres affichages. « Sans temps » ne déplace pas le lecteur.
 5. « Signaler ici » pour un point, « Sélectionner une plage » pour une durée. Décrire le problème, écouter, confirmer. La revue se sauvegarde localement ; vérifier l'indicateur « Enregistré localement ».
 6. Télécharger le pack ZIP complet pour le transférer dans un environnement cloud autorisé. Il contient l'audio, la prédiction originale, la revue courante, ses révisions et un manifeste d'empreintes SHA-256. Le bilan JSON seul est aussi disponible. Le stockage cloud, les droits sur des voix tierces et une vérité terrain exhaustive restent à établir avant d'annoncer des métriques.
+
+## File d'attente, vidéos, « non lu » et durées (contrat d'API)
+
+Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le serveur les met en **file FIFO** et n'en exécute qu'une à la fois (la carte graphique n'aime pas le parallèle). Le client envoie un fichier par requête, autant de fois qu'il veut, et revient plus tard.
+
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `AQR_MAX_CONCURRENT` | analyses exécutées en même temps (entier ≥ 1 ; invalide = 1). Lue à chaque démarrage d'analyse | `1` |
+| `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafond d'une **vidéo** envoyée en flux (`413` au-delà). Une vidéo garde son image sur le disque alors que seul le son sert : 2 Gio couvrent 1 h 30 de 1080p courant | 2 Gio |
+| `AQR_MAX_UPLOAD_BYTES` | plafond d'un **audio** en flux, et de tout envoi par formulaire multipart (lu en mémoire) | 300 Mo |
+| `AQR_FFPROBE` | exécutable ffprobe (défaut : voisin de `AQR_FFMPEG`, sinon `ffprobe` du PATH, comme le moteur) | — |
+
+### Importer (`POST /api/sessions`)
+
+- **En flux (recommandé, seul adapté à une vidéo)** : le corps est le fichier lui-même, écrit directement sur le disque (jamais lu en mémoire), empreinte calculée au vol.
+  ```js
+  await fetch("/api/sessions?autorun=1", {
+    method: "POST",
+    headers: {
+      "x-aqr-filename": encodeURIComponent(file.name), // obligatoire (extension reconnue)
+      "x-aqr-source-kind": "file",                      // ou "microphone" (facultatif)
+      "content-type": file.type || "application/octet-stream",
+    },
+    body: file, // le navigateur lit le File par morceaux
+  });
+  ```
+- **Formulaire multipart** (compatibilité) : champ `audio` (ou `media`), `result` facultatif (JSON `aqr.recognition/1` du même audio), `source_kind`, `autorun=1`. Lu en mémoire : plafond `AQR_MAX_UPLOAD_BYTES` pour tous les types.
+- `?autorun=1` (ou le champ `autorun=1`) met l'analyse en file dès l'import ; la réponse est alors la session déjà `queued` ou `running`. Si la mise en file échoue (moteur non configuré…), l'import n'est pas perdu : la session reste `ready` et la réponse porte `autorun_error`.
+- Réponses : `201` + session ; `400` format non accepté / fichier vide / flux interrompu / résultat d'un autre audio ; `413` au-delà du plafond ; `422` **vidéo sans piste audio** ou illisible (rien n'est conservé) ; `403` hors accès local.
+- Formats : audio MP3, M4A, WAV, OGG, OPUS, FLAC, AAC, WebM ; vidéo MP4, MKV, MOV, AVI, M4V (et WebM). ffprobe sonde le fichier à l'import (piste audio présente, durée de la **piste audio**, pas du conteneur) ; sans ffprobe le fichier est accepté sans durée (et sans estimation) et c'est le moteur qui refusera un fichier sans audio. Helpers côté client : `lib/audio-upload.ts` (`mediaAccept`, `isAcceptedMediaName`, `isVideoName`, `acceptedMediaFiles`, `bindMediaDrop` pour un dépôt multiple).
+
+### États et champs d'une session (`GET /api/sessions`, `GET /api/sessions/<id>` → `session`)
+
+`GET /api/sessions` renvoie un tableau, les plus récentes d'abord. Champs ajoutés (les anciens sont inchangés) :
+
+| Champ | Type | Sens |
+| --- | --- | --- |
+| `state` | `ready` · `queued` · `running` · `done` · `failed` · `cancelled` | `queued` = en attente de la file |
+| `queue_position` | entier ≥ 1 ou `null` | rang dans l'attente (1 = la prochaine) ; calculé à la lecture, `null` hors attente |
+| `queued_at` | ISO ou `null` | mise en file ; ordre FIFO durable (reste renseigné après le départ) |
+| `started_at` / `finished_at` | ISO ou `null` | départ réel du processus / fin (réussite, échec ou annulation) |
+| `duration_s` | secondes ou `null` | durée **réelle** du traitement (fin − départ) |
+| `audio_duration_s` | secondes ou `null` | durée de l'audio : sonde à l'import, puis valeur exacte du moteur (`source.duration_s`) à la fin |
+| `engine` | `cascade` · `fastconformer` · `whisper` · `muno-streaming` ou `null` | moteur de l'analyse |
+| `elapsed_s` | secondes ou `null` | temps écoulé depuis le départ (en cours seulement) |
+| `eta_s` | secondes ou `null` | **reste à attendre** : en cours = estimation − écoulé (jamais négatif) ; en attente = ce qui la précède + sa propre durée. `null` = « estimation indisponible » |
+| `eta_range_s` | `[min, max]` ou `null` | fourchette p10–p90 observée en validation croisée (en cours, ≥ 4 analyses du moteur) |
+| `eta_reason` | voir ci-dessous ou `null` | pourquoi `eta_s` est `null` |
+| `eta_overrun` | booléen | en cours depuis plus longtemps que prévu : `eta_s` vaut `0` sans que la fin soit proche |
+| `viewed_at` | ISO, `null` ou **absent** | ouverture du résultat (voir « non lu ») |
+| `unread` | booléen | `state` ∈ {`done`, `failed`} **et** `viewed_at === null` |
+
+`eta_reason` : `no_history` (aucune analyse terminée de ce moteur), `insufficient_history` (moins de 3), `history_too_narrow` (audios de durées trop proches pour lire une pente), `out_of_range` (audio plus de 2× plus long que tout l'historique : pas d'extrapolation), `audio_duration_unknown`, `ahead_unknown` (une analyse devant elle n'a pas d'estimation). **Aucun chiffre n'est jamais inventé.**
+
+**Estimation.** Le facteur temps réel (RTF = durée de traitement / durée audio) n'est pas constant : les modèles se chargent à chaque analyse (≈ 50 s fixes), donc 18 s d'audio coûtent ≈ 60 s (RTF ≈ 3) et 1 h d'audio ≈ 110 s (RTF ≈ 0,03). L'estimation est donc `durée = chargement + coût × audio`, ajustée **par moteur** sur les analyses terminées (droite robuste de Theil–Sen : quelques analyses lancées en parallèle, donc lentes, ne la déplacent pas). Mesure en validation croisée sur les 33 analyses FastConformer réelles : erreur relative médiane **11 %** (contre 38 % pour un RTF médian), p90 28 %. `GET /api/stats` expose le modèle et la dispersion du RTF.
+
+**Non lu.** `viewed_at` est mis à `null` à la fin de chaque analyse (réussite **ou** échec) et posé par `POST /api/sessions/<id>/viewed`, que l'interface appelle quand l'utilisateur **ouvre le résultat**. Un `GET` ne marque jamais comme vu (le sondage de la liste n'efface pas le point). Migration : une session créée avant ce suivi n'a pas de champ `viewed_at` (absent) et est considérée **lue** : aucun point fantôme. Un résultat importé à la main (JSON joint) est créé déjà vu.
+
+### Routes
+
+- `POST /api/sessions/<id>/run` — met en file : `200 { state: "running" | "queued", queue_position }` ; `400` si la session tourne, attend déjà, a déjà un résultat, ou si `AQR_MODELS_DIR` manque. Corps facultatif `{ "asr": "…" }` ; sans moteur, celui de l'atelier (`AQR_ASR`, cascade par défaut).
+- `DELETE /api/sessions/<id>/run` — annule : une analyse **en attente quitte la file** sans jamais démarrer, une analyse en cours voit son processus tué ; la suivante démarre. `400` s'il n'y a rien à annuler.
+- `DELETE /api/sessions/<id>` — supprime aussi une session **en attente** (retirée de la file) ; refus tant qu'elle tourne.
+- `POST /api/sessions/<id>/viewed` — idempotent, accès local requis (même garde que les autres mutations) : `200 { id, state, viewed_at, unread }` ; sans effet (`viewed_at` reste `null`) tant que la session n'est ni `done` ni `failed` ; `404` si inconnue.
+- `GET /api/stats` — par moteur : `analyses`, `failures`, `audio_total_s`, `processing_total_s`, `rtf` (`median`, `p90`, `mean`, `min`, `max`), `estimate` (`overhead_s`, `seconds_per_audio_s`, `samples`, `audio_max_s`, `loo_median_rel_error`) ou `estimate_unavailable` (raison) ; `queue` (`concurrency`, `running`, `waiting` avec `eta_s`) ; `recent` (10 dernières analyses terminées, avec leur `rtf`). Pur calcul sur les sessions, aucune donnée nouvelle.
+
+### Robustesse
+
+- **Redémarrage** : au démarrage du serveur (`instrumentation.ts`, et à la première requête sinon), les sessions `queued` sans traitement reprennent leur place dans l'ordre de `queued_at`. Une session `running` dont le processus est mort passe `failed` (« Le traitement s'est arrêté… », non lue). Un processus d'un serveur précédent encore vivant garde sa place : la file attend sa fin avant de lancer la suivante.
+- **Sans course** : deux lancements simultanés (même session ou sessions différentes) ne démarrent jamais deux fois le moteur au-delà de `AQR_MAX_CONCURRENT` ; l'issue d'une analyse n'est jamais écrasée par un écrasement tardif de `session.json` (écritures atomiques, reprise des refus passagers de Windows `EPERM`/`EBUSY` quand un autre lecteur ouvre le fichier).
+- **Purge** (`AQR_SESSION_TTL_S`) : une session en attente n'est jamais purgée.
 
 ## Construire la vérité terrain (panneau « 07 / VÉRITÉ TERRAIN »)
 
@@ -72,7 +143,7 @@ Par défaut l'atelier n'accepte que la boucle locale (`127.0.0.1`, `localhost`, 
 | `AQR_ALLOWED_HOSTS` | noms d'hôte supplémentaires acceptés, séparés par des virgules (sans port) | vide |
 | `AQR_ACCESS_TOKEN` | jeton d'accès, **obligatoire** pour qu'un hôte supplémentaire soit accepté ; une fois défini il protège aussi le loopback. Choisir ≥ 24 caractères aléatoires | absent |
 | `AQR_ACCESS_TTL_S` | durée de vie (s) du cookie d'accès délivré par `/access` (1 à 604800) | 3600 |
-| `AQR_MAX_UPLOAD_BYTES` | plafond d'upload (refus `413` dès l'en-tête `Content-Length`, `400` sinon) | 300 Mo |
+| `AQR_MAX_UPLOAD_BYTES` | plafond d'upload d'un audio ou d'un formulaire (refus `413` dès l'en-tête `Content-Length`) ; les vidéos ont `AQR_MAX_VIDEO_UPLOAD_BYTES` (voir « File d'attente ») | 300 Mo |
 | `AQR_SESSION_TTL_S` | supprime à chaque import les sessions **inactives** depuis plus de N secondes (jamais celles en cours) ; voir « Règle d'activité » ci-dessous | `0` = désactivé |
 
 Le jeton se présente par l'en-tête `x-aqr-token`, `Authorization: Bearer …` (scripts, tests) ou par un cookie `HttpOnly` signé (HMAC, expiration incluse) obtenu en saisissant le jeton sur `/access` ; la comparaison est à temps constant. Sans jeton valide, l'API répond `403` et la page redirige vers `/access`. Les mutations (`POST`/`DELETE`) exigent en plus une origine identique ou un hôte autorisé de même protocole et port.
