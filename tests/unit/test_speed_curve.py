@@ -27,6 +27,7 @@ from aqr.eval.speed_curve import (
     aggregate_rate,
     cell_id,
     choose_estimator,
+    ctc_stats,
     decide_speed,
     interval_rates,
     leave_reciter_out,
@@ -69,8 +70,8 @@ def test_la_grille_des_temoins_reste_sous_la_vitesse_nette_maximale() -> None:
     cells = temoin_cells()
     assert (1.0, 1.0) in cells and (0.3, 4.0) in cells and (0.4, 2.5) in cells
     assert all(s * c <= MAX_NET_SPEED + 1e-9 for s, c in cells)
-    assert (1.0, 4.0) not in cells  # propre accéléré ×4 : hors cahier
-    assert len(cells) == len(set(cells))
+    assert (1.0, 4.0) in cells  # le propre sur-compensé ×4 : une estimation fausse reste mesurable
+    assert len(cells) == len(set(cells)) == len(STRETCHES) * len(TEMOIN_COMPENSATIONS)
     assert {s for s, _c in cells} == set(STRETCHES)
     assert {c for _s, c in cells} <= set(TEMOIN_COMPENSATIONS)
 
@@ -384,3 +385,26 @@ def test_decision_finale() -> None:
     assert decide_speed(True, False).startswith("ne pas implémenter")
     assert decide_speed(False, True).startswith("ne pas implémenter")
     assert math.isfinite(SPEED_RULE.min_gain_points)
+
+
+# --- treillis CTC : taux de trames non blanches ---------------------------------------------------
+
+
+def test_stats_ctc_comptent_trames_non_blanches_et_symboles() -> None:
+    #           blanc=0 : 0 7 7 0 7 3 3 0 0
+    stats = ctc_stats([0, 7, 7, 0, 7, 3, 3, 0, 0], blank=0)
+    assert stats.frames == 9
+    assert stats.nonblank == 5
+    assert stats.tokens == 3  # 7 7 | 7 (après un blanc) | 3 3
+    assert stats.nonblank_rate == pytest.approx(5 / 9)
+
+
+def test_stats_ctc_d_un_passage_vide_ou_muet() -> None:
+    assert ctc_stats([], blank=0).nonblank_rate == 0.0
+    muted = ctc_stats([0, 0, 0], blank=0)
+    assert muted.tokens == 0 and muted.nonblank == 0
+
+
+def test_stats_ctc_s_additionnent() -> None:
+    total = ctc_stats([0, 1, 0], blank=0) + ctc_stats([2, 2, 0, 0], blank=0)
+    assert (total.frames, total.nonblank, total.tokens) == (7, 3, 2)
