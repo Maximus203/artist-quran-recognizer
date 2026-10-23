@@ -145,6 +145,19 @@ def test_le_balayage_couvre_l_a_priori_le_minimum_de_mots_et_le_seuil() -> None:
     assert all(c.prior == 0.9 for c in guards)  # les garde-fous se jugent à a priori constant
 
 
+def test_le_balayage_couvre_la_densite_des_mots_du_verrou() -> None:
+    density = [c for family, c in m.sweep_grid(["density"])]
+    assert {c.min_lock_density for c in density} == {0.5, 0.6, 0.7, 0.8, 0.9}
+
+
+def test_le_balayage_peut_se_limiter_a_des_familles() -> None:
+    grid = m.sweep_grid(["rivals", "jumps"])
+    assert {family for family, _cfg in grid} == {"rivals", "jumps"}
+    assert len(grid) == 4 + 9
+    with pytest.raises(ValueError):
+        m.sweep_grid(["inconnue"])
+
+
 def test_le_balayage_couvre_la_marge_des_rivaux_et_les_conditions_du_saut() -> None:
     grid = m.sweep_grid()
     rivals = [c for family, c in grid if family == "rivals"]

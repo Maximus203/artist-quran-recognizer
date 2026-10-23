@@ -573,7 +573,7 @@ def group_name(entry: dict[str, Any]) -> str:
     return entry["kind"]
 
 
-def sweep_grid() -> list[tuple[str, LiveConfig]]:
+def sweep_grid(families: Sequence[str] | None = None) -> list[tuple[str, LiveConfig]]:
     """Deux balayages : le coeur (a priori, mots minimum, seuil) puis les garde-fous (confiance de
     l'ASR, mots exacts) autour des valeurs de départ."""
     base = LiveConfig()
@@ -601,10 +601,23 @@ def sweep_grid() -> list[tuple[str, LiveConfig]]:
         configs.append(
             ("jumps", base.replace(min_words_jump=min_jump, jump_leader_posterior=leader))
         )
+    for density in (0.5, 0.6, 0.7, 0.8, 0.9):
+        configs.append(("density", base.replace(min_lock_density=density)))
+    if families is not None:
+        unknown = set(families) - {family for family, _cfg in configs}
+        if unknown:
+            raise ValueError(f"familles de balayage inconnues : {sorted(unknown)}")
+        configs = [(family, cfg) for family, cfg in configs if family in families]
     return configs
 
 
-def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dict[str, Any]:
+def run_report(
+    work: Path,
+    corpus_dir: Path,
+    out_path: Path,
+    sweep: bool,
+    families: Sequence[str] | None = None,
+) -> dict[str, Any]:
     from aqr.live.corpus_flow import load_prefix_index
 
     index, skeleton = load_prefix_index(corpus_dir)
@@ -688,7 +701,7 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
             for e, s, _ev, _r in real_runs
             if e["kind"] == "real-speech"
         ]
-        for number, (family, cfg) in enumerate(sweep_grid(), start=1):
+        for number, (family, cfg) in enumerate(sweep_grid(families), start=1):
             print(f"balayage {number} ({family})", file=sys.stderr, flush=True)
             graded = evaluate_all(index, cfg, [(e, s) for e, s, _ev, _r in truth_runs])
             summary = summarize([r[3] for r in graded])
@@ -703,6 +716,11 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
                     "min_lock_confidence": cfg.min_lock_confidence,
                     "min_exact_share": cfg.min_exact_share,
                     "mid_verse_extra_words": cfg.mid_verse_extra_words,
+                    "min_lock_density": cfg.min_lock_density,
+                    "words_margin": cfg.words_margin,
+                    "min_words_jump": cfg.min_words_jump,
+                    "jump_leader_posterior": cfg.jump_leader_posterior,
+                    "jumps": summary["jumps"],
                     "locked_correct": summary["locked_correct"],
                     "verses": summary["verses"],
                     "false_locks": summary["false_locks"],
@@ -851,6 +869,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--out", type=Path, default=None, help="rapport JSON (défaut : work/report.json)"
     )
     parser.add_argument("--no-sweep", action="store_true")
+    parser.add_argument(
+        "--sweep-families",
+        default=None,
+        help="core,guards,rivals,jumps (défaut : toutes)",
+    )
     args = parser.parse_args(argv)
 
     stages = {s.strip() for s in args.stage.split(",")}
@@ -879,7 +902,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"asr : {run_asr(work, models_dir)} fichiers traités")
     if "report" in stages:
         out = args.out or (work / "report.json")
-        report = run_report(work, args.corpus, out, sweep=not args.no_sweep)
+        families = args.sweep_families.split(",") if args.sweep_families else None
+        report = run_report(work, args.corpus, out, sweep=not args.no_sweep, families=families)
         print(json.dumps(report["truth"], ensure_ascii=False, indent=1))
         print(f"rapport : {out}")
     return 0
