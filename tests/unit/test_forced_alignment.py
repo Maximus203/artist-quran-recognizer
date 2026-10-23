@@ -238,6 +238,67 @@ def test_fin_libre_jamais_au_milieu_d_un_mot_uthmani():
     assert result.evidence.llr_per_frame < -1.0  # « أيها » manque : la preuve le dit
 
 
+# --- Preuve « voisée » : l'audio qui soutient le texte, mesuré sur la seule parole alignée -------
+# Dans un long passage presque silencieux, la preuve par trame de tout le passage est diluée par
+# les blancs : un mauvais texte posé sur quelques trames y paraît soutenu (cas du comblement de
+# trou, ADR-0013). La preuve voisée ne compte que les trames entre le premier et le dernier symbole.
+def test_la_preuve_voisee_du_bon_texte_est_proche_de_zero_quel_que_soit_le_silence_autour():
+    lat = lattice([0] * 40 + [1, 2, 0, 3] + [0] * 40)
+    result = aligner().align(lat, [WordSpan(V1, 1, 2)])
+    assert result is not None
+    assert result.evidence.voiced_llr_per_frame == pytest.approx(0.0, abs=1e-6)
+    assert result.evidence.voiced_frames == 4
+
+
+def test_un_mauvais_texte_dilue_dans_le_silence_reste_visible_dans_la_preuve_voisee():
+    lat = lattice([0] * 40 + [1, 2, 0, 3] + [0] * 40)
+    wrong = aligner().align(lat, [WordSpan(V2, 1, 2)])
+    assert wrong is not None
+    assert wrong.evidence.llr_per_frame > -0.3  # dilué : 84 trames, dont 80 de blancs
+    assert wrong.evidence.voiced_llr_per_frame is not None
+    assert wrong.evidence.voiced_llr_per_frame < -2.0  # la parole, elle, ne le soutient pas
+    assert wrong.evidence.voiced_frames < 10
+
+
+def test_la_preuve_voisee_suit_la_fin_libre():
+    lat = lattice([0, 1, 2, 0, 3, 0, 0, 0])  # le texte attendu est plus long que ce qui est dit
+    result = aligner().align(lat, [WordSpan(V1, 1, 2), WordSpan(V2, 1, 2)], free_end=True)
+    assert result is not None
+    assert result.evidence.voiced_frames == 4  # trames 1 à 4 : de « يا » à « الناس »
+    assert result.evidence.voiced_llr_per_frame == pytest.approx(0.0, abs=1e-6)
+
+
+# --- Preuve par mot : un mot que l'audio ne contient pas se voit, même noyé dans un long passage --
+def test_chaque_mot_porte_sa_propre_preuve():
+    lat = lattice([0, 1, 2, 0, 3, 0])
+    result = aligner().align(lat, [WordSpan(V1, 1, 2)])
+    assert result is not None
+    assert [w.llr_per_frame for w in result.spans[0].words] == [
+        pytest.approx(0.0, abs=1e-6),
+        pytest.approx(0.0, abs=1e-6),
+    ]
+
+
+def test_un_mot_pose_sur_du_blanc_a_une_preuve_tres_negative_alors_que_les_autres_vont_bien():
+    # « يا أيها » est dit, « الناس » non : l'alignement doit pourtant le poser quelque part.
+    lat = lattice([0] * 30 + [1, 2] + [0] * 30)
+    result = aligner().align(lat, [WordSpan(V1, 1, 2)])
+    assert result is not None
+    first, second = result.spans[0].words
+    assert first.llr_per_frame == pytest.approx(0.0, abs=1e-6)
+    assert second.llr_per_frame is not None and second.llr_per_frame < -3.0
+    # le texte entier, lui, reste presque indolore par trame : c'est le défaut de la moyenne
+    assert result.evidence.voiced_llr_per_frame is not None
+    assert result.evidence.voiced_llr_per_frame > second.llr_per_frame
+
+
+def test_la_preuve_par_mot_suit_les_symboles_repetes_sur_plusieurs_trames():
+    lat = lattice([0, 1, 1, 2, 2, 0, 3, 3, 3, 0])
+    result = aligner().align(lat, [WordSpan(V1, 1, 2)])
+    assert result is not None
+    assert all(w.llr_per_frame == pytest.approx(0.0, abs=1e-6) for w in result.spans[0].words)
+
+
 # --- Encodeur de l'aligneur : seuls les symboles que le modèle peut émettre ----------------------
 class _LazyModel:
     """Comme le FastConformer : `unknown_symbol` charge le modèle."""

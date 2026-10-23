@@ -661,3 +661,143 @@ def test_un_debut_que_l_audio_ne_soutient_pas_reste_une_abstention(
     assert (det.span.first_word, det.span.last_word) == (8, 13)
     assert [c.accepted for c in result.acoustic_checks if c.kind == "head"] == [False]
     assert any(isinstance(i, AbstentionSpan) for i in result.intervals)
+
+
+# --- Comblement de trou entre deux versets reconnus (revue lot3-04, ADR-0013) -------------------
+# 67:2 a 11 mots, 67:3 en a 18. Les fenêtres sont celles du segmenteur ; l'audio (modèle CTC
+# factice) dit ce que `said` décrit, à raison d'un mot toutes les 0,6 s.
+def _gap_texts(corpus, *parts):
+    return [_verse(corpus, 67, a, f, last) if isinstance(a, int) else a for a, f, last in parts]
+
+
+def test_un_mot_dit_dans_la_fenetre_reconnue_mais_absent_du_texte_est_ajoute(
+    corpus, matcher, alignment_texts
+):  # cas 2 : 2:87 [1-12] alors que le mot 13 est dit dans la même fenêtre
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, (2.2, "67:3[1-13]")))
+    result = _pipeline(
+        corpus,
+        matcher,
+        [_verse(corpus, 67, 3, 1, 10)],
+        [(2.0, 11.0)],
+        seconds=14.0,
+        acoustic=acoustic,
+    )
+    (det,) = _verses(result)
+    assert (det.span.first_word, det.span.last_word) == (1, 13) and det.status is Status.RECOGNIZED
+    assert len(det.word_times) == 13
+    assert all(
+        a.end_s <= b.start_s for a, b in zip(det.word_times, det.word_times[1:], strict=False)
+    )
+    (check,) = [c for c in result.acoustic_checks if c.role == "extension"]
+    assert check.accepted and check.words == 3 and check.gain_nats and check.gain_nats > 12
+
+
+def test_sans_les_mots_dans_l_audio_le_verset_n_est_pas_etendu(corpus, matcher, alignment_texts):
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, (2.2, "67:3[1-10]")))
+    result = _pipeline(
+        corpus,
+        matcher,
+        [_verse(corpus, 67, 3, 1, 10)],
+        [(2.0, 11.0)],
+        seconds=14.0,
+        acoustic=acoustic,
+    )
+    (det,) = _verses(result)
+    assert (det.span.first_word, det.span.last_word) == (1, 10)
+    assert not [c for c in result.acoustic_checks if c.role == "extension" and c.accepted]
+
+
+GARBLED_GAP = "كتاب بيت رجل ماء"
+
+
+def _gap(corpus, matcher, alignment_texts, said, middle, **kwargs):
+    """67:3 [1-5] reconnu, une fenêtre `middle` (texte de l'ASR), puis 67:3 [14-18] reconnu : les
+    mots 6 à 13 sont dits dans la fenêtre du milieu, que l'ASR comprend mal (cas 4 du lot3-04)."""
+    texts = [_verse(corpus, 67, 3, 1, 5), middle, _verse(corpus, 67, 3, 14, 18)]
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, *said))
+    return _pipeline(
+        corpus,
+        matcher,
+        texts,
+        [(1.0, 4.6), (5.0, 10.2), (10.3, 14.0)],
+        seconds=16.0,
+        acoustic=kwargs.pop("acoustic", acoustic),
+        **kwargs,
+    )
+
+
+SAID_GAP = ((1.2, "67:3[1-5]"), (5.2, "67:3[6-13]"), (10.4, "67:3[14-18]"))
+
+
+def test_le_milieu_manquant_d_un_verset_est_comble_sur_l_audio(corpus, matcher, alignment_texts):
+    # l'ASR n'a compris que deux mots sur huit ; l'audio soutient pourtant le texte du corpus
+    # presque parfaitement : les mots 6 à 13 sont alignés d'un seul tenant entre les deux versets
+    # reconnus, puis tout se raccorde en un seul verset.
+    middle = _verse(corpus, 67, 3, 6, 7) + " " + GARBLED_GAP
+    result = _gap(corpus, matcher, alignment_texts, SAID_GAP, middle)
+    (det,) = [d for d in _verses(result) if d.span.ref == VerseRef(67, 3)]
+    assert (det.span.first_word, det.span.last_word) == (1, 18)
+    assert det.status is Status.RECOGNIZED and det.promoted_by == "gap"
+    assert len(det.word_times) == 18
+    assert not any(isinstance(i, AbstentionSpan) for i in result.intervals)
+    assert [c.role for c in result.acoustic_checks if c.kind == "gap" and c.accepted] == ["between"]
+
+
+def test_le_milieu_n_est_pas_comble_si_l_audio_dit_autre_chose(corpus, matcher, alignment_texts):
+    said = ((1.2, "67:3[1-5]"), (5.4, "2:1"), (10.4, "67:3[14-18]"))
+    result = _gap(corpus, matcher, alignment_texts, said, GARBLED_GAP)
+    dets = [d for d in _verses(result) if d.span.ref == VerseRef(67, 3)]
+    assert [(d.span.first_word, d.span.last_word) for d in dets] == [(1, 5), (14, 18)]
+    assert any(isinstance(i, AbstentionSpan) for i in result.intervals)
+    assert not [c for c in result.acoustic_checks if c.kind == "gap" and c.accepted]
+
+
+def test_le_comblement_se_desactive(corpus, matcher, alignment_texts):
+    from aqr.decoding.gaps import GapConfig
+
+    middle = _verse(corpus, 67, 3, 6, 7) + " " + GARBLED_GAP
+    config = PipelineConfig(gap=GapConfig(enabled=False))
+    result = _gap(corpus, matcher, alignment_texts, SAID_GAP, middle, config=config)
+    assert not [c for c in result.acoustic_checks if c.kind == "gap"]
+
+
+def test_la_repetition_du_dernier_verset_est_detectee_et_marquee(
+    corpus, matcher, alignment_texts
+):  # cas 5 : 17:76 redit en entier, la fenêtre est restée en abstention (score 0,727 < 0,75)
+    again = _verse(corpus, 67, 2, 1, 6) + " " + GARBLED_GAP
+    texts = [_verse(corpus, 67, 2), again]
+    said = ((1.2, "67:2"), (10.0, "67:2"))
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, *said))
+    result = _pipeline(
+        corpus,
+        matcher,
+        texts,
+        [(1.0, 9.0), (9.5, 18.0)],
+        seconds=20.0,
+        acoustic=acoustic,
+    )
+    first, second = [d for d in _verses(result)]
+    assert (first.span.ref, first.is_repetition) == (VerseRef(67, 2), False)
+    assert (second.span.ref, second.span.first_word, second.span.last_word) == (
+        VerseRef(67, 2),
+        1,
+        11,
+    )
+    assert second.is_repetition and second.promoted_by == "gap"
+    assert [c.role for c in result.acoustic_checks if c.kind == "gap" and c.accepted] == [
+        "repetition"
+    ]
+
+
+def test_un_fichier_sans_coran_ne_gagne_aucun_verset(corpus, matcher, alignment_texts):
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, (1.2, "67:2[1-5]")))
+    result = _pipeline(
+        corpus,
+        matcher,
+        [GARBLED_GAP, GARBLED_GAP],
+        [(1.0, 5.0), (6.0, 10.0)],
+        seconds=12.0,
+        acoustic=acoustic,
+    )
+    assert _verses(result) == []
+    assert not [c for c in result.acoustic_checks if c.kind == "gap"]  # aucune ancre, aucun trou

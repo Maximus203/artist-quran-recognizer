@@ -136,9 +136,9 @@ def build_json(
 
 def _check_json(check: ChainCheck) -> dict[str, object]:
     """Une vérification sur l'audio (ADR-0008) : suite de versets (`chain`), suite d'un verset
-    commencé (`continuation`) ou détection incertaine qui prolonge son voisin (`neighbor`) ;
-    passage, texte du corpus aligné (syntaxe de `aqr align --verses`),
-    preuve et décision."""
+    commencé (`continuation`), détection incertaine qui prolonge son voisin (`neighbor`) ou
+    hypothèse de texte pour un trou entre deux versets reconnus (`gap`, ADR-0013, avec son `role`) ;
+    passage, texte du corpus aligné (syntaxe de `aqr align --verses`), preuve et décision."""
     return {
         "kind": check.kind,
         "t": _span(check.time),
@@ -146,6 +146,21 @@ def _check_json(check: ChainCheck) -> dict[str, object]:
         "llr_per_frame": None if check.llr_per_frame is None else round(check.llr_per_frame, 4),
         "accepted": check.accepted,
         **({} if check.text_similarity is None else {"text_similarity": check.text_similarity}),
+        **({} if check.role is None else _gap_fields(check)),
+    }
+
+
+def _gap_fields(check: ChainCheck) -> dict[str, object]:
+    """Détail d'une hypothèse de trou : `llr_per_frame` est la preuve sur la seule parole alignée
+    (celle qui décide), `passage_llr_per_frame` celle de tout le passage (diluée par les blancs)."""
+    return {
+        "role": check.role,
+        "words": check.words,
+        "weak_words": check.weak_words,
+        "passage_llr_per_frame": (
+            None if check.passage_llr_per_frame is None else round(check.passage_llr_per_frame, 4)
+        ),
+        **({} if check.gain_nats is None else {"gain_nats": check.gain_nats}),
     }
 
 

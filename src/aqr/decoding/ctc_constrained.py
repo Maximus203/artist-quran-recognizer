@@ -33,6 +33,12 @@ class CtcEvidence:
     free_logprob: float
     llr_per_frame: float
     frames: int
+    voiced_llr_per_frame: float | None = None
+    """Même rapport, sur les seules trames entre le premier et le dernier symbole émis (ADR-0013).
+    `llr_per_frame` est dilué par les blancs d'un long passage : un texte faux posé sur quelques
+    trames y paraît soutenu. None = non calculé (ex. `acoustic_support`)."""
+    voiced_frames: int = 0
+    """Nombre de trames de la parole alignée (la base de `voiced_llr_per_frame`)."""
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,55 @@ def _validate(log_probs: LogProbs, labels: Sequence[int], blank: int) -> int:
 def ctc_free_logprob(log_probs: LogProbs) -> float:
     """Meilleur chemin sans contrainte : somme des maxima par trame."""
     return sum(max(frame) for frame in log_probs)
+
+
+def frame_maxima(log_probs: LogProbs) -> list[float]:
+    """Meilleure log-probabilité de chaque trame (le chemin libre y passe)."""
+    return [max(frame) for frame in log_probs]
+
+
+def voiced_llr(
+    log_probs: LogProbs,
+    blank: int,
+    forced: float,
+    frames: Sequence[tuple[int, int]],
+    maxima: Sequence[float] | None = None,
+) -> tuple[float, int]:
+    """(rapport par trame, nombre de trames) sur la seule parole alignée : de la première trame du
+    premier symbole à la dernière du dernier. Hors de cette plage, le chemin contraint ne peut être
+    que blanc : on retire ce qu'il y vaut, et on compare au meilleur chemin libre de la plage."""
+    best = frame_maxima(log_probs) if maxima is None else maxima
+    start, stop = frames[0][0], frames[-1][1]
+    outside = sum(log_probs[t][blank] for t in range(len(log_probs)) if not start <= t <= stop)
+    free = sum(best[start : stop + 1])
+    count = stop - start + 1
+    return (forced - outside - free) / count, count
+
+
+def word_llrs(
+    log_probs: LogProbs,
+    blank: int,
+    labels: Sequence[int],
+    frames: Sequence[tuple[int, int]],
+    words: Sequence[tuple[int, int]],
+    maxima: Sequence[float] | None = None,
+) -> list[float]:
+    """Rapport par trame de chaque mot sur ses propres trames. `words` : (premier, dernier) indices
+    de symbole de chaque mot ; `frames` : trames (première, dernière) de chaque symbole. Un symbole
+    occupe ses trames, les blancs entre deux symboles complètent : c'est le chemin contraint. Un mot
+    posé sur du silence a un rapport très négatif, que la moyenne du passage ne laisse pas voir."""
+    best = frame_maxima(log_probs) if maxima is None else maxima
+    out: list[float] = []
+    for first_symbol, last_symbol in words:
+        start, stop = frames[first_symbol][0], frames[last_symbol][1]
+        owner = dict.fromkeys(range(start, stop + 1), blank)
+        for n in range(first_symbol, last_symbol + 1):
+            first, last = frames[n]
+            for t in range(first, last + 1):
+                owner[t] = labels[n]
+        forced = sum(log_probs[t][symbol] for t, symbol in owner.items())
+        out.append((forced - sum(best[start : stop + 1])) / (stop - start + 1))
+    return out
 
 
 def ctc_forced_align(
