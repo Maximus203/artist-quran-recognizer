@@ -47,7 +47,7 @@ from aqr.data.mixer import (  # noqa: E402
 from aqr.domain.models import NonQuranKind, Status, VerseRef  # noqa: E402
 from aqr.domain.quran_structure import ayah_count  # noqa: E402
 from aqr.live.config import LiveConfig  # noqa: E402
-from aqr.live.replay import ArrivalModel  # noqa: E402
+from aqr.live.replay import ArrivalModel, restore_stream_times  # noqa: E402
 from aqr.live.scenarios import (  # noqa: E402
     Piece,
     layout,
@@ -491,7 +491,8 @@ def load_scenarios(
         words_path = work / "asr" / f"{entry['id']}.words.json"
         if not words_path.exists():
             continue
-        words, _engine, audio_s = load_words(words_path)
+        raw_words, _engine, audio_s = load_words(words_path)
+        words = restore_stream_times(raw_words)  # l'adaptateur Muno comprime son axe de 13/14
         truth = entry["truth"]
         scenarios.append(
             (
@@ -519,6 +520,22 @@ def evaluate_all(
         events = run_stream(index, config, scenario.words, scenario.duration_s)
         out.append((entry, scenario, events, evaluate(scenario, events, index)))
     return out
+
+
+SWEEP_SPEECH_LIMIT_S = 300.0
+"""Le balayage de la configuration ne rejoue que les 5 premières minutes de chaque parole réelle."""
+
+
+def truncate(scenario: Scenario, limit_s: float) -> Scenario:
+    """Le même scénario, limité aux `limit_s` premières secondes du flux."""
+    return Scenario(
+        id=scenario.id,
+        source=scenario.source,
+        words=tuple(w for w in scenario.words if w.arrival_s <= limit_s),
+        duration_s=min(scenario.duration_s, limit_s),
+        verses=tuple(v for v in scenario.verses if v.end_s <= limit_s),
+        zones=tuple(z for z in scenario.zones if z.end_s <= limit_s),
+    )
 
 
 def group_name(entry: dict[str, Any]) -> str:
@@ -571,15 +588,8 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
 
     # faux verrous : détail pour inspection
     report["false_lock_detail"] = [
-        {
-            "scenario": entry["id"],
-            "kind": fl.kind,
-            "locked": str(fl.locked),
-            "truth": None if fl.truth is None else str(fl.truth),
-            "t": round(fl.t, 2),
-            "status": fl.status,
-        }
-        for entry, _s, _e, result in truth_runs
+        {"scenario": entry["id"], **lock_evidence(index, scenario, events, fl)}
+        for entry, scenario, events, result in truth_runs
         for fl in result.false_locks
     ]
     # latence par nombre de mots du verset, avec et sans contexte (pour les cibles)
@@ -601,15 +611,41 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
     for entry, scenario, events, result in real_runs:
         report["real"][entry["id"]] = real_summary(entry, scenario, events, result, index)
 
+    report["per_input"] = [
+        {
+            "id": entry["id"],
+            "group": group_name(entry),
+            "duration_s": scenario.duration_s,
+            "words": len(scenario.words),
+            "verses": len(result.verses),
+            "locked_correct": sum(1 for v in result.verses if v.locked_correct),
+            "false_locks": len(result.false_locks),
+            "revisions": result.revisions,
+            "jumps": [result.jumps_expected, result.jumps_detected, result.jumps_spurious],
+        }
+        for entry, scenario, _events, result in runs
+    ]
+    by_prefix: dict[str, list[float]] = {}
+    for v in rows:
+        if v.t_locked is not None:
+            key = "never" if v.unique_prefix_words is None else str(min(v.unique_prefix_words, 6))
+            by_prefix.setdefault(key, []).append(v.t_locked)
+    report["t_locked_by_unique_prefix_words"] = {
+        key: distribution(values) for key, values in sorted(by_prefix.items())
+    }
+
     if sweep:
         grid = []
+        speech = [
+            (e, truncate(s, SWEEP_SPEECH_LIMIT_S))
+            for e, s, _ev, _r in real_runs
+            if e["kind"] == "real-speech"
+        ]
         for cfg in sweep_grid():
             graded = evaluate_all(index, cfg, [(e, s) for e, s, _ev, _r in truth_runs])
             summary = summarize([r[3] for r in graded])
-            real_graded = evaluate_all(index, cfg, [(e, s) for e, s, _ev, _r in real_runs])
-            unconfirmed = sum(
-                len(r[3].false_locks) for r in real_graded if r[0]["kind"] == "real-speech"
-            )
+            real_graded = evaluate_all(index, cfg, speech)
+            unconfirmed = sum(len(r[3].false_locks) for r in real_graded)
             grid.append(
                 {
                     "prior": cfg.prior,
@@ -629,6 +665,59 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
     return report
 
 
+def lock_evidence(
+    index: Any, scenario: Scenario, events: Sequence[Any], false_lock: Any
+) -> dict[str, Any]:
+    """Ce que l'ASR a entendu quand un verrou n'est pas confirmé : mots entendus, mots qui sont dans
+    le verset, plus longue suite de mots identique au verset (>= 4 : probablement une vraie
+    citation du verset). Des nombres seulement, jamais de texte coranique."""
+    from aqr.live.events import Locked
+
+    mine = next(
+        (
+            e
+            for e in events
+            if isinstance(e, Locked)
+            and e.ref == false_lock.locked
+            and abs(e.t - false_lock.t) < 1e-6
+        ),
+        None,
+    )
+    heard = exact = run = 0
+    if mine is not None:
+        verse = [
+            index.token(p) for p in range(index.start_of(mine.ref), index.end_of(mine.ref) + 1)
+        ]
+        window = [
+            w.text
+            for w in scenario.words
+            if mine.start_s - 0.1 <= w.start_s and w.arrival_s <= mine.t
+        ]
+        heard = len(window)
+        exact = sum(1 for w in window if w in set(verse))
+        for a in range(len(window)):
+            for b in range(len(verse)):
+                length = 0
+                while (
+                    a + length < len(window)
+                    and b + length < len(verse)
+                    and window[a + length] == verse[b + length]
+                ):
+                    length += 1
+                run = max(run, length)
+    return {
+        "ref": str(false_lock.locked),
+        "t": round(false_lock.t, 1),
+        "reference_says": None if false_lock.truth is None else str(false_lock.truth),
+        "kind": false_lock.kind,
+        "status": false_lock.status,
+        "words_heard": heard,
+        "words_in_verse": exact,
+        "longest_exact_run": run,
+        "verse_words": index.length(false_lock.locked),
+    }
+
+
 def real_summary(
     entry: dict[str, Any],
     scenario: Scenario,
@@ -641,16 +730,7 @@ def real_summary(
     locks = [e for e in events if isinstance(e, Locked)]
     reference = len(scenario.verses)
     confirmed = sum(1 for v in result.verses if v.locked_correct)
-    unconfirmed = [
-        {
-            "ref": str(f.locked),
-            "t": round(f.t, 1),
-            "reference_says": None if f.truth is None else str(f.truth),
-            "kind": f.kind,
-            "status": f.status,
-        }
-        for f in result.false_locks
-    ]
+    unconfirmed = [lock_evidence(index, scenario, events, f) for f in result.false_locks]
     return {
         "duration_s": scenario.duration_s,
         "words": len(scenario.words),

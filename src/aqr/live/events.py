@@ -102,7 +102,7 @@ class Jump:
 
     t: float
     from_ref: VerseRef
-    kind: str  # repeat | back | skip | other_surah | unknown
+    kind: str  # repeat | back | skip | other_surah
 
 
 @dataclass(frozen=True)

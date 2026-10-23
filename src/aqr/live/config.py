@@ -87,6 +87,9 @@ class LiveConfig:
     jump_floor: float = 0.05
     """Posterior de la suite attendue sous lequel le début « casse l'attente » (saut)."""
     min_words_jump: int = 2
+    jump_leader_posterior: float = 0.5
+    """Posterior que doit atteindre le nouveau meilleur verset pour parler d'un saut : sans lui,
+    la suite attendue a disparu mais personne ne la remplace, ce n'est pas un saut."""
     lost_posterior: float = 0.9
     """Posterior de l'hypothèse « pas du Coran » à partir duquel le flux est déclaré perdu."""
     min_words_lost: int = 3
@@ -102,6 +105,7 @@ class LiveConfig:
             "non_quran_prior",
             "word_threshold",
             "jump_floor",
+            "jump_leader_posterior",
             "lost_posterior",
         ):
             _check_open_unit(name, getattr(self, name))

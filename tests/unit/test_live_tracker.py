@@ -249,6 +249,25 @@ def test_une_parole_qui_ressemble_un_peu_au_coran_est_perdue_sans_verrou(
     assert of_type(events, Lost)
 
 
+def test_une_parole_etrangere_qui_ressemble_au_coran_n_est_pas_un_saut(index: PrefixIndex) -> None:
+    # des mots épars du Coran après un verset clos : rien ne remplace la suite attendue avec
+    # assez de poids pour dire « le récitant est allé ailleurs » ; c'est de la parole perdue
+    tracker = new_tracker(index)
+    clock = Clock()
+    feed(tracker, clock.say("nn oo pp qq"))
+    events = flat(feed(tracker, clock.say("cc jj uu ee gg ii")))
+    assert not of_type(events, Jump)
+    assert not of_type(events, Locked)
+
+
+def test_le_seuil_de_saut_est_ce_qui_ecarte_la_parole_etrangere(index: PrefixIndex) -> None:
+    tracker = new_tracker(index, jump_leader_posterior=1e-9)
+    clock = Clock()
+    feed(tracker, clock.say("nn oo pp qq"))
+    events = flat(feed(tracker, clock.say("cc jj uu ee gg ii")))
+    assert of_type(events, Jump)  # sans ce seuil, des mots épars passeraient pour un saut
+
+
 def test_apres_un_verset_clos_une_parole_etrangere_est_perdue(index: PrefixIndex) -> None:
     tracker = new_tracker(index)
     clock = Clock()

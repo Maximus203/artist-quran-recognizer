@@ -10,7 +10,7 @@ from aqr.domain.ports import HeardWord, TranscribedWord
 from aqr.live.config import LiveConfig
 from aqr.live.corpus_flow import make_skeleton
 from aqr.live.events import Locked
-from aqr.live.replay import ArrivalModel, heard_words
+from aqr.live.replay import ArrivalModel, heard_words, restore_stream_times, stream_time
 from aqr.live.simulation import (
     Scenario,
     TruthVerse,
@@ -236,3 +236,33 @@ def test_les_evenements_de_verrou_portent_le_temps_d_arrivee() -> None:
     locks = [e for e in run_stream(index, LiveConfig(), words, 5.0) if isinstance(e, Locked)]
     assert locks and locks[0].t == words[-1].arrival_s
     assert VerseRef.parse("113:2") == locks[0].ref
+
+
+# --------------------------------------------------------------------------- axe du temps de l'ASR
+def test_l_axe_du_temps_de_l_adaptateur_est_ramene_a_celui_de_l_audio() -> None:
+    # 112 trames mel (1,12 s) donnent 13 trames de sortie de 80 ms, comptées chacune 80 ms par
+    # l'adaptateur : sa chronologie se comprime de 13/14 (mesure du rapport live-etape1)
+    assert stream_time(0.0) == pytest.approx(0.0)
+    assert stream_time(0.4) == pytest.approx(0.4)  # 5e trame du 1er bloc : inchangé
+    assert stream_time(13 * 0.08) == pytest.approx(1.12)  # début du 2e bloc
+    assert stream_time(26 * 0.08 + 0.16) == pytest.approx(2.24 + 0.16)
+    assert stream_time(21.76) == pytest.approx(23.4, abs=0.08)  # mesuré : 23,4 s réels
+
+
+def test_les_mots_restaures_gardent_leur_texte_leur_ordre_et_un_intervalle_valide() -> None:
+    raw = [
+        TranscribedWord("a", TimeSpan(1.04, 1.12), 0.9),
+        TranscribedWord("b", TimeSpan(1.12, 1.2), 0.8),
+    ]
+    fixed = restore_stream_times(raw)
+    assert [w.text for w in fixed] == ["a", "b"]
+    assert [w.confidence for w in fixed] == [0.9, 0.8]
+    assert all(w.time.end_s > w.time.start_s for w in fixed)
+    assert fixed[0].time.start_s < fixed[1].time.start_s
+
+
+def test_une_trame_par_bloc_invalide_est_refusee() -> None:
+    with pytest.raises(ValueError):
+        stream_time(1.0, frames_per_chunk=0)
+    with pytest.raises(ValueError):
+        stream_time(-1.0)

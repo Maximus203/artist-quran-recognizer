@@ -34,6 +34,26 @@ de flux (ADR-0004), la vérification acoustique d'un texte connu (ADR-0008) et l
 l'alignement CTC ou interpolé, `word_times_source`) : c'est la mesure du moment où chaque mot est dit, donc
 celle qu'il faut pour chiffrer la latence d'un verrou.
 
+## Décisions du mainteneur (décidé le 2026-10-23)
+Les quatre questions ouvertes de la première version de cet ADR sont tranchées :
+1. **`INFERRED` est accepté** pour « texte entendu, référence déduite de la position » (refrains, sosies
+   exacts), avec `identity_basis: "context"`. Il n'est **jamais présenté comme reconnu** : l'interface le
+   distingue de `RECOGNIZED` (`identity_basis: "words"`). Sans contexte, ces versets restent ambigus puis
+   `UNCERTAIN` à la clôture.
+2. **Valeurs de départ de simulation** : `prior` = 0,9 et `min_words_lock` = 3. Ce sont des paramètres de
+   `LiveConfig`, pas des seuils figés : l'étape 1 les fait varier et le rapport donne ce qu'ils coûtent.
+3. **La transcription provisoire (`PARTIAL`) n'est visible qu'en mode technique.** Elle n'est jamais le
+   « passage entendu » (I1).
+4. **L'audio d'un flux n'est jamais conservé par défaut.** Une conservation éventuelle sera une option
+   explicite, pas un réglage implicite.
+
+**Transport : WebSocket (`aqr.live/1`), pas WebRTC.** Le flux est une voix qui va du navigateur vers un
+serveur que nous contrôlons : aucune traversée de NAT à négocier entre pairs (le serveur est joignable), un
+codage Opus avec pertes ne servirait à rien (le modèle veut du PCM 16 kHz fidèle, et une perte de trame
+change les mots), et WebRTC ajoute de la complexité sans contrepartie (signalisation, STUN/TURN, jitter
+buffer, pile à embarquer côté serveur). WebSocket suffit : trames binaires PCM, messages JSON, reprise
+par numéro de séquence. À rouvrir seulement si un besoin réel de pair à pair apparaît.
+
 ## Exigences
 1. **Précision d'abord (I3).** Afficher des *candidats* n'est pas nommer un verset. Un verset n'est
    « verrouillé » que si les mots entendus (ou, à défaut, le contexte, signalé comme tel) le
