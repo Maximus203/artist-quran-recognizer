@@ -194,9 +194,11 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `POST /api/auth/logout` | `204` (idempotent, même sans connexion) |
 | `GET /api/me` | `{ user, preferences, quota: { used_bytes, limit_bytes } }` : l'appel d'amorçage. `401` → rediriger vers `/login` |
 | `POST /api/me/password` | `{ current, next }` → `204` ; les autres connexions sont révoquées |
+| `PUT /api/me/avatar` · `DELETE /api/me/avatar` | Photo de profil **du compte connecté** (aucun identifiant dans l'adresse : on n'écrit jamais pour un autre). `PUT` : corps = image brute, JPEG/PNG/WebP reconnue **par son contenu** (l'extension et `Content-Type` sont ignorés), 2 Mo au plus → `200 { user }` avec la nouvelle `avatar_version`. `400` vide · `413` trop lourde · `415` autre format (SVG, GIF, HTML…) · `422` illisible ou dimensions refusées (32 à 8192 px) · `503` ffmpeg absent. `DELETE` → `200 { user }` (`avatar_version: null`), idempotent |
+| `GET /api/users/<id>/avatar` | Photo d'un compte, lisible par **tout compte connecté** (`401` sinon ; `404` sans photo ou identifiant invalide). Toujours un JPEG 256×256 fabriqué par le serveur : `Content-Type: image/jpeg`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none'; sandbox`. Cache par empreinte : `ETag` + `If-None-Match` → `304` ; `?v=<avatar_version>` égal à l'empreinte courante → `Cache-Control: private, max-age=31536000, immutable`, sinon `private, no-cache` |
 | `GET /api/admin/users` · `PATCH /api/admin/users/<id>` | administrateurs : liste avec usage (`sessions`, `used_bytes`, `tests`) ; `{ role?, disabled? }` (désactiver révoque les connexions). `409 { code: "last_admin" }` si cela retirerait le dernier administrateur actif |
 
-`user` = `{ id, username, role: "user"\|"admin", created_at, last_login_at }` (jamais d'empreinte). Format d'erreur unique : `{ error, code?, field? }`, `error` toujours en français lisible.
+`user` = `{ id, username, role: "user"\|"admin", created_at, last_login_at, avatar_version: string \| null }` (jamais d'empreinte de mot de passe ; `avatar_version` = empreinte de la photo, `null` = pas de photo, l'interface montre alors l'initiale). Format d'erreur unique : `{ error, code?, field? }`, `error` toujours en français lisible.
 
 ### Qui voit et fait quoi
 
@@ -260,7 +262,7 @@ Chaque `item` (et `session` de `GET /api/sessions/<id>`) reprend les champs hist
 | `name` | nom **affiché** (modifiable) ; `original_name` = nom du fichier envoyé (immuable) ; `name_source` = `auto` · `user` |
 | `content_label` | contenu reconnu, `null` avant la fin : « Yusuf 12:11–31 », « Al-Fatiha 1:1–7 + Al-Baqara 2:1–5 » (versets reconnus ou inférés seulement ; au plus 3 sourates puis « + N autres » ; ≥ 4 tronçons d'une sourate = une plage englobante) |
 | `visibility` | `global` · `private` |
-| `owner` | `{ id, username }` ou `null` (session d'avant les comptes) ; `mine` : booléen ; `can_edit` : renommer/portée/archiver/supprimer/lancer permis à l'utilisateur courant |
+| `owner` | `{ id, username, avatar_version }` (qui a importé l'audio : pseudo et version de la photo, **jamais d'e-mail**) ou `null` (session d'avant les comptes) ; l'image est à `/api/users/<id>/avatar?v=<avatar_version>` ; `mine` : booléen ; `can_edit` : renommer/portée/archiver/supprimer/lancer permis à l'utilisateur courant |
 | `favorite` | favori **de l'utilisateur courant** |
 | `unread` · `viewed_at` | **propres à l'utilisateur** : « non lu » = session terminée dont il est **propriétaire** et qu'il n'a pas ouverte depuis la fin de l'analyse (une relance redevient non lue). Un autre testeur n'a jamais de point. `viewed_at` = sa dernière ouverture ou `null` |
 | `archived_at` · `size_bytes` | archivée le… (ISO ou `null`) ; octets du fichier envoyé |
@@ -305,7 +307,8 @@ erDiagram
     text username_key UK
     text password_hash "scrypt"
     text role "user|admin"
-    text disabled_at }
+    text disabled_at
+    text avatar_hash "empreinte de la photo, NULL = aucune" }
   auth_sessions { text token_hash UK "SHA-256"
     int user_id FK
     text expires_at "glissante" }
@@ -335,7 +338,13 @@ erDiagram
     real duration_s }
 ```
 
-Le schéma commenté ligne à ligne est dans `db/migrations/001_comptes_et_sessions.sql`. Index : `(created_at, id)`, `(owner_id, created_at, id)`, `(visibility, created_at, id)`, `(sort_name, id)`, `state`, `engine` (pagination par curseur et filtres).
+Le schéma commenté ligne à ligne est dans `db/migrations/001_comptes_et_sessions.sql` ; la photo de profil ajoute deux colonnes à `users` (`avatar_hash`, `avatar_updated_at`) par `002_photo_de_profil.sql`. Index : `(created_at, id)`, `(owner_id, created_at, id)`, `(visibility, created_at, id)`, `(sort_name, id)`, `state`, `engine` (pagination par curseur et filtres).
+
+### Photo de profil
+
+Les octets vivent sur la machine, **hors dépôt et jamais dans `public/`** : `AQR_REVIEW_DIR/avatars/<id utilisateur>.jpg` ; la base ne garde que l'empreinte (`users.avatar_hash`, SHA-256 tronqué à 16 caractères) qui dit s'il y a une photo et sert de version de cache. À l'envoi (`lib/avatar-image.ts`) : taille bornée **pendant la lecture** (le `Content-Length` n'est pas cru), type et dimensions lus dans les octets (PNG `IHDR`, JPEG `SOF`, WebP `VP8/VP8L/VP8X` ; plus de 8192 px de côté ou 40 millions de pixels = refus avant tout décodage), puis **réencodage par ffmpeg** (déjà requis par l'atelier : aucune dépendance de plus) en JPEG carré 256×256, recadré au centre, transparence aplatie sur fond clair, orientation EXIF appliquée, **toutes les métadonnées retirées**. Seul ce JPEG fabriqué par nous est stocké et servi : une charge utile cachée dans l'original (EXIF, commentaire, SVG collé après un JPEG) disparaît. ffmpeg est lancé avec le format d'entrée **imposé** (`-f image2pipe -c:v <décodeur>`), le seul protocole `pipe` autorisé (aucune lecture de fichier local ni de réseau), une image lue, 20 s et 512 Ko de sortie au plus. Sans ffmpeg : `503` lisible (l'orientation EXIF des JPEG demande ffmpeg 7.1 ou plus ; en dessous, la photo n'est pas redressée).
+
+Réglages uniques : `lib/avatar-config.ts`. Sans photo, l'avatar est l'initiale du pseudo sur l'un des huit pigments `--av-0` … `--av-7` de `tokens.css`, choisi par une empreinte stable du pseudo (`lib/avatar-tone.ts`). Aucun écran ne supprime de compte : retirer la photo supprime le fichier ; désactiver un compte garde sa photo, ses audios restant listés.
 
 ### Limites connues (à lire avant de brancher l'interface)
 

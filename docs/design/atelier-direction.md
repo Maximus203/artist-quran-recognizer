@@ -82,6 +82,10 @@ Sombre à gauche, clair à droite ; `light-dark()` + `color-scheme` (suit le sys
 colore jamais un bouton d'action. (4) Le vert (`--ok`) n'apparaît que sur « Validé à l'oreille ».
 (5) Un statut = couleur **+** motif **+** libellé, jamais la couleur seule.
 
+### Avatars de personnes (photo de profil)
+
+Une personne n'est ni un statut ni l'accent : ses initiales ont leurs propres jetons, `--av-0` … `--av-7` (lapis, encre, terre cuite, cyprès, ocre, ardoise, grenat, sarcelle), avec le texte `--av-fg` posé dessus. Contraste mesuré ≥ 5,9:1 (clair, texte `#fdfbf7`) et ≥ 7,5:1 (sombre, texte `#0e1013`) sur les huit. Sans photo, l'indice est une empreinte stable du pseudo normalisé (`web/lib/avatar-tone.ts`) : la même personne garde la même couleur partout. Avec photo : cercle, JPEG carré 256 px, `object-fit: cover`, l'initiale reste dessous si l'image ne charge pas. Tailles 24 px (listes), 32 px (en-tête), 56 px (préférences). Le pseudo est toujours écrit à côté : l'avatar est décoratif (`alt=""`).
+
 ### Codage des intervalles (onde, pistes, liste, légende — identique partout)
 
 | État | Motif (aplat + trait supérieur 3 px) | Couleur | Libellé |

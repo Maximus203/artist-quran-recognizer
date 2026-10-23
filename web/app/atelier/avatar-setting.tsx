@@ -63,6 +63,14 @@ export function AvatarSetting() {
           ? error.message
           : "Envoi impossible.",
       );
+      // Fichier refusé (format, taille, image abîmée) : inutile de le garder. Panne réseau ou
+      // serveur : on garde l'aperçu pour réessayer.
+      if (
+        error instanceof ApiError &&
+        error.status >= 400 &&
+        error.status < 500
+      )
+        setStaged(null);
     } finally {
       setBusy(false);
     }
@@ -102,6 +110,12 @@ export function AvatarSetting() {
             width={96}
             height={96}
             data-testid="avatar-preview"
+            onError={() => {
+              setStaged(null);
+              setProblem(
+                "Ton navigateur n’arrive pas à lire cette image : essaie-en une autre.",
+              );
+            }}
           />
         ) : (
           <span className="avatar-current" data-testid="avatar-current">

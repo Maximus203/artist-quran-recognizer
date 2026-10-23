@@ -1745,7 +1745,7 @@ body.auth-pg {
   .shead,
   .srow {
     grid-template-columns:
-      44px 28px minmax(260px, 1fr)
+      44px 28px minmax(224px, 1fr)
       148px 92px 76px 80px 112px 84px 44px 44px;
     column-gap: 10px;
   }
@@ -2634,6 +2634,40 @@ body.auth-pg {
 .acct-id small {
   color: var(--text-2);
   font-size: var(--fs-sm);
+}
+/* ───────── Photo de profil (préférences) ───────── */
+.avatar-setting {
+  display: grid;
+  gap: var(--sp-2);
+  width: 100%;
+}
+.avatar-stage {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.avatar-current {
+  display: inline-flex;
+}
+.avatar-preview {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-3);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.avatar-help {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
 }
 .setgroup {
   padding: 0;
