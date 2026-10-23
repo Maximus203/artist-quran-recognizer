@@ -166,6 +166,15 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
+/* Glisser pour naviguer (souris) : la timeline se saisit comme une carte quand elle déborde. */
+.tl-scroll.can-pan {
+  cursor: grab;
+}
+.tl-scroll.panning,
+.tl-scroll.panning * {
+  cursor: grabbing !important;
+  user-select: none;
+}
 .tl-content {
   position: relative;
   min-width: 100%;
