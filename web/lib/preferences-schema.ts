@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AUDIO_OFFSET } from "./audio-offset";
 import { QURAN_FONTS, type QuranFontId } from "./quran-fonts";
 import { ENGINE_FILTERS, SCOPES, SORTS, STATE_FILTERS } from "./session-query";
 
@@ -38,6 +39,13 @@ export const preferencesShape = {
   translation: z.boolean(),
   /** Surligner en direct le mot arabe récité et le fragment de traduction correspondant. */
   liveHighlight: z.boolean(),
+  /** Décalage audio (ms) : retarde le surlignage (écouteurs Bluetooth). Bornes dans `audio-offset.ts`. */
+  audioOffsetMs: z
+    .number()
+    .int()
+    .min(AUDIO_OFFSET.min)
+    .max(AUDIO_OFFSET.max)
+    .multipleOf(AUDIO_OFFSET.step),
   visibleSpanSeconds: z
     .union([z.literal(600), z.literal(120), z.literal(30), z.literal(10)])
     .nullable(),
@@ -64,6 +72,7 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   arabicSize: null,
   translation: true,
   liveHighlight: true,
+  audioOffsetMs: AUDIO_OFFSET.fallback,
   visibleSpanSeconds: null,
   followPlayback: true,
   leftPanelOpen: null,
