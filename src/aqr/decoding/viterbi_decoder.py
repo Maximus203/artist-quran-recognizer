@@ -14,6 +14,7 @@ from dataclasses import dataclass, field, replace
 
 from aqr.domain.models import Detection, Riwaya, Status, Timeline, TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import Candidate, CorpusRepository
+from aqr.domain.word_timing import without_overlap
 
 
 @dataclass(frozen=True)
@@ -318,4 +319,7 @@ def _joined_word_times(first: Detection, second: Detection) -> tuple[TimeSpan, .
     elles se touchent (un mot sans temps au raccord ne se comble pas : jamais un temps inventé)."""
     if first.span.last_word + 1 != second.span.first_word:
         return ()
-    return (*first.word_times, *second.word_times) if first.word_times and second.word_times else ()
+    if not (first.word_times and second.word_times):
+        return ()
+    # deux fenêtres voisines se recouvrent parfois de quelques dizaines de ms : on recoupe
+    return without_overlap((*first.word_times, *second.word_times)) or ()

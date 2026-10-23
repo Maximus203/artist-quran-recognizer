@@ -10,7 +10,7 @@ from __future__ import annotations
 from aqr.alignment.verification import ChainCheck
 from aqr.domain.models import Detection, NonQuranKind, NonQuranSpan, Status, TimeSpan
 from aqr.pipeline.result import AbstentionSpan, Interval, RecognitionResult
-from aqr.pipeline.word_times import CTC_ALIGNMENT, INTERPOLATED, interpolate
+from aqr.pipeline.word_times import CTC_ALIGNMENT, INTERPOLATED, interpolate, without_overlap
 from aqr.rendering.formula_labels import FORMULA_LABELS_AR
 from aqr.rendering.home_renderer import HomeRenderer, format_range
 
@@ -42,9 +42,10 @@ def _word_fields(item: Detection, renderer: HomeRenderer) -> dict[str, object]:
     if item.status is not Status.RECOGNIZED or item.time is None:
         return {}
     shown = item.span.last_word - item.span.first_word + 1
-    if len(item.word_times) == shown:
+    measured = without_overlap(item.word_times) if len(item.word_times) == shown else None
+    if measured is not None:
         return {
-            "word_times": [_span(t) for t in item.word_times],
+            "word_times": [_span(t) for t in measured],
             "word_times_source": CTC_ALIGNMENT,
         }
     estimated = interpolate(renderer.word_weights(item), item.time)

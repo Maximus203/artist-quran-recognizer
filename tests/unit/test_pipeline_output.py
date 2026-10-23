@@ -434,7 +434,7 @@ def _doc_with(word_times, source="ctc-alignment"):
     ("word_times", "source", "motif"),
     [
         ([[1.0, 1.5], [1.5, 2.0]], "ctc-alignment", "3 mots"),  # 2 temps pour 3 mots
-        ([[1.0, 1.5], [1.4, 2.0], [2.0, 2.5]], "ctc-alignment", "chevauche"),
+        ([[1.0, 1.5], [1.1, 2.0], [2.0, 2.5]], "ctc-alignment", "chevauche"),
         ([[1.0, 1.0], [1.0, 2.0], [2.0, 2.5]], "ctc-alignment", "intervalle invalide"),
         ([[1.0, 1.5], [1.5, 2.0], [2.0, 2.5]], "devine", "source"),
         ([[0.2, 0.5], [1.5, 2.0], [2.0, 2.5]], "ctc-alignment", "hors de l'intervalle"),
@@ -454,3 +454,65 @@ def test_le_lecteur_accepte_l_ancien_format_sans_temps_au_mot():
     del doc["intervals"][0]["word_times"], doc["intervals"][0]["word_times_source"]
     (verse,) = parse_recognition(doc).intervals
     assert verse.word_times is None and verse.word_times_source is None
+
+
+# --- Un fichier que le moteur écrit ne doit jamais être illisible (chevauchement de 50 ms) -------
+def test_le_lecteur_normalise_un_leger_chevauchement_au_lieu_de_rejeter_le_document():
+    from aqr.eval.recognition import parse_recognition
+
+    doc = _doc_with([[1.0, 1.55], [1.5, 2.0], [2.0, 2.5]])  # 50 ms, comme la sortie réelle ×0,3
+    (verse,) = parse_recognition(doc).intervals
+    assert verse.word_times == ((1.0, 1.525), (1.525, 2.0), (2.0, 2.5))
+    assert verse.word_times[0][0] == 1.0 and verse.word_times[-1][1] == 2.5  # bornes de t gardées
+
+
+def test_la_tolerance_du_lecteur_est_reglable():
+    from aqr.eval.recognition import RecognitionError, parse_recognition
+
+    doc = _doc_with([[1.0, 1.55], [1.5, 2.0], [2.0, 2.5]])
+    with pytest.raises(RecognitionError, match="chevauche"):
+        parse_recognition(doc, word_overlap_tolerance_s=0.01)
+    assert parse_recognition(
+        _doc_with([[1.0, 1.8], [1.5, 2.0], [2.0, 2.5]]), word_overlap_tolerance_s=0.5
+    )
+
+
+def test_un_chevauchement_grossier_reste_refuse_par_le_lecteur():
+    from aqr.eval.recognition import RecognitionError, parse_recognition
+
+    with pytest.raises(RecognitionError, match="chevauche"):
+        parse_recognition(_doc_with([[1.0, 2.0], [1.2, 2.2], [2.2, 2.5]]))
+
+
+def test_la_sortie_ne_publie_jamais_de_temps_au_mot_qui_se_chevauchent(corpus, renderer):
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    slight = (TimeSpan(3.0, 3.45), TimeSpan(3.4, 4.0), TimeSpan(4.0, 4.4), TimeSpan(4.4, 5.0))
+    interval = _one(
+        corpus,
+        renderer,
+        Detection(span, TimeSpan(3.0, 5.0), Status.RECOGNIZED, 0.9, word_times=slight),
+    )
+    times = interval["word_times"]
+    assert interval["word_times_source"] == "ctc-alignment"
+    assert all(a[1] <= b[0] for a, b in pairwise(times))
+    assert times[0][0] == interval["t"][0] and times[-1][1] == interval["t"][1]
+    gross = (TimeSpan(3.0, 4.5), TimeSpan(3.5, 4.0), TimeSpan(4.0, 4.4), TimeSpan(4.4, 5.0))
+    interval = _one(
+        corpus,
+        renderer,
+        Detection(span, TimeSpan(3.0, 5.0), Status.RECOGNIZED, 0.9, word_times=gross),
+    )
+    assert interval["word_times_source"] == "interpolated"  # pas de temps mesuré incohérent
+
+
+def test_une_sortie_au_chevauchement_residuel_reste_lisible_de_bout_en_bout(corpus, renderer):
+    from aqr.eval.recognition import parse_recognition
+
+    span = WordSpan(VerseRef(112, 1), 1, 4)
+    slight = (TimeSpan(3.0, 3.45), TimeSpan(3.4, 4.0), TimeSpan(4.0, 4.4), TimeSpan(4.4, 5.0))
+    detection = Detection(span, TimeSpan(3.0, 5.0), Status.RECOGNIZED, 0.9, word_times=slight)
+    from dataclasses import replace
+
+    doc = build_json(replace(_result(corpus), intervals=(detection,)), renderer, None, "00")
+    (verse,) = parse_recognition(doc).intervals
+    assert verse.word_times is not None and len(verse.word_times) == 4

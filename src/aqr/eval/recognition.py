@@ -23,7 +23,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from aqr.domain.models import Status, VerseRef
+from aqr.domain.models import Status, TimeSpan, VerseRef
+from aqr.domain.word_timing import MAX_REPAIRED_OVERLAP_S, without_overlap
 
 SCHEMA = "aqr.recognition/1"
 
@@ -229,15 +230,22 @@ def _parse_translation(raw: object, where: str) -> TranslationOut | None:
     )
 
 
-_WORD_TIME_TOLERANCE_S = 0.002
+_T_TOLERANCE_S = 0.002
 """Arrondi des temps à la milliseconde dans la sortie : les bornes d'un mot peuvent s'écarter de `t`
 d'autant."""
 
 
 def _parse_word_times(
-    raw: Mapping[str, Any], first: int, last: int, t: tuple[float, float] | None, where: str
+    raw: Mapping[str, Any],
+    first: int,
+    last: int,
+    t: tuple[float, float] | None,
+    where: str,
+    overlap_tolerance_s: float,
 ) -> tuple[tuple[tuple[float, float], ...] | None, str | None]:
-    """`word_times` : un [début, fin] par mot de `words`, croissants, sans recouvrement, dans t."""
+    """`word_times` : un [début, fin] par mot de `words`, dans l'ordre, dans `t`. Un recouvrement
+    minime de deux mots voisins (≤ `overlap_tolerance_s`) est normalisé (partagé par moitié) plutôt
+    que de rendre tout le document illisible ; un recouvrement plus grand est refusé."""
     if raw.get("word_times") is None:
         if raw.get("word_times_source") is not None:
             raise RecognitionError(f"{where} : word_times_source sans word_times")
@@ -257,11 +265,15 @@ def _parse_word_times(
     times: list[tuple[float, float]] = []
     for n, pair in enumerate(items):
         start, end = _span(pair, f"{where}.word_times[{n}]")  # refuse un mot vide
-        if times and start < times[-1][1] - _WORD_TIME_TOLERANCE_S:
-            raise RecognitionError(f"{where} : word_times[{n}] chevauche le mot précédent")
         times.append((start, end))
+    ordered = without_overlap([TimeSpan(a, b) for a, b in times], overlap_tolerance_s)
+    if ordered is None:
+        raise RecognitionError(
+            f"{where} : word_times chevauchent le mot précédent de plus de {overlap_tolerance_s} s"
+        )
+    times = [(w.start_s, w.end_s) for w in ordered]
     if t is not None and (
-        times[0][0] < t[0] - _WORD_TIME_TOLERANCE_S or times[-1][1] > t[1] + _WORD_TIME_TOLERANCE_S
+        times[0][0] < t[0] - _T_TOLERANCE_S or times[-1][1] > t[1] + _T_TOLERANCE_S
     ):
         raise RecognitionError(f"{where} : word_times hors de l'intervalle t {list(t)}")
     return tuple(times), str(source)
@@ -304,7 +316,9 @@ def _parse_non_quran(raw: Mapping[str, Any], where: str) -> NonQuranInterval:
     return NonQuranInterval(label, t, label_ar=label_ar)
 
 
-def _parse_one(raw: object, index: int) -> Interval:
+def _parse_one(
+    raw: object, index: int, overlap_tolerance_s: float = MAX_REPAIRED_OVERLAP_S
+) -> Interval:
     where = f"intervals[{index}]"
     if not isinstance(raw, Mapping):
         raise RecognitionError(f"{where} : objet attendu")
@@ -319,7 +333,9 @@ def _parse_one(raw: object, index: int) -> Interval:
             first, last = int(words[0]), int(words[1])
             if first < 1 or last < first:
                 raise RecognitionError(f"{where} : words invalide {words!r}")
-            word_times, word_times_source = _parse_word_times(raw, first, last, t, where)
+            word_times, word_times_source = _parse_word_times(
+                raw, first, last, t, where, overlap_tolerance_s
+            )
             return VerseInterval(
                 ref=VerseRef.parse(str(raw["ref"])),
                 first_word=first,
@@ -350,18 +366,22 @@ def _parse_one(raw: object, index: int) -> Interval:
     raise RecognitionError(f"{where} : kind inconnu {kind!r} (verse, non_quran, abstention)")
 
 
-def parse_intervals(raw: Sequence[object]) -> tuple[Interval, ...]:
-    return tuple(_parse_one(item, i) for i, item in enumerate(raw))
+def parse_intervals(
+    raw: Sequence[object], *, word_overlap_tolerance_s: float = MAX_REPAIRED_OVERLAP_S
+) -> tuple[Interval, ...]:
+    return tuple(_parse_one(item, i, word_overlap_tolerance_s) for i, item in enumerate(raw))
 
 
-def parse_recognition(data: Mapping[str, Any]) -> Recognition:
+def parse_recognition(
+    data: Mapping[str, Any], *, word_overlap_tolerance_s: float = MAX_REPAIRED_OVERLAP_S
+) -> Recognition:
     if data.get("schema") != SCHEMA:
         raise RecognitionError(f"schema {data.get('schema')!r} non géré (attendu {SCHEMA})")
     intervals = data.get("intervals")
     if not isinstance(intervals, list):
         raise RecognitionError("intervals : liste attendue")
     return Recognition(
-        intervals=parse_intervals(intervals),
+        intervals=parse_intervals(intervals, word_overlap_tolerance_s=word_overlap_tolerance_s),
         source=dict(data.get("source") or {}),
         engine=dict(data.get("engine") or {}),
         decoder=dict(data.get("decoder") or {}),

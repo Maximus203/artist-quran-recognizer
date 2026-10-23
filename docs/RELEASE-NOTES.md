@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Les temps au mot ne se chevauchent plus
+Étiquettes : technique
+PR : #78
+
+**Ce qui change.** Une récitation très étirée (vitesse ×0,3) produisait un fichier de résultats que le lecteur refusait : deux moitiés de verset dont les fenêtres se recouvrent de 50 ms plaçaient un mot avant la fin du précédent. Le moteur ne publie plus jamais de temps au mot qui se chevauchent (le recouvrement est partagé au milieu ; au-delà de 0,1 s les temps ne sont pas publiés comme mesurés), et le lecteur normalise un léger chevauchement d'une ancienne sortie au lieu de rejeter tout le document. Les incohérences grossières restent refusées.
+
+**Pourquoi / décision.** Un fichier que le moteur vient d'écrire ne doit jamais être illisible (l'atelier plantait sur la session). Cas réel : campagne de dégradation, Alafasy 67:26, mots 5 et 6, 50 ms. Tolérance réglable (`word_overlap_tolerance_s`, 0,1 s par défaut). ADR-0010, `docs/RECOGNIZE-OUTPUT.md`.
+
 ## 2026-10-23 — Une traduction qui suit les mots récités
 Étiquettes : utilisateur, technique, décision
 PR : #77
