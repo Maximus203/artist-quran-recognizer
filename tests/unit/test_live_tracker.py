@@ -260,6 +260,22 @@ def test_une_parole_etrangere_qui_ressemble_au_coran_n_est_pas_un_saut(index: Pr
     assert not of_type(events, Locked)
 
 
+def test_des_mots_epars_noyes_dans_la_parole_ne_verrouillent_qu_avec_la_densite_par_defaut_nulle(
+    index: PrefixIndex,
+) -> None:
+    # trois mots du verset sur cinq entendus : le reste est de la parole sans rapport
+    speech = "nn x1234567 oo x2345678 pp"
+    default = flat(feed(new_tracker(index), Clock().say(speech)))
+    assert [lock.ref for lock in of_type(default, Locked)] == [ref("113:2")]  # état de départ
+    guarded = flat(feed(new_tracker(index, min_lock_density=0.8), Clock().say(speech)))
+    assert not of_type(guarded, Locked)  # 3 mots sur 5 : des candidats, pas un verset nommé
+
+
+def test_une_recitation_dense_verrouille_meme_avec_la_densite_exigee(index: PrefixIndex) -> None:
+    events = flat(feed(new_tracker(index, min_lock_density=0.8), Clock().say("nn oo pp")))
+    assert [lock.ref for lock in of_type(events, Locked)] == [ref("113:2")]
+
+
 def test_un_premier_mot_avale_de_la_suite_attendue_n_est_pas_un_saut(index: PrefixIndex) -> None:
     # mesuré sur la récitation de la sourate 67 : l'ASR avale « هو », premier mot de 67:15, et le
     # passage commence au 2e mot ; le verset est bien la suite attendue, pas un saut vers l'avant

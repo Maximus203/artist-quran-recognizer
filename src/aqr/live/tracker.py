@@ -502,6 +502,8 @@ class HypothesisTracker:
             return False  # des mots peu sûrs : on propose des candidats, on ne nomme pas (I3)
         if best.exact < math.ceil(cfg.min_exact_share * wanted - 1e-9):
             return False
+        if best.matched < cfg.min_lock_density * len(passage.words) - 1e-9:
+            return False  # des mots épars noyés dans de la parole : pas une récitation (I3, I4)
         margin = math.log(cfg.words_margin)
         equivalent = {
             other

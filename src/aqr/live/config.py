@@ -89,6 +89,10 @@ class LiveConfig:
     min_exact_share: float = 0.0
     """Part des mots exigés (`min_words_lock`) qui doivent être exacts, pas seulement proches.
     0 = non utilisée."""
+    min_lock_density: float = 0.0
+    """Part des mots entendus dans le passage qui doivent correspondre au verset pour le verrouiller
+    (mots du verset / mots entendus). 0 = non utilisée. Des mots épars du verset noyés dans de la
+    parole sans rapport ne font pas une récitation."""
     unlock_floor: float = 0.5
     """Un verrou dont le posterior retombe sous ce seuil est retiré (`Revision`)."""
     context_max_candidates: int = 40
@@ -128,6 +132,7 @@ class LiveConfig:
             "candidate_floor",
             "min_lock_confidence",
             "min_exact_share",
+            "min_lock_density",
             "mid_rival_posterior",
         ):
             _check_unit(name, getattr(self, name))
