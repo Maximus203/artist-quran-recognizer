@@ -98,8 +98,12 @@ def test_le_controle_compte_les_passages_ambigus_et_les_non_coraniques_a_part(tm
     payload = run_readiness(load_inputs(prediction, decisions), options(), env)
     assert payload["schema"] == "aqr.export-readiness/1"
     assert payload["verdict"]["total"] == 2 and payload["verdict"]["ready"] is False
+    assert payload["verses"] == 3
     assert payload["verdict"]["unresolved"] == 2 and payload["verdict"]["resolved"] == 0
-    assert payload["non_quran"] == {"abstentions": 1, "formulas": 1}
+    assert (payload["non_quran"]["abstentions"], payload["non_quran"]["formulas"]) == (1, 1)
+    # le non coranique se VOIT (liste neutre) mais n'est dans aucune liste de passages à vérifier
+    assert [i["kind"] for i in payload["non_quran"]["items"]] == ["abstention", "formula"]
+    assert all(i["type"] in ("uncertain", "inferred") for i in payload["items"])
     assert [i["type"] for i in payload["items"]] == ["uncertain", "inferred"]
     assert payload["first_open"] == payload["items"][0]["key"]
 
@@ -131,6 +135,49 @@ def test_la_liste_est_paginee_et_le_decompte_exact(tmp_path, env):
     }
     assert len(first["items"]) == 10 and len(last["items"]) == 5
     assert len(json.dumps(first)) < 100_000
+
+
+def test_filtre_d_etat_et_page_du_premier_passage_ouvert(tmp_path, env):
+    many = [
+        verse("112:3", (1, 4), (float(10 * n), float(10 * n + 3)), status="inferred")
+        for n in range(25)
+    ]
+    first = many[0]
+    prediction, decisions = write(
+        tmp_path,
+        document(*many),
+        decision_for(first, "inferred", "exclude", {"reason": "not_heard"}),
+    )
+    inputs = load_inputs(prediction, decisions)
+    everything = run_readiness(inputs, options(), env, size=10)
+    assert everything["first_open"] == everything["items"][1]["key"]  # le premier est résolu
+    assert everything["first_open_page"] == 0
+    opened = run_readiness(inputs, options(), env, size=10, state_filter="open")
+    assert opened["page"]["total"] == 24 and all(i["state"] == "open" for i in opened["items"])
+    assert (
+        run_readiness(inputs, options(), env, size=10, state_filter="resolved")["page"]["total"]
+        == 1
+    )
+    late = [
+        verse("112:3", (1, 4), (float(10 * n), float(10 * n + 3)), status="inferred")
+        for n in range(25)
+    ]
+    only_last = write(
+        tmp_path,
+        document(*late),
+        *[
+            decision_for(
+                interval,
+                "inferred",
+                "exclude",
+                {"reason": "not_heard"},
+                id_=f"00000000-0000-4000-8000-{n:012d}",
+            )
+            for n, interval in enumerate(late[:20], start=1)
+        ],
+    )
+    skipped = run_readiness(load_inputs(*only_last), options(), env, size=10)
+    assert skipped["first_open_page"] == 2
 
 
 def test_une_decision_fait_passer_le_passage_a_resolu(tmp_path, env):

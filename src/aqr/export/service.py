@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from aqr.corpus.checksums import CorpusChecksumError
-from aqr.decisions import Decision, DecisionsDocument, parse_decisions
+from aqr.decisions import Decision, DecisionsDocument, interval_fingerprint, parse_decisions
 from aqr.domain.models import VerseRef
 from aqr.export.analysis import (
     MAX_CANDIDATES,
@@ -33,7 +33,7 @@ from aqr.export.analysis import (
 from aqr.export.cues import CueBuild, build_cues, preview_json
 from aqr.export.options import ExportOptions
 from aqr.export.texts import TranslationSource, translation_text
-from aqr.export.view import View, build_view
+from aqr.export.view import Omission, View, build_view
 from aqr.rendering.passages import Passages
 from aqr.rendering.subtitles import write_ass, write_srt, write_vtt
 
@@ -196,10 +196,10 @@ def decision_json(decision: Decision) -> dict[str, Any]:
     return {
         "id": decision.id,
         "kind": decision.kind,
-        "item": decision.target.item,
         "value": value,
         "target": {
             "fingerprint": decision.target.fingerprint,
+            "item": decision.target.item,
             "index": decision.target.index,
             "snapshot": dict(decision.target.snapshot),
             "review_ids": list(decision.target.review_ids),
@@ -337,6 +337,7 @@ def readiness_payload(
     page: int = 0,
     size: int = PAGE_SIZE,
     type_filter: str | None = None,
+    state_filter: str | None = None,
 ) -> dict[str, Any]:
     counted = analysis.counted
     unresolved = analysis.unresolved
@@ -345,12 +346,17 @@ def readiness_payload(
         for i in unresolved
         if i.impact.startswith("arabic") or i.type in ("inferred", "cut", "report")
     ]
-    selected = [i for i in counted if type_filter in (None, "", i.type)]
+    selected = [
+        i
+        for i in counted
+        if type_filter in (None, "", i.type) and state_filter in (None, "", i.state)
+    ]
     size = max(0, min(size, 50))
     pages = 0 if size == 0 else max(1, -(-len(selected) // size))
     window = selected[page * size : (page + 1) * size] if size else []
     ineffective = [i for i in analysis.items if not i.effective]
-    first_open = next((i.key for i in counted if i.state == "open"), None)
+    first_open_at = next((n for n, i in enumerate(selected) if i.state == "open"), None)
+    first_open = None if first_open_at is None else selected[first_open_at].key
     return {
         "schema": READINESS_SCHEMA,
         "prediction_sha256": inputs.prediction_sha256,
@@ -365,10 +371,16 @@ def readiness_payload(
             "other": len(unresolved) - len(arabic_open),
         },
         "counts": _count_types(counted),
-        "non_quran": {"abstentions": analysis.abstentions, "formulas": analysis.formulas},
+        "verses": sum(1 for i in analysis.intervals if i.get("kind") == "verse"),
+        "non_quran": {
+            "abstentions": analysis.abstentions,
+            "formulas": analysis.formulas,
+            "items": _non_quran_items(analysis),
+        },
         "page": {"index": page, "size": size, "total": len(selected), "pages": pages},
         "items": [item_json(i, analysis, ctx) for i in window],
         "first_open": first_open,
+        "first_open_page": (None if first_open_at is None or size == 0 else first_open_at // size),
         "ineffective": {
             "total": len(ineffective),
             "items": [
@@ -383,6 +395,28 @@ def readiness_payload(
     }
 
 
+NON_QURAN_LIST_LIMIT: Final = 100
+
+
+def _non_quran_items(analysis: Analysis) -> list[dict[str, Any]]:
+    """Les passages non coraniques (abstentions, formules) : à voir, jamais à corriger (I4)."""
+    out: list[dict[str, Any]] = []
+    for interval in analysis.intervals:
+        kind = interval.get("kind")
+        if kind not in ("abstention", "non_quran") or interval.get("t") is None:
+            continue
+        out.append(
+            {
+                "kind": "abstention" if kind == "abstention" else "formula",
+                "label": interval.get("reason") if kind == "abstention" else interval.get("label"),
+                "t": list(interval["t"]),
+            }
+        )
+        if len(out) >= NON_QURAN_LIST_LIMIT:
+            break
+    return out
+
+
 def run_readiness(
     inputs: Inputs,
     options: ExportOptions,
@@ -392,10 +426,19 @@ def run_readiness(
     page: int = 0,
     size: int = PAGE_SIZE,
     type_filter: str | None = None,
+    state_filter: str | None = None,
 ) -> dict[str, Any]:
     ctx = build_context(options, env, blocking_tags)
     analysis = analyze(inputs.document, inputs.decisions, inputs.notes, ctx)
-    return readiness_payload(inputs, analysis, ctx, page=page, size=size, type_filter=type_filter)
+    return readiness_payload(
+        inputs,
+        analysis,
+        ctx,
+        page=page,
+        size=size,
+        type_filter=type_filter,
+        state_filter=state_filter,
+    )
 
 
 # --- export ----------------------------------------------------------------------------------
@@ -545,6 +588,7 @@ def run_export(
                 "ref": o.ref,
                 "reason": o.reason,
                 "detail": o.detail,
+                "key": _item_key(analysis, o),
             }
             for o in view.omissions
         ][:200],
@@ -569,6 +613,13 @@ def run_export(
             "head": content[:1500],
         }
     return ExportResult(content, summary, build)
+
+
+def _item_key(analysis: Analysis, omission: Omission) -> str | None:
+    """La clé du passage à vérifier (celle du contrôle) d'un passage omis : lien « Le corriger »."""
+    if omission.index is None or omission.type not in ("uncertain", "inferred"):
+        return None
+    return f"{interval_fingerprint(analysis.intervals[omission.index])}#{omission.type}"
 
 
 def corpus_verse(

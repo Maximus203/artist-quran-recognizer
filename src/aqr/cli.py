@@ -253,6 +253,7 @@ def _add_export_commands(commands: argparse._SubParsersAction[argparse.ArgumentP
     ready.add_argument(
         "--type", dest="item_type", help="uncertain | inferred | cut | approx | report"
     )
+    ready.add_argument("--state", dest="item_state", help="open | resolved | ignored")
 
     verse = commands.add_parser(
         "corpus-verse", help="un verset lu dans le corpus (jamais un modèle)"
@@ -587,6 +588,7 @@ def _export_readiness(
             page=max(0, args.page),
             size=args.size,
             type_filter=args.item_type,
+            state_filter=args.item_state,
         )
     except (OptionsError, InputsError, CorpusChecksumError, OSError, ValueError) as exc:
         print(f"ERREUR {exc}", file=err)
