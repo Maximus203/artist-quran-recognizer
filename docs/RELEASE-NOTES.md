@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Les scripts d'évaluation tournent aussi sous Windows
+Étiquettes : technique
+PR : #100
+
+**Ce qui change.** `aqr.eval.run` (verrou de dossier de sortie) et `scripts/recognize_batch.py` (pic mémoire) ne dépendent plus de modules propres à Unix : un petit module `aqr.eval.portable` choisit `flock` ou `msvcrt.locking` pour le verrou, et `resource` ou l'API Windows pour la mémoire. La suite de tests Python passe en entier sous Windows (elle comptait 67 échecs) ; quelques tests propres à Unix (bits de permission, signal envoyé à soi-même, liens symboliques sans droit) sont ignorés sous Windows, et deux tests de chemins et de dépôt git parent sont rendus indépendants de la machine. Le résultat produit sous Linux et macOS ne change pas.
+
+**Pourquoi / décision.** Ticket [#89](https://github.com/Maximus203/artist-quran-recognizer/issues/89) : les échecs Windows cachaient d'éventuelles régressions. Aucune dépendance ajoutée. Les anciens rapports d'évaluation gardent leur texte d'origine, daté.
+
 ## 2026-10-23 — Export des sous-titres dans l'atelier : vérifier, corriger à l'oreille, exporter
 Étiquettes : utilisateur, technique, décision
 PR : #99

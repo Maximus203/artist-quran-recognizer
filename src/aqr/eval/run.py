@@ -14,12 +14,12 @@ cas commun, et un lot `complete` a tous ses cas planifiés dans `done` et aucun 
 
 Un seul lot à la fois par dossier de sortie : `exclusive_directory` prend un verrou `flock` non
 bloquant sur `<dossier>/.lock` (fichier laissé en place, jamais supprimé : le supprimer ouvrirait
-une course entre deux lots). Module sans modèle ni réseau (Unix : `fcntl`).
+une course entre deux lots). Module sans modèle ni réseau ; le verrou est portable
+(`aqr.eval.portable` : `flock` sous Unix, `msvcrt.locking` sous Windows).
 """
 
 from __future__ import annotations
 
-import fcntl
 import json
 import os
 import tempfile
@@ -29,6 +29,8 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
+
+from aqr.eval.portable import LockBusy, lock_exclusive_nonblocking
 
 RUN_SCHEMA = "aqr.recognition-run/1"
 RUN_FILE = "run.json"
@@ -95,8 +97,8 @@ def exclusive_directory(directory: Path) -> Iterator[None]:
         raise DirectoryBusy(f"verrou {lock} impossible à créer : {exc}") from exc
     try:
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
+            lock_exclusive_nonblocking(fd)
+        except LockBusy as exc:
             raise DirectoryBusy(
                 f"dossier de sortie déjà utilisé par un autre lot (verrou {lock}) : attendre sa "
                 "fin ou choisir un autre --out-dir"

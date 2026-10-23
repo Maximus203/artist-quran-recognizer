@@ -18,7 +18,7 @@ Deux jeux :
 Moteur = `--asr fastconformer` (le moteur principal seul). Les temps rendus sur l'audio accéléré
 sont ramenés à l'échelle de l'audio d'origine (`aqr.eval.speed_curve.rescale_document`). Rien
 n'est écrit dans le dépôt. Dans un worktree, lancer avec `PYTHONPATH=<worktree>/src`. Ce script
-n'utilise pas `scripts/recognize_batch.py` (`fcntl`, absent de Windows).
+n'utilise pas `scripts/recognize_batch.py` : il écrit ses propres sorties par condition.
 """
 
 from __future__ import annotations

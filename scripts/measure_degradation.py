@@ -23,7 +23,7 @@ Dans un worktree, lancer avec `PYTHONPATH=<worktree>/src`.
 
 Sorties par condition : `<out>/<condition>/<mode>/<fichier>.recognition.json` (aqr.recognition/1)
 et `.score.json` (comptes, WER/CER, temps). Ce script n'utilise pas `scripts/recognize_batch.py` :
-celui-ci (comme `aqr.eval.run`) dépend de `fcntl` et `resource`, absents de Windows.
+il écrit ses propres sorties par condition.
 """
 
 from __future__ import annotations

@@ -53,7 +53,9 @@ def test_machine_id_donne_cpu_et_coeurs_sans_nom_d_hote():
     assert "hostname" not in machine and "node" not in machine
 
 
-def test_git_state_sur_ce_depot_et_hors_depot(tmp_path: Path):
+def test_git_state_sur_ce_depot_et_hors_depot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    # sans plafond, git remonte vers un dépôt parent (ex. un dossier personnel versionné)
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
     state = git_state(ROOT)
     assert state["sha"] is not None and len(state["sha"]) == 40
     assert isinstance(state["dirty"], bool)

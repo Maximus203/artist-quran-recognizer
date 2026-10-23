@@ -35,6 +35,7 @@ def _run(
         env={**base, **env},
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=60,
         check=False,
     )
@@ -60,6 +61,7 @@ def test_the_usage_check_comes_before_the_environment_check(tmp_path: Path) -> N
         env=base,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=60,
         check=False,
     )
@@ -80,7 +82,10 @@ def path_without_ffmpeg(tmp_path: Path) -> str:
     for tool in ("dirname", "mktemp", "tr", "rm", "grep", "tee", "cat"):
         found = shutil.which(tool)
         if found:
-            (bin_dir / tool).symlink_to(found)
+            try:
+                (bin_dir / tool).symlink_to(found)
+            except OSError:  # Windows sans mode développeur : pas le droit de créer un lien
+                pytest.skip("création de liens symboliques impossible")
     return str(bin_dir)
 
 
