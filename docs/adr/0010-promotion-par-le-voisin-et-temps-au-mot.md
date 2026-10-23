@@ -49,6 +49,11 @@ Deux défauts relevés par Cherif sur la session 5014015f (Hud 11:61-90, récita
    - rien pour un verset `uncertain` (non nommé) ou `inferred` (jamais entendu) : un faux temps vaut moins
      que pas de temps.
    Le lecteur Python (`aqr.eval.recognition`) valide la forme (un temps par mot, croissants, dans `t`).
+   **Jamais de chevauchement** (correctif du 2026-10-23, cas réel vitesse ×0,3 : deux fenêtres voisines
+   qui se recouvrent de 50 ms plaçaient le mot 6 avant la fin du mot 5, et le lecteur rejetait tout le
+   document) : `aqr.domain.word_timing.without_overlap` recoupe au milieu un recouvrement ≤ 0,1 s, à la fusion
+   des moitiés comme à la sortie ; au-delà, les temps mesurés ne sont pas publiés. Le lecteur normalise de la
+   même façon un résiduel ≤ `word_overlap_tolerance_s` (0,1 s) et refuse le reste.
 5. **Début d'intervalle = début du premier mot aligné.** Vérifié sur le cas réel de Cherif (« début tardif »,
    55,1 s) : le bord de fenêtre n'est pas en cause. La RMS monte à 55,06 s ; le premier mot est placé à
    55,12 s ; ce que Cherif entend à ~54,8 s est une inspiration (RMS ≈ 2 % de la voix, 54,58-54,80 s),
