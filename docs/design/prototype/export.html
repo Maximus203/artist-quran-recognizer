@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Exporter les sous-titres — Atelier de revue</title>
+<!--
+  PROTOTYPE STATIQUE — données factices (export-data.js). Tokens : ../tokens.css ; composants : base.css + export.css.
+  États par l'adresse : #tab=reglages · #forcer · #v=resultat[&forced=1] · #s=pret|long · #content=ar|fr · #fmt=vtt|ass|json · #pv=fichier · #adv=1 · #theme=light
+  Vue des états d'erreur : export-etats.html. Correction d'un passage : corriger.html.
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="export.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.6.6 0 0 0 .9.5l10.6-6.8a.6.6 0 0 0 0-1L8.9 4.7a.6.6 0 0 0-.9.5z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2M12 17v.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z"/><path d="M14 3.5V8h4M9 12.5h6M9 16h6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/></symbol>
+</svg>
+
+<div class="sr" id="live" aria-live="polite" role="status"></div>
+<div class="app">
+  <header class="header">
+    <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em class="hide-m">de revue</em></b></a>
+    <nav class="hdr-nav hide-m" aria-label="Pages" style="display:flex;gap:2px;margin-left:var(--sp-4)"><a href="index.html" aria-current="page" style="color:var(--text)">Revue</a><a href="sessions.html">Sessions</a><a href="index.html#perf">Performance</a><a href="docs.html">Documentation</a></nav>
+    <span class="spacer"></span>
+    <button class="btn btn--ghost btn--icon" id="theme" type="button" aria-label="Changer de thème"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <span class="avatar" aria-label="Compte : cherif" role="img">C</span>
+  </header>
+
+  <main class="xp-page">
+    <div class="xp-wrap">
+      <nav class="crumb" aria-label="Fil d’Ariane"><a href="index.html"><svg class="i" style="width:16px;height:16px" aria-hidden="true"><use href="#i-chev-l"/></svg>Retour à la session</a><span aria-hidden="true">/</span><span>Récitation Hud, Isra, Rahmân</span></nav>
+
+      <!-- ───────── Vue 1 : vérifier + réglages ───────── -->
+      <div id="view-check">
+        <div class="xp" data-tab="verifier">
+          <div class="xp-head">
+      <h1 class="xp-title">Exporter les <em>sous-titres</em></h1>
+      <p class="xp-facts"><span class="f"><svg class="i" aria-hidden="true"><use href="#i-audio"/></svg>Audio · <span class="mono">3:12</span></span><span class="f" id="xp-title-sub">Terminé en <b class="mono" style="font-weight:600">26 s</b> · ×7,4 temps réel</span><span class="f"><span class="mono">44</span>&nbsp;passages coraniques · <span class="mono">9</span>&nbsp;non coraniques ignorés</span></p>
+
+
+      <!-- Mobile : deux temps, comme deux onglets -->
+      <div class="seg-tabs" role="tablist" aria-label="Étapes de l’export">
+        <button type="button" role="tab" data-tab="verifier" aria-selected="true">1 · Vérifier <span class="n" id="tab-n">5</span></button>
+        <button type="button" role="tab" data-tab="reglages" aria-selected="false">2 · Réglages</button>
+      </div>
+</div>
+          <section class="xcol xcol--check" aria-labelledby="h-verif">
+            <div id="verdict" class="verdict">
+              <div class="verdict-top">
+                <div class="bigN" id="v-n" aria-hidden="true">5</div>
+                <div>
+                  <h2 id="v-h">passages à vérifier avant d’exporter</h2>
+                  <p id="v-p"></p>
+                </div>
+              </div>
+              <div>
+                <div class="meter-l" id="v-prog"></div>
+                <div class="meter" role="progressbar" aria-labelledby="v-prog" aria-valuemin="0" aria-valuemax="100"><i id="v-meter"></i></div>
+              </div>
+              <div class="verdict-act" id="v-act">
+                <button class="btn btn--primary" type="button" id="v-first">Corriger le premier passage</button>
+                <span class="muted" style="font-size:var(--fs-sm)">ou <button type="button" id="force-link" style="text-decoration:underline;text-underline-offset:3px;font-weight:600;color:var(--text);min-height:44px">forcer l’export</button> sans corriger</span>
+              </div>
+            </div>
+
+            <div class="neutral-line">
+              <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
+              <p><b style="font-weight:600;color:var(--text)">9 passages non coraniques ignorés</b> (6 abstentions : tafsir, wolof, français · 3 formules). Ils ne demandent rien et ne bloquent jamais l’export. <button type="button">Voir la liste</button></p>
+            </div>
+
+            <div>
+              <div class="list-head">
+                <h3 id="h-verif">À vérifier dans la partie coranique</h3>
+                <span class="grow"></span>
+              </div>
+              <div class="fchips" id="fchips" style="margin:var(--sp-3) 0" role="group" aria-label="Filtrer par type"></div>
+              <div id="xlist"></div>
+            </div>
+          </section>
+
+          <aside class="xcol xcol--set" aria-labelledby="h-set">
+            <form class="set" onsubmit="return false">
+              <div class="set-head"><h3 id="h-set">Réglages de l’export</h3></div>
+
+              <fieldset class="set-sec"><legend>Format</legend>
+                <div class="fmt" role="radiogroup" aria-label="Format">
+                  <label><input type="radio" name="fmt" value="srt" checked><span>SRT<small>universel</small></span></label>
+                  <label><input type="radio" name="fmt" value="vtt"><span>WebVTT<small>web</small></span></label>
+                  <label><input type="radio" name="fmt" value="ass"><span>ASS<small>mot à mot</small></span></label>
+                  <label><input type="radio" name="fmt" value="json"><span>JSON<small>données</small></span></label>
+                </div>
+              </fieldset>
+
+              <fieldset class="set-sec"><legend>Contenu des sous-titres</legend>
+                <div class="rads">
+                  <label class="rad"><input type="radio" name="content" value="arfr" checked><span><b>Arabe et traduction française</b><small>Deux lignes par sous-titre.</small></span></label>
+                  <label class="rad"><input type="radio" name="content" value="ar"><span><b>Arabe seul</b><small>Texte exact du Mushaf (corpus), jamais celui du moteur.</small></span></label>
+                  <label class="rad"><input type="radio" name="content" value="fr"><span><b>Traduction française seule</b><small>QuranEnc, sans modification.</small></span></label>
+                </div>
+              </fieldset>
+
+              <div class="set-sec">
+                <span class="lg">Formules</span>
+                <div class="chk-row" role="group" aria-label="Formules à inclure">
+                  <label class="chk"><input type="checkbox" name="chk" value="istiadha"><span>Isti‘adha</span></label>
+                  <label class="chk"><input type="checkbox" name="chk" value="basmala" checked><span>Basmala</span></label>
+                  <label class="chk"><input type="checkbox" name="chk" value="takbir"><span>Takbîr</span></label>
+                  <label class="chk"><input type="checkbox" name="chk" value="amin"><span>Âmîn</span></label>
+                </div>
+                <p class="muted" style="font-size:var(--fs-sm)">La basmala est le verset 1:1 (texte et traduction du corpus). Les autres formules sont des <b style="font-weight:600">libellés</b>, jamais du texte du Coran.</p>
+              </div>
+
+              <fieldset class="set-sec"><legend>Répétitions</legend>
+                <div class="rads">
+                  <label class="rad"><input type="radio" name="rep" checked><span><b>Garder toutes les récitations</b><small>Chaque passage garde son propre temps.</small></span></label>
+                  <label class="rad"><input type="radio" name="rep"><span><b>Fusionner les répétitions</b><small>Un seul sous-titre, de la première à la dernière.</small></span></label>
+                </div>
+              </fieldset>
+
+              <details class="adv" id="adv">
+                <summary>Mise en forme et synchronisation</summary>
+                <div class="set-sec">
+                  <div class="grid3">
+                    <label class="field">Durée min. <span class="opt">(s)</span><input class="input mono" value="1,0" inputmode="decimal"></label>
+                    <label class="field">Durée max. <span class="opt">(s)</span><input class="input mono" value="7,0" inputmode="decimal"></label>
+                    <label class="field">Signes / ligne<input class="input mono" value="42" inputmode="numeric"></label>
+                  </div>
+                  <label class="field" for="offset">Décalage global <span class="opt">(ms, − pour avancer)</span>
+                    <div class="stepper"><button class="btn btn--secondary" type="button" data-step="offset" data-d="-100" aria-label="Moins 100 millisecondes">−</button><input class="input" id="offset" value="0" inputmode="numeric" aria-describedby="off-h"><button class="btn btn--secondary" type="button" data-step="offset" data-d="100" aria-label="Plus 100 millisecondes">+</button></div>
+                  </label>
+                  <div class="sw-row"><span class="t"><b>Balises de sens d’écriture (RTL)</b><small>Garde l’arabe à droite dans les lecteurs qui l’inversent.</small></span><span class="tgl"><input type="checkbox" id="rtl" checked aria-label="Balises RTL"><i></i></span></div>
+                  <div class="sw-row"><span class="t"><b>Retirer les renvois de note [1]</b><small>Change la traduction QuranEnc (I2) : coché = écart assumé.</small></span><span class="tgl"><input type="checkbox" id="notes" aria-label="Retirer les renvois de note"><i></i></span></div>
+                  <div class="sw-row"><span class="t"><b>Afficher la référence (2:255)</b><small>Ajoute le numéro de sourate et de verset. Rend la référence incertaine gênante.</small></span><span class="tgl"><input type="checkbox" id="ref-shown" aria-label="Afficher la référence"><i></i></span></div>
+                  <div class="sw-row"><span class="t"><b>Encodage UTF-8 avec BOM</b><small id="bom-sub"></small></span><span class="tgl"><input type="checkbox" id="bom" aria-label="UTF-8 avec BOM"><i></i></span></div>
+                  <div id="ass-opts" hidden style="display:grid;gap:var(--sp-3)">
+                    <div class="sw-row"><span class="t"><b>Karaoké mot à mot</b><small>Le mot s’allume quand il est récité (temps mesurés seulement).</small></span><span class="tgl"><input type="checkbox" id="karaoke" checked aria-label="Karaoké mot à mot"><i></i></span></div>
+                    <label class="field">Police arabe<select class="input"><option>Amiri Quran (OFL)</option><option>Scheherazade New (OFL)</option><option>Noto Naskh Arabic (OFL)</option></select></label>
+                  </div>
+                </div>
+              </details>
+
+              <div class="set-sec">
+                <label class="field" for="file-name">Nom du fichier<input class="input mono" id="file-name" value="recitation-hud-isra.ar-fr.srt" autocomplete="off" spellcheck="false"></label>
+              </div>
+
+              <div class="set-sec">
+                <div class="pv-head"><span class="lg">Aperçu · 3 premiers sous-titres</span>
+                  <div class="mini-tabs" id="pv-tabs" role="tablist" aria-label="Type d’aperçu"><button type="button" role="tab" aria-selected="true" data-pv="rendu">Rendu</button><button type="button" role="tab" aria-selected="false" data-pv="fichier">Fichier</button></div></div>
+                <div id="pv" aria-live="polite"></div>
+                <p class="pv-note">Police arabe : Amiri Quran. Le texte vient du corpus Tanzil, le moteur ne l’écrit jamais.</p>
+              </div>
+
+              <div class="set-foot">
+                <div class="btnrow">
+                  <button class="btn btn--primary btn--lg btn--block" type="button" id="go" hidden><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Exporter en <span id="go-fmt">SRT</span></button>
+                  <button class="btn btn--secondary btn--lg btn--block" type="button" id="force">Forcer l’export…</button>
+                </div>
+                <p class="micro" id="micro"></p>
+              </div>
+            </form>
+          </aside>
+        </div>
+      </div>
+
+      <!-- ───────── Vue 2 : résultat ───────── -->
+      <div id="view-res" hidden>
+        <div style="max-width:720px;margin:var(--sp-5) auto 0;display:grid;gap:var(--sp-4)">
+          <section class="res" aria-labelledby="h-res">
+            <div class="res-top"><div class="res-ic" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></div>
+              <div><h2 id="h-res">Ton fichier est prêt</h2><p class="muted" id="res-clean" style="font-size:var(--fs-sm);margin-top:4px">Export propre : tous les passages ambigus ont été traités.</p><p id="res-forced" hidden style="font-size:var(--fs-sm);margin-top:4px;color:var(--text-2)"><b style="color:var(--warn)">Export forcé.</b> Les passages non corrigés ont été omis ; le fichier JSON le mentionne.</p></div></div>
+            <div class="filebox"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><div style="min-width:0"><div class="nm" id="res-name">recitation-hud-isra.ar-fr.srt</div><div class="mt"><span class="mono">44</span> sous-titres · <span class="mono">6,2 Ko</span> · UTF-8</div></div></div>
+            <div class="summary-grid"><div><b>44</b><span>sous-titres écrits</span></div><div><b id="res-omitted">0</b><span>passages omis</span></div><div><b>1</b><span>décision humaine appliquée</span></div></div>
+            <div class="btnrow" style="display:flex;gap:var(--sp-2);flex-wrap:wrap"><button class="btn btn--primary btn--lg" type="button"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Télécharger</button><button class="btn btn--secondary btn--lg" type="button" id="again"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Refaire l’export</button></div>
+          </section>
+          <section class="attrib" aria-labelledby="h-att">
+            <h4 id="h-att">Attribution à inclure avec la vidéo</h4>
+            <blockquote>Texte coranique : Tanzil Project (CC-BY-3.0, tanzil.net), non modifié. Traduction : QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd).</blockquote>
+            <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:center"><button class="btn btn--secondary btn--sm" type="button" id="copy"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>Copier le texte</button><span class="muted" style="font-size:var(--fs-sm)">Les formats SRT et WebVTT n’ont pas de champ d’attribution : mets-la dans la description de la vidéo.</span></div>
+          </section>
+          <section class="train" aria-labelledby="h-tr"><h4 id="h-tr"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg>Ta correction aide à entraîner le moteur</h4><p>La décision prise sur 11:61 est conservée sur ce serveur comme proposition de vérité terrain. <a href="corriger.html#train" style="font-weight:600">Voir ou retirer mon accord</a>.</p></section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Barre d'actions fixée (mobile) -->
+<div class="stickybar" id="stickybar" data-tab="verifier">
+  <button class="btn btn--ghost" type="button" id="sb-force">Forcer l’export</button>
+  <button class="btn btn--primary btn--lg" type="button" id="sb-main">Corriger (5)</button>
+  <button class="btn btn--primary btn--lg" type="button" id="sb-go" hidden>Exporter</button>
+</div>
+
+<!-- Dialogue : forcer l'export -->
+<div class="dlg-back" id="dlg-back" data-open="false">
+  <div class="dlg" id="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-h" aria-describedby="dlg-p">
+    <div><h2 id="dlg-h">Forcer l’export ?</h2>
+    <p id="dlg-p" style="margin-top:6px"><b style="color:var(--text);font-weight:600"><span id="force-n">5</span> passages ambigus</b> n’ont pas été corrigés. Nommer un faux verset est pire que n’en nommer aucun : choisis ce qu’on en fait.</p></div>
+    <fieldset class="rads" style="margin:0;padding:0">
+      <legend class="sr">Que faire des passages ambigus</legend>
+      <label class="rad"><input type="radio" name="policy" value="omit" checked><span><b>Les omettre <span class="tag" style="margin-left:6px">Recommandé</span></b><small>Aucun verset douteux n’est nommé ni sous-titré.</small></span></label>
+      <label class="rad"><input type="radio" name="policy" value="mark"><span><b>Les garder avec un marqueur</b><small>« [incertain : 11:61 | 7:73] » à la place du texte, « [déduit] » pour les supposés.</small></span></label>
+      <label class="rad is-danger"><input type="radio" name="policy" value="first"><span><b>Prendre le premier candidat</b><small class="warn">Risque de nommer un faux verset. Le moteur ne classe pas ses candidats aujourd’hui.</small></span></label>
+    </fieldset>
+    <div class="scroll-x"><table class="tbl" id="force-tbl"></table></div>
+    <p>Le fichier JSON portera la mention <span class="mono">forced: true</span> et le nombre de passages non résolus.</p>
+    <div class="dlg-foot"><button class="btn btn--secondary" type="button" data-close="1">Revenir et corriger</button><button class="btn btn--primary" type="button" id="do-force">Exporter quand même</button></div>
+  </div>
+</div>
+<div class="toast2" id="toast2" role="status"></div>
+
+<script src="export-data.js"></script>
+<script src="export.js"></script>
+<script>
+  document.getElementById("force-link").addEventListener("click", function () { document.getElementById("force").click(); });
+</script>
+</body>
+</html>
