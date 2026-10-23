@@ -1204,6 +1204,31 @@
   (sauvegarder la base avec le dossier de données) ; limiteurs en mémoire ; quota vérifié à l'import (deux
   imports simultanés peuvent le dépasser d'un fichier).
 
+## 2026-10-23 — Traduction par passage (fragments), ADR-0012
+- **Contexte** : sur un verset partiel, l'arabe montre les mots entendus et la traduction le verset entier (signalé
+  par le mainteneur). Contrainte I2 : découper, jamais réécrire ; ADR-0001 : pas de génératif.
+- **Décisions prises seul (hypothèses énoncées)** :
+  - Algorithme : IBM-1 bidirectionnel + longueur + signes de pause, programmation dynamique, posterior
+    avant-arrière, repli par fusion. Choisi sur mesure (pseudo-vérité sourates paires/impaires) et sur lecture
+    de 40 versets ; essais abandonnés listés dans `docs/evaluation/traduction-par-passage-2026-10-23.md`.
+  - Réglages dans `TranslationAlignmentConfig` (nouveau, à côté d'`AlignmentConfig` qui est celle de l'aligneur
+    acoustique CTC : y mêler des seuils de traduction l'aurait pollué).
+  - **Tolérance de position d'un mot** déclarée au contrat : exiger la place exacte ne gardait que 27 % des
+    frontières ; un mot de liaison peut aller des deux côtés. Mesuré : 90,5 % exactes, 99,4 % à ±1.
+  - Seconde chaîne (autre normalisation) obligatoire : elle retire les frontières décalées de 2 mots vues sur
+    12:23 et 59:23.
+  - `text` reste le verset entier ; `scope: "fragment"` dit d'afficher `fragment.text` (compatibilité).
+  - Empreinte de 64 bits (16 hex) par verset : suffisante pour 6 236 textes, fichier de 0,5 Mo.
+  - Le basmala préfixé par Tanzil au premier verset de chaque sourate (sauf 1 et 9) est exclu de l'alignement
+    mais reste numéroté (le rendu le compte).
+- **Écart au cahier des charges** : « 0 frontière fausse dans l'échantillon » non atteint (1 sur 169, une
+  inversion d'ordre du français, confiance 0,999 : le seuil ne la retire pas). Non contourné par une règle
+  écrite pour ce verset.
+- **Risques** : surlignage mot à mot décalé d'un mot à une jonction ; inversion d'ordre rare ; seule
+  `french_hameedullah` est découpée.
+- **Numérotation** : mon ADR a d'abord pris le numéro 0010 ; develop a fusionné entre-temps l'ADR-0010
+  (promotion par le voisin et temps au mot) et l'ADR-0011 (détection en direct). La mienne est devenue 0012.
+
 ## 2026-10-22 — Début incertain promu par son voisin, début avant pause, temps au mot (ADR-0010)
 - **Contexte** : session 5014015f (Hud 11:61-90). L'intervalle 21,5-35,7 s restait `uncertain` (début de 11:61
   semblable à 7:73) alors que la fenêtre contiguë, 11:61 [10-17], est `recognized`. Cause : l'incertitude du
