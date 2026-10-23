@@ -614,6 +614,7 @@ class HypothesisTracker:
         events.append(
             Candidates(
                 t=word.arrival_s,
+                start_s=passage.words[0].start_s,
                 words_heard=len(passage.words),
                 count=len(plausible),
                 items=items,
