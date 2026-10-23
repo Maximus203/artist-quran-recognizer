@@ -22,6 +22,7 @@ from aqr.models.registry import MODELS
 from aqr.pipeline.pipeline import PipelineConfig, RecognitionPipeline
 from aqr.pipeline.result import EngineInfo
 from aqr.rendering.home_renderer import HomeRenderer
+from aqr.rendering.translation_segments import SegmentLibrary
 
 if TYPE_CHECKING:
     from aqr.alignment.verification import AcousticVerifier
@@ -42,6 +43,7 @@ CASCADE = "cascade"
 l'arbitre acoustique (le choix du moteur n'est plus l'affaire de l'utilisateur)."""
 ASR_CHOICES = (CASCADE, "fastconformer", "whisper", "muno-streaming")
 MUNO_KEY = "muno-fastconformer-quran-streaming"
+DEFAULT_SEGMENTS_DIR = Path("data/translation-segments")
 
 
 class RecognizerUnavailable(RuntimeError):
@@ -58,6 +60,9 @@ class RecognizeOptions:
     corpus_dir: Path = Path("data/corpus")
     translation_id: str | None = "french_hameedullah"
     cache_dir: Path | None = None
+    segments_dir: Path | None = None
+    """Frontières de découpage des traductions (`AQR_SEGMENTS_DIR`, défaut
+    `data/translation-segments`)."""
     device: str = "auto"
     batch_size: int = 8
     constrained: bool = False
@@ -85,6 +90,11 @@ def options_from_env(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
     if updated.cache_dir is None:
         base = env.get("AQR_CACHE_DIR") or os.path.join(os.path.expanduser("~"), ".cache", "aqr")
         updated = replace(updated, cache_dir=Path(base) / "translations")
+    if updated.segments_dir is None:
+        updated = replace(
+            updated,
+            segments_dir=Path(env.get("AQR_SEGMENTS_DIR") or DEFAULT_SEGMENTS_DIR),
+        )
     return updated
 
 
@@ -149,7 +159,8 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
         if options.translation_id and options.cache_dir
         else _NoTranslations()
     )
-    return Recognizer(pipeline, HomeRenderer(corpus, translations))
+    segments = SegmentLibrary(options.segments_dir) if options.segments_dir else None
+    return Recognizer(pipeline, HomeRenderer(corpus, translations, segments))
 
 
 def _segmenter(

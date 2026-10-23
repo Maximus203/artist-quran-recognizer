@@ -19,6 +19,10 @@ data/corpus/*
 !data/finetune/
 data/finetune/*
 !data/finetune/LOCK.json
+# Frontières de découpage des traductions (indices, offsets, empreintes : aucun texte)
+!data/translation-segments/
+data/translation-segments/*
+!data/translation-segments/*.json
 models/*
 !models/LOCK.json
 tests/fixtures/audio/files/
