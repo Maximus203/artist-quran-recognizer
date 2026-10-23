@@ -59,8 +59,8 @@ fichiers est une limite assumée, un seul scalaire par estimateur étant calibr�
 
 - **Témoins** : les 9 sourates reconstituées de la campagne de dégradation (73 versets, 12,6 min),
   étirées à ×1,0 (propre), ×0,8, ×0,6, ×0,5, ×0,4, ×0,3, puis accélérées de ×1,0 ; 1,25 ; 1,5 ; 2 ;
-  2,5 ; 3 ; 4 (`atempo`, hauteur conservée ; cellules dont la vitesse nette dépasse ×3,2 omises) :
-  41 cellules. Vérité = celle de l'étirement (début et fin ÷ étirement) ; les temps rendus sont
+  2,5 ; 3 ; 4 (`atempo`, hauteur conservée) : 42 cellules, toutes mesurées (une estimation
+  fausse d'un facteur 4 reste donc évaluable). Vérité = celle de l'étirement (début et fin ÷ étirement) ; les temps rendus sont
   multipliés par le facteur d'accélération pour revenir à cette échelle.
 - **Vrais fichiers** : `lot3-01` à `lot3-06`, `lot1-05`, `lot2-07` ; **sans Coran** : `lot1-09`,
   `lot2-11`, `lot2-12` ; facteurs ×1,0 (référence) ; 1,25 ; 1,5 ; 2,0 ; 2,5.

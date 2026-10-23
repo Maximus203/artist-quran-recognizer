@@ -39,9 +39,9 @@ TEMOIN_COMPENSATIONS: Final = (1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0)
 """Facteurs d'accélération essayés sur chaque témoin (`atempo`, hauteur conservée)."""
 REAL_FACTORS: Final = (1.0, 1.25, 1.5, 2.0, 2.5)
 """Facteurs appliqués aux vrais fichiers : 1,0 est la référence."""
-MAX_NET_SPEED: Final = 3.2
-"""Au-delà (étirement x compensation), l'audio est plus rapide que toute récitation : la cellule n'a
-aucun intérêt. Ne sert qu'à borner la grille."""
+MAX_NET_SPEED: Final = 4.0
+"""Borne de la grille (étirement x compensation) : toutes les cellules la respectent, une
+estimation fausse d'un facteur 4 reste donc mesurable. Une cellule absente est une erreur."""
 ROUND_S: Final = 3
 EPSILON: Final = 1e-9
 
@@ -218,6 +218,40 @@ def choose_estimator(errors: Mapping[str, Sequence[float]]) -> str:
     if not errors:
         raise ValueError("aucun estimateur")
     return min(errors, key=lambda name: (median(errors[name]), name))
+
+
+@dataclass(frozen=True)
+class CtcStats:
+    """Ce que le CTC émet dans des fenêtres de parole : trames, trames non blanches, symboles."""
+
+    frames: int
+    nonblank: int
+    tokens: int
+
+    @property
+    def nonblank_rate(self) -> float:
+        """Part des trames qui portent un symbole : proportionnelle au débit de parole, car un CTC
+        émet ses symboles de façon espacée et laisse les blancs entre eux."""
+        return self.nonblank / self.frames if self.frames else 0.0
+
+    def __add__(self, other: CtcStats) -> CtcStats:
+        return CtcStats(
+            self.frames + other.frames, self.nonblank + other.nonblank, self.tokens + other.tokens
+        )
+
+
+def ctc_stats(best_path: Sequence[int], blank: int) -> CtcStats:
+    """Statistiques du chemin le plus probable (un symbole par trame) : un symbole répété sans blanc
+    entre deux trames est un seul token."""
+    nonblank = tokens = 0
+    previous = blank
+    for symbol in best_path:
+        if symbol != blank:
+            nonblank += 1
+            if symbol != previous:
+                tokens += 1
+        previous = symbol
+    return CtcStats(len(best_path), nonblank, tokens)
 
 
 # --- profil d'une reconnaissance, sans vérité -------------------------------------------------
