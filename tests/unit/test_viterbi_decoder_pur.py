@@ -338,3 +338,112 @@ def test_un_recouvrement_grossier_des_moities_ne_garde_aucun_temps_au_mot():
     ]
     (det,) = _decoder().decode(obs).detections()
     assert (det.span.first_word, det.span.last_word) == (1, 12) and det.word_times == ()
+
+
+# --- Détections venues d'ailleurs que du Viterbi (comblement de trou, ADR-0013) -------------------
+def _det(ref, first, last, start, end, **kwargs):
+    from aqr.domain.models import Detection, WordSpan
+
+    return Detection(
+        WordSpan(ref, first, last), TimeSpan(start, end), Status.RECOGNIZED, 0.75, **kwargs
+    )
+
+
+def _words(start, count):
+    return tuple(TimeSpan(start + 0.5 * n, start + 0.5 * (n + 1)) for n in range(count))
+
+
+V = VerseRef(12, 21)
+
+
+def test_un_debut_ajoute_avant_la_suite_reconnue_fusionne_avec_elle():
+    # Cas 3 (lot3-04) : 12:21 [13-23] reconnu, son début [1-12] comblé juste avant.
+    tail = _det(V, 13, 23, 578.27, 607.63, word_times=_words(578.27, 11))
+    head = _det(V, 1, 12, 556.0, 577.9, word_times=_words(556.0, 12), promoted_by="gap")
+    out = _decoder().integrate([tail], [head], barriers=[])
+    (merged,) = out
+    assert (merged.span.first_word, merged.span.last_word) == (1, 23)
+    assert merged.time == TimeSpan(556.0, 607.63)
+    assert len(merged.word_times) == 23 and merged.promoted_by == "gap"
+    assert merged.status is Status.RECOGNIZED and not merged.is_repetition
+
+
+def test_une_suite_ajoutee_apres_le_verset_reconnu_fusionne_avec_lui():
+    # Cas 2 : 2:87 [1-12] reconnu, le mot 13 dit juste après.
+    before = _det(VerseRef(2, 87), 1, 12, 33.9, 62.6, word_times=_words(33.9, 12))
+    word = _det(VerseRef(2, 87), 13, 13, 62.9, 63.8, word_times=_words(62.9, 1), promoted_by="gap")
+    (merged,) = _decoder().integrate([before], [word], barriers=[])
+    assert (merged.span.first_word, merged.span.last_word) == (1, 13)
+    assert merged.time == TimeSpan(33.9, 63.8) and merged.promoted_by == "gap"
+
+
+def test_les_detections_ajoutees_gardent_l_ordre_du_temps():
+    a = _det(VerseRef(17, 73), 1, 10, 10.0, 20.0)
+    c = _det(VerseRef(17, 75), 1, 12, 60.0, 70.0)
+    b = _det(VerseRef(17, 74), 1, 10, 30.0, 50.0, promoted_by="gap")
+    out = _decoder().integrate([a, c], [b], barriers=[])
+    assert [d.span.ref.ayah for d in out] == [73, 74, 75]
+
+
+def test_des_mots_redits_sont_marques_repetition_sans_fusion():
+    # Cas 5 : 17:76 reconnu, puis redit en entier.
+    first = _det(VerseRef(17, 76), 1, 13, 719.4, 747.9)
+    again = _det(VerseRef(17, 76), 1, 13, 760.0, 779.0, promoted_by="gap")
+    out = _decoder().integrate([first], [again], barriers=[])
+    assert [(d.span.first_word, d.is_repetition) for d in out] == [(1, False), (1, True)]
+    assert out[1].promoted_by == "gap"
+
+
+def test_la_reprise_apres_un_ajout_est_marquee_repetition():
+    # 2:87 [1-12] + mot 13 ajouté, puis la reprise [9-24] déjà marquée par le décodeur
+    before = _det(VerseRef(2, 87), 1, 12, 33.9, 62.6)
+    word = _det(VerseRef(2, 87), 13, 13, 62.9, 63.8, promoted_by="gap")
+    reprise = _det(VerseRef(2, 87), 9, 24, 66.1, 103.9)
+    out = _decoder().integrate([before, reprise], [word], barriers=[])
+    assert [(d.span.first_word, d.span.last_word, d.is_repetition) for d in out] == [
+        (1, 13, False),
+        (9, 24, True),
+    ]
+
+
+def test_un_long_silence_entre_l_ajout_et_son_voisin_empeche_la_fusion():
+    tail = _det(V, 13, 23, 578.27, 607.63)
+    head = _det(V, 1, 12, 500.0, 520.0, promoted_by="gap")
+    out = _decoder(merge_max_gap_s=5.0).integrate([tail], [head], barriers=[])
+    assert [(d.span.first_word, d.span.last_word) for d in out] == [(1, 12), (13, 23)]
+
+
+def test_une_observation_ecartee_entre_les_deux_empeche_la_fusion():
+    tail = _det(V, 13, 23, 578.27, 607.63)
+    head = _det(V, 1, 12, 556.0, 570.0, promoted_by="gap")
+    barrier = TimeSpan(571.0, 577.0)
+    out = _decoder().integrate([tail], [head], barriers=[barrier])
+    assert len(out) == 2
+
+
+def test_les_autres_detections_ne_sont_jamais_touchees():
+    other = _det(VerseRef(5, 55), 1, 13, 242.0, 274.0)
+    twin = _det(VerseRef(5, 55), 14, 15, 274.5, 280.0)  # deux moitiés que le décodeur a laissées
+    head = _det(V, 1, 12, 556.0, 577.9, promoted_by="gap")
+    out = _decoder().integrate([other, twin], [head], barriers=[])
+    assert out[:2] == [other, twin]
+
+
+def test_integrer_sans_ajout_rend_les_memes_detections():
+    a = _det(V, 1, 12, 10.0, 20.0)
+    assert _decoder().integrate([a], [], barriers=[]) == [a]
+
+
+def test_un_ajout_n_est_raccorde_qu_aux_mots_contigus():
+    # l'ajout [1-8] et le voisin [11-18] : les mots 9 et 10 manquent, personne ne les a entendus
+    tail = _det(V, 11, 18, 578.27, 607.63)
+    head = _det(V, 1, 8, 556.0, 570.0, promoted_by="gap")
+    out = _decoder().integrate([tail], [head], barriers=[])
+    assert [(d.span.first_word, d.span.last_word) for d in out] == [(1, 8), (11, 18)]
+    # alors que le décodeur, lui, raccorde deux moitiés proches sans exiger la contiguïté
+    obs = [
+        (TimeSpan(0.0, 3.0), [_cand(VerseRef(2, 255), first=1, last=6)]),
+        (TimeSpan(3.2, 6.0), [_cand(VerseRef(2, 255), first=9, last=12)]),
+    ]
+    (det,) = _decoder().decode(obs).detections()
+    assert (det.span.first_word, det.span.last_word) == (1, 12)

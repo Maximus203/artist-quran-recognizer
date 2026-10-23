@@ -1327,6 +1327,21 @@
   7. *Documentation d'agents* (`.artist/`, `docs/prompts/`, `CLAUDE.md`, `AGENTS.md`) : à décider si elle
      est publiée telle quelle.
 
+## 2026-10-23 — Combler un trou entre deux versets reconnus (revue lot3-04), ADR-0013
+- **Besoin** : cinq défauts relevés à l'oreille par le mainteneur sur « lot3-04 », tous du même genre (une partie d'un
+  verset reconnue, l'autre abstenue ou incertaine). Mécanisme commun plutôt que cinq rustines : contexte -> hypothèse de
+  texte du corpus -> alignement sur le trou -> décision acoustique.
+- **Décision prise seul (hypothèses)** : (1) la preuve par trame se mesure sur la parole alignée, pas sur tout le passage
+  (le `head` de la session avait −0,48 pour 2 mots dans 22 s) ; (2) un mot sans soutien se voit mot par mot, toléré à 15 %
+  (un verset parfait en compte un sur dix) ; (3) deux hypothèses se comparent par la log-vraisemblance TOTALE sur les
+  mêmes trames, pas par la moyenne par trame ; (4) le cas 2 (mot suivant dit dans la même fenêtre) n'est pas un trou :
+  extension de bord par comparaison de deux textes sur les mêmes trames ; (5) un verset nouveau n'est jamais nommé sur
+  moins de 3 mots (2:88 [1-1] et 11:91 [1-1] écartés à la mesure) ; (6) les détections ajoutées ne se raccordent que si
+  aucun mot ne manque (l'audio vient d'être entendu).
+- **Pas corrigé** : le mot « بسم » de 1:1 (llr −0,84, un mot sans transcription : sous le seuil des mots seuls).
+- **Mesure** : `docs/evaluation/comblement-de-trou-2026-10-23.md` (0 perdu, 0 ajouté sans Coran, EveryAyah 216/216).
+- **Risques connus** : seuils provisoires (étape A) ; 16 ajouts proches du seuil ou sans second témoin à écouter.
+
 
 ## 2026-10-23 — Courbe de vitesse : pas d'étage « candidat de vitesse »
 - **Contexte** : la campagne de dégradation montrait qu'accélérer l'audio d'une récitation ralentie remonte

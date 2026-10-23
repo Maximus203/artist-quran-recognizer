@@ -147,6 +147,13 @@
     "summary": "Pour un verset partiel, la traduction suit les mots affichés : découpage hors ligne et déterministe, précision d'abord, repli sur le verset entier."
   },
   {
+    "slug": "adr-0013",
+    "title": "ADR-0013 — Combler un trou entre deux versets reconnus, sur l'audio",
+    "section": "Décisions",
+    "file": "docs/adr/0013-comblement-de-trou.md",
+    "summary": "Quand une partie d'un verset est reconnue et l'autre abstenue : hypothèses de texte déduites du contexte, alignées sur le trou, preuve sur la seule parole alignée, promotion par la suite acceptée, extension d'un bord."
+  },
+  {
     "slug": "metriques-evaluation",
     "title": "Métriques d'évaluation",
     "section": "Évaluation",
@@ -215,6 +222,13 @@
     "section": "Évaluation",
     "file": "docs/evaluation/cascade-2026-10-20.md",
     "summary": "Mesure de la cascade : aucun verset perdu, EveryAyah 216/216, coût en temps multiplié par 2,85."
+  },
+  {
+    "slug": "comblement-de-trou-2026-10-23",
+    "title": "Comblement de trou : mesure sur la revue lot3-04 et 11 fichiers",
+    "section": "Évaluation",
+    "file": "docs/evaluation/comblement-de-trou-2026-10-23.md",
+    "summary": "Les cinq signalements de la revue, 0 verset perdu sur 6 lot3, lot1-05, lot1-06 et lot2-04, 0 verset ajouté sans Coran, EveryAyah 216/216, ajouts à écouter."
   },
   {
     "slug": "traduction-par-passage-2026-10-23",
