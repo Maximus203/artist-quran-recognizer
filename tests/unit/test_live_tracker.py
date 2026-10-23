@@ -405,6 +405,22 @@ def test_un_rival_qui_n_est_pas_un_sosie_bloque_le_verrou_tant_que_les_mots_ne_l
     ]
 
 
+def test_un_rival_en_milieu_de_verset_peu_probable_ne_bloque_pas_un_debut_de_verset(
+    index: PrefixIndex,
+) -> None:
+    # « nn oo pp » ouvre 113:2 et se retrouve au milieu de 111:1 : un passage qui démarre au début
+    # d'un verset l'emporte largement, le milieu de verset reste une hypothèse de réserve
+    tracker = new_tracker(index)
+    events = flat(feed(tracker, Clock().say("nn oo pp")))
+    assert [lock.ref for lock in of_type(events, Locked)] == [ref("113:2")]
+
+
+def test_un_rival_en_milieu_de_verset_bloque_s_il_est_probable(index: PrefixIndex) -> None:
+    tracker = new_tracker(index, mid_rival_posterior=1e-9)
+    events = flat(feed(tracker, Clock().say("nn oo pp")))
+    assert not of_type(events, Locked)
+
+
 def test_le_rival_qui_gagne_au_mot_suivant_ne_nomme_jamais_la_suite_attendue(
     index: PrefixIndex,
 ) -> None:

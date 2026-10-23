@@ -582,14 +582,16 @@ def sweep_grid() -> list[tuple[str, LiveConfig]]:
         (0.8, 0.9, 0.95), (2, 3, 4, 5), (0.95, 0.98, 0.99)
     ):
         configs.append(("core", base.replace(prior=prior, min_words_lock=min_words, tau_lock=tau)))
-    for min_words, confidence, exact in itertools.product(
-        (3, 4), (0.0, 0.5, 0.6, 0.7, 0.8), (0.0, 0.67, 1.0)
+    for confidence, exact, extra in itertools.product(
+        (0.0, 0.6, 0.7, 0.8), (0.0, 0.67, 1.0), (2, 3, 4)
     ):
         configs.append(
             (
                 "guards",
                 base.replace(
-                    min_words_lock=min_words, min_lock_confidence=confidence, min_exact_share=exact
+                    min_lock_confidence=confidence,
+                    min_exact_share=exact,
+                    mid_verse_extra_words=extra,
                 ),
             )
         )
@@ -693,6 +695,7 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
                     "tau_lock": cfg.tau_lock,
                     "min_lock_confidence": cfg.min_lock_confidence,
                     "min_exact_share": cfg.min_exact_share,
+                    "mid_verse_extra_words": cfg.mid_verse_extra_words,
                     "locked_correct": summary["locked_correct"],
                     "verses": summary["verses"],
                     "false_locks": summary["false_locks"],
