@@ -1417,3 +1417,27 @@
   1,4 s, export ASS 1,0 s (corpus et cache de traduction locaux).
 - **Risques connus** : coupe de la traduction d'un long verset sans `segments` = proportionnelle (avertie) ;
   taux de faux positifs de la règle des coupures non mesuré sur le lot 1 (risque n° 6 de la conception).
+
+## 2026-10-23 — Export des sous-titres : l'API de l'atelier (contrôle, décisions, orphelines, vérité terrain)
+- **Décision** : le serveur lance le moteur Python (`export-readiness`, `export-subtitles`, `corpus-verse`) au lieu
+  de réimplémenter le rendu : au plus 3 processus, mémoire des réponses identiques (clé = prédiction,
+  `decisions.json`, `review.json`, options), erreurs traduites (code 3 → `409 unresolved_items`). L'export n'est
+  jamais mémorisé : c'est un acte, le fichier est écrit le temps de la réponse.
+- **Hypothèses énoncées** : les décisions s'enregistrent dans `decisions.json` sous verrou (comme la revue), le
+  serveur fixe empreinte, auteur, date, révision et copie du consentement ; un non-propriétaire ne consent pas, un
+  administrateur qui corrige l'audio d'un autre ne change pas l'accord du propriétaire et son `use_for_training`
+  reste faux ; une décision posée sur des signalements que la revue ne confirme plus devient orpheline ; une
+  décision `uncertain` ne se pose que sur un passage réellement incertain (idem `inferred`) ; retirer le
+  consentement du document empêche toute proposition, sans effacer l'historique.
+- **Réconciliation (obligatoire avant de livrer le calque, risque n° 3)** : après une nouvelle analyse, les
+  orphelines sont listées avec le passage du moteur le plus proche (recouvrement ≥ 50 % du plus court), jamais
+  appliquées toutes seules ; `reattach` les rattache et garde l'ancienne (`superseded_by`).
+- **Vérité terrain** : action administrateur `from_decisions` : propositions `proposed` (`source:
+  export-review`) pour les décisions factuelles écoutées, consenties (document ET décision), encore appliquées.
+  Les exclusions « pas du Coran » ne deviennent pas encore un passage de vérité terrain (le manifeste ne porte
+  que des versets) : écart avec la conception §5.4, à trancher avec le mainteneur.
+- **Défaut corrigé par le test partagé** : le lecteur Python refusait un pseudonyme avec espace ou accent
+  (« Chérif Diouf ») que l'atelier accepte ; 36 documents d'essai communs aux deux lecteurs garantissent
+  désormais le même verdict.
+- **Preuve** : `web/e2e/export-api.mjs` (14 scénarios, serveur de production, données de test) →
+  `.artist/acceptance-playbooks/export-sous-titres-api.md`.

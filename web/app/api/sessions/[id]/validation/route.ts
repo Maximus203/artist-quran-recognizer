@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   alignValidation,
+  proposeFromDecisions,
   proposeValidation,
   readValidation,
   saveValidation,
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 const time = z.number().finite().nonnegative();
 const action = z.discriminatedUnion("action", [
   z.object({ action: z.literal("propose") }),
+  z.object({ action: z.literal("from_decisions") }),
   z.object({
     action: z.literal("edit"),
     passage: z.string().uuid(),
@@ -74,6 +76,8 @@ async function handlePOST(
     const input = action.parse(await request.json());
     if (input.action === "propose")
       return NextResponse.json({ validation: await proposeValidation(id) });
+    if (input.action === "from_decisions")
+      return NextResponse.json({ validation: await proposeFromDecisions(id) });
     if (input.action === "align")
       return NextResponse.json({
         validation: await alignValidation(id, input.ids),

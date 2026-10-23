@@ -1,7 +1,16 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { engineArgs, lastError, runPython, type PythonRunner } from "./python";
-import { REPO, atomicJson, audioPath, readSession, sessionDir } from "./store";
+import { proposalsFromDecisions } from "./decision-proposals";
+import { readDecisions } from "./decisions-store";
+import {
+  REPO,
+  atomicJson,
+  audioPath,
+  readResult,
+  readSession,
+  sessionDir,
+} from "./store";
 import {
   applyAlignment,
   applyProposals,
@@ -73,6 +82,35 @@ export async function proposeValidation(
     await readValidation(id),
     JSON.parse(result.stdout),
   );
+  await saveValidation(next);
+  return next;
+}
+
+/**
+ * Passages proposés par les corrections ÉCOUTÉES de l'export (ADR-0014) : seulement les décisions de
+ * nature factuelle, écoutées, dont l'auteur a consenti (consentement du document ET de la décision),
+ * encore appliquées à un passage de l'analyse courante. Statut `proposed` : rien n'entre seul dans le
+ * manifeste, un administrateur écoute, aligne puis valide.
+ */
+export async function proposeFromDecisions(id: string): Promise<Validation> {
+  const [doc, result, current] = await Promise.all([
+    readDecisions(id),
+    readResult(id),
+    readValidation(id),
+  ]);
+  const proposals = proposalsFromDecisions(
+    doc,
+    (result?.parsed.intervals ?? []) as never,
+    new Set(current.passages.map((p) => p.id)),
+  );
+  if (!proposals.length) return current;
+  const next: Validation = {
+    ...current,
+    passages: [...current.passages, ...proposals].sort(
+      (a, b) => a.t[0] - b.t[0],
+    ),
+    updated_at: new Date().toISOString(),
+  };
   await saveValidation(next);
   return next;
 }

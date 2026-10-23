@@ -59,6 +59,8 @@ ne font que l'afficher.
 | `GET /api/sessions/<id>/peaks` | Crêtes de la forme d'onde, `aqr.listening-peaks/1`, 50 par seconde. |
 | `GET` / `PUT /api/sessions/<id>/review` | Lire la revue · enregistrer (fusion par identifiant, §7). |
 | `GET /api/sessions/<id>/export` · `…/bundle` | Bilan JSON seul · pack ZIP complet. |
+| `GET …/export/readiness` · `POST …/export/subtitles` | « Prêt à exporter ? » (passages ambigus, une page à la fois) · sous-titres SRT, WebVTT, ASS, JSON, aperçu (ADR-0014, §7 bis). |
+| `GET` / `PUT /api/sessions/<id>/decisions` · `GET /api/corpus/verse` | Calque de décisions humaines (jamais la prédiction) · un verset lu dans le corpus. |
 | `GET` / `POST /api/sessions/<id>/validation` | Vérité terrain (administrateurs seulement). |
 | `/api/auth/*`, `/api/me*`, `/api/admin/users`, `/api/docs*`, `PATCH /api/sessions/<id>`, `…/favorite`, `POST /api/sessions/bulk` | Comptes, préférences, statistiques, documentation, renommage/portée/archivage, actions groupées : contrat complet dans `web/README.md` (§13 ci-dessous). |
 | `GET /api/stats` | Vitesse par moteur, file en cours, précision de l'estimation. |
@@ -175,6 +177,29 @@ faux », « il manque un verset », « le temps est décalé »…).
 - **La revue ne modifie jamais la prédiction** du moteur, et les signalements partiels ne sont pas évalués
   comme vérité terrain.
 
+## 7 bis. Les décisions humaines et l'export des sous-titres
+
+Une correction à l'oreille ne réécrit jamais la prédiction : elle est un **calque** (`decisions.json`,
+`aqr.decisions/1`, `docs/DECISIONS.md`, ADR-0014) accroché à l'intervalle du moteur par son **empreinte**
+(sha256 de ce que le moteur a dit, temps en millisecondes), jamais par sa position. Après une nouvelle analyse, une
+décision dont le passage est identique reste appliquée ; les autres deviennent **orphelines** et l'atelier
+les montre au lieu de les appliquer en silence.
+
+```
+ navigateur ── GET readiness / PUT decisions / POST subtitles ──▶ routes (droits : voir · modifier)
+                                                                    │ lib/export-engine.ts : au plus 3 processus,
+                                                                    │ mémoire des réponses identiques
+                                                                    ▼
+                                         python -m aqr.cli export-readiness | export-subtitles | corpus-verse
+                                         (corpus, QuranEnc en cache : le web n'a ni l'un ni l'autre)
+```
+
+Pourquoi le moteur en Python : le serveur n'a pas le corpus, et un second rendu en TypeScript finirait par
+diverger. Le serveur construit la ligne de commande, valide les options (`lib/export-options.ts`, même défauts
+que le moteur), traduit les codes de sortie (3 → `409 unresolved_items`) et écrit `decisions.json` avec le
+lecteur strict (`lib/decisions.ts`, mêmes cas de test que `src/aqr/decisions/`). Les étiquettes de revue qui
+bloquent l'export sont une propriété des puces (`blocksExport`, `lib/review-presets.ts`), transmises au moteur.
+
 ## 8. Stockage sur disque
 
 Tout vit dans `AQR_REVIEW_DIR` (défaut : `%LOCALAPPDATA%\aqr-review` sous Windows, `~/.local/share/aqr-review`
@@ -188,6 +213,7 @@ AQR_REVIEW_DIR/
         ├── source.<ext>            l'audio ou la vidéo importé(e), tel quel
         ├── prediction.recognition.json   la sortie du moteur, jamais modifiée
         ├── review.json             la revue courante (tous les testeurs), aqr.review/2
+        ├── decisions.json          les décisions humaines à l'oreille, aqr.decisions/1 (ADR-0014)
         ├── revisions/              une révision à chaque changement réel de la revue
         ├── exports/                packs ZIP générés à la demande
         ├── validation.json, alignment/   vérité terrain (onglet réservé)
