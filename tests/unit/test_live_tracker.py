@@ -462,3 +462,76 @@ def test_apres_une_fin_de_verset_une_basmala_puis_un_debut_de_sourate_se_verroui
     feed(tracker, clock.say("m1 m2 m3 m4 m5 m6 m7 m8"))  # 114:2 ; la suite (114:3) est absente ici
     events = flat(feed(tracker, clock.say("bs1 bs2 bs3 bs4 pa qa ra")))
     assert [lock.ref for lock in of_type(events, Locked)] == [ref("2:1")]
+
+
+# --------------------------------------------------------------------------- confiance de l'ASR
+def _say_with_confidence(
+    tracker: HypothesisTracker, text: str, confidence: float
+) -> list[LiveEvent]:
+    events: list[LiveEvent] = []
+    for word in Clock().say(text):
+        events.extend(
+            tracker.feed(
+                HeardWord(
+                    word.text,
+                    word.start_s,
+                    word.end_s,
+                    word.arrival_s,
+                    confidence=confidence,
+                )
+            )
+        )
+    return events
+
+
+def test_des_mots_peu_surs_ne_verrouillent_pas_meme_s_ils_correspondent(
+    index: PrefixIndex,
+) -> None:
+    # un ASR spécialisé « voit du Coran partout » : ses mots peu sûrs ne nomment pas un verset (I3)
+    tracker = new_tracker(index, min_lock_confidence=0.7)
+    events = _say_with_confidence(tracker, "nn oo pp qq", confidence=0.4)
+    assert not of_type(events, Locked)
+    assert of_type(events, Candidates)  # on propose, on ne nomme pas
+
+
+def test_des_mots_sirs_verrouillent_avec_le_meme_seuil(index: PrefixIndex) -> None:
+    tracker = new_tracker(index, min_lock_confidence=0.7)
+    events = _say_with_confidence(tracker, "nn oo pp qq", confidence=0.9)
+    locks = of_type(events, Locked)
+    assert [lock.ref for lock in locks] == [ref("113:2")]
+    assert locks[0].mean_confidence == pytest.approx(0.9)
+
+
+def test_la_confiance_moyenne_se_mesure_sur_les_seuls_mots_qui_correspondent(
+    index: PrefixIndex,
+) -> None:
+    tracker = new_tracker(index, min_lock_confidence=0.7)
+    events: list[LiveEvent] = []
+    for text, confidence in (("nn", 0.9), ("oo", 0.9), ("x7654321", 0.1), ("pp", 0.9), ("qq", 0.9)):
+        events += _say_with_confidence(tracker, text, confidence)
+    assert [lock.ref for lock in of_type(events, Locked)] == [ref("113:2")]
+
+
+def test_sans_seuil_la_confiance_n_empeche_rien(index: PrefixIndex) -> None:
+    tracker = new_tracker(index)
+    events = _say_with_confidence(tracker, "nn oo pp qq", confidence=0.05)
+    assert of_type(events, Locked)
+
+
+def test_des_mots_seulement_proches_ne_suffisent_pas_a_verrouiller(index: PrefixIndex) -> None:
+    # trois mots proches (une lettre de différence) sans un seul mot exact ne nomment rien
+    near = "qalphb qbeta2 qgammb"
+    control = flat(feed(new_tracker(index), Clock().say(near)))
+    assert [lock.ref for lock in of_type(control, Locked)] == [ref("114:5")]  # sans la règle
+    strict = flat(feed(new_tracker(index, min_exact_share=0.67), Clock().say(near)))
+    assert not of_type(strict, Locked)
+
+
+def test_le_part_de_mots_exacts_est_comptee_sur_le_minimum_de_mots(index: PrefixIndex) -> None:
+    tracker = new_tracker(index, min_exact_share=0.67)
+    events = flat(feed(tracker, Clock().say("nn oo pp")))
+    assert of_type(events, Locked)  # 3 mots exacts sur 3
+    one_exact = flat(
+        feed(new_tracker(index, min_exact_share=0.67), Clock().say("qalpha qbeta2 qgammb"))
+    )
+    assert not of_type(one_exact, Locked)  # 1 mot exact sur 3 : moins de 2 exacts exigés

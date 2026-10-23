@@ -133,10 +133,15 @@ def test_la_reference_d_un_lot_ne_garde_que_les_versets_de_la_fenetre(tmp_path: 
 
 def test_le_balayage_couvre_l_a_priori_le_minimum_de_mots_et_le_seuil() -> None:
     grid = m.sweep_grid()
-    assert len(grid) == 3 * 4 * 3
-    assert {c.prior for c in grid} == {0.8, 0.9, 0.95}
-    assert {c.min_words_lock for c in grid} == {2, 3, 4, 5}
-    assert len({(c.prior, c.min_words_lock, c.tau_lock) for c in grid}) == len(grid)
+    core = [c for family, c in grid if family == "core"]
+    guards = [c for family, c in grid if family == "guards"]
+    assert len(core) == 3 * 4 * 3 and len(guards) == 2 * 5 * 3
+    assert {c.prior for c in core} == {0.8, 0.9, 0.95}
+    assert {c.min_words_lock for c in core} == {2, 3, 4, 5}
+    assert len({(c.prior, c.min_words_lock, c.tau_lock) for c in core}) == len(core)
+    assert {c.min_lock_confidence for c in guards} == {0.0, 0.5, 0.6, 0.7, 0.8}
+    assert {c.min_exact_share for c in guards} == {0.0, 0.67, 1.0}
+    assert all(c.prior == 0.9 for c in guards)  # les garde-fous se jugent à a priori constant
 
 
 def test_le_groupe_d_une_entree_suit_son_type() -> None:
@@ -151,3 +156,40 @@ def test_le_groupe_d_une_entree_suit_son_type() -> None:
 @pytest.mark.parametrize("name", ["full-112", "jump-surah"])
 def test_chaque_montage_a_un_nom_stable(name: str) -> None:
     assert name in m.recipes()
+
+
+def _run(index, label: str, truth_ref: str, text: str):
+    from aqr.live.config import LiveConfig
+    from aqr.live.simulation import Scenario, TruthVerse, evaluate, run_stream
+    from tests.support.live_toy import Clock, ref
+
+    words = tuple(Clock().say(text))
+    scenario = Scenario(label, "sequence", words, 6.0, (TruthVerse(ref(truth_ref), 0.0, 2.0),), ())
+    events = run_stream(index, LiveConfig(), scenario.words, scenario.duration_s)
+    result = evaluate(scenario, events, index)
+    return {"kind": "sequence", "id": label}, scenario, events, result
+
+
+def test_la_confiance_des_verrous_separe_les_confirmes_des_non_confirmes() -> None:
+    from tests.support.live_toy import toy_index
+
+    index = toy_index()
+    runs = [
+        _run(index, "ok", "113:2", "nn oo pp qq"),
+        _run(index, "faux", "113:3", "nn oo pp qq"),
+    ]
+    report = m.lock_confidence_report(runs)
+    assert report["truth:confirmed"]["locks"] == 1
+    assert report["truth:unconfirmed"]["locks"] == 1
+    assert report["truth:confirmed"]["mean_confidence"]["median"] == 1.0
+    assert report["truth:confirmed"]["exact_words"]["median"] == 3.0
+
+
+def test_la_preuve_d_un_verrou_non_confirme_compte_mots_exacts_et_suite_commune() -> None:
+    from tests.support.live_toy import toy_index
+
+    index = toy_index()
+    _entry, scenario, events, result = _run(index, "t", "113:3", "nn oo x9999999 qq")
+    evidence = m.lock_evidence(index, scenario, events, result.false_locks[0])
+    assert evidence["ref"] == "113:2" and evidence["verse_words"] == 4
+    assert evidence["words_in_verse"] == 3 and evidence["longest_exact_run"] == 2

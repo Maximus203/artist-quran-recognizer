@@ -39,6 +39,8 @@ class HeardWord:
     start_s: float
     end_s: float
     arrival_s: float
+    confidence: float = 1.0
+    """Confiance du modèle dans ce mot, dans [0, 1] (1 = inconnue ou parfaite)."""
 
 
 class WordStreamSource(Protocol):

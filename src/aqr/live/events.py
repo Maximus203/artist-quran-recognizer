@@ -66,6 +66,10 @@ class Locked:
     posterior: float
     start_s: float
     repetition: bool
+    mean_confidence: float = 1.0
+    """Confiance moyenne de l'ASR sur les mots qui correspondent au verset."""
+    exact_words: int = 0
+    """Mots entendus identiques (et non seulement proches) à ceux du verset."""
 
 
 @dataclass(frozen=True)
