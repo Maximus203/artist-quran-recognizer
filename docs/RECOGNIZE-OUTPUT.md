@@ -195,6 +195,9 @@ connues : `docs/KNOWN-ISSUES.md` KI-1.
 Une ligne par verset (texte du corpus), `[incertain : 55:13 | 55:16]` pour un verset ambigu, `[déduit] …` pour
 un verset supposé, `[isti'adha]`, `[takbir]`, `[amin]`, `[basmala]` pour les formules. Les abstentions n'ont
 pas de sous-titre. La basmala garde son libellé `[basmala]` (son texte est dans le JSON).
+Les écrivains SRT et WebVTT sont ceux de `aqr export-subtitles` (`aqr.rendering.subtitles`) : même rendu,
+mêmes légendes que l'export forcé en politique « marqueur ». Pour un fichier de sous-titres corrigé à
+l'oreille, avec traduction, ASS karaoké et contrôle des passages ambigus : `docs/EXPORT-SOUS-TITRES.md`.
 
 ## Ce qui n'est pas fait
 - Décodage contraint sur treillis CTC (`--constrained`, ADR-0005) : la reconnaissance vérifie et horodate les

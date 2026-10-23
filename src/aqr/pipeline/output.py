@@ -12,7 +12,8 @@ from aqr.domain.models import Detection, NonQuranKind, NonQuranSpan, Status, Tim
 from aqr.pipeline.result import AbstentionSpan, Interval, RecognitionResult
 from aqr.pipeline.word_times import CTC_ALIGNMENT, INTERPOLATED, interpolate, without_overlap
 from aqr.rendering.formula_labels import FORMULA_LABELS_AR
-from aqr.rendering.home_renderer import HomeRenderer, format_range
+from aqr.rendering.home_renderer import HomeRenderer
+from aqr.rendering.subtitles import Cue, write_srt, write_vtt
 
 SCHEMA = "aqr.recognition/1"
 RIWAYA_NOTICE = (
@@ -174,20 +175,18 @@ def _captions(result: RecognitionResult, renderer: HomeRenderer) -> list[tuple[T
     return lines
 
 
-def render_srt(result: RecognitionResult, renderer: HomeRenderer) -> str:
-    blocks = [
-        f"{n}\n{format_range(time, ',')}\n{text}\n"
-        for n, (time, text) in enumerate(_captions(result, renderer), start=1)
+def _cues(result: RecognitionResult, renderer: HomeRenderer) -> list[Cue]:
+    return [
+        Cue(time.start_s, time.end_s, arabic=text) for time, text in _captions(result, renderer)
     ]
-    return "\n".join(blocks)
+
+
+def render_srt(result: RecognitionResult, renderer: HomeRenderer) -> str:
+    return write_srt(_cues(result, renderer), rtl=False)
 
 
 def render_vtt(result: RecognitionResult, renderer: HomeRenderer) -> str:
-    blocks = ["WEBVTT\n"]
-    blocks.extend(
-        f"{format_range(time, '.')}\n{text}\n" for time, text in _captions(result, renderer)
-    )
-    return "\n".join(blocks)
+    return write_vtt(_cues(result, renderer), rtl=False)
 
 
 def redact_document(document: dict[str, object]) -> dict[str, object]:

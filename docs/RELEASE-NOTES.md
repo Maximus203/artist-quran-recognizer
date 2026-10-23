@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Export des sous-titres : la commande aqr export-subtitles
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Une commande produit les sous-titres d'un audio analysé : `aqr export-subtitles` écrit du SRT, du WebVTT, de l'ASS (karaoké mot à mot quand les temps des mots sont mesurés) ou le JSON enrichi. Elle contrôle d'abord les passages ambigus de la partie coranique (versets incertains, supposés, coupés au milieu d'une suite, traductions approximatives, signalements de revue confirmés) et refuse d'exporter tant qu'il en reste, sauf si on force. Forcer omet par défaut les passages douteux (jamais un faux verset nommé) ; un marqueur `[incertain : …]` ou le premier candidat restent possibles. Un passage dont le choix ne change rien à ce qui est imprimé (même arabe, même traduction) ne bloque pas, et un signe de pause qui diffère est compté à part. Les abstentions et les formules ne sont jamais obligatoires. `aqr recognize --format srt,vtt` écrit maintenant avec les mêmes écrivains. L'atelier et ses écrans viennent dans les PR suivantes.
+
+**Pourquoi / décision.** Le mainteneur écoute un audio, exporte si tout est correct et corrige ou force sinon. Un seul moteur de rendu en Python (le web n'a pas le corpus) évite deux implémentations qui divergent. Le texte arabe est toujours relu dans le corpus (I1), la traduction est celle de QuranEnc (I2, option explicite pour retirer les renvois de note), la prédiction n'est jamais réécrite (ADR-0014). Mesuré sur une vraie session de 23 minutes : contrôle en 1,4 s, export ASS en 1,0 s. `docs/EXPORT-SOUS-TITRES.md`.
+
 ## 2026-10-23 — Export des sous-titres : le calque de décisions humaines (ADR-0014)
 Étiquettes : technique, décision
 PR : #96
