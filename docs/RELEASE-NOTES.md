@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Courbe de dégradation : jusqu'où le moteur tient
+Étiquettes : technique, décision
+PR : #76
+
+**Ce qui change.** Une campagne mesure ce que devient le rappel du moteur quand l'enregistrement se dégrade : bruit blanc et rose, réverbération de salle, téléphone avec vrai codec, MP3, récitation ralentie, sur 9 sourates reconstituées dont le contenu est connu. Le script `scripts/measure_degradation.py` la rejoue (conditions, commandes ffmpeg et graines enregistrées) et le rapport `docs/evaluation/courbe-degradation-2026-10-23.md` donne les tableaux, les courbes et la décision.
+
+**Pourquoi / décision.** Le fine-tuning avec dégradations ne se décide qu'avec des preuves. La règle (chute de plus de 15 points à un niveau réaliste, plancher de 95 % en propre) a été écrite avant la mesure : aucune des quatre familles du cahier n'échoue (chute de 0 à −4 points, 0 faux verset), donc **pas de fine-tuning justifié par elles**. La mesure est toutefois saturée (EveryAyah probablement vu à l'entraînement) : le moteur ne casse qu'au-delà du cahier (bruit plus fort que la voix, grande nef, récitation à ×0,4), et un jeu réel annoté reste la preuve qui manque. Trois leviers peu coûteux sont chiffrés avant tout fine-tuning ; un faux verset d'un mot (0,16 s) subsiste à ×0,5. Usage provisoire des audios EveryAyah (`docs/data-lots/ref-corpus-provenance.md`).
+
 ## 2026-10-23 — Détection en direct sans plage déclarée : conception et décisions produit
 Étiquettes : technique, décision
 PR : #74
