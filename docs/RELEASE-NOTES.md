@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Dépôt public : README, contribution, tickets et crédits
+Étiquettes : utilisateur, technique
+PR : #92
+
+**Ce qui change.** Le dépôt public se présente : le README raconte le projet (démonstration en image, atelier web, fonctionnement du moteur, règles qui ne bougent jamais, chiffres mesurés avec leurs limites, démarrage rapide, feuille de route) et existe aussi en anglais. Le dépôt gagne un guide de contribution, un code de conduite, une politique de sécurité, une page de crédits et de licences, trois formulaires d'issue (bug, problème de reconnaissance, idée) et une carte de la documentation. Aucun code du moteur ni de l'atelier ne change.
+
+**Pourquoi / décision.** Le projet vise des contributions extérieures : relecture à l'oreille, tests d'accessibilité, portage Windows, moteur en flux. Les chantiers ouverts sont tracés en issues (détection en direct, export de sous-titres, transcription des parties non coraniques, vérité terrain, fine-tuning, trois premiers tickets). La licence du code reste MIT ; la bascule vers une licence non commerciale décidée par le mainteneur n'est pas faite et le README le dit.
+
 ## 2026-10-23 — Les versets à moitié reconnus sont complétés par l'audio
 Étiquettes : utilisateur, technique, décision
 PR : #83

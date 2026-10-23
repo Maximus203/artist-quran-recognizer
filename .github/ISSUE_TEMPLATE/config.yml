@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Faille de sécurité
+    url: https://github.com/Maximus203/artist-quran-recognizer/security/advisories/new
+    about: Signalement privé. Ne l'ouvrez pas dans une issue publique.
+  - name: Lire le système en bref
+    url: https://github.com/Maximus203/artist-quran-recognizer/blob/develop/docs/SYSTEME-EN-BREF.md
+    about: Ce que fait le moteur, où il en est, et ce qui n'est pas encore prouvé.
