@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — Export des sous-titres : le calque de décisions humaines (ADR-0014)
 Étiquettes : technique, décision
-PR : -
+PR : #96
 
 **Ce qui change.** Première brique de l'export des sous-titres (issue #86) : le format du calque de décisions humaines `aqr.decisions/1`. Corriger à l'oreille un passage ambigu (choisir entre `11:61` et `7:73`, confirmer un verset supposé, étendre un verset coupé) ne modifiera jamais la sortie du moteur : la décision est un document à part, accroché au passage par l'empreinte de ce que le moteur avait dit. Rien ne change encore pour l'utilisateur ; le moteur d'export (PR suivante) et les écrans de l'atelier viennent ensuite.
 
