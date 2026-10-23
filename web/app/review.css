@@ -19,8 +19,6 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--text);
-  color: var(--bg);
   font: 700 var(--fs-sm) / 1 var(--font-ui);
 }
 .tester-row .who {

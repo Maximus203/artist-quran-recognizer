@@ -74,6 +74,44 @@ afterEach(() => db.close());
 const ids = (rows: Array<{ id: string }>) =>
   rows.map((r) => Number(r.id.slice(-12)));
 
+describe("propriétaire affiché : pseudo et empreinte de la photo", () => {
+  it("chaque ligne porte le pseudo et l'empreinte de la photo de son propriétaire", () => {
+    add(1); // Cherif, sans photo
+    add(2, { ownerId: awa });
+    add(3, { ownerId: null });
+    db.prepare("UPDATE users SET avatar_hash = ? WHERE id = ?").run(
+      "abcdef0123456789",
+      awa,
+    );
+    const rows = listPage(db, cherif, query("scope=all")).items;
+    const by = (n: number) => rows.find((r) => r.id === id(n))!;
+    expect(by(1)).toMatchObject({ owner_name: "Cherif", owner_avatar: null });
+    expect(by(2)).toMatchObject({
+      owner_name: "Awa",
+      owner_avatar: "abcdef0123456789",
+    });
+    expect(by(3)).toMatchObject({ owner_name: null, owner_avatar: null });
+    expect(getMeta(db, id(2))!.owner_avatar).toBe("abcdef0123456789");
+  });
+
+  it("changer la photo se voit aussitôt dans la liste", () => {
+    add(1, { ownerId: awa });
+    db.prepare("UPDATE users SET avatar_hash = 'v1' WHERE id = ?").run(awa);
+    expect(listPage(db, cherif, query("")).items[0].owner_avatar).toBe("v1");
+    db.prepare("UPDATE users SET avatar_hash = 'v2' WHERE id = ?").run(awa);
+    expect(listPage(db, cherif, query("")).items[0].owner_avatar).toBe("v2");
+    db.prepare("UPDATE users SET avatar_hash = NULL WHERE id = ?").run(awa);
+    expect(listPage(db, cherif, query("")).items[0].owner_avatar).toBeNull();
+  });
+
+  it("une session privée reste invisible des autres, photo ou non (règle inchangée)", () => {
+    add(1, { ownerId: awa, visibility: "private" });
+    db.prepare("UPDATE users SET avatar_hash = 'v1' WHERE id = ?").run(awa);
+    expect(listPage(db, cherif, query("scope=all")).items).toHaveLength(0);
+    expect(listPage(db, awa, query("scope=all")).items).toHaveLength(1);
+  });
+});
+
 describe("portées et visibilité", () => {
   beforeEach(() => {
     add(1); // global, Cherif

@@ -74,6 +74,19 @@
   --action-bg-hover: light-dark(#34363d, #ffffff);
   --action-fg: light-dark(#f4f0e6, #0e1013);
 
+  /* ── Avatars : huit pigments sobres pour l'avatar par défaut (initiale sur couleur stable dérivée
+   * du pseudo, voir lib/avatar-tone.ts). Ce sont des identités de personnes, pas des statuts ni
+   * l'accent. Texte --av-fg posé dessus : ≥ 4,5:1 sur chacun, dans les deux thèmes (mesuré). */
+  --av-fg: light-dark(#fdfbf7, #0e1013);
+  --av-0: light-dark(#2447b8, #78a0ff); /* lapis */
+  --av-1: light-dark(#1b1c20, #eeeae0); /* encre */
+  --av-2: light-dark(#9a4527, #e8977a); /* terre cuite */
+  --av-3: light-dark(#2b6a4d, #7cc49c); /* cyprès */
+  --av-4: light-dark(#7d5f12, #dcb35a); /* ocre */
+  --av-5: light-dark(#4f5d73, #a3afc2); /* ardoise */
+  --av-6: light-dark(#8c2f3f, #ea93a0); /* grenat */
+  --av-7: light-dark(#1b6670, #6fc3cb); /* sarcelle */
+
   /* ── Couleurs sémantiques : réservées aux STATUTS, jamais décoratives ──────── */
   --ok: light-dark(
     #2f7552,

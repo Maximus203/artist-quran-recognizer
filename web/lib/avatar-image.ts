@@ -22,7 +22,8 @@ export type SniffResult =
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 const startsWith = (bytes: Uint8Array, magic: number[], at = 0): boolean =>
-  bytes.length >= at + magic.length && magic.every((b, i) => bytes[at + i] === b);
+  bytes.length >= at + magic.length &&
+  magic.every((b, i) => bytes[at + i] === b);
 const ascii = (bytes: Uint8Array, at: number, text: string): boolean =>
   startsWith(
     bytes,
@@ -238,7 +239,13 @@ export type AvatarOutcome =
   | {
       ok: false;
       status: 400 | 413 | 415 | 422 | 503;
-      code: "empty" | "too_large" | "format" | "corrupt" | "dimensions" | "unavailable";
+      code:
+        | "empty"
+        | "too_large"
+        | "format"
+        | "corrupt"
+        | "dimensions"
+        | "unavailable";
       message: string;
     };
 
@@ -248,7 +255,10 @@ const REFUSALS = {
     413,
     `Image trop lourde : ${AVATAR.maxBytes / (1024 * 1024)} Mo au maximum.`,
   ],
-  format: [415, "Format non pris en charge : choisis une image JPEG, PNG ou WebP."],
+  format: [
+    415,
+    "Format non pris en charge : choisis une image JPEG, PNG ou WebP.",
+  ],
   corrupt: [422, "Cette image est illisible ou abîmée : essaie-en une autre."],
   dimensions: [
     422,

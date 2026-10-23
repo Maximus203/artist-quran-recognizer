@@ -25,6 +25,8 @@ export type MetaRow = {
   id: string;
   owner_id: number | null;
   owner_name: string | null;
+  /** Empreinte de la photo de profil du propriétaire (null = pas de photo, ou pas de propriétaire). */
+  owner_avatar: string | null;
   name: string;
   name_source: "auto" | "user";
   original_name: string;
@@ -62,7 +64,7 @@ const withUser = (row: Record<string, unknown>): ListedRow => ({
   viewed_at: (row.viewed_at as string | null) ?? null,
 });
 
-const BASE = `SELECT m.id, m.owner_id, u.username AS owner_name, m.name, m.name_source, m.original_name,
+const BASE = `SELECT m.id, m.owner_id, u.username AS owner_name, u.avatar_hash AS owner_avatar, m.name, m.name_source, m.original_name,
   m.source_kind, m.content_label, m.visibility, m.archived_at, m.state, m.engine, m.started_at,
   m.finished_at, m.audio_duration_s, m.duration_s, m.size_bytes, m.disk_bytes, m.created_at,
   m.updated_at, m.sort_name`;

@@ -74,7 +74,9 @@ describe("migrations versionnées", () => {
     expect(user.avatar_updated_at).toBeNull();
     expect(
       (
-        db.prepare("SELECT owner_id FROM session_meta WHERE id = 's1'").get() as {
+        db
+          .prepare("SELECT owner_id FROM session_meta WHERE id = 's1'")
+          .get() as {
           owner_id: number;
         }
       ).owner_id,

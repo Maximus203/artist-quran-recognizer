@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { ApiSession } from "@/lib/api-types";
 import { buildRow, queueSummary, type SessionRow } from "@/lib/session-list";
+import { Avatar, useOwnerPerson } from "./avatar";
 import { Icon, SessionGlyph } from "./icons";
 import {
   SIDEBAR_FAVORITES,
@@ -35,10 +36,8 @@ function Row({
   onRetry: () => void;
 }) {
   const running = row.glyph === "running";
-  const status =
-    session.mine || !session.owner
-      ? row.status
-      : `par ${session.owner?.username ?? "—"} · ${row.status}`;
+  const owner = useOwnerPerson(session.owner);
+  const status = owner ? `${owner.username} · ${row.status}` : row.status;
   return (
     <li className={row.canRetry && session.can_edit ? "has-retry" : undefined}>
       <button
@@ -67,6 +66,9 @@ function Row({
             </>
           ) : null}
           <span className="t">{row.name}</span>
+        </span>
+        <span className="sess-who" data-testid="session-owner">
+          {owner ? <Avatar person={owner} size="sm" /> : null}
         </span>
         <span className="sess-end">
           {row.unread ? (

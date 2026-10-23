@@ -54,7 +54,10 @@ describe("sniffImage : le type se lit dans le contenu", () => {
   });
 
   it("refuse un SVG, même s'il se présente comme une image", () => {
-    expect(sniffImage(SVG_BYTES)).toMatchObject({ ok: false, reason: "format" });
+    expect(sniffImage(SVG_BYTES)).toMatchObject({
+      ok: false,
+      reason: "format",
+    });
   });
 
   it("refuse un GIF, du HTML, un exécutable et un fichier vide", () => {
@@ -78,9 +81,7 @@ describe("sniffImage : le type se lit dans le contenu", () => {
       reason: "corrupt",
     });
     expect(
-      sniffImage(
-        Buffer.concat([Buffer.from("RIFF\0\0\0\0WEBP", "latin1")]),
-      ),
+      sniffImage(Buffer.concat([Buffer.from("RIFF\0\0\0\0WEBP", "latin1")])),
     ).toMatchObject({ ok: false, reason: "corrupt" });
   });
 
@@ -240,31 +241,38 @@ withFfmpeg("réencodage réel par ffmpeg", () => {
     expect(text).not.toContain("Lavc");
   });
 
-  orientationIt("applique l'orientation EXIF d'une photo de téléphone avant de retirer les métadonnées", async () => {
-    // 200×100 : moitié gauche rouge, moitié droite bleue ; EXIF « orientation 6 » = à tourner d'un
-    // quart de tour horaire pour s'afficher droit → rouge en HAUT, bleu en BAS.
-    const plain = make("half.jpg", [
+  orientationIt(
+    "applique l'orientation EXIF d'une photo de téléphone avant de retirer les métadonnées",
+    async () => {
+      // 200×100 : moitié gauche rouge, moitié droite bleue ; EXIF « orientation 6 » = à tourner d'un
+      // quart de tour horaire pour s'afficher droit → rouge en HAUT, bleu en BAS.
+      const plain = make("half.jpg", [
       "-f", "lavfi", "-i",
       "color=c=red:s=200x100,drawbox=x=100:y=0:w=100:h=100:color=blue:t=fill",
       "-frames:v", "1",
     ]); // prettier-ignore
-    const exif = Buffer.from([
+      const exif = Buffer.from([
       0xff, 0xe1, 0x00, 0x22, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, // APP1 « Exif »
       0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08, // TIFF big-endian, IFD0 à 8
       0x00, 0x01, // une entrée
       0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00, // orientation = 6
       0x00, 0x00, 0x00, 0x00,
     ]); // prettier-ignore
-    const rotated = Buffer.concat([plain.subarray(0, 2), exif, plain.subarray(2)]);
-    const r = await prepareAvatar(rotated);
-    if (!r.ok) throw new Error(r.message);
-    const [topR, , topB] = pixel(r.jpeg, 128, 10);
-    const [botR, , botB] = pixel(r.jpeg, 128, 245);
-    expect(topR).toBeGreaterThan(200);
-    expect(topB).toBeLessThan(80);
-    expect(botB).toBeGreaterThan(200);
-    expect(botR).toBeLessThan(80);
-  });
+      const rotated = Buffer.concat([
+        plain.subarray(0, 2),
+        exif,
+        plain.subarray(2),
+      ]);
+      const r = await prepareAvatar(rotated);
+      if (!r.ok) throw new Error(r.message);
+      const [topR, , topB] = pixel(r.jpeg, 128, 10);
+      const [botR, , botB] = pixel(r.jpeg, 128, 245);
+      expect(topR).toBeGreaterThan(200);
+      expect(topB).toBeLessThan(80);
+      expect(botB).toBeGreaterThan(200);
+      expect(botR).toBeLessThan(80);
+    },
+  );
 
   it("aplatit la transparence sur un fond clair (pas de coin noir)", async () => {
     const r = await prepareAvatar(makePng(100, 100, [0, 0, 0, 0]));
@@ -275,10 +283,7 @@ withFfmpeg("réencodage réel par ffmpeg", () => {
 
   it("un PNG tronqué ou corrompu donne 422, jamais un 500", async () => {
     const png = makePng(80, 80);
-    const broken = Buffer.concat([
-      png.subarray(0, 60),
-      Buffer.alloc(40, 0x55),
-    ]);
+    const broken = Buffer.concat([png.subarray(0, 60), Buffer.alloc(40, 0x55)]);
     const r = await prepareAvatar(broken);
     expect(r).toMatchObject({ ok: false, status: 422 });
   });
@@ -305,7 +310,10 @@ withFfmpeg("réencodage réel par ffmpeg", () => {
 
   it("ffmpegEncoder lève ImageCorrupt sur un flux illisible", async () => {
     await expect(
-      ffmpegEncoder.encode(Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]), "png"),
+      ffmpegEncoder.encode(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]),
+        "png",
+      ),
     ).rejects.toBeInstanceOf(ImageCorrupt);
   });
 });

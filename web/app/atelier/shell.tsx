@@ -39,6 +39,8 @@ export type Quota = QuotaView;
 
 type ShellValue = {
   user: PublicUser;
+  /** Après un changement de photo : tout l'affichage (en-tête, listes) suit sans recharger la page. */
+  setAvatarVersion: (version: string | null) => void;
   prefs: Preferences;
   update: (patch: PreferencesPatch) => void;
   /** Remet toutes les préférences à leur valeur par défaut, côté serveur. */
@@ -80,7 +82,11 @@ const readStorage = (): string | null => {
 };
 
 export function ShellProvider(props: Props) {
-  const { user } = props;
+  const [avatarVersion, setAvatarVersion] = useState(props.user.avatar_version);
+  const user = useMemo<PublicUser>(
+    () => ({ ...props.user, avatar_version: avatarVersion }),
+    [props.user, avatarVersion],
+  );
   const [prefs, setPrefs] = useState(props.preferences);
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
@@ -237,6 +243,7 @@ export function ShellProvider(props: Props) {
   const value = useMemo<ShellValue>(
     () => ({
       user,
+      setAvatarVersion,
       prefs,
       update,
       reset,

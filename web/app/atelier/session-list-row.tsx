@@ -9,6 +9,7 @@ import {
   formatListDate,
   isVideoSession,
 } from "@/lib/session-list";
+import { useOwnerPerson, PersonChip } from "./avatar";
 import { Icon, SessionGlyph, type IconName } from "./icons";
 import { FavButton, NameEditor, ScopeBadge, useDismiss } from "./session-bits";
 
@@ -28,9 +29,6 @@ type Props = {
   actions: RowActions;
   archivedScope: boolean;
 };
-
-const ownerLabel = (s: ApiSession): string =>
-  s.mine ? "Moi" : (s.owner?.username ?? "Avant les comptes");
 
 /** Une session dans la liste complète : ligne de tableau sur grand écran, carte sur téléphone. */
 export function SessionListRow({
@@ -69,6 +67,16 @@ export function SessionListRow({
   const when = formatListDate(s.created_at, now);
   const fullDate = new Date(s.created_at).toLocaleString("fr-FR");
   const scope = <ScopeBadge visibility={s.visibility} />;
+  const owner = useOwnerPerson(s.owner);
+  const ownerChip = (testId: string) =>
+    owner ? (
+      <PersonChip person={owner} me={s.mine} testId={testId} />
+    ) : (
+      <span className="ic" data-testid={testId}>
+        <Icon name="user" />
+        Avant les comptes
+      </span>
+    );
 
   const item = (
     icon: IconName,
@@ -163,24 +171,13 @@ export function SessionListRow({
         </span>
         <span className="ic mono">{size}</span>
         <span>{engine}</span>
-        {s.mine ? null : (
-          <span className="ic">
-            <Icon name="user" />
-            {ownerLabel(s)}
-          </span>
-        )}
+        {ownerChip("session-owner-sm")}
         {scope}
         <span className="mono" title={fullDate}>
           {when}
         </span>
       </span>
-      <span className="sown">
-        {s.mine ? (
-          <span className="muted">Moi</span>
-        ) : (
-          <span title={`Propriétaire : ${ownerLabel(s)}`}>{ownerLabel(s)}</span>
-        )}
-      </span>
+      <span className="sown">{ownerChip("session-owner")}</span>
       <span className="sscope">{scope}</span>
       <span className="sdur">
         <span className="sr">Durée : </span>

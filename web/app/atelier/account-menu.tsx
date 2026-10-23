@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { api } from "@/lib/api-client";
 import { formatBytesFr } from "@/lib/format";
 import { storageState } from "@/lib/storage-meter";
+import { Avatar } from "./avatar";
 import type { NavId } from "./header";
 import { Icon, type IconName } from "./icons";
 import { useShell } from "./shell";
@@ -70,7 +71,6 @@ export function AccountMenu({ active }: { active: NavId }) {
     location.assign("/login");
   };
 
-  const initial = user.username.trim().charAt(0).toLocaleUpperCase() || "?";
   const space = storageState(quota);
   const joined = new Date(user.created_at).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -90,7 +90,7 @@ export function AccountMenu({ active }: { active: NavId }) {
         aria-controls={menuId}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="av" data-i={initial} aria-hidden="true" />
+        <Avatar person={user} size="md" eager />
         <span className="acct-name" data-testid="account-name">
           {user.username}
         </span>
@@ -112,7 +112,7 @@ export function AccountMenu({ active }: { active: NavId }) {
             aria-label="Compte"
           >
             <div className="menu-head">
-              <span className="av av--lg" data-i={initial} aria-hidden="true" />
+              <Avatar person={user} size="lg" eager />
               <div>
                 <b>{user.username}</b>
                 <small>

@@ -1,4 +1,10 @@
-import { mkdtempSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -85,7 +91,9 @@ describe("stockage de la photo de profil", () => {
   it("ne laisse aucun fichier temporaire derrière lui", async () => {
     await storeAvatar(db, awaId, JPEG_A);
     await storeAvatar(db, awaId, JPEG_B);
-    expect(readdirSync(path.join(dir, "avatars")).every((f) => f.endsWith(".jpg"))).toBe(true);
+    expect(
+      readdirSync(path.join(dir, "avatars")).every((f) => f.endsWith(".jpg")),
+    ).toBe(true);
   });
 });
 
@@ -99,7 +107,9 @@ describe("avatarServing : cache par empreinte", () => {
   it("200 avec un ETag fort et un cache court tant que la version demandée n'est pas la bonne", () => {
     const r = avatarServing(hash, null, null);
     expect(r).toMatchObject({ status: 200, etag: `"${hash}"` });
-    expect((r as { cacheControl: string }).cacheControl).toBe("private, no-cache");
+    expect((r as { cacheControl: string }).cacheControl).toBe(
+      "private, no-cache",
+    );
   });
 
   it("200 avec un cache immuable quand ?v correspond à l'empreinte courante", () => {
@@ -110,12 +120,18 @@ describe("avatarServing : cache par empreinte", () => {
 
   it("une ancienne version demandée n'est PAS mise en cache durablement", () => {
     const r = avatarServing(hash, "ffffffffffffffff", null);
-    expect((r as { cacheControl: string }).cacheControl).toBe("private, no-cache");
+    expect((r as { cacheControl: string }).cacheControl).toBe(
+      "private, no-cache",
+    );
   });
 
   it("304 si If-None-Match désigne l'empreinte courante, 200 sinon", () => {
-    expect(avatarServing(hash, null, `"${hash}"`)).toMatchObject({ status: 304 });
-    expect(avatarServing(hash, null, `W/"${hash}"`)).toMatchObject({ status: 304 });
+    expect(avatarServing(hash, null, `"${hash}"`)).toMatchObject({
+      status: 304,
+    });
+    expect(avatarServing(hash, null, `W/"${hash}"`)).toMatchObject({
+      status: 304,
+    });
     expect(avatarServing(hash, null, `"autre"`)).toMatchObject({ status: 200 });
   });
 });

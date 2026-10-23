@@ -10,6 +10,7 @@ import {
 import type { Recognition } from "@/lib/recognition";
 import { buildRow, engineLabel, isVideoSession } from "@/lib/session-list";
 import { ExportEntry } from "./export/export-entry";
+import { PersonChip, useOwnerPerson } from "./avatar";
 import { Icon } from "./icons";
 import { FavButton, InlineName, ScopeBadge, useDismiss } from "./session-bits";
 
@@ -161,6 +162,7 @@ export function SessionHead({
   onArchive,
 }: Props) {
   const row = buildRow(view, Date.now());
+  const owner = useOwnerPerson(view.owner);
   const video = isVideoSession(view);
   const engine = engineLabel(view.engine ?? view.asr);
   const spent =
@@ -212,15 +214,18 @@ export function SessionHead({
             <ScopeBadge visibility={view.visibility} />
           </span>
         )}
-        {!view.mine ? (
-          <span className="f" data-testid="owner-fact">
-            <Icon name="user" />
-            Propriétaire :{" "}
-            <b style={{ fontWeight: 600, color: "var(--text)" }}>
-              {view.owner?.username ?? "avant les comptes"}
-            </b>
-          </span>
-        ) : null}
+        <span className="f" data-testid="owner-fact">
+          {owner ? (
+            <>
+              Importé par <PersonChip person={owner} me={view.mine} />
+            </>
+          ) : (
+            <>
+              <Icon name="user" />
+              Importé avant les comptes
+            </>
+          )}
+        </span>
         <span className="f">
           <Icon name={video ? "video" : "audio"} />
           {video ? "Vidéo" : "Audio"}

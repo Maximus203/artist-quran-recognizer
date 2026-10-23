@@ -73,10 +73,69 @@ a.btn {
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  position: relative;
+  overflow: hidden;
   background: var(--text);
   color: var(--bg);
   font: 700 var(--fs-sm) / 1 var(--font-ui);
   text-transform: uppercase;
+}
+/* Sans photo : initiale sur le pigment du pseudo (jetons --av-*, texte --av-fg). */
+.av[data-tone] {
+  color: var(--av-fg);
+}
+.av[data-tone="0"] {
+  background: var(--av-0);
+}
+.av[data-tone="1"] {
+  background: var(--av-1);
+}
+.av[data-tone="2"] {
+  background: var(--av-2);
+}
+.av[data-tone="3"] {
+  background: var(--av-3);
+}
+.av[data-tone="4"] {
+  background: var(--av-4);
+}
+.av[data-tone="5"] {
+  background: var(--av-5);
+}
+.av[data-tone="6"] {
+  background: var(--av-6);
+}
+.av[data-tone="7"] {
+  background: var(--av-7);
+}
+/* La photo recouvre l'initiale (qui reste dessous si l'image ne se charge pas). */
+.av > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+.av--md {
+  width: 32px;
+  height: 32px;
+}
+.who-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text-2);
+}
+.who-chip .nm {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
 }
 .av--sm {
   width: 24px;
@@ -544,8 +603,22 @@ a.btn {
 .sess.is-compact .sess-glyph {
   grid-row: 1 / span 2;
 }
+.sess.is-compact {
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+}
 .sess.is-compact .sess-end {
+  grid-column: 4;
   grid-row: 1 / span 2;
+}
+/* Qui a importé l'audio : photo ou initiale, 24 px, centrée sur les deux lignes. */
+.sess-who {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  display: grid;
+}
+.sess-who:empty {
+  display: none;
 }
 .sess.is-compact .sess-name {
   display: flex;
@@ -1673,7 +1746,7 @@ body.auth-pg {
   .srow {
     grid-template-columns:
       44px 28px minmax(260px, 1fr)
-      112px 92px 76px 80px 112px 84px 44px 44px;
+      148px 92px 76px 80px 112px 84px 44px 44px;
     column-gap: 10px;
   }
   .shead button,
