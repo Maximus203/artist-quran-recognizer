@@ -5,7 +5,7 @@ Chaque port a un test de contrat dans tests/contract/ que toute implémentation 
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -25,6 +25,26 @@ class TranscribedWord:
     text: str
     time: TimeSpan
     confidence: float
+
+
+@dataclass(frozen=True)
+class HeardWord:
+    """Mot (déjà normalisé comme le flux du Coran) livré par un ASR en flux continu (ADR-0011).
+
+    `start_s`/`end_s` sont le temps du mot dans le flux ; `arrival_s` est le temps du flux auquel il
+    est livré, jamais avant `end_s` (horloge des échantillons reçus, pas horloge murale).
+    """
+
+    text: str
+    start_s: float
+    end_s: float
+    arrival_s: float
+
+
+class WordStreamSource(Protocol):
+    """Mots entendus dans l'ordre d'arrivée (ASR streaming, ou rejeu d'un enregistrement)."""
+
+    def words(self) -> Iterable[HeardWord]: ...
 
 
 @dataclass(frozen=True)

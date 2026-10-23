@@ -1,4 +1,4 @@
-"""PrefixIndex (ADR-0011, étape 1) : index des débuts de versets et des positions « n'importe où »."""
+"""PrefixIndex (ADR-0011, étape 1) : débuts de versets et positions « n'importe où »."""
 
 from __future__ import annotations
 
