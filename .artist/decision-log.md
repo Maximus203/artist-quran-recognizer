@@ -1341,3 +1341,23 @@
 - **Pas corrigé** : le mot « بسم » de 1:1 (llr −0,84, un mot sans transcription : sous le seuil des mots seuls).
 - **Mesure** : `docs/evaluation/comblement-de-trou-2026-10-23.md` (0 perdu, 0 ajouté sans Coran, EveryAyah 216/216).
 - **Risques connus** : seuils provisoires (étape A) ; 16 ajouts proches du seuil ou sans second témoin à écouter.
+
+
+## 2026-10-23 — Courbe de vitesse : pas d'étage « candidat de vitesse »
+- **Contexte** : la campagne de dégradation montrait qu'accélérer l'audio d'une récitation ralentie remonte
+  le rappel, mais avec le facteur connu. Question : le facteur est-il estimable, et un étage de la cascade
+  (ADR-0009) se justifie-t-il ? Rapport : `docs/evaluation/courbe-vitesse-2026-10-23.md`.
+- **Décision prise (règle écrite avant la mesure, commit `f153e8f`)** : pas d'étage. Partie témoins tenue
+  (+11,0 points à ×0,4, +21,9 à ×0,3 avec le facteur estimé, 0 faux verset) ; partie vrais fichiers non tenue :
+  `lot1-09` (cours étiqueté « sans Coran ») reçoit un verset nouveau soutenu, 11:105 [8-10], qui prolonge la
+  suite 11:106-108 déjà reconnue — très probablement une vraie citation. Appliqué à la lettre, pas
+  réinterprété après coup.
+- **Hypothèses énoncées** : le débit typique est de 3,2 lettres/s (médiane des 9 sourates propres) ; le
+  facteur est le plus proche de l'inverse du rapport, activé sous 0,75 ; l'estimateur de la règle est celui de
+  plus petite erreur relative médiane (lettres par seconde, 26,5 %), calibré par récitant exclu.
+- **Écart / risque** : la règle compare au moteur seul (référence demandée), pas à la cascade ; un prototype
+  mesuré dans la cascade (branche `wip/etage-vitesse`, non fusionnée) ajoute 0 verset distinct sur 7 fichiers.
+- **À retenir** : l'optimum de compensation est à une vitesse nette de ×1,2 à ×1,6, pas à l'inverse ;
+  An-Naml ne manque pas de vitesse (8, 8, 7, 7, 7 versets de ×1 à ×2,5) ; la compensation du fichier entier
+  peut tout perdre (`lot3-01` : 5 → 0 versets à ×1,5). Reprendre la question seulement avec un fichier réel
+  que la cascade rate et que ×1,5 sauve.
