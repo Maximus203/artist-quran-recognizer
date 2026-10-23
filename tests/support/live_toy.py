@@ -42,6 +42,7 @@ def toy_flow() -> dict[VerseRef, tuple[str, ...]]:
         ref("113:5"): ("aa", "bb", "cc", "dd"),  # sosie exact de 112:1
         ref("114:1"): ("wx", "bs1", "bs2", "bs3", "bs4"),  # finit par la phrase de la basmala
         ref("114:2"): ("m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"),
+        ref("114:4"): ("bs2", "y3"),  # s'ouvre sur le 2e mot de la basmala, comme « الله »
         ref("114:6"): _filler(),
         # la sourate 2 est longue : la masse « même sourate » se répartit sur beaucoup de versets
         **{ref(f"2:{k}"): (f"v{k:02d}x",) for k in range(4, 41)},
