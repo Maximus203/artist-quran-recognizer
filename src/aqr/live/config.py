@@ -71,8 +71,9 @@ class LiveConfig:
     """Mots entendus minimum pour verrouiller, QUEL QUE SOIT le posterior (I3). Un verset plus
     court doit être entendu en entier."""
     words_margin: float = 100.0
-    """Rapport de vraisemblance des mots seuls à partir duquel un rival ne départage plus : au
-    delà, la référence est déduite du contexte (`INFERRED`), pas des mots (`RECOGNIZED`)."""
+    """Rapport de vraisemblance des mots seuls en deçà duquel un rival explique « aussi bien » les
+    mots entendus. Un tel rival qui n'est pas un sosie exact interdit le verrou (on attend le mot
+    qui sépare) ; un sosie exact fait déduire la référence du contexte (`INFERRED`)."""
     mid_verse_extra_words: int = 2
     """Mots de plus exigés pour verrouiller un passage qui démarre en milieu de verset (ADR-0011
     mesure B : un début en milieu de verset coûte au moins un mot de plus ; une phrase courte et

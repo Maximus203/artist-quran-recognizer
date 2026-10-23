@@ -385,19 +385,46 @@ def test_le_suivi_est_deterministe(index: PrefixIndex) -> None:
     assert run() == run()
 
 
-def test_un_verrou_contredit_est_retire_sans_etre_cache(index: PrefixIndex) -> None:
-    # 2:2 et 2:3 partagent leurs 3 premiers mots : la suite attendue (2:2) est verrouillée par le
-    # contexte, puis le 4e mot est celui de 2:3. Le verrou affiché est retiré, jamais caché.
+def test_un_rival_qui_n_est_pas_un_sosie_bloque_le_verrou_tant_que_les_mots_ne_le_separent_pas(
+    index: PrefixIndex,
+) -> None:
+    # 2:2 (la suite attendue) et 2:3 partagent leurs 3 premiers mots : le contexte seul ne dit pas
+    # lequel est récité, alors qu'un 4e mot le dira. Règle (c) de l'ADR-0011 : seuls des sosies
+    # EXACTS se départagent par la position ; pour les autres, on attend le mot qui sépare.
     tracker = new_tracker(index)
     clock = Clock()
     feed(tracker, clock.say("pa qa ra"))
-    first = flat(feed(tracker, clock.say("sa ta ua")))
-    lock = of_type(first, Locked)[0]
-    assert (lock.ref, lock.status, lock.identity_basis) == (ref("2:2"), Status.INFERRED, "context")
-    events = flat(feed(tracker, clock.say("wa")))
-    revisions = of_type(events, Revision)
-    assert [(r.ref, r.reason) for r in revisions] == [(ref("2:2"), "contradicted")]
-    assert of_type(events, Candidates)[-1].leader == ref("2:3")
+    waiting = flat(feed(tracker, clock.say("sa ta ua")))
+    assert not of_type(waiting, Locked)
+    candidates = of_type(waiting, Candidates)[-1]
+    assert candidates.leader == ref("2:2") and candidates.leader_posterior > 0.98
+    decided = flat(feed(tracker, clock.say("va")))
+    locks = of_type(decided, Locked)
+    assert [(lock.ref, lock.status, lock.identity_basis) for lock in locks] == [
+        (ref("2:2"), Status.RECOGNIZED, "words")
+    ]
+
+
+def test_le_rival_qui_gagne_au_mot_suivant_ne_nomme_jamais_la_suite_attendue(
+    index: PrefixIndex,
+) -> None:
+    tracker = new_tracker(index)
+    clock = Clock()
+    feed(tracker, clock.say("pa qa ra"))
+    events = flat(feed(tracker, clock.say("sa ta ua wa")))
+    assert not [lock for lock in of_type(events, Locked) if lock.ref == ref("2:2")]  # I3
+
+
+def test_un_verrou_dont_le_posterior_retombe_est_retire_sans_etre_cache(index: PrefixIndex) -> None:
+    # mécanisme seul : avec un seuil de retrait à 1, tout posterior un peu inférieur retire le
+    # verrou (la vérification acoustique de l'étape 2 s'en servira pour corriger une décision)
+    tracker = new_tracker(index, unlock_floor=1.0)
+    clock = Clock()
+    events = flat(feed(tracker, clock.say("nn oo pp x7654321")))
+    order = [type(e).__name__ for e in events if isinstance(e, (Locked, Revision))]
+    assert order[:2] == ["Locked", "Revision"]
+    revision = of_type(events, Revision)[0]
+    assert (revision.ref, revision.reason) == (ref("113:2"), "contradicted")
 
 
 def test_le_modele_de_mots_refuse_un_mot_vide(index: PrefixIndex) -> None:

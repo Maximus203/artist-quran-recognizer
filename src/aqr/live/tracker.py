@@ -499,12 +499,18 @@ class HypothesisTracker:
         if best.exact < math.ceil(cfg.min_exact_share * wanted - 1e-9):
             return False
         margin = math.log(cfg.words_margin)
-        rival = any(
-            other != verse and words >= summary.best_words[verse] - margin
+        equivalent = {
+            other
             for other, words in summary.best_words.items()
-        )
-        basis = "context" if rival else "words"
-        status = Status.INFERRED if rival else Status.RECOGNIZED
+            if other != verse and words >= summary.best_words[verse] - margin
+        }
+        if equivalent - set(index.twins(verse)):
+            # règle (c) de l'ADR-0011 : un rival qui explique aussi bien les mots sans être un
+            # sosie exact finira par être séparé par un mot de plus ; seuls des sosies EXACTS se
+            # départagent par la position. On attend ce mot, on ne nomme pas sur l'a priori (I3).
+            return False
+        basis = "context" if equivalent else "words"
+        status = Status.INFERRED if equivalent else Status.RECOGNIZED
         passage.locked = _Lock(verse, status, basis, rank)
         events.append(
             Locked(
@@ -516,6 +522,7 @@ class HypothesisTracker:
                 first_word=rank,
                 posterior=posterior,
                 start_s=best.first_start_s,
+                end_s=best.last_end_s,
                 repetition=best.cls is HypothesisClass.REPEAT,
                 mean_confidence=best.conf_sum / best.matched,
                 exact_words=best.exact,
@@ -636,6 +643,7 @@ class HypothesisTracker:
             Candidates(
                 t=word.arrival_s,
                 start_s=passage.words[0].start_s,
+                end_s=word.end_s,
                 words_heard=len(passage.words),
                 count=len(plausible),
                 items=items,
