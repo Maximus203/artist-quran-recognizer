@@ -446,16 +446,17 @@ class HypothesisTracker:
             for v, p in summary.posterior.items()
             if summary.best[v].cls is not HypothesisClass.CONTINUE
         }
-        kind = "unknown"
-        if others:
-            leader = max(others, key=lambda v: (others[v], v))
-            if others[leader] / sum(others.values()) >= 0.5:
-                if leader == origin:
-                    kind = "repeat"
-                elif leader.surah == origin.surah:
-                    kind = "back" if leader < origin else "skip"
-                else:
-                    kind = "other_surah"
+        if not others:
+            return
+        leader = max(others, key=lambda v: (others[v], v))
+        if others[leader] < cfg.jump_leader_posterior:
+            return  # la suite a disparu mais rien ne la remplace : ce n'est pas un saut
+        if leader == origin:
+            kind = "repeat"
+        elif leader.surah == origin.surah:
+            kind = "back" if leader < origin else "skip"
+        else:
+            kind = "other_surah"
         passage.jumped = True
         events.append(Jump(word.arrival_s, origin, kind))
 

@@ -18,6 +18,7 @@ import math
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from aqr.domain.models import TimeSpan
 from aqr.domain.ports import HeardWord, TranscribedWord
 from aqr.live.corpus_flow import Skeleton
 
@@ -60,3 +61,48 @@ def heard_words(
         )
     heard.sort(key=lambda w: (w.arrival_s, w.start_s))
     return heard
+
+
+# --------------------------------------------------------------------------- axe du temps de l'ASR
+MUNO_FRAMES_PER_CHUNK = 13
+"""Trames de sortie que le modèle donne pour un bloc de 112 trames mel (mesuré le 2026-10-23 sur
+`muno-fastconformer-quran-streaming` : 13 sur chaque bloc, et non 14)."""
+OUTPUT_FRAME_S = 0.08
+
+
+def stream_time(
+    adapter_time_s: float,
+    *,
+    frames_per_chunk: int = MUNO_FRAMES_PER_CHUNK,
+    chunk_s: float = 1.12,
+    frame_s: float = OUTPUT_FRAME_S,
+) -> float:
+    """Temps réel de l'audio d'un instant de la chronologie de l'adaptateur Muno.
+
+    L'adaptateur compte chaque trame de sortie pour 80 ms, comme si un bloc de 1,12 s en donnait
+    14 ; il en donne 13 : ses temps se compriment de 13/14 (environ 1,2 s d'avance à 20 s). Les
+    trames sont séquentielles, donc la trame `f` appartient au bloc `f // 13` et en est la
+    `f % 13`-ième.
+    """
+    if frames_per_chunk < 1 or adapter_time_s < 0:
+        raise ValueError("frames_per_chunk >= 1 et un temps positif requis")
+    frame = adapter_time_s / frame_s
+    chunk = math.floor(frame / frames_per_chunk)
+    return chunk * chunk_s + (frame - chunk * frames_per_chunk) * frame_s
+
+
+def restore_stream_times(
+    words: Iterable[TranscribedWord],
+    *,
+    frames_per_chunk: int = MUNO_FRAMES_PER_CHUNK,
+    chunk_s: float = 1.12,
+) -> list[TranscribedWord]:
+    """Les mêmes mots, datés sur l'axe réel de l'audio (voir `stream_time`)."""
+    restored: list[TranscribedWord] = []
+    for word in words:
+        start = stream_time(word.time.start_s, frames_per_chunk=frames_per_chunk, chunk_s=chunk_s)
+        end = stream_time(word.time.end_s, frames_per_chunk=frames_per_chunk, chunk_s=chunk_s)
+        if end <= start:
+            end = start + OUTPUT_FRAME_S
+        restored.append(TranscribedWord(word.text, TimeSpan(start, end), word.confidence))
+    return restored
