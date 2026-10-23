@@ -32,6 +32,7 @@ from aqr.eval.recognition import (
     Recognition,
     VerseInterval,
 )
+from aqr.pipeline.speed import snap_compensation as _snap
 
 STRETCHES: Final = (1.0, 0.8, 0.6, 0.5, 0.4, 0.3)
 """Étirements des témoins : 1,0 = propre ; les autres sont ceux de la courbe de dégradation."""
@@ -149,13 +150,9 @@ def snap_compensation(
     """Facteur de compensation pour un rapport de débit estimé (débit / débit typique) : ×1,0 si la
     récitation n'est pas nettement plus lente que la normale ; sinon la valeur de la grille la plus
     proche de 1/ratio en échelle logarithmique (borne haute : la plus grande de la grille)."""
-    choices = tuple(grid if grid is not None else rule.compensations)
-    if ratio >= rule.activation_ratio:
-        return 1.0
-    if ratio <= 0:
-        return max(choices)
-    target = 1.0 / ratio
-    return min(choices, key=lambda g: (abs(math.log(target / g)), g))
+    return _snap(
+        ratio, rule.activation_ratio, tuple(grid if grid is not None else rule.compensations)
+    )
 
 
 # --- estimateurs du débit (sans vérité) ---------------------------------------------------------
@@ -179,12 +176,6 @@ def interval_rates(
         ):
             out.append((weight(item), item.t[1] - item.t[0]))
     return out
-
-
-def aggregate_rate(pairs: Sequence[tuple[float, float]]) -> float | None:
-    """Débit d'un fichier = somme des poids / somme des durées (None sans intervalle)."""
-    duration = sum(d for _w, d in pairs)
-    return sum(w for w, _d in pairs) / duration if duration > 0 else None
 
 
 def median(values: Sequence[float]) -> float:

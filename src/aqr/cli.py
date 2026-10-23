@@ -133,6 +133,19 @@ def _build_parser() -> argparse.ArgumentParser:
         "--constrained", action="store_true", help="preuve acoustique CTC (ADR-0005, indisponible)"
     )
     rec.add_argument(
+        "--no-speed",
+        dest="speed",
+        action="store_false",
+        help="cascade : ne pas réécouter accélérées les fenêtres douteuses d'une récitation "
+        "lente (ADR-0013)",
+    )
+    rec.add_argument(
+        "--cascade-budget-s",
+        type=float,
+        default=None,
+        help="cascade : temps maximal de la réécoute en secondes (défaut : sans limite)",
+    )
+    rec.add_argument(
         "--no-acoustic-check",
         dest="acoustic_check",
         action="store_false",
@@ -279,6 +292,8 @@ def _recognize(
         batch_size=args.batch_size,
         constrained=args.constrained,
         acoustic_check=args.acoustic_check,
+        speed=args.speed,
+        cascade_budget_s=args.cascade_budget_s,
     )
     try:
         recognizer = factory(options, env)

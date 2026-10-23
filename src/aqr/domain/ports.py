@@ -77,6 +77,14 @@ class AudioExtractor(Protocol):
     def extract(self, path: Path) -> AudioClip: ...
 
 
+class TimeStretcher(Protocol):
+    """Accélère un signal sans changer sa hauteur (oreille accélérée de la cascade, ADR-0013)."""
+
+    def stretch(
+        self, samples: Sequence[float], sample_rate: int, factor: float
+    ) -> Sequence[float]: ...
+
+
 # --- B2 -----------------------------------------------------------------
 class SpeechSegmenter(Protocol):
     def segment(self, clip: AudioClip) -> list[TimeSpan]: ...

@@ -61,7 +61,6 @@ from aqr.eval.speed_curve import (
     STRETCHES,
     CtcStats,
     Profile,
-    aggregate_rate,
     cell_id,
     choose_estimator,
     ctc_stats,
@@ -79,6 +78,7 @@ from aqr.eval.speed_curve import (
     temoin_rows,
     temoin_verdict,
 )
+from aqr.pipeline.speed import aggregate_rate
 
 ROOT = Path(__file__).resolve().parents[1]
 META_SUFFIX = ".meta.json"

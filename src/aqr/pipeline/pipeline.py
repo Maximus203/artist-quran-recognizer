@@ -56,9 +56,14 @@ from aqr.pipeline.result import (
     Interval,
     RecognitionResult,
 )
+from aqr.pipeline.speed import SpeedConfig, SpeedPlan, observed_rate, plan_speed
 from aqr.pipeline.windows import split_long_spans
 
 CandidateVerifier = Callable[[AudioClip, TimeSpan, list[Candidate]], list[Candidate]]
+SpeedEar = Callable[[float], QuranASR]
+"""Fabrique d'oreille accélérée : facteur d'accélération -> moteur qui écoute l'audio accéléré."""
+SPEED_EAR_NAME = "vitesse"
+SPEED_CHECK_KIND = "relisten-speed"
 
 
 class _BatchASR(Protocol):
@@ -82,6 +87,8 @@ class PipelineConfig:
     """Réécoute des fenêtres douteuses par les moteurs secondaires (avec arbitre acoustique)."""
     neighbor: NeighborConfig = field(default_factory=NeighborConfig)
     """Promotion d'un début `uncertain` qui prolonge un verset reconnu voisin (avec l'audio)."""
+    speed: SpeedConfig = field(default_factory=SpeedConfig)
+    """Réécoute accélérée des fenêtres douteuses d'une récitation lente (ADR-0013)."""
 
 
 @dataclass(frozen=True)
@@ -91,6 +98,9 @@ class CascadeConfig:
     sous ce seuil, la fenêtre est de la parole sans rapport (cours en français, wolof)."""
     relisten_neighbors: bool = True
     """Réécouter aussi les fenêtres voisines d'un verset retenu (la récitation y continue)."""
+    time_budget_s: float | None = None
+    """Temps maximal de la réécoute (secondes). Épuisé, la cascade s'arrête là : ce qui est déjà
+    sauvé reste, le reste garde la décision du moteur principal. None = pas de limite."""
 
 
 class RecognitionPipeline:
@@ -108,6 +118,7 @@ class RecognitionPipeline:
         secondary: Sequence[tuple[str, QuranASR]] = (),
         warnings: tuple[str, ...] = (),
         clock: Callable[[], float] = _time.perf_counter,
+        speed_ear: SpeedEar | None = None,
     ) -> None:
         self._extractor, self._segmenter, self._asr = extractor, segmenter, asr
         self._matcher, self._corpus = matcher, corpus
@@ -120,6 +131,8 @@ class RecognitionPipeline:
         (un verset d'un autre moteur n'est jamais nommé sans que l'audio le soutienne, I3)."""
         self._warnings = warnings
         self._clock = clock
+        self._speed_ear = speed_ear
+        """Sans fabrique (ou sans arbitre acoustique), jamais de réécoute accélérée."""
         self._basmala = tuple(normalize_arabic(w) for w in corpus.words(VerseRef(1, 1))[:4])
         self._decoder = ViterbiSequenceDecoder(self._config.decoder, corpus=corpus)
 
@@ -155,21 +168,39 @@ class RecognitionPipeline:
         proven, checks = self._resolve(clip, matched, heard, side, timing)
 
         cascade: dict[str, object] | None = None
-        if self._secondary and self._acoustic is not None:
+        plan = self._speed_plan(proven) if self._acoustic is not None else None
+        ears = self._ears(plan)
+        if ears and self._acoustic is not None:
             mark = self._clock()
             doubtful = self._doubtful(proven, side)
             relistens: list[ChainCheck] = []
+            report = _Relistening()
             if doubtful:
-                matched, heard, relistens = self._relisten(clip, matched, heard, doubtful, side)
+                matched, heard, relistens, report = self._relisten(
+                    clip, matched, heard, doubtful, side, ears, mark
+                )
                 proven, checks = self._resolve(clip, matched, heard, side, timing)
                 checks = (*checks, *relistens)
             floor = self._config.decoder.min_recognized_score
-            rescued = sum(1 for i in doubtful if any(c.score >= floor for c in proven[i][1]))
+
+            def kept(windows: Sequence[int]) -> int:
+                return sum(1 for i in windows if any(c.score >= floor for c in proven[i][1]))
+
             cascade = {
                 "secondary": [name for name, _asr in self._secondary],
                 "relistened_windows": len(doubtful),
-                "rescued_windows": rescued,
+                "rescued_windows": kept(doubtful),
             }
+            if self._config.cascade.time_budget_s is not None:
+                cascade["budget_exhausted"] = report.exhausted
+            if plan is not None and plan.factor > 1.0:
+                cascade["speed"] = {
+                    "rate_letters_per_s": round(plan.rate_letters_per_s, 3),
+                    "ratio": round(plan.ratio, 3),
+                    "factor": plan.factor,
+                    "relistened_windows": report.listened.get(SPEED_EAR_NAME, 0),
+                    "rescued_windows": kept(sorted(report.admitted.get(SPEED_EAR_NAME, ()))),
+                }
             timing["relisten_s"] = self._clock() - mark
 
         mark = self._clock()
@@ -309,6 +340,31 @@ class RecognitionPipeline:
                 out.append(i)
         return out
 
+    # -- Candidat de vitesse (ADR-0013) ------------------------------------------------------------
+    def _speed_plan(self, proven: Sequence[tuple[TimeSpan, list[Candidate]]]) -> SpeedPlan | None:
+        """Débit de la première passe (lettres du corpus par seconde de verset PLACÉ par
+        alignement) rapporté au débit typique ; None si la réécoute accélérée est impossible ou
+        sans objet (désactivée, pas de fabrique, aucun verset placé)."""
+        config = self._config.speed
+        if not config.enabled or self._speed_ear is None:
+            return None
+        rate = observed_rate(
+            proven, self._letters, self._config.decoder.min_recognized_score, config.min_words
+        )
+        return plan_speed(rate, config)
+
+    def _letters(self, span: WordSpan) -> int:
+        words = self._corpus.words(span.ref)[span.first_word - 1 : span.last_word]
+        return sum(len(normalize_arabic(w).replace(" ", "")) for w in words)
+
+    def _ears(self, plan: SpeedPlan | None) -> list[tuple[str, QuranASR]]:
+        """Oreilles de la réécoute, dans l'ordre : l'oreille accélérée d'abord (le moteur principal
+        reste le plus rapide et le mieux mesuré), puis les moteurs secondaires."""
+        ears = list(self._secondary)
+        if plan is not None and plan.factor > 1.0 and self._speed_ear is not None:
+            ears.insert(0, (SPEED_EAR_NAME, self._speed_ear(plan.factor)))
+        return ears
+
     def _relisten(
         self,
         clip: AudioClip,
@@ -316,53 +372,70 @@ class RecognitionPipeline:
         heard: list[str],
         doubtful: Sequence[int],
         side: list[AbstentionSpan | NonQuranSpan],
-    ) -> tuple[list[tuple[TimeSpan, list[Candidate]]], list[str], list[ChainCheck]]:
-        """Chaque moteur secondaire réécoute les fenêtres douteuses. Leurs candidats rejoignent
-        ceux du moteur principal ; un candidat qui se suffit seul (score au seuil) n'est gardé que
-        si l'audio soutient le texte du corpus (arbitre, I3) ; les autres ne peuvent devenir un
-        verset que par une suite, que la vérification acoustique juge comme toute suite."""
+        ears: Sequence[tuple[str, QuranASR]],
+        started: float,
+    ) -> tuple[list[tuple[TimeSpan, list[Candidate]]], list[str], list[ChainCheck], _Relistening]:
+        """Chaque oreille réécoute les fenêtres douteuses. Leurs candidats rejoignent ceux du moteur
+        principal ; un candidat qui se suffit seul (score au seuil) n'est gardé que si l'audio
+        D'ORIGINE soutient le texte du corpus (arbitre, I3) ; les autres ne peuvent devenir un
+        verset que par une suite, que la vérification acoustique juge comme toute suite. Le budget
+        de temps est vérifié avant chaque lot de fenêtres."""
         assert self._acoustic is not None
         floor = self._config.decoder.min_recognized_score
-        windows = [matched[i][0] for i in doubtful]
+        step = self._config.batch_size
         matched, heard = list(matched), list(heard)
         best = {i: _best_quality(matched[i][1]) for i in doubtful}
         checks: list[ChainCheck] = []
-        for _name, asr in self._secondary:
-            for i, transcript in zip(
-                doubtful, _transcribe_with(asr, clip, windows, self._config.batch_size), strict=True
-            ):
-                window = matched[i][0]
-                scratch: list[AbstentionSpan | NonQuranSpan] = []
-                found = self._classify(clip, window, transcript, scratch)
-                admitted: list[Candidate] = []
-                for candidate in found:
-                    if candidate.score >= floor:
-                        llr = self._acoustic.supports(clip, window, candidate.spans)
-                        threshold = self._acoustic.threshold
-                        accepted = llr is not None and llr >= threshold
-                        checks.append(
-                            ChainCheck(window, candidate.spans, llr, accepted, kind="relisten")
+        report = _Relistening()
+        for name, asr in ears:
+            kind = SPEED_CHECK_KIND if name == SPEED_EAR_NAME else "relisten"
+            for lot in range(0, len(doubtful), step):
+                if not self._within_budget(started):
+                    report.exhausted = True
+                    break
+                indexes = list(doubtful[lot : lot + step])
+                windows = [matched[i][0] for i in indexes]
+                transcripts = _transcribe_with(asr, clip, windows, step)
+                report.listened[name] = report.listened.get(name, 0) + len(indexes)
+                for i, transcript in zip(indexes, transcripts, strict=True):
+                    window = matched[i][0]
+                    scratch: list[AbstentionSpan | NonQuranSpan] = []
+                    found = self._classify(clip, window, transcript, scratch)
+                    admitted: list[Candidate] = []
+                    for candidate in found:
+                        if candidate.score >= floor:
+                            llr = self._acoustic.supports(clip, window, candidate.spans)
+                            accepted = llr is not None and llr >= self._acoustic.threshold
+                            checks.append(
+                                ChainCheck(window, candidate.spans, llr, accepted, kind=kind)
+                            )
+                            if not accepted:
+                                continue
+                        admitted.append(candidate)
+                    if not admitted:
+                        continue
+                    report.admitted.setdefault(name, set()).add(i)
+                    matched[i] = (window, _merge(matched[i][1], admitted))
+                    if _best_quality(admitted) > best[i]:
+                        best[i] = _best_quality(admitted)
+                        heard[i] = " ".join(w.text for w in transcript.words)
+                    side[:] = [
+                        s
+                        for s in side
+                        if not (
+                            isinstance(s, AbstentionSpan)
+                            and s.time == window
+                            and s.reason
+                            in (AbstentionReason.NO_CANDIDATE, AbstentionReason.EMPTY_TRANSCRIPT)
                         )
-                        if not accepted:
-                            continue
-                    admitted.append(candidate)
-                if not admitted:
-                    continue
-                matched[i] = (window, _merge(matched[i][1], admitted))
-                if _best_quality(admitted) > best[i]:
-                    best[i] = _best_quality(admitted)
-                    heard[i] = " ".join(w.text for w in transcript.words)
-                side[:] = [
-                    s
-                    for s in side
-                    if not (
-                        isinstance(s, AbstentionSpan)
-                        and s.time == window
-                        and s.reason
-                        in (AbstentionReason.NO_CANDIDATE, AbstentionReason.EMPTY_TRANSCRIPT)
-                    )
-                ]
-        return matched, heard, checks
+                    ]
+            if report.exhausted:
+                break
+        return matched, heard, checks, report
+
+    def _within_budget(self, started: float) -> bool:
+        budget = self._config.cascade.time_budget_s
+        return budget is None or self._clock() - started < budget
 
     def _engine_info(self) -> EngineInfo:
         if self._acoustic is None:
@@ -490,6 +563,15 @@ class RecognitionPipeline:
             else:
                 out.append(det)
         return out
+
+
+@dataclass
+class _Relistening:
+    """Ce que la réécoute a fait : fenêtres écoutées et admises par oreille, budget épuisé."""
+
+    listened: dict[str, int] = field(default_factory=dict)
+    admitted: dict[str, set[int]] = field(default_factory=dict)
+    exhausted: bool = False
 
 
 def _transcribe_with(

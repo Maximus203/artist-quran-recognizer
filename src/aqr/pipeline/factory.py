@@ -19,8 +19,9 @@ from aqr.domain.models import VerseRef
 from aqr.domain.ports import CorpusRepository, QuranASR, SpeechSegmenter, Translation
 from aqr.models.lock import ModelsLock
 from aqr.models.registry import MODELS
-from aqr.pipeline.pipeline import PipelineConfig, RecognitionPipeline
+from aqr.pipeline.pipeline import CascadeConfig, PipelineConfig, RecognitionPipeline, SpeedEar
 from aqr.pipeline.result import EngineInfo
+from aqr.pipeline.speed import SpeedConfig
 from aqr.rendering.home_renderer import HomeRenderer
 from aqr.rendering.translation_segments import SegmentLibrary
 
@@ -68,6 +69,11 @@ class RecognizeOptions:
     constrained: bool = False
     acoustic_check: bool = True
     """Vérifier les suites sur le treillis du FastConformer et en prendre les temps au mot."""
+    speed: bool = True
+    """Cascade seulement : réécouter accélérées les fenêtres douteuses d'une récitation lente
+    (ADR-0013). Sans vérificateur acoustique, jamais."""
+    cascade_budget_s: float | None = None
+    """Temps maximal de la réécoute de la cascade, en secondes (None = pas de limite)."""
 
 
 @dataclass(frozen=True)
@@ -138,7 +144,11 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
         constrained=False,
         corpus=f"tanzil.net hafs ({corpus.version})",
     )
-    config = PipelineConfig(batch_size=options.batch_size)
+    config = PipelineConfig(
+        batch_size=options.batch_size,
+        cascade=CascadeConfig(time_budget_s=options.cascade_budget_s),
+        speed=SpeedConfig(enabled=options.speed),
+    )
     acoustic = (
         _acoustic(options, lock, corpus, asr, config, warnings) if options.acoustic_check else None
     )
@@ -153,6 +163,7 @@ def build_recognizer(options: RecognizeOptions, env: Mapping[str, str]) -> Recog
         acoustic=acoustic,
         secondary=secondary,
         warnings=tuple(warnings),
+        speed_ear=_speed_ear(asr) if cascading and acoustic is not None else None,
     )
     translations = (
         QuranEncTranslationRepository(options.cache_dir)
@@ -203,6 +214,14 @@ def _secondary(
         asr, name = _asr(replace(options, asr=choice), lock)
         out.append((name, asr))
     return out
+
+
+def _speed_ear(asr: QuranASR) -> SpeedEar:
+    """Fabrique de l'oreille accélérée : le moteur principal, sur l'audio accéléré par ffmpeg."""
+    from aqr.adapters.speedup import FfmpegTimeStretcher, SpeedUpASR
+
+    stretcher = FfmpegTimeStretcher()
+    return lambda factor: SpeedUpASR(asr, stretcher, factor)
 
 
 def _asr(options: RecognizeOptions, lock: ModelsLock) -> tuple[QuranASR, str]:

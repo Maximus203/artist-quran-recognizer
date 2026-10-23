@@ -661,3 +661,147 @@ def test_un_debut_que_l_audio_ne_soutient_pas_reste_une_abstention(
     assert (det.span.first_word, det.span.last_word) == (8, 13)
     assert [c.accepted for c in result.acoustic_checks if c.kind == "head"] == [False]
     assert any(isinstance(i, AbstentionSpan) for i in result.intervals)
+
+
+# --- Candidat de vitesse (ADR-0013) -------------------------------------------------------------
+# Récitation lente : la première passe place 67:1 [5-13] ; la fenêtre suivante est mal
+# transcrite. Le MÊME moteur la réécoute accélérée ; l'arbitre juge sur l'audio d'origine.
+SAID_SLOW = ((2.5, "67:1[5-13]"), (10.0, "67:2"))
+
+
+class _EarFactory:
+    """Fabrique d'oreilles accélérées factice : garde les facteurs demandés."""
+
+    def __init__(self, texts: list[str]) -> None:
+        self.factors: list[float] = []
+        self.asr = _ASR(texts)
+
+    def __call__(self, factor: float):
+        self.factors.append(factor)
+        return self.asr
+
+
+def _slow(corpus, matcher, alignment_texts, factory, *, config=None, secondary=(), **kwargs):
+    from aqr.pipeline.speed import SpeedConfig
+
+    acoustic = kwargs.pop(
+        "acoustic", _acoustic(corpus, alignment_texts, _heard(alignment_texts, *SAID_SLOW))
+    )
+    return _pipeline(
+        corpus,
+        matcher,
+        [_verse(corpus, 67, 1, 5), "تبارك بيده"],
+        [(2.0, 8.0), (9.5, 30.0)],
+        seconds=40.0,
+        acoustic=acoustic,
+        secondary=secondary,
+        speed_ear=factory,
+        config=config or PipelineConfig(speed=SpeedConfig(typical_letters_per_s=40.0)),
+        **kwargs,
+    )
+
+
+def test_vitesse_une_recitation_lente_est_reecoutee_acceleree_et_l_audio_d_origine_arbitre(
+    corpus, matcher, alignment_texts
+):
+    factory = _EarFactory([_verse(corpus, 67, 2)])
+    result = _slow(corpus, matcher, alignment_texts, factory)
+    assert factory.factors == [4.0]  # débit très bas : le plus grand facteur de la grille
+    assert factory.asr.calls == 1  # seule la fenêtre douteuse
+    assert VerseRef(67, 2) in [d.span.ref for d in _verses(result)]
+    speed = result.cascade["speed"]
+    assert speed["factor"] == 4.0 and speed["ratio"] < 0.75
+    assert speed["relistened_windows"] == 1 and speed["rescued_windows"] == 1
+    assert result.cascade["secondary"] == []
+    assert any(c.kind == "relisten-speed" and c.accepted for c in result.acoustic_checks)
+
+
+def test_vitesse_l_arbitre_refuse_un_verset_que_l_audio_d_origine_ne_soutient_pas(
+    corpus, matcher, alignment_texts
+):  # I3 : l'oreille accélérée entend 2:255, l'audio d'origine contient 67:2
+    factory = _EarFactory([_verse(corpus, 2, 255, 1, 12)])
+    result = _slow(corpus, matcher, alignment_texts, factory)
+    assert VerseRef(2, 255) not in [d.span.ref for d in _verses(result)]
+    assert result.cascade["speed"]["rescued_windows"] == 0
+    assert any(c.kind == "relisten-speed" and not c.accepted for c in result.acoustic_checks)
+
+
+def test_vitesse_pas_de_reecoute_acceleree_a_debit_normal(corpus, matcher, alignment_texts):
+    factory = _EarFactory([_verse(corpus, 67, 2)])
+    result = _slow(corpus, matcher, alignment_texts, factory, config=PipelineConfig())
+    assert factory.factors == [] and factory.asr.calls == 0
+    assert result.cascade is None or "speed" not in result.cascade
+
+
+def test_vitesse_desactivee_par_la_configuration(corpus, matcher, alignment_texts):
+    from aqr.pipeline.speed import SpeedConfig
+
+    factory = _EarFactory([_verse(corpus, 67, 2)])
+    config = PipelineConfig(speed=SpeedConfig(enabled=False, typical_letters_per_s=40.0))
+    _slow(corpus, matcher, alignment_texts, factory, config=config)
+    assert factory.factors == []
+
+
+def test_vitesse_sans_arbitre_acoustique_jamais_de_reecoute(corpus, matcher, alignment_texts):
+    factory = _EarFactory([_verse(corpus, 67, 2)])
+    result = _slow(corpus, matcher, alignment_texts, factory, acoustic=None)
+    assert factory.factors == [] and result.cascade is None  # I3
+
+
+def test_vitesse_sans_verset_place_le_debit_est_inconnu_et_rien_n_est_compense(
+    corpus, matcher, alignment_texts
+):
+    factory = _EarFactory([_verse(corpus, 67, 2)])
+    acoustic = _acoustic(corpus, alignment_texts, _heard(alignment_texts, (10.0, "67:2")))
+    _slow(corpus, matcher, alignment_texts, factory, acoustic=acoustic)
+    assert factory.factors == []  # le temps de 67:1 n'est pas mesuré : pas d'estimation
+
+
+def test_vitesse_passe_avant_les_autres_moteurs_secondaires(corpus, matcher, alignment_texts):
+    factory = _EarFactory([_verse(corpus, 67, 2)])
+    whisper = _ASR([_verse(corpus, 67, 2)])
+    result = _slow(
+        corpus, matcher, alignment_texts, factory, secondary=(("whisper-test", whisper),)
+    )
+    assert factory.asr.calls == 1 and whisper.calls == 1  # les deux écoutent les fenêtres douteuses
+    assert result.cascade["secondary"] == ["whisper-test"]
+    kinds = [c.kind for c in result.acoustic_checks if c.kind.startswith("relisten")]
+    assert kinds[0] == "relisten-speed"  # l'oreille accélérée passe d'abord
+
+
+# --- Budget de temps de la cascade ---------------------------------------------------------------
+
+
+def test_budget_epuise_aucun_moteur_secondaire_n_est_appele(corpus, matcher, alignment_texts):
+    from aqr.pipeline.pipeline import CascadeConfig
+
+    primary = [_verse(corpus, 67, 1, 5), "تبارك بيده"]
+    ticks = iter(float(i) for i in range(100_000))
+    config = PipelineConfig(cascade=CascadeConfig(time_budget_s=0.5))
+    result, second = _cascade(
+        corpus,
+        matcher,
+        alignment_texts,
+        primary,
+        [_verse(corpus, 67, 2)],
+        SAID_67_2,
+        config=config,
+        clock=lambda: next(ticks),
+    )
+    assert second.calls == 0
+    assert result.cascade["budget_exhausted"] is True
+    assert result.cascade["rescued_windows"] == 0
+    assert VerseRef(67, 2) not in [d.span.ref for d in _verses(result)]
+
+
+def test_budget_suffisant_la_cascade_va_au_bout(corpus, matcher, alignment_texts):
+    from aqr.pipeline.pipeline import CascadeConfig
+
+    primary = [_verse(corpus, 67, 1, 5), "تبارك بيده"]
+    config = PipelineConfig(cascade=CascadeConfig(time_budget_s=1e9))
+    result, second = _cascade(
+        corpus, matcher, alignment_texts, primary, [_verse(corpus, 67, 2)], SAID_67_2, config=config
+    )
+    assert second.calls == 1
+    assert result.cascade["budget_exhausted"] is False
+    assert VerseRef(67, 2) in [d.span.ref for d in _verses(result)]
