@@ -59,11 +59,25 @@ RECOGNIZED = {
 }
 
 
+_ITEM_OF_KIND = {
+    "choose": "uncertain",
+    "set_ref": "uncertain",
+    "exclude": "uncertain",
+    "ignore": "uncertain",
+    "confirm_inferred": "inferred",
+    "confirm_partial": "cut",
+    "translation_scope": "approx",
+    "adjust_time": "report",
+    "dismiss_report": "report",
+}
+
+
 def _decision(
     fingerprint: str | None = None,
     *,
     id_: str = "00000000-0000-4000-8000-000000000001",
     kind: str = "choose",
+    item: str | None = None,
     value: dict | None = None,
     decided_at: str = "2026-10-23T14:02:11Z",
     revision: int = 1,
@@ -78,6 +92,7 @@ def _decision(
         "kind": kind,
         "target": {
             "fingerprint": fingerprint or None,
+            "item": item or _ITEM_OF_KIND[kind],
             "index": index,
             "snapshot": {"kind": "verse", "status": "uncertain", "ref": "11:61", "t": [48.2, 62.6]},
             "review_ids": review_ids or [],
@@ -246,13 +261,14 @@ def test_une_cible_sans_empreinte_vise_un_signalement() -> None:
     raw = _decision(
         "",
         kind="set_ref",
+        item="report",
         value={"ref": "112:3", "words": [1, 4], "t": [30.0, 33.0]},
         review_ids=[review_id],
         index=None,
     )
     (decision,) = parse_decisions(_document(raw)).decisions
     assert decision.target.fingerprint is None and decision.target.review_ids == (review_id,)
-    assert target_key(decision) == f"report:{review_id}"
+    assert target_key(decision) == f"report:{review_id}#report"
 
 
 def test_une_cible_sans_empreinte_ni_signalement_est_refusee() -> None:
@@ -264,10 +280,11 @@ def test_un_signalement_sans_intervalle_ne_se_corrige_pas_par_un_choix() -> None
     raw = _decision(
         "",
         kind="choose",
+        item="report",
         review_ids=["11111111-1111-4111-8111-111111111111"],
         index=None,
     )
-    with pytest.raises(DecisionsError, match="signalement"):
+    with pytest.raises(DecisionsError, match="report"):
         parse_decisions(_document(raw))
 
 
@@ -277,11 +294,32 @@ def test_la_cible_d_une_correction_de_temps_ou_de_choix_exige_ses_temps_pour_un_
     raw = _decision(
         "",
         kind="set_ref",
+        item="report",
         value={"ref": "112:3", "words": [1, 4]},
         review_ids=["11111111-1111-4111-8111-111111111111"],
         index=None,
     )
     with pytest.raises(DecisionsError, match="t"):
+        parse_decisions(_document(raw))
+
+
+def test_une_decision_repond_a_une_sorte_de_passage_qui_la_permet() -> None:
+    with pytest.raises(DecisionsError, match="item"):
+        parse_decisions(_document(_decision(item="autre")))
+    with pytest.raises(DecisionsError, match="inferred"):
+        parse_decisions(_document(_decision(item="inferred")))  # choose ne répond pas à un supposé
+
+
+def test_un_signalement_sans_intervalle_est_de_sorte_report() -> None:
+    raw = _decision(
+        "",
+        kind="ignore",
+        item="uncertain",
+        value={},
+        review_ids=["11111111-1111-4111-8111-111111111111"],
+        index=None,
+    )
+    with pytest.raises(DecisionsError, match="report"):
         parse_decisions(_document(raw))
 
 
@@ -316,6 +354,29 @@ def test_deux_decisions_actives_sur_la_meme_cible_la_plus_recente_gagne() -> Non
         )
     )
     assert [d.id[-1] for d in active_decisions(document)] == ["b"]
+
+
+def test_une_coupure_et_une_traduction_approximative_du_meme_verset_ont_chacune_leur_decision() -> (
+    None
+):
+    fingerprint = interval_fingerprint(RECOGNIZED)
+    document = parse_decisions(
+        _document(
+            _decision(
+                fingerprint,
+                id_="00000000-0000-4000-8000-00000000000a",
+                kind="confirm_partial",
+                value={},
+            ),
+            _decision(
+                fingerprint,
+                id_="00000000-0000-4000-8000-00000000000b",
+                kind="translation_scope",
+                value={"scope": "verse"},
+            ),
+        )
+    )
+    assert len(active_decisions(document)) == 2
 
 
 def test_l_empreinte_des_decisions_ignore_les_annulees() -> None:
@@ -373,6 +434,7 @@ def test_les_decisions_de_signalement_sont_rendues_a_part() -> None:
     raw = _decision(
         "",
         kind="dismiss_report",
+        item="report",
         value={},
         review_ids=["11111111-1111-4111-8111-111111111111"],
         index=None,
@@ -386,3 +448,23 @@ def test_les_intervalles_qui_ne_sont_pas_des_versets_n_ont_pas_d_empreinte() -> 
     abstention = {"kind": "abstention", "reason": "silence", "t": [0.0, 1.0], "best_score": None}
     result = reconcile([abstention, UNCERTAIN], _decisions(_decision(index=1)))
     assert list(result.applied) == [1]
+
+
+def test_plusieurs_decisions_sur_un_meme_intervalle_s_appliquent_toutes() -> None:
+    fingerprint = interval_fingerprint(RECOGNIZED)
+    decisions = _decisions(
+        _decision(
+            fingerprint,
+            id_="00000000-0000-4000-8000-00000000000a",
+            kind="confirm_partial",
+            value={},
+        ),
+        _decision(
+            fingerprint,
+            id_="00000000-0000-4000-8000-00000000000b",
+            kind="translation_scope",
+            value={"scope": "none"},
+        ),
+    )
+    result = reconcile([RECOGNIZED], decisions)
+    assert [d.kind for d in result.applied[0]] == ["confirm_partial", "translation_scope"]

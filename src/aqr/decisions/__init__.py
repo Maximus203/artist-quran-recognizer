@@ -4,6 +4,8 @@ from aqr.decisions.fingerprint import canonical_interval, interval_fingerprint
 from aqr.decisions.model import (
     EXCLUDE_REASONS,
     FACTUAL_KINDS,
+    ITEM_KINDS,
+    ITEMS,
     KINDS,
     REPORT_KINDS,
     SCHEMA,
@@ -29,6 +31,8 @@ from aqr.decisions.reconcile import (
 __all__ = [
     "EXCLUDE_REASONS",
     "FACTUAL_KINDS",
+    "ITEMS",
+    "ITEM_KINDS",
     "KINDS",
     "REPORT_KINDS",
     "SCHEMA",

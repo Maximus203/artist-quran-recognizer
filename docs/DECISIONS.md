@@ -34,6 +34,7 @@ Une session porte trois fichiers qui ne se mélangent pas :
         | "adjust_time" | "translation_scope" | "dismiss_report" | "ignore",
   "target": {
     "fingerprint": "<sha256 hex>" | null,   // l'intervalle du moteur visé ; null = un signalement sans intervalle
+    "item": "uncertain" | "inferred" | "cut" | "approx" | "report",   // la question à laquelle on répond
     "index": 17,                            // position dans intervals[] : un indice, l'empreinte fait foi
     "snapshot": { "kind": "verse", "status": "uncertain", "ref": "11:61", "words": [1, 10],
                   "t": [48.2, 62.6], "candidates": ["11:61", "7:73"] },   // ce que le moteur avait dit
@@ -47,6 +48,17 @@ Une session porte trois fichiers qui ne se mélangent pas :
   "withdrawn_at": null | "2026-10-23T15:00:00Z"   // annulée (jamais supprimée)
 }
 ```
+
+Un intervalle peut porter plusieurs questions (`item`) : une coupure ET une traduction approximative ont
+chacune leur décision. Les genres permis dépendent de la sorte de passage :
+
+| `item` | Pourquoi le passage est à vérifier | `kind` permis |
+|---|---|---|
+| `uncertain` | le moteur hésite entre plusieurs versets | `choose`, `set_ref`, `exclude`, `ignore` |
+| `inferred` | verset supposé, jamais entendu | `confirm_inferred`, `exclude`, `ignore` |
+| `cut` | verset à moitié reconnu dans une suite | `set_ref`, `confirm_partial`, `exclude`, `ignore` |
+| `approx` | la traduction ne colle qu'à peu près à l'arabe affiché | `translation_scope`, `ignore` |
+| `report` | un testeur a signalé une erreur (revue confirmée) | `set_ref`, `adjust_time`, `exclude`, `dismiss_report`, `ignore` |
 
 | `kind` | `value` | Effet sur l'export |
 |---|---|---|
@@ -89,7 +101,7 @@ Valeurs factuelles (`choose`, `set_ref`, `confirm_*`, `exclude`, `adjust_time`) 
 | annulée | `withdrawn_at` renseigné | ignorée, conservée dans l'historique |
 | remplacée | `superseded_by` renseigné | ignorée, conservée |
 
-Une seule décision est active par cible ; si deux le sont, la plus récente (`decided_at`, puis `revision`,
+Une seule décision est active par cible (empreinte de l'intervalle, ou signalements, et `item`) ; si deux le sont, la plus récente (`decided_at`, puis `revision`,
 puis `id`) gagne. `decisions_sha256` = SHA-256 des seules décisions actives, triées par identifiant.
 
 ## Ce que ce format ne fait pas

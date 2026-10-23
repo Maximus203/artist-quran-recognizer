@@ -41,7 +41,9 @@ même calcul en Python et en TypeScript, vérifié par des vecteurs partagés). 
 
 ### 4. Cycle de vie
 Annuler = renseigner `withdrawn_at` (jamais supprimer : historique, et vérité terrain proposée à partir de la
-décision). Remplacer = `superseded_by`. Une seule décision active par cible ; si deux sont actives (deux
+décision). Remplacer = `superseded_by`. Une seule décision active par cible, c'est-à-dire par intervalle **et** par sorte de passage (`item` :
+`uncertain`, `inferred`, `cut`, `approx`, `report`) : une coupure et une traduction approximative du même verset
+sont deux questions, chacune a sa décision. Si deux sont actives (deux
 enregistrements simultanés), la plus récente gagne. `decisions_sha256` (empreinte des décisions **actives**)
 trace un export : annuler toutes les décisions redonne l'empreinte, et l'export, d'une session sans décision.
 

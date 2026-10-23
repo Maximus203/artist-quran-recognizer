@@ -48,6 +48,19 @@ FACTUAL_KINDS: Final = frozenset(
 """Les décisions de nature factuelle : seules elles peuvent devenir une proposition de vérité
 terrain (si elles ont été écoutées et que le consentement est donné)."""
 
+ITEMS: Final = ("uncertain", "inferred", "cut", "approx", "report")
+"""La question à laquelle une décision répond (le « passage à vérifier ») : un intervalle peut en
+porter plusieurs (une coupure ET une traduction approximative), chacune a sa propre décision."""
+
+ITEM_KINDS: Final = {
+    "uncertain": frozenset({"choose", "set_ref", "exclude", "ignore"}),
+    "inferred": frozenset({"confirm_inferred", "exclude", "ignore"}),
+    "cut": frozenset({"set_ref", "confirm_partial", "exclude", "ignore"}),
+    "approx": frozenset({"translation_scope", "ignore"}),
+    "report": frozenset({"set_ref", "adjust_time", "exclude", "dismiss_report", "ignore"}),
+}
+"""Genres de décision permis pour chaque sorte de passage."""
+
 REPORT_KINDS: Final = frozenset({"set_ref", "dismiss_report", "ignore"})
 """Genres permis quand la cible est un signalement sans intervalle du moteur."""
 
@@ -78,9 +91,11 @@ class Target:
     """Ce que le moteur avait dit au moment de la décision, figé.
 
     `fingerprint` (voir `fingerprint.py`) fait foi ; `index` n'est qu'un indice de position.
-    Sans empreinte, la cible est un signalement de revue (`review_ids`) qui n'a pas d'intervalle."""
+    Sans empreinte, la cible est un signalement de revue (`review_ids`) qui n'a pas d'intervalle.
+    `item` dit à quelle question répond la décision (`ITEMS`)."""
 
     fingerprint: str | None
+    item: str
     index: int | None
     snapshot: Mapping[str, Any]
     review_ids: tuple[str, ...]
@@ -277,6 +292,11 @@ def _target(raw: object, kind: str, value: Value, where: str) -> Target:
         or any(not isinstance(i, str) or not _UUID.match(i) for i in ids)
     ):
         raise _fail(f"{where}.review_ids", "liste d'identifiants de signalement attendue")
+    item = data.get("item")
+    if item not in ITEMS:
+        raise _fail(f"{where}.item", f"sorte de passage attendue parmi {list(ITEMS)}")
+    if kind not in ITEM_KINDS[item]:
+        raise _fail(where, f"« {kind} » ne répond pas à un passage « {item} »")
     index = data.get("index")
     if index is not None and (isinstance(index, bool) or not isinstance(index, int) or index < 0):
         raise _fail(f"{where}.index", "entier ≥ 0 attendu")
@@ -286,6 +306,8 @@ def _target(raw: object, kind: str, value: Value, where: str) -> Target:
     if fingerprint is None:
         if not ids:
             raise _fail(where, "cible sans empreinte ni signalement")
+        if item != "report":
+            raise _fail(f"{where}.item", "un signalement sans intervalle est de sorte « report »")
         if kind not in REPORT_KINDS:
             raise _fail(where, f"« {kind} » ne s'applique pas à un signalement sans intervalle")
         if kind == "set_ref" and value.t is None:
@@ -294,6 +316,7 @@ def _target(raw: object, kind: str, value: Value, where: str) -> Target:
             )
     return Target(
         fingerprint=fingerprint,
+        item=str(item),
         index=index,
         snapshot=dict(snapshot),
         review_ids=tuple(ids),

@@ -18,10 +18,13 @@ from aqr.decisions.model import Decision, DecisionsDocument
 
 
 def target_key(decision: Decision) -> str:
-    """Clé de ce que la décision vise : l'empreinte de l'intervalle, sinon ses signalements."""
-    if decision.target.fingerprint is not None:
-        return decision.target.fingerprint
-    return "report:" + ",".join(sorted(decision.target.review_ids))
+    """Clé de ce que la décision vise : l'empreinte de l'intervalle (ou ses signalements) et la
+    sorte de passage : une coupure et une traduction approximative du même verset sont deux
+    questions, chacune a sa décision."""
+    where = decision.target.fingerprint
+    if where is None:
+        where = "report:" + ",".join(sorted(decision.target.review_ids))
+    return f"{where}#{decision.target.item}"
 
 
 def active_decisions(document: DecisionsDocument) -> tuple[Decision, ...]:
@@ -71,8 +74,9 @@ def decisions_digest(decisions: Sequence[Decision]) -> str:
 
 @dataclass(frozen=True)
 class Reconciliation:
-    applied: Mapping[int, Decision]
-    """Index de l'intervalle du moteur -> décision active qui s'y applique."""
+    applied: Mapping[int, tuple[Decision, ...]]
+    """Index de l'intervalle du moteur -> décisions actives qui s'y appliquent (une par sorte de
+    passage : une coupure et une traduction approximative ont chacune la leur)."""
     reports: tuple[Decision, ...]
     """Décisions dont la cible est un signalement (sans intervalle) : à vérifier contre la revue."""
     orphans: tuple[Decision, ...]
@@ -87,7 +91,7 @@ def reconcile(
     for index, interval in enumerate(intervals):
         if interval.get("kind") == "verse":
             by_fingerprint.setdefault(interval_fingerprint(interval), []).append(index)
-    applied: dict[int, Decision] = {}
+    applied: dict[int, list[Decision]] = {}
     reports: list[Decision] = []
     orphans: list[Decision] = []
     for decision in decisions:
@@ -97,10 +101,14 @@ def reconcile(
         if fingerprint is None:
             reports.append(decision)
             continue
-        candidates = [i for i in by_fingerprint.get(fingerprint, []) if i not in applied]
+        candidates = by_fingerprint.get(fingerprint, [])
         if not candidates:
             orphans.append(decision)
             continue
         hint = decision.target.index
-        applied[hint if hint in candidates else candidates[0]] = decision
-    return Reconciliation(applied=applied, reports=tuple(reports), orphans=tuple(orphans))
+        applied.setdefault(hint if hint in candidates else candidates[0], []).append(decision)
+    return Reconciliation(
+        applied={index: tuple(found) for index, found in applied.items()},
+        reports=tuple(reports),
+        orphans=tuple(orphans),
+    )
