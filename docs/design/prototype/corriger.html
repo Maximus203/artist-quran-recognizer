@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Corriger un passage — Atelier de revue</title>
+<!--
+  PROTOTYPE STATIQUE — corriger un passage ambigu SANS toucher à la prédiction du moteur (calque « décisions humaines »).
+  États par l'adresse : #pick=a|b|other|exclude (choix) · #valid=1 (décision enregistrée) · #theme=light · #train=off
+  Données factices : export-data.js (Tanzil CC BY 3.0, QuranEnc). Parcours complet : export.html.
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="export.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.6.6 0 0 0 .9.5l10.6-6.8a.6.6 0 0 0 0-1L8.9 4.7a.6.6 0 0 0-.9.5z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M5 11V9.5A2.5 2.5 0 0 1 7.5 7H18m0 0l-2.5-2.5M18 7l-2.5 2.5M19 13v1.5a2.5 2.5 0 0 1-2.5 2.5H6m0 0l2.5 2.5M6 17l2.5-2.5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L4.5 11.5 9 16M5 11.5h8a6 6 0 0 1 6 6"/></symbol>
+</svg>
+<div class="sr" id="live" aria-live="polite" role="status"></div>
+<div class="app">
+  <header class="header">
+    <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em class="hide-m">de revue</em></b></a>
+    <nav class="hdr-nav hide-m" aria-label="Pages" style="display:flex;gap:2px;margin-left:var(--sp-4)"><a href="index.html" aria-current="page" style="color:var(--text)">Revue</a><a href="sessions.html">Sessions</a><a href="index.html#perf">Performance</a><a href="docs.html">Documentation</a></nav>
+    <span class="spacer"></span>
+    <button class="btn btn--ghost btn--icon" id="theme" type="button" aria-label="Changer de thème"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <span class="avatar" aria-label="Compte : cherif" role="img">C</span>
+  </header>
+
+  <main class="xp-page">
+    <div class="xp-wrap">
+      <nav class="crumb" aria-label="Fil d’Ariane"><a href="export.html"><svg class="i" style="width:16px;height:16px" aria-hidden="true"><use href="#i-chev-l"/></svg>Prêt à exporter ?</a><span aria-hidden="true">/</span><span>Corriger</span></nav>
+
+      <div class="cx">
+      <div class="cx-nav">
+          <button class="btn btn--secondary btn--sm" type="button" aria-label="Passage précédent"><svg class="i" aria-hidden="true"><use href="#i-chev-l"/></svg><span class="hide-m">Précédent</span></button>
+          <span class="pos" aria-live="polite">Passage 2 sur 5 restants</span>
+          <button class="btn btn--secondary btn--sm" type="button" aria-label="Passage suivant"><span class="hide-m">Suivant</span><svg class="i" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+          <span class="grow"></span>
+          <div style="min-width:160px;flex:0 1 220px"><div class="meter-l"><span>Résolus</span><b>1 sur 6</b></div><div class="meter" style="--p:17%"><i></i></div></div>
+        </div>
+        <section class="cx-main" style="display:grid;gap:var(--sp-4);min-width:0" aria-labelledby="h-item">
+          <div class="card2">
+            <div class="item-head"><span class="sw s-uncertain" aria-hidden="true"></span><h1 class="ref" id="h-item">11:61 <span style="color:var(--text-3)">ou</span> 7:73</h1><span class="badge badge--warn"><span class="sw s-uncertain" aria-hidden="true"></span>Incertain · 2 candidats</span><span class="tag tag--ar">Arabe</span></div>
+            <p class="muted" style="font-size:var(--fs-sm)">Mots 11 à 17 · <span class="mono">00:48.2 → 01:02.6</span> · 14,4 s. Le moteur hésite entre deux versets qui commencent pareil. <b style="color:var(--text);font-weight:600">Écoute la fin :</b> « <span lang="ar" dir="rtl" style="font-family:var(--font-quran);font-size:1.15em">هُوَ أَنشَأَكُم</span> » ou « <span lang="ar" dir="rtl" style="font-family:var(--font-quran);font-size:1.15em">قَدْ جَآءَتْكُم</span> » ?</p>
+
+            <div class="wv" id="wv" aria-label="Forme d’onde, du 00:40 au 01:10">
+              <div class="wv-row"><span class="wv-n">Onde</span><div class="wv-track" id="wv-wave"><svg viewBox="0 0 600 56" preserveAspectRatio="none" aria-hidden="true"><path id="wv-path" d=""/></svg><i class="wv-play" style="--ph:44%" aria-hidden="true"></i></div></div>
+              <div class="wv-row"><span class="wv-n">Moteur</span><div class="wv-track lane"><span class="wv-seg wv-seg--rec" style="left:3%;width:23%" title="11:61 · mots 1–10 · décidé"></span><span class="wv-seg" style="left:27.3%;width:48%" title="Incertain"></span></div></div>
+              <div class="wv-row"><span class="wv-n">Décision</span><div class="wv-track lane" id="wv-dec"><span class="wv-empty-lane" id="wv-none">Aucune décision</span><span class="wv-hum is-empty" id="wv-hum" style="left:27.3%;width:48%"><b class="a"></b><b class="b"></b></span></div></div>
+              <div class="wv-axis"><span></span><div><span>00:40</span><span>00:50</span><span>01:00</span><span>01:10</span></div></div>
+            </div>
+
+            <div class="tools2">
+              <button class="btn btn--secondary" type="button" id="listen"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Écouter le passage</button>
+              <button class="btn btn--ghost" type="button" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-loop"/></svg>En boucle</button>
+              <span class="nud" role="group" aria-label="Début de la décision"><span class="l">Début</span><button class="btn" type="button" data-nud="s" data-d="-0.1" aria-label="Début : 0,1 s plus tôt">−</button><output id="o-s">48,2 s</output><button class="btn" type="button" data-nud="s" data-d="0.1" aria-label="Début : 0,1 s plus tard">+</button></span>
+              <span class="nud" role="group" aria-label="Fin de la décision"><span class="l">Fin</span><button class="btn" type="button" data-nud="e" data-d="-0.1" aria-label="Fin : 0,1 s plus tôt">−</button><output id="o-e">62,6 s</output><button class="btn" type="button" data-nud="e" data-d="0.1" aria-label="Fin : 0,1 s plus tard">+</button></span>
+            </div>
+            <p class="keys2 hide-m" aria-label="Raccourcis"><span><span class="kbd">Espace</span>écouter</span><span><span class="kbd">1</span><span class="kbd">2</span>choisir</span><span><span class="kbd">X</span>exclure</span><span><span class="kbd">Entrée</span>valider et suivant</span><span><span class="kbd">J</span><span class="kbd">K</span>suivant · précédent</span></p>
+          </div>
+
+          <div class="vs" aria-label="Comparaison moteur et décision">
+            <div class="vs-card">
+              <div class="lbl"><span>Moteur</span><span style="display:inline-flex;gap:5px;align-items:center;color:var(--text-3)"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Figé</span></div>
+              <div class="big">Incertain</div>
+              <p>Candidats : <b style="color:var(--text);font-weight:600">11:61</b> · <b style="color:var(--text);font-weight:600">7:73</b>.<br>Aucun texte nommé (précision d’abord).</p>
+              <p class="mono" style="font-size:var(--fs-xs)">confiance 0,52 · empreinte 9c41…e7</p>
+            </div>
+            <div class="vs-card vs-card--human" id="dec-card" aria-live="polite">
+              <div class="lbl"><span>Ta décision</span><span style="display:inline-flex;gap:5px;align-items:center"><span class="sw s-human" aria-hidden="true"><i></i></span><span id="dec-state">Non décidé</span></span></div>
+              <div id="dec-body"><p class="none">Choisis un candidat à droite, ou saisis une autre référence.</p></div>
+            </div>
+          </div>
+          <section class="train" aria-labelledby="h-tr">
+                <h4 id="h-tr"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg>Ta correction aide à entraîner le moteur</h4>
+                <p>Quand tu as écouté le passage, ta décision devient une <b style="color:var(--text);font-weight:600">proposition de vérité terrain</b> (référence, mots, temps), relue ensuite par le relecteur. Elle reste sur ce serveur ; ton audio n’est envoyé nulle part.</p>
+                <label class="sw-row" for="train-ok" style="gap:12px"><span class="t"><b>Utiliser ma correction pour améliorer le moteur</b><small>Modifiable à tout moment, décision par décision.</small></span><span class="tgl"><input type="checkbox" id="train-ok" checked><i></i></span></label>
+              </section>
+        </section>
+
+        <aside class="xcol xcol--set" aria-labelledby="h-dec">
+          <form class="set" onsubmit="return false">
+            <div class="set-head"><h2 id="h-dec" style="font:400 var(--fs-xl)/1.1 var(--font-display)">Qu’entends-tu ?</h2><p class="muted" style="font-size:var(--fs-sm);margin-top:4px">Ta décision s’ajoute à la prédiction ; elle ne la remplace jamais.</p></div>
+            <fieldset class="set-sec" style="border-top:0;padding-top:var(--sp-2)">
+              <legend class="sr">Choix du passage</legend>
+              <div class="rads" role="radiogroup">
+                <label class="rad cand-r"><input type="radio" name="pick" value="a"><span><span class="head2"><b>C’est 11:61</b><small style="margin:0">mots 11–17 · <span class="kbd">1</span></small></span><span class="cand" style="grid-column:2"><span class="ar" lang="ar" dir="rtl" id="ar-a"></span><span class="fr" id="fr-a"></span></span></span></label>
+                <label class="rad cand-r"><input type="radio" name="pick" value="b"><span><span class="head2"><b>C’est 7:73</b><small style="margin:0">mots 11–17 · <span class="kbd">2</span></small></span><span class="cand" style="grid-column:2"><span class="ar" lang="ar" dir="rtl" id="ar-b"></span><span class="fr" id="fr-b"></span></span></span></label>
+                <label class="rad cand-r"><input type="radio" name="pick" value="other"><span><b>Un autre verset</b><small>Saisis la référence et la plage de mots.</small>
+                  <span class="ref-inputs" id="ref-in"><span class="fld">Sourate:verset<input class="input" aria-label="Sourate et verset, par exemple 11:62" value="11:62" inputmode="numeric" aria-describedby="ref-ok"></span><span class="fld">Mot début<input class="input" aria-label="Mot de début" value="1" inputmode="numeric"></span><span class="fld">Mot fin<input class="input" aria-label="Mot de fin" value="7" inputmode="numeric"></span></span>
+                  <span class="ref-ok" id="ref-ok"><svg class="i" style="width:16px;height:16px" aria-hidden="true"><use href="#i-check"/></svg>Verset trouvé dans le corpus · 22 mots</span></span></label>
+                <label class="rad"><input type="radio" name="pick" value="exclude"><span><b>Ce n’est pas du Coran</b><small>À exclure du sous-titre. <span class="kbd">X</span></small></span></label>
+              </div>
+              <button class="btn btn--ghost btn--sm" type="button" id="undo" hidden style="justify-self:start"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Annuler ma décision</button>
+            </fieldset>
+
+            <div class="set-foot">
+              <div class="btnrow">
+                <button class="btn btn--primary btn--lg btn--block" type="button" id="valid">Valider et passer au suivant</button>
+                <div class="cx-actions"><button class="btn btn--ghost" type="button">Ignorer cet élément</button><span class="grow"></span><span class="muted" style="font-size:var(--fs-sm)">Ignorer = exporter selon la règle par défaut</span></div>
+              </div>
+              <p class="micro" id="listened"><b>Pas encore écouté</b> · une décision écoutée vaut vérité terrain</p>
+            </div>
+          </form>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="stickybar" id="stickybar2" style="display:none">
+  <button class="btn btn--secondary btn--icon btn--lg" style="flex:0 0 52px" type="button" aria-label="Écouter le passage"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg></button>
+  <button class="btn btn--ghost" type="button">Ignorer</button>
+  <button class="btn btn--primary btn--lg" type="button" id="valid-m">Valider et suivant</button>
+</div>
+<div class="toast2" id="toast2" role="status"></div>
+<script src="export-data.js"></script>
+<script>
+(function () {
+  var V = window.AQR_VERSES, $ = function (s) { return document.querySelector(s); }, $$ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
+  var esc = function (s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); };
+  /* Candidats : texte lu dans le corpus (I1), mots 11–17 ; la différence est marquée, jamais inventée. */
+  var A = V["11:61"].words.slice(10, 17), B = V["7:73"].words.slice(10, 17);
+  function paint(ws, other) { return ws.map(function (w, i) { return w === other[i] ? esc(w) : '<span class="diffmark">' + esc(w) + "</span>"; }).join(" "); }
+  $("#ar-a").innerHTML = paint(A, B); $("#ar-b").innerHTML = paint(B, A);
+  var clamp = function (t) { t = t.replace(/\s+/g, " "); return t.length > 120 ? t.slice(0, 118).replace(/\s\S*$/, "") + " …" : t; };
+  $("#fr-a").textContent = "Traduction du verset entier : " + clamp(V["11:61"].fr);
+  $("#fr-b").textContent = "Traduction du verset entier : " + clamp(V["7:73"].fr);
+  /* Onde factice, déterministe */
+  var d = "M0 28", seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  for (var x = 0; x <= 600; x += 3) { var a = (6 + 20 * rnd() * (0.4 + 0.6 * Math.abs(Math.sin(x / 47)))) ; d += " L" + x + " " + (28 - a) + " L" + x + " " + (28 + a); }
+  $("#wv-path").setAttribute("d", d);
+
+  var st = { pick: null, s: 48.2, e: 62.6, valid: false, listened: false };
+  function f1(n) { return n.toFixed(1).replace(".", ",") + " s"; }
+  function draw() {
+    $("#o-s").textContent = f1(st.s); $("#o-e").textContent = f1(st.e);
+    var hum = $("#wv-hum"), has = !!st.pick && st.pick !== "exclude" || st.pick === "exclude";
+    $("#wv-none").hidden = !!st.pick; hum.classList.toggle("is-empty", !st.pick);
+    hum.style.left = ((st.s - 40) / 30 * 100) + "%"; hum.style.width = ((st.e - st.s) / 30 * 100) + "%";
+    var body = $("#dec-body"), stt = $("#dec-state");
+    var rows = { a: ["11:61 · mots 11–17", V["11:61"].words.slice(10, 17).join(" ")], b: ["7:73 · mots 11–17", V["7:73"].words.slice(10, 17).join(" ")], other: ["11:62 · mots 1–7", V["11:61"].words.slice(0, 0).join(" ")], exclude: ["Pas du Coran", ""] };
+    if (!st.pick) { body.innerHTML = '<p class="none">Choisis un candidat à droite, ou saisis une autre référence.</p>'; stt.textContent = "Non décidé"; }
+    else {
+      var r = rows[st.pick];
+      body.innerHTML = '<div class="big">' + esc(r[0]) + "</div>" + (r[1] ? '<div class="ar" lang="ar" dir="rtl">' + esc(r[1]) + "</div>" : "") +
+        '<p class="mono" style="font-size:var(--fs-xs)">' + (st.pick === "exclude" ? "exclu de l’export" : f1(st.s) + " → " + f1(st.e)) + "</p>";
+      stt.textContent = st.valid ? "Enregistrée" : "Brouillon";
+    }
+    $("#undo").hidden = !st.pick;
+    $("#listened").innerHTML = st.listened ? "<b>Écouté</b> · cette décision vaut vérité terrain" : "<b>Pas encore écouté</b> · une décision écoutée vaut vérité terrain";
+  }
+  document.addEventListener("change", function (e) { if (e.target.name === "pick") { st.pick = e.target.value; st.valid = false; draw(); } });
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.nud) { st[t.dataset.nud] = Math.round((st[t.dataset.nud] + parseFloat(t.dataset.d)) * 10) / 10; draw(); }
+    if (t.id === "undo") { st.pick = null; $$("input[name=pick]").forEach(function (i) { i.checked = false; }); draw(); }
+    if (t.id === "listen") { st.listened = true; draw(); }
+    if (t.id === "valid" || t.id === "valid-m") { st.valid = true; draw(); var x = $("#toast2"); x.textContent = "Décision enregistrée — la prédiction du moteur n’a pas changé"; x.dataset.open = "true"; setTimeout(function () { x.dataset.open = "false"; }, 3200); }
+    if (t.id === "theme") document.documentElement.dataset.theme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  });
+  document.addEventListener("keydown", function (e) { if (/INPUT|TEXTAREA|SELECT/.test((e.target.tagName || ""))) return; if (e.key === "1" || e.key === "2") { var r = $("input[name=pick][value=" + (e.key === "1" ? "a" : "b") + "]"); r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true })); } });
+  var h = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (h.get("theme")) document.documentElement.dataset.theme = h.get("theme");
+  if (h.get("pick")) { var r = $("input[name=pick][value=" + h.get("pick") + "]"); if (r) { r.checked = true; st.pick = h.get("pick"); } }
+  if (h.get("valid")) st.valid = true;
+  if (h.get("listened")) st.listened = true;
+  if (h.get("train") === "off") $("#train-ok").checked = false;
+  if (innerWidth < 1100) $("#stickybar2").style.display = "flex";
+  addEventListener("resize", function () { $("#stickybar2").style.display = innerWidth < 1100 ? "flex" : "none"; });
+  draw();
+})();
+</script>
+</body>
+</html>
