@@ -57,6 +57,7 @@ def heard_words(
                 start_s=word.time.start_s,
                 end_s=word.time.end_s,
                 arrival_s=model.arrival(word.time.end_s),
+                confidence=word.confidence,
             )
         )
     heard.sort(key=lambda w: (w.arrival_s, w.start_s))

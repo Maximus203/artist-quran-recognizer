@@ -548,13 +548,26 @@ def group_name(entry: dict[str, Any]) -> str:
     return entry["kind"]
 
 
-def sweep_grid() -> list[LiveConfig]:
+def sweep_grid() -> list[tuple[str, LiveConfig]]:
+    """Deux balayages : le coeur (a priori, mots minimum, seuil) puis les garde-fous (confiance de
+    l'ASR, mots exacts) autour des valeurs de départ."""
     base = LiveConfig()
-    configs = []
+    configs: list[tuple[str, LiveConfig]] = []
     for prior, min_words, tau in itertools.product(
         (0.8, 0.9, 0.95), (2, 3, 4, 5), (0.95, 0.98, 0.99)
     ):
-        configs.append(base.replace(prior=prior, min_words_lock=min_words, tau_lock=tau))
+        configs.append(("core", base.replace(prior=prior, min_words_lock=min_words, tau_lock=tau)))
+    for min_words, confidence, exact in itertools.product(
+        (3, 4), (0.0, 0.5, 0.6, 0.7, 0.8), (0.0, 0.67, 1.0)
+    ):
+        configs.append(
+            (
+                "guards",
+                base.replace(
+                    min_words_lock=min_words, min_lock_confidence=confidence, min_exact_share=exact
+                ),
+            )
+        )
     return configs
 
 
@@ -625,6 +638,7 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
         }
         for entry, scenario, _events, result in runs
     ]
+    report["lock_confidence"] = lock_confidence_report(runs)
     by_prefix: dict[str, list[float]] = {}
     for v in rows:
         if v.t_locked is not None:
@@ -641,16 +655,19 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
             for e, s, _ev, _r in real_runs
             if e["kind"] == "real-speech"
         ]
-        for cfg in sweep_grid():
+        for family, cfg in sweep_grid():
             graded = evaluate_all(index, cfg, [(e, s) for e, s, _ev, _r in truth_runs])
             summary = summarize([r[3] for r in graded])
             real_graded = evaluate_all(index, cfg, speech)
             unconfirmed = sum(len(r[3].false_locks) for r in real_graded)
             grid.append(
                 {
+                    "family": family,
                     "prior": cfg.prior,
                     "min_words_lock": cfg.min_words_lock,
                     "tau_lock": cfg.tau_lock,
+                    "min_lock_confidence": cfg.min_lock_confidence,
+                    "min_exact_share": cfg.min_exact_share,
                     "locked_correct": summary["locked_correct"],
                     "verses": summary["verses"],
                     "false_locks": summary["false_locks"],
@@ -663,6 +680,36 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
         report["sweep"] = grid
     out_path.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return report
+
+
+def lock_confidence_report(
+    runs: Sequence[tuple[dict[str, Any], Scenario, list[Any], ScenarioResult]],
+) -> dict[str, Any]:
+    """Confiance moyenne de l'ASR et mots exacts, au verrou : verrous justes contre non confirmés,
+    séparément pour la vérité calculée et pour les extraits réels (référence seulement)."""
+    from aqr.live.events import Locked
+
+    buckets: dict[str, dict[str, list[float]]] = {}
+    for entry, _scenario, events, result in runs:
+        truth = "truth" if entry["kind"] in ("sequence", "mix") else "reference"
+        false_keys = {(str(f.locked), round(f.t, 6)) for f in result.false_locks}
+        for event in events:
+            if not isinstance(event, Locked):
+                continue
+            verdict = (
+                "unconfirmed" if (str(event.ref), round(event.t, 6)) in false_keys else "confirmed"
+            )
+            bucket = buckets.setdefault(f"{truth}:{verdict}", {"confidence": [], "exact": []})
+            bucket["confidence"].append(event.mean_confidence)
+            bucket["exact"].append(float(event.exact_words))
+    return {
+        name: {
+            "locks": len(values["confidence"]),
+            "mean_confidence": distribution(values["confidence"]),
+            "exact_words": distribution(values["exact"]),
+        }
+        for name, values in sorted(buckets.items())
+    }
 
 
 def lock_evidence(
@@ -715,6 +762,8 @@ def lock_evidence(
         "words_in_verse": exact,
         "longest_exact_run": run,
         "verse_words": index.length(false_lock.locked),
+        "mean_confidence": None if mine is None else round(mine.mean_confidence, 3),
+        "exact_words": None if mine is None else mine.exact_words,
     }
 
 

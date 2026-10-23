@@ -77,6 +77,13 @@ class LiveConfig:
     """Mots de plus exigés pour verrouiller un passage qui démarre en milieu de verset (ADR-0011
     mesure B : un début en milieu de verset coûte au moins un mot de plus ; une phrase courte et
     unique, comme l'isti'adha qui finit un verset, ne doit pas nommer ce verset)."""
+    min_lock_confidence: float = 0.0
+    """Confiance moyenne minimale (donnée par l'ASR) des mots qui correspondent au verset pour le
+    verrouiller. 0 = non utilisée. Un ASR réglé sur le Coran « voit du Coran partout » : ses mots
+    de parole étrangère sont nettement moins sûrs que ceux d'une récitation."""
+    min_exact_share: float = 0.0
+    """Part des mots exigés (`min_words_lock`) qui doivent être exacts, pas seulement proches.
+    0 = non utilisée."""
     unlock_floor: float = 0.5
     """Un verrou dont le posterior retombe sous ce seuil est retiré (`Revision`)."""
     context_max_candidates: int = 40
@@ -109,7 +116,14 @@ class LiveConfig:
             "lost_posterior",
         ):
             _check_open_unit(name, getattr(self, name))
-        for name in ("local_share", "mid_verse_share", "unlock_floor", "candidate_floor"):
+        for name in (
+            "local_share",
+            "mid_verse_share",
+            "unlock_floor",
+            "candidate_floor",
+            "min_lock_confidence",
+            "min_exact_share",
+        ):
             _check_unit(name, getattr(self, name))
         if not 0.5 < self.tau_lock < 1.0:
             raise ValueError(f"tau_lock doit être dans ]0,5 ; 1[ (reçu {self.tau_lock})")

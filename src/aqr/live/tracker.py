@@ -65,6 +65,10 @@ class _Hyp:
     last_end_s: float
     verse: VerseRef
     end: int
+    conf_sum: float = 0.0
+    """Somme des confiances ASR des mots qui correspondent."""
+    exact: int = 0
+    """Mots qui correspondent exactement (similarité 1) et non seulement de près."""
 
     @property
     def log_w(self) -> float:
@@ -223,7 +227,7 @@ class HypothesisTracker:
             direct = sims.get(hyp.ptr)
             if direct:
                 gain = self._log_correct + math.log(direct)
-                keep(self._moved(hyp, hyp.ptr + 1, gain, True, word))
+                keep(self._moved(hyp, hyp.ptr + 1, gain, True, word, exact=direct >= 1.0))
                 continue
             for skip in range(1, cfg.max_skip + 1):
                 target = hyp.ptr + skip
@@ -232,7 +236,7 @@ class HypothesisTracker:
                 similar = sims.get(target)
                 if similar:
                     gain = skip * self._log_deletion + self._log_correct + math.log(similar)
-                    keep(self._moved(hyp, target + 1, gain, True, word))
+                    keep(self._moved(hyp, target + 1, gain, True, word, exact=similar >= 1.0))
             keep(self._moved(hyp, hyp.ptr + 1, self._log_substitution, False, word))
             keep(self._moved(hyp, hyp.ptr, self._log_insertion, False, word))
 
@@ -242,7 +246,9 @@ class HypothesisTracker:
         passage.hyps = self._prune(advanced, passage.log_none)
 
     @staticmethod
-    def _moved(hyp: _Hyp, ptr: int, gain: float, is_match: bool, word: HeardWord) -> _Hyp:
+    def _moved(
+        hyp: _Hyp, ptr: int, gain: float, is_match: bool, word: HeardWord, *, exact: bool = False
+    ) -> _Hyp:
         return _Hyp(
             start=hyp.start,
             ptr=ptr,
@@ -255,6 +261,8 @@ class HypothesisTracker:
             last_end_s=word.end_s if is_match else hyp.last_end_s,
             verse=hyp.verse,
             end=hyp.end,
+            conf_sum=hyp.conf_sum + (word.confidence if is_match else 0.0),
+            exact=hyp.exact + (1 if exact else 0),
         )
 
     def _birth(
@@ -288,6 +296,8 @@ class HypothesisTracker:
                         last_end_s=word.end_s,
                         verse=verse,
                         end=index.end_of(verse),
+                        conf_sum=word.confidence,
+                        exact=1 if similarity >= 1.0 else 0,
                     )
                 )
             if previous and rank > previous:
@@ -307,6 +317,8 @@ class HypothesisTracker:
                             last_end_s=word.end_s,
                             verse=verse,
                             end=index.end_of(verse),
+                            conf_sum=word.confidence,
+                            exact=1 if similarity >= 1.0 else 0,
                         )
                     )
 
@@ -482,6 +494,10 @@ class HypothesisTracker:
             wanted = cfg.min_words_lock + cfg.mid_verse_extra_words
         if best.matched < wanted:
             return False
+        if best.conf_sum / best.matched < cfg.min_lock_confidence:
+            return False  # des mots peu sûrs : on propose des candidats, on ne nomme pas (I3)
+        if best.exact < math.ceil(cfg.min_exact_share * wanted - 1e-9):
+            return False
         margin = math.log(cfg.words_margin)
         rival = any(
             other != verse and words >= summary.best_words[verse] - margin
@@ -501,6 +517,8 @@ class HypothesisTracker:
                 posterior=posterior,
                 start_s=best.first_start_s,
                 repetition=best.cls is HypothesisClass.REPEAT,
+                mean_confidence=best.conf_sum / best.matched,
+                exact_words=best.exact,
             )
         )
         return True
