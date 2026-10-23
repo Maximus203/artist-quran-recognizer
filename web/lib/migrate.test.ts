@@ -42,10 +42,43 @@ describe("migrations versionnées", () => {
   it("est idempotent : un second passage n'applique rien", () => {
     const db = new DatabaseSync(":memory:");
     const migrations = loadMigrations(migrationsDir());
-    expect(applyMigrations(db, migrations)).toEqual([1]);
+    const all = migrations.map((m) => m.version);
+    expect(applyMigrations(db, migrations)).toEqual(all);
     expect(applyMigrations(db, migrations)).toEqual([]);
     const rows = db.prepare("SELECT version FROM schema_migrations").all();
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(all.length);
+    db.close();
+  });
+
+  it("002 : une base existante (migration 001 seule) gagne les colonnes de photo sans rien perdre", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    const migrations = loadMigrations(migrationsDir());
+    expect(applyMigrations(db, migrations.slice(0, 1))).toEqual([1]);
+    db.prepare(
+      `INSERT INTO users (username, username_key, password_hash, role, created_at)
+       VALUES ('Awa', 'awa', 'h', 'user', '2026-10-01T00:00:00.000Z')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO session_meta (id, owner_id, name, original_name, created_at, updated_at)
+       VALUES ('s1', 1, 'Session', 'a.mp3', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')`,
+    ).run();
+    expect(applyMigrations(db, migrations)).toEqual([2]);
+    expect(applyMigrations(db, migrations)).toEqual([]);
+    const user = db.prepare("SELECT * FROM users WHERE id = 1").get() as Record<
+      string,
+      unknown
+    >;
+    expect(user.username).toBe("Awa");
+    expect(user.avatar_hash).toBeNull();
+    expect(user.avatar_updated_at).toBeNull();
+    expect(
+      (
+        db.prepare("SELECT owner_id FROM session_meta WHERE id = 's1'").get() as {
+          owner_id: number;
+        }
+      ).owner_id,
+    ).toBe(1);
     db.close();
   });
 
