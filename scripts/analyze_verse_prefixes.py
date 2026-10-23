@@ -33,12 +33,20 @@ import math
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Hashable, Iterable, Sequence
-from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if (ROOT / "src").is_dir() and str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+
+# Les fonctions pures de préfixe vivent avec le suivi en direct (ADR-0011) : une seule définition.
+from aqr.live.prefix_index import (  # noqa: E402
+    Discrimination,
+    common_prefix_length,
+    discriminating_lengths,
+)
+
+__all__ = ["Discrimination", "common_prefix_length", "discriminating_lengths"]
 
 DEFAULT_PRIORS = (0.8, 0.9, 0.95)
 DEFAULT_TAUS = (0.95, 0.99)
@@ -48,50 +56,6 @@ SHARED_START_WORDS = (2, 3, 4, 5)
 
 
 # --------------------------------------------------------------------------- logique pure
-@dataclass(frozen=True)
-class Discrimination:
-    """`needed` = plus petit préfixe unique (None si aucun) ; `blocker` dit pourquoi."""
-
-    needed: int | None
-    blocker: str | None = None  # "twin" (séquence identique) | "prefix_of_longer"
-
-
-def common_prefix_length(a: Sequence[object], b: Sequence[object]) -> int:
-    limit = min(len(a), len(b))
-    i = 0
-    while i < limit and a[i] == b[i]:
-        i += 1
-    return i
-
-
-def discriminating_lengths(
-    items: Iterable[tuple[Hashable, Sequence[object]]],
-) -> dict[Hashable, Discrimination]:
-    """Pour chaque élément, plus petit k tel qu'aucun AUTRE élément ne commence par ses k premiers
-    symboles. Tri lexicographique : le plus long préfixe commun avec n'importe quel autre élément
-    est atteint chez un voisin immédiat.
-
-    Un élément dont un autre est identique (« twin ») ou dont il est le début strict
-    (« prefix_of_longer ») n'a aucun préfixe unique : le début seul ne suffit jamais.
-    """
-    ordered = sorted(items, key=lambda item: item[1])
-    result: dict[Hashable, Discrimination] = {}
-    for index, (key, sequence) in enumerate(ordered):
-        best = 0
-        twin = False
-        for other in (index - 1, index + 1):
-            if not 0 <= other < len(ordered):
-                continue
-            neighbour = ordered[other][1]
-            best = max(best, common_prefix_length(sequence, neighbour))
-            twin = twin or list(neighbour) == list(sequence)
-        if best >= len(sequence):
-            result[key] = Discrimination(None, "twin" if twin else "prefix_of_longer")
-        else:
-            result[key] = Discrimination(best + 1)
-    return result
-
-
 def summarize(values: Sequence[int]) -> dict[str, float | int | None]:
     """Médiane, p90 (rang le plus proche), maximum et moyenne ; None si vide."""
     if not values:
@@ -300,32 +264,13 @@ def summarize_floats(values: Sequence[float]) -> dict[str, float | None]:
 def load_flow_words(corpus_dir: Path) -> dict[object, tuple[str, ...]]:
     """Mots normalisés de chaque verset, comme le matcher (basmala du verset 1 retirée)."""
     from aqr.corpus.imlai_corrections import build_word_corrections, load_simple_clean_words
-    from aqr.corpus.normalize import normalize_arabic
     from aqr.corpus.tanzil_repository import TanzilCorpusRepository
-    from aqr.domain.quran_structure import BASMALA_WORD_COUNT, verse_one_includes_basmala
+    from aqr.live.corpus_flow import flow_words, make_skeleton
 
     corpus = TanzilCorpusRepository(corpus_dir)
     corrections = build_word_corrections(corpus, load_simple_clean_words(corpus_dir))
-
-    def skeleton(word: str) -> str:
-        normalized = normalize_arabic(word).replace(" ", "")
-        return corrections.get(normalized, normalized)
-
-    basmala = tuple(skeleton(w) for w in corpus.words(next(iter(corpus.all_refs()))))[
-        :BASMALA_WORD_COUNT
-    ]
-    flow: dict[object, tuple[str, ...]] = {}
-    for ref in corpus.all_refs():
-        words = tuple(skeleton(w) for w in corpus.words(ref))
-        if (
-            ref.ayah == 1
-            and ref.surah != 1
-            and verse_one_includes_basmala(ref.surah)
-            and words[:BASMALA_WORD_COUNT] == basmala
-        ):
-            words = words[BASMALA_WORD_COUNT:]
-        flow[ref] = words
-    return flow
+    flow, _basmala = flow_words(corpus, make_skeleton(corrections))
+    return dict(flow)
 
 
 def _ref_label(ref: object) -> str:

@@ -39,9 +39,11 @@ class Candidates:
     """Niveau 1 : plusieurs versets restent plausibles, on écoute encore (transitoire)."""
 
     t: float
+    start_s: float
+    """Début (temps du flux) du premier mot du passage en cours."""
     words_heard: int
     count: int
-    """Versets encore en lice (hypothèses non élaguées)."""
+    """Versets plausibles (posterior d'au moins `candidate_floor` fois celui du meilleur)."""
     items: tuple[CandidateItem, ...]
     leader: VerseRef | None
     leader_posterior: float
