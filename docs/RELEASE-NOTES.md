@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — Export des sous-titres : la commande aqr export-subtitles
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #97
 
 **Ce qui change.** Une commande produit les sous-titres d'un audio analysé : `aqr export-subtitles` écrit du SRT, du WebVTT, de l'ASS (karaoké mot à mot quand les temps des mots sont mesurés) ou le JSON enrichi. Elle contrôle d'abord les passages ambigus de la partie coranique (versets incertains, supposés, coupés au milieu d'une suite, traductions approximatives, signalements de revue confirmés) et refuse d'exporter tant qu'il en reste, sauf si on force. Forcer omet par défaut les passages douteux (jamais un faux verset nommé) ; un marqueur `[incertain : …]` ou le premier candidat restent possibles. Un passage dont le choix ne change rien à ce qui est imprimé (même arabe, même traduction) ne bloque pas, et un signe de pause qui diffère est compté à part. Les abstentions et les formules ne sont jamais obligatoires. `aqr recognize --format srt,vtt` écrit maintenant avec les mêmes écrivains. L'atelier et ses écrans viennent dans les PR suivantes.
 
