@@ -1,7 +1,13 @@
 # Exporter les sous-titres — conception et flux de correction
 
 Complète `atelier-direction.md` (tokens, composants, codes visuels, « Encre & lapis »), `phase2.md` et `revue-humaine.md`.
-**Conception seulement** : aucun code dans `web/` ni `src/`. Prototypes statiques (données factices, ouvrir par un
+**État (2026-10-23).** Conçu ici, puis construit en quatre briques : format des décisions (#96), moteur (#97), API de
+l'atelier (#98), écrans (#99 : `web/app/atelier/export/`, `docs/ARCHITECTURE-ATELIER.md` §7 bis). Écarts assumés par
+rapport à ce document : un seul type d'élément « coupure » (début ou fin manquants) au lieu de deux ; l'exclusion d'un
+passage n'est pas proposée en vérité terrain (rien d'attesté sur ce qu'on entend) ; une session d'un autre
+propriétaire se contrôle et s'exporte, mais ne se corrige que par son propriétaire ou un administrateur.
+
+**Conception d'origine : aucun code dans `web/` ni `src/`.** Prototypes statiques (données factices, ouvrir par un
 petit serveur statique ou en `file://`) : `prototype/export.html`, `prototype/corriger.html`, `prototype/export-etats.html`
 (+ `export.css`, `export.js`, `export-data.js`). Captures : `captures/export-*.png`.
 

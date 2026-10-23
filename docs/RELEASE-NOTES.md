@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Export des sous-titres dans l'atelier : vérifier, corriger à l'oreille, exporter
+Étiquettes : utilisateur, technique, décision
+PR : #99
+
+**Ce qui change.** Une session terminée a maintenant un bouton « Exporter » (ou la touche E) qui ouvre la page d'export, à deux colonnes sur ordinateur et en deux onglets sur téléphone. À gauche, le contrôle : combien de passages ambigus restent, filtrables (incertains, coupures, traductions approximatives), avec écoute en un geste. À droite, les réglages (format SRT, WebVTT, ASS mot à mot ou JSON, contenu, formules, répétitions, nom du fichier) et un aperçu en direct des premiers sous-titres. Un passage se corrige sur un écran dédié : l'onde, ce que le moteur a dit, ce qu'on entend ; on choisit un candidat, une autre référence ou une plage de mots, on exclut le passage ou on l'ignore. Une décision écoutée sur au moins 70 % de sa plage est notée « écoutée » (vérité terrain proposée). Le bouton « Forcer l'export » demande quoi faire des passages restants (les omettre, les garder avec un marqueur, prendre le premier candidat) et montre ce que chacun deviendrait. Le fichier se télécharge avec le rappel d'attribution à copier ; tout se contrôle au clavier (Espace, 1 à 9, X, Entrée, J, K, Échap), en thème clair et sombre, sans défilement horizontal à 375 px.
+
+**Pourquoi / décision.** C'est la quatrième brique de l'export (ADR-0014, `docs/design/export-sous-titres.md`) : les trois premières (#96, #97, #98) posent le format des décisions, le moteur et l'API ; celle-ci n'ajoute que l'écran, sans toucher à la liste ni à la chronologie de l'atelier (nouveaux composants dans `web/app/atelier/export/`, styles dans `web/app/export.css`, quatre variables de couleur de sous-titre ajoutées aux jetons). Le moteur renvoie en plus l'état filtré, la page du premier passage ouvert et les passages non coraniques (≤ 100) pour que l'écran ne recalcule rien. Mesuré le 2026-10-23 sur un serveur de production : la page d'une session de 23 minutes se charge sans erreur console, le contrôle répond en environ 1,4 s, l'export ASS en environ 1 s. Vérifié dans un navigateur : choix, validation, annulation, ignorer, forcer avec marqueur (le fichier téléchargé contient la décision et le marqueur), thème clair, clavier. Pas encore vérifié dans un navigateur : l'écran vu par un non-propriétaire (couvert côté API par le playbook de #98).
+
 ## 2026-10-23 — Export des sous-titres : l'API de l'atelier, contrôle, décisions et export
 Étiquettes : technique, décision
 PR : #98

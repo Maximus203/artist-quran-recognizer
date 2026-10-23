@@ -376,6 +376,14 @@ les renvoie avec `suggestion`, et `reattach` les rattache sur demande (l'ancienn
 administrateur qui corrige l'audio d'un autre n'écrit pas de vérité terrain à son nom et ne change pas l'accord du
 propriétaire). Se retire à tout moment, tout le document ou décision par décision.
 
+**Écrans.** Bouton « Exporter » dans l'en-tête d'une session terminée (ou touche `E`) → `/s/<id>/exporter` (contrôle,
+réglages, aperçu, forcer l'export, résultat et attribution) ; « Corriger » → `/s/<id>/exporter/corriger?item=<clé>` (une
+clé est `<empreinte>#<type>`, type parmi `uncertain`, `inferred`, `cut`, `approx`, `report` ; une clé invalide ramène à
+la liste). Clavier de l'écran de
+correction : `Espace` écoute, `1`–`9` choisit, `X` exclut, `Entrée` valide, `J`/`K` passage suivant ou précédent,
+`Échap` revient à la liste. Le code est dans `app/atelier/export/` ; les règles testables sans navigateur dans
+`lib/export-*.ts`. Contrôle visuel : build de production (`next build` puis `next start`), jamais `next dev`.
+
 ## Construire la vérité terrain (onglet « Vérité terrain », administrateurs)
 
 Une fois la reconnaissance terminée (ou une prédiction importée) sur un fichier **dev** du manifeste :
