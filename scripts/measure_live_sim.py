@@ -601,7 +601,7 @@ def sweep_grid(families: Sequence[str] | None = None) -> list[tuple[str, LiveCon
         configs.append(
             ("jumps", base.replace(min_words_jump=min_jump, jump_leader_posterior=leader))
         )
-    for density in (0.5, 0.6, 0.7, 0.8, 0.9):
+    for density in (0.0, 0.5, 0.6, 0.7, 0.8, 0.9):
         configs.append(("density", base.replace(min_lock_density=density)))
     if families is not None:
         unknown = set(families) - {family for family, _cfg in configs}

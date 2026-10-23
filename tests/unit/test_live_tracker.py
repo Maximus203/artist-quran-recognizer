@@ -145,7 +145,7 @@ def test_un_verset_court_se_verrouille_une_fois_entendu_en_entier(index: PrefixI
 def test_un_mot_mal_entendu_n_empeche_pas_le_verrou_et_ne_nomme_aucun_autre_verset(
     index: PrefixIndex,
 ) -> None:
-    tracker = new_tracker(index)
+    tracker = new_tracker(index, min_lock_density=0.0)  # la tolérance, sans la densité de départ
     events = flat(feed(tracker, Clock().say("nn oo x9999999 qq")))
     locks = of_type(events, Locked)
     assert [lock.ref for lock in locks] == [ref("113:2")]
@@ -159,7 +159,7 @@ def test_un_mot_avale_est_toleree(index: PrefixIndex) -> None:
 
 
 def test_un_mot_en_trop_est_tolere(index: PrefixIndex) -> None:
-    tracker = new_tracker(index)
+    tracker = new_tracker(index, min_lock_density=0.0)  # la tolérance, sans la densité de départ
     events = flat(feed(tracker, Clock().say("nn oo x8888888 pp qq")))
     assert [lock.ref for lock in of_type(events, Locked)] == [ref("113:2")]
 
@@ -260,13 +260,15 @@ def test_une_parole_etrangere_qui_ressemble_au_coran_n_est_pas_un_saut(index: Pr
     assert not of_type(events, Locked)
 
 
-def test_des_mots_epars_noyes_dans_la_parole_ne_verrouillent_qu_avec_la_densite_par_defaut_nulle(
+def test_des_mots_epars_noyes_dans_la_parole_ne_verrouillent_pas_au_reglage_de_depart(
     index: PrefixIndex,
 ) -> None:
     # trois mots du verset sur cinq entendus : le reste est de la parole sans rapport
     speech = "nn x1234567 oo x2345678 pp"
     default = flat(feed(new_tracker(index), Clock().say(speech)))
-    assert [lock.ref for lock in of_type(default, Locked)] == [ref("113:2")]  # état de départ
+    assert not of_type(default, Locked)  # densité de départ 0,9 : 3 mots sur 5, pas une récitation
+    open_ = flat(feed(new_tracker(index, min_lock_density=0.0), Clock().say(speech)))
+    assert [lock.ref for lock in of_type(open_, Locked)] == [ref("113:2")]  # sans la condition
     guarded = flat(feed(new_tracker(index, min_lock_density=0.8), Clock().say(speech)))
     assert not of_type(guarded, Locked)  # 3 mots sur 5 : des candidats, pas un verset nommé
 
@@ -274,6 +276,14 @@ def test_des_mots_epars_noyes_dans_la_parole_ne_verrouillent_qu_avec_la_densite_
 def test_une_recitation_dense_verrouille_meme_avec_la_densite_exigee(index: PrefixIndex) -> None:
     events = flat(feed(new_tracker(index, min_lock_density=0.8), Clock().say("nn oo pp")))
     assert [lock.ref for lock in of_type(events, Locked)] == [ref("113:2")]
+
+
+def test_un_mot_mal_entendu_sur_quatre_ne_verrouille_pas_au_reglage_de_depart(
+    index: PrefixIndex,
+) -> None:
+    # le prix assumé de la densité 0,9 : 3 mots sur 4 ne suffisent pas, on attend (I3 avant le rappel)
+    events = flat(feed(new_tracker(index), Clock().say("nn oo x9999999 qq")))
+    assert not of_type(events, Locked)
 
 
 def test_un_premier_mot_avale_de_la_suite_attendue_n_est_pas_un_saut(index: PrefixIndex) -> None:
@@ -574,7 +584,7 @@ def test_des_mots_sirs_verrouillent_avec_le_meme_seuil(index: PrefixIndex) -> No
 def test_la_confiance_moyenne_se_mesure_sur_les_seuls_mots_qui_correspondent(
     index: PrefixIndex,
 ) -> None:
-    tracker = new_tracker(index, min_lock_confidence=0.7)
+    tracker = new_tracker(index, min_lock_confidence=0.7, min_lock_density=0.0)
     events: list[LiveEvent] = []
     for text, confidence in (("nn", 0.9), ("oo", 0.9), ("x7654321", 0.1), ("pp", 0.9), ("qq", 0.9)):
         events += _say_with_confidence(tracker, text, confidence)

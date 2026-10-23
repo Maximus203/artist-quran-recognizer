@@ -147,7 +147,7 @@ def test_le_balayage_couvre_l_a_priori_le_minimum_de_mots_et_le_seuil() -> None:
 
 def test_le_balayage_couvre_la_densite_des_mots_du_verrou() -> None:
     density = [c for family, c in m.sweep_grid(["density"])]
-    assert {c.min_lock_density for c in density} == {0.5, 0.6, 0.7, 0.8, 0.9}
+    assert {c.min_lock_density for c in density} == {0.0, 0.5, 0.6, 0.7, 0.8, 0.9}
 
 
 def test_le_balayage_peut_se_limiter_a_des_familles() -> None:
@@ -199,7 +199,9 @@ def _run(index, label: str, truth_ref: str, text: str):
 
     words = tuple(Clock().say(text))
     scenario = Scenario(label, "sequence", words, 6.0, (TruthVerse(ref(truth_ref), 0.0, 2.0),), ())
-    events = run_stream(index, LiveConfig(), scenario.words, scenario.duration_s)
+    events = run_stream(
+        index, LiveConfig().replace(min_lock_density=0.0), scenario.words, scenario.duration_s
+    )
     result = evaluate(scenario, events, index)
     return {"kind": "sequence", "id": label}, scenario, events, result
 

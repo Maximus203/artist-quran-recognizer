@@ -61,3 +61,9 @@ def test_la_config_se_serialise_pour_le_rapport() -> None:
     data = LiveConfig().as_dict()
     assert data["prior"] == 0.9
     assert LiveConfig(**data) == LiveConfig()
+
+
+def test_la_densite_des_mots_du_verrou_vaut_0_9_au_depart() -> None:
+    # décision du coordinateur du 2026-10-23 (I3 : la précision prime sur le rappel) : seule valeur
+    # du balayage qui supprime le faux verrou 67:16 et les verrous sur la parole réelle
+    assert LiveConfig().min_lock_density == 0.9

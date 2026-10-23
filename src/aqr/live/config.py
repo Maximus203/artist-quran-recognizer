@@ -89,10 +89,12 @@ class LiveConfig:
     min_exact_share: float = 0.0
     """Part des mots exigés (`min_words_lock`) qui doivent être exacts, pas seulement proches.
     0 = non utilisée."""
-    min_lock_density: float = 0.0
+    min_lock_density: float = 0.9
     """Part des mots entendus dans le passage qui doivent correspondre au verset pour le verrouiller
     (mots du verset / mots entendus). 0 = non utilisée. Des mots épars du verset noyés dans de la
-    parole sans rapport ne font pas une récitation."""
+    parole sans rapport ne font pas une récitation. 0,9 : valeur de départ de simulation (décision
+    du 2026-10-23, I3), la seule du balayage qui supprime le faux verrou mesuré et les verrous sur
+    la parole ; coût : 54 verrous sur 376 (docs/evaluation/live-etape1-2026-10-23.md)."""
     unlock_floor: float = 0.5
     """Un verrou dont le posterior retombe sous ce seuil est retiré (`Revision`)."""
     context_max_candidates: int = 40
