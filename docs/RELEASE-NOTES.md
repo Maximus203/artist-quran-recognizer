@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — La carte du passage actif reste vide quand rien n'est détecté
+Étiquettes : utilisateur
+PR : -
+
+**Ce qui change.** Pendant la lecture, quand aucun verset n'est localisé à cet instant (silence, parole non coranique ou abstention), la carte « Passage actif » reste vide au lieu d'afficher « Aucun verset localisé à cet instant » ou l'explication d'une abstention à chaque trou. Sa hauteur est conservée pour que la page ne saute pas. L'explication d'une abstention reste affichée quand on la choisit dans la liste des intervalles.
+
+**Pourquoi / décision.** Demande du propriétaire : un message répété à chaque pause est du bruit, puisqu'un verset va suivre. Une abstention choisie volontairement reste un diagnostic utile.
+
 ## 2026-10-23 — Dataset du lot 1 repassé en privé
 Étiquettes : décision, technique
 PR : -
