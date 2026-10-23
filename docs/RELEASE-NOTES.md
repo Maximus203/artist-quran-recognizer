@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Courbe de vitesse : réécouter un audio accéléré n'apporte rien à la cascade
+Étiquettes : technique, décision
+PR : #82
+
+**Ce qui change.** Aucun changement de comportement : le moteur ne réécoute pas les fenêtres douteuses sur un audio accéléré. Le dépôt gagne la mesure qui a permis d'en décider : `scripts/measure_speed.py` (témoins EveryAyah étirés puis accélérés, vrais fichiers lents accélérés de ×1,25 à ×2,5) et `aqr.eval.speed_curve` (grille, remise à l'échelle des temps, estimateurs de débit sans vérité, règle de décision), avec leurs tests.
+
+**Pourquoi / décision.** La règle écrite avant la mesure n'est pas satisfaite : avec le facteur ESTIMÉ, le rappel des témoins gagne +11,0 points à ×0,4 et +21,9 à ×0,3 sans faux verset, mais un fichier de contrôle (`lot1-09`) reçoit un verset nouveau (11:105, probablement une vraie citation) et, mesuré dans la cascade complète, un prototype n'ajoute aucun verset distinct sur 7 fichiers. Découverte : l'optimum de compensation est à une vitesse nette de ×1,2 à ×1,6, pas à l'inverse de l'étirement. Le prototype reste sur la branche `wip/etage-vitesse`, non fusionnée. `docs/evaluation/courbe-vitesse-2026-10-23.md`.
+
 ## 2026-10-23 — Glisser pour naviguer dans la timeline, tracé qui se ferme tout seul
 Étiquettes : utilisateur
 PR : -
