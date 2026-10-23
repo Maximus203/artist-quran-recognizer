@@ -41,9 +41,11 @@ vérification acceptée n'est pas une vérité terrain.
 Trois sortes d'intervalles :
 - `{"kind":"verse","ref":"42:3","words":[1,10],"partial":false,"status":"recognized|inferred|uncertain",
   "t":[a,b]|null,"time_interpolated":false,"confidence":0.97,"candidates":[],"repetition":false,
-  "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse"}|null,
+  "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse|fragment",
+  "segments"?,"fragment"?}|null,
   "word_times"?:[[a,b],…],"word_times_source"?:"ctc-alignment|interpolated","promoted_by"?:"neighbor"}`
-  (les trois derniers champs sont **additifs** : voir « Temps au mot » ci-dessous)
+  (`segments`, `fragment` : voir « Traduction par passage » plus bas ; les trois derniers champs sont
+  **additifs** : voir « Temps au mot » ci-dessous)
 - `{"kind":"non_quran","label":"basmala|istiadha|takbir|amin|…","t":[a,b]}` ; champs **additifs** (l'ancien
   format `{kind, label, t}` reste valide, le schéma reste `aqr.recognition/1`) :
   - **basmala** (d'ouverture d'une sourate, ou un 1:1 isolé non suivi de 1:2 ; dans Al-Fatiha entière, 1:1 reste
@@ -69,6 +71,56 @@ Trois sortes d'intervalles :
     `label_ar` est la constante du libellé et que la traduction garde sa provenance (id, version, attribution,
     `scope: "verse"`). Le contenu de la traduction n'est pas comparé (comme pour les versets).
 - `{"kind":"abstention","reason":"silence|empty_transcript|no_candidate|below_threshold","t":[a,b],"best_score":0.6}`
+
+## Traduction par passage : `segments`, `fragment`, `scope` (additif)
+
+`aqr.recognition/1` reste lisible : un lecteur qui ignore ces champs lit la sortie comme avant.
+
+Pour un verset **partiel** (le récitant ne dit qu'une partie du verset, s'arrête, reprend), l'arabe n'affiche que
+les mots entendus (`words`). La traduction doit suivre : **n'afficher que la partie qui correspond à l'arabe
+affiché**. L'objet `translation` d'un intervalle `verse` (et de la basmala) garde ses champs, `text` y est
+**toujours le verset entier, tel que QuranEnc le livre** (I2), et gagne :
+
+- `segments` : `[{"words":[a,b],"text":"…"}, …]`, des tranches **consécutives du texte d'origine** (jamais
+  réécrit : `text[start:end]` ; les tranches rejointes redonnent la traduction à l'espace de jonction près) qui
+  couvrent **tout** le verset, plages de mots contiguës et ordonnées (`a`, `b` = numéros de mots du verset, ceux de
+  `words`). C'est ce qu'il faut pour le surlignage en direct : le mot arabe `n` appartient au segment dont la
+  plage le contient. Les marques de note (`[1]`) restent attachées à la tranche qui les précède. Une basmala
+  porte aussi ses `segments`. Absent si la traduction n'a pas de découpage valide (voir plus bas) ;
+- `scope` : `"fragment"` quand le découpage est jugé fiable pour la plage affichée, sinon `"verse"` (repli
+  honnête : la traduction entière, à étiqueter « Traduction du verset entier ») ;
+- `fragment` (présent si et seulement si `scope == "fragment"`) :
+  `{"words":[a,b],"text":"…","approximate":false,"ellipsis_before":true,"ellipsis_after":true}`. Réunion des
+  segments qui recouvrent la plage affichée (un segment de bord à peine recouvert, moins de la moitié de ses
+  mots, est écarté) ; `words` suit toujours les frontières des segments. `approximate` : le fragment ne couvre
+  pas exactement la plage affichée. `ellipsis_before` / `ellipsis_after` : le fragment ne commence pas au début /
+  ne finit pas à la fin du verset — **l'interface ajoute « … »**, `text` n'est jamais modifié ;
+- intervalle qui couvre le verset entier : `scope` reste `"verse"`, pas de `fragment` (`segments` reste présent) ;
+- **à afficher** : `scope == "fragment"` → `fragment.text` ; sinon `text` (étiqueté verset entier).
+
+Exemple réel (session de revue, 11:61 mots 10-17 ; texte arabe lu dans le corpus, `segments` abrégé) :
+`"translation":{"text":"Et (Nous avons envoyé) au Thamûd, … (aux appels).\"","translation_id":"french_hameedullah",
+"version":"quranenc.com","attribution":"QuranEnc.com — …","scope":"fragment",
+"segments":[{"words":[1,2],"text":"Et (Nous avons envoyé) au Thamûd,"},{"words":[3,4],"text":"leur frère Sâlih,"}, …,
+{"words":[9,14],"text":"Vous n’avez point de divinité en dehors de Lui."},{"words":[15,17],"text":"De la terre Il vous a
+créé,"}, …],"fragment":{"words":[9,17],"text":"Vous n’avez point de divinité en dehors de Lui. De la terre Il vous a
+créé,","approximate":true,"ellipsis_before":true,"ellipsis_after":true}}`.
+
+**D'où viennent les frontières.** Un fichier par traduction, `data/translation-segments/<translation_id>.json`,
+calculé **hors ligne** par `scripts/build_translation_segments.py` (algorithme déterministe, aucun modèle
+génératif : ADR-0001 ; méthode : ADR-0012 ; mesures : `docs/evaluation/traduction-par-passage-2026-10-23.md`).
+Il ne contient ni texte coranique ni traduction : des indices de mots, des offsets de caractères, des confiances
+et l'**empreinte SHA-256** du texte français de chaque verset. Si la traduction QuranEnc change, l'empreinte ne
+correspond plus : le verset n'a plus de `segments` ni de `fragment` (repli sur le verset entier), jamais un
+décalage silencieux ; un fichier absent ou illisible a le même effet. Dossier : `AQR_SEGMENTS_DIR` (défaut
+`data/translation-segments`).
+
+**Ce que la précision garantit — et pas.** Une frontière est sûre **à un mot près** (un mot de liaison peut aller
+d'un côté ou de l'autre) : exacte dans ≈ 90 % des frontières relues, jamais plus d'un mot d'écart dans 99,4 %
+d'entre elles. Le français ne suit pas toujours l'ordre de l'arabe : une inversion produit une frontière fausse
+(1 cas sur 169 relues, voir l'évaluation). Pour un mot précis, le surlignage peut donc se tromper d'un mot à la
+jonction de deux segments. Le lecteur Python (`aqr.eval.recognition`) valide ces champs : plages contiguës,
+tranches qui redonnent le texte (I2), fragment qui suit les frontières, `scope` cohérent avec `fragment`.
 
 ## Ce que chaque statut AFFIRME (I3, I5)
 - `recognized` : le texte entendu ressemble au verset au-dessus du seuil du décodeur (seul, ou par la suite de

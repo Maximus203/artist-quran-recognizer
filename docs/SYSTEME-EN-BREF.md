@@ -47,6 +47,7 @@ du 2026-10-19, `docs/PLAN.md`) ; le projet sera publié en open source sous une 
   6. DÉCIDER       chaque passage reçoit un statut : reconnu / supposé / incertain / abstention
         |
   7. RESTITUER     texte arabe du corpus + traduction QuranEnc + temps (début, fin, parfois au mot)
+                   (verset partiel : la traduction est découpée pour ne montrer que les mots affichés, ADR-0012)
         |
   JSON `aqr.recognition/1`  (+ SRT / VTT)  →  atelier web : onde, pistes, revue humaine
 ```

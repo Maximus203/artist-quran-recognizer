@@ -326,6 +326,14 @@ def test_basmala_translation_keeps_its_provenance() -> None:
             )
 
 
+def test_translation_scope_fragment_is_accepted_when_the_text_stays_whole() -> None:
+    repo = FakeCorpus({**FakeCorpus()._texts, BASMALA_REF: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ"})
+    fragment = {**_TRANSLATION, "scope": "fragment"}
+    assert_matches_corpus(
+        _doc(_basmala(repo, translation=fragment), _verse(REF, repo)), repo, surah=112
+    )
+
+
 def test_a_formula_never_carries_a_translation(repo: FakeCorpus) -> None:
     takbir = {
         "kind": "non_quran",
