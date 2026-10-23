@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Dataset du lot 1 repassé en privé
+Étiquettes : décision, technique
+PR : -
+
+**Ce qui change.** Le dataset Hugging Face qui héberge les 12 audios du lot 1 n'est plus public : il est repassé en privé à la demande du mainteneur (vérifié sans compte : l'API, la page et les fichiers répondent HTTP 401). La lecture sans jeton de la révision épinglée ne fonctionne donc plus ; un agent cloud qui a besoin du lot doit disposer d'un jeton de lecture.
+
+**Pourquoi / décision.** Ces enregistrements sont des voix de tiers dont les droits ne sont pas établis (docs/data-lots/RIGHTS.md) : les rendre publics était une redistribution contraire à la mention « usage interne d'évaluation uniquement ». Les deux autres décisions de RIGHTS.md (retirer certains enregistrements du dataset, mention de droits) restent ouvertes.
+
 ## 2026-10-23 — Les temps au mot ne se chevauchent plus
 Étiquettes : technique
 PR : #78
