@@ -17,6 +17,13 @@ PR : #94
 
 **Pourquoi / décision.** Le mainteneur ressentait des saccades en naviguant entre versets sur un audio de 2 h. Mesure avant correction : 22 400 nœuds DOM, 176 tâches longues pour 50 sauts, mise en page de 93 ms par saut ; 86 % du coût venait des 6 300 boutons de segments, le reste de la liste et de la mise en page de toute la page à chaque image de lecture. Règle retenue : le DOM ne dépend que de l'écran (`docs/ARCHITECTURE-ATELIER.md` §6 bis), par des fonctions pures testées. Pas de bibliothèque de virtualisation : une liste à hauteur de ligne fixe et un index temporel se codent en 150 lignes testées, et le fenêtrage de la timeline (fusion de blocs, fenêtre de rendu) n'existe dans aucune bibliothèque. Reste à faire : une mise en page de 5 ms à chaque mise à jour du texte de position sur un écran 240 Hz (voir la PR #94).
 
+## 2026-10-23 — README allégé : l'atelier d'abord, les détails techniques en bas
+Étiquettes : utilisateur
+PR : #95
+
+**Ce qui change.** Le README met l'atelier web en avant : une démonstration animée en haute définition (WebP de 1800 px de large, 3,7 Mo, remplaçant le GIF de 426 px devenu flou ; une version MP4 sans son est liée dessous), quelques lignes sur ce que fait l'atelier, un démarrage court et l'appel à contribuer. Le moteur, les règles, les mesures, la feuille de route, l'organisation du dépôt et les attributions passent en bas, dans des sections repliables. Aucun code ne change.
+
+**Pourquoi / décision.** La première version du README était trop technique pour une page d'accueil : le lecteur doit voir l'atelier d'abord. Le contenu technique n'est pas supprimé, il est replié.
 
 ## 2026-10-23 — Dépôt public : README, contribution, tickets et crédits
 Étiquettes : utilisateur, technique
