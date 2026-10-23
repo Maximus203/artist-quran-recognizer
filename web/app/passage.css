@@ -446,3 +446,54 @@
   left: 0;
   right: 0;
 }
+
+/* ── Calage à l'oreille ────────────────────────────────────────────────────────
+ * Panneau sous les interrupteurs de la carte : curseur du décalage audio (ms) entre deux boutons
+ * − / +, valeur lisible, actions. Cibles ≥ 44 px au tactile (tokens --h-sm / --h-md).
+ */
+.calibrate {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  display: grid;
+  gap: var(--sp-3);
+}
+.calibrate-title {
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+.calibrate-help {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  line-height: var(--lh-read);
+}
+.calibrate-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "minus range plus"
+    "value value value";
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+.calibrate-line > [data-testid="calibrate-minus"] {
+  grid-area: minus;
+}
+.calibrate-line > input[type="range"] {
+  grid-area: range;
+}
+.calibrate-line > [data-testid="calibrate-plus"] {
+  grid-area: plus;
+}
+.calibrate-value {
+  grid-area: value;
+  justify-self: center;
+  font: 600 var(--fs-lg) / 1 var(--font-mono);
+}
+.calibrate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}

@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Décalage audio : le surlignage se cale à l'oreille
+Étiquettes : utilisateur, technique
+PR : #101
+
+**Ce qui change.** Si le mot surligné devance la voix que tu entends (écouteurs sans fil surtout), un nouveau réglage « Décalage audio » (Compte, Préférences, Affichage) retarde le surlignage de −500 à +500 ms, par pas de 10, et se retrouve sur tous tes appareils. Sous le passage actif, le bouton « Caler à l'oreille » lit le début du passage en boucle (8 secondes au plus) pendant que le curseur, ou les boutons − et +, déplacent le surlignage en direct ; « Terminé » ou Échap referme et arrête la lecture. Le décalage retarde le mot arabe, le fragment de traduction qui le suit et le changement de passage, seulement pendant la lecture : à l'arrêt, un clic sur un mot garde ce mot. L'audio, l'onde, la tête de lecture, les temps du moteur et l'export ne changent pas.
+
+**Pourquoi / décision.** Mesuré le 2026-10-23 sur un build de production dans Chrome, sur les trois sessions au micro signalées : le lecteur lit la copie d'écoute WAV du moteur (`engine-pcm`, durées identiques à celles du moteur : 20,1 s, 136,5 s, 35,4 s) et le mot surligné suit `audio.currentTime` avec un retard de 1 à 40 ms (médiane 6 à 18 ms, 5 à 30 transitions par passage), jamais une avance. Le code n'ajoute donc aucune avance : celle qu'on entend est la latence de sortie de l'appareil d'écoute, que le navigateur ne mesure pas, d'où un réglage par compte plutôt qu'une correction automatique. Avec le réglage à +200, −150 et +500 ms, le retard mesuré devient 206, −136 et 510 ms (médianes). Le calcul est une fonction pure (`web/lib/audio-offset.ts`, `liveAt` dans `web/lib/passage.ts`) ; la préférence `audioOffsetMs` est validée par le schéma commun des préférences.
+
 ## 2026-10-23 — Les scripts d'évaluation tournent aussi sous Windows
 Étiquettes : technique
 PR : #100

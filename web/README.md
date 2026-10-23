@@ -223,6 +223,7 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `arabicSize` | entier 28–72, multiple de 4, ou `null` | `null` (taille du thème) |
 | `translation` | booléen | `true` |
 | `liveHighlight` | booléen : surligner en lecture le mot arabe récité et le fragment de traduction correspondant | `true` |
+| `audioOffsetMs` | entier −500 à 500, multiple de 10 : retarde le surlignage en lecture (latence de sortie des écouteurs sans fil) ; ne touche ni l'audio, ni l'onde, ni l'export | `0` |
 | `visibleSpanSeconds` | `600` · `120` · `30` · `10` · `null` (fichier entier) | `null` |
 | `followPlayback` | booléen | `true` |
 | `leftPanelOpen` · `rightPanelOpen` | booléen ou `null` | `null` (selon la largeur d'écran) |

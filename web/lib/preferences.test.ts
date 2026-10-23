@@ -34,6 +34,7 @@ describe("préférences : défauts centralisés", () => {
         "arabicSize",
         "translation",
         "liveHighlight",
+        "audioOffsetMs",
         "visibleSpanSeconds",
         "followPlayback",
         "leftPanelOpen",
@@ -87,6 +88,22 @@ describe("préférences : fusion partielle", () => {
     expect(
       preferencesPatchSchema.safeParse({ liveHighlight: false }).success,
     ).toBe(true);
+  });
+
+  it("« Décalage audio » : 0 par défaut, mémorisé par compte, valeurs hors pas refusées", () => {
+    expect(readPreferences(db, userId).preferences.audioOffsetMs).toBe(0);
+    const view = patchPreferences(db, userId, { audioOffsetMs: -180 });
+    expect(view.preferences.audioOffsetMs).toBe(-180);
+    const other = createUser(db, { username: "Fatou", passwordHash: "x" }).id;
+    expect(readPreferences(db, other).preferences.audioOffsetMs).toBe(0);
+    for (const bad of [-510, 510, 15, 0.5, "100", null])
+      expect(
+        preferencesPatchSchema.safeParse({ audioOffsetMs: bad }).success,
+      ).toBe(false);
+    for (const ok of [-500, 0, 10, 500])
+      expect(
+        preferencesPatchSchema.safeParse({ audioOffsetMs: ok }).success,
+      ).toBe(true);
   });
 
   it("accepte null pour une clé automatique, et le conserve", () => {

@@ -1,22 +1,27 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { FORMULA_NOTICE } from "@/lib/formulas";
 import { formatTime, type Interval } from "@/lib/recognition";
+import { calibrationWindow } from "@/lib/audio-offset";
 import {
   describePassage,
-  visibleIndex,
+  liveAt,
   type PassageModel,
   type TranslationView,
 } from "@/lib/passage";
 import {
-  currentWordIndex,
   seekTimeForWord,
   verseWordNumber,
   wordTimesOf,
 } from "@/lib/live-highlight";
 import { activePartIndex } from "@/lib/translation-fragment";
 import type { Store } from "@/lib/mini-store";
+import {
+  CalibrationButton,
+  CalibrationPanel,
+  type CalibrationView,
+} from "./ear-calibration";
 import { useStoreValue } from "./hooks";
 import { Icon } from "./icons";
 import { LiveArabic, LiveTranslation } from "./live-text";
@@ -38,6 +43,7 @@ type Props = {
   showTranslation: boolean;
   onToggleTranslation: () => void;
   live: LiveView;
+  calibration: CalibrationView;
   /** Police arabe + A− / A+ (le sélecteur lui-même vit dans `FontPicker`). */
   tools: React.ReactNode;
   onListen: (range: [number, number]) => void;
@@ -407,8 +413,12 @@ export function PassageCard(props: Props) {
             <i />
             Afficher la traduction
           </button>
+          {props.live.enabled ? (
+            <CalibrationButton view={props.calibration} />
+          ) : null}
         </div>
       </div>
+      <CalibrationPanel view={props.calibration} />
     </section>
   );
 }
@@ -419,7 +429,7 @@ export function PassageCard(props: Props) {
  * de lecture : un retour en arrière (seek, boucle, reprise) se recale à l'image suivante.
  */
 export function LivePassage(
-  props: Omit<Props, "item" | "fadeKey" | "live"> & {
+  props: Omit<Props, "item" | "fadeKey" | "live" | "calibration"> & {
     store: Store<PlayerState>;
     intervals: readonly Interval[];
     selectedIndex: number | null;
@@ -427,8 +437,14 @@ export function LivePassage(
     /** Préférence « Surligner en direct » (enregistrée côté serveur). */
     liveHighlight: boolean;
     onToggleLive: () => void;
+    /** Préférence « Décalage audio » (ms) : retarde le surlignage, jamais l'audio. */
+    audioOffsetMs: number;
+    onAudioOffset: (ms: number) => void;
     /** Place le lecteur à cet instant (clic sur un mot arabe). */
     onSeek: (time: number) => void;
+    /** Lit cette plage en boucle (calage à l'oreille) / arrête cette lecture. */
+    onLoop: (range: [number, number]) => void;
+    onStopLoop: () => void;
   },
 ) {
   const {
@@ -438,20 +454,37 @@ export function LivePassage(
     sessionId,
     liveHighlight,
     onToggleLive,
+    audioOffsetMs,
+    onAudioOffset,
     onSeek,
+    onLoop,
+    onStopLoop,
     ...rest
   } = props;
+  // Calage à l'oreille : le verset épinglé reste affiché pendant que le curseur déplace le surlignage.
+  const [pinned, setPinned] = useState<number | null>(null);
+  useEffect(() => setPinned(null), [sessionId]);
+  const offsetMs = liveHighlight ? audioOffsetMs : 0;
   // Rien de détecté (silence, abstention non choisie) : la carte reste vide.
-  const index = useStoreValue(store, (s) =>
-    visibleIndex(intervals, selectedIndex, s.time),
+  const index = useStoreValue(
+    store,
+    (s) =>
+      liveAt(intervals, selectedIndex, s.time, {
+        offsetMs,
+        playing: s.playing,
+        pin: pinned,
+      }).index,
   );
   const item = index >= 0 ? intervals[index] : null;
-  const wordIndex = useStoreValue(store, (s) => {
-    if (!liveHighlight) return -1;
-    const shown = visibleIndex(intervals, selectedIndex, s.time);
-    const times = shown >= 0 ? wordTimesOf(intervals[shown]) : null;
-    return times ? currentWordIndex(times, s.time) : -1;
-  });
+  const wordIndex = useStoreValue(store, (s) =>
+    liveHighlight
+      ? liveAt(intervals, selectedIndex, s.time, {
+          offsetMs,
+          playing: s.playing,
+          pin: pinned,
+        }).wordIndex
+      : -1,
+  );
   const playing = useStoreValue(store, (s) => s.playing);
   const onSeekWord = useCallback(
     (word: number) => {
@@ -471,10 +504,58 @@ export function LivePassage(
     }),
     [liveHighlight, playing, wordIndex, onSeekWord, onToggleLive],
   );
+  const loopRange = calibrationWindow(item?.kind === "verse" ? item.t : null);
+  const closeCalibration = useCallback(() => {
+    setPinned(null);
+    onStopLoop();
+  }, [onStopLoop]);
+  // Le calage n'a de sens que pendant un surlignage actif.
+  useEffect(() => {
+    if (!liveHighlight && pinned !== null) closeCalibration();
+  }, [liveHighlight, pinned, closeCalibration]);
+  const calibration = useMemo<CalibrationView>(
+    () => ({
+      available: loopRange !== null,
+      open: pinned !== null,
+      offsetMs: audioOffsetMs,
+      playing,
+      onOpen: () => {
+        if (index < 0 || !loopRange) return;
+        setPinned(index);
+        onLoop(loopRange);
+      },
+      onClose: closeCalibration,
+      onOffset: onAudioOffset,
+      onToggleLoop: () => {
+        if (playing) {
+          onStopLoop();
+          return;
+        }
+        const target = pinned !== null ? intervals[pinned] : null;
+        const range = calibrationWindow(
+          target?.kind === "verse" ? target.t : null,
+        );
+        if (range) onLoop(range);
+      },
+    }),
+    [
+      loopRange,
+      pinned,
+      audioOffsetMs,
+      playing,
+      index,
+      intervals,
+      onLoop,
+      closeCalibration,
+      onAudioOffset,
+      onStopLoop,
+    ],
+  );
   return (
     <PassageCard
       {...rest}
       live={live}
+      calibration={calibration}
       item={item}
       fadeKey={`${sessionId}:${index}`}
     />

@@ -336,6 +336,15 @@ export default function ReviewApp() {
     timelineRef.current?.centerOn(start);
     player.playRange(start, end);
   };
+  // Calage à l'oreille : un bout du passage en boucle, identité stable (lue par la carte mémorisée).
+  const playRange = player.playRange;
+  const loopPassage = useCallback(
+    ([start, end]: [number, number]) => {
+      timelineRef.current?.centerOn(start);
+      playRange(start, end, { loop: true });
+    },
+    [playRange],
+  );
 
   /* ── import (audio et vidéo, plusieurs fichiers) ── */
   const visibility: Visibility = prefs.defaultVisibility;
@@ -777,7 +786,11 @@ export default function ReviewApp() {
                     onToggleLive={() =>
                       update({ liveHighlight: !prefs.liveHighlight })
                     }
+                    audioOffsetMs={prefs.audioOffsetMs}
+                    onAudioOffset={(audioOffsetMs) => update({ audioOffsetMs })}
                     onSeek={player.seek}
+                    onLoop={loopPassage}
+                    onStopLoop={player.stopPlayback}
                     tools={fontTools}
                     onListen={listenPassage}
                   />

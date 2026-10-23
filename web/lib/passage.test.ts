@@ -6,6 +6,7 @@ import {
   intervalLabel,
   intervalStateLabel,
   intervalStyle,
+  liveAt,
   passageToShow,
   shownIndex,
   splitNoteMarkers,
@@ -369,5 +370,79 @@ describe("passageToShow : la carte reste vide quand rien n'est détecté", () =>
   it("l'abstention choisie n'est plus montrée quand la lecture en sort", () => {
     expect(passageToShow(intervals, 2, 15)).toBe(intervals[1]);
     expect(passageToShow(intervals, 2, 5)).toBeNull();
+  });
+});
+
+describe("liveAt : passage et mot entendus, avec le décalage audio", () => {
+  const timed = (over: Record<string, unknown> = {}) =>
+    verse({
+      t: [10, 20],
+      words: [1, 3],
+      text: "أَلَمْ تَرَ كَيْفَ",
+      word_times: [
+        [10, 12],
+        [12, 15],
+        [15, 20],
+      ],
+      word_times_source: "ctc-alignment",
+      ...over,
+    });
+  const intervals: Interval[] = [timed(), verse({ t: [20, 30], ref: "2:256" })];
+  const on = (offsetMs: number) => ({ offsetMs, playing: true });
+
+  it("sans décalage : le mot à l'instant de lecture (comportement d'origine)", () => {
+    expect(liveAt(intervals, null, 12.1, on(0))).toEqual({
+      index: 0,
+      wordIndex: 1,
+    });
+  });
+
+  it("décalage positif : le mot suivant n'est surligné qu'après le décalage", () => {
+    expect(liveAt(intervals, null, 12.1, on(200)).wordIndex).toBe(0);
+    expect(liveAt(intervals, null, 12.25, on(200)).wordIndex).toBe(1);
+  });
+
+  it("le passage aussi est retardé : la carte change quand le son change", () => {
+    expect(liveAt(intervals, null, 20.1, on(300)).index).toBe(0);
+    expect(liveAt(intervals, null, 20.35, on(300)).index).toBe(1);
+  });
+
+  it("à l'arrêt, le décalage ne s'applique pas : un clic sur un mot garde ce mot", () => {
+    expect(
+      liveAt(intervals, null, 12, { offsetMs: 300, playing: false }),
+    ).toEqual({ index: 0, wordIndex: 1 });
+  });
+
+  it("décalage négatif : le surlignage avance", () => {
+    expect(liveAt(intervals, null, 11.9, on(-200)).wordIndex).toBe(1);
+  });
+
+  it("épinglé (calage à l'oreille) : le passage reste affiché même avant l'arrivée du son", () => {
+    // 10,05 s au lecteur, décalage 300 ms : l'oreille est encore dans le silence d'avant
+    const pinned = { offsetMs: 300, playing: true, pin: 0 };
+    expect(liveAt(intervals, null, 10.05, pinned)).toEqual({
+      index: 0,
+      wordIndex: -1,
+    });
+    expect(liveAt(intervals, null, 12.5, pinned)).toEqual({
+      index: 0,
+      wordIndex: 1,
+    });
+    // épingle invalide : retombe sur le comportement normal
+    expect(
+      liveAt(intervals, null, 25, { offsetMs: 0, playing: true, pin: 7 }).index,
+    ).toBe(1);
+  });
+
+  it("sans temps de mots valides ou hors passage : pas de mot, jamais un mot deviné", () => {
+    const sans: Interval[] = [timed({ word_times: undefined })];
+    expect(liveAt(sans, null, 12, on(100))).toEqual({
+      index: 0,
+      wordIndex: -1,
+    });
+    expect(liveAt(intervals, null, 99, on(100))).toEqual({
+      index: -1,
+      wordIndex: -1,
+    });
   });
 });
