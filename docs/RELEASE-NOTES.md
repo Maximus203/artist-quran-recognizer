@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — README allégé : l'atelier d'abord, les détails techniques en bas
 Étiquettes : utilisateur
-PR : #94
+PR : #95
 
 **Ce qui change.** Le README met l'atelier web en avant : une démonstration animée en haute définition (WebP de 1800 px de large, 3,7 Mo, remplaçant le GIF de 426 px devenu flou ; une version MP4 sans son est liée dessous), quelques lignes sur ce que fait l'atelier, un démarrage court et l'appel à contribuer. Le moteur, les règles, les mesures, la feuille de route, l'organisation du dépôt et les attributions passent en bas, dans des sections repliables. Aucun code ne change.
 
