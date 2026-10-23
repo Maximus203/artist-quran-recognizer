@@ -81,6 +81,28 @@ function measure() {
         );
     }
   }
+  // Le contenu d'une carte reste dans la carte (hors zones défilantes voulues et éléments positionnés).
+  for (const card of document.querySelectorAll(".card, .tile")) {
+    const cr = card.getBoundingClientRect();
+    if (!cr.width) continue;
+    for (const el of card.querySelectorAll("*")) {
+      const r = el.getBoundingClientRect();
+      if (!r.width || r.right <= cr.right + 0.5) continue;
+      let clipped = false;
+      for (let a = el; a && a !== card; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.position === "absolute" || cs.position === "fixed")
+          clipped = true;
+        if (cs.overflowX !== "visible") clipped = clipped || a !== el;
+      }
+      if (!clipped) {
+        out.push(
+          `carte: ${el.tagName.toLowerCase()}.${String(el.className).slice(0, 24)} sort de sa carte (${Math.round(r.right)} > ${Math.round(cr.right)})`,
+        );
+        break;
+      }
+    }
+  }
   return [...new Set(out)];
 }
 

@@ -229,11 +229,7 @@ export function PerfView({ initialMine = false }: { initialMine?: boolean }) {
     );
   const empty = model.analyses === 0;
   return (
-    <div
-      className="page"
-      data-testid="perf-view"
-      style={{ display: "grid", gap: "var(--sp-5)" }}
-    >
+    <div className="page page--grid" data-testid="perf-view">
       <header className="pg-title">
         <div>
           <h1>Performance</h1>

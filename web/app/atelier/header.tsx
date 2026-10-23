@@ -113,7 +113,7 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
           onClick={onNew}
         >
           <Icon name="plus" />
-          <span className="hide-sm">Nouvel essai</span>
+          <span className="hide-compact">Nouvel essai</span>
         </button>
       ) : (
         <Link
@@ -123,12 +123,12 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
           href="/?vue=new"
         >
           <Icon name="plus" />
-          <span className="hide-sm">Nouvel essai</span>
+          <span className="hide-compact">Nouvel essai</span>
         </Link>
       )}
       <button
         type="button"
-        className="btn btn--ghost btn--icon btn--sm hide-sm"
+        className="btn btn--ghost btn--icon btn--sm hide-compact"
         data-testid="toggle-theme"
         aria-label="Basculer le thème clair / sombre"
         onClick={() => update({ theme: dark ? "light" : "dark" })}
