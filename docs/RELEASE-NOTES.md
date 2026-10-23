@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Export des sous-titres : le calque de décisions humaines (ADR-0014)
+Étiquettes : technique, décision
+PR : #96
+
+**Ce qui change.** Première brique de l'export des sous-titres (issue #86) : le format du calque de décisions humaines `aqr.decisions/1`. Corriger à l'oreille un passage ambigu (choisir entre `11:61` et `7:73`, confirmer un verset supposé, étendre un verset coupé) ne modifiera jamais la sortie du moteur : la décision est un document à part, accroché au passage par l'empreinte de ce que le moteur avait dit. Rien ne change encore pour l'utilisateur ; le moteur d'export (PR suivante) et les écrans de l'atelier viennent ensuite.
+
+**Pourquoi / décision.** Le moteur se mesure sur sa prédiction : la réécrire avec des corrections empêcherait de savoir s'il s'améliore (I5). ADR-0014 fixe le statut `resolved`/`by: "human"` à côté du `status` intact, l'empreinte (sha256 de la forme canonique, temps en millisecondes entières, mêmes vecteurs en Python et en TypeScript), le sort d'une décision orpheline après une nouvelle analyse (jamais appliquée en silence), l'omission comme règle d'un export forcé et le consentement d'entraînement (activé pour ses propres sessions, verrouillé sinon). Contrat : `docs/DECISIONS.md`.
+
 ## 2026-10-23 — Fluidité sur les longs audios : navigation, lecture et ouverture
 Étiquettes : utilisateur, technique
 PR : #94

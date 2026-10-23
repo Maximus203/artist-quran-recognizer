@@ -1377,3 +1377,21 @@
   (cause non isolée, racine = document) ; pic de style/peinture de 25 à 45 ms au 95ᵉ centile à 240 Hz.
 - **À retenir** : mesurer en mode avec fenêtre (`--headed`, vrai GPU) : le mode sans fenêtre masque un facteur 4 à 5
   sur la mise en page.
+
+## 2026-10-23 — Export des sous-titres : les décisions humaines sur une prédiction immuable (ADR-0014)
+- **Contexte** : issue #86, conception `docs/design/export-sous-titres.md`. Le mainteneur n'a pas contredit les
+  défauts d'arbitrage proposés ; ils sont appliqués tels quels.
+- **Décisions prises** : (1) la correction est un champ `resolved` (`by: "human"`) à côté du `status` du moteur,
+  jamais un 4e statut ni une réécriture ; (2) un signe de pause qui diffère est compté à part (`Arabe · 1 signe`) ;
+  (3) consentement d'entraînement activé pour ses propres sessions, verrouillé à faux pour celles des autres ;
+  (4) forcer = omettre par défaut, un verset supposé est omis ; (5) attribution portée par JSON / ASS / WebVTT,
+  rappel à l'écran pour SRT ; (6) renvois de note gardés avec une case pour les retirer.
+- **Hypothèses énoncées** : les temps de l'empreinte sont en millisecondes entières, `floor(x × 1000 + 0,5)` (le
+  demi vers le haut en Python comme en TypeScript, jamais l'arrondi bancaire) ; une annulation garde la décision
+  (`withdrawn_at`) au lieu de la supprimer, pour l'historique ; une décision dont la cible est un signalement sans
+  intervalle n'a pas d'empreinte et n'admet que `set_ref`, `dismiss_report`, `ignore`.
+- **Écart avec la conception** : le schéma de la conception parlait d'une annulation par « nouvelle entrée »
+  `ignore`/`withdrawn` ; l'ADR retient `withdrawn_at` (plus simple, même effet, l'empreinte des décisions actives
+  redonne celle d'un export sans décision).
+- **À faire ensuite** : moteur `aqr export-subtitles` (PR 2), routes et réconciliation des orphelines (PR 3),
+  écrans (PR 4).
