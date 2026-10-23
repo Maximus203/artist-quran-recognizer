@@ -217,7 +217,8 @@ export default function ReviewApp() {
     let cancelled = false;
     setPeaks(null);
     setListening("pending");
-    fetch(`/api/sessions/${detailId}/peaks`, { cache: "no-store" })
+    // `no-cache` : le navigateur revalide (ETag) et réutilise ses crêtes si l'audio n'a pas changé.
+    fetch(`/api/sessions/${detailId}/peaks`, { cache: "no-cache" })
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error);
@@ -316,15 +317,20 @@ export default function ReviewApp() {
   };
 
   /* ── interactions du passage et des intervalles ── */
-  const selectInterval = (index: number) => {
-    setSelectedIndex(index);
-    setFollow(false);
-    const item = intervals[index];
-    if (item?.t) {
-      player.seek(item.t[0]);
-      timelineRef.current?.centerOn(item.t[0]);
-    }
-  };
+  // Identité stable (seek l'est) : les lignes et segments mémorisés ne se redessinent pas pour rien.
+  const seek = player.seek;
+  const selectInterval = useCallback(
+    (index: number) => {
+      setSelectedIndex(index);
+      setFollow(false);
+      const item = intervalsRef.current[index];
+      if (item?.t) {
+        seek(item.t[0]);
+        timelineRef.current?.centerOn(item.t[0]);
+      }
+    },
+    [seek],
+  );
   const listenPassage = ([start, end]: [number, number]) => {
     timelineRef.current?.centerOn(start);
     player.playRange(start, end);

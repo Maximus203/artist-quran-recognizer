@@ -10,7 +10,7 @@ import {
 } from "@/lib/review";
 import type { Store } from "@/lib/mini-store";
 import { Icon } from "./icons";
-import { useStoreValue } from "./hooks";
+import { useClock } from "./hooks";
 import type { ReviewController } from "./use-review";
 import type { PlayerState } from "./use-player";
 
@@ -34,7 +34,7 @@ function ProvisionalLength({
   store: Store<PlayerState>;
   start: number;
 }) {
-  const time = useStoreValue(store, (s) => s.time);
+  const time = useClock(store);
   return <b>{formatSecondsFr(Math.max(0, time - start))} s</b>;
 }
 

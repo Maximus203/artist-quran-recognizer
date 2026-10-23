@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { dueForPublish } from "@/lib/clock";
 import { createStore } from "@/lib/mini-store";
 
 export type PlayerState = { time: number; duration: number; playing: boolean };
@@ -102,9 +103,14 @@ export function usePlayer(
     };
     const publish = () =>
       store.set((state) => ({ ...state, time: node.currentTime }));
-    const tick = () => {
+    // La fin d'une plage se vérifie à chaque image (précision), la position ne se publie qu'à ~60 Hz.
+    let publishedAt: number | null = null;
+    const tick = (now: number = performance.now()) => {
       check();
-      publish();
+      if (dueForPublish(publishedAt, now)) {
+        publishedAt = now;
+        publish();
+      }
       if (!node.paused) raf.current = requestAnimationFrame(tick);
     };
     // requestAnimationFrame est suspendu quand l'onglet est masqué : timeupdate prend le relais.
@@ -115,6 +121,7 @@ export function usePlayer(
     const onPlay = () => {
       events.current.onPlay();
       store.set((state) => ({ ...state, playing: true }));
+      publishedAt = null;
       tick();
     };
     const onPause = () => {

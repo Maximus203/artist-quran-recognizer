@@ -1,14 +1,31 @@
 "use client";
 import {
   forwardRef,
+  memo,
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { formatTenths } from "@/lib/format";
+import {
+  indicesOverlapping,
+  nearestIndex,
+  timeIndexOf,
+} from "@/lib/interval-index";
+import {
+  capBlocks,
+  renderWindowFor,
+  visibleTimeRange,
+  windowFits,
+  windowMatchesSpan,
+  type Block,
+  type Range,
+  type SegLike,
+} from "@/lib/timeline-window";
 import {
   STEP_LARGE_S,
   STEP_S,
@@ -78,6 +95,61 @@ function resolveColor(node: HTMLElement, variable: string): string {
   return color;
 }
 
+/** Un segment (ou un bloc de segments fondus) tel que la timeline le dessine. */
+type SegView = {
+  key: string;
+  /** Intervalle du segment ; pour un bloc, le premier intervalle fondu. */
+  index: number;
+  run: boolean;
+  className: string;
+  left: string;
+  width: string;
+  pressed: boolean;
+  label: string;
+  /** Infobulle des pistes (l'onde n'en porte pas). */
+  title: string | null;
+  /** Référence écrite sur le segment quand il est assez large. */
+  text: string | null;
+};
+
+/**
+ * Segment de piste : raccourci au pointeur, hors de l'ordre de tabulation et masqué aux lecteurs
+ * d'écran (la liste des intervalles fait exactement la même chose, au clavier). Mémorisé : un
+ * changement de sélection ne redessine que les deux segments concernés.
+ */
+const SegmentButton = memo(function SegmentButton({
+  seg,
+  testId,
+  onSelect,
+  onPick,
+}: {
+  seg: SegView;
+  testId: string;
+  onSelect: (index: number) => void;
+  onPick: (clientX: number) => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      data-index={seg.index}
+      data-run={seg.run ? "" : undefined}
+      tabIndex={-1}
+      aria-hidden="true"
+      className={seg.className}
+      style={{ "--l": seg.left, "--w": seg.width } as React.CSSProperties}
+      aria-pressed={seg.pressed}
+      aria-label={seg.run ? undefined : seg.label}
+      title={seg.run ? undefined : (seg.title ?? undefined)}
+      onClick={
+        seg.run ? (event) => onPick(event.clientX) : () => onSelect(seg.index)
+      }
+    >
+      {seg.text ? <span>{seg.text}</span> : null}
+    </button>
+  );
+});
+
 /**
  * Forme d'onde, pistes synchronisées, légende : UN seul repère temporel. L'onde, les trois pistes,
  * la règle et la tête de lecture vivent dans le même conteneur défilant, donc la tête de lecture
@@ -107,6 +179,9 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
     const liveMarkRef = useRef<HTMLDivElement>(null);
     const [viewportW, setViewportW] = useState(0);
     const [live, setLive] = useState<Live>(null);
+    // Fenêtre de rendu (en secondes) : seuls les segments qui la touchent existent dans le DOM.
+    const [win, setWin] = useState<Range | null>(null);
+    const colors = useRef<{ wave: string; played: string } | null>(null);
     const latest = useRef(props);
     latest.current = props;
     const gesture = useRef<
@@ -152,12 +227,17 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       const heights = peaks
         ? barHeights(peaks.peaks, peaks.duration, t0, t1, bars, norm)
         : [];
-      const paint = (canvas: HTMLCanvasElement, variable: string) => {
+      // Résolues une fois par thème : chaque lecture de style forcée coûte un recalcul de la page.
+      const palette = (colors.current ??= {
+        wave: resolveColor(base, "--wave"),
+        played: resolveColor(played, "--wave-played"),
+      });
+      const paint = (canvas: HTMLCanvasElement, color: string) => {
         const context = canvas.getContext("2d");
         if (!context) return;
         context.setTransform(dpr, 0, 0, dpr, 0, 0);
         context.clearRect(0, 0, w, h);
-        context.fillStyle = resolveColor(canvas, variable);
+        context.fillStyle = color;
         const middle = h / 2;
         const pitch = w / bars;
         heights.forEach((value, i) => {
@@ -168,8 +248,8 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
           context.fill();
         });
       };
-      paint(base, "--wave");
-      paint(played, "--wave-played");
+      paint(base, palette.wave);
+      paint(played, palette.played);
     }, [duration, peaks, norm]);
 
     /* ── tête de lecture, partie écoutée, pose en cours, suivi de la lecture ── */
@@ -181,8 +261,9 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       const total = content.clientWidth;
       const w = scroll.clientWidth;
       const x = (time / duration) * total;
+      // `transform` (compositeur) et non `left` : pas de mise en page à chaque image de lecture.
       if (playheadRef.current)
-        playheadRef.current.style.left = `${percentAt(time, duration)}%`;
+        playheadRef.current.style.transform = `translate3d(${(percentAt(time, duration) / 100) * total}px,0,0)`;
       if (playedRef.current) {
         const visible = Math.max(0, Math.min(w, x - scroll.scrollLeft));
         playedRef.current.style.clipPath = `inset(0 ${w - visible}px 0 0)`;
@@ -257,32 +338,64 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       [duration, scheduleDraw],
     );
 
+    /* ── fenêtre de rendu : ce que la vue touche, plus une marge ── */
+    const refreshWindow = useCallback(() => {
+      const scroll = scrollRef.current;
+      const content = contentRef.current;
+      if (!scroll || !content || !(duration > 0)) return;
+      const visible = visibleTimeRange(
+        scroll.scrollLeft,
+        scroll.clientWidth,
+        content.clientWidth,
+        duration,
+      );
+      // Même objet tant que la vue reste dedans : aucun rendu pendant le défilement ordinaire.
+      setWin((previous) =>
+        windowFits(previous, visible)
+          ? previous
+          : renderWindowFor(visible, duration),
+      );
+    }, [duration]);
+
     /* ── redessin : taille, défilement, zoom, thème ── */
     useEffect(() => {
       const scroll = scrollRef.current;
       if (!scroll) return;
       const observer = new ResizeObserver(() => {
         setViewportW(scroll.clientWidth);
+        refreshWindow();
         scheduleDraw();
       });
       observer.observe(scroll);
-      const onScroll = () => scheduleDraw();
+      const onScroll = () => {
+        refreshWindow();
+        scheduleDraw();
+      };
       scroll.addEventListener("scroll", onScroll, { passive: true });
-      const themeObserver = new MutationObserver(() => scheduleDraw());
+      const onTheme = () => {
+        colors.current = null;
+        scheduleDraw();
+      };
+      const themeObserver = new MutationObserver(onTheme);
       themeObserver.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ["data-theme"],
       });
       const media = window.matchMedia("(prefers-color-scheme: dark)");
-      media.addEventListener("change", scheduleDraw);
+      media.addEventListener("change", onTheme);
       return () => {
         observer.disconnect();
         scroll.removeEventListener("scroll", onScroll);
         themeObserver.disconnect();
-        media.removeEventListener("change", scheduleDraw);
+        media.removeEventListener("change", onTheme);
         cancelAnimationFrame(frame.current);
       };
-    }, [scheduleDraw]);
+    }, [scheduleDraw, refreshWindow]);
+
+    // Avant la peinture : un changement d'échelle ou de largeur recalcule la fenêtre sans image vide.
+    useLayoutEffect(() => {
+      refreshWindow();
+    }, [refreshWindow, contentPct, viewportW]);
 
     useEffect(() => {
       scheduleDraw();
@@ -303,15 +416,18 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
     }, [span, duration, store, scheduleDraw]);
 
     /* ── gestes sur l'onde : déplacer la lecture, tracer, tirer une poignée ── */
-    const timeAt = (clientX: number): number => {
-      const row = rowRef.current;
-      if (!row || !(duration > 0)) return 0;
-      const rect = row.getBoundingClientRect();
-      return Math.max(
-        0,
-        Math.min(duration, ((clientX - rect.left) / rect.width) * duration),
-      );
-    };
+    const timeAt = useCallback(
+      (clientX: number): number => {
+        const row = rowRef.current;
+        if (!row || !(duration > 0)) return 0;
+        const rect = row.getBoundingClientRect();
+        return Math.max(
+          0,
+          Math.min(duration, ((clientX - rect.left) / rect.width) * duration),
+        );
+      },
+      [duration],
+    );
 
     const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
       const target = event.target as HTMLElement;
@@ -444,78 +560,132 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
 
     /* ── éléments ── */
     const pxPerSecond = duration > 0 ? contentPx / duration : 0;
-    const pct = (seconds: number) => `${percentAt(seconds, duration)}%`;
-    const step = tickStep(visibleSpan(duration, span), viewportW || Infinity);
+    const shownSpan = visibleSpan(duration, span);
+    const step = tickStep(shownSpan, viewportW || Infinity);
+    // Fenêtre de rendu valable pour l'échelle actuelle : au changement de zoom, l'ancienne fenêtre
+    // (recalculée avant la peinture) ne dessine rien plutôt que des milliers de segments à la mauvaise échelle.
+    const renderWin = windowMatchesSpan(win, shownSpan) ? win : null;
+    // Graduations de la fenêtre de rendu seulement (8 000 au pas d'une seconde pour 2 h sinon).
     const tickMarks = useMemo(
       () =>
-        ticks(duration, step).map((t) => (
-          <span key={t} style={{ left: `${percentAt(t, duration)}%` }}>
-            {formatTick(t, step)}
-          </span>
-        )),
-      [duration, step],
+        renderWin
+          ? ticks(duration, step, renderWin.a, renderWin.b).map((t) => (
+              <span key={t} style={{ left: `${percentAt(t, duration)}%` }}>
+                {formatTick(t, step)}
+              </span>
+            ))
+          : null,
+      [duration, step, renderWin],
     );
 
     // Les segments des pistes sont des raccourcis au pointeur : à l'échelle d'un fichier entier ils
     // font quelques pixels. Hors de l'ordre de tabulation et masqués aux lecteurs d'écran, car la liste
     // des intervalles (lignes de 44 px, au clavier) fait exactement la même chose (WCAG 2.5.8 : contrôle
-    // équivalent sur la même page).
-    const waveSegs = intervals.map((item, index) =>
-      item.t ? (
-        <button
-          key={index}
-          type="button"
-          data-testid="wave-seg"
-          data-index={index}
-          tabIndex={-1}
-          aria-hidden="true"
-          className={`wave-seg s-${intervalStyle(item)}`}
-          style={
-            {
-              "--l": pct(item.t[0]),
-              "--w": pct(item.t[1] - item.t[0]),
-            } as React.CSSProperties
-          }
-          aria-pressed={props.selectedIndex === index}
-          aria-label={`${intervalLabel(item)} · ${intervalStateLabel(item)}`}
-          onClick={() => props.onSelectInterval(index)}
-        >
-          {(item.t[1] - item.t[0]) * pxPerSecond >= REGION_LABEL_PX &&
-          item.kind === "verse" &&
-          item.status !== "uncertain" &&
-          item.ref ? (
-            <span>{item.ref}</span>
-          ) : null}
-        </button>
-      ) : null,
+    // équivalent sur la même page). Seuls ceux qui touchent la fenêtre de rendu existent dans le DOM, et
+    // les segments trop étroits pour être distingués se fondent en blocs (cliquables au temps du clic).
+    const timeIndex = useMemo(() => timeIndexOf(intervals), [intervals]);
+    const candidates = useMemo(() => {
+      if (!renderWin) return null;
+      const all: SegLike[] = indicesOverlapping(
+        timeIndex,
+        renderWin.a,
+        renderWin.b,
+      )
+        .map((index) => {
+          const item = intervals[index];
+          const [start, end] = item.t as [number, number];
+          return { index, start, end, style: intervalStyle(item) };
+        })
+        .sort((x, y) => x.start - y.start);
+      const inferred = (s: SegLike) => {
+        const item = intervals[s.index];
+        return item.kind === "verse" && item.status === "inferred";
+      };
+      return {
+        wave: all,
+        main: all.filter((s) => !inferred(s)),
+        inferred: all.filter(inferred),
+      };
+    }, [renderWin, timeIndex, intervals]);
+
+    const selectedInterval = props.selectedIndex;
+    const layers = useMemo(() => {
+      const none: SegView[] = [];
+      if (!candidates || !(pxPerSecond > 0))
+        return { wave: none, main: none, inferred: none };
+      const pct = (seconds: number) => `${percentAt(seconds, duration)}%`;
+      const view = (blocks: Block[], lane: boolean): SegView[] =>
+        blocks.map((block) => {
+          if (block.kind === "run")
+            return {
+              key: `${lane ? "l" : "w"}r${block.first}`,
+              index: block.first,
+              run: true,
+              className: `${lane ? "seg" : "wave-seg"} s-${block.style}`,
+              left: pct(block.start),
+              width: pct(block.end - block.start),
+              pressed: false,
+              label: "",
+              title: null,
+              text: null,
+            };
+          const item = intervals[block.index];
+          const [start, end] = item.t as [number, number];
+          const label = `${intervalLabel(item)} · ${intervalStateLabel(item)}`;
+          return {
+            key: `${lane ? "l" : "w"}${block.index}`,
+            index: block.index,
+            run: false,
+            className: `${lane ? "seg" : "wave-seg"} s-${intervalStyle(item)}`,
+            left: pct(start),
+            width: pct(end - start),
+            pressed: selectedInterval === block.index,
+            label,
+            title: lane
+              ? `${intervalLabel(item)} · ${formatTenths(start)} – ${formatTenths(end)}`
+              : null,
+            text:
+              !lane &&
+              (end - start) * pxPerSecond >= REGION_LABEL_PX &&
+              item.kind === "verse" &&
+              item.status !== "uncertain" &&
+              item.ref
+                ? item.ref
+                : null,
+          };
+        });
+      const blocks = (segs: SegLike[]) =>
+        capBlocks(segs, pxPerSecond, undefined, selectedInterval);
+      return {
+        wave: view(blocks(candidates.wave), false),
+        main: view(blocks(candidates.main), true),
+        inferred: view(blocks(candidates.inferred), true),
+      };
+    }, [candidates, pxPerSecond, duration, intervals, selectedInterval]);
+
+    const onSelectSegment = useCallback(
+      (index: number) => latest.current.onSelectInterval(index),
+      [],
     );
+    const onPickSegment = useCallback(
+      (clientX: number) => {
+        const index = nearestIndex(timeIndex, timeAt(clientX));
+        if (index >= 0) latest.current.onSelectInterval(index);
+      },
+      [timeIndex, timeAt],
+    );
+    const segments = (views: SegView[], testId: string) =>
+      views.map((seg) => (
+        <SegmentButton
+          key={seg.key}
+          seg={seg}
+          testId={testId}
+          onSelect={onSelectSegment}
+          onPick={onPickSegment}
+        />
+      ));
 
-    const lane = (inferred: boolean) =>
-      intervals.map((item, index) =>
-        item.t &&
-        (item.kind === "verse" && item.status === "inferred") === inferred ? (
-          <button
-            key={index}
-            type="button"
-            data-testid="lane-seg"
-            data-index={index}
-            tabIndex={-1}
-            aria-hidden="true"
-            className={`seg s-${intervalStyle(item)}`}
-            style={
-              {
-                "--l": pct(item.t[0]),
-                "--w": pct(item.t[1] - item.t[0]),
-              } as React.CSSProperties
-            }
-            aria-pressed={props.selectedIndex === index}
-            aria-label={`${intervalLabel(item)} · ${intervalStateLabel(item)}`}
-            title={`${intervalLabel(item)} · ${formatTenths(item.t[0])} – ${formatTenths(item.t[1])}`}
-            onClick={() => props.onSelectInterval(index)}
-          />
-        ) : null,
-      );
-
+    const pct = (seconds: number) => `${percentAt(seconds, duration)}%`;
     const regions = annotations.map((a) => {
       const isPoint = a.end_s === null;
       const selected = selectedAnnotationId === a.id;
@@ -669,7 +839,9 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
                     aria-hidden="true"
                   />
                 </div>
-                <div className="wave-layer">{waveSegs}</div>
+                <div className="wave-layer">
+                  {segments(layers.wave, "wave-seg")}
+                </div>
                 <div className="rv-layer">
                   {regions}
                   {mark !== null ? (
@@ -702,10 +874,10 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
                 </div>
               </div>
               <div className="tl-row tl-lane" data-testid="lane-main">
-                {lane(false)}
+                {segments(layers.main, "lane-seg")}
               </div>
               <div className="tl-row tl-lane" data-testid="lane-inferred">
-                {lane(true)}
+                {segments(layers.inferred, "lane-seg")}
               </div>
               <div className="tl-row tl-lane" data-testid="lane-review">
                 {humans}

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { clockTime } from "@/lib/clock";
 import type { Store } from "@/lib/mini-store";
+import type { PlayerState } from "./use-player";
 import { effectiveTheme, type ThemePref } from "@/lib/ui-prefs";
 
 /** Valeur dérivée d'un magasin : le composant ne se redessine que si la valeur choisie change. */
@@ -13,6 +15,11 @@ export function useStoreValue<T, S>(
     () => select(store.get()),
     () => select(store.get()),
   );
+}
+
+/** Position de lecture pour un texte : exacte à l'arrêt, `CLOCK_HZ` fois par seconde au plus en lecture. */
+export function useClock(store: Store<PlayerState>): number {
+  return useStoreValue(store, clockTime);
 }
 
 /** Condition `matchMedia`, sûre côté serveur (faux avant le montage). */

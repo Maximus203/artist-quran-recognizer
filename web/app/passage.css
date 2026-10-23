@@ -376,7 +376,9 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  min-height: var(--hit);
+  /* Hauteur FIXE : la liste est virtualisée, elle calcule la position des lignes à partir d'elle. */
+  height: var(--irow-h);
+  overflow: hidden;
   padding: 8px var(--sp-4);
   border-top: 1px solid var(--border-subtle);
   transition: background var(--dur-1) var(--ease);
@@ -424,7 +426,23 @@
   }
 }
 .intervals-list {
+  /* Deux lignes de texte sur petit écran (libellé, puis état) : la ligne est plus haute. */
+  --irow-h: var(--hit);
   max-height: 560px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+@media (max-width: 560px) {
+  .intervals-list {
+    --irow-h: 72px;
+  }
+}
+/* Liste virtualisée : seules les lignes proches de la zone visible existent, placées par `top`. */
+.vlist {
+  position: relative;
+}
+.vrow {
+  position: absolute;
+  left: 0;
+  right: 0;
 }

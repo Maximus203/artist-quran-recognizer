@@ -5,7 +5,7 @@ import { formatTime, type Interval } from "@/lib/recognition";
 import { ZOOM_SPANS } from "@/lib/timeline";
 import { Icon } from "./icons";
 import type { ReviewController } from "./use-review";
-import { useStoreValue } from "./hooks";
+import { useClock, useStoreValue } from "./hooks";
 import type { usePlayer } from "./use-player";
 import { Timeline, type TimelineHandle } from "./timeline";
 
@@ -46,7 +46,7 @@ function Transport({
   onDockMark: () => void;
   dockLabel: string;
 }) {
-  const time = useStoreValue(player.store, (s) => s.time);
+  const time = useClock(player.store);
   const playing = useStoreValue(player.store, (s) => s.playing);
   const percent = duration > 0 ? (time / duration) * 100 : 0;
   return (

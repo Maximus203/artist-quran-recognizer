@@ -1,5 +1,6 @@
 import { safe } from "@/lib/http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
+import { matchesEtag, weakEtag } from "@/lib/http-cache";
 import { NextResponse } from "next/server";
 import { audioPath, sessionDir } from "@/lib/store";
 import { ensureListening } from "@/lib/listening";
@@ -15,11 +16,18 @@ async function handleGET(
   try {
     const id = access.id;
     const files = await ensureListening(sessionDir(id), await audioPath(id));
+    // Les crêtes ne changent que si l'audio change : le navigateur revalide (304, sans corps) au lieu
+    // de retélécharger 2,3 Mo à chaque ouverture. `private` : jamais dans un cache partagé.
+    const info = await stat(files.peaks);
+    const etag = weakEtag(info.size, info.mtimeMs);
+    const headers = {
+      ETag: etag,
+      "Cache-Control": "private, no-cache",
+    };
+    if (matchesEtag(request.headers.get("if-none-match"), etag))
+      return new Response(null, { status: 304, headers });
     return new Response(await readFile(files.peaks), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "private, no-store",
-      },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (e) {
     return NextResponse.json(
