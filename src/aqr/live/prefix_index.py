@@ -20,7 +20,7 @@ from aqr.domain.quran_structure import SURAH_WITHOUT_BASMALA
 from aqr.matching.similarity import word_similarity
 
 BASMALA_VERSE = VerseRef(1, 1)
-"""1:1 est la basmala elle-même : le suivi la traite par son propre événement, jamais comme départ."""
+"""1:1 est la basmala elle-même : le suivi la traite par son événement, jamais comme départ."""
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,7 @@ def discriminating_lengths(
     Un élément dont un autre est identique (« twin ») ou dont il est le début strict
     (« prefix_of_longer ») n'a aucun préfixe unique : le début seul ne suffit jamais.
     """
-    ordered = sorted(items, key=lambda item: item[1])
+    ordered = sorted(items, key=lambda item: item[1])  # type: ignore[arg-type, return-value]
     result: dict[Hashable, Discrimination] = {}
     for index, (key, sequence) in enumerate(ordered):
         best = 0
@@ -151,6 +151,19 @@ class PrefixIndex:
         return self._start.get(following) if following is not None else None
 
     # -- Départs possibles ----------------------------------------------------------------
+    def is_basmala_position(self, position: int) -> bool:
+        """Mot de 1:1, la basmala : jamais un départ de passage."""
+        return self._where[position][0] == BASMALA_VERSE
+
+    def is_verse_start(self, position: int) -> bool:
+        return self._where[position][1] == 1
+
+    @property
+    def mid_verse_count(self) -> int:
+        """Positions d'où un passage peut démarrer en milieu de verset."""
+        basmala = self.length(BASMALA_VERSE) if BASMALA_VERSE in self._start else 0
+        return self.size - len(self.verse_starts) - basmala
+
     @property
     def verse_starts(self) -> tuple[int, ...]:
         """Débuts de verset d'où un suivi peut démarrer (tous sauf 1:1, la basmala)."""

@@ -36,7 +36,7 @@ class LiveConfig:
 
     # -- Modèle d'erreur d'ASR, par mot ------------------------------------------------------
     word_threshold: float = 0.7
-    """Similarité de lettres minimale pour que deux mots comptent comme le même (comme le matcher)."""
+    """Similarité de lettres minimale pour que deux mots soient le même (comme le matcher)."""
     word_error: float = 0.15
     """Probabilité qu'un mot attendu soit mal entendu (remplacé par un mot sans rapport)."""
     word_deletion: float = 0.05
@@ -73,10 +73,17 @@ class LiveConfig:
     words_margin: float = 100.0
     """Rapport de vraisemblance des mots seuls à partir duquel un rival ne départage plus : au
     delà, la référence est déduite du contexte (`INFERRED`), pas des mots (`RECOGNIZED`)."""
+    mid_verse_extra_words: int = 2
+    """Mots de plus exigés pour verrouiller un passage qui démarre en milieu de verset (ADR-0011
+    mesure B : un début en milieu de verset coûte au moins un mot de plus ; une phrase courte et
+    unique, comme l'isti'adha qui finit un verset, ne doit pas nommer ce verset)."""
     unlock_floor: float = 0.5
     """Un verrou dont le posterior retombe sous ce seuil est retiré (`Revision`)."""
+    context_max_candidates: int = 40
+    """Un passage clos resté ambigu transmet sa liste comme contexte jusqu'à ce nombre de candidats
+    (refrains : la suite de chacun est attendue) ; au-delà, le contexte est perdu."""
 
-    # -- Saut et perte ------------------------------------------------------------------------------
+    # -- Saut et perte --------------------------------------------------------------------------
     jump_floor: float = 0.05
     """Posterior de la suite attendue sous lequel le début « casse l'attente » (saut)."""
     min_words_jump: int = 2
@@ -111,11 +118,12 @@ class LiveConfig:
             "restart_misses",
             "max_hypotheses",
             "basmala_min_matched",
+            "context_max_candidates",
         ):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} doit être >= 1")
-        if self.max_skip < 0:
-            raise ValueError("max_skip doit être >= 0")
+        if self.max_skip < 0 or self.mid_verse_extra_words < 0:
+            raise ValueError("max_skip et mid_verse_extra_words doivent être >= 0")
         if self.words_margin < 1 or self.silence_lost_s <= 0 or self.prune_ratio <= 0:
             raise ValueError("words_margin >= 1, silence_lost_s > 0 et prune_ratio > 0 requis")
 
