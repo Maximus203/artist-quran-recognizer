@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — Courbe de vitesse : réécouter un audio accéléré n'apporte rien à la cascade
 Étiquettes : technique, décision
-PR : #81
+PR : #82
 
 **Ce qui change.** Aucun changement de comportement : le moteur ne réécoute pas les fenêtres douteuses sur un audio accéléré. Le dépôt gagne la mesure qui a permis d'en décider : `scripts/measure_speed.py` (témoins EveryAyah étirés puis accélérés, vrais fichiers lents accélérés de ×1,25 à ×2,5) et `aqr.eval.speed_curve` (grille, remise à l'échelle des temps, estimateurs de débit sans vérité, règle de décision), avec leurs tests.
 
