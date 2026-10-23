@@ -4,8 +4,10 @@ import type { Me } from "@/lib/review-access";
 import type { Annotation } from "@/lib/review";
 import type { Store } from "@/lib/mini-store";
 import ValidationPanel from "../validation-panel";
+import { Avatar } from "./avatar";
 import { Icon } from "./icons";
 import { ListTab } from "./list-tab";
+import { useShell } from "./shell";
 import { SignalTab } from "./signal-tab";
 import type { ReviewController } from "./use-review";
 import type { PlayerState } from "./use-player";
@@ -37,6 +39,7 @@ type Props = {
 };
 
 export function ReviewPanel(props: Props) {
+  const { user } = useShell();
   const tabs: { id: ReviewTab; label: string }[] = [
     { id: "sig", label: "Signaler" },
     { id: "list", label: "Signalements" },
@@ -78,11 +81,7 @@ export function ReviewPanel(props: Props) {
         data-testid="tester"
       >
         <div className="tester-row">
-          <span
-            className="av av--sm"
-            data-i={props.me.username.charAt(0).toLocaleUpperCase()}
-            aria-hidden="true"
-          />
+          <Avatar person={user} size="sm" />
           <div className="who">
             <span className="eyebrow">Tu signales en tant que</span>
             <b data-testid="tester-name">

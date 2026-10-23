@@ -63,6 +63,7 @@ ne font que l'afficher.
 | `GET` / `PUT /api/sessions/<id>/decisions` · `GET /api/corpus/verse` | Calque de décisions humaines (jamais la prédiction) · un verset lu dans le corpus. |
 | `GET` / `POST /api/sessions/<id>/validation` | Vérité terrain (administrateurs seulement). |
 | `/api/auth/*`, `/api/me*`, `/api/admin/users`, `/api/docs*`, `PATCH /api/sessions/<id>`, `…/favorite`, `POST /api/sessions/bulk` | Comptes, préférences, statistiques, documentation, renommage/portée/archivage, actions groupées : contrat complet dans `web/README.md` (§13 ci-dessous). |
+| `GET /api/users/<id>/avatar` · `PUT` / `DELETE /api/me/avatar` | Photo de profil : lecture par tout compte connecté (cache par empreinte), écriture réservée au compte connecté, réencodage serveur en JPEG 256×256 (§13). |
 | `GET /api/stats` | Vitesse par moteur, file en cours, précision de l'estimation. |
 | `GET /api/fonts` · `GET /api/fonts/<nom>` | Polices locales présentes · service de la police Hafs (boucle locale seulement). |
 | `POST /api/access` · page `/access` | Échange du jeton d'accès contre un cookie (mode test distant). |
@@ -218,6 +219,7 @@ ailleurs), **hors Git**, jamais supprimé automatiquement (sauf option `AQR_SESS
 
 ```
 AQR_REVIEW_DIR/
+├── avatars/                        <id utilisateur>.jpg : photos de profil, JPEG 256×256 fabriqués par le serveur (jamais dans public/)
 └── sessions/
     └── <id>/                       identifiant = UUID strict (toute autre forme est rejetée)
         ├── session.json            état, dates, moteur, durées, viewed_at, empreinte SHA-256 de l'audio
@@ -247,6 +249,7 @@ L'atelier est conçu pour un **usage local de confiance** : il n'écoute que `12
 | Contrôle de l'**origine** | Les écritures (`POST`, `PUT`, `DELETE`) exigent une origine identique ou un hôte autorisé de même protocole et port. |
 | Mode test distant (optionnel) | `AQR_ALLOWED_HOSTS` ajoute des hôtes, **acceptés seulement si** `AQR_ACCESS_TOKEN` est défini (refus par défaut). Le jeton se présente par en-tête, `Bearer`, ou cookie `HttpOnly` signé (HMAC, avec expiration, `AQR_ACCESS_TTL_S`) obtenu sur `/access`. Comparaison à temps constant. |
 | Identifiants de session | UUID stricts ; tout chemin (`..`, séparateurs) est rejeté. |
+| Photos de profil | Type lu dans le contenu (JPEG/PNG/WebP ; SVG et le reste refusés), taille lue avec plafond de 2 Mo, dimensions bornées, réencodage ffmpeg à format imposé et protocole `pipe` seul, métadonnées retirées ; servies en `image/jpeg` fixe avec `nosniff` et `sandbox`, uniquement à un compte connecté ; écriture : le seul compte connecté. |
 | Plafonds d'envoi | `AQR_MAX_UPLOAD_BYTES` (audio, 500 Mo par défaut), `AQR_MAX_VIDEO_UPLOAD_BYTES` (vidéo, 2 Gio) ; `413` dès l'en-tête. |
 | Messages d'erreur | Aucun chemin local ni code système brut n'est montré à l'utilisateur. |
 | Purge optionnelle | `AQR_SESSION_TTL_S` supprime les sessions **inactives** ; une revue enregistrée récemment garde la session et son historique ; une session en cours ou en attente n'est jamais purgée. |
@@ -355,6 +358,7 @@ l'interface de la phase 2 pour les écrans). Le contrat détaillé d'API est dan
 | **Global ou privé** | Un audio est **global** par défaut (visible de tous les testeurs, avec ses performances) ou **privé** (visible de son seul propriétaire, **administrateurs compris** : un privé d'un autre répond `404`). Choix à l'import (carte « Qui peut voir cet essai ? »), modifiable par le propriétaire ; privé → global demande une confirmation. |
 | **Préférences côté serveur** | 15 clés (`web/lib/preferences-schema.ts`, l'unique source) : thème, police et taille arabes, traduction, surlignage en direct, fenêtre visible, suivi de lecture, panneaux, filtre de la liste, vitesse, volume, raccourcis, onglet de revue, portée des nouveaux essais. Lues dans `app/layout.tsx` et posées sur `<html>` **avant le premier rendu** (aucun clignotement, sur tout appareil). Écrites par `PATCH` groupé (anti-rebond 600 ms) ; `localStorage` ne garde que le cache de la page de connexion et ce qui n'a pas pu partir. |
 | **Sessions à l'échelle** | `GET /api/sessions` pagine par curseur et filtre côté serveur. Barre de gauche allégée (file, 5 favoris, 8 récentes, « Voir toutes les sessions ») ; page `/sessions` : recherche, portée, filtres état/moteur/date (dans l'adresse), tri, groupes par date, « Charger plus » (20 par lot), sélection multiple et actions groupées. |
+| **Photo de profil et « qui a importé quoi »** | Chaque ligne de session (barre de gauche, page `/sessions`, en-tête d'une session) montre le **pseudo et l'avatar** du propriétaire : sa photo si elle en a une, sinon son initiale sur un pigment stable dérivé du pseudo (`--av-0` … `--av-7`). La photo se règle dans `/compte` (choisir, aperçu rond, retirer) et suit **à l'instant** dans toute l'interface. L'API des sessions donne `owner: { id, username, avatar_version }` ; la visibilité des sessions est inchangée (un audio privé reste invisible des autres, la photo n'ouvre rien). Stockage et contrôles : `web/README.md`, « Photo de profil ». |
 | **Favoris, archivage, renommage** | Étoile par utilisateur ; archivage réversible (toast « Annuler ») ; renommage au double-clic ou au crayon ; nom par défaut calculé par le serveur et ligne « Contenu détecté ». |
 | **Revue multi-testeurs** | L'auteur d'un signalement est le **compte** (plus de saisie libre). Un testeur ne modifie pas le signalement d'un autre (l'interface le grise, le serveur le refuse : `rejected`). La **vérité terrain** est réservée aux administrateurs. |
 | **Documentation** | `/docs` et `/docs/<slug>` : navigation par document (liste blanche `docs/docs-index.json`), sommaire, rendu Markdown **sans HTML brut** (`react-markdown`, GFM), liens `.md` réécrits ; `/docs/release-notes` : chronologie lue dans `docs/RELEASE-NOTES.md`. |

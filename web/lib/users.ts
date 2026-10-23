@@ -12,6 +12,8 @@ export type User = {
   disabled_at: string | null;
   created_at: string;
   last_login_at: string | null;
+  /** Empreinte de la photo de profil (version de cache) ; null = pas de photo. */
+  avatar_hash: string | null;
 };
 export type UserRow = User & { username_key: string; password_hash: string };
 
@@ -51,7 +53,8 @@ export class LastAdminError extends Error {
   }
 }
 
-const COLUMNS = "id, username, role, disabled_at, created_at, last_login_at";
+const COLUMNS =
+  "id, username, role, disabled_at, created_at, last_login_at, avatar_hash";
 
 const toUser = (row: Record<string, unknown>): User => ({
   id: row.id as number,
@@ -60,6 +63,7 @@ const toUser = (row: Record<string, unknown>): User => ({
   disabled_at: (row.disabled_at as string | null) ?? null,
   created_at: row.created_at as string,
   last_login_at: (row.last_login_at as string | null) ?? null,
+  avatar_hash: (row.avatar_hash as string | null) ?? null,
 });
 
 export function countUsers(db: Db): number {

@@ -8,6 +8,8 @@ import {
 import type { Preferences } from "@/lib/preferences-schema";
 import { QURAN_FONTS, type QuranFontId } from "@/lib/quran-fonts";
 import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
+import { AvatarSetting } from "./avatar-setting";
+import { Avatar } from "./avatar";
 import { Switch, SegControl } from "./controls";
 import { FONT_SAMPLE } from "./font-picker";
 import { Icon } from "./icons";
@@ -82,11 +84,7 @@ export function PreferencesPane() {
         Préférences
       </h2>
       <div className="card acct-id">
-        <span
-          className="av av--lg"
-          data-i={user.username.charAt(0).toLocaleUpperCase()}
-          aria-hidden="true"
-        />
+        <Avatar person={user} size="lg" eager />
         <div style={{ flex: 1, minWidth: 0 }}>
           <b>{user.username}</b>
           <small>Inscrit le {joined}</small>
@@ -97,6 +95,24 @@ export function PreferencesPane() {
             Administrateur
           </span>
         ) : null}
+      </div>
+
+      <div className="card setgroup" aria-labelledby="g-pro">
+        <header>
+          <h2 id="g-pro">Profil</h2>
+          <p>
+            Ton pseudo et ta photo apparaissent à côté des audios que tu
+            importes, pour que chacun voie qui a testé quoi.
+          </p>
+        </header>
+        <Setting
+          id="lab-photo"
+          label="Photo de profil"
+          help="Visible des autres testeurs. Sans photo, ton initiale s’affiche."
+          wide
+        >
+          <AvatarSetting />
+        </Setting>
       </div>
 
       <div className="card setgroup" aria-labelledby="g-aff">

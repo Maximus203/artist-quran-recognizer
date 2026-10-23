@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Photo de profil et propriétaire de chaque audio dans les listes
+Étiquettes : utilisateur, technique
+PR : #103
+
+**Ce qui change.** Chaque audio affiche maintenant qui l'a importé : un petit avatar rond et le pseudo, dans le panneau Sessions, dans la page « Toutes les sessions » (colonne « Importé par ») et dans l'en-tête d'une session. Dans Compte, Préférences, une nouvelle carte « Profil » permet de choisir une photo (JPEG, PNG ou WebP, 2 Mo au plus), de la voir en aperçu rond avant de l'enregistrer, ou de la retirer ; l'avatar de l'en-tête et du menu du compte change aussitôt. Sans photo, l'avatar montre l'initiale du pseudo sur une couleur qui reste la même pour la même personne. Les audios déjà importés montrent leur propriétaire sans rien refaire. Un audio privé reste invisible des autres comptes ; les pseudos et les photos, eux, sont visibles de tous les testeurs connectés.
+
+**Pourquoi / décision.** Pour voir d'un coup d'œil qui a testé quoi. La photo est lue par son contenu (SVG et tout autre format refusés), puis réencodée par ffmpeg, déjà requis par l'atelier, en JPEG carré de 256 pixels sans aucune métadonnée : aucune dépendance ajoutée, et ce que contenait le fichier d'origine n'est jamais conservé ni servi. Elle vit dans `AQR_REVIEW_DIR/avatars/`, hors dépôt. Le serveur la sert aux seuls comptes connectés, avec un cache qui se renouvelle quand la photo change. Détails et limites (orientation des photos de téléphone : ffmpeg 7.1 ou plus) : `web/README.md`, « Photo de profil » ; décision dans `.artist/decision-log.md` ; contrôle dans `.artist/acceptance-playbooks/photo-de-profil.md`.
+
 ## 2026-10-23 — Décalage audio : le surlignage se cale à l'oreille
 Étiquettes : utilisateur, technique
 PR : #101

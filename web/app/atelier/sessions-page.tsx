@@ -481,7 +481,7 @@ export function SessionsPage({ search }: { search: string }) {
               >
                 Nom
               </button>
-              <span>Propriétaire</span>
+              <span>Importé par</span>
               <span>Portée</span>
               <button
                 type="button"

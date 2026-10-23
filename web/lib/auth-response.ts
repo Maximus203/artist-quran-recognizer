@@ -15,6 +15,8 @@ export type PublicUser = {
   role: "user" | "admin";
   created_at: string;
   last_login_at: string | null;
+  /** Empreinte de la photo de profil (adresse de l'image : `avatarUrl`), ou null = initiale. */
+  avatar_version: string | null;
 };
 
 export const publicUser = (user: User): PublicUser => ({
@@ -23,6 +25,7 @@ export const publicUser = (user: User): PublicUser => ({
   role: user.role,
   created_at: user.created_at,
   last_login_at: user.last_login_at,
+  avatar_version: user.avatar_hash,
 });
 
 /** Réponse d'une inscription ou connexion : `{ user }` + cookie, ou l'erreur (429 avec `Retry-After`). */

@@ -1,5 +1,6 @@
 import { statfs } from "node:fs/promises";
 import { can, type Actor } from "./access";
+import type { PersonRef } from "./avatar-config";
 import type { Db } from "./db";
 import { isMissingSession } from "./errors";
 import { log } from "./log";
@@ -41,7 +42,8 @@ export type ApiSession = Omit<SessionView, "pid"> & {
   content_label: string | null;
   visibility: "global" | "private";
   archived_at: string | null;
-  owner: { id: number; username: string } | null;
+  /** Qui a importé l'audio : pseudo et version de la photo (jamais d'e-mail ni de donnée sensible). */
+  owner: PersonRef | null;
   mine: boolean;
   can_edit: boolean;
   favorite: boolean;
@@ -89,7 +91,11 @@ function compose(
     owner:
       row.owner_id === null
         ? null
-        : { id: row.owner_id, username: row.owner_name ?? "" },
+        : {
+            id: row.owner_id,
+            username: row.owner_name ?? "",
+            avatar_version: row.owner_avatar ?? null,
+          },
     mine: row.owner_id === me.id,
     can_edit: can(me, "edit", row),
     favorite: row.favorite,
