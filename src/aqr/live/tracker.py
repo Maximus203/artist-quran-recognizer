@@ -463,6 +463,10 @@ class HypothesisTracker:
         leader = max(others, key=lambda v: (others[v], v))
         if others[leader] < cfg.jump_leader_posterior:
             return  # la suite a disparu mais rien ne la remplace : ce n'est pas un saut
+        if leader in {v.next() for v in passage.context}:
+            # la suite attendue elle-même, entendue sans son premier mot (avalé par l'ASR) : le
+            # passage démarre au milieu du verset attendu, la classe d'hypothèse n'y change rien
+            return
         if leader == origin:
             kind = "repeat"
         elif leader.surah == origin.surah:

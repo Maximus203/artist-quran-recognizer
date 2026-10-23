@@ -260,6 +260,16 @@ def test_une_parole_etrangere_qui_ressemble_au_coran_n_est_pas_un_saut(index: Pr
     assert not of_type(events, Locked)
 
 
+def test_un_premier_mot_avale_de_la_suite_attendue_n_est_pas_un_saut(index: PrefixIndex) -> None:
+    # mesuré sur la récitation de la sourate 67 : l'ASR avale « هو », premier mot de 67:15, et le
+    # passage commence au 2e mot ; le verset est bien la suite attendue, pas un saut vers l'avant
+    tracker = new_tracker(index)
+    clock = Clock()
+    feed(tracker, clock.say("nn oo pp qq"))  # 113:2 ; la suite attendue est 113:3 (rr ss tt)
+    events = flat(feed(tracker, clock.say("ss tt")))
+    assert not of_type(events, Jump)
+
+
 def test_le_seuil_de_saut_est_ce_qui_ecarte_la_parole_etrangere(index: PrefixIndex) -> None:
     tracker = new_tracker(index, jump_leader_posterior=1e-9)
     clock = Clock()
