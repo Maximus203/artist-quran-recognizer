@@ -288,9 +288,23 @@ try {
     `aucun verset RECOGNIZED de la sourate ${surah} à afficher`,
   );
   for (const { index, interval } of recognized) {
-    await page
-      .locator(`[data-testid="interval-row"][data-index="${index}"]`)
-      .click();
+    // La liste est virtualisée (≈ 25 lignes dans le DOM) : on la fait défiler jusqu'à la ligne voulue.
+    const row = page.locator(
+      `[data-testid="interval-row"][data-index="${index}"]`,
+    );
+    if ((await row.count()) === 0) {
+      await page.evaluate((target) => {
+        const list = document.querySelector(".intervals-list");
+        const size = Number(
+          list.querySelector("[role=listitem]")?.getAttribute("aria-setsize") ||
+            1,
+        );
+        list.scrollTop =
+          (target / size) * list.scrollHeight - list.clientHeight / 2;
+      }, index);
+      await row.waitFor({ timeout: 5_000 });
+    }
+    await row.click();
     const card = page.getByTestId("passage");
     // La carte suit l'événement « seeked » du lecteur : on attend la bonne référence au lieu de
     // lire aussitôt le passage précédent.
