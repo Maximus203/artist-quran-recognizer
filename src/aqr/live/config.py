@@ -78,6 +78,10 @@ class LiveConfig:
     """Mots de plus exigés pour verrouiller un passage qui démarre en milieu de verset (ADR-0011
     mesure B : un début en milieu de verset coûte au moins un mot de plus ; une phrase courte et
     unique, comme l'isti'adha qui finit un verset, ne doit pas nommer ce verset)."""
+    mid_rival_posterior: float = 0.01
+    """Posterior à partir duquel un rival qui démarre en MILIEU de verset interdit le verrou d'un
+    début de verset (un rival qui démarre, lui, au début d'un verset l'interdit toujours, tant
+    qu'il explique aussi bien les mots sans être un sosie exact)."""
     min_lock_confidence: float = 0.0
     """Confiance moyenne minimale (donnée par l'ASR) des mots qui correspondent au verset pour le
     verrouiller. 0 = non utilisée. Un ASR réglé sur le Coran « voit du Coran partout » : ses mots
@@ -124,6 +128,7 @@ class LiveConfig:
             "candidate_floor",
             "min_lock_confidence",
             "min_exact_share",
+            "mid_rival_posterior",
         ):
             _check_unit(name, getattr(self, name))
         if not 0.5 < self.tau_lock < 1.0:

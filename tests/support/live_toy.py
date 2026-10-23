@@ -49,6 +49,7 @@ def toy_flow() -> dict[VerseRef, tuple[str, ...]]:
             "qgamma",
             "qdelta",
         ),  # mots de 6 lettres : le flou existe
+        ref("111:1"): ("z91", "nn", "oo", "pp", "z92"),  # contient « nn oo pp » en milieu de verset
         ref("114:6"): _filler(),
         # la sourate 2 est longue : la masse « même sourate » se répartit sur beaucoup de versets
         **{ref(f"2:{k}"): (f"v{k:02d}x",) for k in range(4, 41)},

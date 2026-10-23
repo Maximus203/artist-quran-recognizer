@@ -502,7 +502,13 @@ class HypothesisTracker:
         equivalent = {
             other
             for other, words in summary.best_words.items()
-            if other != verse and words >= summary.best_words[verse] - margin
+            if other != verse
+            and words >= summary.best_words[verse] - margin
+            and (
+                rank > 1  # un passage qui démarre en milieu de verset ne tranche que par les mots
+                or index.verse_at(summary.best[other].start)[1] == 1
+                or summary.posterior[other] >= cfg.mid_rival_posterior
+            )
         }
         if equivalent - set(index.twins(verse)):
             # règle (c) de l'ADR-0011 : un rival qui explique aussi bien les mots sans être un

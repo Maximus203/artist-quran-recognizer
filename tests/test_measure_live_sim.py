@@ -135,12 +135,13 @@ def test_le_balayage_couvre_l_a_priori_le_minimum_de_mots_et_le_seuil() -> None:
     grid = m.sweep_grid()
     core = [c for family, c in grid if family == "core"]
     guards = [c for family, c in grid if family == "guards"]
-    assert len(core) == 3 * 4 * 3 and len(guards) == 2 * 5 * 3
+    assert len(core) == 3 * 4 * 3 and len(guards) == 4 * 3 * 3
     assert {c.prior for c in core} == {0.8, 0.9, 0.95}
     assert {c.min_words_lock for c in core} == {2, 3, 4, 5}
     assert len({(c.prior, c.min_words_lock, c.tau_lock) for c in core}) == len(core)
-    assert {c.min_lock_confidence for c in guards} == {0.0, 0.5, 0.6, 0.7, 0.8}
+    assert {c.min_lock_confidence for c in guards} == {0.0, 0.6, 0.7, 0.8}
     assert {c.min_exact_share for c in guards} == {0.0, 0.67, 1.0}
+    assert {c.mid_verse_extra_words for c in guards} == {2, 3, 4}
     assert all(c.prior == 0.9 for c in guards)  # les garde-fous se jugent à a priori constant
 
 
