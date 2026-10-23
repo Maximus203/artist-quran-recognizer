@@ -1,5 +1,14 @@
 # Droits du lot 1 — contradiction à clarifier par le mainteneur
 
+> **Mise à jour du 2026-10-23 — dataset repassé en PRIVÉ.** Sur demande de Cherif, le dataset
+> `printf0cherif/aqr-audio-private` n'est plus public (réglage « Dataset Access control » : Private).
+> Vérifié sans compte le jour même : l'API, la page et un fichier répondent HTTP 401. La décision 1
+> ci-dessous est donc tranchée (retour en privé). Conséquences : `scripts/fetch_public_lot.py`
+> (lecture sans jeton de la révision épinglée) ne fonctionne plus ; un agent cloud qui a besoin du lot
+> doit disposer d'un jeton de lecture et utiliser `scripts/audio_lot.py fetch`. Les décisions 2 et 3
+> restent ouvertes. Le constat ci-dessous décrit l'état du 2026-10-06 (public) : il est conservé pour
+> l'historique.
+
 **Le lot 1 n'est pas un précédent.** Ses trois décisions ci-dessous sont ouvertes : rien de ce qui
 est fait pour lui ne vaut autorisation pour d'autres sources, ni l'inverse. La règle d'usage
 provisoire des audios aux droits non établis (évaluation interne locale, hors dépôt, sans
