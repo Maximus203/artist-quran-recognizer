@@ -9,6 +9,7 @@ import {
 } from "@/lib/format";
 import type { Recognition } from "@/lib/recognition";
 import { buildRow, engineLabel, isVideoSession } from "@/lib/session-list";
+import { ExportEntry } from "./export/export-entry";
 import { Icon } from "./icons";
 import { FavButton, InlineName, ScopeBadge, useDismiss } from "./session-bits";
 
@@ -259,6 +260,7 @@ export function SessionHead({
         <span className="f mono muted m-hide">
           SHA-256 {view.audio_sha256.slice(0, 12)}…
         </span>
+        <ExportEntry sessionId={view.id} state={view.state} />
         <button
           className="btn btn--ghost btn--sm"
           type="button"

@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bindMediaDrop, isVideoName } from "@/lib/audio-upload";
 import { listenWindow } from "@/lib/marking";
@@ -501,11 +502,17 @@ export default function ReviewApp() {
   };
 
   /* ── raccourcis clavier : jamais dans un champ, désactivables (WCAG 2.1.4) ── */
-  const latest = useRef({ prefs, showingNew, detail });
-  latest.current = { prefs, showingNew, detail };
+  const router = useRouter();
+  const latest = useRef({ prefs, showingNew, detail, router });
+  latest.current = { prefs, showingNew, detail, router };
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const { prefs: p, showingNew: onNew, detail: d } = latest.current;
+      const {
+        prefs: p,
+        showingNew: onNew,
+        detail: d,
+        router: nav,
+      } = latest.current;
       if (onNew || !d) return;
       const target = event.target as HTMLElement;
       const typing = target.matches?.(
@@ -548,6 +555,9 @@ export default function ReviewApp() {
       } else if (key === "l" && r.draft) {
         event.preventDefault();
         setLoop(!r.loop);
+      } else if (key === "e" && d.session.state === "done") {
+        event.preventDefault();
+        nav.push(`/s/${d.session.id}/exporter`);
       } else if (
         key === " " &&
         !target.closest?.("button,[role=tab],summary,a,[role=slider],input")
