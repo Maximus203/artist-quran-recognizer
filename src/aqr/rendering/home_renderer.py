@@ -11,13 +11,21 @@ from __future__ import annotations
 from typing import Final
 
 from aqr.corpus.normalize import normalize_arabic
-from aqr.domain.models import Detection, Status, Timeline, TimeSpan, VerseRef
+from aqr.domain.models import Detection, Status, Timeline, VerseRef
 from aqr.domain.ports import (
     BatchOptions,
     CorpusRepository,
     RenderedBatch,
     Translation,
     TranslationRepository,
+)
+from aqr.rendering.subtitles import (
+    Cue,
+    format_interval,
+    format_range,
+    format_timestamp,
+    write_srt,
+    write_vtt,
 )
 from aqr.rendering.translation_segments import (
     FragmentPolicy,
@@ -167,6 +175,13 @@ class HomeRenderer:
                 }
         return out
 
+    def translation_json(
+        self, ref: VerseRef, translation_id: str | None, words: tuple[int, int] | None = None
+    ) -> dict[str, object] | None:
+        """La traduction QuranEnc d'un passage (`scope: fragment` avec `words` si le découpage est
+        fiable), sans modification : la même que celle des intervalles de la sortie JSON (I2)."""
+        return self._translation_json(ref, translation_id, words)
+
     def render_basmala(self, translation_id: str | None) -> dict[str, object]:
         """La basmala d'une zone non coranique : le verset 1:1, lu dans le corpus comme n'importe
         quel verset (I1), avec sa traduction QuranEnc (I2). Jamais un texte venu d'un modèle."""
@@ -220,33 +235,20 @@ class HomeRenderer:
         text = self.span_text(det)
         return f"[déduit] {text}" if det.status is Status.INFERRED else text
 
-    def _render_srt(self, batch: tuple[Detection, ...]) -> str:
-        blocks = []
-        for i, det in enumerate(batch, start=1):
-            if det.status is Status.INFERRED and det.time is None:
-                continue
-            assert det.time is not None
-            blocks.append(f"{i}\n{format_range(det.time, ',')}\n{self.caption(det)}\n")
-        return "\n".join(blocks)
-
-    def _render_vtt(self, batch: tuple[Detection, ...]) -> str:
-        blocks = ["WEBVTT\n"]
+    def _cues(self, batch: tuple[Detection, ...]) -> list[Cue]:
+        cues: list[Cue] = []
         for det in batch:
             if det.status is Status.INFERRED and det.time is None:
                 continue
             assert det.time is not None
-            blocks.append(f"{format_range(det.time, '.')}\n{self.caption(det)}\n")
-        return "\n".join(blocks)
+            cues.append(Cue(det.time.start_s, det.time.end_s, arabic=self.caption(det)))
+        return cues
+
+    def _render_srt(self, batch: tuple[Detection, ...]) -> str:
+        return write_srt(self._cues(batch), rtl=False)
+
+    def _render_vtt(self, batch: tuple[Detection, ...]) -> str:
+        return write_vtt(self._cues(batch), rtl=False)
 
 
-def format_range(time: TimeSpan, decimal_sep: str) -> str:
-    start = format_timestamp(time.start_s, decimal_sep)
-    return f"{start} --> {format_timestamp(time.end_s, decimal_sep)}"
-
-
-def format_timestamp(seconds: float, decimal_sep: str) -> str:
-    total_ms = round(seconds * 1000)
-    hours, total_ms = divmod(total_ms, 3_600_000)
-    minutes, total_ms = divmod(total_ms, 60_000)
-    secs, millis = divmod(total_ms, 1000)
-    return f"{hours:02d}:{minutes:02d}:{secs:02d}{decimal_sep}{millis:03d}"
+__all__ = ["BASMALA_REF", "HomeRenderer", "format_interval", "format_range", "format_timestamp"]

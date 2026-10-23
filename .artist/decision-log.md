@@ -1395,3 +1395,25 @@
   redonne celle d'un export sans décision).
 - **À faire ensuite** : moteur `aqr export-subtitles` (PR 2), routes et réconciliation des orphelines (PR 3),
   écrans (PR 4).
+
+## 2026-10-23 — Moteur d'export des sous-titres (`aqr export-subtitles`)
+- **Décision** : un seul moteur de rendu en Python (le web n'a pas le corpus, risque n° 1 de la conception) ;
+  l'atelier le lance comme `recognize`. `aqr recognize --format srt,vtt` passe par les mêmes écrivains
+  (`aqr.rendering.subtitles`) ; le test `test_la_politique_marqueur_donne_les_memes_lignes_que_aqr_recognize`
+  garde l'alignement. La numérotation SRT de `recognize` devient séquentielle (elle comptait les détections omises).
+- **Hypothèses énoncées (règles du contrôle §3)** : une coupure n'est pas posée sur une répétition (un passage
+  redit est partiel par nature), ni quand le voisin proche est le même verset (il continue), ni sur les versets
+  supposés voisins (jamais entendus) ; après la basmala concaténée du verset 1, le premier mot de contenu est
+  le 5e ; une traduction inconnue (hors ligne) est comptée comme différente par prudence (I3) ; un signalement
+  posé sur un passage déjà à vérifier lui est rattaché (un passage, un décompte) ; un passage ignoré suit la
+  politique choisie pour l'export forcé (omettre par défaut).
+- **Choix d'écriture** : les formules autres que la basmala s'exportent avec le libellé arabe constant du
+  contrat (`label_ar`) entre crochets, jamais un arabe écrit pour l'occasion (I1) ; un marqueur
+  `[incertain : …]` est du texte latin, jamais encadré en RTL ; les points de suspension d'un fragment ne
+  tombent que sur une ligne qui porte du texte.
+- **Écart avec la conception** : une seule sorte `cut` (côtés `start`/`end` en détail) au lieu de `cut_start` et
+  `cut_end`, parce qu'une plage de mots étendue répond aux deux côtés à la fois.
+- **Mesure** : session réelle de 23 min (11 passages à vérifier dont 7 traductions approximatives) : contrôle
+  1,4 s, export ASS 1,0 s (corpus et cache de traduction locaux).
+- **Risques connus** : coupe de la traduction d'un long verset sans `segments` = proportionnelle (avertie) ;
+  taux de faux positifs de la règle des coupures non mesuré sur le lot 1 (risque n° 6 de la conception).

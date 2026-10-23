@@ -70,6 +70,13 @@
     "summary": "Le format aqr.decisions/1 : genres de décision et leur valeur, empreinte d'un intervalle, états (appliquée, orpheline, annulée), ce que le calque ne fait pas."
   },
   {
+    "slug": "export-sous-titres",
+    "title": "Export des sous-titres : le moteur",
+    "section": "Architecture",
+    "file": "docs/EXPORT-SOUS-TITRES.md",
+    "summary": "La commande aqr export-subtitles : ce qui est ambigu dans la partie coranique, la politique d'un export forcé, les options, les formats SRT, WebVTT, ASS et JSON, le contrôle de préparation."
+  },
+  {
     "slug": "adr-0001",
     "title": "ADR-0001 — Pas d'entraînement de zéro, pas de LLM génératif",
     "section": "Décisions",

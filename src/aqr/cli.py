@@ -8,7 +8,12 @@ dépôt) puis `<audio_dir>/manifest.yaml`.
 
 Codes de sortie : 0 succès · 1 erreur sur les données (fiche, étiquettes, cas inconnu, fichier
 absent ou déjà écrit) · 2 utilisation impossible (variable manquante, moteur ou option
-indisponible).
+indisponible) · 3 `export-subtitles` : des passages ambigus restent à corriger (voir ADR-0014).
+
+`aqr export-subtitles PREDICTION` (SRT, WebVTT, ASS, JSON), `aqr export-readiness PREDICTION` (le
+contrôle « prêt à exporter ? ») et `aqr corpus-verse REF` (un verset lu dans le corpus) servent
+l'atelier et la ligne de commande : voir `docs/DECISIONS.md` et
+`docs/design/export-sous-titres.md`.
 """
 
 from __future__ import annotations
@@ -36,6 +41,7 @@ from aqr.alignment.service import (
     passage_of,
     read_plan,
 )
+from aqr.corpus.checksums import CorpusChecksumError
 from aqr.data.alignment_import import import_alignment
 from aqr.data.config import DataConfig
 from aqr.data.ingest import Converter, ffmpeg_converter, ingest
@@ -49,6 +55,19 @@ from aqr.data.labels import (
 )
 from aqr.data.manifest import Manifest, ManifestError
 from aqr.data.split import assign_splits, quarantine_recitant
+from aqr.export.options import ExportOptions, OptionsError, parse_options
+from aqr.export.service import (
+    Environment as ExportEnvironment,
+)
+from aqr.export.service import (
+    ExportBlocked,
+    InputsError,
+    corpus_verse,
+    load_inputs,
+    run_export,
+    run_readiness,
+)
+from aqr.export.service import Inputs as ExportInputs
 from aqr.pipeline.factory import (
     ASR_CHOICES,
     CASCADE,
@@ -177,7 +196,70 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     pla.add_argument("prediction", type=Path, help="<fichier>.recognition.json")
     pla.add_argument("--out", type=Path, help="défaut : sortie standard")
+    _add_export_commands(commands)
     return parser
+
+
+def _add_export_commands(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """`export-subtitles`, `export-readiness`, `corpus-verse` (voir `aqr.export.service`)."""
+
+    def common(cmd: argparse.ArgumentParser) -> None:
+        cmd.add_argument("--corpus-dir", type=Path, default=Path("data/corpus"))
+        cmd.add_argument(
+            "--options", default="{}", help="options d'export (objet JSON, voir aqr.export.options)"
+        )
+        cmd.add_argument(
+            "--no-translations",
+            action="store_true",
+            help="ne lire ni le cache ni l'API QuranEnc (hors ligne strict)",
+        )
+
+    def passage(cmd: argparse.ArgumentParser) -> None:
+        cmd.add_argument("prediction", type=Path, help="<fichier>.recognition.json")
+        cmd.add_argument("--decisions", type=Path, help="decisions.json (aqr.decisions/1)")
+        cmd.add_argument("--review", type=Path, help="review.json (aqr.review/2)")
+        cmd.add_argument(
+            "--blocking-tags",
+            default="",
+            help="étiquettes de revue qui bloquent l'export, séparées par des virgules",
+        )
+        common(cmd)
+
+    sub = commands.add_parser(
+        "export-subtitles",
+        help="prédiction + décisions -> sous-titres SRT, WebVTT, ASS ou JSON (ADR-0014)",
+    )
+    passage(sub)
+    sub.add_argument("--out", type=Path, help="fichier à écrire")
+    sub.add_argument("--force", action="store_true", help="écraser le fichier existant")
+    sub.add_argument(
+        "--preview", type=int, metavar="N", help="n'écrit rien : résumé et N premiers sous-titres"
+    )
+    sub.add_argument("--format", dest="fmt", help="srt | vtt | ass | json (défaut : options)")
+    sub.add_argument("--content", help="ar_fr | ar | fr")
+    sub.add_argument("--policy", help="omit | marker | first (passages non résolus, si forcé)")
+    sub.add_argument(
+        "--allow-unresolved",
+        action="store_true",
+        help="forcer l'export malgré les passages ambigus",
+    )
+
+    ready = commands.add_parser(
+        "export-readiness", help="le contrôle « prêt à exporter ? » : passages ambigus et décisions"
+    )
+    passage(ready)
+    ready.add_argument("--page", type=int, default=0)
+    ready.add_argument("--size", type=int, default=10)
+    ready.add_argument(
+        "--type", dest="item_type", help="uncertain | inferred | cut | approx | report"
+    )
+
+    verse = commands.add_parser(
+        "corpus-verse", help="un verset lu dans le corpus (jamais un modèle)"
+    )
+    verse.add_argument("ref", help="sourate:verset")
+    verse.add_argument("--words", help="plage de mots « début-fin »")
+    common(verse)
 
 
 def _resolve_paths(args: argparse.Namespace, env: Mapping[str, str]) -> tuple[Path, Path] | None:
@@ -420,6 +502,117 @@ def _import_alignment(
     return 0
 
 
+def _export_environment(args: argparse.Namespace, env: Mapping[str, str]) -> ExportEnvironment:
+    cache = env.get("AQR_CACHE_DIR") or os.path.join(os.path.expanduser("~"), ".cache", "aqr")
+    return ExportEnvironment(
+        corpus_dir=args.corpus_dir,
+        cache_dir=None if args.no_translations else Path(cache) / "translations",
+        segments_dir=Path(env.get("AQR_SEGMENTS_DIR") or "data/translation-segments"),
+    )
+
+
+def _export_options(args: argparse.Namespace) -> ExportOptions:
+    try:
+        raw = json.loads(args.options)
+    except json.JSONDecodeError as exc:
+        raise OptionsError(f"--options : JSON invalide ({exc})") from None
+    if not isinstance(raw, dict):
+        raise OptionsError("--options : un objet JSON est attendu")
+    for key, value in (
+        ("format", getattr(args, "fmt", None)),
+        ("content", getattr(args, "content", None)),
+        ("policy", getattr(args, "policy", None)),
+    ):
+        if value:
+            raw[key] = value
+    if getattr(args, "allow_unresolved", False):
+        raw["allow_unresolved"] = True
+    return parse_options(raw)
+
+
+def _export_common(
+    args: argparse.Namespace, env: Mapping[str, str]
+) -> tuple[ExportInputs, ExportOptions, ExportEnvironment, frozenset[str]]:
+    options = _export_options(args)
+    inputs = load_inputs(args.prediction, args.decisions, args.review)
+    tags = frozenset(t.strip() for t in args.blocking_tags.split(",") if t.strip())
+    return inputs, options, _export_environment(args, env), tags
+
+
+def _print_json(document: object, out: TextIO) -> None:
+    out.write(json.dumps(document, ensure_ascii=False, indent=1) + "\n")
+
+
+def _export_subtitles(
+    args: argparse.Namespace, env: Mapping[str, str], out: TextIO, err: TextIO
+) -> int:
+    if args.out is None and args.preview is None:
+        print("ERREUR --out FICHIER ou --preview N est requis", file=err)
+        return 2
+    if args.out is not None and args.out.exists() and not args.force:
+        print(f"ERREUR sortie déjà présente : {args.out} (--force pour écraser)", file=err)
+        return 1
+    try:
+        inputs, options, environment, tags = _export_common(args, env)
+        result = run_export(inputs, options, environment, tags, preview=args.preview)
+    except (OptionsError, InputsError, CorpusChecksumError, OSError, ValueError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    except ExportBlocked as exc:
+        print(f"ERREUR {exc} : corriger ou forcer (--allow-unresolved)", file=err)
+        _print_json({"error": "unresolved_items", "unresolved": exc.unresolved}, out)
+        return 3
+    if args.out is not None and args.preview is None:
+        data = result.content.encode("utf-8")
+        if options.bom and options.format != "json":
+            data = b"\xef\xbb\xbf" + data
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_bytes(data)
+        result.summary["file"] = args.out.name
+        result.summary["bytes"] = len(data)
+    _print_json(result.summary, out)
+    return 0
+
+
+def _export_readiness(
+    args: argparse.Namespace, env: Mapping[str, str], out: TextIO, err: TextIO
+) -> int:
+    try:
+        inputs, options, environment, tags = _export_common(args, env)
+        payload = run_readiness(
+            inputs,
+            options,
+            environment,
+            tags,
+            page=max(0, args.page),
+            size=args.size,
+            type_filter=args.item_type,
+        )
+    except (OptionsError, InputsError, CorpusChecksumError, OSError, ValueError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    _print_json(payload, out)
+    return 0
+
+
+def _corpus_verse(
+    args: argparse.Namespace, env: Mapping[str, str], out: TextIO, err: TextIO
+) -> int:
+    words: tuple[int, int] | None = None
+    try:
+        if args.words:
+            first, _, last = args.words.partition("-")
+            words = (int(first), int(last or first))
+        payload = corpus_verse(
+            args.ref, words, _export_options(args), _export_environment(args, env)
+        )
+    except (OptionsError, CorpusChecksumError, OSError, ValueError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    _print_json(payload, out)
+    return 0 if payload.get("ok") else 1
+
+
 def _plan_alignment(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
     try:
         prediction = json.loads(args.prediction.read_text(encoding="utf-8"))
@@ -459,6 +652,12 @@ def main(
         return _align(args, env, out, err, aligner_factory)
     if args.command == "plan-alignment":
         return _plan_alignment(args, out, err)
+    if args.command == "export-subtitles":
+        return _export_subtitles(args, env, out, err)
+    if args.command == "export-readiness":
+        return _export_readiness(args, env, out, err)
+    if args.command == "corpus-verse":
+        return _corpus_verse(args, env, out, err)
     if args.command != "data":
         parser.print_help(out)
         return 0
