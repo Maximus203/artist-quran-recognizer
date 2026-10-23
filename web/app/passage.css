@@ -209,6 +209,11 @@
   padding: var(--sp-8) 0;
   color: var(--text-2);
 }
+/* Carte vide (rien de détecté) : même hauteur qu'un passage court, pour ne pas faire sauter la page. */
+.p-empty.p-blank {
+  min-height: 9rem;
+  padding: 0;
+}
 .p-empty .ar-label {
   font: 400 2.2rem / 1.4 var(--font-quran);
   color: var(--text);

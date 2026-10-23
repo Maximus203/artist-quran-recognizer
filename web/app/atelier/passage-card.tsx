@@ -5,7 +5,7 @@ import { FORMULA_NOTICE } from "@/lib/formulas";
 import { formatTime, type Interval } from "@/lib/recognition";
 import {
   describePassage,
-  shownIndex,
+  visibleIndex,
   type PassageModel,
   type TranslationView,
 } from "@/lib/passage";
@@ -329,12 +329,8 @@ function Body({
         </>
       );
     default:
-      return (
-        <div className="p-empty">
-          <h3>Aucun verset localisé à cet instant</h3>
-          <p>Lis un passage ou sélectionne un segment dans la liste.</p>
-        </div>
-      );
+      // Rien de détecté à cet instant : la carte reste vide (hauteur conservée, pas de message).
+      return <div className="p-empty p-blank" aria-hidden="true" />;
   }
 }
 
@@ -445,13 +441,14 @@ export function LivePassage(
     onSeek,
     ...rest
   } = props;
+  // Rien de détecté (silence, abstention non choisie) : la carte reste vide.
   const index = useStoreValue(store, (s) =>
-    shownIndex(intervals, selectedIndex, s.time),
+    visibleIndex(intervals, selectedIndex, s.time),
   );
   const item = index >= 0 ? intervals[index] : null;
   const wordIndex = useStoreValue(store, (s) => {
     if (!liveHighlight) return -1;
-    const shown = shownIndex(intervals, selectedIndex, s.time);
+    const shown = visibleIndex(intervals, selectedIndex, s.time);
     const times = shown >= 0 ? wordTimesOf(intervals[shown]) : null;
     return times ? currentWordIndex(times, s.time) : -1;
   });
