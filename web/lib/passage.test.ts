@@ -6,6 +6,7 @@ import {
   intervalLabel,
   intervalStateLabel,
   intervalStyle,
+  passageToShow,
   shownIndex,
   splitNoteMarkers,
   toArabicIndic,
@@ -339,5 +340,34 @@ describe("filterIntervals", () => {
   });
   it("garde l'indice d'origine de chaque intervalle", () => {
     expect(filterIntervals(list, "abstention")[0].index).toBe(4);
+  });
+});
+
+describe("passageToShow : la carte reste vide quand rien n'est détecté", () => {
+  const abstention = (t: [number, number]): Interval =>
+    ({ kind: "abstention", reason: "no_candidate", t }) as Interval;
+  const intervals: Interval[] = [
+    abstention([0, 10]),
+    verse({ t: [10, 20] }),
+    abstention([20, 30]),
+  ];
+
+  it("un verset en cours s'affiche", () => {
+    expect(passageToShow(intervals, null, 15)).toBe(intervals[1]);
+  });
+
+  it("silence ou abstention pendant la lecture : rien (pas de message à chaque trou)", () => {
+    expect(passageToShow(intervals, null, 5)).toBeNull();
+    expect(passageToShow(intervals, null, 25)).toBeNull();
+    expect(passageToShow(intervals, null, 99)).toBeNull();
+  });
+
+  it("une abstention choisie dans la liste s'explique : c'est un diagnostic voulu", () => {
+    expect(passageToShow(intervals, 2, 25)).toBe(intervals[2]);
+  });
+
+  it("l'abstention choisie n'est plus montrée quand la lecture en sort", () => {
+    expect(passageToShow(intervals, 2, 15)).toBe(intervals[1]);
+    expect(passageToShow(intervals, 2, 5)).toBeNull();
   });
 });
