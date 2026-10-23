@@ -45,11 +45,11 @@ def trace_path(manifest_path: Path) -> Path:
 
 def portable_path(path: Path, repo_root: Path, home: Path) -> str:
     """Chemin sans information locale : relatif au dépôt, sinon `~/...`, sinon `<hors-depot>/x`."""
-    text = str(path)
+    text = path.as_posix()  # sous Windows, `~\x` devient `~/x` : même trace partout
     if text == "~" or text.startswith("~/"):
         return text
-    if not path.is_absolute():
-        return path.as_posix()
+    if not (path.is_absolute() or text.startswith("/")):  # `/x` n'est pas absolu sous Windows
+        return text
     for base, prefix in ((repo_root, ""), (home, "~/")):
         try:
             return prefix + path.relative_to(base).as_posix()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import stat
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -123,6 +124,9 @@ def test_ecriture_qui_echoue_laisse_l_ancien_contenu_et_aucun_tmp(tmp_path: Path
     assert [p.name for p in tmp_path.iterdir()] == ["x.json"]
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="les bits de permission POSIX n'existent pas sous Windows"
+)
 @pytest.mark.parametrize(
     ("umask", "mode"), [(0o022, 0o644), (0o077, 0o600), (0o002, 0o664), (0o000, 0o666)]
 )

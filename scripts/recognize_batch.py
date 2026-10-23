@@ -27,7 +27,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import resource
 import signal
 import sys
 import threading
@@ -43,6 +42,7 @@ from typing import Any
 from aqr.cli import RecognizerFactory, _sha256_of
 from aqr.corpus.checksums import sha256_of, sha256_of_file
 from aqr.data.manifest import AudioCase, Manifest
+from aqr.eval.portable import peak_rss_mb
 from aqr.eval.report import git_state
 from aqr.eval.run import (
     RUN_FILE,
@@ -158,7 +158,7 @@ def _recognize_case(
         "wall_s": round(wall, 3),
         "audio_s": round(result.duration_s, 3),
         # pic CUMULÉ du processus (modèles chargés compris) : non attribuable à ce cas
-        "process_peak_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024,
+        "process_peak_rss_mb": peak_rss_mb(),
     }
     print(f"{case.id} {wall:.1f}s/{result.duration_s:.1f}s", flush=True)
     engine = document["engine"]

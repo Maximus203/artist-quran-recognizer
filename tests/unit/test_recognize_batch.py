@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
@@ -388,6 +389,9 @@ def test_le_verrou_est_libere_apres_un_lot_interrompu(world):
     assert _batch(world, _Pipeline("moteur-A")) == 0
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="os.kill(SIGTERM) termine le processus sous Windows"
+)
 def test_sigterm_est_converti_en_interruption_propre(world):
     import signal
 
