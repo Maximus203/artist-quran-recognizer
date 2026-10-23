@@ -252,6 +252,13 @@
     "summary": "Rappel du moteur sous bruit, réverbération, téléphone, MP3 et récitation lente, règle de décision écrite d'avance : un fine-tuning avec dégradations n'est pas justifié, mais la mesure est saturée."
   },
   {
+    "slug": "courbe-vitesse-2026-10-23",
+    "title": "Courbe de vitesse : réécouter un audio accéléré",
+    "section": "Évaluation",
+    "file": "docs/evaluation/courbe-vitesse-2026-10-23.md",
+    "summary": "Rappel sur témoins étirés et sur vrais fichiers lents quand l'audio est accéléré de ×1,25 à ×4, estimateurs du débit sans vérité, règle de décision écrite d'avance : l'étage « candidat de vitesse » n'est pas implémenté."
+  },
+  {
     "slug": "corpus-de-test",
     "title": "Corpus de test audio",
     "section": "Données",
