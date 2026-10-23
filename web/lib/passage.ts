@@ -226,6 +226,32 @@ export function shownIndex(
   return activeIndex(intervals, time);
 }
 
+/**
+ * Ce que la carte du passage actif montre : le verset (ou la formule) en cours, sinon RIEN. Un silence ou
+ * une abstention pendant la lecture ne doit pas afficher de message à chaque trou (le verset suivant va
+ * venir) ; l'explication d'une abstention n'apparaît que si le testeur l'a choisie dans la liste.
+ */
+export function visibleIndex(
+  intervals: readonly Interval[],
+  selected: number | null,
+  time: number,
+): number {
+  const index = shownIndex(intervals, selected, time);
+  if (index < 0) return -1;
+  return intervals[index].kind === "abstention" && index !== selected
+    ? -1
+    : index;
+}
+
+export function passageToShow(
+  intervals: readonly Interval[],
+  selected: number | null,
+  time: number,
+): Interval | null {
+  const index = visibleIndex(intervals, selected, time);
+  return index < 0 ? null : intervals[index];
+}
+
 /** Filtres de la liste des intervalles ; l'indice d'origine est conservé (clic, sélection). */
 export function filterIntervals(
   intervals: readonly Interval[],
