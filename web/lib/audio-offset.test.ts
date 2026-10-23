@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AUDIO_OFFSET,
+  calibrationWindow,
   clampAudioOffset,
   formatAudioOffset,
   heardTime,
@@ -59,6 +60,24 @@ describe("heardTime : l'instant que l'oreille entend", () => {
     expect(currentWordIndex(times, heardTime(1.65, 100))).toBe(1);
     // avant le premier mot : rien n'est surligné tant que le son n'est pas arrivé
     expect(currentWordIndex(times, heardTime(1.05, 100))).toBe(-1);
+  });
+});
+
+describe("calibrationWindow : le passage court lu en boucle pour caler à l'oreille", () => {
+  it("garde un passage court tel quel", () => {
+    expect(calibrationWindow([10, 14])).toEqual([10, 14]);
+  });
+  it("coupe un passage long à sa durée maximale, depuis son début", () => {
+    expect(calibrationWindow([10, 60])).toEqual([
+      10,
+      10 + AUDIO_OFFSET.calibrationSpanS,
+    ]);
+  });
+  it("refuse une plage absente ou vide", () => {
+    expect(calibrationWindow(null)).toBeNull();
+    expect(calibrationWindow([5, 5])).toBeNull();
+    expect(calibrationWindow([5, 4])).toBeNull();
+    expect(calibrationWindow([Number.NaN, 4])).toBeNull();
   });
 });
 

@@ -174,6 +174,12 @@ export function usePlayer(
     done.current = null;
   }, []);
 
+  /** Arrête la lecture ET toute plage (boucle comprise) : le calage à l'oreille se referme proprement. */
+  const stopPlayback = useCallback(() => {
+    stopRange();
+    audioRef.current?.pause();
+  }, [stopRange]);
+
   const seek = useCallback(
     (time: number) => {
       const node = audioRef.current;
@@ -241,6 +247,7 @@ export function usePlayer(
     skip,
     playRange,
     stopRange,
+    stopPlayback,
     position,
   };
 }

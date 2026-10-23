@@ -9,7 +9,13 @@
  */
 import { formulaFromLabel, type Formula } from "./formulas";
 import { indexAt, timeIndexOf } from "./interval-index";
-import { liveWords, type LiveWords } from "./live-highlight";
+import { heardTime } from "./audio-offset";
+import {
+  currentWordIndex,
+  liveWords,
+  wordTimesOf,
+  type LiveWords,
+} from "./live-highlight";
 import type { Interval } from "./recognition";
 import {
   translationDisplay,
@@ -244,6 +250,29 @@ export function visibleIndex(
   return intervals[index].kind === "abstention" && index !== selected
     ? -1
     : index;
+}
+
+/**
+ * Ce que la carte entend à l'instant `time` : l'intervalle affiché et le mot en cours (-1 : aucun).
+ * Pendant la lecture, le décalage audio retarde les deux (l'oreille entend `time − décalage`) ; à
+ * l'arrêt il ne s'applique pas, pour qu'un clic sur un mot garde ce mot. Jamais un mot deviné : sans
+ * temps de mots valides, `wordIndex` vaut -1.
+ */
+export function liveAt(
+  intervals: readonly Interval[],
+  selected: number | null,
+  time: number,
+  options: { offsetMs: number; playing: boolean; pin?: number | null },
+): { index: number; wordIndex: number } {
+  const heard = options.playing ? heardTime(time, options.offsetMs) : time;
+  // Calage à l'oreille : le passage lu en boucle reste affiché, même quand le son est encore en route.
+  const pin = options.pin ?? null;
+  const index =
+    pin !== null && intervals[pin]?.kind === "verse"
+      ? pin
+      : visibleIndex(intervals, selected, heard);
+  const times = index >= 0 ? wordTimesOf(intervals[index]) : null;
+  return { index, wordIndex: times ? currentWordIndex(times, heard) : -1 };
 }
 
 export function passageToShow(

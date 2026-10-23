@@ -1,5 +1,10 @@
 "use client";
 import { useState } from "react";
+import {
+  AUDIO_OFFSET,
+  clampAudioOffset,
+  formatAudioOffset,
+} from "@/lib/audio-offset";
 import type { Preferences } from "@/lib/preferences-schema";
 import { QURAN_FONTS, type QuranFontId } from "@/lib/quran-fonts";
 import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
@@ -240,6 +245,47 @@ export function PreferencesPane() {
             checked={prefs.liveHighlight}
             onChange={(liveHighlight) => update({ liveHighlight })}
           />
+        </Setting>
+        <Setting
+          id="lab-offset"
+          label="Décalage audio"
+          help="Si le mot surligné devance la voix (écouteurs Bluetooth : 100 à 300 ms), retarde le surlignage. Seul l’affichage change, jamais l’audio. Pour caler à l’oreille, ouvre une session et utilise « Caler à l’oreille » sous le passage."
+        >
+          <div className="slider-line">
+            <input
+              type="range"
+              id="pref-offset"
+              data-testid="pref-offset"
+              min={AUDIO_OFFSET.min}
+              max={AUDIO_OFFSET.max}
+              step={AUDIO_OFFSET.step}
+              value={prefs.audioOffsetMs}
+              aria-labelledby="lab-offset"
+              aria-valuetext={formatAudioOffset(prefs.audioOffsetMs)}
+              style={
+                {
+                  "--p": `${((prefs.audioOffsetMs - AUDIO_OFFSET.min) / (AUDIO_OFFSET.max - AUDIO_OFFSET.min)) * 100}%`,
+                } as React.CSSProperties
+              }
+              onChange={(event) =>
+                update({
+                  audioOffsetMs: clampAudioOffset(Number(event.target.value)),
+                })
+              }
+            />
+            <output htmlFor="pref-offset" data-testid="pref-offset-value">
+              {formatAudioOffset(prefs.audioOffsetMs)}
+            </output>
+          </div>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            data-testid="pref-offset-zero"
+            disabled={prefs.audioOffsetMs === 0}
+            onClick={() => update({ audioOffsetMs: 0 })}
+          >
+            Remettre à 0
+          </button>
         </Setting>
         <div className="preview-ar" aria-label="Aperçu">
           <p className="eyebrow lbl">
