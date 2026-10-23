@@ -2,7 +2,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import { AVATAR } from "@/lib/avatar-config";
-import { checkPickedFile } from "@/lib/avatar-pick";
+import { checkPickedDimensions, checkPickedFile } from "@/lib/avatar-pick";
 import type { PublicUser } from "@/lib/auth-response";
 import { Avatar } from "./avatar";
 import { Icon } from "./icons";
@@ -22,7 +22,19 @@ export function AvatarSetting() {
   const [problem, setProblem] = useState("");
   const [status, setStatus] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const choose = useRef<HTMLButtonElement>(null);
+  const [refocus, setRefocus] = useState(0);
   const helpId = useId();
+
+  // Le bouton qu'on vient d'activer (« Utiliser cette photo », « Retirer ») disparaît : le focus
+  // clavier revient sur « Choisir / Changer la photo » au lieu de tomber sur la page.
+  useEffect(() => {
+    if (refocus > 0) choose.current?.focus();
+  }, [refocus]);
+  const leave = () => {
+    setStaged(null);
+    setRefocus((n) => n + 1);
+  };
 
   // L'aperçu est une URL locale : on la libère dès qu'elle ne sert plus.
   useEffect(
@@ -55,7 +67,7 @@ export function AvatarSetting() {
         body: staged.file,
       });
       setAvatarVersion(next.avatar_version);
-      setStaged(null);
+      leave();
       setStatus("Photo enregistrée.");
     } catch (error) {
       setProblem(
@@ -70,7 +82,7 @@ export function AvatarSetting() {
         error.status >= 400 &&
         error.status < 500
       )
-        setStaged(null);
+        leave();
     } finally {
       setBusy(false);
     }
@@ -83,7 +95,7 @@ export function AvatarSetting() {
     try {
       await api("/api/me/avatar", { method: "DELETE" });
       setAvatarVersion(null);
-      setStaged(null);
+      leave();
       setStatus("Photo retirée : ton initiale est de retour.");
     } catch (error) {
       setProblem(error instanceof Error ? error.message : "Action impossible.");
@@ -93,7 +105,7 @@ export function AvatarSetting() {
   };
 
   const cancel = () => {
-    setStaged(null);
+    leave();
     setProblem("");
     if (input.current) input.current.value = "";
   };
@@ -111,10 +123,22 @@ export function AvatarSetting() {
             height={96}
             data-testid="avatar-preview"
             onError={() => {
-              setStaged(null);
+              leave();
               setProblem(
                 "Ton navigateur n’arrive pas à lire cette image : essaie-en une autre.",
               );
+            }}
+            onLoad={(event) => {
+              // Mêmes bornes de dimensions que le serveur : pas d'aperçu pour un refus certain.
+              const { naturalWidth, naturalHeight } = event.currentTarget;
+              const refusal = checkPickedDimensions(
+                naturalWidth,
+                naturalHeight,
+              );
+              if (refusal) {
+                leave();
+                setProblem(refusal);
+              }
             }}
           />
         ) : (
@@ -160,7 +184,8 @@ export function AvatarSetting() {
             <>
               <button
                 type="button"
-                className="btn btn--sm"
+                ref={choose}
+                className="btn btn--secondary btn--sm"
                 data-testid="avatar-choose"
                 disabled={busy}
                 onClick={() => input.current?.click()}

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { AVATAR } from "./avatar-config";
+import { AVATAR, avatarDimensionsMessage } from "./avatar-config";
 
 /**
  * Photo de profil : de l'octet reçu au JPEG servi.
@@ -260,10 +260,7 @@ const REFUSALS = {
     "Format non pris en charge : choisis une image JPEG, PNG ou WebP.",
   ],
   corrupt: [422, "Cette image est illisible ou abîmée : essaie-en une autre."],
-  dimensions: [
-    422,
-    `Dimensions refusées : de ${AVATAR.minSide} à ${AVATAR.maxSide} px de côté.`,
-  ],
+  dimensions: [422, avatarDimensionsMessage()],
   unavailable: [
     503,
     "Le traitement des images est indisponible sur ce serveur (ffmpeg introuvable).",

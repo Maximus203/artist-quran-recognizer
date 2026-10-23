@@ -28,6 +28,10 @@ export const AVATAR = {
   hashLength: 16,
 } as const;
 
+/** Message de refus des dimensions : le même dans le navigateur (avant l'envoi) et sur le serveur. */
+export const avatarDimensionsMessage = (): string =>
+  `Dimensions refusées : de ${AVATAR.minSide} à ${AVATAR.maxSide} px de côté.`;
+
 /** Adresse de la photo d'un compte ; `version` (empreinte) rend l'adresse neuve à chaque changement. */
 export function avatarUrl(userId: number, version: string): string {
   return `/api/users/${userId}/avatar?v=${encodeURIComponent(version)}`;

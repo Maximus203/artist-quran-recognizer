@@ -78,14 +78,18 @@ export function PersonChip({
   me = false,
   size = "sm",
   testId,
+  srLabel,
 }: {
   person: AvatarPerson;
   me?: boolean;
   size?: AvatarSize;
   testId?: string;
+  /** Contexte lu aux lecteurs d'écran avant le pseudo (« Importé par »), quand rien de visible ne le dit. */
+  srLabel?: string;
 }) {
   return (
     <span className="who-chip" data-testid={testId}>
+      {srLabel ? <span className="sr">{srLabel} </span> : null}
       <Avatar person={person} size={size} />
       <span className="nm" title={person.username}>
         {person.username}

@@ -1,4 +1,21 @@
-import { AVATAR } from "./avatar-config";
+import { AVATAR, avatarDimensionsMessage } from "./avatar-config";
+
+/**
+ * Mêmes bornes de dimensions que le serveur, appliquées dès que le navigateur a décodé l'image :
+ * on ne propose pas « Utiliser cette photo » pour un fichier que le serveur refusera.
+ */
+export function checkPickedDimensions(
+  width: number,
+  height: number,
+): string | null {
+  const ok =
+    Number.isFinite(width) &&
+    Number.isFinite(height) &&
+    Math.min(width, height) >= AVATAR.minSide &&
+    Math.max(width, height) <= AVATAR.maxSide &&
+    width * height <= AVATAR.maxPixels;
+  return ok ? null : avatarDimensionsMessage();
+}
 
 const ACCEPTED = new Set(AVATAR.accept.split(","));
 

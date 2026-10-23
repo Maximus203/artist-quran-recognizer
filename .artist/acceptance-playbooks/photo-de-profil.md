@@ -1,5 +1,5 @@
 # Photo de profil et « qui a importé quoi » dans les listes de sessions
-> Surfaces : [API] · [mobile 375 px] · [desktop 1280 px] · Statut : ✅ (10 scénarios, vérifiés par l'auteur ; le rapport de Cherif QA est ajouté dans la PR) · Build : feat/photo-de-profil · Testé : 2026-10-23
+> Surfaces : [API] · [mobile 375 px] · [desktop 1280 px] · Statut : ✅ (12 scénarios ; campagne indépendante de Cherif QA du 2026-10-23 : aucun défaut bloquant, 4 corrections faites, voir P.11 et P.12) · Build : feat/photo-de-profil · Testé : 2026-10-23
 > Périmètre : `PUT`/`DELETE /api/me/avatar`, `GET /api/users/<id>/avatar`, `owner` de `GET /api/sessions`, réglage dans `/compte`, avatar de l'en-tête, du menu du compte, du panneau Sessions, de `/sessions` et de l'en-tête d'une session, migration `002_photo_de_profil.sql`.
 > Environnement : `next build` puis `next start` sur 127.0.0.1:3217 (jamais `next dev`), dossier de données de TEST jetable (`AQR_REVIEW_DIR` sur D:, jamais les données du mainteneur), quatre comptes locaux (« Chef Test » administrateur, « Amina Test », « Bilal Test », « Cécile Test »), cinq audios générés par ffmpeg (sinus de 4 s). Navigateur du volet intégré de l'outil, tailles émulées 375×812, 1024×768 et 1280×800, thèmes sombre et clair.
 > Critère d'arrêt : tous les scénarios critiques ✅, tous les refus (must-fail) bloqués, aucune erreur inattendue dans la console (observé : seules les réponses 415/404 voulues des scénarios négatifs).
@@ -100,3 +100,27 @@
 **Observé** : conforme
 **Verdict** : ✅
 **Issue** : —
+
+### P.11 — [desktop 1280 px] Le bouton de choix a un survol et le focus clavier ne se perd pas
+**Priorité** : important
+**Technique** : transition d'état (accessibilité)
+**Action** : Survoler « Changer la photo » ; au clavier, activer « Utiliser cette photo » puis « Retirer » ; lire `document.activeElement`.
+**Attendu** : le bouton a un contour (variante secondaire) et un état de survol ; après chaque action, le focus est sur « Choisir / Changer la photo », jamais sur `<body>` ; le pseudo d'une ligne de session est précédé de « Importé par » pour un lecteur d'écran.
+**Observé** : contour et anneau visibles au survol ; focus sur `avatar-choose` après l'enregistrement et après l'annulation ; texte masqué « Importé par » dans les puces de propriétaire des cartes et des lignes
+**Verdict** : ✅
+**Issue** : — (relevé par Cherif QA : D1, D2, D5 ; corrigés avant ce test)
+
+### P.12 — [desktop 1280 px] Un fichier aux dimensions refusées n'a pas d'aperçu
+**Priorité** : important
+**Technique** : valeurs-limites (dimensions)
+**Action** : Choisir un PNG de 1×1 px, puis un PNG de 600×300.
+**Attendu** : le 1×1 est refusé tout de suite (« Dimensions refusées : de 32 à 8192 px de côté. », même texte que le serveur), sans aperçu ni envoi ; le 600×300 s'affiche et s'enregistre.
+**Observé** : message identique à celui du serveur, pas d'aperçu, focus sur « Choisir une photo » ; le 600×300 s'affiche et s'enregistre (« Photo enregistrée. »)
+**Verdict** : ✅
+**Issue** : — (relevé par Cherif QA : D4 ; corrigé avant ce test)
+
+## Défauts relevés par Cherif QA et laissés tels quels (décisions)
+- Le serveur coupe la connexion au lieu de répondre `413` pour un `PUT` en flux (sans `Content-Length`) de plus de 2 Mo : cas hors navigateur, l'interface contrôle la taille avant l'envoi.
+- Un `PUT` sans en-tête `Origin` est accepté avec un cookie valide : règle commune à toutes les écritures de l'atelier (le cookie est `SameSite=Lax`), pas propre à cette fonction.
+- L'état de la photo ne se synchronise pas entre deux onglets du même compte avant la prochaine action ou le prochain rechargement.
+- Hors périmètre, présents avant ce changement : la grille de `/sessions` dépasse de sa carte entre 1024 et 1140 px (actions de ligne coupées) ; l'en-tête déborde horizontalement entre 761 et 1008 px.

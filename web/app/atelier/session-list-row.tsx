@@ -70,7 +70,12 @@ export function SessionListRow({
   const owner = useOwnerPerson(s.owner);
   const ownerChip = (testId: string) =>
     owner ? (
-      <PersonChip person={owner} me={s.mine} testId={testId} />
+      <PersonChip
+        person={owner}
+        me={s.mine}
+        testId={testId}
+        srLabel="Importé par"
+      />
     ) : (
       <span className="ic" data-testid={testId}>
         <Icon name="user" />
