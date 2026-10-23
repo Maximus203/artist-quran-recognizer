@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Détection en direct : l'étape 1, la simulation hors ligne
+Étiquettes : technique, décision
+PR : #104
+
+**Ce qui change.** Rien de visible pour l'instant : le suivi en direct (candidats ouverts au début d'un verset, verrou quand un mot départage, suite attendue, saut) existe comme moteur de simulation hors ligne, avec son banc de mesure. Sur 82 scénarios à vérité calculée, le premier message de candidats arrive en médiane 2,0 s après le début du verset et le verrou en 4,9 s (p90 8,2 s) ; 376 versets sur 492 sont nommés. Un début de verset attendu dont l'ASR avale le premier mot n'est plus annoncé comme un saut. Un nouveau réglage, `min_lock_density`, refuse de nommer un verset dont les mots sont épars dans de la parole ; il est éteint par défaut.
+
+**Pourquoi / décision.** Le critère de sortie de l'étape 1, zéro faux verset nommé, n'est **pas atteint** : 1 faux verrou sur 376 en vérité calculée (retiré en 2 s) et 8 verrous non confirmés sur 3 600 s de parole réelle. Le rapport dit les limites (jeu optimiste, aucune vérité terrain humaine) et propose des cibles de latence et des garde-fous à trancher avant l'étape 2. Décisions du 2026-10-23 consignées dans l'ADR-0011 : `INFERRED` accepté avec `identity_basis: context`, `prior` 0,9 et `min_words_lock` 3 en valeurs de départ, transcription provisoire visible en mode technique seulement, audio du flux jamais conservé par défaut, transport WebSocket `aqr.live/1` et non WebRTC. Rapport : `docs/evaluation/live-etape1-2026-10-23.md`.
+
 ## 2026-10-23 — Photo de profil et propriétaire de chaque audio dans les listes
 Étiquettes : utilisateur, technique
 PR : #103

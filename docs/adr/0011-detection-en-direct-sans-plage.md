@@ -1,6 +1,7 @@
 # ADR-0011 — Détection en direct sur flux, sans plage déclarée
 
-- Statut : **proposé** — 2026-10-23 (conception ; rien n'est codé hors du script d'analyse)
+- Statut : **accepté** — décisions du mainteneur du 2026-10-23 ; **étape 1 (simulation hors ligne) livrée**,
+  son critère de sortie n'est pas atteint (voir « Résultats de l'étape 1 »). Étapes 2 à 4 : à faire.
 - Précise : ADR-0004 (recherche sur le flux continu), ADR-0007 (preuve cumulée), ADR-0008
   (vérification acoustique), ADR-0009 (cascade), ADR-0010 (promotion par le voisin reconnu et temps au
   mot). Remplace la ligne « V2+ : mode temps réel » de
@@ -343,10 +344,21 @@ Règle de sécurité : **quand un palier est sauté, la règle de verrou se durc
    confirmer à tort un autre passage identique ; pris en charge par SAUT LOCAL et `repetition`.
 6. **Vie privée** : un flux en direct est de la voix d'une personne ; pas de conservation par défaut.
 
+## Résultats de l'étape 1
+Rapport complet : `docs/evaluation/live-etape1-2026-10-23.md`. Sur 82 scénarios à vérité calculée
+(492 versets, EveryAyah et mixages, **jeu optimiste**, aucune vérité terrain humaine) : premier
+`CANDIDATES` médiane 2,0 s / p90 3,8 s ; `LOCKED` médiane 4,9 s / p90 8,2 s, 376 versets nommés ;
+**1 faux verrou** (67:16 pour 67:17, retiré en 2 s par une `REVISION`) et **8 verrous non confirmés** sur
+3 600 s de parole réelle. Le critère « 0 faux verset nommé » n'est donc pas tenu.
+Écarts avec ce qui est décidé plus haut : garde-fous du verrou ajoutés (milieu de verset, rival non
+sosie, densité des mots, confiance, mots exacts), tous éteints par défaut ; un début qui est la suite
+attendue entendue sans son premier mot n'est plus un saut. Les valeurs de départ (`prior` 0,9,
+`min_words_lock` 3) sont inchangées.
+
 ## Plan par étapes
 Chaque étape a son playbook (`.artist/acceptance-playbooks/`) et ne démarre qu'avec l'étape précédente
 verte. TDD strict.
-1. **Simulation hors ligne.** Rejouer des fichiers comme un flux (sorties par fenêtre et mots de l'ASR,
+1. **Simulation hors ligne — livrée (PR de l'issue #84), critère de sortie non atteint.** Rejouer des fichiers comme un flux (sorties par fenêtre et mots de l'ASR,
    audio EveryAyah, dev réel, mixages avec parole non coranique). Construire `PrefixIndex`,
    `HypothesisTracker`, `LiveConfig` et les mesures : temps jusqu'au premier `CANDIDATES`, au `LOCKED`,
    nombre de faux verrous (**doit être 0**, I3), `JUMP`/`LOST` sur les mixages. Poser les cibles de
@@ -359,9 +371,6 @@ verte. TDD strict.
    navigateur, puis par Cherif QA.
 
 ## Questions ouvertes pour le mainteneur
-1. Accepter `INFERRED` pour « texte entendu, référence déduite de la position » (refrains, sosies) ?
-   Sinon, ces versets resteront `UNCERTAIN` jusqu'à la clôture.
-2. Valeurs de départ de `prior` (0,9 ?) et de `min_words_lock` (3 ?) pour l'étape 1 : paramètres de
-   simulation, pas des seuils.
-3. Afficher la transcription provisoire (`PARTIAL`) à l'utilisateur, ou seulement en mode technique ?
-4. Conservation de l'audio d'un flux : jamais, ou sur option du compte ?
+Les quatre questions de la première version sont **tranchées le 2026-10-23** (section « Décisions du
+mainteneur »). Reste ouverte celle que l'étape 1 a fait naître : quel garde-fou contre les verrous sur la
+parole et le mot fondu (`min_lock_density` 0,8 ou 0,9, ou `min_words_lock` 5) ; voir le rapport.

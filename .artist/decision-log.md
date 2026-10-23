@@ -1479,3 +1479,10 @@
 - **Rien ne change dans la visibilité** : l'API des sessions ajoute `owner.avatar_version` (jamais d'e-mail) ; une session privée reste invisible des autres comptes. Les pseudos et photos sont, eux, visibles de tout compte connecté (voulu par le mainteneur).
 - **Non traité** : il n'existe pas de suppression de compte ; la fonction `clearAvatar` est prête pour le jour où elle existera. La liste à 1024 px dépassait déjà de sa carte avant ce changement (grille à 1076 px) ; non aggravée, non corrigée (hors périmètre).
 - **Preuve** : `.artist/acceptance-playbooks/photo-de-profil.md` (10 scénarios, build de production, 375 px et 1280 px, thèmes clair et sombre), tests `web/lib/avatar-*.test.ts`, `migrate.test.ts`, `session-index.test.ts`.
+
+## 2026-10-23 — Détection en direct, étape 1 (simulation hors ligne)
+- **Mesure, pas réglage** : le banc rejoue 82 scénarios à vérité calculée et 9 extraits réels (lots `dev` seulement, jamais le split `test`, jamais les sessions locales). Résultats et limites : `docs/evaluation/live-etape1-2026-10-23.md`.
+- **Critère « 0 faux verrou » non atteint**, dit tel quel : 1 faux verrou (67:16 pour 67:17, mot fondu par l'ASR, retiré en 2 s) et 8 verrous non confirmés sur de la parole réelle. Aucune valeur par défaut n'a été changée pour le faire disparaître ; le garde-fou `min_lock_density` (0,8 : 0 verrou sur la parole, 13 verrous perdus ; 0,9 : supprime aussi le faux verrou, 54 perdus) est livré éteint, à trancher par le mainteneur.
+- **Correction de moteur trouvée par le banc** : la suite attendue entendue sans son premier mot n'est plus un saut (62 à 21 sauts non attendus vers l'avant).
+- **Patterns** : State (`HypothesisTracker`), Strategy (`PriorPolicy`), Observer (événements), Repository en lecture (`PrefixIndex`), banc = Template Method simple (build, asr, report reprenables).
+- **Preuve** : `.artist/acceptance-playbooks/live-etape1.md`, tests `tests/unit/test_live_*.py` et `tests/test_measure_live_sim.py`.
