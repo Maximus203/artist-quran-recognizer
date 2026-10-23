@@ -120,6 +120,42 @@ inférieur à 0,05 s, durée identique à l'échantillon près.
   pour 2 h d'audio. Un seul repère de temps (`web/lib/timeline.ts`) sert l'onde, les pistes et la tête de
   lecture.
 
+### 6 bis. Le rendu des longs audios : un coût proportionnel à l'écran, pas au fichier
+
+**Problème mesuré** (PR « fluidité des longs audios », banc `web/e2e/perf-measure.mjs`). Un audio de 2 h 14
+compte 3 128 intervalles. L'interface créait un nœud par intervalle partout : 2 × 3 128 boutons sur l'onde et les
+pistes (chacun avec deux pseudo-éléments), 3 128 lignes dans la liste, 1 612 graduations au zoom 30 s, soit
+**22 400 nœuds** au repos. Chaque saut entre versets coûtait 0,5 à 1,7 s (mise en page, style, peinture,
+test de survol), la lecture tombait à 1 ou 20 images par seconde, l'ouverture prenait 2,5 à 4 s.
+
+**Règle d'architecture : le DOM ne dépend que de ce que l'écran montre.** Trois mécanismes, tous des fonctions
+pures testées dans `web/lib/` :
+
+| Mécanisme | Fichier | Ce qu'il fait |
+|---|---|---|
+| Index temporel | `interval-index.ts` | « Quel intervalle couvre cet instant ? », « lesquels touchent cette fenêtre ? », « le plus proche » en O(log n). Mémorisé par résultat (`WeakMap`). `activeIndex` (appelé à chaque image) l'utilise : fini le `findIndex` sur 3 000 intervalles. |
+| Fenêtre de rendu de la timeline | `timeline-window.ts` | Seuls les segments qui touchent la vue (plus une demi-vue de marge de chaque côté) existent dans le DOM, et ceux trop étroits pour être distingués (< 4 px) se fondent en **blocs** de même style (151 blocs au lieu de 3 128 sur « Fichier entier »). Un clic sur un bloc désigne l'intervalle le plus proche du temps cliqué ; l'intervalle choisi n'est jamais fondu (il garde son contour). La fenêtre ne change que quand la vue en sort : le défilement ordinaire ne redessine rien. |
+| Liste virtualisée | `virtual-list.ts`, `app/atelier/intervals-list.tsx` | Hauteur de ligne fixe (CSS : 44 px, 72 px sur petit écran), ≈ 25 lignes dans le DOM. Au clavier : une seule ligne porte la tabulation (la focalisée, sinon la choisie, sinon celle qui joue), flèches / Début / Fin / Page suivante / Page précédente déplacent le focus ; chaque ligne annonce `aria-posinset` et `aria-setsize` (taille réelle de la liste). |
+
+Autres décisions de rendu, chacune mesurée :
+
+- **Lecture** (`lib/clock.ts`, `use-player.ts`) : la position n'est publiée qu'à ~60 Hz même sur un écran à 144
+  ou 240 Hz (chaque publication déclenche mise en page, peinture et composition) ; la fin d'une plage écoutée
+  reste vérifiée à chaque image. Les **textes** (position, longueur provisoire) lisent une horloge à 20 Hz
+  (`useClock`) ; la tête de lecture, elle, suit en direct hors de React, déplacée par `transform` (couche
+  propre) et non par `left`.
+- **Couleurs du canvas** résolues une fois par thème : chaque `getComputedStyle` forçait un recalcul de style de
+  toute la page.
+- **Crêtes** : `GET …/peaks` répond `ETag` + `Cache-Control: private, no-cache` (304 sans corps à la réouverture
+  d'une session au lieu de 2,3 Mo).
+- Les rappels passés aux lignes et aux segments ont une identité stable (`useCallback`, `ref`) : un changement
+  de sélection ne redessine que les deux éléments concernés (composants mémorisés).
+
+**Mesurer.** `node web/e2e/perf-measure.mjs --url <serveur de production> --session <id>` (build de
+production sur une COPIE des sessions, jamais les données du mainteneur) rejoue ouverture, 50 sauts, rafale,
+touches, lecture, surlignage, glisser, changement de fenêtre et fuites, et rapporte images, tâches longues,
+latence geste → image peinte, commits React, nœuds DOM, écouteurs, mémoire (`web/README.md`).
+
 ## 7. Le modèle de revue `aqr.review/2`
 
 La revue humaine est l'ensemble des **signalements** posés par les testeurs sur une session (« ce verset est

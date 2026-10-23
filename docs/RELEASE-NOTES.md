@@ -9,6 +9,15 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Fluidité sur les longs audios : navigation, lecture et ouverture
+Étiquettes : utilisateur, technique
+PR : #94
+
+**Ce qui change.** Sur un audio de 2 h 14 (3 128 intervalles), l'atelier reste fluide. Un saut entre versets (clic dans la liste, flèches, clic sur l'onde) répond en 30 à 40 ms au lieu de 1,7 s ; la lecture et le surlignage des mots avancent sans à-coup ; le glisser de la timeline et le changement de fenêtre visible ne bloquent plus ; la session s'ouvre en 0,3 à 0,5 s au lieu de 2,5 à 4 s. La liste des intervalles est virtualisée (≈ 25 lignes dans la page au lieu de 3 128) et reste utilisable au clavier : une seule ligne porte la tabulation, flèches, Début, Fin, Page précédente et suivante déplacent le focus, chaque ligne annonce sa position et la taille de la liste. Sur « Fichier entier », les abstentions contiguës se fondent en blocs (151 au lieu de 3 128 segments) : l'onde redevient visible entre eux, et un clic sur un bloc choisit l'intervalle le plus proche du temps cliqué. Les graduations ne couvrent plus que la zone proche. La position affichée change 20 fois par seconde, la tête de lecture 60 fois ; les crêtes de l'onde sont revalidées (304) à la réouverture d'une session. Le banc `web/e2e/perf-measure.mjs` mesure tout cela sur un build de production (`web/README.md`).
+
+**Pourquoi / décision.** Le mainteneur ressentait des saccades en naviguant entre versets sur un audio de 2 h. Mesure avant correction : 22 400 nœuds DOM, 176 tâches longues pour 50 sauts, mise en page de 93 ms par saut ; 86 % du coût venait des 6 300 boutons de segments, le reste de la liste et de la mise en page de toute la page à chaque image de lecture. Règle retenue : le DOM ne dépend que de l'écran (`docs/ARCHITECTURE-ATELIER.md` §6 bis), par des fonctions pures testées. Pas de bibliothèque de virtualisation : une liste à hauteur de ligne fixe et un index temporel se codent en 150 lignes testées, et le fenêtrage de la timeline (fusion de blocs, fenêtre de rendu) n'existe dans aucune bibliothèque. Reste à faire : une mise en page de 5 ms à chaque mise à jour du texte de position sur un écran 240 Hz (voir la PR #94).
+
+
 ## 2026-10-23 — Dépôt public : README, contribution, tickets et crédits
 Étiquettes : utilisateur, technique
 PR : #92
