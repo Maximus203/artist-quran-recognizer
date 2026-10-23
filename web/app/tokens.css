@@ -110,6 +110,11 @@
   --seg-formula-edge: var(--slate-edge);
   --seg-abstain-edge: var(--text-3);
   --seg-human: var(--ink-human);
+  /* Surlignage en direct (mot arabe + segment de traduction) : fond ET trait sous le texte,
+   * jamais la couleur seule. Le texte garde sa couleur (contraste inchangé sur un fond à 20 %). */
+  --live-fill: color-mix(in srgb, var(--accent) 20%, transparent);
+  --live-edge: var(--accent);
+  --live-soft: color-mix(in srgb, var(--accent) 7%, transparent);
   /* Signalements humains sur l'onde : confirmé = losange plein + trait plein ; brouillon = losange creux + pointillé */
   --review-fill: color-mix(in srgb, var(--ink-human) 11%, transparent);
   --review-draft-fill: color-mix(in srgb, var(--ink-human) 6%, transparent);

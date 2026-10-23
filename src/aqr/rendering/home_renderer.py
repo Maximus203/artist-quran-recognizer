@@ -99,6 +99,13 @@ class HomeRenderer:
                 kept.append(token)
         return " ".join(kept)
 
+    def word_weights(self, det: Detection) -> list[int]:
+        """Longueur en lettres de chaque mot affiché du passage, lue dans le corpus (I1) : le poids
+        d'une estimation du temps au mot (ADR-0010)."""
+        words = self._corpus.words(det.span.ref)
+        shown = words[det.span.first_word - 1 : det.span.last_word]
+        return [max(1, len(normalize_arabic(word).replace(" ", ""))) for word in shown]
+
     def _is_partial(self, det: Detection) -> bool:
         total = len(self._corpus.words(det.span.ref))
         return not (det.span.first_word == 1 and det.span.last_word >= total)

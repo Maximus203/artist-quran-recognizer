@@ -1,7 +1,7 @@
 # Traduction par passage — mesure du découpage en fragments
 
 Date : 2026-10-23 · Code : `src/aqr/translation_align/`, `src/aqr/rendering/translation_segments.py` ·
-Données : `data/translation-segments/french_hameedullah.json` · Décision : ADR-0010 ·
+Données : `data/translation-segments/french_hameedullah.json` · Décision : ADR-0012 ·
 Reproduire : `python scripts/build_translation_segments.py` puis
 `python scripts/measure_translation_segments.py --sessions <dossier de sessions>`.
 

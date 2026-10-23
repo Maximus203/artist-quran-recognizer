@@ -1,6 +1,6 @@
 # Traduction par passage (fragments alignés sur les mots arabes)
 
-Contrat : `docs/RECOGNIZE-OUTPUT.md` § « Traduction par passage » · décision : ADR-0010 · mesures :
+Contrat : `docs/RECOGNIZE-OUTPUT.md` § « Traduction par passage » · décision : ADR-0012 · mesures :
 `docs/evaluation/traduction-par-passage-2026-10-23.md`. Les scénarios d'écran (surface mobile d'abord) sont à
 jouer par l'interface ; le reste est vérifié par les tests Python.
 

@@ -127,9 +127,23 @@
   },
   {
     "slug": "adr-0010",
-    "title": "ADR-0010 — La traduction est découpée en fragments alignés sur les mots arabes",
+    "title": "ADR-0010 — Promotion par le voisin reconnu et temps au mot",
     "section": "Décisions",
-    "file": "docs/adr/0010-traduction-decoupee-en-fragments.md",
+    "file": "docs/adr/0010-promotion-par-le-voisin-et-temps-au-mot.md",
+    "summary": "Un début de verset ambigu prolongé par un verset reconnu est promu si l'audio soutient son texte ; chaque mot reçoit son temps dans la sortie."
+  },
+  {
+    "slug": "adr-0011",
+    "title": "ADR-0011 — Détection en direct sur flux, sans plage déclarée",
+    "section": "Décisions",
+    "file": "docs/adr/0011-detection-en-direct-sans-plage.md",
+    "summary": "Proposition : garder les candidats ouverts au début d'un verset, nommer la source exacte dès qu'un mot départage, attendre la suite, signaler les sauts ; chiffres sur le corpus Hafs et protocole WebSocket."
+  },
+  {
+    "slug": "adr-0012",
+    "title": "ADR-0012 — La traduction est découpée en fragments alignés sur les mots arabes",
+    "section": "Décisions",
+    "file": "docs/adr/0012-traduction-decoupee-en-fragments.md",
     "summary": "Pour un verset partiel, la traduction suit les mots affichés : découpage hors ligne et déterministe, précision d'abord, repli sur le verset entier."
   },
   {
