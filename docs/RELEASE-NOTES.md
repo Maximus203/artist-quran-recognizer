@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — Les versets à moitié reconnus sont complétés par l'audio
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #83
 
 **Ce qui change.** Un verset dont une partie est reconnue et l'autre non est maintenant complété par ce que l'audio contient réellement. Cinq défauts relevés à l'écoute d'un enregistrement de 23 minutes sont corrigés (un seul reste, le premier mot de 1:1) : les deux premiers versets de la Fatiha lus mais restés incertains sont reconnus parce que la suite qui les contient a été confirmée ; un mot dit juste après la fin d'un verset est ajouté ; le début manquant d'un verset dont la fin est reconnue, ou son milieu, s'affiche ; un verset redit en entier est détecté comme répétition. Chaque ajout est vérifié sur la parole elle-même : si l'audio ne soutient pas le texte attendu, rien n'est affiché. Sur 11 fichiers (dont deux sans aucun Coran) aucun verset reconnu avant n'est perdu et aucun verset n'est ajouté là où il n'y a pas de Coran. Champs de sortie additifs : `promoted_by` peut valoir `chain` ou `gap`, et `acoustic_checks` trace chaque hypothèse (`kind: gap`).
 
