@@ -262,10 +262,13 @@ export function useReviewController(options: Options) {
   }, []);
 
   const traceSelect = useCallback(
-    (selection: Selection) =>
-      selection.mode === "range"
-        ? draftNow(selection.start, selection.end)
-        : draftNow(selection.start, null),
+    (selection: Selection) => {
+      if (selection.mode === "range") draftNow(selection.start, selection.end);
+      else draftNow(selection.start, null);
+      // Le tracé est terminé : on quitte l'outil, un clic sur l'onde redéplace la lecture.
+      setTraceState(false);
+      opts.current.announce("Plage posée : mode tracé quitté");
+    },
     [draftNow],
   );
 
@@ -354,6 +357,8 @@ export function useReviewController(options: Options) {
       immediate.current = true;
       setState(result.state);
       setLoop(false);
+      // Valider un signalement quitte aussi l'outil de tracé : on continue d'écouter.
+      setTraceState(false);
       opts.current.announce("Signalement enregistré");
       return true;
     },
