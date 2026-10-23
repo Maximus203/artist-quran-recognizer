@@ -499,7 +499,7 @@ export function SessionsPage({ search }: { search: string }) {
               >
                 Taille
               </button>
-              <span>Moteur</span>
+              <span className="col-eng">Moteur</span>
               <button
                 type="button"
                 aria-current={

@@ -222,8 +222,26 @@
   .brand b {
     font-size: 1.35rem;
   }
-  .brand b em {
+}
+/* Très petits téléphones (< 400 px) : l'en-tête serre ses marges pour garder ses cinq commandes. */
+@media (max-width: 399px) {
+  .header {
+    gap: var(--sp-1);
+    padding: 0 var(--sp-2);
+  }
+  .brand {
+    padding: 0 var(--sp-1);
+  }
+}
+/* En-tête compact (< 1160 px) : tout tient sur une ligne, du plus utile au plus accessoire.
+   Plus de 1159 px : libellés complets. Le thème reste dans le menu du compte. */
+@media (max-width: 1159px) {
+  .brand b em,
+  .hide-compact {
     display: none;
+  }
+  .nav {
+    margin-left: var(--sp-2);
   }
 }
 

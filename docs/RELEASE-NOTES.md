@@ -16,6 +16,13 @@ PR : #106
 **Ce qui change.** Rien de visible pour l'instant : le suivi en direct (candidats ouverts au début d'un verset, verrou quand un mot départage, suite attendue, saut) existe comme moteur de simulation hors ligne, avec son banc de mesure. Sur 82 scénarios à vérité calculée, le premier message de candidats arrive en médiane 2,0 s après le début du verset et le verrou en 4,9 s (p90 8,2 s) ; 376 versets sur 492 sont nommés. Un début de verset attendu dont l'ASR avale le premier mot n'est plus annoncé comme un saut. Un nouveau réglage, `min_lock_density`, refuse de nommer un verset dont les mots sont épars dans de la parole ; il est éteint par défaut.
 
 **Pourquoi / décision.** Le critère de sortie de l'étape 1, zéro faux verset nommé, n'est **pas atteint** : 1 faux verrou sur 376 en vérité calculée (retiré en 2 s) et 8 verrous non confirmés sur 3 600 s de parole réelle. Le rapport dit les limites (jeu optimiste, aucune vérité terrain humaine) et propose des cibles de latence et des garde-fous à trancher avant l'étape 2. Décisions du 2026-10-23 consignées dans l'ADR-0011 : `INFERRED` accepté avec `identity_basis: context`, `prior` 0,9 et `min_words_lock` 3 en valeurs de départ, transcription provisoire visible en mode technique seulement, audio du flux jamais conservé par défaut, transport WebSocket `aqr.live/1` et non WebRTC. Rapport : `docs/evaluation/live-etape1-2026-10-23.md`.
+## 2026-10-23 — L'atelier ne déborde plus : liste des sessions et en-tête
+Étiquettes : utilisateur, technique
+PR : #104
+
+**Ce qui change.** La page Sessions ne dépasse plus de sa carte entre 1024 et 1159 px : l'étoile des favoris et le menu « … » restent visibles (la colonne « Moteur » s'efface dans cette plage, elle reste dans la fiche). L'en-tête de l'application tient sur une ligne de 768 à 1159 px (avatar seul, « Nouvel essai » en icône, bascule de thème dans le menu du compte) et la page ne défile plus latéralement, y compris la revue d'une session, Documentation, Compte et Performance (de 320 à 460 px).
+
+**Pourquoi / décision.** La colonne « Importé par » élargie à 148 px (PR #103) faisait déborder la grille ; la mesure en navigateur réel sur un build de production (320 à 1400 px, clair et sombre, 5 pages) a montré 150 mesures en échec sur 550, et 0 après correction. La garde `web/e2e/layout-overflow.mjs` rejoue cette mesure.
 
 ## 2026-10-23 — Photo de profil et propriétaire de chaque audio dans les listes
 Étiquettes : utilisateur, technique

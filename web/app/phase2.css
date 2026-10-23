@@ -26,6 +26,11 @@ a.btn {
   position: relative;
   text-decoration: none;
 }
+@media (max-width: 1159px) {
+  .nav a {
+    padding: 0 var(--sp-2);
+  }
+}
 .nav a:hover {
   background: var(--surface-3);
   color: var(--text);
@@ -298,6 +303,9 @@ a.btn {
   .menu-only-sm {
     display: block;
   }
+}
+/* Bouton du compte réduit à l'avatar tant que l'en-tête manque de place (nom lisible dans le menu) */
+@media (max-width: 1159px) {
   .acct-btn .acct-name {
     position: absolute;
     width: 1px;
@@ -690,6 +698,12 @@ a.btn {
   max-width: var(--w-page);
   margin: 0 auto;
   padding: var(--sp-6) var(--gutter) var(--sp-12);
+}
+/* Pile verticale : une seule colonne qui PEUT rétrécir (sinon un contenu large élargit toute la page). */
+.page--grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
 }
 .page--narrow {
   max-width: 880px;
@@ -1841,6 +1855,24 @@ body.auth-pg {
   .srow .sname-sub {
     display: grid;
     gap: 1px;
+  }
+}
+
+/* Tableau resserré (1024–1159 px) : la colonne « Moteur », la moins utile pour retrouver une session
+   (elle reste dans la fiche), cède sa place pour que l'étoile et le menu « … » restent visibles. */
+@media (min-width: 1024px) and (max-width: 1159px) {
+  .shead,
+  .srow {
+    grid-template-columns:
+      44px 28px minmax(200px, 1fr)
+      148px 92px 76px 80px 84px 44px 44px;
+  }
+  .srow {
+    grid-template-areas: "chk sg name own scope dur size date fav more";
+  }
+  .shead .col-eng,
+  .srow .seng {
+    display: none;
   }
 }
 
