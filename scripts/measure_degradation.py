@@ -57,6 +57,7 @@ from aqr.eval.degradation_curve import (
     conditions_by_id,
     file_id,
     load_scores,
+    parse_for_scoring,
     reference_words_for_file,
     scale_truth,
     score_file,
@@ -70,7 +71,6 @@ from aqr.eval.degradation_report import (
     render_decision,
     render_table,
 )
-from aqr.eval.recognition import parse_recognition
 from aqr.eval.transcription import TOLERANTE, score_transcript
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -298,7 +298,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         wall = time.perf_counter() - begun
         digest = _sha256(audio)
         document = build_json(result, recognizer.renderer, None, digest)
-        recognition = parse_recognition(document)
+        recognition, note = parse_for_scoring(document)
         score = score_file(scale_truth(verses, cond.tempo), recognition)
         hypothesis = " ".join(w.text for t in recorder.heard for w in t.words)
         reference = reference_words_for_file(verses, corpus)
@@ -317,6 +317,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             letter_total=asr.letter_total,
             engine=result.engine.asr,
             windows=result.windows,
+            note=note,
         )
         folder = args.out_dir / cond.id / args.mode
         _write_atomic(
@@ -327,7 +328,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         _log(
             f"{cond.id}/{args.mode} {name}: {score.recognized}/{score.expected} reconnus, "
             f"{score.false_recognized} faux, WER {_pct(asr.wer)}, {wall:.1f} s "
-            f"pour {result.duration_s:.1f} s"
+            f"pour {result.duration_s:.1f} s" + (f" [{note}]" if note else "")
         )
     return 0
 
@@ -347,6 +348,7 @@ def _summary_json(solo: Any, cascade: Any) -> dict[str, Any]:
             out.setdefault(cond_id, {})[mode] = {
                 **s.score.to_dict(),
                 "files": s.files,
+                "outputs_refused_by_reader": sum(1 for r in records.values() if r.note),
                 "recall_ci95": s.recall_ci,
                 "wer": s.wer,
                 "cer": s.cer,
