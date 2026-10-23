@@ -29,12 +29,14 @@ de l'ASR ; aucun verset n'est inventé : seuls des candidats du matcher sont pro
 
 from __future__ import annotations
 
+import math
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
 from typing import Protocol
 
 from aqr.alignment.forced import (
+    AlignedSpan,
     AlignedWord,
     AlignmentConfig,
     PassageAligner,
@@ -51,8 +53,10 @@ from aqr.decoding.chains import (
     find_chains,
     recited_start,
 )
-from aqr.domain.models import TimeSpan, VerseRef, WordSpan
+from aqr.decoding.gaps import ROLE_CONTINUATION, ROLE_REPETITION, Hole, Hypothesis
+from aqr.domain.models import Detection, Status, TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import AudioClip, Candidate, CtcAcousticModel, CtcLattice
+from aqr.domain.word_timing import without_overlap
 
 
 @dataclass(frozen=True)
@@ -81,6 +85,56 @@ class AcousticCheckConfig:
     continuation_following_verses: int = 1
     """Versets suivants ajoutés au texte attendu (le reste du verset peut finir tôt dans la
     fenêtre) ; l'alignement à fin libre dit jusqu'où l'audio va."""
+    gap: bool = True
+    """Combler un trou entre deux versets reconnus par le texte que le contexte laisse attendre
+    (ADR-0013). La preuve y est mesurée sur la seule parole alignée (`voiced_llr_per_frame`)."""
+    gap_strong_llr_per_frame: float = -0.5
+    """Preuve par trame (parole alignée) au-delà de laquelle l'audio se suffit presque à lui-même :
+    il dispense de la transcription quand il n'y en a pas, et la rend moins exigeante quand elle est
+    pauvre. Provisoire : mesuré le 2026-10-23 (docs/evaluation/comblement-de-trou-2026-10-23.md)."""
+    gap_min_text_similarity: float = 0.6
+    """Similarité exigée entre la transcription du trou et le texte aligné (comme les suites)."""
+    gap_weak_text_similarity: float = 0.3
+    """Similarité minimale quand l'audio est fort (`gap_strong_llr_per_frame`) : l'ASR comprend mal
+    certains passages (lot3-04, 12:21 : 0,29 alors que le texte du corpus s'aligne bien)."""
+    gap_min_speech_frames: int = 3
+    """Trames où le modèle n'est pas à plus de 50 % sur le blanc : en dessous, le trou est muet."""
+    gap_unwitnessed_max_words: int = 3
+    """Mots au plus qu'on nomme sur l'audio seul, sans aucune transcription du trou (mot manquant
+    d'un bord de verset). Au-delà, l'audio seul ne suffit pas (mesuré, lot1-04)."""
+    gap_new_verse_min_words: int = 3
+    """Mots minimaux d'un verset NOUVEAU que la suite d'un verset fini ferait nommer (le premier mot
+    du verset d'après, sans contexte ni après lui : mesuré, 2:88 [1-1] et 11:91 [1-1]). En dessous,
+    ce mot est écarté ; le reste de la suite est gardé."""
+    gap_repetition_min_words: int = 3
+    """Une répétition de moins de mots ne se distingue pas d'un bruit : jamais nommée."""
+    extend: bool = True
+    """Étendre de un à trois mots les bords d'un verset reconnu que l'audio contient (ADR-0013)."""
+    extend_max_words: int = 3
+    extend_anchor_words: int = 3
+    """Mots du bord conservés dans la comparaison (le texte étendu et le texte reconnu se mesurent
+    sur les mêmes trames : l'écart de preuve totale est un rapport de vraisemblance)."""
+    extend_pad_s: float = 4.0
+    """Audio examiné au-delà du bord reconnu (jamais au-delà du voisin)."""
+    extend_min_gain_nats_per_word: float = 4.0
+    """Gain de preuve totale exigé par mot ajouté. Un mot faux posé sur de la parole qui n'est
+    pas la sienne gagne peu ; un mot dit gagne en moyenne bien davantage (2:87 mot 13 : +13 nats).
+    Provisoire : mesuré le 2026-10-23 (docs/evaluation/comblement-de-trou-2026-10-23.md)."""
+    gap_weak_word_llr_per_frame: float = -3.0
+    """Preuve par trame au-dessous de laquelle UN mot n'est pas dans l'audio : la moyenne du passage
+    ne le voit pas (un mot faux au bord d'une longue parole ne coûte presque rien par trame)."""
+    gap_max_weak_fraction: float = 0.15
+    """Part des mots d'un texte nommé qui peut être sans soutien (arrondie par défaut) : un verset
+    parfaitement reconnu en compte un sur dix (prononciation, liaison : 2:87 [1-12], mot 6 à −4,8),
+    un mot faux au bord d'un texte court, jamais. Provisoire : mesuré le 2026-10-23."""
+    gap_variant_margin_nats: float = 2.0
+    """Entre deux variantes compatibles d'un même texte (reprise de quelques mots), on garde celle
+    qui explique le plus de mots tant que la preuve TOTALE du passage ne perd pas plus que cela
+    (un mot absent coûte bien davantage)."""
+    gap_decisive_nats: float = 3.0
+    """Écart de preuve TOTALE (sur les mêmes trames : un rapport de vraisemblance) à partir duquel
+    un texte en bat un autre : un concurrent qui explique mieux le trou met l'hypothèse en échec ;
+    deux hypothèses différentes plus proches que cela ne se départagent pas (aucune nommée)."""
 
 
 @dataclass(frozen=True)
@@ -95,12 +149,100 @@ class ChainCheck:
     kind: str = "chain"
     """`chain` : suite de versets vérifiée ; `continuation` : suite d'un verset commencé ;
     `neighbor` : détection `uncertain` qui prolonge un verset reconnu voisin ; `head` : début
-    d'un verset dont la suite est reconnue (ADR-0010)."""
+    d'un verset dont la suite est reconnue (ADR-0010) ; `gap` : hypothèse de texte pour un trou
+    entre deux versets reconnus (ADR-0013, voir `role`)."""
     text_similarity: float | None = None
     """Suite d'un verset : similarité entre la transcription de la fenêtre et le texte aligné."""
+    role: str | None = None
+    """`kind="gap"` : rôle de l'hypothèse (`head`, `between`, `continuation`, `repetition`) ou
+    `competitor` (texte que le matcher avait vu dans le trou, évalué pour départager)."""
+    words: int = 0
+    """`kind="gap"` : mots du corpus effectivement alignés."""
+    passage_llr_per_frame: float | None = None
+    """`kind="gap"` : preuve par trame de TOUT le passage (diluée par les blancs). `llr_per_frame`
+    est alors la preuve sur la seule parole alignée, celle qui décide."""
+    weak_words: int = 0
+    """`kind="gap"` : mots alignés sans soutien dans l'audio (preuve du mot sous le seuil)."""
+    gain_nats: float | None = None
+    """`role="extension"` : gain de preuve totale du texte étendu sur le texte reconnu."""
+
+
+@dataclass(frozen=True)
+class GapFill:
+    """Texte du corpus que l'audio d'un trou soutient (ADR-0013) : ses mots et leurs temps."""
+
+    role: str
+    candidate: Candidate
+    """Plages, temps et temps au mot de l'alignement du texte du corpus (I1), dans le trou."""
+    repeat: bool
+    """Redit des mots déjà reconnus juste avant."""
+    llr_per_frame: float
+    """Preuve par trame sur la seule parole alignée."""
+
+
+@dataclass(frozen=True)
+class EdgeExtension:
+    """Verset reconnu étendu de mots que l'audio contient (ADR-0013)."""
+
+    span: WordSpan
+    time: TimeSpan
+    word_times: tuple[TimeSpan, ...]
+    """Un temps par mot de `span`, ou vide si le verset n'en avait pas."""
+    added_before: int
+    added_after: int
+
+
+@dataclass(frozen=True)
+class _Edge:
+    """Un bord essayé : sa trace et, s'il est retenu, l'alignement qui le fonde."""
+
+    check: ChainCheck | None
+    accepted: bool = False
+    added: int = 0
+    words: tuple[AlignedWord, ...] = ()
+    edge_s: float = 0.0
+    anchors: int = 0
+    gain: float = 0.0
+    passage: TimeSpan | None = None
+
+
+@dataclass(frozen=True)
+class _Trial:
+    """Une hypothèse de trou alignée sur l'audio, avant décision."""
+
+    role: str
+    repeat: bool
+    aligned: tuple[WordSpan, ...]
+    llr: float | None
+    passage_llr: float | None
+    words: int
+    similarity: float | None
+    result: PassageAlignment | None
+    passes: bool
+    total: float = -math.inf
+    """Log-vraisemblance du chemin contraint sur TOUT le passage : la parole que le texte laisse
+    sans explication est comptée en blanc forcé, donc très pénalisante. Comparable entre
+    hypothèses (mêmes trames) : c'est un rapport de vraisemblance."""
+    weak_words: int = 0
+
+    def check(self, passage: TimeSpan, accepted: bool) -> ChainCheck:
+        return ChainCheck(
+            passage,
+            self.aligned,
+            self.llr,
+            accepted,
+            kind="gap",
+            text_similarity=self.similarity,
+            role=self.role,
+            words=self.words,
+            passage_llr_per_frame=self.passage_llr,
+            weak_words=self.weak_words,
+        )
 
 
 Link = tuple[int, int]
+
+_HALF: float = math.log(0.5)
 
 _EDGE_S = 0.001
 """Durée d'un mot que l'alignement place hors de la fenêtre et qu'on ramène à son bord."""
@@ -203,6 +345,347 @@ class AcousticVerifier:
         if self._config.head and heard is not None:
             checks.extend(self._precede(clip, out, set(blocked), heard))
         return out, tuple(checks)
+
+    # -- Bords d'un verset reconnu (ADR-0013) ------------------------------------------------------
+    def extend(
+        self,
+        clip: AudioClip,
+        detection: Detection,
+        lower_s: float,
+        upper_s: float,
+        max_before: int | None = None,
+        max_after: int | None = None,
+    ) -> tuple[tuple[ChainCheck, ...], EdgeExtension | None]:
+        """Un verset est reconnu mais l'audio contient un ou deux mots de plus à son bord (le mot
+        suivant dit dans la même fenêtre mais absent du texte reconnu, le mot d'avant que l'ASR a
+        perdu). Les textes (reconnu, étendu de 1 à `extend_max_words` mots) sont alignés sur les
+        MÊMES trames, autour du bord seulement : l'écart de preuve totale est un rapport de
+        vraisemblance, qu'une moyenne par trame cacherait. Le texte étendu n'est retenu que s'il
+        gagne `extend_min_gain_nats_per_word` par mot et qu'aucun mot ajouté n'est sans soutien.
+        `lower_s`, `upper_s` : bornes en temps (les voisins) ; `max_before`, `max_after` : bornes
+        en mots (un voisin du même verset, dont on ne reprend pas les mots). Rien n'est tracé sans
+        gain."""
+        cfg = self._config
+        if not cfg.extend or detection.status is not Status.RECOGNIZED or detection.time is None:
+            return (), None
+        span = detection.span
+        total = len(self._corpus.words(span.ref))
+        after = (
+            self._edge(clip, detection, lower_s, upper_s, total, max_after, forward=True)
+            if span.last_word < total
+            else _Edge(None)
+        )
+        before = (
+            self._edge(clip, detection, lower_s, upper_s, total, max_before, forward=False)
+            if span.first_word > recited_start(span.ref)
+            else _Edge(None)
+        )
+        checks = tuple(e.check for e in (before, after) if e.check is not None)
+        if not (before.accepted or after.accepted):
+            return checks, None
+        return checks, self._compose(clip, detection, before, after, lower_s, upper_s)
+
+    def _edge(
+        self,
+        clip: AudioClip,
+        detection: Detection,
+        lower_s: float,
+        upper_s: float,
+        total: int,
+        limit: int | None,
+        *,
+        forward: bool,
+    ) -> _Edge:
+        cfg = self._config
+        assert detection.time is not None
+        span, time, times = detection.span, detection.time, detection.word_times
+        count = span.last_word - span.first_word + 1
+        anchors = min(cfg.extend_anchor_words, count)
+        timed = len(times) == count
+        if forward:
+            start = times[count - anchors].start_s if timed else max(time.start_s, time.end_s - 3.0)
+            low, high = max(lower_s, start - 0.3), min(upper_s, time.end_s + cfg.extend_pad_s)
+            room = total - span.last_word
+        else:
+            end = times[anchors - 1].end_s if timed else min(time.end_s, time.start_s + 3.0)
+            low, high = max(lower_s, time.start_s - cfg.extend_pad_s), min(upper_s, end + 0.3)
+            room = span.first_word - recited_start(span.ref)
+        if limit is not None:
+            room = min(room, limit)
+        if room < 1 or high - low < 0.5:
+            return _Edge(None)
+        passage = TimeSpan(low, high)
+        lattice = self._model.lattice(clip, passage)  # pas de cache : un bord, un treillis
+        if forward:
+            kept = WordSpan(span.ref, span.last_word - anchors + 1, span.last_word)
+        else:
+            kept = WordSpan(span.ref, span.first_word, span.first_word + anchors - 1)
+        base = self._aligner.align(lattice, [kept])
+        if base is None:
+            return _Edge(None)
+        best: tuple[float, int, PassageAlignment] | None = None
+        for k in range(1, min(cfg.extend_max_words, room) + 1):
+            wider = (
+                WordSpan(span.ref, kept.first_word, kept.last_word + k)
+                if forward
+                else WordSpan(span.ref, kept.first_word - k, kept.last_word)
+            )
+            result = self._aligner.align(lattice, [wider])
+            if result is None:
+                continue
+            gain = result.evidence.forced_logprob - base.evidence.forced_logprob
+            if best is None or gain > best[0]:
+                best = (gain, k, result)
+        if best is None or best[0] <= 0:
+            return _Edge(None)
+        gain, k, result = best
+        words = result.spans[0].words
+        added = words[-k:] if forward else words[:k]
+        weak = cfg.gap_weak_word_llr_per_frame
+        accepted = gain >= cfg.extend_min_gain_nats_per_word * k and not any(
+            w.llr_per_frame is not None and w.llr_per_frame < weak for w in added
+        )
+        new_span = (
+            WordSpan(span.ref, span.last_word + 1, span.last_word + k)
+            if forward
+            else WordSpan(span.ref, span.first_word - k, span.first_word - 1)
+        )
+        check = ChainCheck(
+            passage,
+            (new_span,),
+            result.evidence.voiced_llr_per_frame,
+            accepted,
+            kind="gap",
+            role="extension",
+            words=k,
+            passage_llr_per_frame=result.evidence.llr_per_frame,
+            weak_words=sum(1 for w in added if (w.llr_per_frame or 0.0) < weak),
+            gain_nats=round(gain, 3),
+        )
+        edge = result.spans[0].time.end_s if forward else result.spans[0].time.start_s
+        return _Edge(check, accepted, k, words, edge, anchors, gain, passage)
+
+    def _compose(
+        self,
+        clip: AudioClip,
+        detection: Detection,
+        before: _Edge,
+        after: _Edge,
+        lower_s: float,
+        upper_s: float,
+    ) -> EdgeExtension | None:
+        assert detection.time is not None
+        span, time, times = detection.span, detection.time, detection.word_times
+        count = span.last_word - span.first_word + 1
+        added_before = before.added if before.accepted else 0
+        added_after = after.added if after.accepted else 0
+        wider = WordSpan(span.ref, span.first_word - added_before, span.last_word + added_after)
+        timed = len(times) == count
+        if before.accepted and after.accepted:
+            # Les deux bords à la fois : un alignement commun des deux passages, pour des temps
+            # cohérents (les mots d'ancrage des deux côtés peuvent être les mêmes).
+            assert before.passage is not None and after.passage is not None
+            joint = TimeSpan(before.passage.start_s, after.passage.end_s)
+            result = self._aligner.align(self._model.lattice(clip, joint), [wider])
+            if result is None:
+                return None
+            words = [w.time for w in result.spans[0].words]
+            start, end = result.spans[0].time.start_s, result.spans[0].time.end_s
+            return EdgeExtension(
+                wider, TimeSpan(start, end), tuple(words), added_before, added_after
+            )
+        start, end = time.start_s, time.end_s
+        new_times: list[TimeSpan] | None = list(times) if timed else None
+        if after.accepted:
+            tail = [w.time for w in after.words]
+            end = min(max(after.edge_s, time.end_s), upper_s)
+            new_times = _splice(new_times, tail[-(after.added + 1) :], forward=True)
+        if before.accepted:
+            head = [w.time for w in before.words]
+            start = max(min(before.edge_s, time.start_s), lower_s)
+            new_times = _splice(new_times, head[: before.added + 1], forward=False)
+        if end <= start:
+            return None
+        return EdgeExtension(
+            wider, TimeSpan(start, end), tuple(new_times or ()), added_before, added_after
+        )
+
+    # -- Trou entre deux versets reconnus (ADR-0013) ----------------------------------------------
+    def verify_gap(
+        self,
+        clip: AudioClip,
+        hole: Hole,
+        hypotheses: Sequence[Hypothesis],
+        heard: str | None = None,
+        competitors: Sequence[Sequence[WordSpan]] = (),
+    ) -> tuple[tuple[ChainCheck, ...], GapFill | None]:
+        """Aligne chaque hypothèse de texte du corpus sur l'audio du trou et garde la meilleure si
+        la parole la soutient. Preuve par trame mesurée sur la SEULE parole alignée (un mauvais
+        texte posé sur quelques trames ne se dilue pas dans les blancs), au même seuil que toute
+        suite ; plus la transcription du trou (`heard`) comme second témoin, sauf audio fort. Le
+        trou est refusé s'il est mieux expliqué par autre chose (`competitors` : textes que le
+        matcher y avait vus) ou si deux textes différents se valent. Trou muet : rien, pas même une
+        trace."""
+        if not self._config.gap or not hypotheses:
+            return (), None
+        lattice = self._model.lattice(clip, hole.passage)  # pas de cache : un trou, un treillis
+        speech = sum(1 for row in lattice.log_probs if row[lattice.blank] < _HALF)
+        if speech < self._config.gap_min_speech_frames:
+            return (), None
+        trials = [self._trial(lattice, h, heard) for h in hypotheses]
+        rivals = [self._rival(lattice, tuple(spans)) for spans in competitors]
+        best = self._best_trial(trials, rivals)
+        kept = [] if best is None else self._without_short_new_verse(hole, best)
+        if not kept:
+            best = None  # rien de retenu : la trace dit que l'hypothèse est refusée
+        checks = [t.check(hole.passage, t is best) for t in trials]
+        checks += [t.check(hole.passage, False) for t in rivals]
+        if best is None or best.result is None or best.llr is None:
+            return tuple(checks), None
+        kept_spans = tuple(a.span for a in kept if isinstance(a.span, WordSpan))
+        if kept_spans != best.aligned:  # la trace dit ce qui est réellement nommé
+            index = trials.index(best)
+            checks[index] = replace(
+                checks[index],
+                spans=kept_spans,
+                words=sum(s.last_word - s.first_word + 1 for s in kept_spans),
+            )
+        words = [w for a in kept for w in a.words]
+        seed = Candidate(
+            span=kept[0].span if isinstance(kept[0].span, WordSpan) else best.aligned[0],
+            score=self._floor,
+            explained=float(len(words)),
+        )
+        candidate = _with_words(seed, words, hole.passage)  # les temps font la détection
+        if not self._config.word_times:
+            candidate = replace(candidate, word_times=())
+        return tuple(checks), GapFill(best.role, candidate, best.repeat, best.llr)
+
+    def _without_short_new_verse(self, hole: Hole, best: _Trial) -> list[AlignedSpan]:
+        """Plages alignées retenues. La suite d'un verset n'ouvre pas un verset nouveau sur moins
+        de `gap_new_verse_min_words` mots : trop peu pour le nommer (même si un verset reconnu
+        suit plus loin : il ne le prolonge pas, sinon ce serait un `between`)."""
+        assert best.result is not None
+        spans = list(best.result.spans)
+        if best.role != ROLE_CONTINUATION or hole.before is None:
+            return spans
+        minimum = self._config.gap_new_verse_min_words
+        while (
+            spans
+            and isinstance(spans[-1].span, WordSpan)
+            and spans[-1].span.ref != hole.before.span.ref
+            and len(spans[-1].words) < minimum
+        ):
+            spans.pop()
+        return spans
+
+    def _trial(self, lattice: CtcLattice, hypothesis: Hypothesis, heard: str | None) -> _Trial:
+        result = self._aligner.align(lattice, list(hypothesis.spans), hypothesis.free_end)
+        if result is None:
+            return _Trial(
+                hypothesis.role,
+                hypothesis.repeat,
+                hypothesis.spans,
+                None,
+                None,
+                0,
+                None,
+                None,
+                False,
+            )
+        aligned = tuple(a.span for a in result.spans if isinstance(a.span, WordSpan))
+        words = sum(s.last_word - s.first_word + 1 for s in aligned)
+        similarity = round(self._similarity(aligned, heard), 4) if heard else None
+        llr = result.evidence.voiced_llr_per_frame
+        weak = self._weak_words(result)
+        reached = _reaches(aligned, hypothesis.new_from)
+        return _Trial(
+            hypothesis.role,
+            hypothesis.repeat,
+            aligned,
+            llr,
+            result.evidence.llr_per_frame,
+            words,
+            similarity,
+            result,
+            reached and self._gap_passes(hypothesis, llr, words, similarity, weak),
+            result.evidence.forced_logprob,
+            weak,
+        )
+
+    def _weak_words(self, result: PassageAlignment) -> int:
+        floor = self._config.gap_weak_word_llr_per_frame
+        return sum(
+            1
+            for aligned in result.spans
+            for word in aligned.words
+            if word.llr_per_frame is not None and word.llr_per_frame < floor
+        )
+
+    def _rival(self, lattice: CtcLattice, spans: tuple[WordSpan, ...]) -> _Trial:
+        result = self._aligner.align(lattice, list(spans), free_end=True)
+        if result is None:
+            return _Trial("competitor", False, spans, None, None, 0, None, None, False)
+        aligned = tuple(a.span for a in result.spans if isinstance(a.span, WordSpan))
+        words = sum(s.last_word - s.first_word + 1 for s in aligned)
+        return _Trial(
+            "competitor",
+            False,
+            aligned,
+            result.evidence.voiced_llr_per_frame,
+            result.evidence.llr_per_frame,
+            words,
+            None,
+            result,
+            False,
+            result.evidence.forced_logprob,
+        )
+
+    def _gap_passes(
+        self,
+        hypothesis: Hypothesis,
+        llr: float | None,
+        words: int,
+        similarity: float | None,
+        weak: int,
+    ) -> bool:
+        """Deux témoins : l'audio (preuve de la parole alignée) et la transcription du trou.
+        Audio fort : la transcription, souvent pauvre, ne bloque plus que si elle contredit
+        franchement. Pas de transcription : audio fort et peu de mots."""
+        cfg = self._config
+        if llr is None or llr < self._threshold or words < 1:
+            return False
+        if weak > int(words * cfg.gap_max_weak_fraction):
+            return False
+        if hypothesis.role == ROLE_REPETITION and words < cfg.gap_repetition_min_words:
+            return False
+        strong = llr >= cfg.gap_strong_llr_per_frame
+        if similarity is None:
+            return strong and words <= cfg.gap_unwitnessed_max_words
+        if similarity >= cfg.gap_min_text_similarity:
+            return True
+        return strong and similarity >= cfg.gap_weak_text_similarity
+
+    def _best_trial(self, trials: Sequence[_Trial], rivals: Sequence[_Trial]) -> _Trial | None:
+        passing = [t for t in trials if t.passes and t.llr is not None]
+        if not passing:
+            return None
+        top = max(passing, key=lambda t: t.total)
+        # Variantes compatibles d'un même texte (reprise de quelques mots, fin seule d'un verset) :
+        # celle qui explique le plus de PAROLE (preuve totale) ; à quelques nats près, celle qui
+        # nomme le plus de mots. La moyenne par trame ne départage pas : une fin parfaite sur trois
+        # mots battrait le verset entier qui laisse peu de parole sans soutien.
+        same = [t for t in passing if _same_text(top, t)]
+        close = [t for t in same if top.total - t.total < self._config.gap_variant_margin_nats]
+        best = max(close, key=lambda t: (t.words, t.total))
+        decisive = self._config.gap_decisive_nats
+        for other in passing:
+            if not _same_text(best, other) and best.total - other.total < decisive:
+                return None  # deux textes différents se valent : aucun n'est nommé
+        for rival in rivals:
+            if not _same_text(best, rival) and rival.total - best.total >= decisive:
+                return None  # le trou est mieux expliqué par autre chose
+        return best
 
     # -- Début d'un verset dont la suite est reconnue ---------------------------------------------
     def _precede(
@@ -468,6 +951,59 @@ class AcousticVerifier:
             times=tuple(aligned.time for aligned in result.spans),
             word_times=words if complete else (),
         )
+
+
+_MAX_RETIMING_S = 0.5
+"""Décalage maximal d'une frontière de mot qu'on corrige à la jointure d'un bord étendu : au-delà,
+deux alignements se contredisent et aucun temps au mot n'est gardé plutôt qu'un faux."""
+
+
+def _splice(
+    old: list[TimeSpan] | None, fresh: Sequence[TimeSpan], *, forward: bool
+) -> list[TimeSpan] | None:
+    """Temps au mot d'un verset dont un bord est étendu : les mots d'origine gardent leurs temps,
+    sauf le mot du bord (re-timé avec les mots ajoutés par le nouvel alignement : l'ancien l'avait
+    étiré par-dessus la parole du suivant). `fresh` : ce mot du bord puis les mots ajoutés (ou
+    l'inverse au début). La jointure ne doit pas chevaucher le mot voisin : un petit écart de
+    frontière se corrige, un grand n'a plus de temps au mot (None)."""
+    if old is None:
+        return None
+    if forward:
+        kept, joined = old[:-1], list(fresh)
+        if kept and joined[0].start_s < kept[-1].end_s:
+            previous = kept[-1]
+            shift = previous.end_s - joined[0].start_s
+            if shift > _MAX_RETIMING_S or joined[0].start_s <= previous.start_s:
+                return None
+            kept[-1] = TimeSpan(previous.start_s, joined[0].start_s)
+        merged = [*kept, *joined]
+    else:
+        kept, joined = old[1:], list(fresh)
+        if kept and joined[-1].end_s > kept[0].start_s:
+            following = kept[0]
+            shift = joined[-1].end_s - following.start_s
+            if shift > _MAX_RETIMING_S or joined[-1].end_s >= following.end_s:
+                return None
+            kept[0] = TimeSpan(joined[-1].end_s, following.end_s)
+        merged = [*joined, *kept]
+    return merged if without_overlap(merged) == tuple(merged) else None
+
+
+def _reaches(aligned: Sequence[WordSpan], target: tuple[VerseRef, int] | None) -> bool:
+    """L'alignement atteint le premier mot nouveau de l'hypothèse (None : rien à atteindre)."""
+    if target is None:
+        return True
+    ref, word = target
+    return any(s.ref == ref and s.first_word <= word <= s.last_word for s in aligned)
+
+
+def _same_text(a: _Trial, b: _Trial) -> bool:
+    """Les deux alignements disent (au moins en partie) les mêmes mots d'un même verset."""
+    return any(
+        x.ref == y.ref and x.first_word <= y.last_word and y.first_word <= x.last_word
+        for x in a.aligned
+        for y in b.aligned
+    )
 
 
 def _with_words(candidate: Candidate, words: Sequence[AlignedWord], window: TimeSpan) -> Candidate:

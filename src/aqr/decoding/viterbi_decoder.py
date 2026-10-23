@@ -238,25 +238,44 @@ class ViterbiSequenceDecoder:
         écartée (`barriers`) entre deux moitiés interdit la fusion : l'union la couvrirait."""
         merged: list[Detection] = []
         for det in detections:
-            prev = merged[-1] if merged else None
-            if (
-                prev is None
-                or prev.status is not Status.RECOGNIZED
-                or det.status is not Status.RECOGNIZED
-                or prev.span.ref != det.span.ref
-            ):
+            if not merged:
                 merged.append(det)
                 continue
-            # Les deux détections sont RECOGNIZED : leur `time` est garanti non nul (domaine).
-            assert prev.time is not None
-            assert det.time is not None
-            if det.span.first_word <= prev.span.last_word:
-                merged.append(replace(det, is_repetition=True))
-            elif det.time.start_s - prev.time.end_s <= self._config.merge_max_gap_s and not any(
+            merged[-1:] = self._link(merged[-1], det, barriers)
+        return merged
+
+    def _link(
+        self,
+        prev: Detection,
+        det: Detection,
+        barriers: Sequence[TimeSpan],
+        *,
+        contiguous_only: bool = False,
+    ) -> list[Detection]:
+        """Deux détections consécutives : fusionnées si ce sont deux moitiés proches d'un même
+        verset (`contiguous_only` : et si aucun mot ne manque entre elles), la seconde marquée
+        répétition si elle redit des mots de la première, sinon inchangées."""
+        if (
+            prev.status is not Status.RECOGNIZED
+            or det.status is not Status.RECOGNIZED
+            or prev.span.ref != det.span.ref
+        ):
+            return [prev, det]
+        # Les deux détections sont RECOGNIZED : leur `time` est garanti non nul (domaine).
+        assert prev.time is not None
+        assert det.time is not None
+        if det.span.first_word <= prev.span.last_word:
+            return [prev, replace(det, is_repetition=True)]
+        if (
+            det.time.start_s - prev.time.end_s <= self._config.merge_max_gap_s
+            and (not contiguous_only or det.span.first_word == prev.span.last_word + 1)
+            and not any(
                 b.start_s >= prev.time.end_s - 1e-9 and b.end_s <= det.time.start_s + 1e-9
                 for b in barriers
-            ):
-                merged[-1] = Detection(
+            )
+        ):
+            return [
+                Detection(
                     span=WordSpan(
                         ref=prev.span.ref,
                         first_word=prev.span.first_word,
@@ -267,10 +286,35 @@ class ViterbiSequenceDecoder:
                     confidence=min(prev.confidence, det.confidence),
                     is_repetition=prev.is_repetition,
                     word_times=_joined_word_times(prev, det),
+                    promoted_by=prev.promoted_by or det.promoted_by,
                 )
-            else:
-                merged.append(det)
-        return merged
+            ]
+        return [prev, det]
+
+    def integrate(
+        self,
+        detections: Sequence[Detection],
+        added: Sequence[Detection],
+        barriers: Sequence[TimeSpan],
+    ) -> list[Detection]:
+        """Insère des détections RECOGNIZED venues d'ailleurs que du Viterbi (comblement de trou,
+        ADR-0013) à leur place dans le temps et les raccorde à leurs voisins comme les siennes :
+        moitiés fusionnées si aucun mot ne manque entre elles (un ajout vient d'être entendu :
+        ce qu'il ne dit pas n'est pas supposé), mots redits marqués répétition. Les autres
+        détections ne sont jamais touchées (elles ne sont raccordées qu'à travers un ajout)."""
+        out = list(detections)
+        for new in sorted(added, key=lambda d: d.time.start_s if d.time else 0.0):
+            index = _position(out, new)
+            out.insert(index, new)
+            if index > 0:
+                linked = self._link(out[index - 1], new, barriers, contiguous_only=True)
+                out[index - 1 : index + 1] = linked
+                index += len(linked) - 2
+            if index + 1 < len(out):
+                out[index : index + 2] = self._link(
+                    out[index], out[index + 1], barriers, contiguous_only=True
+                )
+        return out
 
     def _fill_single_gaps(self, detections: list[Detection]) -> list[Detection]:
         if not detections:
@@ -312,6 +356,15 @@ class ViterbiSequenceDecoder:
             confidence=0.0,
             time_interpolated=interpolated,
         )
+
+
+def _position(detections: Sequence[Detection], new: Detection) -> int:
+    """Indice d'insertion dans l'ordre du temps (un verset sans temps suit son prédécesseur)."""
+    start = new.time.start_s if new.time else 0.0
+    for index, det in enumerate(detections):
+        if det.time is not None and det.time.start_s > start:
+            return index
+    return len(detections)
 
 
 def _joined_word_times(first: Detection, second: Detection) -> tuple[TimeSpan, ...]:
