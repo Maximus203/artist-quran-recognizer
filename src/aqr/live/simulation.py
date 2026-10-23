@@ -158,6 +158,10 @@ def _verse_at(
     return min(found, key=lambda v: abs(v.start_s - t) if t >= v.start_s else v.start_s - t + 1e-3)
 
 
+def _overlap(verse: TruthVerse, lock: Locked) -> float:
+    return min(verse.end_s, lock.end_s) - max(verse.start_s, lock.start_s)
+
+
 def _zone_at(
     scenario: Scenario, t: float, tolerance_s: float, upper_s: float = 0.0
 ) -> TruthZone | None:
@@ -191,26 +195,33 @@ def evaluate(
     false_locks: list[FalseLock] = []
     correct_locks: dict[int, Locked] = {}
     for emitted in locks:
-        truth = _verse_at(ordered, emitted.start_s, tolerance_s)
-        if truth is None:
-            zone = _zone_at(ordered, emitted.start_s, tolerance_s)
-            kind = "non_quran" if zone is not None else "unattributed"
-            false_locks.append(FalseLock(kind, emitted.ref, None, emitted.t, emitted.status.value))
-        elif truth.ref != emitted.ref:
+        # un verrou est juste si le verset nommé a été récité sous les mots qui l'ont fait nommer
+        # (de son premier mot reconnu au dernier) ; sa latence, elle, est mesurée à part
+        covered = [
+            slot
+            for slot, v in enumerate(verses)
+            if emitted.start_s <= v.end_s + tolerance_s and emitted.end_s >= v.start_s - tolerance_s
+        ]
+        same = [slot for slot in covered if verses[slot].ref == emitted.ref]
+        if same:
+            slot = min(same, key=lambda s: abs(verses[s].start_s - emitted.start_s))
+            correct_locks.setdefault(slot, emitted)
+        elif covered:
+            truth = verses[max(covered, key=lambda s: _overlap(verses[s], emitted))]
             false_locks.append(
                 FalseLock("wrong_verse", emitted.ref, truth.ref, emitted.t, emitted.status.value)
             )
         else:
-            slot = verses.index(truth)
-            correct_locks.setdefault(slot, emitted)
+            zone = _zone_at(ordered, emitted.end_s, tolerance_s)
+            kind = "non_quran" if zone is not None else "unattributed"
+            false_locks.append(FalseLock(kind, emitted.ref, None, emitted.t, emitted.status.value))
 
     results: list[VerseResult] = []
     for slot, verse in enumerate(verses):
         mine = [
             c
             for c in candidates
-            if verse.start_s - tolerance_s <= c.start_s <= verse.end_s
-            and c.t <= verse.end_s + tolerance_s + grace_s
+            if verse.start_s - tolerance_s <= c.end_s <= verse.end_s + tolerance_s
         ]
         first = min((c.t for c in mine), default=None)
         short = min(
@@ -239,7 +250,7 @@ def evaluate(
                 unique_prefix_words=index.unique_prefix_words(verse.ref),
                 locked_correct=lock is not None,
                 closed_unresolved=any(
-                    verse.start_s - tolerance_s <= u.start_s <= verse.end_s
+                    verse.start_s - tolerance_s <= u.end_s <= verse.end_s + tolerance_s
                     and verse.ref in u.candidates
                     for u in unresolved
                 ),
@@ -279,8 +290,7 @@ def evaluate(
                 candidates=sum(
                     1
                     for c in candidates
-                    if zone.start_s - tolerance_s <= c.start_s <= zone.end_s
-                    and c.t <= zone.end_s + tolerance_s + grace_s
+                    if zone.start_s - tolerance_s <= c.end_s <= zone.end_s + tolerance_s
                 ),
                 locks=sum(
                     1

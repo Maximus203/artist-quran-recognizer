@@ -193,3 +193,11 @@ def test_la_preuve_d_un_verrou_non_confirme_compte_mots_exacts_et_suite_commune(
     evidence = m.lock_evidence(index, scenario, events, result.false_locks[0])
     assert evidence["ref"] == "113:2" and evidence["verse_words"] == 4
     assert evidence["words_in_verse"] == 3 and evidence["longest_exact_run"] == 2
+
+
+def test_seuls_les_lots_du_split_dev_servent_a_regler_et_mesurer() -> None:
+    m.check_dev_only(m.used_lots())  # ne lève pas
+    assert "lot1-07" not in m.used_lots()  # split test
+    with pytest.raises(SystemExit):
+        m.check_dev_only(["lot1-02"])  # split test
+    assert {"lot1-09", "lot2-11"} <= m.dev_lots()

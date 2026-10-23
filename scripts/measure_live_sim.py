@@ -82,12 +82,20 @@ REAL_RECITATIONS = (
     ("lot1-06", 0.0, 600.0),
 )
 REAL_SPEECH = (
-    ("lot1-08", 0.0, 600.0),
     ("lot1-09", 0.0, 900.0),
     ("lot2-11", 0.0, 900.0),
-    ("lot1-07", 0.0, 600.0),
-    ("lot1-11", 0.0, 600.0),
+    ("lot2-12", 0.0, 900.0),
+    ("lot1-03", 0.0, 900.0),
 )
+SPEECH_SOURCES = (("french", "lot1-09"), ("arabic_speech", "lot2-12"))
+SPECIAL_SOURCES = (
+    (NonQuranKind.ISTIADHA, "lot1-04"),
+    (NonQuranKind.TAKBIR, "lot1-06"),
+    (NonQuranKind.AMIN, "lot1-03"),
+)
+MIXSRC = "mixsrc-dev"
+"""Sources des mixages et des montages (dossier du travail) : uniquement des lots du split dev."""
+MANIFEST = ROOT / "tests" / "fixtures" / "audio" / "manifest.yaml"
 LOT_FOLDERS = {"C01": "C01", "C08": "C08", "C09": "C09", "C10": "C10"}
 
 
@@ -203,7 +211,7 @@ def truth_json(verses_: Sequence[TruthVerse], zones: Sequence[TruthZone]) -> dic
 
 
 def build_sequences(work: Path, audio_dir: Path) -> int:
-    provider = DiskClipProvider(work / "mixsrc", sample_rate=SAMPLE_RATE)
+    provider = DiskClipProvider(work / MIXSRC, sample_rate=SAMPLE_RATE)
     count = 0
     for reciter in RECITERS:
         for name, steps in recipes().items():
@@ -249,6 +257,29 @@ def ffmpeg_cut(source: Path, start_s: float, duration_s: float, target: Path) ->
             str(target),
         ],
         check=True,
+    )
+
+
+def dev_lots() -> set[str]:
+    """Lots du split `dev` du manifeste : seuls autorisés pour régler et mesurer (le split `test`
+    reste vierge, docs/TEST-CORPUS.md)."""
+    import yaml
+
+    cases = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))["cases"]
+    return {case["id"] for case in cases if case.get("split") == "dev"}
+
+
+def check_dev_only(lots: Iterable[str]) -> None:
+    forbidden = sorted(set(lots) - dev_lots())
+    if forbidden:
+        raise SystemExit(f"lots hors du split dev, refusés : {', '.join(forbidden)}")
+
+
+def used_lots() -> list[str]:
+    return sorted(
+        {lot for lot, _start, _duration in (*REAL_RECITATIONS, *REAL_SPEECH)}
+        | {lot for _kind, lot in SPEECH_SOURCES}
+        | {lot for _kind, lot in SPECIAL_SOURCES}
     )
 
 
@@ -317,7 +348,7 @@ def prepare_mix_sources(work: Path, audio_dir: Path, batch_dir: Path) -> list[st
     """Dossier de sources pour `generate_mixes` : EveryAyah (jonction), isti'adha/takbir/amin et
     parole non coranique extraits des lots réels là où la sortie par lots les a étiquetés. Les
     étiquettes ne sont PAS vérifiées à l'oreille : c'est écrit dans le rapport."""
-    source = work / "mixsrc"
+    source = work / MIXSRC
     source.mkdir(parents=True, exist_ok=True)
     link = source / "everyayah"
     if not link.exists():
@@ -327,12 +358,7 @@ def prepare_mix_sources(work: Path, audio_dir: Path, batch_dir: Path) -> list[st
             capture_output=True,
         )
     notes: list[str] = []
-    wanted = {
-        NonQuranKind.ISTIADHA: "lot1-04",
-        NonQuranKind.TAKBIR: "lot1-06",
-        NonQuranKind.AMIN: "lot1-03",
-    }
-    for kind, lot in wanted.items():
+    for kind, lot in SPECIAL_SOURCES:
         target = source / "specials" / f"{kind.value}.wav"
         if target.exists():
             continue
@@ -357,8 +383,7 @@ def prepare_mix_sources(work: Path, audio_dir: Path, batch_dir: Path) -> list[st
         a, b = found[0]["t"]
         ffmpeg_cut(lot_source(audio_dir, lot), max(0.0, a - 0.2), (b - a) + 0.4, target)
         notes.append(f"{kind.value}: {lot} {a:.1f}-{b:.1f} s (étiquette du moteur par lots)")
-    speech_sources = (("french", "lot1-09"), ("arabic_speech", "lot1-10"))
-    for kind_name, lot in speech_sources:
+    for kind_name, lot in SPEECH_SOURCES:
         output = batch_output(batch_dir, lot)
         if output is None:
             continue
@@ -414,7 +439,7 @@ def build_mixes(
     from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 
     notes = prepare_mix_sources(work, audio_dir, batch_dir)
-    provider = BismillahProvider(work / "mixsrc", sample_rate=SAMPLE_RATE)
+    provider = BismillahProvider(work / MIXSRC, sample_rate=SAMPLE_RATE)
     corpus = TanzilCorpusRepository(corpus_dir)
     report = generate_mixes(
         provider, corpus, seed=7, per_scenario=2, config=MixConfig(sample_rate=SAMPLE_RATE)
@@ -830,6 +855,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if "build" in stages:
         if audio_dir is None or args.batch_dir is None:
             sys.exit("build : --audio-dir (ou AQR_AUDIO_DIR) et --batch-dir sont requis")
+        check_dev_only(used_lots())
         mixes, notes = build_mixes(work, audio_dir, args.batch_dir, args.corpus)  # prépare mixsrc
         sequences = build_sequences(work, audio_dir)
         real = build_real(work, audio_dir, args.batch_dir)

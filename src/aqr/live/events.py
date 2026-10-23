@@ -41,6 +41,8 @@ class Candidates:
     t: float
     start_s: float
     """Début (temps du flux) du premier mot du passage en cours."""
+    end_s: float
+    """Fin (temps du flux) du dernier mot entendu : ce qui situe l'événement dans l'audio."""
     words_heard: int
     count: int
     """Versets plausibles (posterior d'au moins `candidate_floor` fois celui du meilleur)."""
@@ -65,6 +67,9 @@ class Locked:
     first_word: int
     posterior: float
     start_s: float
+    end_s: float
+    """Fin du dernier mot qui correspond : situe le verrou dans l'audio même si le début du passage
+    traîne (un mot de l'ASR peut en avaler deux)."""
     repetition: bool
     mean_confidence: float = 1.0
     """Confiance moyenne de l'ASR sur les mots qui correspondent au verset."""

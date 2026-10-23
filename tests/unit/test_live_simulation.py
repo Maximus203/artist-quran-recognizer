@@ -150,6 +150,26 @@ def test_un_faux_verrou_est_compte_quand_la_verite_est_un_autre_verset() -> None
     assert result.verses[0].locked_correct is False
 
 
+def test_un_verrou_tardif_dont_les_mots_couvrent_le_verset_reste_un_verrou_juste() -> None:
+    # l'ASR rend le 3e mot de 113:2 pendant 113:3 : le verrou arrive tard (latence mesurée) mais
+    # le verset nommé a bien été récité sous les mots qui l'ont fait nommer
+    index = toy_index()
+    words = words_at("nn oo", 0.0) + words_at("pp", 2.2)
+    truth = [TruthVerse(ref("113:2"), 0.0, 2.0), TruthVerse(ref("113:3"), 2.0, 3.5)]
+    result = evaluate(scenario(words, truth), run_stream(index, LiveConfig(), words, 6.0), index)
+    assert result.false_locks == []
+    assert result.verses[0].locked_correct is True
+    assert result.verses[0].t_locked == pytest.approx(2.7)
+
+
+def test_un_verrou_dont_les_mots_ne_couvrent_aucun_verset_recite_est_faux() -> None:
+    index = toy_index()
+    words = words_at("nn oo pp", 0.0)
+    truth = [TruthVerse(ref("113:3"), 0.0, 1.5), TruthVerse(ref("113:4"), 1.6, 3.0)]
+    result = evaluate(scenario(words, truth), run_stream(index, LiveConfig(), words, 6.0), index)
+    assert [fl.kind for fl in result.false_locks] == ["wrong_verse"]
+
+
 def test_un_verrou_dans_une_zone_non_coranique_est_un_faux_verrou() -> None:
     index = toy_index()
     words = words_at("nn oo pp qq", 0.0)
