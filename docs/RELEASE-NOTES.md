@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-23 — Export des sous-titres : l'API de l'atelier, contrôle, décisions et export
 Étiquettes : technique, décision
-PR : -
+PR : #98
 
 **Ce qui change.** Le serveur de l'atelier expose l'export des sous-titres, sans écran encore (il vient dans la PR suivante). Une page de passages ambigus « prêt à exporter ? » se calcule à la demande, dix par page, selon ce qu'on exporte. Les corrections à l'oreille s'enregistrent dans un fichier à part (`decisions.json`) et s'annulent ; l'export refuse tant qu'il reste des passages ambigus, sauf si on force (409 `unresolved_items`). Après une nouvelle analyse, une décision dont le passage a changé devient orpheline : l'atelier la montre avec le passage le plus proche et la rattache sur demande, jamais en silence. Seul le propriétaire de l'audio (ou un administrateur) corrige ; l'accord d'utiliser ses corrections pour améliorer le moteur est activé pour ses propres sessions, jamais pour celles des autres. Les corrections écoutées peuvent être proposées à la vérité terrain (jamais validées seules).
 
