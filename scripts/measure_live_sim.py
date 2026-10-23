@@ -595,6 +595,12 @@ def sweep_grid() -> list[tuple[str, LiveConfig]]:
                 ),
             )
         )
+    for margin in (100.0, 1e3, 1e4, 1e5):
+        configs.append(("rivals", base.replace(words_margin=margin)))
+    for min_jump, leader in itertools.product((2, 3, 4), (0.5, 0.8, 0.95)):
+        configs.append(
+            ("jumps", base.replace(min_words_jump=min_jump, jump_leader_posterior=leader))
+        )
     return configs
 
 
@@ -682,7 +688,8 @@ def run_report(work: Path, corpus_dir: Path, out_path: Path, sweep: bool) -> dic
             for e, s, _ev, _r in real_runs
             if e["kind"] == "real-speech"
         ]
-        for family, cfg in sweep_grid():
+        for number, (family, cfg) in enumerate(sweep_grid(), start=1):
+            print(f"balayage {number} ({family})", file=sys.stderr, flush=True)
             graded = evaluate_all(index, cfg, [(e, s) for e, s, _ev, _r in truth_runs])
             summary = summarize([r[3] for r in graded])
             real_graded = evaluate_all(index, cfg, speech)

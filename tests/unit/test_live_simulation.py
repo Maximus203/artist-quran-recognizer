@@ -209,6 +209,37 @@ def test_un_saut_attendu_est_detecte_et_un_saut_inattendu_est_signale() -> None:
     assert (result.jumps_expected, result.jumps_detected, result.jumps_spurious) == (0, 0, 0)
 
 
+def test_un_saut_signale_apres_un_verset_non_nomme_est_compte_a_part() -> None:
+    # 113:3 est récité mais l'ASR ne l'entend pas : le moteur compare 113:4 à 113:2, le dernier
+    # verset qu'il a nommé, et parle d'un saut vers l'avant. Ce n'est pas une contradiction de ce
+    # qu'il sait, c'est un trou : le rapport le sépare des sauts sans cette explication.
+    index = toy_index()
+    clock = Clock()
+    words = clock.say("nn oo pp qq")  # 113:2
+    clock.now += 2.0  # 113:3 : silence de l'ASR
+    words += clock.say("uu vv ww")  # 113:4
+    truth = [
+        TruthVerse(ref("113:2"), 0.0, 2.0),
+        TruthVerse(ref("113:3"), 2.0, 4.0),
+        TruthVerse(ref("113:4"), 4.0, 5.5),
+    ]
+    result = evaluate(scenario(words, truth), run_stream(index, LiveConfig(), words, 9.0), index)
+    assert result.jumps_spurious == 1
+    assert result.jumps_after_gap == 1
+    assert summarize([result])["jumps"]["after_gap"] == 1
+
+
+def test_un_saut_sans_trou_n_est_pas_compte_apres_un_verset_non_nomme() -> None:
+    index = toy_index()
+    clock = Clock()
+    words = clock.say("nn oo pp qq")  # 113:2
+    words += clock.say("ee ff")  # 112:2 ; la vérité dit 113:3 : un vrai faux saut
+    truth = [TruthVerse(ref("113:2"), 0.0, 2.0), TruthVerse(ref("113:3"), 2.0, 3.0)]
+    result = evaluate(scenario(words, truth), run_stream(index, LiveConfig(), words, 6.0), index)
+    assert result.jumps_spurious == 1
+    assert result.jumps_after_gap == 0
+
+
 def test_la_suite_attendue_se_verrouille_plus_vite_que_sans_contexte() -> None:
     index = toy_index()
     clock = Clock()

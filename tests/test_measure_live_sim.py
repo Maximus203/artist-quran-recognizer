@@ -145,6 +145,26 @@ def test_le_balayage_couvre_l_a_priori_le_minimum_de_mots_et_le_seuil() -> None:
     assert all(c.prior == 0.9 for c in guards)  # les garde-fous se jugent à a priori constant
 
 
+def test_le_balayage_couvre_la_marge_des_rivaux_et_les_conditions_du_saut() -> None:
+    grid = m.sweep_grid()
+    rivals = [c for family, c in grid if family == "rivals"]
+    jumps = [c for family, c in grid if family == "jumps"]
+    assert {c.words_margin for c in rivals} == {100.0, 1e3, 1e4, 1e5}
+    assert len(jumps) == 3 * 3
+    assert {c.min_words_jump for c in jumps} == {2, 3, 4}
+    assert {c.jump_leader_posterior for c in jumps} == {0.5, 0.8, 0.95}
+    # ces deux familles se jugent autour des valeurs de départ : le reste ne bouge pas
+    base = m.LiveConfig()
+    assert all(c.replace(words_margin=base.words_margin) == base for c in rivals)
+    assert all(
+        c.replace(
+            min_words_jump=base.min_words_jump, jump_leader_posterior=base.jump_leader_posterior
+        )
+        == base
+        for c in jumps
+    )
+
+
 def test_le_groupe_d_une_entree_suit_son_type() -> None:
     assert m.group_name({"kind": "sequence", "id": "seq-full-112-alafasy"}) == "sequence:full"
     assert (

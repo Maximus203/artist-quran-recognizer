@@ -138,6 +138,9 @@ class ScenarioResult:
     jumps_expected: int
     jumps_detected: int
     jumps_spurious: int
+    jumps_after_gap: int
+    """Sauts non attendus dont l'origine n'est pas le verset récité juste avant : un verset entre
+    les deux n'a pas été nommé (trou), le moteur compare à son dernier verset connu."""
     lost_in_recitation: int
     events: dict[str, int] = field(default_factory=dict)
 
@@ -278,6 +281,16 @@ def evaluate(
                 detected += 1
                 break
     spurious = len(jumps) - len(matched_jumps)
+    after_gap = 0
+    for number, jump in enumerate(jumps):
+        if number in matched_jumps:
+            continue
+        current = _verse_at(ordered, jump.t, tolerance_s, grace_s)
+        if current is None:
+            continue
+        slot = verses.index(current)
+        if slot and verses[slot - 1].ref != jump.from_ref:
+            after_gap += 1
 
     lost_in_recitation = 0
     zone_results: list[ZoneResult] = []
@@ -323,6 +336,7 @@ def evaluate(
         jumps_expected=expected,
         jumps_detected=detected,
         jumps_spurious=spurious,
+        jumps_after_gap=after_gap,
         lost_in_recitation=lost_in_recitation,
         events=counts,
     )
@@ -403,6 +417,7 @@ def summarize(results: Sequence[ScenarioResult]) -> dict[str, Any]:
             "expected": sum(r.jumps_expected for r in results),
             "detected": sum(r.jumps_detected for r in results),
             "spurious": sum(r.jumps_spurious for r in results),
+            "after_gap": sum(r.jumps_after_gap for r in results),
         },
         "lost_in_recitation": sum(r.lost_in_recitation for r in results),
         "zones": {
