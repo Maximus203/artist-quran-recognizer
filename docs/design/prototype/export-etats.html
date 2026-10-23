@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Exporter : points d’entrée et états — Atelier de revue</title>
+<!-- PROTOTYPE STATIQUE — planche des états de la fonction « Exporter les sous-titres » : point d'entrée dans l'en-tête de session, chargement, rien à exporter, analyse en cours, session introuvable, erreur. #theme=light -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="export.css">
+<style>
+  .entry { grid-column: 1 / -1; }
+  .entry-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-1); font-size: var(--fs-sm); color: var(--text-2); }
+  .entry-row .f { display: inline-flex; align-items: center; gap: 6px; }
+  .entry-row .sp { flex: 1; }
+  .xbtn { display: inline-flex; align-items: center; gap: 8px; }
+  .xbtn .st { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; padding: 0 8px; border-radius: var(--r-pill); font: 600 var(--fs-xs)/1 var(--font-mono); border: 1px solid var(--border); background: var(--surface-1); }
+  .xbtn .st.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn-edge) 60%, transparent); }
+  .xbtn .st.ready { color: var(--text); }
+  .xbtn .st.ready svg.i { width: 13px; height: 13px; stroke-width: 2; }
+  .opt-note { font-size: var(--fs-xs); color: var(--text-3); margin-top: 6px; }
+  .state .btnrow { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z"/><path d="M14 3.5V8h4M9 12.5h6M9 16h6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 4l2.4 5 5.4.7-4 3.8 1 5.4L12 16.2 7.2 18.9l1-5.4-4-3.8 5.4-.7z"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2M12 17v.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+</svg>
+<div class="app">
+  <header class="header">
+    <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em class="hide-m">de revue</em></b></a>
+    <span class="spacer"></span>
+    <button class="btn btn--ghost btn--icon" id="theme" type="button" aria-label="Changer de thème"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <span class="avatar" role="img" aria-label="Compte : cherif">C</span>
+  </header>
+  <main class="xp-page">
+    <div class="xp-wrap">
+      <h1 class="xp-title">Exporter : <em>entrée et états</em></h1>
+      <p class="xp-facts"><span class="f">Planche de contrôle des états de la fonction</span></p>
+      <div class="states" style="margin-top:var(--sp-5)">
+
+        <section class="state entry" aria-labelledby="e0">
+          <p class="eyebrow"><span id="e0">Point d’entrée · en-tête de session</span><span>raccourci <span class="kbd">E</span> ou <span class="kbd">Ctrl</span>+<span class="kbd">Maj</span>+<span class="kbd">E</span></span></p>
+          <div class="entry-row" role="group" aria-label="Session à vérifier">
+            <span class="f"><svg class="i" aria-hidden="true"><use href="#i-audio"/></svg>Audio · <span class="mono">3:12</span></span>
+            <span class="f">Terminé en <b class="mono" style="font-weight:600">26 s</b> · ×7,4</span><span class="sp"></span>
+            <button class="btn btn--ghost btn--sm" type="button"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg>Archiver</button>
+            <button class="btn btn--secondary xbtn" type="button" aria-describedby="e0a"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Exporter <span class="st warn" id="e0a">5 à vérifier</span></button>
+          </div>
+          <div class="entry-row" role="group" aria-label="Session prête">
+            <span class="f"><svg class="i" aria-hidden="true"><use href="#i-audio"/></svg>Audio · <span class="mono">3:12</span></span>
+            <span class="f">Terminé en <b class="mono" style="font-weight:600">26 s</b> · ×7,4</span><span class="sp"></span>
+            <button class="btn btn--ghost btn--sm" type="button"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg>Archiver</button>
+            <button class="btn btn--secondary xbtn" type="button" aria-describedby="e0b"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Exporter <span class="st ready" id="e0b"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Prêt</span></button>
+          </div>
+          <p class="opt-note">Le bouton reste secondaire : l’action primaire de la zone est « Lancer l’analyse » tant que rien n’est terminé. Le compteur vient du contrôle de préparation (même calcul que la page), sans le vert : le vert reste réservé à « Validé à l’oreille ». Désactivé tant que la session n’est pas terminée, avec l’info-bulle « L’analyse n’est pas terminée ».</p>
+        </section>
+
+        <section class="state" aria-labelledby="e1">
+          <p class="eyebrow"><span id="e1">Chargement</span><span>aria-busy</span></p>
+          <h3>Calcul du contrôle de préparation…</h3>
+          <div class="skel" aria-hidden="true"><i style="width:36%;height:22px"></i><i style="width:92%"></i><i style="width:78%"></i><i style="width:100%;height:58px"></i><i style="width:100%;height:58px"></i></div>
+          <p>Le serveur lit le résultat et la revue, puis renvoie le décompte et la première page. Au-delà de 400 ms, le squelette remplace la liste ; avant, rien ne clignote.</p>
+        </section>
+
+        <section class="state" aria-labelledby="e2">
+          <p class="eyebrow"><span id="e2">Rien à exporter</span><span>0 verset reconnu</span></p>
+          <div class="ill" aria-hidden="true"><svg viewBox="0 0 120 64"><path d="M6 32h14l6-14 8 28 8-22 7 12h8"/><path d="M72 32h42" stroke-dasharray="3 6"/><path d="M98 20l8 12-8 12-8-12z"/></svg></div>
+          <h3>Aucun verset reconnu dans cet audio</h3>
+          <p>Il n’y a donc aucun sous-titre à écrire. Les passages non coraniques (9) sont ignorés par l’export. Tu peux relancer l’analyse avec un autre moteur, ou signaler un verset manquant dans la revue.</p>
+          <div class="btnrow"><a class="btn btn--primary" href="index.html">Voir la session</a><button class="btn btn--secondary" type="button">Relancer l’analyse</button></div>
+        </section>
+
+        <section class="state" aria-labelledby="e3">
+          <p class="eyebrow"><span id="e3">Analyse en cours</span><span>session running</span></p>
+          <h3>L’analyse n’est pas terminée</h3>
+          <p>Le contrôle de préparation s’ouvrira quand le résultat sera prêt. Il reste environ <b class="mono" style="color:var(--text)">2 min</b>.</p>
+          <div class="meter" style="--p:62%" role="progressbar" aria-label="Progression de l’analyse" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+          <div class="btnrow"><button class="btn btn--secondary" type="button">Revenir à la session</button><button class="btn btn--ghost" type="button">Me prévenir à la fin</button></div>
+        </section>
+
+        <section class="state" aria-labelledby="e4">
+          <p class="eyebrow"><span id="e4">Session privée d’un autre</span><span>404</span></p>
+          <div class="ill" aria-hidden="true"><svg viewBox="0 0 120 64"><rect x="44" y="26" width="32" height="24" rx="5"/><path d="M50 26v-6a10 10 0 0 1 20 0v6M60 36v6"/></svg></div>
+          <h3>Session introuvable</h3>
+          <p>Elle n’existe pas, ou elle n’est pas partagée avec toi. Le message est volontairement le même dans les deux cas : l’existence d’une session privée ne se devine pas.</p>
+          <div class="btnrow"><a class="btn btn--secondary" href="sessions.html">Mes sessions</a></div>
+        </section>
+
+        <section class="state" aria-labelledby="e5">
+          <p class="eyebrow"><span id="e5">Erreur de génération</span><span role="alert">alert</span></p>
+          <div class="ill" aria-hidden="true" style="color:var(--danger)"><svg viewBox="0 0 120 64"><path d="M60 12l22 38H38z"/><path d="M60 26v10M60 43v.01"/></svg></div>
+          <h3>Le fichier n’a pas pu être écrit</h3>
+          <p>Le serveur n’a pas réussi à relire le résultat du moteur : <b style="color:var(--text)">le fichier de résultat est introuvable</b> (la session a été restaurée sans lui). Rien n’a été exporté, tes décisions sont intactes. Relance l’analyse, ou réessaie dans un instant si le disque était plein.</p>
+          <div class="btnrow"><button class="btn btn--primary" type="button"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Réessayer</button><button class="btn btn--secondary" type="button">Copier le détail technique</button></div>
+        </section>
+
+        <section class="state" style="grid-column:1/-1" aria-labelledby="e6">
+          <p class="eyebrow"><span id="e6">Long fichier · 2 h, 3 012 intervalles</span><span>liste paginée côté serveur</span></p>
+          <h3>Le contrôle reste court, même sur un cours entier</h3>
+          <p>Le serveur renvoie le décompte (35 à traiter sur 47) et <b style="color:var(--text)">dix éléments par page</b>, triés par temps ; filtres par type et saut direct au prochain non résolu. Les 2 965 passages sans doute ne sont jamais envoyés au navigateur. Voir la page : <a href="export.html#s=long" style="font-weight:600">export.html#s=long</a>.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+  var h = new URLSearchParams(location.hash.replace(/^#/, "")); if (h.get("theme")) document.documentElement.dataset.theme = h.get("theme");
+  document.getElementById("theme").addEventListener("click", function () { var r = document.documentElement; r.dataset.theme = r.dataset.theme === "light" ? "dark" : "light"; });
+</script>
+</body>
+</html>
