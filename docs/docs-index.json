@@ -63,6 +63,13 @@
     "summary": "Le parcours qui fabrique une vérité terrain : le moteur propose, l'humain déclare, l'alignement pose les temps, l'humain écoute et valide."
   },
   {
+    "slug": "sortie-decisions",
+    "title": "Contrat de sortie du calque de décisions",
+    "section": "Architecture",
+    "file": "docs/DECISIONS.md",
+    "summary": "Le format aqr.decisions/1 : genres de décision et leur valeur, empreinte d'un intervalle, états (appliquée, orpheline, annulée), ce que le calque ne fait pas."
+  },
+  {
     "slug": "adr-0001",
     "title": "ADR-0001 — Pas d'entraînement de zéro, pas de LLM génératif",
     "section": "Décisions",
@@ -152,6 +159,13 @@
     "section": "Décisions",
     "file": "docs/adr/0013-comblement-de-trou.md",
     "summary": "Quand une partie d'un verset est reconnue et l'autre abstenue : hypothèses de texte déduites du contexte, alignées sur le trou, preuve sur la seule parole alignée, promotion par la suite acceptée, extension d'un bord."
+  },
+  {
+    "slug": "adr-0014",
+    "title": "ADR-0014 — Les décisions humaines se superposent à une prédiction immuable",
+    "section": "Décisions",
+    "file": "docs/adr/0014-decisions-humaines-sur-une-prediction-immuable.md",
+    "summary": "Une correction à l'oreille ne réécrit jamais la sortie du moteur : un calque de décisions, accroché à l'empreinte de l'intervalle, un champ « résolu » à côté du statut, l'omission comme règle d'un export forcé, le consentement d'entraînement."
   },
   {
     "slug": "metriques-evaluation",

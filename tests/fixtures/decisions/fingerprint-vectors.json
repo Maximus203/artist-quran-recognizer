@@ -1,0 +1,166 @@
+[
+ {
+  "name": "incertain 11:61 ou 7:73",
+  "interval": {
+   "kind": "verse",
+   "ref": "11:61",
+   "words": [
+    1,
+    10
+   ],
+   "partial": true,
+   "status": "uncertain",
+   "t": [
+    48.2,
+    62.6
+   ],
+   "time_interpolated": false,
+   "confidence": 0.75,
+   "candidates": [
+    "11:61",
+    "7:73"
+   ],
+   "repetition": false,
+   "text": null,
+   "translation": null
+  },
+  "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e"
+ },
+ {
+  "name": "reconnu complet avec temps au mot",
+  "interval": {
+   "kind": "verse",
+   "ref": "112:1",
+   "words": [
+    1,
+    4
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    1.0,
+    4.5
+   ],
+   "candidates": [],
+   "repetition": false,
+   "word_times": [
+    [
+     1.0,
+     2.0
+    ],
+    [
+     2.0,
+     3.0
+    ],
+    [
+     3.0,
+     3.8
+    ],
+    [
+     3.8,
+     4.5
+    ]
+   ],
+   "word_times_source": "ctc-alignment",
+   "text": "x",
+   "translation": {
+    "text": "y"
+   }
+  },
+  "fingerprint": "2f5c4650494a7b9fb32c52e4e927c2cabae0bf506e111e2125648f69966afb57"
+ },
+ {
+  "name": "supposé, temps interpolé",
+  "interval": {
+   "kind": "verse",
+   "ref": "112:3",
+   "words": [
+    1,
+    4
+   ],
+   "partial": false,
+   "status": "inferred",
+   "t": [
+    10.25,
+    12.75
+   ],
+   "time_interpolated": true,
+   "candidates": [],
+   "repetition": false
+  },
+  "fingerprint": "b6a421ab076d331d1fe0b63bc61e93416ae370310dd797ff4821e85678c2a90b"
+ },
+ {
+  "name": "demi-milliseconde vers le haut",
+  "interval": {
+   "kind": "verse",
+   "ref": "1:5",
+   "words": [
+    1,
+    2
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    1.0005,
+    2.0015
+   ],
+   "candidates": []
+  },
+  "fingerprint": "f7d1348501569c1d50c951d84e69fd6af178d39ecdfe1ebcde34ea3748c30a4e"
+ },
+ {
+  "name": "flottants à erreur binaire",
+  "interval": {
+   "kind": "verse",
+   "ref": "55:13",
+   "words": [
+    1,
+    5
+   ],
+   "partial": false,
+   "status": "uncertain",
+   "t": [
+    0.285,
+    1.005
+   ],
+   "candidates": [
+    "55:13",
+    "55:16",
+    "55:18"
+   ]
+  },
+  "fingerprint": "6f75e77649b531d009c74c069d99425d4919a876096cc59d21ac653257ac9456"
+ },
+ {
+  "name": "sans candidats ni mots",
+  "interval": {
+   "kind": "verse",
+   "ref": null,
+   "words": null,
+   "status": "recognized",
+   "t": null,
+   "candidates": []
+  },
+  "fingerprint": "ce5e59f5b2f1f682932305a57f95bc43f1d21c9036ffa2db0ef8891786d798df"
+ },
+ {
+  "name": "heures de fichier long",
+  "interval": {
+   "kind": "verse",
+   "ref": "2:255",
+   "words": [
+    1,
+    50
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    3599.9995,
+    7200.0
+   ],
+   "candidates": []
+  },
+  "fingerprint": "f5b1941c46afd27b95f918bcf2aba5a9f2e4228239c941747e1a3dbdeb55ba32"
+ }
+]
