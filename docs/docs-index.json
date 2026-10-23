@@ -140,6 +140,13 @@
     "summary": "Proposition : garder les candidats ouverts au début d'un verset, nommer la source exacte dès qu'un mot départage, attendre la suite, signaler les sauts ; chiffres sur le corpus Hafs et protocole WebSocket."
   },
   {
+    "slug": "adr-0012",
+    "title": "ADR-0012 — La traduction est découpée en fragments alignés sur les mots arabes",
+    "section": "Décisions",
+    "file": "docs/adr/0012-traduction-decoupee-en-fragments.md",
+    "summary": "Pour un verset partiel, la traduction suit les mots affichés : découpage hors ligne et déterministe, précision d'abord, repli sur le verset entier."
+  },
+  {
     "slug": "metriques-evaluation",
     "title": "Métriques d'évaluation",
     "section": "Évaluation",
@@ -208,6 +215,13 @@
     "section": "Évaluation",
     "file": "docs/evaluation/cascade-2026-10-20.md",
     "summary": "Mesure de la cascade : aucun verset perdu, EveryAyah 216/216, coût en temps multiplié par 2,85."
+  },
+  {
+    "slug": "traduction-par-passage-2026-10-23",
+    "title": "Traduction par passage : mesure du découpage en fragments",
+    "section": "Évaluation",
+    "file": "docs/evaluation/traduction-par-passage-2026-10-23.md",
+    "summary": "Pseudo-vérité, couverture (69,5 % des versets), 732 intervalles partiels réels et relecture de 40 versets : 153 frontières justes, 15 discutables, 1 fausse sur 169."
   },
   {
     "slug": "riwaya-2026-10-20",
