@@ -271,5 +271,12 @@
     "section": "Interface",
     "file": "docs/design/atelier-direction.md",
     "summary": "La direction « Encre & lapis » : principes visuels, composants, thème clair et sombre, polices."
+  },
+  {
+    "slug": "export-sous-titres-conception",
+    "title": "Exporter les sous-titres : conception",
+    "section": "Interface",
+    "file": "docs/design/export-sous-titres.md",
+    "summary": "Conception (non livrée) de l'export SRT/WebVTT/ASS/JSON : contrôle de préparation, correction par calque de décisions, export forcé, options."
   }
 ]
