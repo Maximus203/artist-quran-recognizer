@@ -314,3 +314,27 @@ def test_une_fusion_dont_une_moitie_n_a_pas_de_temps_au_mot_n_en_garde_aucun():
     ]
     (det,) = _decoder().decode(obs).detections()
     assert det.word_times == ()
+
+
+def test_deux_moities_dont_les_fenetres_se_recouvrent_ne_donnent_aucun_chevauchement():
+    # cas réel (vitesse ×0,3, Alafasy 67:26) : le mot 6 commence 50 ms avant la fin du mot 5
+    obs = [
+        (TimeSpan(0.0, 3.1), [_timed(VerseRef(2, 255), 1, 6, 0.0)]),
+        (TimeSpan(2.95, 6.0), [_timed(VerseRef(2, 255), 7, 12, 2.95)]),
+    ]
+    (det,) = _decoder().decode(obs).detections()
+    assert len(det.word_times) == 12
+    assert all(
+        a.end_s <= b.start_s for a, b in zip(det.word_times, det.word_times[1:], strict=False)
+    )
+    assert det.word_times[0].start_s == det.time.start_s
+    assert det.word_times[-1].end_s == det.time.end_s
+
+
+def test_un_recouvrement_grossier_des_moities_ne_garde_aucun_temps_au_mot():
+    obs = [
+        (TimeSpan(0.0, 3.0), [_timed(VerseRef(2, 255), 1, 6, 0.0)]),
+        (TimeSpan(1.0, 6.0), [_timed(VerseRef(2, 255), 7, 12, 1.0)]),
+    ]
+    (det,) = _decoder().decode(obs).detections()
+    assert (det.span.first_word, det.span.last_word) == (1, 12) and det.word_times == ()

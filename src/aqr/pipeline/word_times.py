@@ -6,6 +6,8 @@ Deux provenances, jamais mélangées, et déclarées dans la sortie :
   où il finit ;
 - `interpolated` : seul le temps de l'intervalle est mesuré ; le temps de chaque mot en est une
   estimation proportionnelle à la longueur des mots du corpus, bornée à l'intervalle.
+Dans les deux cas les mots sont ordonnés et ne se chevauchent pas (`without_overlap`) ; des temps
+mesurés qui se chevauchent trop ne sont pas publiés comme mesurés.
 Ni l'un ni l'autre n'est publié pour un verset `uncertain` (il n'est pas nommé) ou `inferred` (il
 n'a jamais été entendu) : un faux temps vaut moins que pas de temps.
 """
@@ -16,6 +18,16 @@ from collections.abc import Sequence
 from typing import Final
 
 from aqr.domain.models import TimeSpan
+from aqr.domain.word_timing import MAX_REPAIRED_OVERLAP_S, without_overlap
+
+__all__ = [
+    "CTC_ALIGNMENT",
+    "INTERPOLATED",
+    "MAX_REPAIRED_OVERLAP_S",
+    "SOURCES",
+    "interpolate",
+    "without_overlap",
+]
 
 CTC_ALIGNMENT: Final = "ctc-alignment"
 INTERPOLATED: Final = "interpolated"
