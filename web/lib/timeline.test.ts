@@ -3,6 +3,8 @@ import {
   ZOOM_SPANS,
   centeredScroll,
   formatTick,
+  isPanMove,
+  panScrollLeft,
   laneWidthPercent,
   percentAt,
   tickStep,
@@ -77,5 +79,26 @@ describe("graduations", () => {
     expect(formatTick(125, 5)).toBe("02:05");
     expect(formatTick(3725, 300)).toBe("1:02:05");
     expect(formatTick(1.5, 0.5)).toBe("00:01.5");
+  });
+});
+
+describe("navigation par glisser-déposer", () => {
+  it("un petit tremblement n'est pas un glissement (le clic reste un déplacement de la lecture)", () => {
+    expect(isPanMove(0)).toBe(false);
+    expect(isPanMove(3)).toBe(false);
+    expect(isPanMove(-4)).toBe(false);
+    expect(isPanMove(5)).toBe(true);
+    expect(isPanMove(-12)).toBe(true);
+  });
+
+  it("glisser vers la gauche fait avancer dans le temps, vers la droite recule", () => {
+    expect(panScrollLeft(1000, -200, 5000)).toBe(1200);
+    expect(panScrollLeft(1000, 200, 5000)).toBe(800);
+  });
+
+  it("ne sort jamais du contenu", () => {
+    expect(panScrollLeft(100, 500, 5000)).toBe(0);
+    expect(panScrollLeft(4900, -500, 5000)).toBe(5000);
+    expect(panScrollLeft(10, 10, 0)).toBe(0);
   });
 });

@@ -17,6 +17,14 @@ PR : #82
 
 **Pourquoi / décision.** La règle écrite avant la mesure n'est pas satisfaite : avec le facteur ESTIMÉ, le rappel des témoins gagne +11,0 points à ×0,4 et +21,9 à ×0,3 sans faux verset, mais un fichier de contrôle (`lot1-09`) reçoit un verset nouveau (11:105, probablement une vraie citation) et, mesuré dans la cascade complète, un prototype n'ajoute aucun verset distinct sur 7 fichiers. Découverte : l'optimum de compensation est à une vitesse nette de ×1,2 à ×1,6, pas à l'inverse de l'étirement. Le prototype reste sur la branche `wip/etage-vitesse`, non fusionnée. `docs/evaluation/courbe-vitesse-2026-10-23.md`.
 
+## 2026-10-23 — Glisser pour naviguer dans la timeline, tracé qui se ferme tout seul
+Étiquettes : utilisateur
+PR : -
+
+**Ce qui change.** Quand la timeline est zoomée, on la saisit avec la souris et on la glisse vers la gauche ou la droite pour naviguer, au lieu d'aller chercher la barre de défilement tout en bas (un simple clic déplace toujours la lecture). Dans la revue, l'outil « Tracer sur l'onde » se ferme tout seul dès qu'une plage ou un point est tracé, et aussi quand on valide le signalement : on continue d'écouter, et on le réactive pour un nouveau signalement.
+
+**Pourquoi / décision.** Retours du propriétaire pendant ses tests : la navigation par la barre du bas est lourde, et devoir quitter manuellement l'outil de tracé après chaque signalement freine le testeur. Au doigt, le défilement natif reste en place.
+
 ## 2026-10-23 — La carte du passage actif reste vide quand rien n'est détecté
 Étiquettes : utilisateur
 PR : -
