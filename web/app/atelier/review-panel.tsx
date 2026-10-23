@@ -163,6 +163,8 @@ export function ReviewPanel(props: Props) {
                 <span>Signaler un point à la position de lecture</span>
                 <kbd>L</kbd>
                 <span>Écouter la plage en boucle</span>
+                <kbd>E</kbd>
+                <span>Exporter les sous-titres (session terminée)</span>
                 <kbd>Échap</kbd>
                 <span>Annuler la pose en cours</span>
                 <kbd>Ctrl ↵</kbd>

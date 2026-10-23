@@ -200,6 +200,17 @@ que le moteur), traduit les codes de sortie (3 → `409 unresolved_items`) et é
 lecteur strict (`lib/decisions.ts`, mêmes cas de test que `src/aqr/decisions/`). Les étiquettes de revue qui
 bloquent l'export sont une propriété des puces (`blocksExport`, `lib/review-presets.ts`), transmises au moteur.
 
+**Les écrans** (`/s/<id>/exporter` et `/s/<id>/exporter/corriger?item=<clé>`, routes sous `(app)/s/[id]/`). Ils
+respectent le coût du DOM de §6 bis : l'atelier n'est pas modifié, hormis le bouton d'entrée dans l'en-tête de session
+(`session-head.tsx`) et la touche E (`review-app.tsx`). Tout le code vit dans `web/app/atelier/export/` (composants
+clients), `web/lib/export-*.ts` (règles pures, testées sans navigateur : textes, choix de décision, voisins d'un passage,
+brouillon, préférences, mesure d'écoute) et `web/app/export.css` (préfixe `ex-`, uniquement des jetons de `tokens.css`).
+La liste est paginée par dix côté moteur : le navigateur ne reçoit jamais plus de dix lignes. Un seul `<audio>` sert
+toute la page. L'écoute d'un passage est mesurée sur la position lue directement sur l'`<audio>` toutes les 100 ms
+(`ListenMeter`), pas sur les images dessinées : un onglet ou un volet masqué ne fausse pas le « écouté ». Les actions
+de décision partent en `PUT /decisions` par lots ; hors connexion, elles attendent dans le navigateur (`lib/export-draft.ts`) et un message le dit ; elles partent
+avec la décision suivante.
+
 ## 8. Stockage sur disque
 
 Tout vit dans `AQR_REVIEW_DIR` (défaut : `%LOCALAPPDATA%\aqr-review` sous Windows, `~/.local/share/aqr-review`

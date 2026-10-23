@@ -130,6 +130,12 @@
   --wave-played: light-dark(#1b1c20, #d9d5ca);
   --playhead: light-dark(#1b1c20, #eeeae0);
 
+  /* ── Aperçu d'un sous-titre : un cadre vidéo, noir fixe voulu dans les deux thèmes ───── */
+  --cue-bg: #0b0c0e;
+  --cue-edge: #2a2d33;
+  --cue-fg: #f2efe6;
+  --cue-fg-2: #d9d5ca;
+
   /* ── Typographie ──────────────────────────────────────────────────────────── */
   --font-display:
     "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;

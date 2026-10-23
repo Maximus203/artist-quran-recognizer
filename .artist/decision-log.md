@@ -1441,3 +1441,29 @@
   désormais le même verdict.
 - **Preuve** : `web/e2e/export-api.mjs` (14 scénarios, serveur de production, données de test) →
   `.artist/acceptance-playbooks/export-sous-titres-api.md`.
+
+## 2026-10-23 — Export des sous-titres : les écrans de l'atelier (contrôle, correction, forcer)
+- **Pas de nouveau passage par Sofia.** La direction artistique (« Encre & lapis », prototypes, captures) est déjà
+  fusionnée dans `docs/design/` ; les écrans la portent en jetons (`web/app/tokens.css`, identique à
+  `docs/design/tokens.css`) et en classes préfixées `ex-` (`web/app/export.css`). Seuls ajouts de jetons :
+  `--cue-bg`, `--cue-edge`, `--cue-fg`, `--cue-fg-2` (couleur de la ligne de sous-titre).
+- **Architecture** : composants clients dans `web/app/atelier/export/` (aucun fichier existant de l'atelier
+  refactoré ; deux ajouts de quelques lignes : bouton d'entrée dans `session-head.tsx`, touche E dans
+  `review-app.tsx`) ; règles pures dans `web/lib/export-*.ts` (textes, choix de décision, voisins, brouillon,
+  préférences, écoute), testées sans navigateur. Patterns : Adapter (`export-client.ts`, seul à parler à l'API),
+  Strategy (`export-decision.ts` : un constructeur de décision par sorte de passage), Repository côté serveur
+  (déjà posé en #98, `decisions-store.ts`).
+- **Écoute mesurée sur l'`<audio>`, pas sur l'animation** : le premier essai suivait la position publiée à chaque
+  image dessinée ; dans un volet masqué ou lent, aucune image ne vient et le passage n'était jamais « écouté ».
+  La position est maintenant lue toutes les 100 ms ; un saut se distingue d'une lecture par l'horloge (la position
+  ne peut pas avancer plus vite que ×2,5 le temps réel). Seuil : 70 % de la plage.
+- **Un seul type d'élément « coupure »** (début ou fin manquants) au lieu de deux : la correction est la même
+  (choisir la plage de mots) ; l'écran dit lequel manque.
+- **Erreur franche** : une session absente ou non terminée n'affiche ni réglages ni bouton « Forcer » (premier jet
+  de l'écran : réglages actifs sous un message d'erreur).
+- **Non tranché, à voir avec le mainteneur** : (1) l'exclusion « pas du Coran » ne devient pas un passage de vérité
+  terrain (inchangé depuis #98) ; (2) la règle « premier candidat » reste déconseillée tant que le moteur n'expose
+  pas de score par candidat ; (3) le taux de fausses coupures n'est pas mesuré ; (4) l'écran n'a pas été vu par un
+  testeur non propriétaire (couvert par l'API seulement).
+- **Preuve** : `.artist/acceptance-playbooks/export-sous-titres-ui.md` (10 scénarios, build de production,
+  375 px et 1280 px), tests `web/lib/export-*.test.ts`.

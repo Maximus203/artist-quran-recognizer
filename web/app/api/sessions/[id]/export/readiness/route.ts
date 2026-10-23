@@ -3,6 +3,7 @@ import { exportErrorResponse } from "@/lib/export-errors";
 import { resolveExportOptions } from "@/lib/export-options";
 import { json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
+import { viewForUser } from "@/lib/session-service";
 export const runtime = "nodejs";
 
 const flag = (value: string | null): boolean | undefined =>
@@ -18,6 +19,7 @@ const count = (value: string | null, fallback: number): number => {
  * qu'on exporte : `content` (`ar_fr` · `ar` · `fr`), `ref=1` (référence affichée), `strip=1`. Une
  * session de 3 000 intervalles ne renvoie jamais ses 3 000 intervalles. Tout lecteur de la session
  * peut la lire ; 404 pour l'audio privé d'un autre ; 409 `not_ready` tant que l'analyse n'est pas finie.
+ * `state` (`open` · `resolved` · `ignored`) filtre les passages ; `session` donne le nom, les droits et les durées.
  */
 async function handleGET(
   request: Request,
@@ -36,13 +38,28 @@ async function handleGET(
         ? { strip_notes: flag(query.get("strip")) }
         : {}),
     });
-    return json(
-      await readiness(access.id, options, {
-        page: count(query.get("page"), 0),
-        size: Math.min(50, count(query.get("size"), 10)),
-        type: query.get("type"),
-      }),
-    );
+    const payload = (await readiness(access.id, options, {
+      page: count(query.get("page"), 0),
+      size: Math.min(50, count(query.get("size"), 10)),
+      type: query.get("type"),
+      state: query.get("state"),
+    })) as Record<string, unknown>;
+    // Ce que la page affiche de la session (nom, droits, durées) : jamais son résultat.
+    const view = await viewForUser(access.db, access.user, access.meta);
+    return json({
+      ...payload,
+      session: view && {
+        id: view.id,
+        name: view.name,
+        state: view.state,
+        can_edit: view.can_edit,
+        mine: view.mine,
+        visibility: view.visibility,
+        audio_duration_s: view.audio_duration_s ?? null,
+        duration_s: view.duration_s ?? null,
+        owner: view.owner,
+      },
+    });
   } catch (error) {
     return exportErrorResponse(error) ?? Promise.reject(error);
   }
