@@ -30,6 +30,8 @@ import {
   tickStep,
   ticks,
   visibleSpan,
+  isPanMove,
+  panScrollLeft,
 } from "@/lib/timeline";
 import type { Store } from "@/lib/mini-store";
 import { barHeights, peakNorm } from "@/lib/waveform";
@@ -112,6 +114,14 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       | { kind: "edge"; id: string; edge: "start" | "end" }
       | null
     >(null);
+    /* glisser pour naviguer : appui sur la timeline (hors tracé), puis déplacement horizontal */
+    const pan = useRef<{
+      x0: number;
+      left0: number;
+      id: number;
+      moved: boolean;
+    } | null>(null);
+    const suppressClick = useRef(false);
     const frame = useRef(0);
     const norm = useMemo(() => (peaks ? peakNorm(peaks.peaks) : 1), [peaks]);
 
@@ -357,6 +367,58 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
       latest.current.onTrace(selection);
     };
 
+    const onScrollPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+      props.onUserMove();
+      // Souris ou stylet seulement : au doigt, le défilement natif fait déjà le travail.
+      if (event.pointerType === "touch" || event.button !== 0) return;
+      if (gesture.current !== null || event.shiftKey) return; // tracé ou poignée en cours
+      const target = event.target as HTMLElement;
+      if (target.closest(".rv-h")) return;
+      if (latest.current.trace && target.closest(".tl-wave")) return; // l'onde trace
+      const scroll = scrollRef.current;
+      if (!scroll) return;
+      pan.current = {
+        x0: event.clientX,
+        left0: scroll.scrollLeft,
+        id: event.pointerId,
+        moved: false,
+      };
+    };
+
+    const onScrollPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+      const g = pan.current;
+      const scroll = scrollRef.current;
+      if (!g || !scroll || event.pointerId !== g.id) return;
+      const dx = event.clientX - g.x0;
+      if (!g.moved) {
+        if (!isPanMove(dx)) return;
+        g.moved = true;
+        // Capture seulement une fois le glissement commencé : un simple clic garde sa cible.
+        scroll.setPointerCapture(event.pointerId);
+        scroll.classList.add("panning");
+      }
+      scroll.scrollLeft = panScrollLeft(
+        g.left0,
+        dx,
+        scroll.scrollWidth - scroll.clientWidth,
+      );
+    };
+
+    const endPan = (event: React.PointerEvent<HTMLDivElement>) => {
+      const g = pan.current;
+      pan.current = null;
+      const scroll = scrollRef.current;
+      scroll?.classList.remove("panning");
+      if (!g?.moved) return;
+      if (scroll?.hasPointerCapture(event.pointerId))
+        scroll.releasePointerCapture(event.pointerId);
+      // Le clic qui suit un glissement ne doit pas déplacer la lecture ni choisir un segment.
+      suppressClick.current = true;
+      window.setTimeout(() => {
+        suppressClick.current = false;
+      }, 0);
+    };
+
     const onRowClick = (event: React.MouseEvent<HTMLDivElement>) => {
       if (latest.current.trace || event.shiftKey) return;
       if ((event.target as HTMLElement).closest("button,.rv-h")) return;
@@ -560,12 +622,18 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
           </div>
           <div
             ref={scrollRef}
-            className="tl-scroll"
+            className={`tl-scroll${contentPct > 100 ? " can-pan" : ""}`}
             data-testid="timeline-scroll"
             onWheel={props.onUserMove}
-            onPointerDownCapture={(event) => {
-              if (!(event.target as HTMLElement).closest(".tl-wave.tracing"))
-                props.onUserMove();
+            onPointerDown={onScrollPointerDown}
+            onPointerMove={onScrollPointerMove}
+            onPointerUp={endPan}
+            onPointerCancel={endPan}
+            onClickCapture={(event) => {
+              if (!suppressClick.current) return;
+              event.stopPropagation();
+              event.preventDefault();
+              suppressClick.current = false;
             }}
           >
             <div
@@ -656,7 +724,8 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
         </div>
         {trace ? (
           <p className="trace-hint" role="status">
-            Glisse pour une plage · touche pour un point · Échap pour sortir
+            Glisse pour une plage · touche pour un point · l’outil se ferme
+            après le tracé (Échap pour sortir avant)
           </p>
         ) : null}
       </div>
