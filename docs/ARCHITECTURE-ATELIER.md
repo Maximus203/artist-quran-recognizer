@@ -316,6 +316,11 @@ et surligne en lecture le mot arabe récité et le segment de traduction qui le 
 - **Interaction** : lecture à l'arrêt, un clic sur un mot arabe place le lecteur au début de ce mot (jamais pendant
   une sélection de texte). Interrupteur « Surligner en direct » sur la carte et dans le compte (`liveHighlight`,
   enregistré côté serveur, activé par défaut).
+- **Décalage audio** : `audio.currentTime` devance le son réellement entendu de la latence de sortie de l'appareil
+  (écouteurs sans fil : 100 à 300 ms). La préférence `audioOffsetMs` (−500 à +500 ms, pas de 10, défaut 0)
+  retarde seulement l'affichage : `liveAt` (`web/lib/passage.ts`) lit le passage et le mot à `t − décalage`
+  (`heardTime`, `web/lib/audio-offset.ts`), en lecture uniquement. Réglage dans le compte et « Caler à l'oreille »
+  sur la carte (`ear-calibration.tsx`) : le début du passage tourne en boucle, le verset reste épinglé.
 
 ## 12. Variables d'environnement
 
