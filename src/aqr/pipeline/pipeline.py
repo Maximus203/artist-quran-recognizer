@@ -23,9 +23,11 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Protocol
 
-from aqr.alignment.verification import AcousticVerifier, ChainCheck
+from aqr.alignment.verification import AcousticVerifier, ChainCheck, GapFill
 from aqr.corpus.normalize import normalize_arabic
+from aqr.decoding.chain_members import ChainProof, promote_chain_members
 from aqr.decoding.chains import ChainConfig, promote_chains
+from aqr.decoding.gaps import GapConfig, Hole, find_holes, propose
 from aqr.decoding.neighbors import NeighborConfig, Promotion, propose_promotions
 from aqr.decoding.viterbi_decoder import DecoderConfig, ViterbiSequenceDecoder
 from aqr.domain.models import (
@@ -82,6 +84,12 @@ class PipelineConfig:
     """Réécoute des fenêtres douteuses par les moteurs secondaires (avec arbitre acoustique)."""
     neighbor: NeighborConfig = field(default_factory=NeighborConfig)
     """Promotion d'un début `uncertain` qui prolonge un verset reconnu voisin (avec l'audio)."""
+    chain_members: bool = True
+    """Un verset `uncertain` membre d'une suite acceptée par l'audio est reconnu (ADR-0013)."""
+    gap: GapConfig = field(default_factory=GapConfig)
+    """Comblement des trous entre deux versets reconnus (ADR-0013), avec l'audio."""
+    gap_competitors: int = 3
+    """Textes du matcher dans un trou (meilleure qualité d'abord) opposés aux hypothèses."""
 
 
 @dataclass(frozen=True)
@@ -178,9 +186,17 @@ class RecognitionPipeline:
         timing["match_s"] += self._clock() - mark
 
         mark = self._clock()
-        detections, promotions = self._promote_neighbors(clip, timeline.detections(), decided)
+        detections = self._promote_chain_members(timeline.detections(), checks)
+        detections, promotions = self._promote_neighbors(clip, detections, decided)
         if promotions:
             checks = (*checks, *promotions)
+        detections, filled = self._fill_gaps(clip, detections, decided, heard, side, duration)
+        if filled:
+            checks = (*checks, *filled)
+        detections, extended = self._extend_edges(clip, detections, decided, side, duration)
+        if extended:
+            checks = (*checks, *extended)
+        self._retire_covered_abstentions(detections, side)
         if self._acoustic is not None:
             timing["acoustic_s"] = timing.get("acoustic_s", 0.0) + self._clock() - mark
         timing["total_s"] = self._clock() - started
@@ -216,6 +232,222 @@ class RecognitionPipeline:
         proven, checks = self._acoustic.verify(clip, matched, blocked, heard)
         timing["acoustic_s"] = timing.get("acoustic_s", 0.0) + self._clock() - mark
         return proven, checks
+
+    # -- Promotion par la suite acceptée (ADR-0013) -----------------------------------------------
+    def _promote_chain_members(
+        self, detections: Sequence[Detection], checks: Sequence[ChainCheck]
+    ) -> list[Detection]:
+        """Un `uncertain` couvert par une suite que l'audio a acceptée devient `recognized` : le
+        décodeur le jugeait sans avoir vu la suite qui le désambiguïse."""
+        if self._acoustic is None or not self._config.chain_members:
+            return list(detections)
+        proofs = [ChainProof(c.time, c.spans, c.accepted) for c in checks if c.kind == "chain"]
+        return promote_chain_members(detections, proofs)
+
+    # -- Bords d'un verset reconnu (ADR-0013) ------------------------------------------------------
+    def _extend_edges(
+        self,
+        clip: AudioClip,
+        detections: Sequence[Detection],
+        decided: Sequence[tuple[TimeSpan, list[Candidate]]],
+        side: Sequence[AbstentionSpan | NonQuranSpan],
+        duration_s: float,
+    ) -> tuple[list[Detection], tuple[ChainCheck, ...]]:
+        """Un verset reconnu dont l'audio contient un à trois mots de plus à son bord (le mot
+        suivant dit dans la même fenêtre mais perdu par l'ASR) est étendu, sous la preuve de
+        l'alignement (`AcousticVerifier.extend`). Les voisins bornent l'extension."""
+        out = list(detections)
+        if self._acoustic is None or not self._config.gap.enabled:
+            return out, ()
+        formulae = [s.time for s in side if isinstance(s, NonQuranSpan)]
+        checks: list[ChainCheck] = []
+        extended: list[Detection] = []
+        for index in range(len(out)):  # de gauche à droite : chaque bord voit ses voisins à jour
+            det = out[index]
+            if det.status is not Status.RECOGNIZED or det.time is None:
+                continue
+            real = [d for d in out if d is not det and d.time is not None and not _inferred(d)]
+            times = [d.time for d in real if d.time is not None] + formulae
+            lower = max((t.end_s for t in times if t.end_s <= det.time.start_s + 1e-9), default=0.0)
+            upper = min(
+                (t.start_s for t in times if t.start_s >= det.time.end_s - 1e-9), default=duration_s
+            )
+            before = max(
+                (d for d in real if d.time and d.time.end_s <= det.time.start_s + 1e-9),
+                key=lambda d: d.time.end_s if d.time else 0.0,
+                default=None,
+            )
+            after = min(
+                (d for d in real if d.time and d.time.start_s >= det.time.end_s - 1e-9),
+                key=lambda d: d.time.start_s if d.time else 0.0,
+                default=None,
+            )
+            more, extension = self._acoustic.extend(
+                clip,
+                det,
+                lower,
+                upper,
+                _room(before, det, backward=True),
+                _room(after, det, backward=False),
+            )
+            checks.extend(more)
+            if extension is not None:
+                out[index] = replace(
+                    det,
+                    span=extension.span,
+                    time=extension.time,
+                    word_times=extension.word_times,
+                )
+                extended.append(out[index])
+        if extended:
+            # les moitiés d'un même verset que l'extension vient de rapprocher se raccordent
+            kept = [d for d in out if not any(d is e for e in extended)]
+            out = self._decoder.integrate(kept, extended, self._barriers(decided, extended))
+        return out, tuple(checks)
+
+    def _barriers(
+        self, observations: Sequence[tuple[TimeSpan, list[Candidate]]], added: Sequence[Detection]
+    ) -> list[TimeSpan]:
+        floor = self._config.decoder.min_recognized_score
+        times = [d.time for d in added if d.time is not None]
+        return [
+            w
+            for w, cands in observations
+            if not any(c.score >= floor for c in cands) and not _mostly_covered(w, times)
+        ]
+
+    # -- Comblement de trou entre deux versets reconnus (ADR-0013) ---------------------------------
+    def _fill_gaps(
+        self,
+        clip: AudioClip,
+        detections: Sequence[Detection],
+        observations: Sequence[tuple[TimeSpan, list[Candidate]]],
+        heard: Sequence[str],
+        side: list[AbstentionSpan | NonQuranSpan],
+        duration_s: float,
+    ) -> tuple[list[Detection], tuple[ChainCheck, ...]]:
+        """Entre deux versets reconnus, ou après le dernier, le contexte dit presque ce qu'il faut
+        attendre (début ou suite du verset reconnu, versets consécutifs, répétition) : chaque
+        hypothèse de texte du corpus est alignée sur l'audio du trou et n'est gardée que si la
+        parole la soutient (I3). Un fichier sans verset reconnu n'a aucun trou à combler."""
+        cfg = self._config.gap
+        out = list(detections)
+        if self._acoustic is None or not cfg.enabled:
+            return out, ()
+        floor = self._config.decoder.min_recognized_score
+        checks: list[ChainCheck] = []
+        tried: set[tuple[TimeSpan, WordSpan | None, WordSpan | None]] = set()
+        progress = True
+        while progress:
+            progress = False
+            formulae = [s for s in side if isinstance(s, NonQuranSpan)]
+            for hole in find_holes([*out, *formulae], duration_s, cfg):
+                key = (
+                    hole.passage,
+                    hole.before.span if hole.before else None,
+                    hole.after.span if hole.after else None,
+                )
+                if key in tried:
+                    continue
+                tried.add(key)
+                hypotheses = propose(hole, self._corpus, cfg)
+                if not hypotheses:
+                    continue
+                text, rivals = self._hole_context(hole, observations, heard, hypotheses)
+                hole_checks, fill = self._acoustic.verify_gap(clip, hole, hypotheses, text, rivals)
+                checks.extend(hole_checks)
+                if fill is None:
+                    continue
+                out = self._add_fill(out, fill, observations, side, floor)
+                progress = True
+                break  # les trous ont changé : on les recalcule
+        return out, tuple(checks)
+
+    def _hole_context(
+        self,
+        hole: Hole,
+        observations: Sequence[tuple[TimeSpan, list[Candidate]]],
+        heard: Sequence[str],
+        hypotheses: Sequence[object],
+    ) -> tuple[str | None, list[tuple[WordSpan, ...]]]:
+        """Transcription des fenêtres du trou (second témoin) et textes que le matcher y avait vus
+        (concurrents : le trou peut être mieux expliqué par autre chose)."""
+        inside = [
+            i
+            for i, (window, _c) in enumerate(observations)
+            if _overlap(window, hole.passage) >= min(window.duration_s, hole.passage.duration_s) / 2
+        ]
+        text = " ".join(t for i in inside if (t := heard[i].strip())) or None
+        minimum = self._config.cascade.relisten_min_quality
+        seen = [
+            c
+            for i in inside
+            for c in observations[i][1]
+            if (c.quality or 0.0) >= minimum and not c.continuation
+        ]
+        seen.sort(key=lambda c: -(c.quality or 0.0))
+        rivals: list[tuple[WordSpan, ...]] = []
+        for candidate in seen:
+            if candidate.spans not in rivals:
+                rivals.append(candidate.spans)
+        return text, rivals[: self._config.gap_competitors]
+
+    def _add_fill(
+        self,
+        detections: list[Detection],
+        fill: GapFill,
+        observations: Sequence[tuple[TimeSpan, list[Candidate]]],
+        side: list[AbstentionSpan | NonQuranSpan],
+        floor: float,
+    ) -> list[Detection]:
+        candidate = fill.candidate
+        added: list[Detection] = []
+        for n, span in enumerate(candidate.spans):
+            words = (
+                candidate.word_times[n] if len(candidate.word_times) == len(candidate.spans) else ()
+            )
+            added.append(
+                Detection(
+                    span=span,
+                    time=candidate.times[n],
+                    status=Status.RECOGNIZED,
+                    confidence=candidate.score,
+                    word_times=words,
+                    promoted_by="gap",
+                )
+            )
+        # un verset supposé (jamais entendu) que l'audio vient de retrouver n'est plus supposé
+        kept = [
+            d
+            for d in detections
+            if not (
+                d.status is Status.INFERRED
+                and any(
+                    a.span.ref == d.span.ref
+                    and a.span.first_word <= d.span.first_word
+                    and d.span.last_word <= a.span.last_word
+                    for a in added
+                )
+            )
+        ]
+        return self._decoder.integrate(kept, added, self._barriers(observations, added))
+
+    @staticmethod
+    def _retire_covered_abstentions(
+        detections: Sequence[Detection], side: list[AbstentionSpan | NonQuranSpan]
+    ) -> None:
+        """Une abstention dont la fenêtre est en grande partie occupée par un verset reconnu (étendu
+        ou comblé depuis) ne dit plus rien : l'intervalle serait un doublon de la parole nommée."""
+        times = [
+            d.time
+            for d in detections
+            if d.status is Status.RECOGNIZED and d.time is not None and d.promoted_by == "gap"
+        ]
+        side[:] = [
+            s
+            for s in side
+            if not (isinstance(s, AbstentionSpan) and _mostly_covered(s.time, times))
+        ]
 
     # -- Promotion par le voisin reconnu (ADR-0010) ----------------------------------------------
     def _promote_neighbors(
@@ -388,6 +620,11 @@ class RecognitionPipeline:
             if self._config.neighbor.enabled:
                 out["neighbor_max_overlap_words"] = float(self._config.neighbor.max_overlap_words)
                 out["neighbor_max_gap_words"] = float(self._config.neighbor.max_gap_words)
+            if self._config.gap.enabled and check.gap:
+                out["gap_strong_llr_per_frame"] = check.gap_strong_llr_per_frame
+                out["gap_min_text_similarity"] = check.gap_min_text_similarity
+                out["gap_weak_text_similarity"] = check.gap_weak_text_similarity
+                out["gap_max_search_s"] = self._config.gap.max_search_s
         return out
 
     def _run_warnings(self) -> tuple[str, ...]:
@@ -490,6 +727,36 @@ class RecognitionPipeline:
             else:
                 out.append(det)
         return out
+
+
+def _overlap(a: TimeSpan, b: TimeSpan) -> float:
+    return min(a.end_s, b.end_s) - max(a.start_s, b.start_s)
+
+
+def _inferred(det: Detection) -> bool:
+    return det.status is Status.INFERRED
+
+
+def _room(neighbor: Detection | None, det: Detection, *, backward: bool) -> int | None:
+    """Mots qu'on peut ajouter à `det` sans empiéter sur son voisin du même verset (None : aucune
+    limite, ce voisin n'est pas un autre morceau du verset ou redit des mots déjà dits)."""
+    if neighbor is None or neighbor.status is not Status.RECOGNIZED:
+        return None
+    if neighbor.span.ref != det.span.ref:
+        return None
+    if backward:
+        gap = det.span.first_word - neighbor.span.last_word - 1
+    else:
+        gap = neighbor.span.first_word - det.span.last_word - 1
+    return gap if gap >= 0 else None
+
+
+def _mostly_covered(window: TimeSpan, times: Sequence[TimeSpan]) -> bool:
+    """Au moins la moitié de la fenêtre est occupée par l'un des temps."""
+    return any(
+        min(window.end_s, t.end_s) - max(window.start_s, t.start_s) >= window.duration_s / 2
+        for t in times
+    )
 
 
 def _transcribe_with(

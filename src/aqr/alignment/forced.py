@@ -17,7 +17,13 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from aqr.corpus.alignment_text import AlignmentTexts, AlignmentVariant, Declared
-from aqr.decoding.ctc_constrained import CtcEvidence, ctc_forced_align, ctc_free_logprob
+from aqr.decoding.ctc_constrained import (
+    CtcEvidence,
+    ctc_forced_align,
+    frame_maxima,
+    voiced_llr,
+    word_llrs,
+)
 from aqr.domain.models import TimeSpan, VerseRef, WordSpan
 from aqr.domain.ports import CtcLattice
 
@@ -67,6 +73,9 @@ class AlignedWord:
     word: int
     """Indice du mot Uthmani (à partir de 1)."""
     time: TimeSpan
+    llr_per_frame: float | None = None
+    """Preuve par trame de CE mot sur ses seules trames (chemin contraint contre chemin libre). Très
+    négative pour un mot que l'audio ne contient pas, même si la moyenne du passage reste bonne."""
 
 
 @dataclass(frozen=True)
@@ -105,7 +114,10 @@ class PassageAligner:
         mieux, et ne rend que les plages (réduites) effectivement alignées."""
         if not spans:
             raise ValueError("aucune plage à aligner")
-        best: tuple[float, AlignmentVariant, list[tuple[int, int]], list[tuple[int, int]]] | None
+        best: (
+            tuple[float, AlignmentVariant, list[tuple[int, int]], list[tuple[int, int]], list[int]]
+            | None
+        )
         best = None
         for variant in self._config.variants:
             labels: list[int] = []
@@ -120,21 +132,48 @@ class PassageAligner:
                 ends = [n + 1 for n in range(len(owners)) if owners[n + 1 : n + 2] != [owners[n]]]
             forced, frames = ctc_forced_align(lattice.log_probs, labels, lattice.blank, ends)
             if forced > -math.inf and (best is None or forced > best[0]):
-                best = (forced, variant, owners[: len(frames)], frames)
+                best = (forced, variant, owners[: len(frames)], frames, labels[: len(frames)])
         if best is None:
             return None
-        forced, variant, owners, frames = best
+        forced, variant, owners, frames, symbols = best
         spans = _consumed(spans, owners)
-        free = ctc_free_logprob(lattice.log_probs)
+        maxima = frame_maxima(lattice.log_probs)
+        free = sum(maxima)
+        voiced, voiced_frames = voiced_llr(lattice.log_probs, lattice.blank, forced, frames, maxima)
         evidence = CtcEvidence(
             forced_logprob=forced,
             free_logprob=free,
             llr_per_frame=(forced - free) / lattice.frames,
             frames=lattice.frames,
+            voiced_llr_per_frame=voiced,
+            voiced_frames=voiced_frames,
         )
+        word_support = self._word_support(lattice, symbols, owners, frames, maxima)
         return PassageAlignment(
-            spans=self._timed(lattice, spans, owners, frames), variant=variant, evidence=evidence
+            spans=self._timed(lattice, spans, owners, frames, word_support),
+            variant=variant,
+            evidence=evidence,
         )
+
+    @staticmethod
+    def _word_support(
+        lattice: CtcLattice,
+        symbols: Sequence[int],
+        owners: Sequence[tuple[int, int]],
+        frames: Sequence[tuple[int, int]],
+        maxima: Sequence[float],
+    ) -> dict[tuple[int, int], float]:
+        """Preuve par trame de chaque mot Uthmani de chaque plage, sur ses propres trames."""
+        groups: list[tuple[int, int]] = []
+        keys: list[tuple[int, int]] = []
+        for n, owner in enumerate(owners):
+            if keys and keys[-1] == owner:
+                groups[-1] = (groups[-1][0], n)
+            else:
+                keys.append(owner)
+                groups.append((n, n))
+        values = word_llrs(lattice.log_probs, lattice.blank, symbols, frames, groups, maxima)
+        return dict(zip(keys, values, strict=True))
 
     def _timed(
         self,
@@ -142,6 +181,7 @@ class PassageAligner:
         spans: Sequence[Declared],
         owners: list[tuple[int, int]],
         frames: list[tuple[int, int]],
+        support: dict[tuple[int, int], float],
     ) -> tuple[AlignedSpan, ...]:
         # Trames [première, dernière] de chaque mot Uthmani, par plage.
         word_frames: list[dict[int, list[int]]] = [{} for _ in spans]
@@ -175,7 +215,9 @@ class PassageAligner:
                 following = position + 1 < len(words_frames)
                 stop = lattice.time_of(words_frames[position + 1][1][0]) if following else end
                 ref = span.ref if isinstance(span, WordSpan) else None
-                words.append(AlignedWord(ref, word, TimeSpan(start, stop)))
+                words.append(
+                    AlignedWord(ref, word, TimeSpan(start, stop), support.get((index, word)))
+                )
             result.append(
                 AlignedSpan(
                     span=span, time=TimeSpan(words[0].time.start_s, end), words=tuple(words)

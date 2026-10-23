@@ -17,12 +17,16 @@ impossible) · 2 utilisation impossible (variable manquante, option indisponible
  "engine": {"asr", "segmenter", "matcher", "decoder", "constrained", "corpus", "acoustic"},
  "decoder": {"min_recognized_score", "uncertainty_ratio", "merge_max_gap_s", "infer_max_gap_s",
              "chain_evidence_words", "acoustic_min_llr_per_frame"?, "acoustic_rescue_min_quality"?,
-             "neighbor_max_overlap_words"?, "neighbor_max_gap_words"?},
+             "neighbor_max_overlap_words"?, "neighbor_max_gap_words"?,
+             "gap_strong_llr_per_frame"?, "gap_min_text_similarity"?, "gap_weak_text_similarity"?,
+             "gap_max_search_s"?},
  "timing": {"extract_s", "segment_s", "asr_s", "match_s", "acoustic_s"?, "relisten_s"?, "total_s"},
  "windows": N, "warnings": [...],
  "cascade"?: {"secondary": [...], "relistened_windows": N, "rescued_windows": N},
- "acoustic_checks": [{"kind":"chain|continuation|relisten|neighbor|head", "t":[a,b], "verses":"55:1[5-5],55:2[1-2]",
-                      "llr_per_frame":-0.43|null, "accepted":true, "text_similarity"?:0.92}],
+ "acoustic_checks": [{"kind":"chain|continuation|relisten|neighbor|head|gap", "t":[a,b], "verses":"55:1[5-5],55:2[1-2]",
+                      "llr_per_frame":-0.43|null, "accepted":true, "text_similarity"?:0.92,
+                      "role"?:"head|between|continuation|repetition|extension|competitor", "words"?:12,
+                      "weak_words"?:1, "passage_llr_per_frame"?:-0.33, "gain_nats"?:6.9}],
  "intervals": [ ... ]}      // ordre chronologique
 ```
 `engine.acoustic` nomme le modèle CTC qui vérifie les suites (ADR-0008), vide s'il n'y en a pas (poids
@@ -43,7 +47,7 @@ Trois sortes d'intervalles :
   "t":[a,b]|null,"time_interpolated":false,"confidence":0.97,"candidates":[],"repetition":false,
   "text":..., "translation":{"text","translation_id","version","attribution","scope":"verse|fragment",
   "segments"?,"fragment"?}|null,
-  "word_times"?:[[a,b],…],"word_times_source"?:"ctc-alignment|interpolated","promoted_by"?:"neighbor"}`
+  "word_times"?:[[a,b],…],"word_times_source"?:"ctc-alignment|interpolated","promoted_by"?:"neighbor|chain|gap"}`
   (`segments`, `fragment` : voir « Traduction par passage » plus bas ; les trois derniers champs sont
   **additifs** : voir « Temps au mot » ci-dessous)
 - `{"kind":"non_quran","label":"basmala|istiadha|takbir|amin|…","t":[a,b]}` ; champs **additifs** (l'ancien
@@ -165,7 +169,16 @@ l'ordre (`word_times[i]` est le mot `words[0] + i`) : l'interface s'en sert pour
 versets d'une même fenêtre), pas les temps au mot. Les deux moitiés d'un verset fusionnées (fenêtres
 contiguës) mettent leurs temps bout à bout, sauf si un mot manque au raccord (alors `interpolated`).
 
-`promoted_by: "neighbor"` : la détection était `uncertain` (deux versets au début semblable, ex. 11:61 / 7:73) et
+`promoted_by` (ADR-0010, ADR-0013), absent quand le score du candidat a suffi :
+- `"chain"` : la détection était `uncertain` (égalité avec des homonymes au moment où le décodeur l'a vue) mais
+  elle est membre d'une suite de versets que l'audio a acceptée (`acoustic_checks[kind="chain"]`, mêmes plages) ;
+  aucune autre suite n'a été acceptée sur le même temps.
+- `"gap"` : tout ou partie de l'intervalle vient d'un trou comblé entre deux versets reconnus (début manquant, milieu,
+  suite, répétition ; `acoustic_checks[kind="gap"]`, `role`) : le texte est celui du corpus que le contexte laissait
+  attendre, aligné sur l'audio du trou, avec une preuve sur la seule parole alignée (`llr_per_frame` du contrôle) ;
+  une répétition porte aussi `repetition: true`. L'extension d'un bord (`role="extension"`, un à trois mots dans la
+  même fenêtre) ne change pas `promoted_by`.
+- `"neighbor"` : la détection était `uncertain` (deux versets au début semblable, ex. 11:61 / 7:73) et
 a été promue parce qu'elle prolonge le verset `recognized` voisin ET que l'audio soutient son texte
 (`acoustic_checks[kind="neighbor"]`). Son `status` est `recognized`, sa preuve est la suite plus l'audio, pas le
 seuil du score. Absent sinon. Exemple réel (session 5014015f, Hud 11:61, texte et traduction retirés) :

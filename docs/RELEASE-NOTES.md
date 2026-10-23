@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Les versets à moitié reconnus sont complétés par l'audio
+Étiquettes : utilisateur, technique, décision
+PR : #83
+
+**Ce qui change.** Un verset dont une partie est reconnue et l'autre non est maintenant complété par ce que l'audio contient réellement. Cinq défauts relevés à l'écoute d'un enregistrement de 23 minutes sont corrigés (un seul reste, le premier mot de 1:1) : les deux premiers versets de la Fatiha lus mais restés incertains sont reconnus parce que la suite qui les contient a été confirmée ; un mot dit juste après la fin d'un verset est ajouté ; le début manquant d'un verset dont la fin est reconnue, ou son milieu, s'affiche ; un verset redit en entier est détecté comme répétition. Chaque ajout est vérifié sur la parole elle-même : si l'audio ne soutient pas le texte attendu, rien n'est affiché. Sur 11 fichiers (dont deux sans aucun Coran) aucun verset reconnu avant n'est perdu et aucun verset n'est ajouté là où il n'y a pas de Coran. Champs de sortie additifs : `promoted_by` peut valoir `chain` ou `gap`, et `acoustic_checks` trace chaque hypothèse (`kind: gap`).
+
+**Pourquoi / décision.** Le mainteneur a signalé cinq cas du même genre sur le lot3-04. Un seul mécanisme plutôt que cinq rustines : le contexte (verset reconnu avant ou après, fin du fichier) dit presque ce qu'il faut attendre dans le trou ; le texte vient du corpus, jamais d'un modèle, et l'audio décide. La preuve est mesurée sur la seule parole alignée (celle d'un long passage est diluée par les blancs). ADR-0013, mesures dans `docs/evaluation/comblement-de-trou-2026-10-23.md`, liste des ajouts proches du seuil à écouter.
+
 ## 2026-10-23 — Courbe de vitesse : réécouter un audio accéléré n'apporte rien à la cascade
 Étiquettes : technique, décision
 PR : #82
