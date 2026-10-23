@@ -217,6 +217,13 @@
     "summary": "Deux signaux testés pour détecter le Warsh, tous deux négatifs ; origine de l'avertissement « riwaya supposée Hafs »."
   },
   {
+    "slug": "courbe-degradation-2026-10-23",
+    "title": "Courbe de dégradation : robustesse du moteur",
+    "section": "Évaluation",
+    "file": "docs/evaluation/courbe-degradation-2026-10-23.md",
+    "summary": "Rappel du moteur sous bruit, réverbération, téléphone, MP3 et récitation lente, règle de décision écrite d'avance : un fine-tuning avec dégradations n'est pas justifié, mais la mesure est saturée."
+  },
+  {
     "slug": "corpus-de-test",
     "title": "Corpus de test audio",
     "section": "Données",
