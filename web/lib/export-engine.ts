@@ -131,7 +131,7 @@ async function filesOf(id: string): Promise<Files> {
     review: path.join(dir, "review.json"),
   };
   try {
-    await stat(files.prediction);
+    await stat(/* turbopackIgnore: true */ files.prediction);
   } catch {
     throw new NotReadyError();
   }
@@ -178,6 +178,8 @@ export type ReadinessQuery = {
   page?: number;
   size?: number;
   type?: string | null;
+  /** `open` · `resolved` · `ignored` : ne renvoie que les passages dans cet état. */
+  state?: string | null;
 };
 
 export async function readiness(
@@ -214,6 +216,7 @@ export async function readiness(
       "--size",
       String(query.size ?? 10),
       ...(query.type ? ["--type", query.type] : []),
+      ...(query.state ? ["--state", query.state] : []),
     ]);
     check(result);
     return parseJson<unknown>(result);
