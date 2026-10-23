@@ -145,9 +145,16 @@ l'ordre (`word_times[i]` est le mot `words[0] + i`) : l'interface s'en sert pour
 `word_times_source` dit d'où ils viennent, et l'interface doit en tenir compte :
 - `"ctc-alignment"` : mesurés. Chaque mot a été placé par l'alignement forcé du texte du corpus sur le treillis CTC
   (trame de 80 ms). Le premier mot commence où commence `t`, le dernier finit où finit `t` ; les mots sont dans
-  l'ordre, sans chevauchement, avec d'éventuelles pauses entre eux (la fin d'un mot est le début du suivant
-  dans un verset, sauf si une pause bornée par l'énergie les sépare). Bornés à la fenêtre du segmenteur,
-  comme `t`.
+  l'ordre, avec d'éventuelles pauses entre eux (la fin d'un mot est le début du suivant dans un verset, sauf
+  si une pause bornée par l'énergie les sépare). Bornés à la fenêtre du segmenteur, comme `t`.
+  **Contrat d'ordre** : `word_times[i].début ≥ word_times[i-1].fin`, toujours, dans ce que le moteur écrit. Deux
+  fenêtres voisines peuvent se recouvrir de quelques dizaines de ms ; leurs deux mots de raccord sont alors
+  recoupés au milieu du recouvrement. Si le recouvrement dépasse 0,1 s, les temps mesurés ne sont pas publiés
+  (`interpolated`). **Lecteur Python** : un chevauchement résiduel ≤ 0,1 s (réglable :
+  `word_overlap_tolerance_s`) d'une ancienne sortie est normalisé de la même façon plutôt que de rejeter le
+  document ; un chevauchement plus grand, un mot de durée nulle ou négative, un nombre de temps ≠ nombre de
+  mots, ou des temps hors de `t` restent refusés. **Interface** : `validateWordTimes` n'exige que des débuts qui
+  ne reculent pas, et le schéma zod n'impose pas d'ordre : une sortie au léger chevauchement reste lisible.
 - `"interpolated"` : estimés. Seul `t` est mesuré (moteur sans modèle CTC, `--no-acoustic-check`, ou mots
   non mesurés) ; chaque mot reçoit une part de `t` proportionnelle à sa longueur en lettres dans le corpus.
   Les bornes sont celles de `t`, les mots sont contigus. À afficher comme une approximation (ex. surlignage
