@@ -300,7 +300,14 @@ def analyze(
     intervals: Sequence[Mapping[str, Any]] = document.get("intervals") or []
     active = active_decisions(decisions) if decisions is not None else ()
     reconciled = reconcile(intervals, active)
-    by_key = {target_key(d): d for d in active if d not in reconciled.orphans}
+    # Une décision posée sur des signalements dont plus aucun n'est confirmé ne vise plus rien.
+    known = {n.id for n in notes}
+    live_reports = tuple(d for d in reconciled.reports if set(d.target.review_ids) & known)
+    orphans = (
+        *reconciled.orphans,
+        *(d for d in reconciled.reports if d not in live_reports),
+    )
+    by_key = {target_key(d): d for d in active if d not in orphans}
     warnings: list[str] = []
     max_gap = (document.get("decoder") or {}).get("merge_max_gap_s")
     if not isinstance(max_gap, int | float):
@@ -387,8 +394,8 @@ def analyze(
         intervals=intervals,
         items=tuple(items),
         applied=reconciled.applied,
-        report_decisions=reconciled.reports,
-        orphans=reconciled.orphans,
+        report_decisions=live_reports,
+        orphans=orphans,
         decisions_sha256=decisions_digest(active),
         abstentions=abstentions,
         formulas=formulas,

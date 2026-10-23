@@ -70,7 +70,8 @@ TRANSLATION_SCOPES: Final = ("verse", "fragment", "none")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _REF = re.compile(r"^\d{1,3}:\d{1,3}$")
-_USER = re.compile(r"^[\w.\-]{1,64}$")
+_USER = re.compile(r"^[\w .\-]{1,64}$")
+"""Un pseudonyme de l'atelier : lettres, chiffres, espace, `-` `_` `.` (`web/lib/tester.ts`)."""
 
 
 class DecisionsError(ValueError):

@@ -104,6 +104,16 @@ Valeurs factuelles (`choose`, `set_ref`, `confirm_*`, `exclude`, `adjust_time`) 
 Une seule décision est active par cible (empreinte de l'intervalle, ou signalements, et `item`) ; si deux le sont, la plus récente (`decided_at`, puis `revision`,
 puis `id`) gagne. `decisions_sha256` = SHA-256 des seules décisions actives, triées par identifiant.
 
+## Dans l'atelier
+- `GET` / `PUT /api/sessions/<id>/decisions` (contrat : `web/README.md`) : le serveur fixe l'empreinte, l'auteur, la
+  date et la révision. Annuler marque `withdrawn_at` ; décider de nouveau sur la même cible remplace la
+  décision précédente (`superseded_by`), sans la supprimer.
+- **Après une nouvelle analyse**, les décisions orphelines sont listées avec le passage du moteur le plus proche
+  dans le temps (recouvrement ≥ 50 %) ; `reattach` les rattache, l'ancienne reste dans l'historique.
+- **Vérité terrain** : `POST …/validation {action: "from_decisions"}` (administrateurs) ajoute, comme
+  propositions `proposed`, les décisions factuelles **écoutées**, dont le consentement du document ET celui de la
+  décision sont donnés. Rien n'entre seul dans le manifeste.
+
 ## Ce que ce format ne fait pas
 - Il ne réécrit jamais `prediction.recognition.json` ni le `status` d'un intervalle (I5).
 - Il ne stocke aucun texte coranique ni aucune traduction : le texte vient du corpus à l'export (I1, I2).

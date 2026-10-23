@@ -347,6 +347,35 @@ Le schéma commenté ligne à ligne est dans `db/migrations/001_comptes_et_sessi
 
 L'onglet « Performance » (barre du haut ; pied du tiroir de gauche sur mobile) dit combien de temps prend une analyse et à quelle vitesse : durée moyenne, vitesse médiane (« ×7,1 » = 7 fois plus vite que l'audio), audio traité (dont vidéo), file d'attente, vitesse par moteur (barres d'une seule teinte, nommées et chiffrées, avec une vue en tableau), file en cours avec estimation et dernières analyses. Les tuiles, les moteurs et le tableau sont calculés sur les sessions terminées de la **période choisie** (7 jours, 30 jours, tout) à partir de `GET /api/sessions` ; la file en cours et la précision de l'estimation viennent de `GET /api/stats` (rafraîchi toutes les 5 s onglet visible). Aucun chiffre n'est inventé : une analyse sans durée mesurée n'entre dans aucune moyenne.
 
+## Export des sous-titres et décisions humaines (contrat d'API)
+
+Conception : `docs/design/export-sous-titres.md` · moteur : `docs/EXPORT-SOUS-TITRES.md` · format du calque :
+`docs/DECISIONS.md` (ADR-0014). Le serveur ne fabrique aucun texte : il lance `aqr export-readiness`,
+`aqr export-subtitles` et `aqr corpus-verse` (comme `recognize`), au plus 3 à la fois, avec une mémoire des
+réponses identiques (clé = prédiction, décisions, revue, options). Tout lecteur de la session peut lire le
+contrôle et exporter ; seuls le propriétaire (ou un administrateur) écrit des décisions ; l'audio privé d'un
+autre répond **404** partout.
+
+| Route | Droit | Rôle |
+|---|---|---|
+| `GET /api/sessions/<id>/export/readiness?content=&ref=&strip=&type=&page=&size=` | voir | Décompte, verdict (`total`, `resolved`, `unresolved`, `ready`) et **une page** de passages (10 par défaut, 50 au plus) triés par temps ; `content` = `ar_fr` · `ar` · `fr`, `ref=1` affiche la référence : les deux changent le décompte. `409 not_ready` tant que l'analyse n'est pas finie. |
+| `POST /api/sessions/<id>/export/subtitles` | voir | Corps `{ options, name?, preview?, cues? }`. Sans `options.allow_unresolved`, des passages ambigus non résolus → **`409 unresolved_items`** (`unresolved: n`) ; forcé : `forced: true`, politique `omit` (défaut) · `marker` · `first`. `preview: true` → `{ summary }` avec les premiers sous-titres (aperçu en direct). Sinon `{ summary, name, mime, content }` ; `?raw=1` répond le fichier en pièce jointe. Le nom est assaini (jamais de `/`, `..`, 120 caractères au plus). La route `GET …/export` (bilan JSON) existe toujours, intacte. |
+| `GET /api/sessions/<id>/decisions` | voir | Les décisions avec leur état (`applied`, `report`, `orphan`, `withdrawn`, `superseded`), le consentement, `stale` (prises sur une autre analyse) et les orphelines avec le passage du moteur le plus proche (une suggestion). |
+| `PUT /api/sessions/<id>/decisions` | modifier | `{ ops: [...] }` : `decide` (`item`, `index` ou `review_ids`, `kind`, `value`, `evidence`), `withdraw`, `consent` et `training` (propriétaire seulement), `reattach` (une orpheline à un passage). Le serveur fixe l'empreinte, l'auteur, la date, la révision et la copie du consentement ; le document est relu par le lecteur strict du moteur avant d'être écrit. Écriture atomique sous verrou, fusion sans écrasement. |
+| `GET /api/corpus/verse?ref=11:61&words=11-17` | connecté | Un verset lu **dans le corpus** (mots, nombre de mots, traduction) : valide un verset saisi dans l'écran de correction. `404` si le verset ou la plage n'existe pas. |
+| `POST /api/sessions/<id>/validation` `{ action: "from_decisions" }` | administrateur | Ajoute à la vérité terrain, comme **propositions** (`source: "export-review"`, jamais validées seules), les corrections factuelles écoutées dont l'auteur a consenti et qui s'appliquent encore. |
+
+Fichiers de la session : `decisions.json` (`aqr.decisions/1`, jamais la prédiction), les exports ne sont écrits
+que le temps de la réponse (`exports/subtitles-<uuid>.<ext>`, supprimés ensuite).
+
+**Après une nouvelle analyse** la prédiction change d'empreinte : une décision dont le passage est identique reste
+appliquée ; les autres deviennent orphelines. Elles ne sont **jamais** appliquées en silence : `GET …/decisions`
+les renvoie avec `suggestion`, et `reattach` les rattache sur demande (l'ancienne reste dans l'historique).
+
+**Consentement d'entraînement** : activé pour ses propres sessions, verrouillé à faux pour celles des autres (un
+administrateur qui corrige l'audio d'un autre n'écrit pas de vérité terrain à son nom et ne change pas l'accord du
+propriétaire). Se retire à tout moment, tout le document ou décision par décision.
+
 ## Construire la vérité terrain (onglet « Vérité terrain », administrateurs)
 
 Une fois la reconnaissance terminée (ou une prédiction importée) sur un fichier **dev** du manifeste :

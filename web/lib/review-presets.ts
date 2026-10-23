@@ -12,7 +12,17 @@ export type LegacyType =
   | "timing"
   | "other";
 
-type Item = { id: string; label: string; legacy: LegacyType };
+type Item = {
+  id: string;
+  label: string;
+  legacy: LegacyType;
+  /**
+   * Un signalement confirmé portant cette puce dit que le moteur se trompe sur la partie arabe : il
+   * bloque l'export des sous-titres tant qu'il n'est pas résolu (`docs/design/export-sous-titres.md`
+   * §3). Une seule source : le moteur d'export reçoit la liste de `exportBlockingTags()`.
+   */
+  blocksExport?: boolean;
+};
 
 export type PresetFamily = {
   id: string;
@@ -30,15 +40,27 @@ export const REVIEW_PRESETS: readonly PresetFamily[] = [
     hint: "Ce que le moteur affiche est faux ou incomplet.",
     defaultOpen: true,
     items: [
-      { id: "wrong_verse", label: "Verset faux", legacy: "wrong_verse" },
+      {
+        id: "wrong_verse",
+        blocksExport: true,
+        label: "Verset faux",
+        legacy: "wrong_verse",
+      },
       {
         id: "missing_verse",
+        blocksExport: true,
         label: "Verset manquant",
         legacy: "missing_verse",
       },
-      { id: "extra_verse", label: "Verset en trop", legacy: "other" },
+      {
+        id: "extra_verse",
+        blocksExport: true,
+        label: "Verset en trop",
+        legacy: "other",
+      },
       {
         id: "repetition_missed",
+        blocksExport: true,
         label: "Répétition non détectée",
         legacy: "repetition",
       },
@@ -50,12 +72,33 @@ export const REVIEW_PRESETS: readonly PresetFamily[] = [
     hint: "Le verset est bon, mais pas ses bornes.",
     defaultOpen: true,
     items: [
-      { id: "start_early", label: "Début trop tôt", legacy: "timing" },
-      { id: "start_late", label: "Début trop tard", legacy: "timing" },
-      { id: "end_early", label: "Fin trop tôt", legacy: "timing" },
-      { id: "end_late", label: "Fin trop tard", legacy: "timing" },
+      {
+        id: "start_early",
+        blocksExport: true,
+        label: "Début trop tôt",
+        legacy: "timing",
+      },
+      {
+        id: "start_late",
+        blocksExport: true,
+        label: "Début trop tard",
+        legacy: "timing",
+      },
+      {
+        id: "end_early",
+        blocksExport: true,
+        label: "Fin trop tôt",
+        legacy: "timing",
+      },
+      {
+        id: "end_late",
+        blocksExport: true,
+        label: "Fin trop tard",
+        legacy: "timing",
+      },
       {
         id: "display_offset",
+        blocksExport: true,
         label: "Affichage décalé de la voix",
         legacy: "timing",
       },
@@ -69,12 +112,19 @@ export const REVIEW_PRESETS: readonly PresetFamily[] = [
     items: [
       {
         id: "non_quran_as_quran",
+        blocksExport: true,
         label: "Parole non coranique prise pour du Coran",
         legacy: "other",
       },
-      { id: "quran_undetected", label: "Coran non détecté", legacy: "other" },
+      {
+        id: "quran_undetected",
+        blocksExport: true,
+        label: "Coran non détecté",
+        legacy: "other",
+      },
       {
         id: "abstention_wrong",
+        blocksExport: true,
         label: "Abstention à tort (le verset était audible)",
         legacy: "other",
       },
@@ -141,6 +191,10 @@ const ALL_ITEMS: readonly Item[] = REVIEW_PRESETS.flatMap((f) => f.items);
 const BY_ID = new Map(ALL_ITEMS.map((item) => [item.id, item]));
 
 export const allPresetIds = (): string[] => ALL_ITEMS.map((item) => item.id);
+
+/** Les puces qui bloquent l'export tant que leur signalement confirmé n'est pas résolu. */
+export const exportBlockingTags = (): string[] =>
+  ALL_ITEMS.filter((item) => item.blocksExport).map((item) => item.id);
 
 /** Libellé d'une puce ; un identifiant inconnu (liste modifiée depuis) s'affiche tel quel. */
 export function presetLabel(id: string): string {

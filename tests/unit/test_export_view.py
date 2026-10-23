@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from tests.support.export_docs import abstention, document, formula, uncertain, verse
-from tests.unit.test_export_analysis import decision_for, decisions_of
+from tests.unit.test_export_analysis import decision_for, decisions_of, note, review_of
 
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.domain.models import VerseRef
@@ -207,7 +207,8 @@ def test_un_verset_pose_sur_un_signalement_sans_intervalle_est_ajoute(corpus):
         "snapshot": {},
         "review_ids": ["11111111-1111-4111-8111-111111111111"],
     }
-    analysis = analyze(doc, decisions_of(raw), [], ctx)
+    notes = review_of(note("11111111-1111-4111-8111-111111111111", 30.0, 33.0, "quran_undetected"))
+    analysis = analyze(doc, decisions_of(raw), notes, ctx)
     view = build_view(doc, analysis, ctx)
     assert [e.ref for e in view.entries] == ["112:1", "112:3"] and len(view.added) == 1
 

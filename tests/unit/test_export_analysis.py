@@ -406,6 +406,33 @@ def test_un_signalement_arrive_apres_la_decision_rouvre_le_passage(passages):
     )
 
 
+def test_une_decision_sur_des_signalements_disparus_est_orpheline_et_n_ajoute_rien(passages):
+    raw = decision_for(
+        uncertain("11:61", (1, 10), (48.2, 62.6), ["11:61", "7:73"]),
+        "report",
+        "set_ref",
+        {"ref": "112:3", "words": [1, 4], "t": [30.0, 33.0]},
+    )
+    raw["target"] = {
+        "fingerprint": None,
+        "item": "report",
+        "index": None,
+        "snapshot": {},
+        "review_ids": [N1],
+    }
+    decided = decisions_of(raw)
+    doc = document(verse("112:3", (1, 4), (10.0, 14.0)))
+    gone = analyze(doc, decided, [], ctx_of(passages, blocking=BLOCKING))
+    assert len(gone.orphans) == 1 and not gone.report_decisions
+    alive = analyze(
+        doc,
+        decided,
+        review_of(note(N1, 30.0, 33.0, "quran_undetected")),
+        ctx_of(passages, blocking=frozenset({"quran_undetected"})),
+    )
+    assert not alive.orphans and len(alive.report_decisions) == 1
+
+
 def test_l_analyse_ne_modifie_pas_le_document(passages):
     import copy
     import json

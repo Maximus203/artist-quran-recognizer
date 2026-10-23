@@ -63,6 +63,10 @@ export const passageSchema = z.object({
   status: z.enum(["proposed", "aligned", "validated", "excluded"]),
   alignment: alignedPassageSchema.nullable(),
   updated_at: z.string().datetime(),
+  /** D'où vient la proposition : `export-review` = une correction écoutée de l'export (ADR-0014). */
+  source: z.string().max(40).optional(),
+  /** Qui a entendu et décidé (le relecteur de la proposition). */
+  reviewer: z.string().max(64).optional(),
 });
 export const validationSchema = z.object({
   schema: z.literal("aqr.validation/1"),
