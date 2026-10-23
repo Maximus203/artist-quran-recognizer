@@ -8,6 +8,7 @@
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "smoke:browser": "node e2e/browser-smoke.mjs",
+    "check:layout": "node e2e/layout-overflow.mjs",
     "test": "vitest run",
     "format:check": "prettier --check app lib e2e next.config.ts tsconfig.json package.json",
     "format": "prettier --write app lib e2e next.config.ts tsconfig.json package.json"

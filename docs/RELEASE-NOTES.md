@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — L'atelier ne déborde plus : liste des sessions et en-tête
+Étiquettes : utilisateur, technique
+PR : #104
+
+**Ce qui change.** La page Sessions ne dépasse plus de sa carte entre 1024 et 1159 px : l'étoile des favoris et le menu « … » restent visibles (la colonne « Moteur » s'efface dans cette plage, elle reste dans la fiche). L'en-tête de l'application tient sur une ligne de 768 à 1159 px (avatar seul, « Nouvel essai » en icône, bascule de thème dans le menu du compte) et la page ne défile plus latéralement, y compris la revue d'une session, Documentation, Compte et Performance (de 320 à 460 px).
+
+**Pourquoi / décision.** La colonne « Importé par » élargie à 148 px (PR #103) faisait déborder la grille ; la mesure en navigateur réel sur un build de production (320 à 1400 px, clair et sombre, 5 pages) a montré 150 mesures en échec sur 550, et 0 après correction. La garde `web/e2e/layout-overflow.mjs` rejoue cette mesure.
+
 ## 2026-10-23 — Photo de profil et propriétaire de chaque audio dans les listes
 Étiquettes : utilisateur, technique
 PR : #103
