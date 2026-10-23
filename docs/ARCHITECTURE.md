@@ -61,7 +61,7 @@ que toute implémentation doit passer.
 | — | `TranslationRepository` | `VerseRef`, `translation_id` → texte + version | QuranEnc (Hamidullah/KFC, Rachid Maach, Nûr) | oui |
 | B9 | `Renderer` | `Timeline` + options de lot → JSON / SRT / VTT | maison | **oui (pur)** |
 
-> B9 et les traductions partielles (ADR-0010) : `translation.segments` / `translation.fragment` viennent de
+> B9 et les traductions partielles (ADR-0012) : `translation.segments` / `translation.fragment` viennent de
 > `data/translation-segments/<id>.json` (calculé hors ligne par `src/aqr/translation_align/`, lu en Python pur par
 > `aqr.rendering.translation_segments`). Le renderer ne découpe jamais à l'exécution ; il vérifie l'empreinte.
 
@@ -166,4 +166,6 @@ complément (métriques Words F1, Repeats F1).
 - **V2** : traduction anglaise (nouveau `translation_id`, zéro changement de code).
 - **V2+** : sous-titrage automatique de vidéos (Timeline → SRT/ASS stylé → incrustation
   ffmpeg, polices arabes). Nouveau cas d'usage dans `app/`, aucune brique existante modifiée.
-- **V2+** : mode temps réel (streaming) : B2–B7 en fenêtres glissantes.
+- **Détection en direct sur flux WebSocket, sans plage déclarée** (direction produit du 2026-10-23) :
+  conception dans `docs/adr/0011-detection-en-direct-sans-plage.md` (proposé) ; remplace l'ancienne idée
+  « B2–B7 en fenêtres glissantes ».

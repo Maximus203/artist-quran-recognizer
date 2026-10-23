@@ -21,7 +21,8 @@ Il se présente de deux façons :
   versets sur une ligne de temps et signalent ce qui est faux : voir `docs/ARCHITECTURE-ATELIER.md`.
 
 Usage prévu : **non commercial**, en local, hors ligne une fois les modèles téléchargés (décision de Cherif
-du 2026-10-19, `docs/PLAN.md`).
+du 2026-10-19, `docs/PLAN.md`) ; le projet sera publié en open source sous une licence non commerciale
+(« Direction produit », § 4).
 
 ## 2. Ce qui se passe quand on dépose un audio
 
@@ -46,7 +47,7 @@ du 2026-10-19, `docs/PLAN.md`).
   6. DÉCIDER       chaque passage reçoit un statut : reconnu / supposé / incertain / abstention
         |
   7. RESTITUER     texte arabe du corpus + traduction QuranEnc + temps (début, fin, parfois au mot)
-                   (verset partiel : la traduction est découpée pour ne montrer que les mots affichés, ADR-0010)
+                   (verset partiel : la traduction est découpée pour ne montrer que les mots affichés, ADR-0012)
         |
   JSON `aqr.recognition/1`  (+ SRT / VTT)  →  atelier web : onde, pistes, revue humaine
 ```
@@ -90,6 +91,29 @@ identifie 97 à 100 % des versets (ADR-0006) : **le goulot était la couche de d
 **Point à retenir : toute l'amélioration mesurée vient de l'architecture de décision (étape B), pas d'un
 modèle réentraîné.** Les mêmes modèles, mieux exploités, retrouvent plus de versets sans en inventer.
 
+### Direction produit (décisions de Cherif du 2026-10-23)
+
+- **Usage non commercial uniquement.** Le projet sera **publié en open source sous une licence non
+  commerciale** (décidé, on n'y revient pas). Les modèles et jeux non commerciaux restent admissibles. La
+  licence actuelle du dépôt (MIT) n'est pas encore remplacée : les écarts à traiter avant publication sont
+  listés dans `.artist/decision-log.md` (entrée du 2026-10-23).
+- **Hafs uniquement.** Ni Warsh ni autre riwaya. Un verset d'une autre lecture éventuellement reconnu reçoit
+  simplement sa traduction.
+- **L'analyse de fichiers d'abord ; l'objectif est la détection en direct.** Sur un flux WebSocket, **sans
+  plage déclarée** : le passage peut venir de n'importe où dans le Coran. Idée de départ : au début d'un
+  verset plusieurs versets se ressemblent, le système garde donc les candidats ouverts, n'affiche que ce qui
+  est sûr (le passage entendu), et nomme `sourate:verset` dès qu'un mot départage ; une fois un verset
+  détecté, la suite est attendue, et un début qui casse l'attente signale un saut. **Conception :
+  ADR-0011 (proposé, rien n'est encore codé en dehors d'un script d'analyse).**
+- **Ce que disent les chiffres** (corpus Hafs, mots exactement entendus, donc une borne basse) : il faut en
+  médiane **2 mots** pour distinguer un début de verset de tous les autres (p90 : 5 mots) ; 54 % des
+  versets sont connus en 2 mots, 74 % en 3 ; **26 % exigent plus de 3 mots** et **289 versets (4,6 %)
+  n'ont aucun début propre** (refrains, formules répétées). Avec la sourate pour contexte, 83 % se
+  tranchent en 2 mots ; 125 versets (surtout les refrains) ne se nomment que par leur position. Détail et
+  limites : `docs/adr/0011-detection-en-direct-sans-plage.md`.
+- **Le budget de la cascade dépendra du temps disponible** (conçu dans l'ADR-0011, pas codé).
+- **Comptes** : Cherif est administrateur ; le relecteur et les écrans d'administration viendront plus tard.
+
 ## 5. Les chiffres mesurés, avec leurs limites
 
 | Mesure | Résultat | Source |
@@ -125,7 +149,8 @@ Elles sont listées dans `docs/KNOWN-ISSUES.md` et dans les rapports :
   équivalent au découpeur principal (`docs/evaluation/silero-fallback.md`).
 - **Warsh** : une récitation en Warsh est reconnue comme du Hafs, sans détection possible aujourd'hui (deux
   signaux testés, tous deux négatifs : `docs/evaluation/riwaya-2026-10-20.md`). La sortie affiche un
-  avertissement « riwaya supposée Hafs ».
+  avertissement « riwaya supposée Hafs ». Depuis le 2026-10-23 le périmètre est **Hafs seul** : ce n'est plus
+  un manque à combler.
 - **Parole non coranique** : elle ne produit pas de verset, mais n'a pas encore d'étiquette dédiée (étape D).
 - **Citations courtes dans un cours** (2 à 4 mots) : volontairement écartées tant que la preuve est
   insuffisante (I3).
@@ -141,4 +166,5 @@ Elles sont listées dans `docs/KNOWN-ISSUES.md` et dans les rapports :
 | voir ce qui a changé et quand | `docs/RELEASE-NOTES.md` |
 | connaître le plan et les phases | `docs/PLAN.md` |
 | savoir comment on mesure | `docs/EVALUATION-METRICS.md` |
-| savoir pourquoi telle décision | les ADR, `docs/adr/0001` à `0009` |
+| savoir pourquoi telle décision | les ADR, `docs/adr/0001` à `0011` |
+| comprendre la détection en direct envisagée | `docs/adr/0011-detection-en-direct-sans-plage.md` |

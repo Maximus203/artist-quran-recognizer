@@ -1,4 +1,4 @@
-# ADR-0010 — La traduction est découpée en fragments alignés sur les mots arabes
+# ADR-0012 — La traduction est découpée en fragments alignés sur les mots arabes
 
 - Statut : accepté — 2026-10-23
 - Précise : ADR-0001 (pas de LLM génératif), invariants I1-I3
