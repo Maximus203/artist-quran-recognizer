@@ -23,7 +23,13 @@ from typing import Any, Final
 
 from aqr.domain.models import Status, VerseRef
 from aqr.domain.quran_structure import BASMALA_WORD_COUNT, ayah_count, verse_one_includes_basmala
-from aqr.eval.recognition import AbstentionInterval, Recognition, VerseInterval
+from aqr.eval.recognition import (
+    AbstentionInterval,
+    Recognition,
+    RecognitionError,
+    VerseInterval,
+    parse_recognition,
+)
 from aqr.eval.transcription import WordSource
 
 CLEAN_ID: Final = "propre"
@@ -706,6 +712,8 @@ class ScoreRecord:
     """Erreurs de l'ASR contre le texte du corpus (0/0 : non calculé)."""
     engine: str = ""
     windows: int = 0
+    note: str = ""
+    """Non vide si le lecteur a refusé la sortie du moteur telle quelle (`parse_for_scoring`)."""
 
     def to_json(self) -> str:
         document = {
@@ -724,6 +732,26 @@ class ScoreRecord:
         score = FileScore(**{k: v for k, v in data["score"].items() if k in names})
         own = {f.name for f in fields(cls)} - {"score"}
         return cls(score=score, **{k: v for k, v in data.items() if k in own})
+
+
+def parse_for_scoring(document: Mapping[str, Any]) -> tuple[Recognition, str]:
+    """Lit la sortie du moteur pour la noter. Si le lecteur la refuse à cause des champs additifs
+    `word_times` (temps au mot, ADR-0010), on les ignore et on le NOTE : le rappel des versets reste
+    mesurable, et le défaut du moteur n'est ni caché ni confondu avec une perte de verset. Toute
+    autre invalidité reste une erreur."""
+    try:
+        return parse_recognition(document), ""
+    except RecognitionError as exc:
+        if "word_times" not in str(exc):
+            raise
+        stripped = {
+            **document,
+            "intervals": [
+                {k: v for k, v in item.items() if k not in ("word_times", "word_times_source")}
+                for item in document.get("intervals", [])
+            ],
+        }
+        return parse_recognition(stripped), f"sortie refusée par le lecteur : {exc}"
 
 
 def load_scores(root: Path, mode: str) -> dict[str, dict[str, ScoreRecord]]:

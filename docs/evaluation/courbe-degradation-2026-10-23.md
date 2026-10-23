@@ -1,9 +1,15 @@
 # Courbe de dégradation : le moteur résiste-t-il à un enregistrement imparfait ? — 2026-10-23
 
 Statut : **mesure terminée** (calculs lancés le 2026-10-22 en soirée, rapport daté du 2026-10-23).
-La règle de décision a été écrite et commitée **avant** la première mesure (commit `08373c6`,
-22:16 ; premier calcul à 22:17) et n'a pas bougé depuis. Les conditions « † » ont été ajoutées
-**après** le résultat principal : elles éclairent, elles ne décident rien.
+La règle de décision a été écrite et commitée **avant** la première mesure (commit `81059e4` après
+rebase, `08373c6` avant ; 22:16 ; premier calcul à 22:17) et n'a pas bougé depuis. Les conditions « † »
+ont été ajoutées **après** le résultat principal : elles éclairent, elles ne décident rien.
+
+**Moteur mesuré : `develop` @ `5d1c87d`** (après #75 « promotion des débuts incertains par le voisin »).
+Une première passe complète sur `develop` @ `14a2365` (avant #73-#75) avait donné les mêmes rappels à
+quatre résultats près, chacun de un ou deux versets : vitesse ×0,8 (69 → 70 versets sur 73), ×0,5
+(67 → 68), cascade à ×0,3 (44 → 45) et le levier passe-bas sur la réverbération extrême (38 → 40).
+Aucune décision n'en dépend ; le rapport ne cite que la seconde passe.
 
 Les chiffres obtenus sur des audios EveryAyah relèvent de la décision d'usage **provisoire** du
 mainteneur (`docs/data-lots/ref-corpus-provenance.md`, « Décision d'usage ») : évaluation interne
@@ -20,7 +26,7 @@ dérivés de ces audios : elles restent hors dépôt aussi.
   72,6 % en bruit blanc, 52,1 % en bruit rose), réverbération de grande nef (RT60 3,5 s, direct/réverbéré
   −10 dB : 61,6 %), récitation à ×0,4 (76,7 %) et ×0,3 (41,1 %). Le téléphone (AMR 4,75 kbit/s),
   le MP3 jusqu'à 8 kbit/s et une bande réduite à 4 kHz ne le dérangent pas du tout (100 %).
-- **Le propre n'est pas un plafond** : 17 des 19 conditions dégradées du cahier font aussi bien que
+- **Le propre n'est pas un plafond** : 18 des 19 conditions dégradées du cahier font aussi bien que
   le propre ou mieux, et le WER de la transcription tombe de 13,4 % (propre) à 2,1-2,4 % dès que
   l'audio perd ses aigus au-delà de ~5,5 kHz. La mesure ne sait donc plus rien dire dans la plage
   réaliste : elle est saturée. Il faut des enregistrements réels annotés.
@@ -28,8 +34,9 @@ dérivés de ces audios : elles restent hors dépôt aussi.
   (jusqu'à +56 points si le facteur est connu), passe-bas à 5,5 kHz en candidat supplémentaire
   (+4,1 points et WER ÷ 5,6 sur le propre, mais pire sous réverbération extrême), plancher d'évidence
   pour une détection d'un mot (le seul faux verset de la campagne est un mot de 0,16 s).
-- **Coût** : 9 fichiers, 73 versets, 12,6 minutes d'audio ; 48 séries de mesure ; environ 30 minutes
-  de calcul (RTX 5090 Laptop, partagée) pour environ 1 h 35 de travail de bout en bout.
+- **Coût** : 9 fichiers, 73 versets, 12,6 minutes d'audio ; 48 séries de mesure (40 du moteur seul,
+  8 de la cascade), environ 30 minutes de calcul par passe (RTX 5090 Laptop, partagée), deux passes ;
+  environ 2 h 15 de travail de bout en bout.
 
 ## Règle de décision (écrite avant la mesure)
 
@@ -85,7 +92,7 @@ Une chute négative est un gain : le rappel à ce niveau dépasse celui du propr
 
 Sensibilité à la référence : le propre (95,9 %) est le point bas des conditions quasi transparentes
 (MP3 128 kbit/s 98,6 %, SNR 20 dB 98,6 %, G.711 100 %). Avec 98,6 % comme référence, la plus grande
-chute au niveau réaliste est ×0,6 : 2,7 points ; au pire niveau du cahier (×0,5), 6,8 points. Aucun
+chute au niveau réaliste est ×0,6 : 2,7 points ; au pire niveau du cahier (×0,5), 5,5 points. Aucun
 verdict ne change, aucune ne s'approche de 15 points. Le critère « moitié des fichiers » ne joue qu'à
 la vitesse : 2 fichiers sur 9 perdent plus de 10 points à ×0,6 (Alafasy-097 : 4 versets sur 5 ;
 Husary-109 : 5 sur 6), pour une chute agrégée nulle.
@@ -102,26 +109,26 @@ calcul / durée de l'audio (le propre inclut le démarrage à froid du premier f
 
 | Condition | Rappel (IC 95 %) | Bien placés | Faux | Inférés | Incertains | Manqués | Abst. | WER | CER | RTF | Rappel cascade | Faux cascade |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| propre (référence) | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 1 | 0 | 2 | 3 | 13,4 % | 4,4 % | 0,124 | 100,0 % | 0 |
-| bruit blanc, SNR 20 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 6,7 % | 2,6 % | 0,096 | - | - |
-| bruit blanc, SNR 10 dB | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 3,7 % | 1,5 % | 0,027 | 100,0 % | 0 |
-| bruit blanc, SNR 5 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 0 | 0 | 1 | 1 | 4,3 % | 1,6 % | 0,026 | - | - |
-| bruit rose, SNR 20 dB | 97,3 % (71/73; 90,5 %-99,2 %) | 97,3 % | 0 | 0 | 0 | 2 | 2 | 10,6 % | 3,9 % | 0,035 | - | - |
-| bruit rose, SNR 10 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 6,3 % | 2,4 % | 0,043 | - | - |
-| bruit rose, SNR 5 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 7,1 % | 2,6 % | 0,050 | - | - |
-| réverbération faible (petite salle, RT60 0,4 s, direct/réverbéré +6 dB) | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 11,8 % | 4,1 % | 0,043 | - | - |
+| propre (référence) | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 1 | 0 | 2 | 3 | 13,4 % | 4,4 % | 0,100 | 100,0 % | 0 |
+| bruit blanc, SNR 20 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 6,7 % | 2,6 % | 0,033 | - | - |
+| bruit blanc, SNR 10 dB | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 3,7 % | 1,5 % | 0,029 | 100,0 % | 0 |
+| bruit blanc, SNR 5 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 0 | 0 | 1 | 1 | 4,3 % | 1,6 % | 0,029 | - | - |
+| bruit rose, SNR 20 dB | 97,3 % (71/73; 90,5 %-99,2 %) | 97,3 % | 0 | 0 | 0 | 2 | 2 | 10,6 % | 3,9 % | 0,037 | - | - |
+| bruit rose, SNR 10 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 6,3 % | 2,4 % | 0,039 | - | - |
+| bruit rose, SNR 5 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 7,1 % | 2,6 % | 0,038 | - | - |
+| réverbération faible (petite salle, RT60 0,4 s, direct/réverbéré +6 dB) | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 11,8 % | 4,1 % | 0,030 | - | - |
 | réverbération moyenne (grande salle, RT60 0,9 s, direct/réverbéré +0 dB) | 97,3 % (71/73; 90,5 %-99,2 %) | 97,3 % | 0 | 2 | 0 | 0 | 2 | 12,1 % | 4,1 % | 0,037 | - | - |
-| réverbération forte (mosquée, RT60 2 s, direct/réverbéré -4 dB) | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 1 | 6,5 % | 2,5 % | 0,028 | - | - |
+| réverbération forte (mosquée, RT60 2 s, direct/réverbéré -4 dB) | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 1 | 6,5 % | 2,5 % | 0,030 | - | - |
 | téléphone 8 kHz, 300-3400 Hz, G.711 µ-law (ligne fixe) | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,030 | - | - |
 | téléphone 8 kHz, 300-3400 Hz, AMR-NB 12,2 kbit/s (mobile) | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,029 | - | - |
-| téléphone 8 kHz, 300-3400 Hz, AMR-NB 4,75 kbit/s (mobile, débit minimal) | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,028 | - | - |
-| MP3 128 kbit/s | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 10,4 % | 3,7 % | 0,034 | - | - |
-| MP3 48 kbit/s | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 2 | 12,5 % | 4,3 % | 0,035 | - | - |
-| MP3 24 kbit/s | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,028 | - | - |
-| vitesse ×0,8 sans changement de hauteur | 94,5 % (69/73; 86,7 %-97,8 %) | 94,5 % | 0 | 1 | 1 | 2 | 3 | 17,0 % | 5,8 % | 0,031 | - | - |
-| vitesse ×0,6 sans changement de hauteur | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 1 | 0 | 2 | 4 | 20,9 % | 7,3 % | 0,027 | 100,0 % | 0 |
-| vitesse ×0,5 sans changement de hauteur | 91,8 % (67/73; 83,2 %-96,2 %) | 91,8 % | 1 | 0 | 2 | 4 | 6 | 22,6 % | 9,1 % | 0,024 | - | - |
-| réverbération moyenne puis bruit blanc SNR 10 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 0 | 0 | 1 | 1 | 5,6 % | 3,1 % | 0,027 | - | - |
+| téléphone 8 kHz, 300-3400 Hz, AMR-NB 4,75 kbit/s (mobile, débit minimal) | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,029 | - | - |
+| MP3 128 kbit/s | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 1 | 10,4 % | 3,7 % | 0,038 | - | - |
+| MP3 48 kbit/s | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 1 | 0 | 0 | 2 | 12,5 % | 4,3 % | 0,037 | - | - |
+| MP3 24 kbit/s | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,029 | - | - |
+| vitesse ×0,8 sans changement de hauteur | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 1 | 0 | 2 | 3 | 17,0 % | 5,8 % | 0,032 | - | - |
+| vitesse ×0,6 sans changement de hauteur | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 1 | 0 | 2 | 4 | 20,9 % | 7,3 % | 0,029 | 100,0 % | 0 |
+| vitesse ×0,5 sans changement de hauteur | 93,2 % (68/73; 84,9 %-97,0 %) | 93,2 % | 1 | 0 | 0 | 5 | 6 | 22,6 % | 9,1 % | 0,025 | - | - |
+| réverbération moyenne puis bruit blanc SNR 10 dB | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 0 | 0 | 1 | 1 | 5,6 % | 3,1 % | 0,029 | - | - |
 
 ## Courbes (rappel du moteur seul ; † = au-delà du cahier)
 
@@ -181,11 +188,11 @@ propre                                 █████████████�
 
 ```
 propre                                 ███████████████████░   95,9 %   WER  13,4 %   cascade  100,0 %
-×0,8                                   ███████████████████░   94,5 %   WER  17,0 %
+×0,8                                   ███████████████████░   95,9 %   WER  17,0 %
 ×0,6                                   ███████████████████░   95,9 %   WER  20,9 %   cascade  100,0 %
-×0,5                                   ██████████████████░░   91,8 %   WER  22,6 %
+×0,5                                   ███████████████████░   93,2 %   WER  22,6 %
 ×0,4 †                                 ███████████████░░░░░   76,7 %   WER  29,3 %   cascade   90,4 %
-×0,3 †                                 ████████░░░░░░░░░░░░   41,1 %   WER  59,7 %   cascade   60,3 %
+×0,3 †                                 ████████░░░░░░░░░░░░   41,1 %   WER  59,7 %   cascade   61,6 %
 ```
 
 ### combinaison
@@ -214,16 +221,16 @@ moteur seul et les 8 de la cascade sauf un (voir plus bas).
 
 **Le modèle se trompe, la décision tient.** Le WER est le meilleur détecteur de tension : il
 monte de façon monotone avec la lenteur (13,4 % propre, 17,0 % à ×0,8, 20,9 % à ×0,6, 22,6 % à
-×0,5, 29,3 % à ×0,4, 59,7 % à ×0,3) bien avant que le rappel ne bouge (95,9 % à ×0,6, 91,8 % à
+×0,5, 29,3 % à ×0,4, 59,7 % à ×0,3) bien avant que le rappel ne bouge (95,9 % à ×0,6, 93,2 % à
 ×0,5, 76,7 % à ×0,4). Le décodeur par suite de versets et l'arbitre acoustique absorbent des
 transcriptions fausses jusqu'à environ un mot sur cinq (×0,6 : WER 20,9 %, rappel 95,9 %). Même
 chose au bruit blanc à SNR 0 dB (WER 8,0 %, rappel 97,3 %). Quand le WER dépasse ~30 %, la décision
 cède à son tour (SNR −5 dB : WER 35,6 %, rappel 72,6 %).
 
-**La lenteur est le talon d'Achille, et il tient à un fichier.** À ×0,8 le rappel de Husary-109
-(six versets courts et répétitifs, récitant le plus lent du jeu) tombe à 3 sur 6, à ×0,5 à 1 sur 6 ;
-sur les 6 versets perdus à ×0,5 sur les 73, 5 sont les siens. Les 8 autres fichiers tiennent à ×0,5
-(Alafasy-097 perd un verset). Avec neuf fichiers, c'est un fait à noter, pas une loi.
+**La lenteur est le talon d'Achille, et il tient surtout à un fichier.** À ×0,8 le rappel de
+Husary-109 (six versets courts et répétitifs, récitant le plus lent du jeu) tombe à 4 sur 6, à ×0,5 à
+2 sur 6 ; sur les 5 versets perdus à ×0,5 sur les 73, 4 sont les siens, le cinquième est à Alafasy-097.
+Les 7 autres fichiers tiennent à ×0,5. Avec neuf fichiers, c'est un fait à noter, pas une loi.
 
 **Le propre est le point bas, pas le plafond.** Trois versets manquent en propre : 114:2 et 114:3
 (deux mots chacun, abstention `below_threshold`) et 1:3 (deux mots, « inféré ») : des versets
@@ -252,21 +259,22 @@ la règle (non déclenchée : ×0,5 n'est pas une ancre).
 
 | Condition | Seul | Cascade | Gain (points) | Faux seul → cascade | Temps seul → cascade |
 |---|---|---|---|---|---|
-| propre (référence) | 95,9 % | 100,0 % | 4,1 | 0 → 0 | 94 s → 79 s |
-| bruit blanc, SNR 10 dB | 100,0 % | 100,0 % | 0,0 | 0 → 0 | 20 s → 23 s |
-| vitesse ×0,6 sans changement de hauteur | 95,9 % | 100,0 % | 4,1 | 0 → 0 | 35 s → 48 s |
-| bruit blanc, SNR -5 dB | 72,6 % | 72,6 % | 0,0 | 0 → 0 | 19 s → 84 s |
-| bruit rose, SNR -5 dB | 52,1 % | 53,4 % | 1,4 | 0 → 0 | 15 s → 54 s |
-| réverbération extrême (grande nef, RT60 3,5 s, direct/réverbéré -10 dB) | 61,6 % | 64,4 % | 2,7 | 0 → 0 | 16 s → 63 s |
-| vitesse ×0,4 sans changement de hauteur | 76,7 % | 90,4 % | 13,7 | 0 → 0 | 39 s → 94 s |
-| vitesse ×0,3 sans changement de hauteur | 41,1 % | 60,3 % | 19,2 | 0 → 0 | 38 s → 172 s |
+| propre (référence) | 95,9 % | 100,0 % | 4,1 | 0 → 0 | 76 s → 82 s |
+| bruit blanc, SNR 10 dB | 100,0 % | 100,0 % | 0,0 | 0 → 0 | 22 s → 22 s |
+| vitesse ×0,6 sans changement de hauteur | 95,9 % | 100,0 % | 4,1 | 0 → 0 | 36 s → 44 s |
+| bruit blanc, SNR -5 dB | 72,6 % | 72,6 % | 0,0 | 0 → 0 | 20 s → 88 s |
+| bruit rose, SNR -5 dB | 52,1 % | 53,4 % | 1,4 | 0 → 0 | 17 s → 47 s |
+| réverbération extrême (grande nef, RT60 3,5 s, direct/réverbéré -10 dB) | 61,6 % | 64,4 % | 2,7 | 0 → 0 | 17 s → 50 s |
+| vitesse ×0,4 sans changement de hauteur | 76,7 % | 90,4 % | 13,7 | 0 → 0 | 41 s → 91 s |
+| vitesse ×0,3 sans changement de hauteur | 41,1 % | 61,6 % | 20,5 | 0 → 0 | 75 s → 151 s |
 
 Sur les trois conditions clés du cahier, **oui, et sans faux verset** : propre 100 % (+4,1 points),
 bruit 10 dB 100 % (inchangé), vitesse ×0,6 100 % (+4,1 points). Aux niveaux sévères (†), elle rattrape
-en partie la lenteur (×0,4 : +13,7 points, ×0,3 : +19,2) mais pas le bruit (SNR −5 dB : +0,0 en blanc,
-+1,4 en rose) ni la réverbération extrême (+2,7). Son coût croît avec la difficulté : de ×0,84 à ×1,4
-le temps du moteur seul aux niveaux du cahier (le « 94 s » du propre seul inclut le démarrage à froid
-du premier fichier), ×4,5 à ×0,3 (172 s au lieu de 38 s).
+en partie la lenteur (×0,4 : +13,7 points, ×0,3 : +20,5) mais pas le bruit (SNR −5 dB : +0,0 en blanc,
++1,4 en rose) ni la réverbération extrême (+2,7). Son coût croît avec la difficulté : de ×1,0 à ×1,2
+le temps du moteur seul aux niveaux du cahier, de ×2,0 à ×4,4 aux niveaux sévères. (Les temps du
+moteur seul de « propre » et de « vitesse ×0,3 » incluent un démarrage à froid de processus, de l'ordre
+de 20 à 40 s : à chaud, ces deux conditions coûtent moins que ce tableau ne le montre.)
 
 ## Au-delà du cahier (exploratoire, décidé après le résultat principal)
 
@@ -276,18 +284,18 @@ et testé la bande passante seule (passe-bas). Ces conditions ne sont pas des an
 
 | Condition | Rappel (IC 95 %) | Bien placés | Faux | Inférés | Incertains | Manqués | Abst. | WER | CER | RTF | Rappel cascade | Faux cascade |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| bruit blanc, SNR 0 dB † | 97,3 % (71/73; 90,5 %-99,2 %) | 97,3 % | 0 | 1 | 0 | 1 | 2 | 8,0 % | 3,8 % | 0,087 | - | - |
-| bruit blanc, SNR -5 dB † | 72,6 % (53/73; 61,4 %-81,5 %) | 72,6 % | 0 | 0 | 0 | 20 | 36 | 35,6 % | 24,2 % | 0,025 | 72,6 % | 0 |
-| bruit rose, SNR 0 dB † | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 0 | 0 | 1 | 4 | 8,4 % | 4,7 % | 0,026 | - | - |
-| bruit rose, SNR -5 dB † | 52,1 % (38/73; 40,8 %-63,1 %) | 52,1 % | 0 | 1 | 0 | 34 | 74 | 48,7 % | 36,8 % | 0,020 | 53,4 % | 0 |
-| réverbération extrême (grande nef, RT60 3,5 s, direct/réverbéré -10 dB) † | 61,6 % (45/73; 50,2 %-71,9 %) | 61,6 % | 0 | 3 | 0 | 25 | 40 | 37,5 % | 20,3 % | 0,021 | 64,4 % | 0 |
-| MP3 16 kbit/s † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,028 | - | - |
-| MP3 8 kbit/s † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,4 % | 1,1 % | 0,028 | - | - |
-| vitesse ×0,4 sans changement de hauteur † | 76,7 % (56/73; 65,8 %-84,9 %) | 76,7 % | 0 | 0 | 0 | 17 | 27 | 29,3 % | 12,6 % | 0,021 | 90,4 % | 0 |
-| vitesse ×0,3 sans changement de hauteur † | 41,1 % (30/73; 30,5 %-52,6 %) | 41,1 % | 0 | 2 | 0 | 41 | 95 | 59,7 % | 32,2 % | 0,015 | 60,3 % | 0 |
-| propre, passe-bas à 7 kHz (rééchantillonnage à 14 kHz) † | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 0 | 0 | 3 | 4 | 14,4 % | 4,7 % | 0,031 | - | - |
-| propre, passe-bas à 5,5 kHz (rééchantillonnage à 11 kHz) † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 1 | 2,4 % | 1,1 % | 0,026 | - | - |
-| propre, passe-bas à 4 kHz (rééchantillonnage à 8 kHz) † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,032 | - | - |
+| bruit blanc, SNR 0 dB † | 97,3 % (71/73; 90,5 %-99,2 %) | 97,3 % | 0 | 1 | 0 | 1 | 2 | 8,0 % | 3,8 % | 0,088 | - | - |
+| bruit blanc, SNR -5 dB † | 72,6 % (53/73; 61,4 %-81,5 %) | 72,6 % | 0 | 0 | 0 | 20 | 36 | 35,6 % | 24,2 % | 0,026 | 72,6 % | 0 |
+| bruit rose, SNR 0 dB † | 98,6 % (72/73; 92,6 %-99,8 %) | 98,6 % | 0 | 0 | 0 | 1 | 4 | 8,4 % | 4,7 % | 0,029 | - | - |
+| bruit rose, SNR -5 dB † | 52,1 % (38/73; 40,8 %-63,1 %) | 52,1 % | 0 | 1 | 0 | 34 | 73 | 48,7 % | 36,8 % | 0,022 | 53,4 % | 0 |
+| réverbération extrême (grande nef, RT60 3,5 s, direct/réverbéré -10 dB) † | 61,6 % (45/73; 50,2 %-71,9 %) | 61,6 % | 0 | 3 | 0 | 25 | 38 | 37,5 % | 20,3 % | 0,023 | 64,4 % | 0 |
+| MP3 16 kbit/s † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,030 | - | - |
+| MP3 8 kbit/s † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,4 % | 1,1 % | 0,030 | - | - |
+| vitesse ×0,4 sans changement de hauteur † | 76,7 % (56/73; 65,8 %-84,9 %) | 76,7 % | 0 | 0 | 0 | 17 | 27 | 29,3 % | 12,6 % | 0,022 | 90,4 % | 0 |
+| vitesse ×0,3 sans changement de hauteur † | 41,1 % (30/73; 30,5 %-52,6 %) | 41,1 % | 0 | 2 | 0 | 41 | 94 | 59,7 % | 32,2 % | 0,030 | 61,6 % | 0 |
+| propre, passe-bas à 7 kHz (rééchantillonnage à 14 kHz) † | 95,9 % (70/73; 88,6 %-98,6 %) | 95,9 % | 0 | 0 | 0 | 3 | 4 | 14,4 % | 4,7 % | 0,035 | - | - |
+| propre, passe-bas à 5,5 kHz (rééchantillonnage à 11 kHz) † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 1 | 2,4 % | 1,1 % | 0,029 | - | - |
+| propre, passe-bas à 4 kHz (rééchantillonnage à 8 kHz) † | 100,0 % (73/73; 95,0 %-100,0 %) | 100,0 % | 0 | 0 | 0 | 0 | 0 | 2,1 % | 1,0 % | 0,029 | - | - |
 
 Où ça casse (chute de plus de 15 points sous le propre, soit moins de 80,9 %) :
 
@@ -296,7 +304,7 @@ Où ça casse (chute de plus de 15 points sous le propre, soit moins de 80,9 %) 
 | Bruit blanc | SNR 0 dB (97,3 %) | SNR −5 dB (72,6 %) |
 | Bruit rose | SNR 0 dB (98,6 %) | SNR −5 dB (52,1 %) |
 | Réverbération | mosquée, RT60 2 s, direct/réverbéré −4 dB (100,0 %) | grande nef, RT60 3,5 s, −10 dB (61,6 %) |
-| Vitesse | ×0,5 (91,8 %) | ×0,4 (76,7 %) |
+| Vitesse | ×0,5 (93,2 %) | ×0,4 (76,7 %) |
 | MP3, téléphone, bande passante | jusqu'à 8 kbit/s, AMR 4,75, 4 kHz (100 %) | non atteint |
 
 Ces seuils sont à lire avec prudence : un seul pas sépare « tient » de « casse » dans chaque famille,
@@ -318,7 +326,7 @@ réglage. L'accélération est un **oracle** : on connaît le facteur de ralenti
 | bruit rose −5 dB puis débruitage `afftdn` | 52,1 % (38/73) | 56,2 % (41/73) | +4,1 | 48,7 % → 44,2 % | 0 |
 | bruit blanc −5 dB puis passe-bas 5,5 kHz | 72,6 % (53/73) | 74,0 % (54/73) | +1,4 | 35,6 % → 34,1 % | 0 |
 | bruit rose −5 dB puis passe-bas 5,5 kHz | 52,1 % (38/73) | 47,9 % (35/73) | -4,1 | 48,7 % → 54,1 % | 0 |
-| réverbération extrême puis passe-bas 5,5 kHz | 61,6 % (45/73) | 52,1 % (38/73) | -9,6 | 37,5 % → 41,8 % | 0 |
+| réverbération extrême puis passe-bas 5,5 kHz | 61,6 % (45/73) | 54,8 % (40/73) | -6,8 | 37,5 % → 41,8 % | 0 |
 | propre puis passe-bas 5,5 kHz | 95,9 % (70/73) | 100,0 % (73/73) | +4,1 | 13,4 % → 2,4 % | 0 |
 
 - **Candidat de vitesse (le plus rentable).** Réaccélérer une récitation ralentie la ramène dans la
@@ -327,7 +335,7 @@ réglage. L'accélération est un **oracle** : on connaît le facteur de ralenti
   (essayer quelques vitesses candidates sur les fenêtres douteuses et garder celle que le matcher et
   l'arbitre acoustique soutiennent, I3).
 - **Passe-bas à 5,5 kHz.** Sur le propre : 95,9 % → 100 % et WER 13,4 % → 2,4 %. Mais il **n'aide pas**
-  le bruit (+1,4 point en blanc, −4,1 en rose) et **aggrave** la réverbération extrême (−9,6 points) :
+  le bruit (+1,4 point en blanc, −4,1 en rose) et **aggrave** la réverbération extrême (−6,8 points) :
   c'est un candidat de plus pour la cascade, pas un filtre global. À valider d'abord sur des
   enregistrements réels non EveryAyah.
 - **Débruitage `afftdn`.** +1,4 point (blanc) et +4,1 (rose) à SNR −5 dB : de l'ordre d'un à trois
@@ -343,7 +351,7 @@ réglage. L'accélération est un **oracle** : on connaît le facteur de ralenti
    rien à gagner aux niveaux du cahier : la cascade y atteint déjà 100 % sur les trois conditions
    testées, soit une marge de 0 à 4,1 points au moteur seul.
 2. **Mais ne pas conclure que le moteur est robuste.** La mesure est saturée (EveryAyah probablement
-   vu à l'entraînement, voix professionnelles, 73 versets) : 17 conditions dégradées sur 19 font
+   vu à l'entraînement, voix professionnelles, 73 versets) : 18 conditions dégradées sur 19 font
    aussi bien que le propre ou mieux. Elle prouve l'absence de défaut grossier, pas l'absence de défaut. La preuve
    qui manque est un jeu **réel annoté** (étape A du plan) : c'est lui qui peut justifier ou non un
    fine-tuning, et dire quelles conditions réelles ressemblent à « bruit plus fort que la voix »,
@@ -512,7 +520,12 @@ de Windows.
 
 ## Surprises
 
-- Le propre est moins bon que 17 conditions dégradées sur 19 (voir « Lecture »).
+- Le propre est moins bon que 16 conditions dégradées sur 19 et égal à deux autres (voir « Lecture »).
+- **Le lecteur refuse une sortie du moteur** : à ×0,3, sur Alafasy-067, `aqr.eval.recognition` (champs
+  `word_times` de #75) lève « intervals[52] : word_times[5] chevauche le mot précédent » : le moteur
+  émet des temps de mots qui se recouvrent sur de l'audio très ralenti. Le script de mesure ignore ces
+  champs, le note (`note` dans le `.score.json`) et continue ; le rappel de ce fichier reste mesuré.
+  À corriger côté moteur ou lecteur.
 - Un faux verset de 0,16 s, un seul mot, à ×0,5 : I3 tient partout ailleurs, pas là.
 - `scripts/recognize_batch.py` et `aqr.eval.run` importent `fcntl` et `resource` : ils ne tournent pas
   sous Windows, où cette campagne a tourné. D'où `scripts/measure_degradation.py`, indépendant de

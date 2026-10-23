@@ -16,10 +16,12 @@ from aqr.eval.degradation_curve import (
     ascii_bar,
     file_id,
     load_scores,
+    parse_for_scoring,
     reference_words_for_file,
     summarize,
     truth_from_durations,
 )
+from aqr.eval.recognition import RecognitionError, VerseInterval
 
 
 def truth(*items: tuple[str, float, float]) -> list[TruthVerse]:
@@ -135,3 +137,40 @@ def test_barre_ascii() -> None:
     assert ascii_bar(0.5, width=10) == "█████░░░░░"
     assert ascii_bar(0.0, width=4) == "░░░░"
     assert ascii_bar(None, width=4) == "    "
+
+
+# --- sortie du moteur refusée par le lecteur ------------------------------------------------------
+
+
+def _document(word_times: list[list[float]], status: str = "recognized") -> dict[str, object]:
+    return {
+        "schema": "aqr.recognition/1",
+        "intervals": [
+            {
+                "kind": "verse",
+                "ref": "112:1",
+                "words": [1, 2],
+                "status": status,
+                "t": [0.0, 2.0],
+                "word_times": word_times,
+                "word_times_source": "interpolated",
+            }
+        ],
+    }
+
+
+def test_une_sortie_valide_est_lue_sans_note() -> None:
+    recognition, note = parse_for_scoring(_document([[0.0, 1.0], [1.0, 2.0]]))
+    assert note == "" and len(recognition.intervals) == 1
+
+
+def test_des_temps_de_mots_qui_se_chevauchent_sont_notes_sans_perdre_le_verset() -> None:
+    recognition, note = parse_for_scoring(_document([[0.0, 1.2], [1.0, 2.0]]))
+    assert "chevauche" in note
+    interval = recognition.intervals[0]
+    assert isinstance(interval, VerseInterval) and interval.ref == VerseRef(112, 1)
+
+
+def test_une_sortie_autrement_invalide_reste_une_erreur() -> None:
+    with pytest.raises(RecognitionError):
+        parse_for_scoring(_document([[0.0, 1.0], [1.0, 2.0]], status="inventé"))
