@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Glisser pour naviguer dans la timeline, tracé qui se ferme tout seul
+Étiquettes : utilisateur
+PR : -
+
+**Ce qui change.** Quand la timeline est zoomée, on la saisit avec la souris et on la glisse vers la gauche ou la droite pour naviguer, au lieu d'aller chercher la barre de défilement tout en bas (un simple clic déplace toujours la lecture). Dans la revue, l'outil « Tracer sur l'onde » se ferme tout seul dès qu'une plage ou un point est tracé, et aussi quand on valide le signalement : on continue d'écouter, et on le réactive pour un nouveau signalement.
+
+**Pourquoi / décision.** Retours du propriétaire pendant ses tests : la navigation par la barre du bas est lourde, et devoir quitter manuellement l'outil de tracé après chaque signalement freine le testeur. Au doigt, le défilement natif reste en place.
+
 ## 2026-10-23 — La carte du passage actif reste vide quand rien n'est détecté
 Étiquettes : utilisateur
 PR : -

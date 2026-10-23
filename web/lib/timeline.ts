@@ -94,3 +94,22 @@ export function formatTick(seconds: number, step: number): string {
     : String(Math.floor(s)).padStart(2, "0");
   return `${h ? `${h}:` : ""}${String(m).padStart(2, "0")}:${sec}`;
 }
+
+/** Au-delà de ce déplacement (px), un appui suivi d'un mouvement est un glissement, pas un clic. */
+export const PAN_THRESHOLD_PX = 4;
+
+/** Vrai si le déplacement horizontal depuis l'appui est un vrai glissement. */
+export function isPanMove(dxPx: number): boolean {
+  return Math.abs(dxPx) > PAN_THRESHOLD_PX;
+}
+
+/** `scrollLeft` après un glissement de `dxPx` : glisser vers la gauche avance dans le temps. */
+export function panScrollLeft(
+  startLeft: number,
+  dxPx: number,
+  maxLeft: number,
+): number {
+  return Math.round(
+    Math.min(Math.max(0, maxLeft), Math.max(0, startLeft - dxPx)),
+  );
+}
