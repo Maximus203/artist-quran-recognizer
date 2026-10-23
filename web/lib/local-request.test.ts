@@ -301,3 +301,68 @@ describe("cookie d'accès à durée limitée", () => {
     expect(verifyToken(null, TOKEN)).toBe(false);
   });
 });
+
+describe("origine publique (tunnel) : AQR_PUBLIC_ORIGIN", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  // Derrière un tunnel, Next voit `http://127.0.0.1:<port>` alors que le navigateur est en `https://`
+  // sur l'adresse publique : sans cette variable, toute écriture distante est refusée (403).
+  const PUBLIC = "https://lab.example";
+  const remote = (
+    origin: string | null,
+    headers: Record<string, string> = {},
+  ) =>
+    post("http://127.0.0.1:3097/api/auth/login", {
+      host: "lab.example",
+      "x-aqr-token": TOKEN,
+      ...(origin === null ? {} : { origin }),
+      ...headers,
+    });
+
+  it("accepte l'écriture dont l'origine est l'adresse publique configurée", () => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", TOKEN);
+    vi.stubEnv("AQR_PUBLIC_ORIGIN", `${PUBLIC}/`);
+    expect(isLocalRequest(remote(PUBLIC), true)).toBe(true);
+  });
+
+  it("l'hôte public est accepté aussi en lecture, avec le jeton", () => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", TOKEN);
+    vi.stubEnv("AQR_PUBLIC_ORIGIN", PUBLIC);
+    expect(isLocalRequest(remote(null))).toBe(true);
+  });
+
+  it("refuse toute autre origine, même avec la variable", () => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", TOKEN);
+    vi.stubEnv("AQR_PUBLIC_ORIGIN", PUBLIC);
+    for (const origin of [
+      "https://evil.example",
+      "http://lab.example",
+      "https://lab.example:8443",
+      "https://sub.lab.example",
+    ])
+      expect(isLocalRequest(remote(origin), true)).toBe(false);
+  });
+
+  it("sans la variable, la même écriture reste refusée", () => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", TOKEN);
+    vi.stubEnv("AQR_ALLOWED_HOSTS", "lab.example");
+    expect(isLocalRequest(remote(PUBLIC), true)).toBe(false);
+  });
+
+  it("sans jeton, la variable est ignorée (boucle locale seulement)", () => {
+    vi.stubEnv("AQR_PUBLIC_ORIGIN", PUBLIC);
+    expect(isLocalRequest(remote(PUBLIC), true)).toBe(false);
+  });
+
+  it("une valeur mal formée ferme la porte (refus, jamais de repli)", () => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", TOKEN);
+    for (const value of [
+      "lab.example",
+      "https://lab.example/atelier",
+      "ftp://lab.example",
+      "https://lab.example?x=1",
+    ]) {
+      vi.stubEnv("AQR_PUBLIC_ORIGIN", value);
+      expect(isLocalRequest(remote(PUBLIC), true)).toBe(false);
+    }
+  });
+});

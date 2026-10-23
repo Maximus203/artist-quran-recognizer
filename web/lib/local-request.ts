@@ -10,6 +10,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  *  - `AQR_ACCESS_TOKEN` : dès qu'il est défini, toute requête (même loopback) doit
  *    le présenter (en-tête `x-aqr-token`, `Authorization: Bearer`, ou cookie d'accès) ;
  *  - `AQR_ACCESS_TTL_S` : durée de vie (secondes) du cookie délivré par `/api/access`.
+ *  - `AQR_PUBLIC_ORIGIN` (ex. `https://lab.example`, avec jeton) : adresse publique d'un tunnel.
+ *    Son hôte est accepté comme hôte autorisé, et ses écritures (origine égale à cette adresse)
+ *    le sont aussi : derrière un tunnel, Next voit `http://127.0.0.1:<port>`, jamais l'adresse
+ *    publique. Valeur mal formée (schéma autre que http(s), chemin, requête) : aucun repli, refus.
  */
 export const ACCESS_COOKIE = "aqr_access";
 export const TOKEN_HEADER = "x-aqr-token";
@@ -80,6 +84,22 @@ function readCookie(request: Request, name: string): string | undefined {
   return undefined;
 }
 
+/** Origine publique (`scheme://hôte[:port]`) de `AQR_PUBLIC_ORIGIN`, ou `null` si absente ou
+ *  mal formée (dans ce cas la frontière reste fermée). */
+export function parsePublicOrigin(raw: string | undefined): URL | null {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const plain =
+      url.pathname === "/" && !url.search && !url.hash && !url.username;
+    if (!plain || (url.protocol !== "https:" && url.protocol !== "http:"))
+      return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 function tokenAuthorized(request: Request, token: string, now: number) {
   const bearer = request.headers
     .get("authorization")
@@ -139,7 +159,15 @@ export function isLocalRequest(
   now = Date.now(),
 ): boolean {
   const token = process.env.AQR_ACCESS_TOKEN ?? "";
-  const extra = token ? parseAllowedHosts(process.env.AQR_ALLOWED_HOSTS) : [];
+  const publicOrigin = token
+    ? parsePublicOrigin(process.env.AQR_PUBLIC_ORIGIN)
+    : null;
+  const extra = token
+    ? [
+        ...parseAllowedHosts(process.env.AQR_ALLOWED_HOSTS),
+        ...(publicOrigin ? [publicOrigin.hostname] : []),
+      ]
+    : [];
   const allowed = (host: string) =>
     LOOPBACK.includes(host) || extra.includes(host);
   const url = new URL(request.url);
@@ -148,6 +176,7 @@ export function isLocalRequest(
   if (token && !tokenAuthorized(request, token, now)) return false;
   const origin = request.headers.get("origin");
   if (!mutation || !origin || origin === url.origin) return true;
+  if (publicOrigin && origin === publicOrigin.origin) return true;
   try {
     const source = new URL(origin);
     return (
