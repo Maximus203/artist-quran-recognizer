@@ -8,6 +8,7 @@
  * sans modification ; `splitNoteMarkers` ne fait que la découper pour styler les `[n]` à l'affichage.
  */
 import { formulaFromLabel, type Formula } from "./formulas";
+import { indexAt, timeIndexOf } from "./interval-index";
 import { liveWords, type LiveWords } from "./live-highlight";
 import type { Interval } from "./recognition";
 import {
@@ -198,14 +199,16 @@ const STATE_LABELS: Record<IntervalStyle, string> = {
 export const intervalStateLabel = (item: Interval): string =>
   STATE_LABELS[intervalStyle(item)];
 
-/** Indice de l'intervalle qui couvre l'instant (formules et abstentions comprises), -1 sinon. */
+/**
+ * Indice de l'intervalle qui couvre l'instant (formules et abstentions comprises), -1 sinon. Appelé à
+ * chaque image de la lecture : recherche binaire sur l'index temporel mémorisé du résultat, pas un
+ * parcours des 3 000 intervalles d'un audio de 2 h.
+ */
 export function activeIndex(
   intervals: readonly Interval[],
   time: number,
 ): number {
-  return intervals.findIndex(
-    (item) => item.t !== null && item.t[0] <= time && time < item.t[1],
-  );
+  return indexAt(timeIndexOf(intervals), time);
 }
 
 /**

@@ -1361,3 +1361,19 @@
   An-Naml ne manque pas de vitesse (8, 8, 7, 7, 7 versets de ×1 à ×2,5) ; la compensation du fichier entier
   peut tout perdre (`lot3-01` : 5 → 0 versets à ×1,5). Reprendre la question seulement avec un fichier réel
   que la cascade rate et que ×1,5 sauve.
+
+## 2026-10-23 — Fluidité de l'atelier sur les longs audios (branche `perf/interface-longs-audios`)
+- **Décision** : le DOM de l'atelier ne dépend que de l'écran. Liste des intervalles virtualisée (hauteur de ligne
+  fixe, tabulation roulante, `aria-setsize`/`aria-posinset`), timeline fenêtrée (segments de la vue + marge, blocs
+  pour les segments < 4 px, graduations de la zone), recherche d'intervalle par index temporel (O(log n)), position
+  publiée à ~60 Hz, textes de position à 20 Hz, tête de lecture par `transform`.
+- **Mesures** (banc `web/e2e/perf-measure.mjs`, build de production, 3 128 intervalles) : 22 431 → ≈ 1 000 nœuds ;
+  saut entre versets 1 670 ms → 37 ms (p50) ; ouverture jusqu'à l'onde 4,1 s → 0,45 s ; lecture 1,4 s → 12 à 33 ms
+  par image (écran 240 Hz).
+- **Hypothèse retenue** : pas de `@tanstack/react-virtual` : lignes de hauteur fixe, besoin de pinner la ligne qui
+  porte la tabulation et fenêtrage temporel de la timeline (aucune bibliothèque ne le fait) ; 150 lignes testées.
+- **Écart / risque** : sur « Fichier entier », les abstentions contiguës fusionnent en blocs (changement visible,
+  l'onde redevient lisible) ; il reste une mise en page de ≈ 5 ms par mise à jour de texte (20 Hz) en mode headed
+  (cause non isolée, racine = document) ; pic de style/peinture de 25 à 45 ms au 95ᵉ centile à 240 Hz.
+- **À retenir** : mesurer en mode avec fenêtre (`--headed`, vrai GPU) : le mode sans fenêtre masque un facteur 4 à 5
+  sur la mise en page.

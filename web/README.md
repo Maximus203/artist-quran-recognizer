@@ -38,6 +38,19 @@ Le lecteur ne joue pas le fichier importé mais sa **copie d'écoute** : le mêm
 5. **Signaler** (panneau de droite) : donner un pseudonyme, délimiter le passage (voir « Revue humaine »), choisir des puces, confirmer. La revue se sauvegarde sur cet ordinateur ; vérifier l'indicateur « Enregistré sur cet ordinateur ».
 6. Télécharger le pack ZIP complet (onglet « Signalements ») pour le transférer dans un environnement cloud autorisé. Il contient l'audio, la prédiction originale, la revue courante (tous les testeurs), ses révisions et un manifeste d'empreintes SHA-256. Le bilan JSON seul est aussi disponible. Le stockage cloud, les droits sur des voix tierces et une vérité terrain exhaustive restent à établir avant d'annoncer des métriques.
 
+## Mesurer la fluidité (longs audios)
+
+`e2e/perf-measure.mjs` rejoue les gestes d'un testeur sur une session et mesure, dans le navigateur : images (deltas de `requestAnimationFrame`), tâches longues, latence geste → image peinte, commits React, nœuds DOM, écouteurs, mémoire JS, temps de style et de mise en page. **Build de production seulement** (`npx next build` puis `npx next start`, jamais `next dev`) et **sur une copie** des sessions : jamais sur le serveur ni les données du mainteneur.
+
+```powershell
+$env:AQR_REVIEW_DIR = 'D:\01-Dev\Data\aqr-review-perf'   # copie d'une session de 2 h dans sessions\<id>\ (listening\ compris)
+$env:AQR_DB_PATH    = 'D:\01-Dev\Data\aqr-review-perf\aqr.sqlite'
+npx next start --hostname 127.0.0.1 -p 3872
+node e2e/perf-measure.mjs --url http://127.0.0.1:3872 --session <uuid> --headed --label apres --out resultats.json
+```
+
+Sans `--user`, un compte jetable est créé par l'inscription. Scénarios (`--only open,jumps,burst,keys,play,live,pan,span,leak`) : ouverture, 50 sauts par clic dans la liste, 50 sauts à chaque image, 50 flèches du clavier, lecture, lecture avec surlignage des mots, glisser de la timeline, changement de fenêtre visible, mémoire après 3 × 50 sauts. Options utiles : `--headed` (vrai GPU, cadence réelle de l'écran : un écran à 240 Hz a un budget de 4 ms par image), `--cpu 4` (processeur ralenti 4 ×), `--mobile` (375 px), `--trace jumps,play` (temps par phase du navigateur : mise en page, peinture, composition, plus les tâches les plus longues), `--profile jumps` (échantillonnage JS), `--inject-css ".tl-lane{display:none}"` (retire une zone pour lui attribuer son coût). Objectifs : navigation entre versets sans tâche longue (> 50 ms), latence au 95ᵉ centile ≤ 50 ms, lecture sans tâche longue, nœuds DOM bornés (≈ 1 000 pour 3 000 intervalles), mémoire stable.
+
 ## Interface : design, panneaux, polices
 
 Direction « Encre & lapis » (`docs/design/atelier-direction.md`, tokens dans `docs/design/tokens.css`). `app/tokens.css` en est la copie, **identique** (un test le vérifie) ; aucune feuille ne porte de valeur visuelle en dur. Chaque zone a son composant (`app/atelier/*`) ; la logique pure vit dans `lib/` et est testée.

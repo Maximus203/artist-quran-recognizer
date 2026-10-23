@@ -75,6 +75,14 @@ describe("graduations", () => {
     expect(ticks(1, 0.2)).toEqual([0, 0.2, 0.4, 0.6, 0.8, 1]);
     expect(ticks(0, 5)).toEqual([]);
   });
+  it("limite les repères à une fenêtre (multiples du pas, bornes incluses)", () => {
+    expect(ticks(100, 10, 25, 61)).toEqual([30, 40, 50, 60]);
+    expect(ticks(100, 10, 30, 60)).toEqual([30, 40, 50, 60]);
+    expect(ticks(100, 10, -5, 15)).toEqual([0, 10]);
+    expect(ticks(100, 10, 95, 200)).toEqual([100]);
+    expect(ticks(100, 10, 70, 60)).toEqual([]);
+    expect(ticks(1, 0.2, 0.3, 0.7)).toEqual([0.4, 0.6]);
+  });
   it("formate selon la finesse du pas", () => {
     expect(formatTick(125, 5)).toBe("02:05");
     expect(formatTick(3725, 300)).toBe("1:02:05");

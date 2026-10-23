@@ -73,12 +73,22 @@ export function tickStep(spanSeconds: number, widthPx = Infinity): number {
   );
 }
 
-/** Graduations de 0 à `duration` inclus (multiples entiers du pas : pas de dérive). */
-export function ticks(duration: number, step: number): number[] {
+/**
+ * Graduations de 0 à `duration` inclus (multiples entiers du pas : pas de dérive), limitées à
+ * [from, to] quand une fenêtre est donnée : seules les graduations proches de la vue sont dessinées.
+ */
+export function ticks(
+  duration: number,
+  step: number,
+  from = 0,
+  to = duration,
+): number[] {
   if (!(duration > 0) || !(step > 0)) return [];
-  const count = Math.floor(duration / step + 1e-9);
-  return Array.from({ length: count + 1 }, (_, i) =>
-    Number((i * step).toFixed(3)),
+  const first = Math.max(0, Math.ceil(from / step - 1e-9));
+  const last = Math.floor(Math.min(to, duration) / step + 1e-9);
+  if (last < first) return [];
+  return Array.from({ length: last - first + 1 }, (_, i) =>
+    Number(((first + i) * step).toFixed(3)),
   );
 }
 

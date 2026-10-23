@@ -374,6 +374,8 @@
   background: var(--playhead);
   z-index: 4;
   pointer-events: none;
+  /* Déplacée par `transform` à chaque image : sa propre couche, sans mise en page ni repeinte du reste. */
+  will-change: transform;
 }
 .playhead::before {
   content: "";
