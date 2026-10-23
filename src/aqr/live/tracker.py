@@ -389,7 +389,9 @@ class HypothesisTracker:
             for word in leftover:
                 self._advance(word, events)
             return True
-        possible = matched >= 1 and position >= count - 1 and count <= len(basmala)
+        # une basmala commence par son premier mot : un verset qui s'ouvre sur « الله » n'attend pas
+        opens = word_similarity(texts[0], basmala[0], cfg.word_threshold) > 0
+        possible = opens and matched >= 1 and position >= count - 1 and count <= len(basmala)
         passage.basmala_pending = possible
         if not possible:
             passage.basmala_checked = True

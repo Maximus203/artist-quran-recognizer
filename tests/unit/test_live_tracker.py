@@ -419,6 +419,15 @@ def test_la_basmala_n_est_jamais_prise_pour_la_fin_d_un_verset(index: PrefixInde
     assert not of_type(events, Candidates)  # rien n'est proposé pendant qu'une basmala se dit
 
 
+def test_un_verset_qui_s_ouvre_comme_le_milieu_de_la_basmala_n_attend_pas(
+    index: PrefixIndex,
+) -> None:
+    tracker = new_tracker(index)
+    events = flat(feed(tracker, Clock().say("bs2 y3")))
+    assert [lock.ref for lock in of_type(events, Locked)] == [ref("114:4")]
+    assert not of_type(events, BasmalaHeard)
+
+
 def test_une_basmala_incomplete_suivie_d_un_verset_est_retrouvee(index: PrefixIndex) -> None:
     tracker = new_tracker(index)
     events = flat(feed(tracker, Clock().say("bs1 bs2 bs3 pa qa ra")))  # « bs4 » avalé
