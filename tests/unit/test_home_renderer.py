@@ -168,3 +168,15 @@ def test_srt_ne_presente_jamais_un_verset_incertain_ou_deduit_comme_reconnu(corp
     assert "[incertain : 55:13 | 55:16]" in srt
     assert corpus.text(VerseRef(55, 13)) not in srt  # aucun texte pour un verset incertain
     assert corpus.text(VerseRef(67, 4)) in srt and "[" not in srt.split("\n\n")[0]
+
+
+def test_passage_text_is_the_exact_mushaf_substring_without_a_detection(
+    renderer: HomeRenderer, corpus: TanzilCorpusRepository
+) -> None:
+    ref = VerseRef(112, 1)
+    count = len(corpus.words(ref))
+    assert renderer.passage_text(ref, 1, count) == corpus.text(ref)
+    detection = Detection(
+        span=WordSpan(ref, 2, 3), time=TimeSpan(0, 1), status=Status.RECOGNIZED, confidence=0.9
+    )
+    assert renderer.passage_text(ref, 2, 3) == renderer.span_text(detection)

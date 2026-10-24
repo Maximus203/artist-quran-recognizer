@@ -670,8 +670,14 @@ class HypothesisTracker:
                 next_word=(
                     None if summary.best[v].complete else index.verse_at(summary.best[v].ptr)[1]
                 ),
+                first_word=index.verse_at(summary.best[v].start)[1],
             )
             for v in plausible[: cfg.max_items]
+        )
+        sources = (
+            tuple((v, index.verse_at(summary.best[v].start)[1]) for v in plausible)
+            if len(plausible) <= _SHARED_WORDS_SAMPLE
+            else ()
         )
         events.append(
             Candidates(
@@ -685,6 +691,7 @@ class HypothesisTracker:
                 leader_posterior=summary.posterior[ranked[0]],
                 shared_words=self._shared_words(summary, plausible),
                 non_quran_posterior=summary.none_posterior,
+                sources=sources,
             )
         )
 
