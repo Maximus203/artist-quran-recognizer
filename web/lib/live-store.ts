@@ -192,6 +192,11 @@ export type LiveAction =
   | { type: "resume"; nowMs: number }
   | { type: "stop"; nowMs: number }
   | { type: "cancel" }
+  | {
+      type: "finish";
+      nowMs: number;
+      error?: { key: LiveErrorKey; message: string };
+    }
   | { type: "audio"; nowMs: number; capturedS: number; level: number }
   | { type: "tick"; nowMs: number }
   | { type: "visibility"; nowMs: number; hidden: boolean }
@@ -274,6 +279,27 @@ export function reduce(state: LiveState, action: LiveAction): LiveState {
         errorMessage: action.message ?? null,
         retryAfterS: action.retryAfterS ?? null,
       };
+    case "finish": {
+      // Fin décidée côté client (coupure trop longue, `FINAL` jamais arrivé) : elle se dit, et rien
+      // de ce qui avait été entendu n'est perdu.
+      const closed = closeLock(state, state.lock?.startT ?? 0);
+      return {
+        ...closed,
+        phase: "ended",
+        nowMs: action.nowMs,
+        endAtS: closed.endAtS ?? closed.capturedS,
+        level: 0,
+        link: "ok",
+        linkLostAtMs: null,
+        streamError: action.error
+          ? {
+              code: action.error.key,
+              message: action.error.message,
+              key: action.error.key,
+            }
+          : closed.streamError,
+      };
+    }
     case "tick":
       return action.nowMs === state.nowMs
         ? state
