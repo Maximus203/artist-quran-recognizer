@@ -164,3 +164,16 @@ def test_the_default_key_file_sits_next_to_the_review_data() -> None:
 def test_claims_are_a_plain_value() -> None:
     claims = LiveClaims(subject="1", token_id="t", expires_at=1.0)
     assert claims.technical is False
+
+
+def test_the_tokens_of_the_atelier_and_of_the_service_agree() -> None:
+    """Vecteurs communs avec `web/lib/live-token.test.ts` : TypeScript signe, Python vérifie."""
+    path = Path(__file__).resolve().parents[1] / "fixtures" / "live" / "token-vectors.json"
+    vectors = json.loads(path.read_text(encoding="utf-8"))
+    verifier = HmacTokenCodec(vectors["key"])
+    now = vectors["now_ms"] / 1000
+    for name in ("ts_token", "python_token"):
+        claims = verifier.verify(vectors[name], now=now + 1)
+        assert claims.subject == vectors["subject"], name
+        assert claims.expires_at == now + vectors["ttl_s"], name
+    assert verifier.verify(vectors["ts_token"], now=now).token_id == vectors["jti"]
