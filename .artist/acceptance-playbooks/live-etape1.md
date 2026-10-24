@@ -19,7 +19,8 @@ Niveaux : U = unitaire (pur, corpus jouet), I = intégration (corpus réel), M =
 | P9 | U | Rejeu : arrivée des mots par blocs de 1,12 s, axe du temps restauré (13/14) | arrivées et temps attendus | `test_live_simulation.py` |
 | P10 | U | Mesures : latence depuis le début du verset, liste courte, faux verrous, sauts, zones | valeurs exactes sur scénarios jouets | `test_live_simulation.py` |
 | P11 | I | Corpus réel | 77 433 mots, 289 versets sans préfixe unique, 113 départs après basmala | `test_live_corpus_flow.py` |
-| P12 | M | Montages EveryAyah (3 récitants) et mixages `make_mix`, vérité calculée | **0 faux verrou** (cible I3). **Résultat 2026-10-23 : 1 sur 376, NON ATTEINT**, dit dans le rapport ; ne passe pas tant que le mainteneur n'a pas tranché le garde-fou | rapport, `scripts/measure_live_sim.py` |
+| P12 | M | Montages EveryAyah (3 récitants) et mixages `make_mix`, vérité calculée | **0 faux verrou** (cible I3). **Résultat 2026-10-23, densité 0,9 : 0 sur 322 verrous, 0 `REVISION` ✅** (1 sur 376 sans densité, voir le JSON `densite-0`) | rapport, `scripts/measure_live_sim.py` |
+| P16 | U | Densité de départ 0,9 : 3 mots du verset sur 5 entendus, ou 3 sur 4 | pas de verrou ; sans la densité (0), verrou | `test_live_tracker.py`, `test_live_config.py` |
 | P14 | U | La suite attendue entendue sans son premier mot (avalé par l'ASR) | pas de `Jump` | `test_live_tracker.py::test_un_premier_mot_avale…` |
 | P15 | U | Sauts hors attente après un verset non nommé | comptés à part (`jumps_after_gap`) | `test_live_simulation.py` |
 | P13 | M | Cibles de latence proposées avec leurs chiffres | tableau du rapport | rapport |
@@ -37,4 +38,4 @@ Niveaux : U = unitaire (pur, corpus jouet), I = intégration (corpus réel), M =
 | F7 | U | Mots peu sûrs / seulement proches avec les garde-fous activés | pas de verrou | `test_live_tracker.py` |
 | F8 | U | Mots hors ordre, configuration invalide, lot hors split `dev` | `ValueError` / refus | `test_live_tracker.py`, `test_live_config.py`, `test_measure_live_sim.py` |
 | F10 | U | Mots du verset épars dans de la parole, `min_lock_density` 0,8 | pas de verrou ; récitation dense : verrou | `test_live_tracker.py` |
-| F9 | M | Parole non coranique réelle (lots `dev`) | verrous recensés un à un avec leur preuve ; aucun présenté comme vérité. **Résultat : 8 verrous non confirmés, dits dans le rapport** | rapport |
+| F9 | M | Parole non coranique réelle (lots `dev`) | verrous recensés un à un avec leur preuve ; aucun présenté comme vérité. **Résultat, densité 0,9 : 0 verrou sur 3 600 s de parole ✅** (8 non confirmés sans densité) ; **3 verrous hors référence sur les récitations réelles, dont 42:14 suspect** : pas de verdict sans vérité terrain humaine | rapport |

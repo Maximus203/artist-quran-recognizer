@@ -281,7 +281,7 @@ def test_une_recitation_dense_verrouille_meme_avec_la_densite_exigee(index: Pref
 def test_un_mot_mal_entendu_sur_quatre_ne_verrouille_pas_au_reglage_de_depart(
     index: PrefixIndex,
 ) -> None:
-    # le prix assumé de la densité 0,9 : 3 mots sur 4 ne suffisent pas, on attend (I3 avant le rappel)
+    # prix assumé de la densité 0,9 : 3 mots sur 4 ne suffisent pas, on attend (I3 avant le rappel)
     events = flat(feed(new_tracker(index), Clock().say("nn oo x9999999 qq")))
     assert not of_type(events, Locked)
 
