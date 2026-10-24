@@ -141,10 +141,13 @@ src/aqr/
 ├── decoding/      # B7 (pur)
 ├── live/          # détection en direct (ADR-0011) : PrefixIndex, HypothesisTracker, LiveConfig, banc de
 │                  #   simulation, LivePipeline (blocs -> ASR incrémental -> suivi), LiveBudget (paliers,
-│                  #   mode dégradé), horloges et rejeu (pur : l'ASR arrive par le port StreamingAsr)
+│                  #   mode dégradé), horloges et rejeu (pur : l'ASR arrive par le port StreamingAsr) ;
+│                  #   service : LiveHub (jetons, quotas, reprise), LiveStream (un flux), LivePresenter
+│                  #   (événements -> messages aqr.live/1), protocole, journal sans donnée sensible
 ├── adapters/      # ffmpeg, modèles HF/NeMo, QuranEnc… (dépendances lourdes, extras optionnels) ;
-│                  #   muno_incremental = ASR en flux, caches du modèle gardés d'un bloc à l'autre
-├── app/           # cas d'usage : recognize(), render()
+│                  #   muno_incremental = ASR en flux, caches du modèle gardés d'un bloc à l'autre ;
+│                  #   ws/ = transport WebSocket du direct (extra [live]) : serveur, jeton HMAC, client de référence
+├── app/           # cas d'usage : recognize(), render() ; live_service = racine d'assemblage de `aqr live-serve`
 └── cli.py
 tests/
 ├── unit/          # pur, rapide, lancé à chaque commit
@@ -179,6 +182,7 @@ complément (métriques Words F1, Repeats F1).
   conception dans `docs/adr/0011-detection-en-direct-sans-plage.md` (accepté) ; remplace l'ancienne idée
   « B2–B7 en fenêtres glissantes ». Étapes 1 (simulation hors ligne) et 2 (moteur incrémental : port
   `StreamingAsr`, adaptateur `muno_incremental`, `LivePipeline`, budget et mode dégradé) livrées ;
-  service WebSocket (étape 3) et écran « En direct » (étape 4) à faire. Le flux de données d'un flux
+  service WebSocket (étape 3, `aqr live-serve`, contrat `docs/LIVE-PROTOCOL.md`) livré ; écran « En direct »
+  (étape 4) à faire. Le flux de données d'un flux
   en direct : `blocs PCM -> StreamingAsr (mots stabilisés + texte provisoire) -> normalisation ->
   HypothesisTracker -> événements`, le retard de chaque bloc décidant des paliers du budget.

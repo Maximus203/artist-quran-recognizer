@@ -1498,3 +1498,23 @@
 - **Patterns** : Adapter + port (`StreamingAsr`, `MunoIncrementalASR`), Strategy (horloges `ManualClock`/`SimulatedClock`/`WallClock`), State (`LiveBudget`, hystérésis), Observer (événements), Template Method simple du banc.
 - **Preuve** : `.artist/acceptance-playbooks/live-etape2.md`, tests `tests/unit/test_muno_incremental.py`, `test_live_budget.py`, `test_live_pipeline.py`, `test_live_drive.py`, `test_live_tracker_hardening.py`, `tests/contract/test_streaming_asr_contract.py` et `test_muno_incremental_parity.py` (vrai modèle), `tests/test_measure_live_engine.py`.
 
+## 2026-10-24 — Détection en direct, étape 3 (service WebSocket)
+- **Bibliothèque** : `websockets` (asyncio), extra `[live]`. Python pur, mêmes comportements sous Windows et Linux, contrôle
+  des trames, ping/pong, taille maximale, fermeture propre ; `aiohttp` ou un serveur ASGI n'apportaient que du code de plus.
+- **Architecture** : adaptateur `adapters/ws` (transport) -> `LiveHub` (jetons, quotas, reprise, sans E/S) -> `LiveStream`
+  (audio validé, numérotation, anneau borné) -> `LivePipeline`. Patterns : Adapter (transport, jeton HMAC derrière le port
+  `SessionTokenVerifier`), Factory (`make_stream_factory`), Observer (`LivePresenter` traduit les événements du domaine en
+  messages), Strategy (politique d'accès `AccessPolicy`), Memento (anneau de messages pour la reprise), State (cycle de vie d'une
+  session : attachée, détachée, expirée). Racine d'assemblage unique : `app/live_service.py`.
+- **Jeton** : HMAC-SHA256, 60 s, usage unique, lié au compte, dans `START` (jamais dans l'adresse) ; clé de `AQR_LIVE_KEY` ou
+  d'un fichier local créé au premier démarrage (`*.key` ignoré par Git). Vecteurs communs Python / TypeScript.
+- **Décisions du coordinateur appliquées** : `GAP` dérivé côté client (le service émet `JUMP`), `PROGRESS`, clôture d'un passage
+  non nommé, `DEGRADED`, `FINALIZING`, `heard.translation`, `resume_ttl_s` ; `settle_s` 1,5 s ; mode technique ouvert à tous ;
+  `server_busy` dès la première version.
+- **Choix pris seul** : `max_streams` = 16 (mesuré : 24 flux sous 1 s, 32 à 1,1 s ; prudence, une machine, voix propre) ; une
+  fermeture propre du client (1000) termine le flux, une coupure brutale le laisse reprenable ; le résultat d'une session expirée
+  est rendu une fois à la reprise tardive (120 s, mémoire seulement) ; `/health` répond aux hôtes autorisés.
+- **Preuve** : `.artist/acceptance-playbooks/live-etape3.md`, `docs/evaluation/live-etape3-2026-10-24.md`, tests
+  `tests/unit/test_live_{tokens,access,protocol,presenter,stream,hub,journal,progress}.py`, `test_cli_live_serve.py`,
+  `tests/integration/test_live_service.py` et `test_live_service_real.py` (vrai modèle), `web/lib/live-*.test.ts`.
+

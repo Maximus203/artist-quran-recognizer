@@ -49,6 +49,8 @@ ne font que l'afficher.
 
 ## 4. Les routes API
 
+`POST /api/live/token` (détection en direct, étape 3 de l'ADR-0011) : émet un jeton de session court, signé et à usage unique pour le service WebSocket `aqr live-serve`, après authentification par le cookie de session (`lib/live-session.ts`, `lib/live-token.ts`). L'atelier ne gère pas les WebSocket dans ses routes : le service Python est un autre processus ; le contrat est `docs/LIVE-PROTOCOL.md`.
+
 | Route | Rôle |
 |---|---|
 | `GET /api/sessions` · `POST /api/sessions` | Liste (les plus récentes d'abord) · import d'un fichier (envoi en flux recommandé ; `?autorun=1` met l'analyse en file). |
@@ -341,6 +343,7 @@ et surligne en lecture le mot arabe récité et le segment de traduction qui le 
 | `AQR_USER_QUOTA_BYTES` | quota de stockage par compte (`0` = illimité) | 5 Gio |
 | `AQR_DB_PATH`, `AQR_SIGNUP`, `AQR_SIGNUP_CODE`, `AQR_TRUST_PROXY`, `AQR_TIMEZONE`, `AQR_REPO_URL` | base, inscription, proxy, fuseau des noms, dépôt des liens de notes de version | voir `web/README.md` |
 | `AQR_ALLOWED_HOSTS`, `AQR_ACCESS_TOKEN`, `AQR_ACCESS_TTL_S` | mode test distant | vides, 3 600 s |
+| `AQR_LIVE_URL`, `AQR_LIVE_TOKEN_TTL_S`, `AQR_LIVE_KEY`, `AQR_LIVE_KEY_FILE` | détection en direct : adresse WebSocket donnée au navigateur, durée du jeton, clé de signature partagée avec `aqr live-serve` | `ws://127.0.0.1:8765/live`, 60 s, fichier `live-signing.key` dans `AQR_REVIEW_DIR` |
 | `AQR_SESSION_TTL_S` | purge des sessions inactives | 0 (désactivée) |
 
 ## 13. Comptes, partage et préférences (phase 2) — livré

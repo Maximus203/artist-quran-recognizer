@@ -232,6 +232,20 @@ def test_the_whole_service_has_a_stream_limit_and_a_freed_place_is_reusable() ->
         assert d.recv()["type"] == "READY"  # type: ignore[index]
 
 
+def test_a_clean_close_without_end_frees_the_place_but_a_cut_keeps_it() -> None:
+    with ServiceHarness(max_streams_per_account=1) as harness:
+        polite = started(harness, "1")
+        polite.close()  # fermeture propre (1000) : le flux est fini
+        deadline = time.time() + 3
+        while harness.hub.active_count and time.time() < deadline:
+            time.sleep(0.05)
+        assert harness.hub.active_count == 0
+        cut = started(harness, "1")
+        cut.drop()  # coupure brutale : la session attend une reprise et garde sa place
+        time.sleep(0.3)
+        assert harness.hub.active_count == 1
+
+
 def test_too_many_unauthenticated_connections_are_turned_away() -> None:
     with ServiceHarness(max_unauthenticated=2, start_timeout_s=3.0) as harness:
         silent = [connect(harness), connect(harness)]

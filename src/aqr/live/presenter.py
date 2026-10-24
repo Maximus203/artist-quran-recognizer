@@ -53,6 +53,10 @@ def _round(value: float) -> float:
     return round(value, 4)
 
 
+def _t(seconds: float) -> float:
+    return round(seconds, 3)
+
+
 class LivePresenter:
     def __init__(
         self, content: LiveContent, translation_id: str | None, *, technical: bool = False
@@ -98,7 +102,11 @@ class LivePresenter:
                 Presented(
                     "PARTIAL",
                     event.t,
-                    {"span": [event.start_s, event.end_s], "text": event.text, "stable": False},
+                    {
+                        "span": [_t(event.start_s), _t(event.end_s)],
+                        "text": event.text,
+                        "stable": False,
+                    },
                 )
             ]
         return [self._degraded(event)]
@@ -135,7 +143,7 @@ class LivePresenter:
                 heard["translation"] = translation
         body: dict[str, Any] = {
             "state": "ambiguous",
-            "span": [event.start_s, event.end_s],
+            "span": [_t(event.start_s), _t(event.end_s)],
             "words_heard": event.words_heard,
             "count": event.count,
             "heard": heard,
@@ -182,7 +190,7 @@ class LivePresenter:
                 "ref": str(event.ref),
                 "words_heard": event.words_heard,
                 "words": [content.corpus_rank(event.ref, first), rank],
-                "word": {"index": rank, "t": [event.word_start_s, event.word_end_s]},
+                "word": {"index": rank, "t": [_t(event.word_start_s), _t(event.word_end_s)]},
             },
         )
 

@@ -80,8 +80,21 @@ def read_pcm(path: Path) -> bytes:
         return wav.readframes(wav.getnframes())
 
 
+def child_pids(pid: int) -> list[int]:
+    """Processus fils directs (sous Windows, le lanceur du venv relance l'interpréteur réel)."""
+    if os.name != "nt":
+        return []
+    command = f"(Get-CimInstance Win32_Process -Filter 'ParentProcessId={pid}').ProcessId"
+    done = subprocess.run(
+        ["powershell", "-NoProfile", "-Command", command],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return [int(x) for x in done.stdout.split() if x.isdigit()]
+
+
 def memory_mb(pid: int) -> float | None:
-    """Mémoire résidente d'un processus, en Mio (None si introuvable)."""
     if os.name == "nt":
 
         class Counters(ctypes.Structure):
@@ -289,10 +302,15 @@ class RealService:
         else:
             raise RuntimeError("le service ne répond pas")
         self.startup_s = time.perf_counter() - self.started_at
+        children = child_pids(self.proc.pid)
+        self.worker_pid = children[0] if children else self.proc.pid
 
     @property
     def url(self) -> str:
         return f"ws://127.0.0.1:{self.port}/live"
+
+    def memory_mb(self) -> float | None:
+        return memory_mb(self.worker_pid)
 
     def stats(self) -> list[dict[str, Any]]:
         """Les lignes `session.stats` du journal, en nombres."""
@@ -349,7 +367,7 @@ def cmd_latency(args: argparse.Namespace) -> dict[str, Any]:
     codec = HmacTokenCodec(KEY)
     results: list[dict[str, Any]] = []
     try:
-        idle_mb = memory_mb(service.proc.pid)
+        idle_mb = service.memory_mb()
         for translation in ("french_hameedullah", None):
             for audio in args.audio:
                 pcm = read_pcm(Path(audio))
@@ -385,7 +403,7 @@ def cmd_latency(args: argparse.Namespace) -> dict[str, Any]:
                         "connect_to_ready_ms": round(run.connect_s * 1000, 1),
                     }
                 )
-        busy_mb = memory_mb(service.proc.pid)
+        busy_mb = service.memory_mb()
         stats = service.stats()
     finally:
         service.stop()
@@ -428,7 +446,7 @@ def run_point(
 
     def watch() -> None:
         while any(t.is_alive() for t in threads):
-            peak[0] = max(peak[0], memory_mb(service.proc.pid) or 0.0)
+            peak[0] = max(peak[0], service.memory_mb() or 0.0)
             time.sleep(1.0)
 
     watcher = threading.Thread(target=watch, daemon=True)
@@ -468,7 +486,7 @@ def cmd_capacity(args: argparse.Namespace) -> dict[str, Any]:
     service = RealService(work, free_port(), threads=args.threads)
     points: list[dict[str, Any]] = []
     try:
-        idle_mb = memory_mb(service.proc.pid)
+        idle_mb = service.memory_mb()
         for count in [int(x) for x in args.streams.split(",")]:
             points.append(run_point(service, clips, codec, count, args.seconds))
             print(json.dumps(points[-1], ensure_ascii=False), flush=True)
