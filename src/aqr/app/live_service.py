@@ -271,9 +271,21 @@ def run(
             file=err,
         )
         return 2
+    from aqr.adapters.ws.hmac_tokens import resolve_key
     from aqr.corpus.checksums import CorpusChecksumError
 
     try:
+        resolve_key(
+            env
+        )  # une clé inutilisable se dit tout de suite, pas après le chargement du modèle
+        if config.host not in ("127.0.0.1", "localhost", "::1"):
+            journal.warning("service.non_loopback", host=config.host)
+            print(
+                f"ATTENTION le service écoute sur {config.host}, pas seulement sur la machine "
+                "locale : les hôtes restent limités par AQR_ALLOWED_HOSTS ; exposez-le derrière "
+                "un proxy de confiance.",
+                file=err,
+            )
         started = time.perf_counter()
         engine = load_engine(options, env)
         print(f"Moteur chargé en {time.perf_counter() - started:.1f} s.", file=out, flush=True)

@@ -101,6 +101,10 @@ class LiveStream:
     def ended(self) -> bool:
         return self._ended
 
+    @property
+    def technical(self) -> bool:
+        return self._presenter.technical
+
     def degradation(self) -> tuple[str, ...]:
         return self.pipeline.degradation
 
@@ -169,10 +173,11 @@ class LiveStream:
 
     def messages_after(self, last_seq: int) -> list[dict[str, Any]] | None:
         """Les messages de numéro > `last_seq`, pour la reprise. None si le client annonce un
-        numéro que le service n'a jamais émis, ou si l'anneau borné n'en remonte plus assez loin."""
+        numéro que le service n'a jamais émis (`bad_message` : le client se trompe), ou si l'anneau
+        borné n'en remonte plus assez loin (None)."""
         with self._lock:
             if last_seq > self._seq or last_seq < 0:
-                return None
+                raise ProtocolError("bad_message", "numéro de séquence jamais émis")
             if last_seq == self._seq:
                 return []
             oldest = self._ring[0]["seq"] if self._ring else self._seq + 1

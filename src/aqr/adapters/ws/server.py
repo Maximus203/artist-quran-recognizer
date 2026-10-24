@@ -142,7 +142,7 @@ class LiveWebSocketServer:
         self._clock = clock
         self._server: Server | None = None
         self._runners: dict[str, _Runner] = {}
-        self._tombstones: dict[str, tuple[str, float, list[dict[str, Any]]]] = {}
+        self._tombstones: dict[str, tuple[str, float, list[dict[str, Any]], bool]] = {}
         self._pool = ThreadPoolExecutor(
             max_workers=config.max_streams, thread_name_prefix="aqr-live"
         )
@@ -189,6 +189,7 @@ class LiveWebSocketServer:
         for runner in list(self._runners.values()):
             if runner.ws is not None:
                 with contextlib.suppress(Exception):
+                    await self._send_error(runner.ws, "service_stopping")
                     await runner.ws.close(CLOSE_GOING_AWAY, "arret_du_service")
             if runner.task is not None:
                 runner.task.cancel()
@@ -208,9 +209,16 @@ class LiveWebSocketServer:
         path = request.path.split("?", 1)[0]
         if self._stopping:
             return connection.respond(HTTPStatus.SERVICE_UNAVAILABLE, "Service en arrêt.\n")
-        if not self._access.allows(
-            headers.get("Host"), headers.get("Origin"), headers.get("X-Forwarded-Host")
-        ):
+        try:
+            host, origin, forwarded = (
+                headers.get("Host"),
+                headers.get("Origin"),
+                headers.get("X-Forwarded-Host"),
+            )
+        except Exception:  # un en-tête présent deux fois est ambigu (jamais accepté)
+            journal.warning("handshake.refused", reason="duplicate_header")
+            return connection.respond(HTTPStatus.BAD_REQUEST, "En-têtes en double.\n")
+        if not self._access.allows(host, origin, forwarded):
             journal.warning("handshake.refused", reason="host_or_origin")
             return connection.respond(HTTPStatus.FORBIDDEN, "Hôte ou origine refusés.\n")
         if path == HEALTH_PATH:
@@ -229,6 +237,7 @@ class LiveWebSocketServer:
     # ------------------------------------------------------------------ connexion
     async def _handle(self, ws: ServerConnection) -> None:
         if self._unauthenticated >= self._config.max_unauthenticated:
+            await self._send_error(ws, "server_busy")
             await ws.close(CLOSE_TRY_LATER, "serveur_occupe")
             return
         self._unauthenticated += 1
@@ -257,8 +266,13 @@ class LiveWebSocketServer:
         except ProtocolError as error:
             await self._refuse(ws, error)
         except ConnectionClosed:
-            if runner is not None and ws.close_code == CLOSE_NORMAL and not runner.done.is_set():
-                # fermeture propre voulue par le client : le flux est fini, la place est rendue
+            if (
+                runner is not None
+                and ws.protocol.close_rcvd_then_sent is True
+                and not runner.done.is_set()
+            ):
+                # le client a fermé (page quittée, fermeture voulue) : le flux est fini et la place
+                # rendue. Une coupure SANS trame de fermeture (réseau perdu) reste reprenable.
                 await runner.queue.put(_End())
         except asyncio.CancelledError:
             raise
@@ -297,8 +311,10 @@ class LiveWebSocketServer:
         if runner is None:
             tomb = self._tombstones.get(request.session_id)
             if tomb is not None and tomb[0] == claims.subject and tomb[1] > now:
-                # la session a expiré : on rend ce qui avait été décidé, une fois
-                await ws.send(dumps(error_message("session_expired")))
+                # le résultat d'une session expirée (ou terminée sans que le client l'ait reçu)
+                # est rendu une fois
+                if tomb[3]:
+                    await ws.send(dumps(error_message("session_expired")))
                 for message in tomb[2]:
                     await ws.send(dumps(message))
                 del self._tombstones[request.session_id]
@@ -340,6 +356,7 @@ class LiveWebSocketServer:
             audio_received_s=round(stream.audio_received_s, 3),
             audio_received_samples=stream.audio_received_samples,
             degraded=list(stream.degradation()),
+            technical=stream.technical,
             resume_ttl_s=config.resume_ttl_s,
             limits={
                 "max_block_bytes": config.max_block_bytes,
@@ -480,6 +497,9 @@ class LiveWebSocketServer:
         if error is not None:
             await self._send_error(runner.ws, error)
         await self._send_new(runner, messages)
+        # le client a pu partir (réseau perdu) avant d'avoir reçu son résultat, sans que le service
+        # le sache encore : le résultat reste disponible pour une reprise (mémoire, `final_keep_s`)
+        self._remember(runner.session, messages, self._clock(), expired=False)
         self._hub.finish(runner.session)
         self._log_stats(runner, error or "end")
         self._release(runner)
@@ -506,17 +526,25 @@ class LiveWebSocketServer:
         self._runners.pop(runner.session.id, None)
 
     async def _close(self, runner: _Runner, code: int, reason: str) -> None:
+        """Ferme en continuant de LIRE : fermer un socket qui a encore des données non lues les
+        détruit (réinitialisation TCP) et le client perdrait l'erreur et le résultat."""
         ws = runner.ws
-        if ws is not None:
+        if ws is None:
+            return
+        drain = asyncio.create_task(_discard(ws))
+        try:
             with contextlib.suppress(Exception):
                 await ws.close(code, reason[:100])
+        finally:
+            drain.cancel()
 
-    async def _send_new(self, runner: _Runner, messages: list[dict[str, Any]]) -> None:
-        """Envoie sur la connexion actuelle ce qu'elle n'a pas déjà reçu (jamais deux fois)."""
+    async def _send_new(self, runner: _Runner, messages: list[dict[str, Any]]) -> bool:
+        """Envoie sur la connexion actuelle ce qu'elle n'a pas déjà reçu (jamais deux fois).
+        Rend False si la connexion n'a pas reçu tout."""
         async with runner.send_lock:
             ws = runner.ws
             if ws is None:
-                return
+                return not messages
             try:
                 for message in messages:
                     if message["seq"] > runner.sent_seq:
@@ -525,6 +553,8 @@ class LiveWebSocketServer:
             except ConnectionClosed:
                 runner.ws = None
                 self._hub.detach(runner.session, self._clock())
+                return False
+            return True
 
     # ------------------------------------------------------------------ erreurs
     async def _send_error(self, ws: ServerConnection | None, code: str) -> None:
@@ -555,7 +585,14 @@ class LiveWebSocketServer:
                     await runner.queue.put(_Expire())  # après l'audio déjà reçu, dans l'ordre
             self._tombstones = {k: v for k, v in self._tombstones.items() if v[1] > now}
 
-    def _remember(self, session: LiveSession, messages: list[dict[str, Any]], now: float) -> None:
+    def _remember(
+        self,
+        session: LiveSession,
+        messages: list[dict[str, Any]],
+        now: float,
+        *,
+        expired: bool = True,
+    ) -> None:
         finals = [m for m in messages if m["type"] == "FINAL"]
         if finals:
             if len(self._tombstones) >= _TOMBSTONES_MAX:
@@ -564,10 +601,18 @@ class LiveWebSocketServer:
                 session.subject,
                 now + self._config.final_keep_s,
                 finals,
+                expired,
             )
             journal.info(
                 "session.final_kept", session=session.id, account=pseudonym(session.subject)
             )
+
+
+async def _discard(ws: ServerConnection) -> None:
+    """Lit et jette ce que le client envoie encore pendant la fermeture."""
+    with contextlib.suppress(Exception):
+        while True:
+            await ws.recv()
 
 
 def _push(stream: Any, pcm: bytes, received_at_s: float) -> list[dict[str, Any]]:

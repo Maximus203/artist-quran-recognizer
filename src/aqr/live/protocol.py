@@ -113,6 +113,11 @@ ERROR_CODES: Final[dict[str, ErrorSpec]] = {
         "plus. Rien n'est perdu côté application ; réessayez dans quelques instants.",
         recoverable=True,
     ),
+    "service_stopping": ErrorSpec(
+        "Le service d'écoute s'arrête (maintenance ou redémarrage). Votre écoute est interrompue "
+        "et ne peut pas être reprise après le redémarrage ; relancez-la dans quelques instants.",
+        recoverable=True,
+    ),
     "internal": ErrorSpec(
         "Le service d'écoute a rencontré un problème inattendu. L'incident est consigné dans son "
         "journal ; relancez l'écoute, et signalez-le s'il se reproduit.",

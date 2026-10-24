@@ -397,7 +397,7 @@ client et de l'audio EveryAyah `dev` :
   deux messages sur 142 au-dessus de 100 ms (borne haute, différence de deux passages bruités) ;
 - **flux tenus** : au moins 24 sous 1 s de retard, 32 à 1,1 s, 48 à 1,9 s, aucun dégradé ; `max_streams` = 16 par prudence ;
   démarrage 7 à 9 s, mémoire 719 Mio au repos et environ 30 Mio par flux ;
-- aucun audio conservé (ni disque, ni journal) ; journal en nombres seulement ; reprise sans trou ni doublon ; 43 cas
+- aucun audio conservé (ni disque, ni journal) ; journal en nombres seulement ; reprise sans trou ni doublon ; plus de 50 cas
   d'intégration dont tous les cas négatifs demandés.
 
 Décisions prises en route (additives sauf mention) : `PROGRESS`, `DEGRADED`, `FINALIZING`, clôture d'un passage non nommé

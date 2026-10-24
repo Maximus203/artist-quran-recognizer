@@ -29,6 +29,9 @@ Les exemples ci-dessous sont des sorties réelles du service (traduction factice
   service ne contient que des événements et des nombres (jamais jeton, audio, texte coranique ni traduction ; un compte y
   est un pseudonyme de 8 caractères). `FINAL.document.source.sha256` est l'empreinte du flux PCM reçu, calculée au fil de
   l'eau : ce n'est pas de l'audio.
+- Les jetons déjà utilisés sont retenus **en mémoire** : un redémarrage du service les oublie (un jeton déjà consommé reste
+  rejouable jusqu'à son expiration, 60 s au plus). Une connexion qui n'a pas encore présenté de jeton occupe une place
+  limitée (`max_unauthenticated`) pendant `start_timeout_s` au plus ; au-delà, elle reçoit `server_busy` puis la fermeture 1013.
 
 ## 2. Déroulé d'un flux
 ```
@@ -67,11 +70,12 @@ partir de 1 pour les événements ; `READY` et `ERROR` portent `seq` 0 (hors flu
 **`READY`** — accepte `START`.
 ```json
 {"schema":"aqr.live/1","type":"READY","seq":0,"session_id":"c0ZxUo2m3VnJ8pQ0yH4d1A","resumed":false,"last_seq":0,
- "replay_from":null,"audio_received_s":0.0,"audio_received_samples":0,"degraded":[],"resume_ttl_s":30.0,
+ "replay_from":null,"audio_received_s":0.0,"audio_received_samples":0,"degraded":[],"technical":false,"resume_ttl_s":30.0,
  "limits":{"max_block_bytes":32000,"max_stream_s":3600.0,"max_silence_s":120.0,"idle_timeout_s":30.0,
  "resume_ttl_s":30.0,"recommended_block_ms":[20,100]}}
 ```
-`degraded` : ce qui ne tourne pas en ce moment (`"overload"`, paliers sautés), utile à une reprise.
+`degraded` : ce qui ne tourne pas en ce moment (`"overload"`, paliers sautés), utile à une reprise ; `technical` : le mode
+technique est réellement actif (il faut le droit dans le jeton **et** la demande dans `START`, sinon `false`).
 
 **`PARTIAL`** — transcription **provisoire** de l'ASR, **mode technique seulement**, jamais le « passage entendu » (I1) :
 `{"type":"PARTIAL","seq":1,"t":0.4,"span":[0.2,0.4],"text":"ق","stable":false}` (seul texte non issu du corpus).
@@ -86,7 +90,9 @@ partir de 1 pour les événements ; `READY` et `ERROR` portent `seq` 0 (hors flu
 - `heard` : les `L` premiers mots entendus que **tous** les candidats expliquent. `heard.text` (texte du corpus) n'est présent que
   si la graphie est identique dans chaque candidat comparé ; `heard.translation` (`text`, `translation_id`, `version`,
   `attribution`, `scope:"verse"`, QuranEnc intacte) seulement si la traduction du verset est identique pour tous (au plus 40
-  versets comparés). `heard` vaut `null` si aucun mot n'est commun. Un candidat non nommé n'a jamais de texte (I3).
+  versets comparés), et **seulement s'il y a au moins deux candidats** : un candidat seul qui n'a pas passé le verrou n'est pas
+  nommé (I3), ni par son texte ni par la traduction de son verset entier. `heard` vaut `null` si aucun mot n'est commun. Un
+  candidat non nommé n'a jamais de texte.
 - `items` : au plus 5 candidats ; `count` est le total ; `class` ∈ `start|continue|repeat|local|far` ; `next_word` est le mot
   qui départagera (graphie du corpus), `null` si le verset est entièrement dit. Les rangs de mots (`index`) sont ceux du
   **corpus** (basmala du verset 1 comprise), comme dans `aqr.recognition/1`.
@@ -103,7 +109,9 @@ partir de 1 pour les événements ; `READY` et `ERROR` portent `seq` 0 (hors flu
 `t` se termine par `null` tant que le verset n'est pas clos. `status` : `recognized` (`identity_basis:"words"`, les mots
 départagent) ou `inferred` (`identity_basis:"context"`, le texte a été entendu, la référence est déduite de la position :
 **ne jamais l'afficher comme « reconnu »**). `words` : de l'entrée dans le verset jusqu'à son dernier mot ; `partial` est
-vrai si le passage ne commence pas au mot 1 (ou si le verset n'est pas couvert), exactement comme le lot. Si la traduction
+est vrai si le passage ne commence pas au mot 1 (ou si le verset n'est pas couvert), exactement comme le lot. La
+`translation` porte `segments` (et `fragment` si `partial`) quand le découpage de QuranEnc est fiable, comme dans
+`docs/RECOGNIZE-OUTPUT.md`. Si la traduction
 est indisponible, `translation` vaut `null` et `translation_unavailable` vaut `true` : un verrou n'attend jamais le réseau.
 
 **`PROGRESS`** — un mot de plus du verset verrouillé a été entendu (surlignage mot à mot), un par mot stable
@@ -119,7 +127,9 @@ est indisponible, `translation` vaut `null` et `translation_unavailable` vaut `t
 ```
 **Passage clos sans nom** (état normal, environ un verset sur trois) : `CONTINUE` avec
 `closed.status:"uncertain"`, `closed.candidates` (références seulement), `text:null`, `translation:null`, `complete:false`,
-`expected:null`, et `closed.candidate_count`. Il n'est jamais nommé (I3).
+`expected:null`, et `closed.candidate_count`. Il n'est jamais nommé (I3) : comme dans `aqr.recognition/1`, le `ref` d'un
+intervalle `uncertain` n'est **pas un nom** (c'est le premier candidat), il ne doit jamais être affiché comme tel ; l'écran
+lit `candidates` (au plus 20, le total est `candidate_count`).
 
 **`REVISION`** — un verrou déjà émis est retiré (jamais caché) :
 `{"type":"REVISION","seq":20,"t":9.1,"ref":"112:1","status":"retracted","reason":"contradicted"}`.
@@ -131,7 +141,8 @@ dérive quand un `JUMP` suit un passage clos `uncertain` ou un `LOST` (on ne sai
 **`LOST`** — le fil est perdu : `{"type":"LOST","t":15.0,"reason":"silence|non_quran|no_candidate"}` ; l'état revient à
 « début de passage ». Aucune parole non coranique ne produit de verrou (I4).
 
-**`BASMALA`** — une basmala en tête de passage (début de sourate, ni verset ni identifiant) :
+**`BASMALA`** — une basmala en tête de passage (début de sourate, pas un verset reconnu : son `ref` 1:1 est celui du texte du
+corpus, comme la zone `non_quran` de la sortie par lots) :
 `{"type":"BASMALA","t":2.0,"basmala":true,"ref":"1:1","text":"…","translation":{…}}` (texte et traduction du corpus).
 
 **`DEGRADED`** — le calcul ne suit plus (ou suit de nouveau) ; jamais un retard en silence :
@@ -168,10 +179,12 @@ texte), pas de zones non coraniques ni de vérification acoustique ; `warnings` 
 | `server_busy` | toutes les places prises, ou calcul dépassé plus de `stall_timeout_s` (`retry_after_s`) | oui |
 | `session_expired` | reprise d'une session inconnue, terminée, expirée **ou d'un autre compte** (même réponse) | oui |
 | `replay_unavailable` | l'anneau borné ne remonte plus assez loin | oui |
+| `service_stopping` | le service s'arrête (envoyé avant la fermeture 1001) ; la session ne survit pas au redémarrage | oui |
 | `internal` | erreur inattendue, consignée dans le journal | oui |
 
 Après une erreur de flux (`bad_audio_block`, `stream_too_long`, `silence_too_long`, `server_busy`) le service envoie quand même
-`FINALIZING` et `FINAL` (ce qui a été décidé n'est pas perdu), puis ferme. Codes de fermeture WebSocket : `1000` normal,
+`FINALIZING` et `FINAL` (ce qui a été décidé n'est pas perdu), puis ferme en continuant de lire ce que le client envoie encore
+(sinon la réinitialisation TCP détruirait l'erreur et le résultat). Codes de fermeture WebSocket : `1000` normal,
 `1001` arrêt du service, `1008` refus, `1009` message trop gros (bibliothèque), `1011` interne, `1013` réessayer plus tard.
 
 ## 5. Contre-pression, gigue, budget
@@ -181,14 +194,19 @@ l'émetteur, le tampon d'envoi du navigateur grossit) ; resté dépassé plus de
 (`server_busy`) plutôt que de prendre un retard sans fin. Un retard qui grandit est dit (`DEGRADED`), jamais caché.
 
 ## 6. Reprise après coupure
-Le service garde l'état d'une session `resume_ttl_s` (30 s) après la coupure et continue de traiter l'audio déjà reçu. Les
+**Seule une coupure SANS trame de fermeture (réseau perdu, processus tué) est reprenable.** Une trame de fermeture envoyée par
+le client (page quittée, `ws.close()`, quel que soit le code) termine le flux et rend sa place : relancer est alors une
+nouvelle écoute. Le service garde l'état d'une session `resume_ttl_s` (30 s) après la coupure et continue de traiter l'audio déjà reçu. Les
 messages sont gardés dans un **anneau borné** (`ring_messages`, 500), **jamais de l'audio**. Pour reprendre, le client ouvre une
 nouvelle connexion avec un **nouveau** jeton et `START.resume = {session_id, last_seq}` (le dernier `seq` reçu). Le service :
 vérifie que la session est au même compte ; répond `READY{resumed:true, last_seq, replay_from, audio_received_samples}` ; rejoue
 les messages de `seq` > `last_seq` dans l'ordre, sans doublon ; la connexion précédente éventuelle est fermée (1008). Le client
 **renvoie l'audio à partir de `audio_received_samples`** (garder un tampon de coupure côté client). Si l'anneau ne remonte pas
 jusqu'à `last_seq` : `replay_unavailable`. Passé le délai, la session est close ; une reprise tardive reçoit `session_expired`
-suivi de son `FINAL` (une seule fois, `final_keep_s` = 120 s en mémoire du service).
+suivi de son `FINAL` (une seule fois, `final_keep_s` = 120 s en mémoire du service). Il en va de même pour un flux terminé par
+`END` dont le client n'a pas pu lire le `FINAL` : la reprise rend le `FINAL` seul, sans `ERROR`. **Les sessions ne survivent pas à
+un redémarrage du service** (la reprise reçoit `session_expired`) ; un `last_seq` que le service n'a jamais émis est
+`bad_message` (le client se trompe), pas `replay_unavailable`.
 
 ## 7. Réglages (`AQR_LIVE_*`, un seul endroit : `LiveServiceConfig`)
 `HOST`, `PORT`, `MAX_STREAMS` (16), `MAX_STREAMS_PER_ACCOUNT` (2), `MAX_UNAUTHENTICATED` (32), `START_TIMEOUT_S` (10),

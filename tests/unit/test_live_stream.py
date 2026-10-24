@@ -208,7 +208,9 @@ def test_the_messages_after_a_known_number_are_replayed(world) -> None:  # type:
 def test_a_client_claiming_the_future_cannot_resume(world) -> None:  # type: ignore[no-untyped-def]
     stream = make(world)
     run(stream, 2.0)
-    assert stream.messages_after(stream.seq + 5) is None
+    with pytest.raises(ProtocolError) as raised:
+        stream.messages_after(stream.seq + 5)
+    assert raised.value.code == "bad_message"  # un numéro jamais émis : le client se trompe
 
 
 def test_the_replay_ring_is_bounded_and_a_gap_is_reported(world) -> None:  # type: ignore[no-untyped-def]

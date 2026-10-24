@@ -34,12 +34,16 @@ Tous les jetons, comptes et clés des tests sont jetables ; aucune clé de produ
 | F2 | I | Mauvais schéma / format audio | `unsupported_schema`, `bad_audio_format` | idem |
 | F3 | I | Jeton rejoué, expiré, falsifié, absent | `token_replayed`, `token_expired`, `token_invalid` | `test_live_service.py` |
 | F4 | I | Origine étrangère, `Host` réattribué | `403` avant le WebSocket | idem |
-| F5 | I | Bloc vide, de taille impaire, plus grand que la limite | `ERROR bad_audio_block` puis `FINAL` ; au-delà de la taille de trame, fermeture 1009 ; le service survit | idem |
+| F5 | I | Bloc vide, de taille impaire, plus grand que la limite | `ERROR bad_audio_block` puis `FINAL` ; au-delà de la taille de trame (~33 Ko), fermeture 1009 par la bibliothèque (pas de phrase) ; le service survit | idem |
 | F6 | I | Flux plus long que le maximum / silence trop long | `stream_too_long`, `silence_too_long` puis `FINAL` | idem |
 | F7 | I | Aucun `START`, aucune trame | `start_timeout`, `idle_timeout` (session reprenable) | idem |
 | F8 | I | Second `START` en cours de flux | `bad_message` puis `FINAL` | idem |
 | F9 | I | Compte au-dessus de son quota, service plein | `too_many_streams`, `server_busy` | idem |
 | F10 | I | Reprise d'un autre compte | `session_expired` (même réponse qu'une session inconnue) | idem |
-| F11 | I | Service dépassé trop longtemps | `server_busy` puis `FINAL` | `test_a_service_that_stays_overwhelmed…` |
+| F11 | I | Service dépassé trop longtemps, client qui inonde | `server_busy` puis `FINAL`, jamais une chute en 1006 | `test_a_service_overwhelmed_by_a_flood…` |
+| F14 | I | Toute trame de fermeture du client (1000, 1001, 4000) | le flux est fini, la place rendue ; une coupure sans trame reste reprenable | `test_any_close_frame…` |
+| F15 | I | Coupure après `END` avant la lecture de `FINAL` | la reprise rend le `FINAL` seul | `test_a_cut_right_after_end…` |
+| F16 | I | `last_seq` jamais émis ; en-têtes `Host` en double ; arrêt du service ; connexions sans jeton en excès | `bad_message` ; 400 journalisé ; `service_stopping` puis 1001 ; `server_busy` puis 1013 | `test_live_service.py` |
+| F17 | U | Un seul candidat non verrouillé | ni texte ni traduction dans `CANDIDATES.heard` (I3) | `test_live_presenter.py` |
 | F12 | U | Clé de signature trop courte, fichier de clé vide, URL du direct mal formée | erreur claire, jamais de jeton | `test_live_tokens.py`, `live-token.test.ts` |
 | F13 | U | Texte d'un candidat non nommé | jamais de texte ni de traduction (I3) | `test_live_presenter.py` |

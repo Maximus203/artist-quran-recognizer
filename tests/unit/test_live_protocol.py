@@ -152,6 +152,7 @@ def test_every_error_code_has_a_clear_french_message_and_a_recoverable_flag() ->
         "token_replayed",
         "too_many_streams",
         "server_busy",
+        "service_stopping",
         "internal",
     } <= set(ERROR_CODES)
     for code, spec in ERROR_CODES.items():

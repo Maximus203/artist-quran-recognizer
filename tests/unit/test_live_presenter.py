@@ -424,3 +424,11 @@ def test_candidates_share_a_translation_only_when_it_is_identical_for_all(corpus
     assert "translation" not in different
     none = only(make(corpus, index, same=True, translation=None).present(event)).fields["heard"]
     assert "translation" not in none
+
+
+def test_a_single_unnamed_candidate_never_shows_text_or_translation(corpus, index) -> None:  # type: ignore[no-untyped-def]
+    """I3 : un seul candidat qui n'a pas passé le verrou n'est pas nommé. Sa traduction est celle du
+    verset ENTIER et son texte serait celui du corpus, pas de ce que le modèle a entendu."""
+    event = candidates([item("27:63", posterior=0.9945)], shared=3)
+    heard = only(make(corpus, index, same=True).present(event)).fields["heard"]
+    assert heard == {"words": [1, 3]}

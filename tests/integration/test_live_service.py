@@ -11,6 +11,7 @@ import contextlib
 import json
 import logging
 import socket
+import threading
 import time
 from pathlib import Path
 
@@ -244,6 +245,80 @@ def test_a_clean_close_without_end_frees_the_place_but_a_cut_keeps_it() -> None:
         cut.drop()  # coupure brutale : la session attend une reprise et garde sa place
         time.sleep(0.3)
         assert harness.hub.active_count == 1
+
+
+@pytest.mark.parametrize("code", [1000, 1001, 4000])
+def test_any_close_frame_from_the_client_ends_the_stream_and_frees_the_place(code: int) -> None:
+    """Un navigateur qui quitte la page ou ferme la connexion envoie une trame de fermeture : le
+    flux est fini. Seule une coupure SANS trame de fermeture (réseau perdu) reste reprenable."""
+    with ServiceHarness(max_streams_per_account=1) as harness:
+        client = started(harness, "1")
+        client.close(code)
+        deadline = time.time() + 3
+        while harness.hub.active_count and time.time() < deadline:
+            time.sleep(0.05)
+        assert harness.hub.active_count == 0
+
+
+def test_a_cut_right_after_end_still_hands_the_result_back_on_resume() -> None:
+    with ServiceHarness() as harness:
+        client = started(harness, "1")
+        session_id = client.received[0].message["session_id"]
+        client.stream(AUDIO)
+        client.end()
+        time.sleep(0.8)  # le service a fini et écrit FINAL ; le client ne l'a pas encore lu
+        client.drop()  # le réseau tombe avant que le client ait pu le lire
+        time.sleep(0.2)
+        again = connect(harness)
+        again.start(harness.token("1"), resume=(session_id, 0))
+        messages = again.drain(3)
+        kinds = [m["type"] for m in messages]
+        assert "FINAL" in kinds
+        assert not [m for m in messages if m["type"] == "ERROR"]  # ce n'est pas une expiration
+
+
+def test_a_future_sequence_number_is_the_clients_mistake_not_a_gap() -> None:
+    with ServiceHarness() as harness:
+        client = started(harness)
+        session_id = client.received[0].message["session_id"]
+        client.drop()
+        time.sleep(0.2)
+        again = connect(harness)
+        again.start(harness.token(), resume=(session_id, 9999))
+        assert error_code(again) == "bad_message"
+
+
+def test_ready_says_whether_the_technical_mode_is_really_on() -> None:
+    with ServiceHarness() as harness:
+        on = connect(harness)
+        on.start(harness.token("1", technical=True), technical=True)
+        assert on.recv()["technical"] is True  # type: ignore[index]
+        off = connect(harness)
+        off.start(harness.token("2", technical=False), technical=True)  # demandé sans le droit
+        assert off.recv()["technical"] is False  # type: ignore[index]
+
+
+def test_duplicate_headers_are_refused_and_logged_not_a_silent_500(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO)
+    with ServiceHarness() as harness, socket.create_connection(("127.0.0.1", harness.port)) as raw:
+        raw.sendall(
+            b"GET /live HTTP/1.1\r\nHost: 127.0.0.1\r\nHost: evil.example\r\nUpgrade: websocket\r\n"
+            b"Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+            b"Sec-WebSocket-Version: 13\r\n\r\n"
+        )
+        assert raw.recv(200).startswith(b"HTTP/1.1 400")
+    assert "handshake.refused" in caplog.text
+
+
+def test_unauthenticated_overflow_gets_a_sentence_before_the_close() -> None:
+    with ServiceHarness(max_unauthenticated=1, start_timeout_s=3.0) as harness:
+        silent = connect(harness)
+        time.sleep(0.2)
+        third = connect(harness)
+        assert error_code(third) == "server_busy"
+        silent.close()
 
 
 def test_too_many_unauthenticated_connections_are_turned_away() -> None:
@@ -509,13 +584,14 @@ def test_a_late_arrival_is_a_visible_degradation() -> None:
 
 
 # --------------------------------------------------------------------------- arrêt et vie privée
-def test_stopping_the_service_closes_streams_with_a_going_away_code() -> None:
+def test_stopping_the_service_says_why_then_closes_with_a_going_away_code() -> None:
     harness = ServiceHarness().__enter__()
     try:
         client = started(harness)
         harness.stop()
         with pytest.raises(ConnectionClosed):
             client.recv_until(lambda m: False, timeout=5.0)
+        assert [m["code"] for m in client.of_type("ERROR")] == ["service_stopping"]
         assert client.close_code == 1001
     finally:
         harness.stop()
@@ -544,3 +620,22 @@ def test_the_log_never_contains_a_token_audio_or_quranic_text(
     assert "session.open" in text and "token.replayed" in text
     assert "session.stats" in text and "max_lag_s=" in text
     assert script_of("112:1")[0][0] not in text
+
+
+def test_a_service_overwhelmed_by_a_flood_still_hands_back_its_result() -> None:
+    """Un client qui inonde un service dépassé : l'erreur ET le résultat arrivent, la connexion ne
+    tombe pas en « 1006 » (fermer un socket qui a encore des données à lire les détruit)."""
+    with ServiceHarness(cost_s=0.6, max_backlog_s=0.3, stall_timeout_s=0.05) as harness:
+        client = started(harness)
+
+        def flood() -> None:
+            with contextlib.suppress(Exception):  # la connexion peut se fermer sous l'envoi
+                client.stream(pcm_loud(60.0), block_ms=100)
+
+        thread = threading.Thread(target=flood, daemon=True)
+        thread.start()
+        messages = client.drain(20)
+        thread.join(5)
+        kinds = [m["type"] for m in messages]
+        assert "ERROR" in kinds and "FINAL" in kinds, kinds
+        assert next(m for m in messages if m["type"] == "ERROR")["code"] == "server_busy"

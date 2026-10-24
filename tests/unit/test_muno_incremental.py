@@ -247,7 +247,7 @@ def test_finish_makes_every_word_stable_and_drops_the_provisional_text() -> None
 def test_a_piece_that_continues_a_word_already_delivered_starts_a_new_one() -> None:
     # une pièce sans « ▁ » 3 trames après la fin du mot : le mot est déjà parti, la pièce ne peut
     # plus le prolonger ; elle ne doit ni être perdue en silence ni recoller un mot livré
-    asr, _ = make_asr({0: {1: 1}, 1: {0: 2}})
+    asr, _ = make_asr({0: {1: 1}, 1: {0: 2}}, settle_s=0.8)  # le défaut (1,5 s) recolle ces pièces
     _, updates = feed_all(asr, 4.0)
     assert [w.word.text for u in updates for w in u.stable] == ["al", "lah"]
 

@@ -59,9 +59,9 @@ class LiveClient:
             raise RuntimeError("connexion non ouverte")
         return self._conn
 
-    def close(self) -> None:
+    def close(self, code: int = 1000) -> None:
         if self._conn is not None:
-            self._conn.close()
+            self._conn.close(code)
             self._remember_close()
 
     def drop(self) -> None:

@@ -67,6 +67,10 @@ class LivePresenter:
         self._lock_posterior: dict[str, float] = {}
         self._lock_first_word: dict[str, int] = {}
 
+    @property
+    def technical(self) -> bool:
+        return self._technical
+
     # ------------------------------------------------------------------ API
     def present(self, event: LiveEvent) -> list[Presented]:
         if isinstance(event, Candidates):
@@ -132,7 +136,9 @@ class LivePresenter:
         heard: dict[str, Any] | None = None
         if event.shared_words > 0:
             heard = {"words": [1, event.shared_words]}
-            comparable = len(event.sources) == event.count
+            # un seul candidat qui n'a pas passé le verrou n'est pas nommé (I3) : ni texte ni
+            # traduction du verset entier ; il faut une vraie famille de candidats
+            comparable = len(event.sources) == event.count and event.count >= 2
             text = content.common_text(event.sources, event.shared_words) if comparable else None
             if text is not None:
                 heard["text"] = text
