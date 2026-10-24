@@ -84,11 +84,9 @@ export function Words({
 export function TranslationBlock({
   translation,
   label,
-  note,
 }: {
   translation: LiveTranslation;
   label: string;
-  note?: string;
 }) {
   return (
     <>
@@ -100,7 +98,6 @@ export function TranslationBlock({
         )}
       </p>
       <p className="attr">
-        {note ? `${note} · ` : ""}
         {translation.attribution} · {translation.translation_id} · source{" "}
         {translation.version}
       </p>
@@ -500,9 +497,6 @@ export function Stage({
             {verseName(lock.ref)}
           </span>
           {lock.repetition ? <span className="lv-tag">Reprise</span> : null}
-          {lock.partial ? (
-            <span className="lv-tag">Passage partiel</span>
-          ) : null}
         </div>
         {lock.text ? (
           <div className="ar" lang="ar" dir="rtl" data-testid="live-arabic">
@@ -556,7 +550,6 @@ export function Stage({
           <TranslationBlock
             translation={lock.translation}
             label="Traduction du verset"
-            note={lock.partial ? "Traduction du verset entier" : undefined}
           />
         ) : null}
         {showTranslation && !lock.translation && lock.translationUnavailable ? (

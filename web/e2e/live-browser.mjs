@@ -80,6 +80,8 @@ const PROBE = () => {
     marks: [],
     stage: [],
     chunks: [],
+    samples: 0,
+    rate: 0,
     sentBytes: 0,
     sentFrames: 0,
     zeroFrames: 0,
@@ -164,6 +166,7 @@ const PROBE = () => {
           if (!d || !d.length) return;
           let sum = 0;
           for (let i = 0; i < d.length; i += 1) sum += d[i] * d[i];
+          probe.samples += d.length;
           probe.chunks.push({
             w: performance.now(),
             n: d.length,
@@ -215,15 +218,27 @@ const PROBE = () => {
 
 async function newPage(
   browser,
-  { w = width, h = height, colorScheme = scheme } = {},
+  {
+    w = width,
+    h = height,
+    colorScheme = scheme,
+    permissions = ["microphone"],
+    mediaError = null,
+  } = {},
 ) {
   const context = await browser.newContext({
     viewport: { width: w, height: h },
     colorScheme,
-    permissions: ["microphone"],
+    permissions,
     deviceScaleFactor: 1,
   });
   await context.addInitScript(PROBE);
+  if (mediaError)
+    // Erreur du navigateur simulée (aucun micro de cette machine de test n'est vraiment absent).
+    await context.addInitScript((name) => {
+      navigator.mediaDevices.getUserMedia = () =>
+        Promise.reject(new DOMException("simulé par le test", name));
+    }, mediaError);
   const page = await context.newPage();
   const problems = [];
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
@@ -242,6 +257,13 @@ async function newPage(
 }
 
 async function signIn(page) {
+  // Atelier derrière le tunnel (mode test distant protégé) : le jeton d'accès d'abord.
+  if (process.env.AQR_ACCESS_TOKEN) {
+    await page.goto(`${base}/access`, { waitUntil: "domcontentloaded" });
+    await page.getByLabel("Jeton d’accès").fill(process.env.AQR_ACCESS_TOKEN);
+    await page.getByRole("button", { name: "Entrer" }).click();
+    await page.waitForLoadState("domcontentloaded");
+  }
   const user = process.env.AQR_SMOKE_USER;
   const password = process.env.AQR_SMOKE_PASSWORD;
   if (user && password) {
@@ -267,6 +289,10 @@ const shot = async (page, name) => {
   await page.screenshot({ path: file });
   return file;
 };
+const audioSeconds = (page) =>
+  page.evaluate(() =>
+    window.__aqr.rate ? window.__aqr.samples / window.__aqr.rate : 0,
+  );
 const view = (page) =>
   page.evaluate(
     () =>
@@ -302,53 +328,88 @@ const p90 = (xs) => {
 };
 const round = (x) => (x === null ? null : Math.round(x));
 
-/** Instant (horloge de la page) où la première voix de la récitation arrive dans le navigateur. */
-function anchor(probe, meta) {
-  const loud = probe.chunks.find((c) => c.rms > 0.012);
-  if (!loud) return null;
-  // Le bloc de 20 ms qui contient le début de voix : on le compte depuis son début.
-  return loud.w - 20 - meta.verses[0].voice_start_s * 1000;
+/**
+ * Horloge AUDIO : secondes d'audio reçues par l'application à l'instant `w` (horloge de la page). Le micro
+ * simulé de Chrome ne tourne pas exactement en temps réel sur cette machine (mesuré : environ 0,8 fois la
+ * vitesse), donc le délai voix -> écran se mesure en secondes d'AUDIO écoulées depuis le début de la voix,
+ * ce qui est ce qu'un vrai micro (horloge = temps réel) donnerait.
+ */
+function audioClock(probe) {
+  const times = [];
+  const cumulative = [];
+  let total = 0;
+  for (const c of probe.chunks) {
+    total += c.n;
+    times.push(c.w);
+    cumulative.push(total);
+  }
+  return (w) => {
+    if (!times.length || w < times[0]) return 0;
+    let lo = 0;
+    let hi = times.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (times[mid] <= w) lo = mid;
+      else hi = mid - 1;
+    }
+    return cumulative[lo] / probe.rate;
+  };
+}
+
+/** Instant audio (s) où la première voix de la récitation arrive dans l'application. */
+function firstVoiceAudioS(probe) {
+  let total = 0;
+  for (const c of probe.chunks) {
+    if (c.rms > 0.012) return total / probe.rate;
+    total += c.n;
+  }
+  return null;
 }
 
 function verseDelays(probe, meta) {
-  const t0 = anchor(probe, meta);
-  if (t0 === null) return { error: "aucune voix reçue par le navigateur" };
+  const first = firstVoiceAudioS(probe);
+  if (first === null) return { error: "aucune voix reçue par le navigateur" };
+  const clock = audioClock(probe);
+  const voiceAt = (v) =>
+    first + (v.voice_start_s - meta.verses[0].voice_start_s);
+  // Un message est rattaché au verset dont la voix a commencé avant lui (fenêtre : jusqu'à la voix suivante).
+  const within = (w, lo, hi) => clock(w) >= lo - 0.2 && clock(w) < hi;
+  const delay = (w, voice) => round((clock(w) - voice) * 1000);
   const rows = [];
   for (const [i, v] of meta.verses.entries()) {
-    const voice = t0 + v.voice_start_s * 1000;
+    const voice = voiceAt(v);
     const nextVoice = meta.verses[i + 1]
-      ? t0 + meta.verses[i + 1].voice_start_s * 1000
+      ? voiceAt(meta.verses[i + 1])
       : Infinity;
     const cand = probe.ws.find(
-      (m) => m.type === "CANDIDATES" && m.w >= voice - 200 && m.w < nextVoice,
+      (m) => m.type === "CANDIDATES" && within(m.w, voice, nextVoice),
     );
     const lock = probe.ws.find(
       (m) =>
         m.type === "LOCKED" &&
         m.ref === v.ref &&
-        m.w >= voice - 200 &&
-        m.w < nextVoice + 8000,
+        within(m.w, voice, nextVoice + 8),
     );
     const domCand = probe.stage.find(
-      (s) => s.view === "cands" && s.w >= voice - 200 && s.w < nextVoice,
+      (s) => s.view === "cands" && within(s.w, voice, nextVoice),
     );
     const domNamed = probe.stage.find(
       (s) =>
         (s.view === "named" || s.view === "inferred") &&
         s.ref?.endsWith(v.ref) &&
-        s.w >= voice - 200 &&
-        s.w < nextVoice + 8000,
+        within(s.w, voice, nextVoice + 8),
     );
     rows.push({
       ref: v.ref,
       voice_s: v.voice_start_s,
-      candidates_ms: cand ? round(cand.w - voice) : null,
-      locked_ms: lock ? round(lock.w - voice) : null,
+      candidates_ms: cand ? delay(cand.w, voice) : null,
+      locked_ms: lock ? delay(lock.w, voice) : null,
       locked_status: lock?.status ?? null,
-      first_name_on_screen_ms: domNamed ? round(domNamed.w - voice) : null,
+      first_name_on_screen_ms: domNamed ? delay(domNamed.w, voice) : null,
+      // Rendu : horloge murale (le temps entre l'arrivée du message et l'image), pas l'audio.
       screen_after_message_ms:
         domNamed && lock ? round(domNamed.w - lock.w) : null,
-      first_cands_on_screen_ms: domCand ? round(domCand.w - voice) : null,
+      first_cands_on_screen_ms: domCand ? delay(domCand.w, voice) : null,
     });
   }
   const named = rows.filter((r) => r.first_name_on_screen_ms !== null);
@@ -418,8 +479,13 @@ async function playClip(page, meta, { onNamedShot = true } = {}) {
   await keepShot(page, "ecoute");
   let shotCands = false;
   let shotNamed = false;
-  const endAt = Date.now() + (meta.total_s + 8) * 1000;
-  while (Date.now() < endAt) {
+  // On laisse finir la récitation en secondes d'AUDIO reçues (le micro simulé n'est pas exactement en temps
+  // réel), avec un plafond mural large.
+  const wallEnd = Date.now() + (meta.total_s * 1.8 + 25) * 1000;
+  while (
+    Date.now() < wallEnd &&
+    (await audioSeconds(page)) < meta.total_s + 6
+  ) {
     const v = await view(page);
     if (v === "cands" && !shotCands) {
       shotCands = true;
@@ -459,6 +525,21 @@ async function nominal() {
     const probe = await page.evaluate(() => window.__aqr);
     const delays = verseDelays(probe, meta);
     results.delays = delays;
+    // Santé de la capture : le micro simulé doit livrer des blocs réguliers, en temps réel.
+    const chunks = probe.chunks;
+    const gaps = chunks.slice(1).map((c, i) => c.w - chunks[i].w);
+    results.capture = {
+      sample_rate: probe.rate,
+      chunks: chunks.length,
+      audio_s: Math.round(chunks.reduce((n, c) => n + c.n, 0) / probe.rate),
+      wall_s: chunks.length
+        ? Math.round((chunks[chunks.length - 1].w - chunks[0].w) / 1000)
+        : 0,
+      max_gap_ms: gaps.length ? Math.round(Math.max(...gaps)) : null,
+      gaps_over_100ms: gaps.filter((g) => g > 100).length,
+    };
+    // Les messages réels du service, dans l'ordre : de quoi rejouer cette écoute en test.
+    results.messages = probe.ws.map((m) => m.raw);
     results.elapsed_s = Math.round((Date.now() - t) / 1000);
     check(
       "aucun faux verset nommé (I3)",
@@ -487,11 +568,17 @@ async function nominal() {
       "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
       kept === 1,
     );
-    const sentBytes = probe.sentBytes;
+    const sentS = probe.sentBytes / 32000;
+    const capturedS = probe.samples / probe.rate;
     check(
-      "l'audio envoyé correspond à la durée captée (16 kHz mono 16 bits)",
-      sentBytes > meta.total_s * 32000 * 0.9,
-      `${Math.round(sentBytes / 32000)} s envoyées`,
+      "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+      Math.abs(sentS - capturedS) <= 0.03 * capturedS + 0.5,
+      `${sentS.toFixed(1)} s envoyées pour ${capturedS.toFixed(1)} s captées`,
+    );
+    check(
+      "la récitation entière a été captée",
+      capturedS >= meta.total_s,
+      `${capturedS.toFixed(1)} s captées, clip de ${meta.total_s} s`,
     );
     const zero = probe.zeroFrames;
     results.zero_frames = zero;
@@ -550,8 +637,12 @@ async function cut() {
       `${results.recovered_after_s} s après la coupure`,
     );
     // La suite de la récitation arrive : on laisse finir le clip.
-    const rest = Math.max(0, meta.total_s * 1000 - (Date.now() - cutAt) + 6000);
-    await sleep(Math.min(rest, 70_000));
+    const wallEnd = Date.now() + (meta.total_s * 1.8 + 25) * 1000;
+    while (
+      Date.now() < wallEnd &&
+      (await audioSeconds(page)) < meta.total_s + 6
+    )
+      await sleep(250);
     await stopAndEnd(page);
     await keepShot(page, "fin");
     const probe = await page.evaluate(() => window.__aqr);
@@ -696,18 +787,33 @@ async function token() {
 }
 
 async function micRefused(kind) {
+  // « deny » : vrai refus du navigateur (--deny-permission-prompts, aucune permission accordée) ;
+  // « none » / « micbusy » : l'erreur du navigateur est simulée (NotFoundError / NotReadableError).
   const browser = await launch({ mic: kind === "deny" ? "deny" : "none" });
-  const { context, page, problems } = await newPage(browser);
+  const { context, page, problems } = await newPage(browser, {
+    permissions: kind === "deny" ? [] : ["microphone"],
+    mediaError:
+      kind === "none"
+        ? "NotFoundError"
+        : kind === "micbusy"
+          ? "NotReadableError"
+          : null,
+  });
   try {
     await signIn(page);
     await page.goto(`${base}/direct`, { waitUntil: "networkidle" });
     await page.getByTestId("live-start").click();
     await waitView(page, "err", 20_000);
     const text = await page.getByTestId("live-stage").innerText();
-    await keepShot(page, kind === "deny" ? "micro-refuse" : "micro-absent");
-    const wanted = kind === "deny" ? /bloqué/ : /Aucun micro/;
+    await keepShot(page, `micro-${kind}`);
+    const wanted =
+      kind === "deny"
+        ? /bloqué/
+        : kind === "micbusy"
+          ? /déjà utilisé/
+          : /Aucun micro/;
     check(
-      `micro ${kind === "deny" ? "refusé" : "absent"} : écran dédié`,
+      `micro (${kind}) : écran dédié`,
       wanted.test(text),
       text.replace(/\n/g, " ").slice(0, 160),
     );
@@ -850,10 +956,311 @@ async function pause() {
   }
 }
 
+/**
+ * Mode allégé et correction : le service ne les émet pas encore en conditions normales (surcharge rare,
+ * vérification acoustique non branchée en direct). Les deux messages sont donc INJECTÉS par le relais
+ * de test, entre deux messages réels, pour éprouver l'écran dans un vrai navigateur. Ce n'est pas une
+ * sortie du moteur : le rapport le dit.
+ */
+async function injected() {
+  const { wav, meta } = clip();
+  const browser = await launch({ wav });
+  const { context, page } = await newPage(browser);
+  const inject = (m) =>
+    fetch(`${proxyCtl}/inject`, {
+      method: "POST",
+      body: JSON.stringify({ schema: "aqr.live/1", seq: 0, t: 0, ...m }),
+    }).then((r) => r.json());
+  try {
+    await signIn(page);
+    await page.goto(`${base}/direct`, { waitUntil: "networkidle" });
+    await page.getByTestId("live-start").click();
+    await waitView(page, "named", 90_000);
+    await waitView(page, ["between", "cands", "listen", "unres"], 30_000);
+    const probe = await page.evaluate(() => window.__aqr);
+    const ref = probe.ws.filter((m) => m.type === "LOCKED").pop()?.ref;
+    check("un verset a été nommé avant l'injection", !!ref, ref ?? "");
+    const verses = () =>
+      page.locator('[data-testid="live-hist"] li[data-kind="verse"]');
+    const before = await verses().count();
+
+    // 1. Mode allégé (surcharge) : bandeau permanent, puce, retard réel affiché.
+    check(
+      "injection DEGRADED reçue",
+      (
+        await inject({
+          type: "DEGRADED",
+          tier: 1,
+          overloaded: true,
+          lag_s: 5.3,
+          skipped: [],
+          reason: "overload",
+        })
+      ).injected,
+    );
+    await page.getByTestId("live-degraded").waitFor({ timeout: 5000 });
+    const banner = await page.getByTestId("live-degraded").innerText();
+    await keepShot(page, "allege");
+    check(
+      "le bandeau du mode allégé dit le retard et que les noms arrivent plus tard",
+      /5,3 s de retard/.test(banner) && /plus tard/.test(banner),
+      banner.replace(/\n/g, " ").slice(0, 200),
+    );
+    check(
+      "la puce « Mode allégé » est affichée",
+      (await page.getByTestId("live-status").innerText()).includes(
+        "Mode allégé",
+      ),
+    );
+    await sleep(2500);
+    check(
+      "le bandeau est permanent (toujours là 2,5 s plus tard)",
+      (await page.getByTestId("live-degraded").count()) === 1,
+    );
+
+    // 2. Correction : la ligne reste, marquée « Corrigé », sans son texte.
+    check(
+      "injection REVISION reçue",
+      (
+        await inject({
+          type: "REVISION",
+          ref,
+          status: "retracted",
+          reason: "acoustic_check",
+        })
+      ).injected,
+    );
+    await page.getByTestId("live-revision").waitFor({ timeout: 5000 });
+    const rev = await page.getByTestId("live-revision").innerText();
+    await keepShot(page, "correction");
+    check(
+      "le bandeau « Correction » nomme le verset retiré",
+      rev.includes(ref) || /Correction/.test(rev),
+      rev.replace(/\n/g, " ").slice(0, 160),
+    );
+    check(
+      "la ligne n'est pas effacée (même nombre de lignes)",
+      (await verses().count()) === before,
+      `${before} -> ${await verses().count()}`,
+    );
+    const row = page.locator(
+      '[data-testid="live-hist"] li[data-revised="true"]',
+    );
+    check(
+      "la ligne est marquée Corrigé",
+      (await row.count()) === 1 && /Corrigé/.test(await row.innerText()),
+    );
+    await row.locator("summary").click();
+    check(
+      "le texte du verset retiré n'est plus affiché",
+      (await row.locator(".ar").count()) === 0,
+    );
+    const announce = await page.getByTestId("live-announce").innerText();
+    check(
+      "la correction est annoncée aux lecteurs d'écran",
+      /Correction/.test(announce) ||
+        (await page.getByTestId("live-revision").getAttribute("role")) ===
+          "status",
+      announce,
+    );
+
+    // 3. Retour à la normale : le bandeau part, la trace reste dans la fin d'écoute.
+    await inject({
+      type: "DEGRADED",
+      tier: 1,
+      overloaded: false,
+      lag_s: 0.2,
+      skipped: [],
+      reason: "recovered",
+    });
+    await page
+      .getByTestId("live-degraded")
+      .waitFor({ state: "detached", timeout: 5000 });
+    check("retour au mode normal : le bandeau disparaît", true);
+    await stopAndEnd(page);
+    await keepShot(page, "fin-allege");
+    const facts = await page.getByTestId("live-facts").innerText();
+    check(
+      "la fin d'écoute rappelle le mode allégé",
+      /mode allégé/.test(facts),
+      facts.replace(/\n/g, " "),
+    );
+    void meta;
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+}
+
+/** « Garder cet enregistrement » (import classique, source microphone) et « Ne rien garder » (annulable). */
+async function keep() {
+  const { wav, meta } = clip();
+  const browser = await launch({ wav });
+  const { context, page } = await newPage(browser);
+  const calls = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/api/sessions?"))
+      calls.push({ method: r.method(), url: r.url(), headers: r.headers() });
+  });
+  try {
+    await signIn(page);
+    await page.goto(`${base}/direct`, { waitUntil: "networkidle" });
+    await page.getByTestId("live-start").click();
+    await waitView(page, ["listen", "cands", "named", "between"], 30_000);
+    await sleep(Math.min(25_000, meta.total_s * 500));
+    await stopAndEnd(page);
+    const before = await page.evaluate(() => window.__aqr.ws.length);
+    check(
+      "rien n'a été envoyé au serveur avant le geste « Garder »",
+      calls.length === 0,
+      `${calls.length} envoi(s)`,
+    );
+    // 1. « Ne rien garder » puis « Annuler » : le son revient.
+    await page.getByTestId("live-discard").click();
+    await page.getByTestId("live-keep-discarded").waitFor();
+    await keepShot(page, "rien-garde");
+    check(
+      "« Ne rien garder » dit que rien n'a été gardé",
+      /Rien n’a été gardé/.test(
+        await page.getByTestId("live-keep-discarded").innerText(),
+      ),
+    );
+    await page.getByTestId("live-undo").click();
+    await page.getByTestId("live-keep").waitFor();
+    check(
+      "« Annuler » (6 s) restaure le son : « Garder » est de nouveau proposé",
+      true,
+    );
+    // 2. Garder : envoi réel, comme un import classique.
+    await page.getByTestId("live-keep").click();
+    await page.getByTestId("live-keep-queued").waitFor({ timeout: 60_000 });
+    await keepShot(page, "garde");
+    check("« Garder » met l'enregistrement dans la file d'analyse", true);
+    const upload = calls.find((c) => c.method === "POST");
+    check(
+      "envoyé comme un import classique (autorun, source microphone)",
+      !!upload &&
+        /autorun=1/.test(upload.url) &&
+        upload.headers["x-aqr-source-kind"] === "microphone",
+      upload ? `${upload.url} ${upload.headers["x-aqr-source-kind"]}` : "",
+    );
+    check(
+      "le nom proposé est « Récitation en direct, hh:mm »",
+      !!upload &&
+        /R%C3%A9citation%20en%20direct/.test(
+          upload.headers["x-aqr-name"] ?? "",
+        ),
+      decodeURIComponent(upload?.headers["x-aqr-name"] ?? ""),
+    );
+    const mine = await page.evaluate(async () =>
+      (
+        await (await fetch("/api/sessions?scope=mine&limit=3")).json()
+      ).items.map((s) => ({ id: s.id, name: s.name, state: s.state })),
+    );
+    results.sessions = mine;
+    check(
+      "la session apparaît dans la liste de l'atelier",
+      mine.some((s) => /Récitation en direct/.test(s.name)),
+      JSON.stringify(mine[0]),
+    );
+    check(
+      "les résultats du direct n'ont pas été réutilisés (analyse complète en file)",
+      mine[0] && ["queued", "running", "ready", "done"].includes(mine[0].state),
+      mine[0]?.state,
+    );
+    void before;
+    results.kept_session =
+      mine.find((s) => /Récitation en direct/.test(s.name)) ?? null;
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+}
+
+/** Mode technique : éteint par défaut, activé par la touche T ; PARTIAL n'apparaît que là, jamais dans la région annoncée. */
+async function tech() {
+  const { wav } = clip();
+  const browser = await launch({ wav });
+  const { context, page } = await newPage(browser);
+  try {
+    await signIn(page);
+    await page.goto(`${base}/direct`, { waitUntil: "networkidle" });
+    check(
+      "mode technique éteint par défaut (aucun panneau)",
+      (await page.getByTestId("live-tech").count()) === 0,
+    );
+    check(
+      "l'interrupteur est éteint",
+      (await page
+        .getByTestId("live-tech-switch")
+        .getAttribute("aria-checked")) === "false",
+    );
+    await page.keyboard.press("t");
+    await page.getByTestId("live-tech").waitFor({ timeout: 3000 });
+    check(
+      "la touche T allume le mode technique",
+      (await page
+        .getByTestId("live-tech-switch")
+        .getAttribute("aria-checked")) === "true",
+    );
+    await page.getByTestId("live-start").click();
+    await waitView(page, ["listen", "cands", "named", "between"], 30_000);
+    await page.waitForFunction(
+      () =>
+        /[؀-ۿ]/.test(
+          document.querySelector('[data-testid="live-tech"] .partial .txt')
+            ?.textContent ?? "",
+        ),
+      null,
+      { timeout: 40_000 },
+    );
+    await sleep(2500);
+    await keepShot(page, "technique");
+    const techText = await page.getByTestId("live-tech").innerText();
+    check(
+      "la transcription provisoire est étiquetée « non vérifiée, jamais le texte du Mushaf »",
+      /non vérifiée/.test(techText) &&
+        /jamais le texte du Mushaf/.test(techText),
+    );
+    check(
+      "les derniers messages du service sont listés",
+      /CANDIDATES|PARTIAL|PROGRESS|LOCKED/.test(techText),
+    );
+    const partial = (
+      await page.locator('[data-testid="live-tech"] .partial .txt').innerText()
+    ).trim();
+    const announced = await page.getByTestId("live-announce").innerText();
+    check(
+      "PARTIAL n'entre jamais dans la région annoncée",
+      partial.length > 0 && !announced.includes(partial.slice(0, 6)),
+      announced,
+    );
+    const stage = await page.getByTestId("live-stage").innerText();
+    check(
+      "PARTIAL n'est pas affiché comme « passage entendu » dans la carte",
+      !stage.includes(partial.slice(0, 8)) || (await view(page)) === "named",
+    );
+    await page.keyboard.press("t");
+    check(
+      "T éteint le panneau",
+      (await page.getByTestId("live-tech").count()) === 0,
+    );
+    await page.getByTestId("live-stop").click();
+    await waitView(page, "end", 40_000);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+}
+
 const runners = {
+  keep,
+  tech,
+  inject: injected,
   nominal,
   cut,
   token,
+  micbusy: () => micRefused("micbusy"),
   nomic: () => micRefused("none"),
   deny: () => micRefused("deny"),
   busy,

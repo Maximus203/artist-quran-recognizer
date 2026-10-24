@@ -27,6 +27,8 @@ import { useShell } from "../shell";
  * logique métier est ailleurs et testée (`lib/live-*.ts`) ; ici, seulement la colle.
  */
 const TRANSLATION_ID = "french_hameedullah";
+const LEAVE_WARNING =
+  "Une écoute est en cours, ou un enregistrement n’est pas encore gardé. Quitter cette page arrête l’écoute et efface le son de ce navigateur. Quitter quand même ?";
 
 function readTech(): boolean {
   try {
@@ -274,8 +276,9 @@ export function useLive() {
   }, [state.phase, state.errorKey, state.retryAfterS, start]);
 
   // ───────────── Écran maintenu allumé, onglet caché, page quittée ─────────────
+  const listening = isLive(state.phase);
   useEffect(() => {
-    if (!isLive(state.phase)) {
+    if (!listening) {
       setWakeHeld(false);
       return;
     }
@@ -318,11 +321,7 @@ export function useLive() {
       void sentinel?.release().catch(() => undefined);
       setWakeHeld(false);
     };
-  }, [
-    state.phase === "paused" ||
-      state.phase === "listening" ||
-      state.phase === "ending",
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [listening]);
 
   useEffect(() => {
     const unsaved =
@@ -336,11 +335,31 @@ export function useLive() {
       event.returnValue = "";
     };
     const onHide = () => clientRef.current?.dispose();
+    // Un lien de l'atelier quitte la page sans `beforeunload` (navigation côté client) : même avertissement.
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const link = (
+        event.target as HTMLElement | null
+      )?.closest<HTMLAnchorElement>("a[href]");
+      if (!link || link.target === "_blank" || link.hasAttribute("download"))
+        return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname) return;
+      if (!window.confirm(LEAVE_WARNING)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
     window.addEventListener("beforeunload", onBefore);
     window.addEventListener("pagehide", onHide);
+    document.addEventListener("click", onClick, true);
     return () => {
       window.removeEventListener("beforeunload", onBefore);
       window.removeEventListener("pagehide", onHide);
+      document.removeEventListener("click", onClick, true);
     };
   }, [state.phase, state.keep.state, keepFile]);
 

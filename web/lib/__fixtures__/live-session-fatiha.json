@@ -1,0 +1,1059 @@
+{
+  "source": "nominal-fatiha-alafasy-1280-dark",
+  "clip": "fatiha-alafasy",
+  "messages": [
+    {
+      "schema": "aqr.live/1",
+      "type": "READY",
+      "seq": 0,
+      "session_id": "_ZTothL5HZaQGMkiS4q7bA",
+      "resumed": false,
+      "last_seq": 0,
+      "replay_from": null,
+      "audio_received_s": 0.0,
+      "audio_received_samples": 0,
+      "degraded": [],
+      "technical": false,
+      "resume_ttl_s": 30.0,
+      "limits": {
+        "max_block_bytes": 32000,
+        "max_stream_s": 3600.0,
+        "max_silence_s": 120.0,
+        "idle_timeout_s": 30.0,
+        "resume_ttl_s": 30.0,
+        "recommended_block_ms": [20, 100]
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "BASMALA",
+      "seq": 1,
+      "t": 6.8,
+      "basmala": true,
+      "ref": "1:1",
+      "text": "mot mot mot mot",
+      "translation": {
+        "text": "traduction de remplissage",
+        "translation_id": "french_hameedullah",
+        "version": "quranenc.com",
+        "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+        "scope": "verse",
+        "segments": [
+          {
+            "words": [1, 2],
+            "text": "mot mot mot"
+          },
+          {
+            "words": [3, 3],
+            "text": "mot mot mot"
+          },
+          {
+            "words": [4, 4],
+            "text": "mot mot mot"
+          }
+        ]
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 2,
+      "t": 10.1,
+      "state": "ambiguous",
+      "span": [8.4, 9.12],
+      "words_heard": 1,
+      "count": 5,
+      "heard": {
+        "words": [1, 1],
+        "text": "mot"
+      },
+      "items": [
+        {
+          "ref": "1:2",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 1,
+          "next_word": {
+            "index": 2,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "6:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 1,
+          "next_word": {
+            "index": 6,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "18:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 1,
+          "next_word": {
+            "index": 6,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "34:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 1,
+          "next_word": {
+            "index": 6,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "35:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 1,
+          "next_word": {
+            "index": 6,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:2",
+        "posterior": 0.2,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 3,
+      "t": 11.3,
+      "state": "ambiguous",
+      "span": [8.4, 9.76],
+      "words_heard": 2,
+      "count": 5,
+      "heard": {
+        "words": [1, 2],
+        "text": "mot mot"
+      },
+      "items": [
+        {
+          "ref": "1:2",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 2,
+          "next_word": {
+            "index": 3,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "6:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 2,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "18:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 2,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "34:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 2,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "35:1",
+          "posterior": 0.2,
+          "class": "start",
+          "matched": 2,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:2",
+        "posterior": 0.2,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "LOCKED",
+      "seq": 4,
+      "t": 11.3,
+      "interval": {
+        "kind": "verse",
+        "ref": "1:2",
+        "words": [1, 4],
+        "partial": false,
+        "status": "recognized",
+        "t": [8.4, null],
+        "time_interpolated": false,
+        "confidence": 0.9999,
+        "candidates": [],
+        "repetition": false,
+        "text": "mot mot mot mot",
+        "translation": {
+          "text": "traduction de remplissage",
+          "translation_id": "french_hameedullah",
+          "version": "quranenc.com",
+          "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+          "scope": "verse",
+          "segments": [
+            {
+              "words": [1, 2],
+              "text": "mot mot mot"
+            },
+            {
+              "words": [3, 4],
+              "text": "mot mot mot"
+            }
+          ]
+        },
+        "identity_basis": "words",
+        "words_heard": 3
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "PROGRESS",
+      "seq": 5,
+      "t": 13.5,
+      "ref": "1:2",
+      "words_heard": 4,
+      "words": [1, 4],
+      "word": {
+        "index": 4,
+        "t": [10.72, 11.6]
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CONTINUE",
+      "seq": 6,
+      "t": 13.5,
+      "closed": {
+        "kind": "verse",
+        "ref": "1:2",
+        "words": [1, 4],
+        "partial": false,
+        "status": "recognized",
+        "t": [8.4, 11.6],
+        "time_interpolated": false,
+        "confidence": 0.9999,
+        "candidates": [],
+        "repetition": false,
+        "text": "mot mot mot mot",
+        "translation": {
+          "text": "traduction de remplissage",
+          "translation_id": "french_hameedullah",
+          "version": "quranenc.com",
+          "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+          "scope": "verse",
+          "segments": [
+            {
+              "words": [1, 2],
+              "text": "mot mot mot"
+            },
+            {
+              "words": [3, 4],
+              "text": "mot mot mot"
+            }
+          ]
+        },
+        "word_times": [
+          [8.4, 9.341],
+          [9.341, 9.906],
+          [9.906, 10.282],
+          [10.282, 11.6]
+        ],
+        "word_times_source": "interpolated",
+        "identity_basis": "words"
+      },
+      "complete": true,
+      "expected": {
+        "ref": "1:3"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 7,
+      "t": 21.3,
+      "state": "ambiguous",
+      "span": [19.6, 20.32],
+      "words_heard": 1,
+      "count": 1,
+      "heard": {
+        "words": [1, 1]
+      },
+      "items": [
+        {
+          "ref": "1:4",
+          "posterior": 0.9973,
+          "class": "local",
+          "matched": 1,
+          "next_word": {
+            "index": 2,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:4",
+        "posterior": 0.9973,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "JUMP",
+      "seq": 8,
+      "t": 21.3,
+      "from": "1:2",
+      "reason": "mismatch_with_expected",
+      "kind": "skip"
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 9,
+      "t": 21.3,
+      "state": "ambiguous",
+      "span": [19.6, 20.64],
+      "words_heard": 2,
+      "count": 1,
+      "heard": {
+        "words": [1, 2]
+      },
+      "items": [
+        {
+          "ref": "1:4",
+          "posterior": 1.0,
+          "class": "local",
+          "matched": 2,
+          "next_word": {
+            "index": 3,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:4",
+        "posterior": 1.0,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "LOCKED",
+      "seq": 10,
+      "t": 23.6,
+      "interval": {
+        "kind": "verse",
+        "ref": "1:4",
+        "words": [1, 3],
+        "partial": false,
+        "status": "recognized",
+        "t": [19.6, null],
+        "time_interpolated": false,
+        "confidence": 1.0,
+        "candidates": [],
+        "repetition": false,
+        "text": "mot mot mot",
+        "translation": {
+          "text": "traduction de remplissage",
+          "translation_id": "french_hameedullah",
+          "version": "quranenc.com",
+          "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+          "scope": "verse",
+          "segments": [
+            {
+              "words": [1, 3],
+              "text": "mot mot mot mot mot mot"
+            }
+          ]
+        },
+        "identity_basis": "words",
+        "words_heard": 3
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CONTINUE",
+      "seq": 11,
+      "t": 23.6,
+      "closed": {
+        "kind": "verse",
+        "ref": "1:4",
+        "words": [1, 3],
+        "partial": false,
+        "status": "recognized",
+        "t": [19.6, 21.6],
+        "time_interpolated": false,
+        "confidence": 1.0,
+        "candidates": [],
+        "repetition": false,
+        "text": "mot mot mot",
+        "translation": {
+          "text": "traduction de remplissage",
+          "translation_id": "french_hameedullah",
+          "version": "quranenc.com",
+          "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+          "scope": "verse",
+          "segments": [
+            {
+              "words": [1, 3],
+              "text": "mot mot mot mot mot mot"
+            }
+          ]
+        },
+        "word_times": [
+          [19.6, 20.145],
+          [20.145, 20.691],
+          [20.691, 21.6]
+        ],
+        "word_times_source": "interpolated",
+        "identity_basis": "words"
+      },
+      "complete": true,
+      "expected": {
+        "ref": "1:5"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 12,
+      "t": 25.8,
+      "state": "ambiguous",
+      "span": [24.8, 25.28],
+      "words_heard": 1,
+      "count": 1,
+      "heard": {
+        "words": [1, 1]
+      },
+      "items": [
+        {
+          "ref": "1:5",
+          "posterior": 1.0,
+          "class": "continue",
+          "matched": 1,
+          "next_word": {
+            "index": 2,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:5",
+        "posterior": 1.0,
+        "basis": "context"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 13,
+      "t": 26.9,
+      "state": "ambiguous",
+      "span": [24.8, 26.24],
+      "words_heard": 2,
+      "count": 1,
+      "heard": {
+        "words": [1, 2]
+      },
+      "items": [
+        {
+          "ref": "1:5",
+          "posterior": 1.0,
+          "class": "continue",
+          "matched": 2,
+          "next_word": {
+            "index": 3,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:5",
+        "posterior": 1.0,
+        "basis": "context"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "LOCKED",
+      "seq": 14,
+      "t": 28.1,
+      "interval": {
+        "kind": "verse",
+        "ref": "1:5",
+        "words": [1, 4],
+        "partial": false,
+        "status": "recognized",
+        "t": [24.8, null],
+        "time_interpolated": false,
+        "confidence": 1.0,
+        "candidates": [],
+        "repetition": false,
+        "text": "mot mot mot mot",
+        "translation": {
+          "text": "traduction de remplissage",
+          "translation_id": "french_hameedullah",
+          "version": "quranenc.com",
+          "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+          "scope": "verse",
+          "segments": [
+            {
+              "words": [1, 3],
+              "text": "mot mot mot mot mot mot"
+            },
+            {
+              "words": [4, 4],
+              "text": "mot mot mot mot mot mot mot mot"
+            }
+          ]
+        },
+        "identity_basis": "words",
+        "words_heard": 3
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "PROGRESS",
+      "seq": 15,
+      "t": 30.3,
+      "ref": "1:5",
+      "words_heard": 4,
+      "words": [1, 4],
+      "word": {
+        "index": 4,
+        "t": [26.96, 27.84]
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CONTINUE",
+      "seq": 16,
+      "t": 30.3,
+      "closed": {
+        "kind": "verse",
+        "ref": "1:5",
+        "words": [1, 4],
+        "partial": false,
+        "status": "recognized",
+        "t": [24.8, 27.84],
+        "time_interpolated": false,
+        "confidence": 1.0,
+        "candidates": [],
+        "repetition": false,
+        "text": "mot mot mot mot",
+        "translation": {
+          "text": "traduction de remplissage",
+          "translation_id": "french_hameedullah",
+          "version": "quranenc.com",
+          "attribution": "QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd)",
+          "scope": "verse",
+          "segments": [
+            {
+              "words": [1, 3],
+              "text": "mot mot mot mot mot mot"
+            },
+            {
+              "words": [4, 4],
+              "text": "mot mot mot mot mot mot mot mot"
+            }
+          ]
+        },
+        "word_times": [
+          [24.8, 25.44],
+          [25.44, 26.08],
+          [26.08, 26.88],
+          [26.88, 27.84]
+        ],
+        "word_times_source": "interpolated",
+        "identity_basis": "words"
+      },
+      "complete": true,
+      "expected": {
+        "ref": "1:6"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 17,
+      "t": 33.7,
+      "state": "ambiguous",
+      "span": [31.52, 32.64],
+      "words_heard": 2,
+      "count": 1,
+      "heard": {
+        "words": [1, 2]
+      },
+      "items": [
+        {
+          "ref": "1:6",
+          "posterior": 0.9999,
+          "class": "continue",
+          "matched": 1,
+          "next_word": {
+            "index": 3,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:6",
+        "posterior": 0.9999,
+        "basis": "context"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CONTINUE",
+      "seq": 18,
+      "t": 35.9,
+      "closed": {
+        "kind": "verse",
+        "ref": "1:6",
+        "words": [1, 3],
+        "partial": true,
+        "status": "uncertain",
+        "t": [31.52, 33.36],
+        "time_interpolated": false,
+        "confidence": 0.0,
+        "candidates": ["1:6"],
+        "repetition": false,
+        "text": null,
+        "translation": null,
+        "candidate_count": 1
+      },
+      "complete": false,
+      "expected": null
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 19,
+      "t": 38.1,
+      "state": "ambiguous",
+      "span": [36.96, 37.36],
+      "words_heard": 1,
+      "count": 23,
+      "heard": null,
+      "items": [
+        {
+          "ref": "81:14",
+          "posterior": 0.2299,
+          "class": "far",
+          "matched": 1,
+          "next_word": {
+            "index": 2,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "82:5",
+          "posterior": 0.2299,
+          "class": "far",
+          "matched": 1,
+          "next_word": {
+            "index": 2,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "3:30",
+          "posterior": 0.0101,
+          "class": "far",
+          "matched": 1,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "2:231",
+          "posterior": 0.005,
+          "class": "far",
+          "matched": 1,
+          "next_word": {
+            "index": 28,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "3:103",
+          "posterior": 0.005,
+          "class": "far",
+          "matched": 1,
+          "next_word": {
+            "index": 9,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "81:14",
+        "posterior": 0.2299,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 20,
+      "t": 38.1,
+      "state": "ambiguous",
+      "span": [36.96, 37.76],
+      "words_heard": 2,
+      "count": 77,
+      "heard": null,
+      "items": [
+        {
+          "ref": "2:231",
+          "posterior": 0.1813,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 30,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "3:103",
+          "posterior": 0.1812,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 11,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "5:11",
+          "posterior": 0.1812,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 8,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "35:3",
+          "posterior": 0.1812,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "10:71",
+          "posterior": 0.0035,
+          "class": "far",
+          "matched": 1,
+          "next_word": {
+            "index": 3,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "2:231",
+        "posterior": 0.1813,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 21,
+      "t": 39.3,
+      "state": "ambiguous",
+      "span": [36.96, 38.4],
+      "words_heard": 3,
+      "count": 7,
+      "heard": null,
+      "items": [
+        {
+          "ref": "1:7",
+          "posterior": 0.5018,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 6,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "5:1",
+          "posterior": 0.4014,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 19,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "2:231",
+          "posterior": 0.0151,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 31,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "35:3",
+          "posterior": 0.0151,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 8,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "3:103",
+          "posterior": 0.0151,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 12,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:7",
+        "posterior": 0.5018,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 22,
+      "t": 39.3,
+      "state": "ambiguous",
+      "span": [36.96, 38.48],
+      "words_heard": 4,
+      "count": 7,
+      "heard": null,
+      "items": [
+        {
+          "ref": "1:7",
+          "posterior": 0.4762,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "5:1",
+          "posterior": 0.3809,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 20,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "35:3",
+          "posterior": 0.0123,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 9,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "2:231",
+          "posterior": 0.0123,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 32,
+            "text": "mot"
+          }
+        },
+        {
+          "ref": "3:103",
+          "posterior": 0.0123,
+          "class": "far",
+          "matched": 2,
+          "next_word": {
+            "index": 13,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:7",
+        "posterior": 0.4762,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 23,
+      "t": 40.4,
+      "state": "ambiguous",
+      "span": [36.96, 39.12],
+      "words_heard": 5,
+      "count": 1,
+      "heard": {
+        "words": [1, 4]
+      },
+      "items": [
+        {
+          "ref": "1:7",
+          "posterior": 0.9999,
+          "class": "far",
+          "matched": 3,
+          "next_word": {
+            "index": 7,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:7",
+        "posterior": 0.9999,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 24,
+      "t": 40.4,
+      "state": "ambiguous",
+      "span": [36.96, 39.6],
+      "words_heard": 6,
+      "count": 1,
+      "heard": {
+        "words": [1, 5]
+      },
+      "items": [
+        {
+          "ref": "1:7",
+          "posterior": 1.0,
+          "class": "far",
+          "matched": 4,
+          "next_word": {
+            "index": 8,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:7",
+        "posterior": 1.0,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CANDIDATES",
+      "seq": 25,
+      "t": 40.4,
+      "state": "ambiguous",
+      "span": [36.96, 39.84],
+      "words_heard": 7,
+      "count": 1,
+      "heard": {
+        "words": [1, 6]
+      },
+      "items": [
+        {
+          "ref": "1:7",
+          "posterior": 1.0,
+          "class": "far",
+          "matched": 5,
+          "next_word": {
+            "index": 9,
+            "text": "mot"
+          }
+        }
+      ],
+      "leader": {
+        "ref": "1:7",
+        "posterior": 1.0,
+        "basis": "words"
+      }
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "CONTINUE",
+      "seq": 26,
+      "t": 44.9,
+      "closed": {
+        "kind": "verse",
+        "ref": "1:7",
+        "words": [1, 8],
+        "partial": true,
+        "status": "uncertain",
+        "t": [36.96, 42.4],
+        "time_interpolated": false,
+        "confidence": 0.0,
+        "candidates": ["1:7"],
+        "repetition": false,
+        "text": null,
+        "translation": null,
+        "candidate_count": 1
+      },
+      "complete": false,
+      "expected": null
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "FINALIZING",
+      "seq": 27,
+      "t": 49.72,
+      "pending_s": null
+    },
+    {
+      "schema": "aqr.live/1",
+      "type": "FINAL",
+      "seq": 28,
+      "t": 49.72,
+      "document": {
+        "schema": "aqr.recognition/1",
+        "intervals": []
+      }
+    }
+  ]
+}

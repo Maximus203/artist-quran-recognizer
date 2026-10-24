@@ -236,8 +236,8 @@ function Body({
           </div>
           <div className="p-empty">
             <p>
-              Verset déduit de la position, pas reconnu à la voix. Il n’est pas une
-              preuve.
+              Verset déduit de la position, pas reconnu à la voix. Il n’est pas
+              une preuve.
             </p>
           </div>
         </>
