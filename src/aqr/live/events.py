@@ -136,4 +136,43 @@ class Revision:
     reason: str  # contradicted
 
 
-LiveEvent = Candidates | Locked | Continue | Unresolved | Jump | Lost | BasmalaHeard | Revision
+@dataclass(frozen=True)
+class PartialTranscript:
+    """Transcription PROVISOIRE de l'ASR (`PARTIAL` d'`aqr.live/1`) : étiquetée comme telle, jamais
+    le « passage entendu » (I1). Texte brut du modèle, seul texte non issu du corpus."""
+
+    t: float
+    start_s: float
+    end_s: float
+    text: str
+
+
+@dataclass(frozen=True)
+class DegradationChanged:
+    """Le calcul ne suit plus (ou suit de nouveau) : jamais un retard accumulé en silence.
+
+    Porte la règle de verrou en vigueur : jamais plus lâche que le réglage de base."""
+
+    t: float
+    tier: int
+    """Palier qui tourne : 1 suivi seul, 2 + vérification acoustique, 3 + réécoute."""
+    overloaded: bool
+    lag_s: float
+    skipped: tuple[str, ...]
+    reason: str  # tier | overload | recovered | lag_growing
+    min_words_lock: int
+    tau_lock: float
+
+
+LiveEvent = (
+    Candidates
+    | Locked
+    | Continue
+    | Unresolved
+    | Jump
+    | Lost
+    | BasmalaHeard
+    | Revision
+    | PartialTranscript
+    | DegradationChanged
+)

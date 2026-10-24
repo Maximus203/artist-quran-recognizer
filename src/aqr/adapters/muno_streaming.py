@@ -89,6 +89,67 @@ def words_from_tokens(
     return tuple(words)
 
 
+@dataclass(frozen=True)
+class MunoAssets:
+    """Ce que charge le modèle, commun à l'adaptateur par fenêtres et à l'incrémental."""
+
+    session: Any
+    tokenizer: Any
+    cmvn: Any
+    revision: str
+
+
+def open_muno_assets(
+    models_dir: Path,
+    lock_path: Path,
+    *,
+    verify_on_load: bool = True,
+    providers: Sequence[str] = ("CPUExecutionProvider",),
+    intra_op_threads: int = 0,
+) -> MunoAssets:  # pragma: no cover - dépendances et poids réels
+    """Session ONNX, tokenizer et CMVN épinglés dans `models/LOCK.json`."""
+    import numpy as np
+    import onnxruntime as ort
+    import sentencepiece as spm
+
+    lock = ModelsLock.load(lock_path)
+    if verify_on_load:
+        verify_model_files(models_dir, MODEL_KEY, lock)
+    model_dir = models_dir / MODEL_KEY
+    opts = ort.SessionOptions()
+    opts.intra_op_num_threads = intra_op_threads
+    session = ort.InferenceSession(
+        str(model_dir / "model.q8.onnx"), sess_options=opts, providers=list(providers)
+    )
+    return MunoAssets(
+        session=session,
+        tokenizer=spm.SentencePieceProcessor(model_file=str(model_dir / "tokenizer.model")),
+        cmvn=np.load(model_dir / "streaming_global_cmvn.npz", allow_pickle=False),
+        revision=lock.models[MODEL_KEY].revision,
+    )
+
+
+def normalize_log_mel(log_mel: Any, cmvn: Any, cmvn_kind: str) -> Any:
+    """Moyenne et écart-type globaux du modèle sur un log-mel `(80, trames)`."""
+    import numpy as np
+
+    mean_key, std_key = f"{cmvn_kind}_mean", f"{cmvn_kind}_std"
+    if mean_key not in cmvn or std_key not in cmvn:
+        raise RuntimeError(f"CMVN Muno incomplet pour {cmvn_kind}")
+    mean = cmvn[mean_key][:, None]
+    std = cmvn[std_key][:, None]
+    return ((log_mel - mean) / (std + 1e-5)).astype(np.float32, copy=False)
+
+
+def new_caches(np: Any) -> tuple[Any, Any, Any]:
+    """Caches du modèle streaming au début d'un flux."""
+    return (
+        np.zeros((1, 17, 70, 512), dtype=np.float32),
+        np.zeros((1, 17, 512, 8), dtype=np.float32),
+        np.zeros((1,), dtype=np.int64),
+    )
+
+
 class MunoStreamingQuranASR(QuranASR):
     """Adaptateur ONNX conforme au port QuranASR, avec caches streaming remis à chaque fenêtre."""
 
@@ -122,28 +183,16 @@ class MunoStreamingQuranASR(QuranASR):
 
     def _load(self) -> None:  # pragma: no cover - dépendances et poids réels
         import numpy as np
-        import onnxruntime as ort
-        import sentencepiece as spm
         import torch
         import torchaudio
 
         cfg = self._config
         if cfg.models_dir is None:
             raise RuntimeError("MunoStreamingConfig.models_dir requis (AQR_MODELS_DIR)")
-        lock = ModelsLock.load(cfg.lock_path)
-        if cfg.verify_on_load:
-            verify_model_files(cfg.models_dir, MODEL_KEY, lock)
-        model_lock = lock.models[MODEL_KEY]
-        model_dir = cfg.models_dir / MODEL_KEY
-        opts = ort.SessionOptions()
-        opts.intra_op_num_threads = 0
-        self._session = ort.InferenceSession(
-            str(model_dir / "model.q8.onnx"),
-            sess_options=opts,
-            providers=["CPUExecutionProvider"],
-        )
-        self._tokenizer = spm.SentencePieceProcessor(model_file=str(model_dir / "tokenizer.model"))
-        self._cmvn = np.load(model_dir / "streaming_global_cmvn.npz", allow_pickle=False)
+        assets = open_muno_assets(cfg.models_dir, cfg.lock_path, verify_on_load=cfg.verify_on_load)
+        self._session = assets.session
+        self._tokenizer = assets.tokenizer
+        self._cmvn = assets.cmvn
         self._torch = torch
         self._np = np
         self._mel_transform = torchaudio.transforms.MelSpectrogram(
@@ -157,7 +206,7 @@ class MunoStreamingQuranASR(QuranASR):
             norm="slaney",
             mel_scale="slaney",
         )
-        self._revision = model_lock.revision
+        self._revision = assets.revision
 
     def _ensure_loaded(self) -> None:
         if self._session is None or self._tokenizer is None:
@@ -180,16 +229,9 @@ class MunoStreamingQuranASR(QuranASR):
         emphasized = torch.cat((waveform[:1], waveform[1:] - 0.97 * waveform[:-1]))
         mel = self._mel_transform(emphasized)
         features = torch.log(mel + 2**-24).numpy().astype(np.float32, copy=False)
-        mean_key, std_key = f"{self._config.cmvn_kind}_mean", f"{self._config.cmvn_kind}_std"
-        if mean_key not in self._cmvn or std_key not in self._cmvn:
-            raise RuntimeError(f"CMVN Muno incomplet pour {self._config.cmvn_kind}")
-        mean = self._cmvn[mean_key][:, None]
-        std = self._cmvn[std_key][:, None]
-        features = ((features - mean) / (std + 1e-5)).astype(np.float32, copy=False)
+        features = normalize_log_mel(features, self._cmvn, self._config.cmvn_kind)
 
-        cache_channel = np.zeros((1, 17, 70, 512), dtype=np.float32)
-        cache_time = np.zeros((1, 17, 512, 8), dtype=np.float32)
-        cache_len = np.zeros((1,), dtype=np.int64)
+        cache_channel, cache_time, cache_len = new_caches(np)
         observed: list[tuple[int, int, float]] = []
         previous = -1
         output_frame = 0
