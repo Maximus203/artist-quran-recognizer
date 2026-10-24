@@ -1,6 +1,8 @@
 # ADR-0011 — Détection en direct sur flux, sans plage déclarée
 
-- Statut : **proposé** — 2026-10-23 (conception ; rien n'est codé hors du script d'analyse)
+- Statut : **accepté** — décisions du mainteneur du 2026-10-23 ; **étape 1 (simulation hors ligne) livrée**,
+  critère de sortie atteint en vérité calculée et sur la parole, non démontré sur la voix réelle (voir
+  « Résultats de l'étape 1 »). Étapes 2 à 4 : à faire.
 - Précise : ADR-0004 (recherche sur le flux continu), ADR-0007 (preuve cumulée), ADR-0008
   (vérification acoustique), ADR-0009 (cascade), ADR-0010 (promotion par le voisin reconnu et temps au
   mot). Remplace la ligne « V2+ : mode temps réel » de
@@ -33,6 +35,26 @@ aujourd'hui rejoué fenêtre par fenêtre, caches remis à zéro, pas encore bra
 de flux (ADR-0004), la vérification acoustique d'un texte connu (ADR-0008) et la cascade (ADR-0009). L'ADR-0010 ajoute aux versets reconnus un temps par mot (`word_times`, issu de
 l'alignement CTC ou interpolé, `word_times_source`) : c'est la mesure du moment où chaque mot est dit, donc
 celle qu'il faut pour chiffrer la latence d'un verrou.
+
+## Décisions du mainteneur (décidé le 2026-10-23)
+Les quatre questions ouvertes de la première version de cet ADR sont tranchées :
+1. **`INFERRED` est accepté** pour « texte entendu, référence déduite de la position » (refrains, sosies
+   exacts), avec `identity_basis: "context"`. Il n'est **jamais présenté comme reconnu** : l'interface le
+   distingue de `RECOGNIZED` (`identity_basis: "words"`). Sans contexte, ces versets restent ambigus puis
+   `UNCERTAIN` à la clôture.
+2. **Valeurs de départ de simulation** : `prior` = 0,9 et `min_words_lock` = 3. Ce sont des paramètres de
+   `LiveConfig`, pas des seuils figés : l'étape 1 les fait varier et le rapport donne ce qu'ils coûtent.
+3. **La transcription provisoire (`PARTIAL`) n'est visible qu'en mode technique.** Elle n'est jamais le
+   « passage entendu » (I1).
+4. **L'audio d'un flux n'est jamais conservé par défaut.** Une conservation éventuelle sera une option
+   explicite, pas un réglage implicite.
+
+**Transport : WebSocket (`aqr.live/1`), pas WebRTC.** Le flux est une voix qui va du navigateur vers un
+serveur que nous contrôlons : aucune traversée de NAT à négocier entre pairs (le serveur est joignable), un
+codage Opus avec pertes ne servirait à rien (le modèle veut du PCM 16 kHz fidèle, et une perte de trame
+change les mots), et WebRTC ajoute de la complexité sans contrepartie (signalisation, STUN/TURN, jitter
+buffer, pile à embarquer côté serveur). WebSocket suffit : trames binaires PCM, messages JSON, reprise
+par numéro de séquence. À rouvrir seulement si un besoin réel de pair à pair apparaît.
 
 ## Exigences
 1. **Précision d'abord (I3).** Afficher des *candidats* n'est pas nommer un verset. Un verset n'est
@@ -323,10 +345,28 @@ Règle de sécurité : **quand un palier est sauté, la règle de verrou se durc
    confirmer à tort un autre passage identique ; pris en charge par SAUT LOCAL et `repetition`.
 6. **Vie privée** : un flux en direct est de la voix d'une personne ; pas de conservation par défaut.
 
+## Résultats de l'étape 1
+Rapport complet : `docs/evaluation/live-etape1-2026-10-23.md`. Sur 82 scénarios à vérité calculée
+(492 versets, EveryAyah et mixages, **jeu optimiste**, aucune vérité terrain humaine) :
+- premier `CANDIDATES` médiane 2,0 s / p90 3,8 s ; `LOCKED` médiane 4,8 s / p90 8,7 s (max 20,8 s) ;
+  322 versets nommés sur 492 (65 %) ;
+- **0 faux verrou**, 0 `REVISION` ; **0 verrou sur 3 600 s de parole réelle** ;
+- décision du coordinateur du 2026-10-23 (I3 avant le rappel) : `min_lock_density` = **0,9** par défaut. Sans
+  elle, la même mesure donnait 376 verrous, 1 faux (67:16 pour 67:17, mot fondu par l'ASR) et 8 verrous non
+  confirmés sur la parole ; la densité coûte **54 verrous (14 %)** et allonge la queue (p90 +0,6 s).
+
+**Critère « 0 faux verset nommé » : atteint en vérité calculée et sur la parole ; non démontré sur la
+récitation réelle** : trois verrous hors de la sortie par lots sur 5 x 600 s (56:57 et 56:58 sans doute de
+vrais versets, 42:14 suspect), faute de vérité terrain humaine. Ce qui reste est écrit dans le rapport.
+
+Écarts avec ce qui est décidé plus haut : garde-fous du verrou ajoutés (milieu de verset, rival non
+sosie, densité des mots, confiance, mots exacts) ; un début qui est la suite attendue entendue sans son
+premier mot n'est plus un saut. `prior` 0,9 et `min_words_lock` 3 sont inchangés.
+
 ## Plan par étapes
 Chaque étape a son playbook (`.artist/acceptance-playbooks/`) et ne démarre qu'avec l'étape précédente
 verte. TDD strict.
-1. **Simulation hors ligne.** Rejouer des fichiers comme un flux (sorties par fenêtre et mots de l'ASR,
+1. **Simulation hors ligne — livrée (PR de l'issue #84), critère atteint en vérité calculée et sur la parole, non démontré sur la voix réelle.** Rejouer des fichiers comme un flux (sorties par fenêtre et mots de l'ASR,
    audio EveryAyah, dev réel, mixages avec parole non coranique). Construire `PrefixIndex`,
    `HypothesisTracker`, `LiveConfig` et les mesures : temps jusqu'au premier `CANDIDATES`, au `LOCKED`,
    nombre de faux verrous (**doit être 0**, I3), `JUMP`/`LOST` sur les mixages. Poser les cibles de
@@ -339,9 +379,7 @@ verte. TDD strict.
    navigateur, puis par Cherif QA.
 
 ## Questions ouvertes pour le mainteneur
-1. Accepter `INFERRED` pour « texte entendu, référence déduite de la position » (refrains, sosies) ?
-   Sinon, ces versets resteront `UNCERTAIN` jusqu'à la clôture.
-2. Valeurs de départ de `prior` (0,9 ?) et de `min_words_lock` (3 ?) pour l'étape 1 : paramètres de
-   simulation, pas des seuils.
-3. Afficher la transcription provisoire (`PARTIAL`) à l'utilisateur, ou seulement en mode technique ?
-4. Conservation de l'audio d'un flux : jamais, ou sur option du compte ?
+Les quatre questions de la première version sont **tranchées le 2026-10-23** (section « Décisions du
+mainteneur »). Tranchée aussi : la densité des mots du verrou (`min_lock_density`) vaut 0,9 au départ
+(coordinateur, 2026-10-23). Reste ouvert : sa valeur sur de la voix réelle, à juger avec une vérité terrain
+humaine.

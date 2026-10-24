@@ -151,7 +151,7 @@
     "title": "ADR-0011 — Détection en direct sur flux, sans plage déclarée",
     "section": "Décisions",
     "file": "docs/adr/0011-detection-en-direct-sans-plage.md",
-    "summary": "Proposition : garder les candidats ouverts au début d'un verset, nommer la source exacte dès qu'un mot départage, attendre la suite, signaler les sauts ; chiffres sur le corpus Hafs et protocole WebSocket."
+    "summary": "Accepté le 2026-10-23 : garder les candidats ouverts au début d'un verset, nommer la source exacte dès qu'un mot départage, attendre la suite, signaler les sauts ; protocole WebSocket aqr.live/1 (pas WebRTC) ; étape 1 livrée, critère de sortie atteint en vérité calculée, non démontré sur la voix réelle."
   },
   {
     "slug": "adr-0012",
@@ -278,6 +278,13 @@
     "section": "Évaluation",
     "file": "docs/evaluation/courbe-vitesse-2026-10-23.md",
     "summary": "Rappel sur témoins étirés et sur vrais fichiers lents quand l'audio est accéléré de ×1,25 à ×4, estimateurs du débit sans vérité, règle de décision écrite d'avance : l'étage « candidat de vitesse » n'est pas implémenté."
+  },
+  {
+    "slug": "live-etape1-2026-10-23",
+    "title": "Détection en direct, étape 1 : simulation hors ligne",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape1-2026-10-23.md",
+    "summary": "Temps jusqu'aux candidats et au verrou sur 82 scénarios à vérité calculée, faux verrous (0 avec la densité à 0,9, 1 sans), verrous sur la parole réelle, sauts, balayage de 91 réglages, cibles de latence proposées et limites."
   },
   {
     "slug": "corpus-de-test",

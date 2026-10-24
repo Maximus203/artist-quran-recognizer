@@ -139,6 +139,7 @@ src/aqr/
 ├── corpus/        # normalisation arabe, chargement Tanzil, checksums
 ├── matching/      # B5 + B6 (pur)
 ├── decoding/      # B7 (pur)
+├── live/          # détection en direct (ADR-0011) : PrefixIndex, HypothesisTracker, LiveConfig, banc de simulation (pur)
 ├── adapters/      # ffmpeg, modèles HF/NeMo, QuranEnc… (dépendances lourdes, extras optionnels)
 ├── app/           # cas d'usage : recognize(), render()
 └── cli.py

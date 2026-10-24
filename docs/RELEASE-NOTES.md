@@ -9,6 +9,13 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-23 — Détection en direct : l'étape 1, la simulation hors ligne
+Étiquettes : technique, décision
+PR : #106
+
+**Ce qui change.** Rien de visible pour l'instant : le suivi en direct (candidats ouverts au début d'un verset, verrou quand un mot départage, suite attendue, saut) existe comme moteur de simulation hors ligne, avec son banc de mesure. Sur 82 scénarios à vérité calculée, le premier message de candidats arrive en médiane 2,0 s après le début du verset et le verrou en 4,8 s (p90 8,7 s) ; 322 versets sur 492 sont nommés, sans aucun faux verrou. Un début de verset attendu dont l'ASR avale le premier mot n'est plus annoncé comme un saut. Un nouveau réglage, `min_lock_density` (0,9 au départ), refuse de nommer un verset dont les mots sont épars dans de la parole : il supprime le seul faux verrou mesuré et les verrous sur 3 600 s de parole réelle, au prix de 54 verrous sur 376.
+
+**Pourquoi / décision.** Le critère de sortie de l'étape 1, zéro faux verset nommé, est atteint en vérité calculée et sur la parole, mais **non démontré sur la récitation réelle** (trois verrous hors de la sortie par lots, dont un suspect). La densité à 0,9 est une décision d'I3 avant le rappel, pas un réglage calibré. Le rapport dit les limites (jeu optimiste, aucune vérité terrain humaine) et propose des cibles de latence. Décisions du 2026-10-23 consignées dans l'ADR-0011 : `INFERRED` accepté avec `identity_basis: context`, `prior` 0,9 et `min_words_lock` 3 en valeurs de départ, transcription provisoire visible en mode technique seulement, audio du flux jamais conservé par défaut, transport WebSocket `aqr.live/1` et non WebRTC. Rapport : `docs/evaluation/live-etape1-2026-10-23.md`.
 ## 2026-10-23 — L'atelier ne déborde plus : liste des sessions et en-tête
 Étiquettes : utilisateur, technique
 PR : #104
