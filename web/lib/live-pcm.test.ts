@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BlockCutter,
   PcmBuffer,
+  PcmPipeline,
   Resampler,
   floatsToPcm16,
   rms,
@@ -103,6 +104,26 @@ describe("BlockCutter", () => {
     const rest = cutter.flush();
     expect(rest?.byteLength).toBe(50);
     expect(cutter.flush()).toBeNull();
+  });
+});
+
+describe("PcmPipeline", () => {
+  it("1 s de micro à 48 kHz donne ~1 s de blocs de 100 ms à 16 kHz et un niveau", () => {
+    const pipe = new PcmPipeline(48000, 16000, 1600);
+    const input = sine(440, 48000, 1, 0.4);
+    const blocks: Uint8Array[] = [];
+    let level = 0;
+    for (let i = 0; i < input.length; i += 960) {
+      const out = pipe.push(input.subarray(i, i + 960));
+      blocks.push(...out.blocks);
+      level = Math.max(level, out.level);
+    }
+    expect(blocks.length).toBeGreaterThanOrEqual(9);
+    expect(blocks.every((b) => b.byteLength === 3200)).toBe(true);
+    expect(level).toBeGreaterThan(0.25);
+    expect(level).toBeLessThan(0.31);
+    const rest = pipe.flush();
+    expect(rest === null || rest.byteLength % 2 === 0).toBe(true);
   });
 });
 

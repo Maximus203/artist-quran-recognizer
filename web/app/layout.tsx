@@ -15,6 +15,7 @@ import "./review.css";
 import "./perf.css";
 import "./phase2.css";
 import "./pages.css";
+import "./live.css";
 import "./export.css";
 
 export const metadata: Metadata = {

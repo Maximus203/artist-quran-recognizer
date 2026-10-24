@@ -65,6 +65,30 @@
 .spacer {
   flex: 1;
 }
+/* « En direct » : onglet avec son disque lapis (bureau) ; bouton-icône à gauche de « + » (téléphone). */
+.livedot {
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  flex: none;
+}
+.nav a[aria-current="page"] .livedot {
+  background: var(--accent);
+}
+.live-link {
+  color: var(--accent);
+}
+.live-link[aria-current="page"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+@media (min-width: 768px) {
+  .live-link {
+    display: none;
+  }
+}
 .toggle-panel {
   position: relative;
 }

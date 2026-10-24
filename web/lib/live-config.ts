@@ -34,6 +34,8 @@ export const LIVE_UI = {
   /** Ruban de niveau : 40 barres, 0,12 s chacune (≈ 5 s d'historique). */
   levelBars: 40,
   levelBarS: 0.12,
+  /** Gain d'affichage du ruban : un niveau efficace de parole (≈ 0,1) remplit environ le tiers de la hauteur. */
+  ribbonGain: 3.2,
   /** Niveau (RMS 0–1) au-dessus duquel le client considère que quelqu'un parle (aide, jamais un verdict). */
   voiceLevel: 0.012,
   /** Attente maximale d'une réponse du service au démarrage, puis à la fin d'écoute. */

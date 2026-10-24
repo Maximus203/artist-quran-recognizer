@@ -122,6 +122,33 @@ export class BlockCutter {
 }
 
 /**
+ * Chaîne complète d'un bloc du micro vers le service : rééchantillonnage → 16 bits → blocs de taille
+ * fixe. Rend aussi le niveau (efficace) du bloc d'entrée, pour le ruban.
+ */
+export class PcmPipeline {
+  private readonly resampler: Resampler;
+  private readonly cutter: BlockCutter;
+
+  constructor(inputRate: number, outputRate: number, blockSamples: number) {
+    this.resampler = new Resampler(inputRate, outputRate);
+    this.cutter = new BlockCutter(blockSamples);
+  }
+
+  push(samples: Float32Array): { blocks: Uint8Array[]; level: number } {
+    const resampled = this.resampler.push(samples);
+    return {
+      blocks: this.cutter.push(floatsToPcm16(resampled)),
+      level: rms(samples),
+    };
+  }
+
+  /** Ce qui reste, à envoyer avant la fin. */
+  flush(): Uint8Array | null {
+    return this.cutter.flush();
+  }
+}
+
+/**
  * Tampon de coupure : garde les derniers blocs envoyés (ou à envoyer) pour pouvoir les renvoyer à
  * partir de `audio_received_samples` après une coupure. Borné (`maxSamples`) : au-delà, les plus
  * vieux blocs partent et le trou est annoncé (`gapSamples`) au lieu d'être caché.

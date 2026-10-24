@@ -66,6 +66,7 @@ export class LiveClient {
   private mode: Mode = "idle";
   private socket: SocketLike | null = null;
   private generation = 0;
+  private attempting = false;
   private everReady = false;
   private connReady = false;
   private startErrorForwarded = false;
@@ -157,6 +158,13 @@ export class LiveClient {
     this.pump();
   }
 
+  /** « Réessayer maintenant » pendant une coupure : sans attendre le prochain essai automatique. */
+  retryNow(): void {
+    if (this.mode !== "lost" || this.attempting || this.socket) return;
+    this.clear("retry");
+    void this.attempt(true);
+  }
+
   /** Page quittée : fermeture propre (le service termine le flux et rend sa place). */
   dispose(): void {
     this.generation += 1;
@@ -168,6 +176,15 @@ export class LiveClient {
   // ───────────── Connexion ─────────────
 
   private async attempt(resume: boolean): Promise<void> {
+    this.attempting = true;
+    try {
+      await this.connect(resume);
+    } finally {
+      this.attempting = false;
+    }
+  }
+
+  private async connect(resume: boolean): Promise<void> {
     const generation = (this.generation += 1);
     const token = await this.deps.fetchToken(this.deps.options.technical);
     if (generation !== this.generation || this.mode === "done") return;

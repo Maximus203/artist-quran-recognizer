@@ -126,7 +126,7 @@ function Transport({
 
 const LEGEND: { label: string; style: string }[] = [
   { label: "Reconnu", style: "s-recognized" },
-  { label: "Déduit · non entendu", style: "s-inferred" },
+  { label: "Déduit de la position", style: "s-inferred" },
   { label: "Incertain", style: "s-uncertain" },
   { label: "Formule", style: "s-formula" },
   { label: "Abstention", style: "s-abstention" },

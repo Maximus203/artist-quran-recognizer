@@ -1,0 +1,1085 @@
+/* Écran « En direct » (/direct). Tous les jetons viennent de tokens.css ; boutons, badges et pastilles de
+ * statut de base.css. Ici seulement ce qui est propre à cet écran, sous la racine `.lv` (aucune règle
+ * globale). Conception : docs/design/en-direct.md ; prototype : docs/design/prototype/live.css. */
+.lv {
+  --dock-h: 76px;
+  min-width: 0;
+}
+.lv-wrap {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--gutter) calc(var(--dock-h) + var(--sp-10));
+}
+@media (min-width: 768px) {
+  .lv-wrap {
+    padding-bottom: var(--sp-12);
+  }
+}
+.lv-title {
+  font: 400 var(--fs-2xl) / 1.1 var(--font-display);
+  letter-spacing: -0.01em;
+}
+.lv-title em {
+  color: var(--text-3);
+}
+.lv-lead {
+  margin-top: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  max-width: 64ch;
+}
+.lv[data-phase="listening"] .lv-lead,
+.lv[data-phase="paused"] .lv-lead,
+.lv[data-phase="ending"] .lv-lead {
+  display: none;
+}
+@media (max-width: 767px) {
+  .lv:not([data-phase="idle"]) .lv-lead {
+    display: none;
+  }
+  .lv:not([data-phase="idle"]) .lv-title {
+    font-size: var(--fs-xl);
+  }
+}
+.lv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .lv-grid {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: var(--sp-6);
+  }
+  .lv-side {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100dvh - var(--header-h) - 80px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+.lv-main,
+.lv-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  min-width: 0;
+  align-content: start;
+}
+
+/* ───────── Console : état, durée, niveau, contrôles ───────── */
+.lv .dock {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--hairline-top);
+  flex-wrap: wrap;
+}
+.lv .dock .grow {
+  flex: 1;
+  min-width: 0;
+}
+.lv .dock-time {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--fs-xl) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 96px;
+}
+.lv .recdot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--rec);
+  flex: none;
+}
+.lv .recdot--pulse {
+  animation: lv-recpulse 1.6s var(--ease) infinite;
+}
+@keyframes lv-recpulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+.lv .pausebars {
+  display: inline-flex;
+  gap: 3px;
+}
+.lv .pausebars i {
+  width: 4px;
+  height: 12px;
+  background: var(--text-2);
+  border-radius: 1px;
+}
+.lv .ribbon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  min-width: 120px;
+  flex: 1 1 0;
+  overflow: hidden;
+  color: var(--text-2);
+}
+.lv .ribbon i {
+  flex: 1;
+  min-width: 2px;
+  max-width: 5px;
+  height: var(--h, 8%);
+  min-height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.85;
+}
+.lv .ribbon[data-quiet="true"] i {
+  opacity: 0.35;
+}
+.lv .dock-note {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.lv .dock .btn--lg {
+  min-width: 160px;
+}
+.lv .sq {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  background: currentColor;
+  border-radius: 2px;
+}
+.lv .dock--idle {
+  justify-content: space-between;
+}
+.lv .dock--idle .btn {
+  flex: none;
+}
+@media (max-width: 767px) {
+  .lv .dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    border-radius: 0;
+    border-width: 1px 0 0;
+    gap: var(--sp-2);
+    padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+    flex-wrap: nowrap;
+    background: var(--surface-1);
+    min-height: var(--dock-h);
+  }
+  .lv .dock .ribbon {
+    min-width: 40px;
+  }
+  .lv .dock-time {
+    min-width: 0;
+    font-size: var(--fs-lg);
+  }
+  .lv .dock .btn--lg {
+    min-width: 44px;
+    padding: 0 var(--sp-4);
+  }
+  .lv .dock--idle {
+    flex-wrap: wrap;
+  }
+  .lv .dock--idle .btn {
+    width: 100%;
+  }
+  .lv .dock--idle .dock-note,
+  .lv .dock .dock-note {
+    display: none;
+  }
+  .lv .dock .btn .lbl {
+    display: none;
+  }
+  .lv .dock .btn--wide .lbl {
+    display: inline;
+  }
+}
+
+/* ───────── Barre d'état (connexion, mode allégé) ───────── */
+.lv .statusbar:empty,
+.lv .notices:empty,
+.lv .know:empty {
+  display: none;
+}
+.lv .statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.lv .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.lv .pill svg.i {
+  width: 14px;
+  height: 14px;
+}
+.lv .pill--warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn-edge) 55%, transparent);
+}
+.lv .pill--rec {
+  color: var(--text);
+}
+.lv .pill .d {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.lv .pill .d--ring {
+  background: none;
+  border: 2px solid currentColor;
+}
+.lv .hide-m {
+  display: none;
+}
+@media (min-width: 768px) {
+  .lv .hide-m {
+    display: inline;
+  }
+  .lv .pill.hide-m {
+    display: inline-flex;
+  }
+}
+
+/* ───────── Bandeaux : dégradation, coupure, correction, jamais cachés, toujours en clair ───────── */
+.lv .notices {
+  display: grid;
+  gap: var(--sp-2);
+}
+.lv .lnotice {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: none;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .lnotice--wide {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+.lv .lnotice svg.i {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+.lv .lnotice b {
+  color: var(--text);
+  font-weight: 700;
+}
+.lv .lnotice p + p {
+  margin-top: 4px;
+}
+.lv .lnotice--warn {
+  border-color: color-mix(in srgb, var(--warn-edge) 60%, transparent);
+  background: color-mix(in srgb, var(--warn-edge) 7%, var(--surface-2));
+}
+.lv .lnotice--warn svg.i {
+  color: var(--warn);
+}
+.lv .lnotice--info svg.i {
+  color: var(--accent);
+}
+.lv .lnotice--danger {
+  border-color: color-mix(in srgb, var(--danger) 60%, transparent);
+}
+.lv .lnotice--danger svg.i {
+  color: var(--danger);
+}
+.lv .lnotice .act {
+  grid-column: 2 / span 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+.lv .lnotice .meta {
+  font: 400 var(--fs-xs) / 1.3 var(--font-mono);
+  color: var(--text-3);
+}
+.lv .fadein {
+  animation: lv-fadein var(--dur-3) var(--ease-out) both;
+}
+@keyframes lv-fadein {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ───────── Passage en cours ───────── */
+.lv .pass {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--hairline-top);
+  padding: var(--sp-5);
+  display: grid;
+  gap: var(--sp-3);
+  min-height: 280px;
+  align-content: start;
+}
+.lv .pass:focus-visible,
+.lv #lv-title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.lv .pass-h {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.lv .pass-h .eyebrow {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lv .pass-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.lv .ref {
+  font: 400 var(--fs-xl) / 1.1 var(--font-display);
+}
+.lv .ref--ded {
+  font-style: italic;
+  text-decoration: underline dotted;
+  text-underline-offset: 5px;
+}
+.lv .rng {
+  font: 400 var(--fs-xs) / 1.2 var(--font-mono);
+  color: var(--text-3);
+}
+.lv .ar {
+  font-family: var(--font-quran);
+  font-size: var(--quran-size);
+  line-height: var(--quran-lh);
+  text-align: center;
+  text-wrap: pretty;
+  padding: var(--sp-2) 0;
+  min-height: 3.2em;
+}
+.lv .ar .w {
+  border-radius: 6px;
+  padding: 0 0.06em;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    color var(--dur-2) var(--ease);
+}
+.lv .ar .w.next {
+  color: var(--text-3);
+}
+.lv .ar .w.on {
+  background: var(--live-fill);
+  box-shadow: inset 0 -3px 0 var(--live-edge);
+  color: var(--text);
+}
+.lv .ar .slot {
+  display: inline-block;
+  width: 0.8em;
+  height: 1.2em;
+  vertical-align: -0.25em;
+  margin: 0 0.2em;
+  border-bottom: 3px dashed var(--accent);
+  opacity: 0.75;
+}
+.lv .prog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 400 var(--fs-xs) / 1 var(--font-mono);
+  color: var(--text-2);
+}
+.lv .lv-meter {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.lv .lv-meter i {
+  display: block;
+  height: 100%;
+  width: var(--p, 0%);
+  background: var(--accent);
+}
+.lv .tr {
+  color: var(--text);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-read);
+  max-width: 68ch;
+  margin-inline: auto;
+  text-align: left;
+}
+.lv .tr sup {
+  font-size: 0.7em;
+  color: var(--text-3);
+}
+.lv .attr {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  max-width: 68ch;
+  margin-inline: auto;
+}
+.lv .tr-lbl {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  max-width: 68ch;
+  margin-inline: auto;
+  width: 100%;
+}
+.lv .sepline {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--sp-1) 0;
+}
+.lv .pass-note {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  max-width: 64ch;
+}
+.lv .pass-note b {
+  color: var(--text);
+}
+.lv .pass-title {
+  font: 400 var(--fs-2xl) / 1.15 var(--font-display);
+}
+.lv .pass-sub {
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  max-width: 58ch;
+}
+.lv .pass--center {
+  text-align: center;
+  justify-items: center;
+}
+.lv .pass--center .pass-h {
+  justify-self: stretch;
+}
+.lv .pass--idle .pass-title,
+.lv .pass--listen .pass-title {
+  margin-top: var(--sp-2);
+}
+.lv .pass--dim .ar {
+  opacity: 0.5;
+}
+.lv .pass .eyebrow--start {
+  justify-self: start;
+}
+
+/* Écoute : l'anneau qui respire (aucune information inventée) */
+.lv .hearing {
+  width: 84px;
+  height: 84px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-top: var(--sp-2);
+}
+.lv .hearing::before,
+.lv .hearing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0.5;
+  animation: lv-breathe 2.8s var(--ease) infinite;
+}
+.lv .hearing::after {
+  animation-delay: 1.4s;
+}
+@keyframes lv-breathe {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+.lv .hearing svg {
+  width: 34px;
+  height: 34px;
+  color: var(--accent);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  position: relative;
+}
+.lv .hearing--still::before,
+.lv .hearing--still::after {
+  animation: none;
+  opacity: 0.35;
+  transform: scale(0.8);
+}
+
+/* Candidats : l'entonnoir (nombres réels du protocole, jamais un texte) */
+.lv .funnel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font: 600 var(--fs-md) / 1 var(--font-mono);
+}
+.lv .funnel .n {
+  padding: 4px 8px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+}
+.lv .funnel .n.now {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.lv .funnel .ar-sep {
+  color: var(--text-3);
+}
+.lv .candcount {
+  font: 400 var(--fs-3xl) / 1 var(--font-display);
+}
+.lv .candwrap {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lv .candwrap span.l {
+  color: var(--text-2);
+  font-size: var(--fs-md);
+}
+.lv .piste {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .piste b {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.lv details.pistes {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv details.pistes summary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.lv details.pistes ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0 2px;
+}
+.lv details.pistes li {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  font: 400 var(--fs-xs) / 1.4 var(--font-mono);
+  color: var(--text-2);
+}
+.lv .patience {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  border: 1px dashed var(--border);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  max-width: 64ch;
+}
+.lv .patience svg.i {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--text-3);
+}
+
+/* « Ce que je sais déjà » */
+.lv .know {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .lv .know {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.lv .know > div {
+  background: var(--surface-2);
+  padding: 10px 14px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.lv .know dt {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.lv .know dd {
+  margin: 0;
+  font: 600 var(--fs-lg) / 1.25 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.lv .know dd small {
+  display: block;
+  font: 400 var(--fs-xs) / 1.3 var(--font-ui);
+  color: var(--text-3);
+}
+
+/* ───────── Pastille de statut : « en cours d'écoute » (candidats) ───────── */
+.lv .s-pending,
+.s-pending {
+  --edge: var(--accent);
+  --fill: var(--pend-fill);
+  --pat: var(--bars);
+  --bar: repeating-linear-gradient(
+    90deg,
+    var(--edge) 0 2px,
+    transparent 2px 4px
+  );
+}
+
+/* ───────── Aide à lire l'écran (avant démarrage) ───────── */
+.lv .lv-legend {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+  width: 100%;
+  max-width: 64ch;
+}
+.lv .lv-legend li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .lv-legend li b {
+  color: var(--text);
+}
+.lv .lv-legend .sw {
+  margin-top: 2px;
+}
+.lv .promise {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 64ch;
+  text-align: left;
+}
+.lv .promise p {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .promise svg.i {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--text-3);
+}
+.lv .promise b {
+  color: var(--text);
+}
+.lv .hero {
+  width: min(420px, 100%);
+  height: auto;
+  color: var(--text-3);
+}
+
+/* ───────── Historique ───────── */
+.lv .hist {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--hairline-top);
+  overflow: hidden;
+}
+.lv .hist-h {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+}
+.lv .hist-h h2 {
+  font: 400 1.5rem / 1 var(--font-display);
+  flex: 1;
+}
+.lv .hist-sum {
+  padding: 0 var(--sp-4) var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .hist-sum b {
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+.lv .hrow {
+  border-top: 1px solid var(--border-subtle);
+}
+.lv .hrow > details > summary,
+.lv .hrow > .hrow-flat {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: start;
+  padding: 12px var(--sp-4);
+  min-height: 56px;
+}
+.lv .hrow summary::-webkit-details-marker {
+  display: none;
+}
+.lv .hrow summary:hover {
+  background: var(--surface-3);
+}
+.lv .hrow .sw {
+  margin-top: 3px;
+}
+.lv .hrow-t {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.lv .hrow-s {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  line-height: 1.4;
+}
+.lv .hrow-e {
+  font: 400 var(--fs-xs) / 1.4 var(--font-mono);
+  color: var(--text-3);
+  text-align: right;
+  white-space: nowrap;
+}
+.lv .hrow-body {
+  padding: 4px var(--sp-4) var(--sp-4) calc(var(--sp-4) + 38px);
+  display: grid;
+  gap: 8px;
+}
+.lv .hrow-body .ar {
+  font-size: calc(var(--quran-size) * 0.7);
+  padding: 0;
+  text-align: right;
+  min-height: 0;
+}
+.lv .hrow-body .tr {
+  font-size: var(--fs-md);
+  margin: 0;
+}
+.lv .hrow--sep .hrow-flat {
+  min-height: 44px;
+  padding-block: 8px;
+  color: var(--text-3);
+}
+.lv .hrow--sep .hrow-t {
+  font-weight: 400;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.lv .hrow--sep .glyph {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 14px;
+  margin-top: 4px;
+  color: var(--text-3);
+}
+.lv .hrow--sep .glyph svg {
+  width: 20px;
+  height: 20px;
+}
+.lv .hrow[data-revised="true"] {
+  background: color-mix(in srgb, var(--warn-edge) 5%, transparent);
+}
+.lv .lv-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border-strong);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+  margin-left: 6px;
+}
+.lv .lv-tag--warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn-edge) 60%, transparent);
+}
+.lv .hist-empty {
+  padding: var(--sp-4);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ───────── Panneau technique ───────── */
+.lv .techsw {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.lv .techsw button[role="switch"] {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-3);
+  flex: none;
+}
+.lv .techsw button[role="switch"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-2);
+  transition: transform var(--dur-2) var(--ease);
+}
+.lv .techsw button[aria-checked="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.lv .techsw button[aria-checked="true"]::after {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+.lv .techsw small {
+  display: block;
+  font-weight: 400;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.lv .tech {
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+  font-size: var(--fs-xs);
+}
+.lv .tech h3 {
+  font: 600 var(--fs-xs) / 1 var(--font-ui);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.lv .partial {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  color: var(--text-2);
+}
+.lv .partial .lbl {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+.lv .partial .txt {
+  font-family: "Noto Naskh Arabic", "Segoe UI", system-ui, sans-serif;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  direction: rtl;
+  text-align: right;
+}
+.lv .log {
+  font: 400 var(--fs-xs) / 1.5 var(--font-mono);
+  color: var(--text-2);
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+.lv .log span.k {
+  color: var(--accent);
+  font-weight: 600;
+}
+.lv .log span.s {
+  color: var(--text-3);
+}
+
+/* ───────── Fin d'écoute ───────── */
+.lv .end {
+  display: grid;
+  gap: var(--sp-4);
+  justify-items: start;
+}
+.lv .end h2 {
+  font: 400 var(--fs-2xl) / 1.15 var(--font-display);
+}
+.lv .lv-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .lv-facts span {
+  white-space: nowrap;
+}
+.lv .lv-facts b {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.lv .end-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.lv .keep {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  display: grid;
+  gap: 10px;
+  background: var(--surface-1);
+  width: 100%;
+}
+.lv .keep p {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  max-width: 62ch;
+}
+.lv .keep p b {
+  color: var(--text);
+}
+.lv .keep .bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.lv .keep .bar i {
+  display: block;
+  height: 100%;
+  width: var(--p, 0%);
+  background: var(--accent);
+  transition: width 600ms var(--ease);
+}
+.lv .about {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.lv .about summary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+}
+.lv .about p {
+  margin-top: 4px;
+  max-width: 62ch;
+}
+
+@media (forced-colors: active) {
+  .lv .ar .w.on {
+    outline: 2px solid Highlight;
+    background: none;
+  }
+  .lv .ribbon i {
+    background: CanvasText;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv .hearing::before,
+  .lv .hearing::after {
+    animation: none;
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  .lv .recdot--pulse {
+    animation: none;
+  }
+  .lv .fadein {
+    animation: none;
+  }
+}

@@ -424,6 +424,19 @@ describe("coupure et reprise", () => {
     expect(h.sockets.length).toBe(count);
   });
 
+  it("« Réessayer maintenant » n'attend pas le prochain essai", async () => {
+    const h = harness();
+    await h.ready();
+    h.last.drop();
+    await h.flush();
+    h.client.retryNow();
+    await h.flush();
+    expect(h.sockets).toHaveLength(2);
+    h.client.retryNow(); // déjà en cours de reprise : rien de plus
+    await h.flush();
+    expect(h.sockets).toHaveLength(2);
+  });
+
   it("idle_timeout (recoverable) est traité comme une coupure reprenable", async () => {
     const h = harness();
     await h.ready();

@@ -270,7 +270,7 @@ describe("libellés des intervalles", () => {
   it("intervalStateLabel et intervalStyle suivent les mêmes codes que la légende", () => {
     expect(intervalStateLabel(verse())).toBe("Reconnu");
     expect(intervalStateLabel(verse({ status: "inferred" }))).toBe(
-      "Déduit · non entendu",
+      "Déduit de la position",
     );
     expect(intervalStateLabel(verse({ status: "uncertain" }))).toBe(
       "Incertain",
