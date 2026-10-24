@@ -1060,6 +1060,47 @@
   max-width: 62ch;
 }
 
+/* Carte « Écouter en direct » de « Nouvel essai » (hors de la page /direct, donc sans la racine .lv). */
+.live-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-3) var(--sp-4);
+  align-items: center;
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  box-shadow: var(--hairline-top);
+}
+.live-card-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.live-card h2 {
+  font: 400 1.35rem / 1.1 var(--font-display);
+}
+.live-card p {
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.live-card .btn {
+  grid-column: 1 / -1;
+}
+@media (min-width: 768px) {
+  .live-card {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .live-card .btn {
+    grid-column: auto;
+  }
+}
+
 @media (forced-colors: active) {
   .lv .ar .w.on {
     outline: 2px solid Highlight;
