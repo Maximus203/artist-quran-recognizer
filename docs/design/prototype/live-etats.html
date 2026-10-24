@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>En direct, tous les états — Atelier de revue</title>
+<!--
+  PROTOTYPE STATIQUE — galerie de tous les états de l'écran « En direct ». Données factices (live-data.js) ; le texte arabe
+  (Tanzil) et la traduction (QuranEnc) viennent de sorties réelles du moteur, tout le reste est inventé. Parcours animé : live.html.
+  Adresse : #theme=light|dark · font=…
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="live.css">
+</head>
+<body>
+<header class="header">
+  <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em class="hide-m">de revue</em></b></a>
+  <span class="spacer"></span>
+  <a class="btn btn--secondary btn--sm" href="live.html">Voir le parcours animé</a>
+</header>
+<main class="gal">
+  <h1 class="lv-title" style="margin-top:var(--sp-4)">En direct <em>— tous les états</em></h1>
+  <p class="lv-lead">Chaque cadre est un instant d’un scénario factice, rendu à 375 px de large (mobile d’abord) par le même noyau que le parcours animé. Ce n’est pas la sortie du moteur : voir le bandeau « données factices » de <a href="live.html">live.html</a>.</p>
+  <div id="gal"></div>
+  <p class="foot">Texte coranique : Tanzil Project (CC BY 3.0, <a href="https://tanzil.net">tanzil.net</a>), non modifié. Traductions : QuranEnc.com, non modifiées. Temps, nombres de candidats, pistes, niveaux sonores, coupures : inventés pour la démonstration.</p>
+</main>
+<style>.lv-frame { max-width: 440px; }</style>
+<script src="live-verses.js"></script>
+<script src="live-data.js"></script>
+<script src="live-core.js"></script>
+<script src="live-etats.js"></script>
+</body>
+</html>
