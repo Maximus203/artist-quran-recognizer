@@ -50,6 +50,67 @@ class WordStreamSource(Protocol):
 
 
 @dataclass(frozen=True)
+class StableWord:
+    """Mot que l'ASR incrémental ne reprendra plus (ADR-0011, étape 2).
+
+    `word.text` est le texte BRUT du modèle (non normalisé) ; `arrival_s` est le temps du flux
+    (échantillons reçus) auquel il est livré, jamais avant `word.time.end_s`."""
+
+    word: TranscribedWord
+    arrival_s: float
+
+
+@dataclass(frozen=True)
+class PartialText:
+    """Transcription PROVISOIRE du mot en cours : elle peut encore changer, elle n'est jamais le
+    « passage entendu » (I1). Visible seulement en mode technique."""
+
+    start_s: float
+    end_s: float
+    text: str
+
+
+@dataclass(frozen=True)
+class AsrUpdate:
+    """Ce que l'ASR incrémental rend après un bloc (ou à la fin du flux)."""
+
+    stable: tuple[StableWord, ...] = ()
+    partial: PartialText | None = None
+    received_s: float = 0.0
+    """Audio reçu depuis le début du flux."""
+    processed_s: float = 0.0
+    """Audio déjà passé dans le modèle (en retrait de `received_s` du bloc en cours)."""
+
+
+class StreamingAsrSession(Protocol):
+    """Un flux : l'état du modèle (caches) vit ici et n'est jamais partagé entre deux flux."""
+
+    @property
+    def received_s(self) -> float: ...
+
+    def feed(self, samples: Sequence[float]) -> AsrUpdate:
+        """Bloc de PCM 16 kHz mono normalisé [-1, 1], de taille libre (éventuellement vide).
+        Lève `ValueError` après `finish`."""
+        ...
+
+    def finish(self) -> AsrUpdate:
+        """Fin du flux : vide les tampons, tous les mots deviennent stables. Idempotent."""
+        ...
+
+
+class StreamingAsr(Protocol):
+    """B4 incrémental : consomme l'audio par blocs, garde ses caches d'un bloc à l'autre (I7)."""
+
+    riwaya: Riwaya
+    sample_rate: int
+
+    @property
+    def engine(self) -> str: ...
+
+    def open(self) -> StreamingAsrSession: ...
+
+
+@dataclass(frozen=True)
 class Transcript:
     words: tuple[TranscribedWord, ...]
     engine: str  # nom + version du modèle

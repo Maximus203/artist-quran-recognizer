@@ -139,8 +139,11 @@ src/aqr/
 ├── corpus/        # normalisation arabe, chargement Tanzil, checksums
 ├── matching/      # B5 + B6 (pur)
 ├── decoding/      # B7 (pur)
-├── live/          # détection en direct (ADR-0011) : PrefixIndex, HypothesisTracker, LiveConfig, banc de simulation (pur)
-├── adapters/      # ffmpeg, modèles HF/NeMo, QuranEnc… (dépendances lourdes, extras optionnels)
+├── live/          # détection en direct (ADR-0011) : PrefixIndex, HypothesisTracker, LiveConfig, banc de
+│                  #   simulation, LivePipeline (blocs -> ASR incrémental -> suivi), LiveBudget (paliers,
+│                  #   mode dégradé), horloges et rejeu (pur : l'ASR arrive par le port StreamingAsr)
+├── adapters/      # ffmpeg, modèles HF/NeMo, QuranEnc… (dépendances lourdes, extras optionnels) ;
+│                  #   muno_incremental = ASR en flux, caches du modèle gardés d'un bloc à l'autre
 ├── app/           # cas d'usage : recognize(), render()
 └── cli.py
 tests/
@@ -173,5 +176,9 @@ complément (métriques Words F1, Repeats F1).
 - **V2+** : sous-titrage automatique de vidéos (Timeline → SRT/ASS stylé → incrustation
   ffmpeg, polices arabes). Nouveau cas d'usage dans `app/`, aucune brique existante modifiée.
 - **Détection en direct sur flux WebSocket, sans plage déclarée** (direction produit du 2026-10-23) :
-  conception dans `docs/adr/0011-detection-en-direct-sans-plage.md` (proposé) ; remplace l'ancienne idée
-  « B2–B7 en fenêtres glissantes ».
+  conception dans `docs/adr/0011-detection-en-direct-sans-plage.md` (accepté) ; remplace l'ancienne idée
+  « B2–B7 en fenêtres glissantes ». Étapes 1 (simulation hors ligne) et 2 (moteur incrémental : port
+  `StreamingAsr`, adaptateur `muno_incremental`, `LivePipeline`, budget et mode dégradé) livrées ;
+  service WebSocket (étape 3) et écran « En direct » (étape 4) à faire. Le flux de données d'un flux
+  en direct : `blocs PCM -> StreamingAsr (mots stabilisés + texte provisoire) -> normalisation ->
+  HypothesisTracker -> événements`, le retard de chaque bloc décidant des paliers du budget.

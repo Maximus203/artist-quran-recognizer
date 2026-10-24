@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-24 — Détection en direct : l'étape 2, le moteur incrémental
+Étiquettes : technique, décision
+PR : #107
+
+**Ce qui change.** Rien de visible pour l'instant : le suivi en direct sait maintenant se nourrir d'un flux audio réel, par blocs, avec le modèle de reconnaissance en continu (ses caches sont gardés d'un bloc à l'autre) ; il rend les mots dès qu'ils sont stables, plus une transcription provisoire à part. Mesuré sur les 91 entrées du banc de l'étape 1, sur CPU : le calcul représente 6 % de la durée de l'audio (retard maximal d'un bloc 0,36 s) ; le premier message de candidats sort en médiane 2,5 s après le début du verset et le verrou en 5,3 s (p90 9,1 s), calcul compris ; aucun faux verrou sur 308. Si le calcul prend du retard, le système le dit (`DegradationChanged`) et durcit la règle de verrou (plus de mots, posterior plus haut), sans jamais l'assouplir. Le suivi comparait chaque mot nouveau à tout le vocabulaire : corrigé, de 3 à 10 fois plus rapide selon l'audio, mêmes résultats.
+
+**Pourquoi / décision.** Les cibles de latence de l'étape 1 sont tenues sur une récitation propre et pas sur la voix réelle difficile (p90 du verrou jusqu'à 21 s) ; le délai vient des morceaux de 1,12 s du modèle et de l'attente de stabilité d'un mot (`settle_s` 0,8 s, mesuré : 80 ms coupait un mot sur trois), pas du calcul. Le GPU n'apporte rien avec le modèle livré (quantisé, facteur 1,0 en CUDA contre 0,06 au CPU). Les contrôles des paliers 2 et 3 (vérification acoustique, réécoute) ont leur contrat mais pas encore d'adaptateur. Voir l'ADR-0011 et `docs/evaluation/live-etape2-2026-10-24.md`.
+
 ## 2026-10-23 — Détection en direct : l'étape 1, la simulation hors ligne
 Étiquettes : technique, décision
 PR : #106

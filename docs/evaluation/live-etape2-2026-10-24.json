@@ -1,0 +1,2697 @@
+{
+ "schema": "aqr.live-etape2-report/1",
+ "reglage": "CPU 4 fils ONNX, blocs de 100 ms, settle_s 0,8, morceau de 112 trames, LiveConfig de l'étape 1",
+ "principal": {
+  "engine_settings": {
+   "block_s": 0.1,
+   "device": "cpu",
+   "threads": 4,
+   "settle_s": 0.8,
+   "chunk_frames": 112,
+   "config": {
+    "prior": 0.9,
+    "local_share": 0.5,
+    "mid_verse_share": 0.2,
+    "non_quran_prior": 0.1,
+    "word_threshold": 0.7,
+    "word_error": 0.15,
+    "word_deletion": 0.05,
+    "word_insertion": 0.03,
+    "max_skip": 2,
+    "inject_window": 3,
+    "max_hypotheses": 4000,
+    "prune_ratio": 1e-09,
+    "restart_misses": 2,
+    "basmala_min_matched": 3,
+    "candidate_floor": 0.001,
+    "max_items": 5,
+    "tau_lock": 0.98,
+    "min_words_lock": 3,
+    "words_margin": 100.0,
+    "mid_verse_extra_words": 2,
+    "mid_rival_posterior": 0.01,
+    "min_lock_confidence": 0.0,
+    "min_exact_share": 0.0,
+    "min_lock_density": 0.9,
+    "unlock_floor": 0.5,
+    "context_max_candidates": 40,
+    "jump_floor": 0.05,
+    "min_words_jump": 2,
+    "jump_leader_posterior": 0.5,
+    "lost_posterior": 0.9,
+    "min_words_lost": 3,
+    "silence_lost_s": 8.0
+   }
+  },
+  "compute": {
+   "all": {
+    "inputs": 91,
+    "audio_s": 12538.3,
+    "compute_s": 755.9,
+    "asr_s": 648.0,
+    "tracker_s": 107.9,
+    "realtime_factor": 0.0603,
+    "asr_realtime_factor": 0.0517,
+    "tracker_realtime_factor": 0.0086,
+    "per_input_realtime_factor": {
+     "count": 91,
+     "median": 0.0586,
+     "p90": 0.0666,
+     "p99": 0.0714,
+     "max": 0.0714
+    },
+    "max_lag_s": {
+     "count": 91,
+     "median": 0.12,
+     "p90": 0.219,
+     "p99": 0.358,
+     "max": 0.358
+    },
+    "heavy_block_compute_s": {
+     "count": 91,
+     "median": 0.109,
+     "p90": 0.1971,
+     "p99": 0.262,
+     "max": 0.262
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 501,
+    "stable_words": 7850,
+    "memory_max_mb": 860.8
+   },
+   "truth": {
+    "inputs": 82,
+    "audio_s": 5938.3,
+    "compute_s": 342.7,
+    "asr_s": 303.9,
+    "tracker_s": 38.8,
+    "realtime_factor": 0.0577,
+    "asr_realtime_factor": 0.0512,
+    "tracker_realtime_factor": 0.0065,
+    "per_input_realtime_factor": {
+     "count": 82,
+     "median": 0.0583,
+     "p90": 0.0666,
+     "p99": 0.071,
+     "max": 0.071
+    },
+    "max_lag_s": {
+     "count": 82,
+     "median": 0.113,
+     "p90": 0.206,
+     "p99": 0.306,
+     "max": 0.306
+    },
+    "heavy_block_compute_s": {
+     "count": 82,
+     "median": 0.1079,
+     "p90": 0.1971,
+     "p99": 0.262,
+     "max": 0.262
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 177,
+    "stable_words": 3592,
+    "memory_max_mb": 836.5
+   },
+   "real": {
+    "inputs": 9,
+    "audio_s": 6600.0,
+    "compute_s": 413.3,
+    "asr_s": 344.1,
+    "tracker_s": 69.1,
+    "realtime_factor": 0.0626,
+    "asr_realtime_factor": 0.0521,
+    "tracker_realtime_factor": 0.0105,
+    "per_input_realtime_factor": {
+     "count": 9,
+     "median": 0.0592,
+     "p90": 0.0714,
+     "p99": 0.0714,
+     "max": 0.0714
+    },
+    "max_lag_s": {
+     "count": 9,
+     "median": 0.268,
+     "p90": 0.358,
+     "p99": 0.358,
+     "max": 0.358
+    },
+    "heavy_block_compute_s": {
+     "count": 9,
+     "median": 0.1188,
+     "p90": 0.2531,
+     "p99": 0.2531,
+     "max": 0.2531
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 324,
+    "stable_words": 4258,
+    "memory_max_mb": 860.8
+   }
+  },
+  "word_delay_median_per_input_s": {
+   "count": 91,
+   "median": 1.2517,
+   "p90": 1.5255,
+   "p99": 1.6463,
+   "max": 1.6463
+  },
+  "first_partial_after_verse_start_s": {
+   "count": 82,
+   "median": 1.049,
+   "p90": 2.3569,
+   "p99": 4.4617,
+   "max": 4.4617
+  },
+  "first_word_after_verse_start_s": {
+   "count": 82,
+   "median": 1.9215,
+   "p90": 3.5059,
+   "p99": 4.5842,
+   "max": 4.5842
+  },
+  "truth_stream_time": {
+   "scenarios": 82,
+   "verses": 492,
+   "locked_correct": 308,
+   "never_locked": 184,
+   "unresolved_closed": 111,
+   "false_locks": 0,
+   "false_lock_detail": [],
+   "revisions": 0,
+   "inferred_locks": 12,
+   "t_first_candidates_s": {
+    "count": 465,
+    "median": 2.458,
+    "p90": 4.06,
+    "max": 11.628
+   },
+   "t_short_list_s": {
+    "count": 406,
+    "median": 2.806,
+    "p90": 6.068,
+    "max": 14.6
+   },
+   "t_locked_s": {
+    "count": 308,
+    "median": 5.238,
+    "p90": 9.0,
+    "max": 20.429
+   },
+   "t_locked_with_context_s": {
+    "count": 247,
+    "median": 5.343,
+    "p90": 9.151,
+    "max": 20.429
+   },
+   "t_locked_without_context_s": {
+    "count": 61,
+    "median": 4.984,
+    "p90": 7.28,
+    "max": 11.2
+   },
+   "t_locked_share_of_verse": {
+    "count": 308,
+    "median": 0.796,
+    "p90": 1.277,
+    "max": 2.218
+   },
+   "words_at_lock": {
+    "count": 308,
+    "median": 3.0,
+    "p90": 5.0,
+    "max": 10.0
+   },
+   "jumps": {
+    "expected": 15,
+    "detected": 11,
+    "spurious": 58,
+    "after_gap": 43
+   },
+   "lost_in_recitation": 20,
+   "zones": {
+    "count": 42,
+    "with_lock": 0,
+    "with_candidates": 16,
+    "with_lost": 10
+   }
+  },
+  "truth_end_to_end": {
+   "scenarios": 82,
+   "verses": 492,
+   "locked_correct": 308,
+   "never_locked": 184,
+   "unresolved_closed": 111,
+   "false_locks": 0,
+   "false_lock_detail": [],
+   "revisions": 0,
+   "inferred_locks": 12,
+   "t_first_candidates_s": {
+    "count": 465,
+    "median": 2.53,
+    "p90": 4.121,
+    "max": 11.719
+   },
+   "t_short_list_s": {
+    "count": 406,
+    "median": 2.887,
+    "p90": 6.14,
+    "max": 14.689
+   },
+   "t_locked_s": {
+    "count": 308,
+    "median": 5.297,
+    "p90": 9.069,
+    "max": 20.485
+   },
+   "t_locked_with_context_s": {
+    "count": 247,
+    "median": 5.401,
+    "p90": 9.207,
+    "max": 20.485
+   },
+   "t_locked_without_context_s": {
+    "count": 61,
+    "median": 5.051,
+    "p90": 7.35,
+    "max": 11.274
+   },
+   "t_locked_share_of_verse": {
+    "count": 308,
+    "median": 0.804,
+    "p90": 1.299,
+    "max": 2.269
+   },
+   "words_at_lock": {
+    "count": 308,
+    "median": 3.0,
+    "p90": 5.0,
+    "max": 10.0
+   },
+   "jumps": {
+    "expected": 15,
+    "detected": 11,
+    "spurious": 58,
+    "after_gap": 43
+   },
+   "lost_in_recitation": 20,
+   "zones": {
+    "count": 42,
+    "with_lock": 0,
+    "with_candidates": 16,
+    "with_lost": 10
+   }
+  },
+  "real": {
+   "real-recitation-lot1-05": {
+    "duration_s": 600.0,
+    "words": 242,
+    "reference_verses": 16,
+    "locks": 11,
+    "locks_confirmed_by_reference": 9,
+    "locks_not_in_reference": [
+     {
+      "ref": "42:14",
+      "t": 552.2,
+      "reference_says": null,
+      "kind": "unattributed",
+      "status": "recognized",
+      "words_heard": 4,
+      "words_in_verse": 3,
+      "longest_exact_run": 2,
+      "verse_words": 30,
+      "mean_confidence": 0.786,
+      "exact_words": 2
+     }
+    ],
+    "reference_verses_locked": 9,
+    "candidates_events": 145,
+    "jumps": 5,
+    "lost": 11,
+    "t_locked_s": {
+     "count": 9,
+     "median": 8.97,
+     "p90": 21.165,
+     "max": 21.165
+    },
+    "t_first_candidates_s": {
+     "count": 14,
+     "median": 3.097,
+     "p90": 3.78,
+     "max": 4.42
+    },
+    "end_to_end_t_locked_s": {
+     "count": 9,
+     "median": 9.036,
+     "p90": 21.225,
+     "max": 21.225
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 14,
+     "median": 3.165,
+     "p90": 3.872,
+     "max": 4.488
+    },
+    "compute": {
+     "realtime_factor": 0.0574,
+     "max_lag_s": 0.207,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 784.7,
+     "end": 781.3,
+     "max": 815.8
+    }
+   },
+   "real-recitation-lot1-06": {
+    "duration_s": 600.0,
+    "words": 519,
+    "reference_verses": 56,
+    "locks": 32,
+    "locks_confirmed_by_reference": 32,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 32,
+    "candidates_events": 253,
+    "jumps": 7,
+    "lost": 2,
+    "t_locked_s": {
+     "count": 32,
+     "median": 4.652,
+     "p90": 9.135,
+     "max": 12.405
+    },
+    "t_first_candidates_s": {
+     "count": 56,
+     "median": 2.404,
+     "p90": 3.535,
+     "max": 7.965
+    },
+    "end_to_end_t_locked_s": {
+     "count": 32,
+     "median": 4.739,
+     "p90": 9.205,
+     "max": 12.468
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 56,
+     "median": 2.46,
+     "p90": 3.608,
+     "max": 8.118
+    },
+    "compute": {
+     "realtime_factor": 0.0578,
+     "max_lag_s": 0.195,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 781.6,
+     "end": 782.4,
+     "max": 816.6
+    }
+   },
+   "real-recitation-lot2-02": {
+    "duration_s": 600.0,
+    "words": 393,
+    "reference_verses": 37,
+    "locks": 28,
+    "locks_confirmed_by_reference": 28,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 28,
+    "candidates_events": 192,
+    "jumps": 3,
+    "lost": 2,
+    "t_locked_s": {
+     "count": 28,
+     "median": 6.78,
+     "p90": 12.725,
+     "max": 17.325
+    },
+    "t_first_candidates_s": {
+     "count": 37,
+     "median": 2.87,
+     "p90": 4.015,
+     "max": 6.125
+    },
+    "end_to_end_t_locked_s": {
+     "count": 28,
+     "median": 6.844,
+     "p90": 12.795,
+     "max": 17.394
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 37,
+     "median": 2.939,
+     "p90": 4.072,
+     "max": 6.216
+    },
+    "compute": {
+     "realtime_factor": 0.0561,
+     "max_lag_s": 0.201,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 782.9,
+     "end": 783.1,
+     "max": 817.5
+    }
+   },
+   "real-recitation-lot2-03": {
+    "duration_s": 600.0,
+    "words": 280,
+    "reference_verses": 69,
+    "locks": 38,
+    "locks_confirmed_by_reference": 35,
+    "locks_not_in_reference": [
+     {
+      "ref": "56:1",
+      "t": 23.6,
+      "reference_says": null,
+      "kind": "unattributed",
+      "status": "recognized",
+      "words_heard": 3,
+      "words_in_verse": 3,
+      "longest_exact_run": 3,
+      "verse_words": 3,
+      "mean_confidence": 0.952,
+      "exact_words": 3
+     },
+     {
+      "ref": "56:57",
+      "t": 460.4,
+      "reference_says": null,
+      "kind": "unattributed",
+      "status": "recognized",
+      "words_heard": 3,
+      "words_in_verse": 3,
+      "longest_exact_run": 3,
+      "verse_words": 4,
+      "mean_confidence": 0.959,
+      "exact_words": 3
+     },
+     {
+      "ref": "56:58",
+      "t": 470.5,
+      "reference_says": null,
+      "kind": "unattributed",
+      "status": "recognized",
+      "words_heard": 3,
+      "words_in_verse": 3,
+      "longest_exact_run": 3,
+      "verse_words": 3,
+      "mean_confidence": 0.829,
+      "exact_words": 3
+     }
+    ],
+    "reference_verses_locked": 35,
+    "candidates_events": 165,
+    "jumps": 9,
+    "lost": 2,
+    "t_locked_s": {
+     "count": 35,
+     "median": 6.085,
+     "p90": 8.21,
+     "max": 13.13
+    },
+    "t_first_candidates_s": {
+     "count": 66,
+     "median": 3.373,
+     "p90": 5.185,
+     "max": 8.63
+    },
+    "end_to_end_t_locked_s": {
+     "count": 35,
+     "median": 6.155,
+     "p90": 8.291,
+     "max": 13.223
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 66,
+     "median": 3.444,
+     "p90": 5.281,
+     "max": 8.776
+    },
+    "compute": {
+     "realtime_factor": 0.0592,
+     "max_lag_s": 0.184,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 783.5,
+     "end": 785.9,
+     "max": 819.4
+    }
+   },
+   "real-recitation-lot2-05": {
+    "duration_s": 600.0,
+    "words": 284,
+    "reference_verses": 20,
+    "locks": 9,
+    "locks_confirmed_by_reference": 9,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 9,
+    "candidates_events": 181,
+    "jumps": 11,
+    "lost": 8,
+    "t_locked_s": {
+     "count": 9,
+     "median": 6.59,
+     "p90": 18.415,
+     "max": 18.415
+    },
+    "t_first_candidates_s": {
+     "count": 20,
+     "median": 2.888,
+     "p90": 5.095,
+     "max": 8.74
+    },
+    "end_to_end_t_locked_s": {
+     "count": 9,
+     "median": 6.665,
+     "p90": 18.472,
+     "max": 18.472
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 20,
+     "median": 2.977,
+     "p90": 5.166,
+     "max": 8.81
+    },
+    "compute": {
+     "realtime_factor": 0.0591,
+     "max_lag_s": 0.332,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 787.9,
+     "end": 799.5,
+     "max": 821.1
+    }
+   },
+   "real-speech-lot1-03": {
+    "duration_s": 900.0,
+    "words": 536,
+    "reference_verses": 14,
+    "locks": 2,
+    "locks_confirmed_by_reference": 2,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 2,
+    "candidates_events": 311,
+    "jumps": 15,
+    "lost": 34,
+    "t_locked_s": {
+     "count": 2,
+     "median": 6.87,
+     "p90": 8.365,
+     "max": 8.365
+    },
+    "t_first_candidates_s": {
+     "count": 12,
+     "median": 2.535,
+     "p90": 5.835,
+     "max": 6.915
+    },
+    "end_to_end_t_locked_s": {
+     "count": 2,
+     "median": 6.931,
+     "p90": 8.43,
+     "max": 8.43
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 12,
+     "median": 2.598,
+     "p90": 5.907,
+     "max": 7.183
+    },
+    "compute": {
+     "realtime_factor": 0.0666,
+     "max_lag_s": 0.268,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 819.8,
+     "end": 831.1,
+     "max": 859.6
+    }
+   },
+   "real-speech-lot1-09": {
+    "duration_s": 900.0,
+    "words": 755,
+    "reference_verses": 5,
+    "locks": 2,
+    "locks_confirmed_by_reference": 2,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 2,
+    "candidates_events": 337,
+    "jumps": 17,
+    "lost": 42,
+    "t_locked_s": {
+     "count": 2,
+     "median": 2.382,
+     "p90": 3.795,
+     "max": 3.795
+    },
+    "t_first_candidates_s": {
+     "count": 4,
+     "median": 1.407,
+     "p90": 2.535,
+     "max": 2.535
+    },
+    "end_to_end_t_locked_s": {
+     "count": 2,
+     "median": 2.455,
+     "p90": 3.857,
+     "max": 3.857
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 4,
+     "median": 1.501,
+     "p90": 2.623,
+     "max": 2.623
+    },
+    "compute": {
+     "realtime_factor": 0.0714,
+     "max_lag_s": 0.358,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 828.8,
+     "end": 829.7,
+     "max": 860.6
+    }
+   },
+   "real-speech-lot2-11": {
+    "duration_s": 900.0,
+    "words": 632,
+    "reference_verses": 0,
+    "locks": 0,
+    "locks_confirmed_by_reference": 0,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 0,
+    "candidates_events": 152,
+    "jumps": 3,
+    "lost": 42,
+    "t_locked_s": {
+     "count": 0,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "t_first_candidates_s": {
+     "count": 0,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "end_to_end_t_locked_s": {
+     "count": 0,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 0,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "compute": {
+     "realtime_factor": 0.0648,
+     "max_lag_s": 0.308,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 829.9,
+     "end": 838.0,
+     "max": 860.4
+    }
+   },
+   "real-speech-lot2-12": {
+    "duration_s": 900.0,
+    "words": 617,
+    "reference_verses": 4,
+    "locks": 0,
+    "locks_confirmed_by_reference": 0,
+    "locks_not_in_reference": [],
+    "reference_verses_locked": 0,
+    "candidates_events": 203,
+    "jumps": 3,
+    "lost": 44,
+    "t_locked_s": {
+     "count": 0,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "t_first_candidates_s": {
+     "count": 2,
+     "median": 0.662,
+     "p90": 1.325,
+     "max": 1.325
+    },
+    "end_to_end_t_locked_s": {
+     "count": 0,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "end_to_end_t_first_candidates_s": {
+     "count": 2,
+     "median": 0.727,
+     "p90": 1.39,
+     "max": 1.39
+    },
+    "compute": {
+     "realtime_factor": 0.0633,
+     "max_lag_s": 0.288,
+     "degraded_blocks": 0
+    },
+    "memory_mb": {
+     "start": 829.0,
+     "end": 833.2,
+     "max": 860.8
+    }
+   }
+  },
+  "false_lock_detail": [],
+  "by_group": {
+   "mix:arret_waqf": {
+    "locked": 2,
+    "verses": 4,
+    "false_locks": 0,
+    "realtime_factor": 0.0645
+   },
+   "mix:assise_fr": {
+    "locked": 2,
+    "verses": 5,
+    "false_locks": 0,
+    "realtime_factor": 0.0685
+   },
+   "mix:khutba_citation": {
+    "locked": 1,
+    "verses": 4,
+    "false_locks": 0,
+    "realtime_factor": 0.068
+   },
+   "mix:murattal_continu": {
+    "locked": 5,
+    "verses": 8,
+    "false_locks": 0,
+    "realtime_factor": 0.0631
+   },
+   "mix:priere": {
+    "locked": 5,
+    "verses": 19,
+    "false_locks": 0,
+    "realtime_factor": 0.0625
+   },
+   "mix:repetition": {
+    "locked": 2,
+    "verses": 5,
+    "false_locks": 0,
+    "realtime_factor": 0.0607
+   },
+   "mix:saut_de_sourate": {
+    "locked": 3,
+    "verses": 10,
+    "false_locks": 0,
+    "realtime_factor": 0.0634
+   },
+   "mix:verset1_avec_basmala": {
+    "locked": 3,
+    "verses": 4,
+    "false_locks": 0,
+    "realtime_factor": 0.0614
+   },
+   "mix:verset1_sans_basmala": {
+    "locked": 3,
+    "verses": 4,
+    "false_locks": 0,
+    "realtime_factor": 0.0593
+   },
+   "mix:verset_brouille": {
+    "locked": 3,
+    "verses": 6,
+    "false_locks": 0,
+    "realtime_factor": 0.0604
+   },
+   "mix:versets_courts_souffle": {
+    "locked": 2,
+    "verses": 6,
+    "false_locks": 0,
+    "realtime_factor": 0.0581
+   },
+   "sequence:basmala": {
+    "locked": 35,
+    "verses": 63,
+    "false_locks": 0,
+    "realtime_factor": 0.0557
+   },
+   "sequence:full": {
+    "locked": 150,
+    "verses": 213,
+    "false_locks": 0,
+    "realtime_factor": 0.0557
+   },
+   "sequence:jump-back": {
+    "locked": 14,
+    "verses": 15,
+    "false_locks": 0,
+    "realtime_factor": 0.0621
+   },
+   "sequence:jump-skip": {
+    "locked": 5,
+    "verses": 9,
+    "false_locks": 0,
+    "realtime_factor": 0.0592
+   },
+   "sequence:jump-surah": {
+    "locked": 7,
+    "verses": 30,
+    "false_locks": 0,
+    "realtime_factor": 0.0609
+   },
+   "sequence:mid": {
+    "locked": 53,
+    "verses": 63,
+    "false_locks": 0,
+    "realtime_factor": 0.0544
+   },
+   "sequence:repeat": {
+    "locked": 5,
+    "verses": 15,
+    "false_locks": 0,
+    "realtime_factor": 0.0586
+   },
+   "sequence:short": {
+    "locked": 8,
+    "verses": 9,
+    "false_locks": 0,
+    "realtime_factor": 0.0562
+   }
+  },
+  "per_input": [
+   {
+    "id": "mix-mix-arret-waqf-s7-00",
+    "duration_s": 13.7,
+    "realtime_factor": 0.0675,
+    "max_lag_s": 0.104,
+    "locked": 1,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 726.7
+   },
+   {
+    "id": "mix-mix-arret-waqf-s7-01",
+    "duration_s": 14.4,
+    "realtime_factor": 0.0616,
+    "max_lag_s": 0.12,
+    "locked": 1,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 732.8
+   },
+   {
+    "id": "mix-mix-assise-fr-s7-00",
+    "duration_s": 173.5,
+    "realtime_factor": 0.0666,
+    "max_lag_s": 0.199,
+    "locked": 0,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 752.2
+   },
+   {
+    "id": "mix-mix-assise-fr-s7-01",
+    "duration_s": 171.2,
+    "realtime_factor": 0.0705,
+    "max_lag_s": 0.264,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 754.1
+   },
+   {
+    "id": "mix-mix-khutba-citation-s7-00",
+    "duration_s": 115.0,
+    "realtime_factor": 0.0696,
+    "max_lag_s": 0.206,
+    "locked": 0,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 750.8
+   },
+   {
+    "id": "mix-mix-khutba-citation-s7-01",
+    "duration_s": 123.7,
+    "realtime_factor": 0.0666,
+    "max_lag_s": 0.306,
+    "locked": 1,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 751.6
+   },
+   {
+    "id": "mix-mix-murattal-continu-s7-00",
+    "duration_s": 74.8,
+    "realtime_factor": 0.0608,
+    "max_lag_s": 0.113,
+    "locked": 3,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 748.8
+   },
+   {
+    "id": "mix-mix-murattal-continu-s7-01",
+    "duration_s": 22.4,
+    "realtime_factor": 0.071,
+    "max_lag_s": 0.242,
+    "locked": 2,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 745.9
+   },
+   {
+    "id": "mix-mix-priere-s7-00",
+    "duration_s": 80.6,
+    "realtime_factor": 0.0636,
+    "max_lag_s": 0.219,
+    "locked": 3,
+    "verses": 9,
+    "false_locks": 0,
+    "memory_mb": 751.8
+   },
+   {
+    "id": "mix-mix-priere-s7-01",
+    "duration_s": 81.4,
+    "realtime_factor": 0.0614,
+    "max_lag_s": 0.199,
+    "locked": 2,
+    "verses": 10,
+    "false_locks": 0,
+    "memory_mb": 751.8
+   },
+   {
+    "id": "mix-mix-repetition-s7-00",
+    "duration_s": 66.5,
+    "realtime_factor": 0.0586,
+    "max_lag_s": 0.113,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 751.5
+   },
+   {
+    "id": "mix-mix-repetition-s7-01",
+    "duration_s": 21.3,
+    "realtime_factor": 0.0672,
+    "max_lag_s": 0.125,
+    "locked": 0,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 749.2
+   },
+   {
+    "id": "mix-mix-saut-de-sourate-s7-00",
+    "duration_s": 57.7,
+    "realtime_factor": 0.0654,
+    "max_lag_s": 0.215,
+    "locked": 1,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 751.4
+   },
+   {
+    "id": "mix-mix-saut-de-sourate-s7-01",
+    "duration_s": 48.0,
+    "realtime_factor": 0.0608,
+    "max_lag_s": 0.107,
+    "locked": 2,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 750.9
+   },
+   {
+    "id": "mix-mix-verset-brouille-s7-00",
+    "duration_s": 37.8,
+    "realtime_factor": 0.0605,
+    "max_lag_s": 0.164,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 750.5
+   },
+   {
+    "id": "mix-mix-verset-brouille-s7-01",
+    "duration_s": 28.7,
+    "realtime_factor": 0.0602,
+    "max_lag_s": 0.143,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 750.5
+   },
+   {
+    "id": "mix-mix-verset1-avec-basmala-s7-00",
+    "duration_s": 21.7,
+    "realtime_factor": 0.0578,
+    "max_lag_s": 0.109,
+    "locked": 1,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 750.1
+   },
+   {
+    "id": "mix-mix-verset1-avec-basmala-s7-01",
+    "duration_s": 13.7,
+    "realtime_factor": 0.067,
+    "max_lag_s": 0.103,
+    "locked": 2,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 748.7
+   },
+   {
+    "id": "mix-mix-verset1-sans-basmala-s7-00",
+    "duration_s": 14.2,
+    "realtime_factor": 0.0606,
+    "max_lag_s": 0.113,
+    "locked": 2,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 748.0
+   },
+   {
+    "id": "mix-mix-verset1-sans-basmala-s7-01",
+    "duration_s": 17.6,
+    "realtime_factor": 0.0583,
+    "max_lag_s": 0.151,
+    "locked": 1,
+    "verses": 2,
+    "false_locks": 0,
+    "memory_mb": 749.1
+   },
+   {
+    "id": "mix-mix-versets-courts-souffle-s7-00",
+    "duration_s": 16.1,
+    "realtime_factor": 0.0594,
+    "max_lag_s": 0.096,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 749.0
+   },
+   {
+    "id": "mix-mix-versets-courts-souffle-s7-01",
+    "duration_s": 15.8,
+    "realtime_factor": 0.0569,
+    "max_lag_s": 0.078,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 748.0
+   },
+   {
+    "id": "real-recitation-lot1-05",
+    "duration_s": 600.0,
+    "realtime_factor": 0.0574,
+    "max_lag_s": 0.207,
+    "locked": 9,
+    "verses": 16,
+    "false_locks": 1,
+    "memory_mb": 815.8
+   },
+   {
+    "id": "real-recitation-lot1-06",
+    "duration_s": 600.0,
+    "realtime_factor": 0.0578,
+    "max_lag_s": 0.195,
+    "locked": 32,
+    "verses": 56,
+    "false_locks": 0,
+    "memory_mb": 816.6
+   },
+   {
+    "id": "real-recitation-lot2-02",
+    "duration_s": 600.0,
+    "realtime_factor": 0.0561,
+    "max_lag_s": 0.201,
+    "locked": 28,
+    "verses": 37,
+    "false_locks": 0,
+    "memory_mb": 817.5
+   },
+   {
+    "id": "real-recitation-lot2-03",
+    "duration_s": 600.0,
+    "realtime_factor": 0.0592,
+    "max_lag_s": 0.184,
+    "locked": 35,
+    "verses": 69,
+    "false_locks": 3,
+    "memory_mb": 819.4
+   },
+   {
+    "id": "real-recitation-lot2-05",
+    "duration_s": 600.0,
+    "realtime_factor": 0.0591,
+    "max_lag_s": 0.332,
+    "locked": 9,
+    "verses": 20,
+    "false_locks": 0,
+    "memory_mb": 821.1
+   },
+   {
+    "id": "real-speech-lot1-03",
+    "duration_s": 900.0,
+    "realtime_factor": 0.0666,
+    "max_lag_s": 0.268,
+    "locked": 2,
+    "verses": 14,
+    "false_locks": 0,
+    "memory_mb": 859.6
+   },
+   {
+    "id": "real-speech-lot1-09",
+    "duration_s": 900.0,
+    "realtime_factor": 0.0714,
+    "max_lag_s": 0.358,
+    "locked": 2,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 860.6
+   },
+   {
+    "id": "real-speech-lot2-11",
+    "duration_s": 900.0,
+    "realtime_factor": 0.0648,
+    "max_lag_s": 0.308,
+    "locked": 0,
+    "verses": 0,
+    "false_locks": 0,
+    "memory_mb": 860.4
+   },
+   {
+    "id": "real-speech-lot2-12",
+    "duration_s": 900.0,
+    "realtime_factor": 0.0633,
+    "max_lag_s": 0.288,
+    "locked": 0,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 860.8
+   },
+   {
+    "id": "seq-basmala-109-abdul",
+    "duration_s": 45.8,
+    "realtime_factor": 0.0567,
+    "max_lag_s": 0.108,
+    "locked": 3,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 782.4
+   },
+   {
+    "id": "seq-basmala-109-alafasy",
+    "duration_s": 55.6,
+    "realtime_factor": 0.0513,
+    "max_lag_s": 0.109,
+    "locked": 5,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 773.5
+   },
+   {
+    "id": "seq-basmala-109-husary",
+    "duration_s": 64.3,
+    "realtime_factor": 0.0543,
+    "max_lag_s": 0.134,
+    "locked": 4,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 779.3
+   },
+   {
+    "id": "seq-basmala-112-abdul",
+    "duration_s": 21.8,
+    "realtime_factor": 0.0572,
+    "max_lag_s": 0.096,
+    "locked": 2,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 778.7
+   },
+   {
+    "id": "seq-basmala-112-alafasy",
+    "duration_s": 23.2,
+    "realtime_factor": 0.056,
+    "max_lag_s": 0.099,
+    "locked": 1,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 778.9
+   },
+   {
+    "id": "seq-basmala-112-husary",
+    "duration_s": 34.9,
+    "realtime_factor": 0.0544,
+    "max_lag_s": 0.101,
+    "locked": 1,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 779.3
+   },
+   {
+    "id": "seq-basmala-113-abdul",
+    "duration_s": 33.9,
+    "realtime_factor": 0.0563,
+    "max_lag_s": 0.088,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 780.3
+   },
+   {
+    "id": "seq-basmala-113-alafasy",
+    "duration_s": 33.7,
+    "realtime_factor": 0.0572,
+    "max_lag_s": 0.202,
+    "locked": 4,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 779.9
+   },
+   {
+    "id": "seq-basmala-113-husary",
+    "duration_s": 46.6,
+    "realtime_factor": 0.0518,
+    "max_lag_s": 0.108,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 780.9
+   },
+   {
+    "id": "seq-basmala-114-abdul",
+    "duration_s": 39.3,
+    "realtime_factor": 0.0642,
+    "max_lag_s": 0.178,
+    "locked": 2,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 780.4
+   },
+   {
+    "id": "seq-basmala-114-alafasy",
+    "duration_s": 51.7,
+    "realtime_factor": 0.055,
+    "max_lag_s": 0.105,
+    "locked": 1,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 781.1
+   },
+   {
+    "id": "seq-basmala-114-husary",
+    "duration_s": 55.6,
+    "realtime_factor": 0.0579,
+    "max_lag_s": 0.166,
+    "locked": 2,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 781.5
+   },
+   {
+    "id": "seq-full-1-abdul",
+    "duration_s": 47.2,
+    "realtime_factor": 0.0569,
+    "max_lag_s": 0.142,
+    "locked": 2,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 781.3
+   },
+   {
+    "id": "seq-full-1-alafasy",
+    "duration_s": 51.1,
+    "realtime_factor": 0.0529,
+    "max_lag_s": 0.103,
+    "locked": 4,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 782.2
+   },
+   {
+    "id": "seq-full-1-husary",
+    "duration_s": 52.4,
+    "realtime_factor": 0.0519,
+    "max_lag_s": 0.1,
+    "locked": 3,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 782.3
+   },
+   {
+    "id": "seq-full-103-abdul",
+    "duration_s": 21.6,
+    "realtime_factor": 0.066,
+    "max_lag_s": 0.162,
+    "locked": 0,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 781.7
+   },
+   {
+    "id": "seq-full-103-alafasy",
+    "duration_s": 22.9,
+    "realtime_factor": 0.0615,
+    "max_lag_s": 0.113,
+    "locked": 0,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 782.3
+   },
+   {
+    "id": "seq-full-103-husary",
+    "duration_s": 32.4,
+    "realtime_factor": 0.0523,
+    "max_lag_s": 0.096,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 784.1
+   },
+   {
+    "id": "seq-full-108-abdul",
+    "duration_s": 17.1,
+    "realtime_factor": 0.0586,
+    "max_lag_s": 0.079,
+    "locked": 3,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 783.2
+   },
+   {
+    "id": "seq-full-108-alafasy",
+    "duration_s": 18.7,
+    "realtime_factor": 0.0566,
+    "max_lag_s": 0.088,
+    "locked": 3,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 783.8
+   },
+   {
+    "id": "seq-full-108-husary",
+    "duration_s": 26.0,
+    "realtime_factor": 0.0584,
+    "max_lag_s": 0.164,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 784.8
+   },
+   {
+    "id": "seq-full-109-abdul",
+    "duration_s": 40.7,
+    "realtime_factor": 0.0545,
+    "max_lag_s": 0.075,
+    "locked": 5,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 784.8
+   },
+   {
+    "id": "seq-full-109-alafasy",
+    "duration_s": 49.1,
+    "realtime_factor": 0.0507,
+    "max_lag_s": 0.068,
+    "locked": 5,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 785.6
+   },
+   {
+    "id": "seq-full-109-husary",
+    "duration_s": 58.6,
+    "realtime_factor": 0.0536,
+    "max_lag_s": 0.075,
+    "locked": 5,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 786.2
+   },
+   {
+    "id": "seq-full-110-abdul",
+    "duration_s": 26.4,
+    "realtime_factor": 0.0548,
+    "max_lag_s": 0.079,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 784.3
+   },
+   {
+    "id": "seq-full-110-alafasy",
+    "duration_s": 28.4,
+    "realtime_factor": 0.053,
+    "max_lag_s": 0.08,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 784.6
+   },
+   {
+    "id": "seq-full-110-husary",
+    "duration_s": 41.6,
+    "realtime_factor": 0.0463,
+    "max_lag_s": 0.068,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 785.7
+   },
+   {
+    "id": "seq-full-112-abdul",
+    "duration_s": 17.4,
+    "realtime_factor": 0.0571,
+    "max_lag_s": 0.104,
+    "locked": 2,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 783.1
+   },
+   {
+    "id": "seq-full-112-alafasy",
+    "duration_s": 16.5,
+    "realtime_factor": 0.0596,
+    "max_lag_s": 0.099,
+    "locked": 2,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 783.8
+   },
+   {
+    "id": "seq-full-112-husary",
+    "duration_s": 28.5,
+    "realtime_factor": 0.0566,
+    "max_lag_s": 0.158,
+    "locked": 1,
+    "verses": 4,
+    "false_locks": 0,
+    "memory_mb": 784.6
+   },
+   {
+    "id": "seq-full-113-abdul",
+    "duration_s": 28.7,
+    "realtime_factor": 0.0571,
+    "max_lag_s": 0.099,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 784.7
+   },
+   {
+    "id": "seq-full-113-alafasy",
+    "duration_s": 27.9,
+    "realtime_factor": 0.0571,
+    "max_lag_s": 0.084,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 784.8
+   },
+   {
+    "id": "seq-full-113-husary",
+    "duration_s": 39.9,
+    "realtime_factor": 0.0557,
+    "max_lag_s": 0.091,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 785.8
+   },
+   {
+    "id": "seq-full-114-abdul",
+    "duration_s": 34.5,
+    "realtime_factor": 0.059,
+    "max_lag_s": 0.101,
+    "locked": 3,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 785.5
+   },
+   {
+    "id": "seq-full-114-alafasy",
+    "duration_s": 45.3,
+    "realtime_factor": 0.0645,
+    "max_lag_s": 0.198,
+    "locked": 1,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 786.2
+   },
+   {
+    "id": "seq-full-114-husary",
+    "duration_s": 50.1,
+    "realtime_factor": 0.0614,
+    "max_lag_s": 0.189,
+    "locked": 1,
+    "verses": 6,
+    "false_locks": 0,
+    "memory_mb": 786.5
+   },
+   {
+    "id": "seq-full-67-abdul",
+    "duration_s": 502.2,
+    "realtime_factor": 0.0555,
+    "max_lag_s": 0.184,
+    "locked": 26,
+    "verses": 30,
+    "false_locks": 0,
+    "memory_mb": 819.1
+   },
+   {
+    "id": "seq-full-67-alafasy",
+    "duration_s": 460.3,
+    "realtime_factor": 0.055,
+    "max_lag_s": 0.215,
+    "locked": 28,
+    "verses": 30,
+    "false_locks": 0,
+    "memory_mb": 817.0
+   },
+   {
+    "id": "seq-full-67-husary",
+    "duration_s": 677.0,
+    "realtime_factor": 0.0543,
+    "max_lag_s": 0.211,
+    "locked": 26,
+    "verses": 30,
+    "false_locks": 0,
+    "memory_mb": 836.5
+   },
+   {
+    "id": "seq-full-97-abdul",
+    "duration_s": 40.6,
+    "realtime_factor": 0.0698,
+    "max_lag_s": 0.142,
+    "locked": 2,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 781.5
+   },
+   {
+    "id": "seq-full-97-alafasy",
+    "duration_s": 39.6,
+    "realtime_factor": 0.0641,
+    "max_lag_s": 0.253,
+    "locked": 3,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 782.1
+   },
+   {
+    "id": "seq-full-97-husary",
+    "duration_s": 59.9,
+    "realtime_factor": 0.06,
+    "max_lag_s": 0.106,
+    "locked": 3,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 785.0
+   },
+   {
+    "id": "seq-jump-back-abdul",
+    "duration_s": 25.3,
+    "realtime_factor": 0.0633,
+    "max_lag_s": 0.092,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 785.7
+   },
+   {
+    "id": "seq-jump-back-alafasy",
+    "duration_s": 23.2,
+    "realtime_factor": 0.0664,
+    "max_lag_s": 0.171,
+    "locked": 4,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 786.3
+   },
+   {
+    "id": "seq-jump-back-husary",
+    "duration_s": 34.8,
+    "realtime_factor": 0.0583,
+    "max_lag_s": 0.107,
+    "locked": 5,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 787.0
+   },
+   {
+    "id": "seq-jump-skip-abdul",
+    "duration_s": 13.9,
+    "realtime_factor": 0.0653,
+    "max_lag_s": 0.135,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 785.4
+   },
+   {
+    "id": "seq-jump-skip-alafasy",
+    "duration_s": 13.8,
+    "realtime_factor": 0.0612,
+    "max_lag_s": 0.109,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 785.7
+   },
+   {
+    "id": "seq-jump-skip-husary",
+    "duration_s": 22.9,
+    "realtime_factor": 0.0544,
+    "max_lag_s": 0.091,
+    "locked": 1,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 787.1
+   },
+   {
+    "id": "seq-jump-surah-abdul",
+    "duration_s": 55.0,
+    "realtime_factor": 0.0591,
+    "max_lag_s": 0.113,
+    "locked": 3,
+    "verses": 10,
+    "false_locks": 0,
+    "memory_mb": 789.0
+   },
+   {
+    "id": "seq-jump-surah-alafasy",
+    "duration_s": 66.6,
+    "realtime_factor": 0.0636,
+    "max_lag_s": 0.189,
+    "locked": 3,
+    "verses": 10,
+    "false_locks": 0,
+    "memory_mb": 789.8
+   },
+   {
+    "id": "seq-jump-surah-husary",
+    "duration_s": 83.4,
+    "realtime_factor": 0.0599,
+    "max_lag_s": 0.162,
+    "locked": 1,
+    "verses": 10,
+    "false_locks": 0,
+    "memory_mb": 791.0
+   },
+   {
+    "id": "seq-mid-67-abdul",
+    "duration_s": 341.2,
+    "realtime_factor": 0.0547,
+    "max_lag_s": 0.176,
+    "locked": 17,
+    "verses": 21,
+    "false_locks": 0,
+    "memory_mb": 806.8
+   },
+   {
+    "id": "seq-mid-67-alafasy",
+    "duration_s": 319.1,
+    "realtime_factor": 0.0549,
+    "max_lag_s": 0.154,
+    "locked": 20,
+    "verses": 21,
+    "false_locks": 0,
+    "memory_mb": 805.5
+   },
+   {
+    "id": "seq-mid-67-husary",
+    "duration_s": 463.3,
+    "realtime_factor": 0.0538,
+    "max_lag_s": 0.184,
+    "locked": 16,
+    "verses": 21,
+    "false_locks": 0,
+    "memory_mb": 819.8
+   },
+   {
+    "id": "seq-repeat-abdul",
+    "duration_s": 21.2,
+    "realtime_factor": 0.0586,
+    "max_lag_s": 0.163,
+    "locked": 3,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 790.6
+   },
+   {
+    "id": "seq-repeat-alafasy",
+    "duration_s": 20.0,
+    "realtime_factor": 0.0556,
+    "max_lag_s": 0.099,
+    "locked": 1,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 790.5
+   },
+   {
+    "id": "seq-repeat-husary",
+    "duration_s": 34.4,
+    "realtime_factor": 0.0604,
+    "max_lag_s": 0.123,
+    "locked": 1,
+    "verses": 5,
+    "false_locks": 0,
+    "memory_mb": 791.4
+   },
+   {
+    "id": "seq-short-start-abdul",
+    "duration_s": 17.2,
+    "realtime_factor": 0.059,
+    "max_lag_s": 0.082,
+    "locked": 3,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 790.3
+   },
+   {
+    "id": "seq-short-start-alafasy",
+    "duration_s": 18.4,
+    "realtime_factor": 0.0558,
+    "max_lag_s": 0.074,
+    "locked": 2,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 790.4
+   },
+   {
+    "id": "seq-short-start-husary",
+    "duration_s": 25.6,
+    "realtime_factor": 0.0546,
+    "max_lag_s": 0.079,
+    "locked": 3,
+    "verses": 3,
+    "false_locks": 0,
+    "memory_mb": 790.9
+   }
+  ]
+ },
+ "sous_contention": {
+  "compute": {
+   "all": {
+    "inputs": 91,
+    "audio_s": 12538.3,
+    "compute_s": 2646.1,
+    "asr_s": 2436.7,
+    "tracker_s": 209.3,
+    "realtime_factor": 0.211,
+    "asr_realtime_factor": 0.1943,
+    "tracker_realtime_factor": 0.0167,
+    "per_input_realtime_factor": {
+     "count": 91,
+     "median": 0.2138,
+     "p90": 0.2387,
+     "p99": 0.2493,
+     "max": 0.2493
+    },
+    "max_lag_s": {
+     "count": 91,
+     "median": 0.362,
+     "p90": 0.576,
+     "p99": 0.707,
+     "max": 0.707
+    },
+    "heavy_block_compute_s": {
+     "count": 91,
+     "median": 0.3403,
+     "p90": 0.5238,
+     "p99": 0.6617,
+     "max": 0.6617
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 501,
+    "stable_words": 7850,
+    "memory_max_mb": 871.7
+   },
+   "truth": {
+    "inputs": 82,
+    "audio_s": 5938.3,
+    "compute_s": 1238.8,
+    "asr_s": 1163.0,
+    "tracker_s": 75.9,
+    "realtime_factor": 0.2086,
+    "asr_realtime_factor": 0.1958,
+    "tracker_realtime_factor": 0.0128,
+    "per_input_realtime_factor": {
+     "count": 82,
+     "median": 0.2137,
+     "p90": 0.239,
+     "p99": 0.2493,
+     "max": 0.2493
+    },
+    "max_lag_s": {
+     "count": 82,
+     "median": 0.3455,
+     "p90": 0.55,
+     "p99": 0.662,
+     "max": 0.662
+    },
+    "heavy_block_compute_s": {
+     "count": 82,
+     "median": 0.338,
+     "p90": 0.5211,
+     "p99": 0.6617,
+     "max": 0.6617
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 177,
+    "stable_words": 3592,
+    "memory_max_mb": 848.2
+   },
+   "real": {
+    "inputs": 9,
+    "audio_s": 6600.0,
+    "compute_s": 1407.3,
+    "asr_s": 1273.8,
+    "tracker_s": 133.5,
+    "realtime_factor": 0.2132,
+    "asr_realtime_factor": 0.193,
+    "tracker_realtime_factor": 0.0202,
+    "per_input_realtime_factor": {
+     "count": 9,
+     "median": 0.2138,
+     "p90": 0.2263,
+     "p99": 0.2263,
+     "max": 0.2263
+    },
+    "max_lag_s": {
+     "count": 9,
+     "median": 0.564,
+     "p90": 0.707,
+     "p99": 0.707,
+     "max": 0.707
+    },
+    "heavy_block_compute_s": {
+     "count": 9,
+     "median": 0.3605,
+     "p90": 0.5819,
+     "p99": 0.5819,
+     "max": 0.5819
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 324,
+    "stable_words": 4258,
+    "memory_max_mb": 871.7
+   }
+  },
+  "note": "même banc, 8 fils, machine chargée par d'autres processus (qemu, find)"
+ },
+ "variantes": {
+  "settle048": {
+   "engine_settings": {
+    "block_s": 0.1,
+    "device": "cpu",
+    "threads": 4,
+    "settle_s": 0.8,
+    "chunk_frames": 112,
+    "config": {
+     "prior": 0.9,
+     "local_share": 0.5,
+     "mid_verse_share": 0.2,
+     "non_quran_prior": 0.1,
+     "word_threshold": 0.7,
+     "word_error": 0.15,
+     "word_deletion": 0.05,
+     "word_insertion": 0.03,
+     "max_skip": 2,
+     "inject_window": 3,
+     "max_hypotheses": 4000,
+     "prune_ratio": 1e-09,
+     "restart_misses": 2,
+     "basmala_min_matched": 3,
+     "candidate_floor": 0.001,
+     "max_items": 5,
+     "tau_lock": 0.98,
+     "min_words_lock": 3,
+     "words_margin": 100.0,
+     "mid_verse_extra_words": 2,
+     "mid_rival_posterior": 0.01,
+     "min_lock_confidence": 0.0,
+     "min_exact_share": 0.0,
+     "min_lock_density": 0.9,
+     "unlock_floor": 0.5,
+     "context_max_candidates": 40,
+     "jump_floor": 0.05,
+     "min_words_jump": 2,
+     "jump_leader_posterior": 0.5,
+     "lost_posterior": 0.9,
+     "min_words_lost": 3,
+     "silence_lost_s": 8.0
+    }
+   },
+   "truth_end_to_end": {
+    "scenarios": 82,
+    "verses": 492,
+    "locked_correct": 295,
+    "never_locked": 197,
+    "unresolved_closed": 124,
+    "false_locks": 0,
+    "false_lock_detail": [],
+    "revisions": 0,
+    "inferred_locks": 12,
+    "t_first_candidates_s": {
+     "count": 464,
+     "median": 2.368,
+     "p90": 3.907,
+     "max": 11.721
+    },
+    "t_short_list_s": {
+     "count": 406,
+     "median": 2.82,
+     "p90": 6.138,
+     "max": 14.759
+    },
+    "t_locked_s": {
+     "count": 295,
+     "median": 5.05,
+     "p90": 8.932,
+     "max": 19.1
+    },
+    "t_locked_with_context_s": {
+     "count": 234,
+     "median": 5.17,
+     "p90": 9.255,
+     "max": 19.1
+    },
+    "t_locked_without_context_s": {
+     "count": 61,
+     "median": 4.39,
+     "p90": 7.355,
+     "max": 11.264
+    },
+    "t_locked_share_of_verse": {
+     "count": 295,
+     "median": 0.776,
+     "p90": 1.261,
+     "max": 1.782
+    },
+    "words_at_lock": {
+     "count": 295,
+     "median": 3.0,
+     "p90": 5.0,
+     "max": 10.0
+    },
+    "jumps": {
+     "expected": 15,
+     "detected": 11,
+     "spurious": 78,
+     "after_gap": 62
+    },
+    "lost_in_recitation": 22,
+    "zones": {
+     "count": 42,
+     "with_lock": 0,
+     "with_candidates": 16,
+     "with_lost": 10
+    }
+   },
+   "word_delay_median_per_input_s": {
+    "count": 82,
+    "median": 1.0999,
+    "p90": 1.217,
+    "p99": 1.4839,
+    "max": 1.4839
+   },
+   "first_word_after_verse_start_s": {
+    "count": 82,
+    "median": 1.8344,
+    "p90": 2.8936,
+    "p99": 3.5117,
+    "max": 3.5117
+   },
+   "compute_truth": {
+    "inputs": 82,
+    "audio_s": 5938.3,
+    "compute_s": 361.9,
+    "asr_s": 318.2,
+    "tracker_s": 43.7,
+    "realtime_factor": 0.0609,
+    "asr_realtime_factor": 0.0536,
+    "tracker_realtime_factor": 0.0074,
+    "per_input_realtime_factor": {
+     "count": 82,
+     "median": 0.0616,
+     "p90": 0.0676,
+     "p99": 0.0759,
+     "max": 0.0759
+    },
+    "max_lag_s": {
+     "count": 82,
+     "median": 0.1205,
+     "p90": 0.233,
+     "p99": 0.357,
+     "max": 0.357
+    },
+    "heavy_block_compute_s": {
+     "count": 82,
+     "median": 0.1124,
+     "p90": 0.2133,
+     "p99": 0.254,
+     "max": 0.254
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 246,
+    "stable_words": 3658,
+    "memory_max_mb": 826.7
+   }
+  },
+  "settle15": {
+   "engine_settings": {
+    "block_s": 0.1,
+    "device": "cpu",
+    "threads": 4,
+    "settle_s": 0.8,
+    "chunk_frames": 112,
+    "config": {
+     "prior": 0.9,
+     "local_share": 0.5,
+     "mid_verse_share": 0.2,
+     "non_quran_prior": 0.1,
+     "word_threshold": 0.7,
+     "word_error": 0.15,
+     "word_deletion": 0.05,
+     "word_insertion": 0.03,
+     "max_skip": 2,
+     "inject_window": 3,
+     "max_hypotheses": 4000,
+     "prune_ratio": 1e-09,
+     "restart_misses": 2,
+     "basmala_min_matched": 3,
+     "candidate_floor": 0.001,
+     "max_items": 5,
+     "tau_lock": 0.98,
+     "min_words_lock": 3,
+     "words_margin": 100.0,
+     "mid_verse_extra_words": 2,
+     "mid_rival_posterior": 0.01,
+     "min_lock_confidence": 0.0,
+     "min_exact_share": 0.0,
+     "min_lock_density": 0.9,
+     "unlock_floor": 0.5,
+     "context_max_candidates": 40,
+     "jump_floor": 0.05,
+     "min_words_jump": 2,
+     "jump_leader_posterior": 0.5,
+     "lost_posterior": 0.9,
+     "min_words_lost": 3,
+     "silence_lost_s": 8.0
+    }
+   },
+   "truth_end_to_end": {
+    "scenarios": 82,
+    "verses": 492,
+    "locked_correct": 315,
+    "never_locked": 177,
+    "unresolved_closed": 103,
+    "false_locks": 0,
+    "false_lock_detail": [],
+    "revisions": 0,
+    "inferred_locks": 12,
+    "t_first_candidates_s": {
+     "count": 462,
+     "median": 2.677,
+     "p90": 4.403,
+     "max": 11.709
+    },
+    "t_short_list_s": {
+     "count": 398,
+     "median": 3.069,
+     "p90": 6.142,
+     "max": 11.592
+    },
+    "t_locked_s": {
+     "count": 315,
+     "median": 5.461,
+     "p90": 8.935,
+     "max": 20.485
+    },
+    "t_locked_with_context_s": {
+     "count": 250,
+     "median": 5.491,
+     "p90": 8.935,
+     "max": 20.485
+    },
+    "t_locked_without_context_s": {
+     "count": 65,
+     "median": 5.23,
+     "p90": 8.632,
+     "max": 12.363
+    },
+    "t_locked_share_of_verse": {
+     "count": 315,
+     "median": 0.825,
+     "p90": 1.351,
+     "max": 2.271
+    },
+    "words_at_lock": {
+     "count": 315,
+     "median": 3.0,
+     "p90": 5.0,
+     "max": 10.0
+    },
+    "jumps": {
+     "expected": 15,
+     "detected": 11,
+     "spurious": 45,
+     "after_gap": 33
+    },
+    "lost_in_recitation": 13,
+    "zones": {
+     "count": 42,
+     "with_lock": 0,
+     "with_candidates": 16,
+     "with_lost": 10
+    }
+   },
+   "word_delay_median_per_input_s": {
+    "count": 82,
+    "median": 1.3958,
+    "p90": 1.8179,
+    "p99": 1.9715,
+    "max": 1.9715
+   },
+   "first_word_after_verse_start_s": {
+    "count": 82,
+    "median": 1.9249,
+    "p90": 3.867,
+    "p99": 4.572,
+    "max": 4.572
+   },
+   "compute_truth": {
+    "inputs": 82,
+    "audio_s": 5938.3,
+    "compute_s": 344.5,
+    "asr_s": 309.4,
+    "tracker_s": 35.1,
+    "realtime_factor": 0.058,
+    "asr_realtime_factor": 0.0521,
+    "tracker_realtime_factor": 0.0059,
+    "per_input_realtime_factor": {
+     "count": 82,
+     "median": 0.0583,
+     "p90": 0.0638,
+     "p99": 0.0868,
+     "max": 0.0868
+    },
+    "max_lag_s": {
+     "count": 82,
+     "median": 0.1095,
+     "p90": 0.197,
+     "p99": 0.471,
+     "max": 0.471
+    },
+    "heavy_block_compute_s": {
+     "count": 82,
+     "median": 0.1061,
+     "p90": 0.1805,
+     "p99": 0.4299,
+     "max": 0.4299
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 103,
+    "stable_words": 3526,
+    "memory_max_mb": 829.3
+   }
+  },
+  "chunk56": {
+   "engine_settings": {
+    "block_s": 0.1,
+    "device": "cpu",
+    "threads": 4,
+    "settle_s": 0.8,
+    "chunk_frames": 112,
+    "config": {
+     "prior": 0.9,
+     "local_share": 0.5,
+     "mid_verse_share": 0.2,
+     "non_quran_prior": 0.1,
+     "word_threshold": 0.7,
+     "word_error": 0.15,
+     "word_deletion": 0.05,
+     "word_insertion": 0.03,
+     "max_skip": 2,
+     "inject_window": 3,
+     "max_hypotheses": 4000,
+     "prune_ratio": 1e-09,
+     "restart_misses": 2,
+     "basmala_min_matched": 3,
+     "candidate_floor": 0.001,
+     "max_items": 5,
+     "tau_lock": 0.98,
+     "min_words_lock": 3,
+     "words_margin": 100.0,
+     "mid_verse_extra_words": 2,
+     "mid_rival_posterior": 0.01,
+     "min_lock_confidence": 0.0,
+     "min_exact_share": 0.0,
+     "min_lock_density": 0.9,
+     "unlock_floor": 0.5,
+     "context_max_candidates": 40,
+     "jump_floor": 0.05,
+     "min_words_jump": 2,
+     "jump_leader_posterior": 0.5,
+     "lost_posterior": 0.9,
+     "min_words_lost": 3,
+     "silence_lost_s": 8.0
+    }
+   },
+   "truth_end_to_end": {
+    "scenarios": 82,
+    "verses": 492,
+    "locked_correct": 267,
+    "never_locked": 225,
+    "unresolved_closed": 147,
+    "false_locks": 1,
+    "false_lock_detail": [
+     {
+      "kind": "wrong_verse",
+      "locked": "67:16",
+      "truth": "67:17"
+     }
+    ],
+    "revisions": 0,
+    "inferred_locks": 11,
+    "t_first_candidates_s": {
+     "count": 457,
+     "median": 2.347,
+     "p90": 4.221,
+     "max": 9.496
+    },
+    "t_short_list_s": {
+     "count": 389,
+     "median": 2.686,
+     "p90": 6.434,
+     "max": 15.281
+    },
+    "t_locked_s": {
+     "count": 267,
+     "median": 5.201,
+     "p90": 8.868,
+     "max": 19.602
+    },
+    "t_locked_with_context_s": {
+     "count": 204,
+     "median": 5.315,
+     "p90": 8.914,
+     "max": 19.602
+    },
+    "t_locked_without_context_s": {
+     "count": 63,
+     "median": 4.61,
+     "p90": 7.35,
+     "max": 11.261
+    },
+    "t_locked_share_of_verse": {
+     "count": 267,
+     "median": 0.752,
+     "p90": 1.248,
+     "max": 1.715
+    },
+    "words_at_lock": {
+     "count": 267,
+     "median": 3.0,
+     "p90": 5.0,
+     "max": 10.0
+    },
+    "jumps": {
+     "expected": 15,
+     "detected": 12,
+     "spurious": 80,
+     "after_gap": 61
+    },
+    "lost_in_recitation": 24,
+    "zones": {
+     "count": 42,
+     "with_lock": 0,
+     "with_candidates": 18,
+     "with_lost": 13
+    }
+   },
+   "word_delay_median_per_input_s": {
+    "count": 82,
+    "median": 0.9826,
+    "p90": 1.1019,
+    "p99": 1.2722,
+    "max": 1.2722
+   },
+   "first_word_after_verse_start_s": {
+    "count": 82,
+    "median": 1.6141,
+    "p90": 3.2555,
+    "p99": 4.0714,
+    "max": 4.0714
+   },
+   "compute_truth": {
+    "inputs": 82,
+    "audio_s": 5938.3,
+    "compute_s": 538.6,
+    "asr_s": 499.7,
+    "tracker_s": 38.9,
+    "realtime_factor": 0.0907,
+    "asr_realtime_factor": 0.0842,
+    "tracker_realtime_factor": 0.0065,
+    "per_input_realtime_factor": {
+     "count": 82,
+     "median": 0.0927,
+     "p90": 0.1003,
+     "p99": 0.1187,
+     "max": 0.1187
+    },
+    "max_lag_s": {
+     "count": 82,
+     "median": 0.103,
+     "p90": 0.199,
+     "p99": 0.381,
+     "max": 0.381
+    },
+    "heavy_block_compute_s": {
+     "count": 82,
+     "median": 0.0935,
+     "p90": 0.1826,
+     "p99": 0.3815,
+     "max": 0.3815
+    },
+    "degraded_blocks": 0,
+    "inputs_degraded": 0,
+    "late_pieces": 244,
+    "stable_words": 3507,
+    "memory_max_mb": 823.4
+   }
+  }
+ },
+ "fils": [
+  {
+   "threads": 1,
+   "audio_s": 150.0,
+   "asr_realtime_factor": 0.0778,
+   "tracker_realtime_factor": 0.0072,
+   "realtime_factor": 0.085,
+   "max_lag_s": 0.256
+  },
+  {
+   "threads": 2,
+   "audio_s": 150.0,
+   "asr_realtime_factor": 0.0628,
+   "tracker_realtime_factor": 0.0035,
+   "realtime_factor": 0.0663,
+   "max_lag_s": 0.176
+  },
+  {
+   "threads": 4,
+   "audio_s": 150.0,
+   "asr_realtime_factor": 0.0515,
+   "tracker_realtime_factor": 0.003,
+   "realtime_factor": 0.0545,
+   "max_lag_s": 0.102
+  },
+  {
+   "threads": 8,
+   "audio_s": 150.0,
+   "asr_realtime_factor": 0.0464,
+   "tracker_realtime_factor": 0.0035,
+   "realtime_factor": 0.0498,
+   "max_lag_s": 0.146
+  },
+  {
+   "threads": 0,
+   "audio_s": 150.0,
+   "asr_realtime_factor": 0.109,
+   "tracker_realtime_factor": 0.0045,
+   "realtime_factor": 0.1135,
+   "max_lag_s": 0.214
+  }
+ ],
+ "gpu": [
+  {
+   "providers": [
+    "CUDAExecutionProvider",
+    "CPUExecutionProvider"
+   ],
+   "threads": 4,
+   "audio_s": 150.0,
+   "asr_realtime_factor": 1.0063,
+   "tracker_realtime_factor": 0.007,
+   "realtime_factor": 1.0133,
+   "max_lag_s": 135.963
+  }
+ ],
+ "vitesse_reelle": {
+  "input": "real-recitation-lot2-02",
+  "audio_s": 150.0,
+  "wall_s": 150.09,
+  "simulated": {
+   "blocks": 1500,
+   "audio_s": 150.0,
+   "compute_s": 8.081,
+   "asr_s": 6.942,
+   "tracker_s": 1.139,
+   "realtime_factor": 0.0539,
+   "asr_realtime_factor": 0.0463,
+   "tracker_realtime_factor": 0.0076,
+   "max_lag_s": 0.251,
+   "lag_s": {
+    "count": 1500,
+    "median": 0.0,
+    "p90": 0.0002,
+    "p99": 0.0705,
+    "max": 0.2513
+   },
+   "blocks_lag_over_1s": 0,
+   "blocks_lag_over_5s": 0,
+   "degraded_blocks": 0,
+   "stable_words": 110,
+   "block_compute_s": {
+    "count": 1501,
+    "median": 0.0,
+    "p90": 0.0002,
+    "p99": 0.0705,
+    "max": 0.2513
+   },
+   "heavy_block_compute_s": {
+    "count": 134,
+    "median": 0.0549,
+    "p90": 0.0713,
+    "p99": 0.1217,
+    "max": 0.2513
+   },
+   "word_delay_s": {
+    "count": 110,
+    "median": 1.134,
+    "p90": 1.6764,
+    "p99": 2.0342,
+    "max": 2.1005
+   },
+   "first_partial_at_s": 1.272276499995496,
+   "first_word_at_s": 2.5512578000023494
+  },
+  "realtime": {
+   "blocks": 1500,
+   "audio_s": 150.0,
+   "compute_s": 9.677,
+   "asr_s": 9.129,
+   "tracker_s": 0.548,
+   "realtime_factor": 0.0645,
+   "asr_realtime_factor": 0.0609,
+   "tracker_realtime_factor": 0.0037,
+   "max_lag_s": 0.161,
+   "lag_s": {
+    "count": 1500,
+    "median": 0.0007,
+    "p90": 0.0014,
+    "p99": 0.085,
+    "max": 0.161
+   },
+   "blocks_lag_over_1s": 0,
+   "blocks_lag_over_5s": 0,
+   "degraded_blocks": 0,
+   "stable_words": 110,
+   "block_compute_s": {
+    "count": 1501,
+    "median": 0.0003,
+    "p90": 0.0007,
+    "p99": 0.0847,
+    "max": 0.1602
+   },
+   "heavy_block_compute_s": {
+    "count": 134,
+    "median": 0.0666,
+    "p90": 0.0863,
+    "p99": 0.106,
+    "max": 0.1602
+   },
+   "word_delay_s": {
+    "count": 110,
+    "median": 1.1404,
+    "p90": 1.6846,
+    "p99": 2.0358,
+    "max": 2.0886
+   },
+   "first_partial_at_s": 1.2616051000077277,
+   "first_word_at_s": 2.406124600005569
+  },
+  "events_simulated": 189,
+  "events_realtime": 189,
+  "paired_events": 189,
+  "emission_time_gap_s": {
+   "count": 189,
+   "median": 0.0107,
+   "p90": 0.0315,
+   "p99": 0.0837,
+   "max": 0.1451
+  },
+  "stream_time_gap_s": {
+   "count": 189,
+   "median": 0.0,
+   "p90": 0.0,
+   "p99": 0.0,
+   "max": 0.0
+  }
+ },
+ "flux_simultanes": [
+  {
+   "streams": 1,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 7.3,
+   "aggregate_realtime_factor": 0.082,
+   "max_lag_s": {
+    "count": 1,
+    "median": 0.26,
+    "p90": 0.26,
+    "p99": 0.26,
+    "max": 0.26
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 4,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 7.7,
+   "aggregate_realtime_factor": 0.086,
+   "max_lag_s": {
+    "count": 4,
+    "median": 0.2935,
+    "p90": 0.327,
+    "p99": 0.327,
+    "max": 0.327
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 8,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 9.7,
+   "aggregate_realtime_factor": 0.108,
+   "max_lag_s": {
+    "count": 8,
+    "median": 0.37,
+    "p90": 0.464,
+    "p99": 0.464,
+    "max": 0.464
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 12,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 14.1,
+   "aggregate_realtime_factor": 0.156,
+   "max_lag_s": {
+    "count": 12,
+    "median": 0.574,
+    "p90": 0.684,
+    "p99": 0.72,
+    "max": 0.72
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 16,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 16.6,
+   "aggregate_realtime_factor": 0.185,
+   "max_lag_s": {
+    "count": 16,
+    "median": 0.7595,
+    "p90": 1.009,
+    "p99": 1.012,
+    "max": 1.012
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 24,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 27.5,
+   "aggregate_realtime_factor": 0.306,
+   "max_lag_s": {
+    "count": 24,
+    "median": 1.4,
+    "p90": 1.688,
+    "p99": 1.854,
+    "max": 1.854
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 32,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 33.1,
+   "aggregate_realtime_factor": 0.368,
+   "max_lag_s": {
+    "count": 32,
+    "median": 1.405,
+    "p90": 2.196,
+    "p99": 2.669,
+    "max": 2.669
+   },
+   "degraded_blocks": 0
+  },
+  {
+   "streams": 48,
+   "threads_per_stream_session": 1,
+   "audio_s_each": 90.0,
+   "wall_s": 51.2,
+   "aggregate_realtime_factor": 0.568,
+   "max_lag_s": {
+    "count": 48,
+    "median": 3.643,
+    "p90": 4.401,
+    "p99": 4.695,
+    "max": 4.695
+   },
+   "degraded_blocks": 0
+  }
+ ]
+}

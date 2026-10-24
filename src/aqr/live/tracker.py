@@ -130,7 +130,8 @@ class HypothesisTracker:
 
     def __init__(self, index: PrefixIndex, config: LiveConfig | None = None) -> None:
         self._index = index
-        self._config = config or LiveConfig()
+        self._base_config = config or LiveConfig()
+        self._config = self._base_config
         cfg = self._config
         vocabulary = max(1, index.vocabulary_size)
         self._log_background = -math.log(vocabulary)
@@ -152,6 +153,27 @@ class HypothesisTracker:
         events: list[LiveEvent] = []
         self._advance(word, events)
         return events
+
+    @property
+    def lock_rule(self) -> tuple[int, float]:
+        """(mots minimum, posterior) du verrou en vigueur."""
+        return self._config.min_words_lock, self._config.tau_lock
+
+    def set_lock_rule(
+        self, min_words_lock: int | None = None, tau_lock: float | None = None
+    ) -> None:
+        """Durcit la règle de verrou en cours de flux (mode dégradé, ADR-0011 §7). `None` = la
+        valeur de la configuration de base. Jamais en dessous de la base (I3) : `ValueError`. Un
+        verrou déjà émis n'est pas retiré, seuls les suivants subissent la nouvelle règle."""
+        base = self._base_config
+        words = base.min_words_lock if min_words_lock is None else min_words_lock
+        tau = base.tau_lock if tau_lock is None else tau_lock
+        if words < base.min_words_lock or tau < base.tau_lock:
+            raise ValueError(
+                f"la règle de verrou ne s'assouplit jamais : base {base.min_words_lock} mots, "
+                f"posterior {base.tau_lock} (reçu {words}, {tau})"
+            )
+        self._config = base.replace(min_words_lock=words, tau_lock=tau)
 
     def tick(self, now_s: float) -> list[LiveEvent]:
         """Le temps du flux avance sans mot : un passage non verrouillé silencieux est abandonné."""

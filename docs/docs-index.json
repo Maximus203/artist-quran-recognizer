@@ -287,6 +287,13 @@
     "summary": "Temps jusqu'aux candidats et au verrou sur 82 scénarios à vérité calculée, faux verrous (0 avec la densité à 0,9, 1 sans), verrous sur la parole réelle, sauts, balayage de 91 réglages, cibles de latence proposées et limites."
   },
   {
+    "slug": "live-etape2-2026-10-24",
+    "title": "Détection en direct, étape 2 : moteur incrémental",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape2-2026-10-24.md",
+    "summary": "Facteur temps réel du Muno incrémental sur CPU (0,06) et GPU (1,0), retard, latence de bout en bout du premier mot et du verrou contre les cibles de l'étape 1, mémoire, flux simultanés, vitesse réelle contre temps simulé, mode dégradé et limites."
+  },
+  {
     "slug": "corpus-de-test",
     "title": "Corpus de test audio",
     "section": "Données",
