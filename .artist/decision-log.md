@@ -1486,3 +1486,15 @@
 - **Correction de moteur trouvée par le banc** : la suite attendue entendue sans son premier mot n'est plus un saut (62 à 21 sauts non attendus vers l'avant).
 - **Patterns** : State (`HypothesisTracker`), Strategy (`PriorPolicy`), Observer (événements), Repository en lecture (`PrefixIndex`), banc = Template Method simple (build, asr, report reprenables).
 - **Preuve** : `.artist/acceptance-playbooks/live-etape1.md`, tests `tests/unit/test_live_*.py` et `tests/test_measure_live_sim.py`.
+
+## 2026-10-24 — Détection en direct, étape 2 (moteur incrémental)
+- **Mesure d'abord** : `docs/evaluation/live-etape2-2026-10-24.md`. CPU, 4 fils : facteur temps réel 0,060 ; bout en bout, premier `CANDIDATES` 2,53 / 4,12 s, `LOCKED` 5,30 / 9,07 s ; 0 faux verrou sur 308. Cibles de l'étape 1 tenues sur récitation propre, **pas** sur la voix réelle difficile (p90 jusqu'à 21 s) : le calcul n'y est pour rien (0,06 s).
+- **`settle_s` = 0,8 s** (au lieu des 80 ms supposés) : mesuré sur 6 clips, 80 ms coupait un mot sur trois (21 pièces tardives sur 65 mots), 0,8 s redonne exactement les mots du hors ligne. Coût : 0,45 s de latence. 1,5 s nomme 7 versets de plus ; reste à trancher avec une vérité terrain.
+- **Morceau de 56 trames écarté** (essai de latence) : 267 verrous sur 492, 1 faux verrou. 112 trames, valeur du modèle.
+- **Fils ONNX = 4** : tous les fils (24) font perdre (0,114 contre 0,055) ; sous contention le même réglage ne finit pas.
+- **GPU : non retenu** : ONNX CUDA sur le modèle int8 = facteur 1,0. Rien n'est ajouté aux dépendances ; un modèle fp16 (non présent, non téléchargé) serait nécessaire.
+- **Budget** : le retard (réception -> fin du traitement) décide du palier ; palier sauté ou surcharge = règle de verrou durcie (jamais sous la base), `DegradationChanged` explicite. Les contrôles des paliers 2 et 3 passent par `VerseCheck` ; aucun adaptateur réel pour l'instant.
+- **Correction de perf au passage** : `similar_positions` comparait chaque mot nouveau à tout le vocabulaire (0,6 s/mot sur de la parole étrangère). Arrêt anticipé de la distance (prouvé égal à la définition) et filtre exact par lettres : suivi de 3 à 10 fois plus rapide selon l'audio, résultats identiques.
+- **Patterns** : Adapter + port (`StreamingAsr`, `MunoIncrementalASR`), Strategy (horloges `ManualClock`/`SimulatedClock`/`WallClock`), State (`LiveBudget`, hystérésis), Observer (événements), Template Method simple du banc.
+- **Preuve** : `.artist/acceptance-playbooks/live-etape2.md`, tests `tests/unit/test_muno_incremental.py`, `test_live_budget.py`, `test_live_pipeline.py`, `test_live_drive.py`, `test_live_tracker_hardening.py`, `tests/contract/test_streaming_asr_contract.py` et `test_muno_incremental_parity.py` (vrai modèle), `tests/test_measure_live_engine.py`.
+

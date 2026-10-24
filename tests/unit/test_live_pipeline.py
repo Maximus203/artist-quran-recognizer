@@ -318,3 +318,28 @@ def test_sans_controle_branche_l_audio_n_est_pas_garde() -> None:
     pipeline, clock = make("m1 m2 m3")
     run(pipeline, 3.0, clock=clock)
     assert pipeline.retained_audio_s == 0.0
+
+
+# --------------------------------------------------------------------------- mesures
+def test_le_delai_entre_la_fin_d_un_mot_et_sa_sortie_est_mesure_mot_par_mot() -> None:
+    pipeline, clock = make("m1 m2 m3 m4", cost_s=0.05)
+    run(pipeline, 3.0, clock=clock)
+    delays = pipeline.stats.word_delay_s
+    assert len(delays) == 4
+    # le faux ASR livre 0,2 s après la fin du mot ; le calcul de 0,05 s s'y ajoute
+    assert all(0.2 <= d <= 0.45 for d in delays)
+
+
+def test_le_retard_est_garde_bloc_par_bloc() -> None:
+    pipeline, clock = make("m1 m2", cost_s=0.25)
+    run(pipeline, 1.0, clock=clock)
+    lags = pipeline.stats.block_lag_s
+    assert len(lags) == pipeline.stats.blocks == 10
+    assert lags[0] == pytest.approx(0.25) and lags[-1] == pytest.approx(0.25 + 0.15 * 9)
+
+
+def test_la_premiere_sortie_provisoire_est_datee() -> None:
+    pipeline, clock = make("m1 m2 m3 m4", cost_s=0.05)
+    run(pipeline, 3.0, clock=clock)
+    assert pipeline.stats.first_partial_at_s is not None
+    assert pipeline.stats.first_partial_at_s >= 0.2  # le premier mot commence à 0,2 s

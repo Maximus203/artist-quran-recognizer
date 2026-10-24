@@ -66,6 +66,9 @@ class MunoIncrementalConfig:
     cmvn_kind: str = "tlog"
     verify_on_load: bool = True
     intra_op_threads: int = 0
+    chunk_frames: int = CHUNK_MEL_FRAMES
+    """Trames mel (10 ms) par morceau. 112 (1,12 s) est la valeur du modèle ; moins est
+    EXPÉRIMENTAL (mesuré dans docs/evaluation/live-etape2-2026-10-24.md)."""
     settle_s: float = 0.8
     """Un mot est stable quand un autre mot commence, ou quand cette durée de sortie s'est écoulée
     après sa dernière pièce sans qu'une autre vienne le prolonger. Mesuré le 2026-10-24 sur 6 clips
@@ -81,6 +84,10 @@ class MunoIncrementalConfig:
             raise ValueError(f"device doit être cpu ou cuda (reçu {self.device})")
         if self.settle_s < 0:
             raise ValueError("settle_s doit être >= 0")
+        if not MIN_CHUNK_MEL_FRAMES <= self.chunk_frames <= CHUNK_MEL_FRAMES:
+            raise ValueError(
+                f"chunk_frames doit être dans [{MIN_CHUNK_MEL_FRAMES}, {CHUNK_MEL_FRAMES}]"
+            )
 
 
 def preemphasis(raw: Any) -> Any:
@@ -102,10 +109,12 @@ class MelStream:
     ses fenêtres sont complètes. Le tampon ne garde que ce dont les morceaux à venir ont besoin.
     """
 
-    def __init__(self, mel_fn: MelFn) -> None:
+    def __init__(self, mel_fn: MelFn, chunk_frames: int = CHUNK_MEL_FRAMES) -> None:
         import numpy as np
 
         self._np = np
+        self._frames = chunk_frames
+        self._samples_per_chunk = chunk_frames * HOP_LENGTH
         self._mel_fn = mel_fn
         self._buf = np.zeros(0, dtype=np.float32)
         self._base = 0  # indice (flux brut) du premier échantillon du tampon
@@ -161,7 +170,7 @@ class MelStream:
 
     def _make(self, frames: int) -> Any:
         np = self._np
-        features = np.asarray(self._mel_fn(self._slice(self._chunk * CHUNK_MEL_FRAMES, frames)))
+        features = np.asarray(self._mel_fn(self._slice(self._chunk * self._frames, frames)))
         if features.shape[1] != frames:
             raise RuntimeError(f"{frames} trames attendues, {features.shape[1]} calculées")
         missing = MIN_CHUNK_MEL_FRAMES - frames
@@ -170,15 +179,15 @@ class MelStream:
         return features[None]
 
     def _trim(self) -> None:
-        keep_from = max(0, self._chunk * CHUNK_SAMPLES - PAD_SAMPLES - 1)
+        keep_from = max(0, self._chunk * self._samples_per_chunk - PAD_SAMPLES - 1)
         if keep_from > self._base:
             self._buf = self._buf[keep_from - self._base :]
             self._base = keep_from
 
     def ready(self) -> Iterator[Any]:
         """Morceaux pleins que les échantillons reçus permettent déjà de calculer."""
-        while self._total >= (self._chunk + 1) * CHUNK_SAMPLES + LOOKAHEAD_SAMPLES:
-            chunk = self._make(CHUNK_MEL_FRAMES)
+        while self._total >= (self._chunk + 1) * self._samples_per_chunk + LOOKAHEAD_SAMPLES:
+            chunk = self._make(self._frames)
             self._chunk += 1
             self._trim()
             yield chunk
@@ -192,8 +201,8 @@ class MelStream:
         if self._total < MIN_STREAM_SAMPLES:
             return
         total_frames = 1 + self._total // HOP_LENGTH
-        while self._chunk * CHUNK_MEL_FRAMES < total_frames:
-            frames = min(CHUNK_MEL_FRAMES, total_frames - self._chunk * CHUNK_MEL_FRAMES)
+        while self._chunk * self._frames < total_frames:
+            frames = min(self._frames, total_frames - self._chunk * self._frames)
             chunk = self._make(frames)
             self._chunk += 1
             yield chunk
@@ -213,7 +222,8 @@ class MunoIncrementalSession:
     def __init__(self, owner: MunoIncrementalASR) -> None:
         self._owner = owner
         assert owner.mel_fn is not None
-        self._mel = MelStream(owner.mel_fn)
+        self._mel = MelStream(owner.mel_fn, owner.config.chunk_frames)
+        self._chunk_s = owner.config.chunk_frames * HOP_LENGTH / SAMPLE_RATE
         self._caches = new_caches(owner.np)
         self._chunk = 0
         self._previous = -1
@@ -270,14 +280,14 @@ class MunoIncrementalSession:
         )
         self._caches = (cache_channel, cache_time, cache_len)
         frames = int(encoded[0])
-        base_s = self._chunk * CHUNK_S
+        base_s = self._chunk * self._chunk_s
         for j, row in enumerate(logprobs[0, :frames]):
             token = int(np.argmax(row))
             if token != self._previous and token != BLANK_ID:
                 self._token(token, base_s + j * OUTPUT_FRAME_S, float(np.exp(row[token])))
             self._previous = token
         self._chunk += 1
-        self._processed_s = min(self._chunk * CHUNK_S, self.received_s)
+        self._processed_s = min(self._chunk * self._chunk_s, self.received_s)
         self._covered_s = base_s + frames * OUTPUT_FRAME_S
         self._settle()
 

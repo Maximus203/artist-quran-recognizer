@@ -113,6 +113,8 @@ class PrefixIndex:
             if verse != BASMALA_VERSE:
                 self._starts_by_surah[verse.surah].append(self._start[verse])
         self._unique_prefix: dict[VerseRef, Discrimination] | None = None
+        self._letter_bit: dict[str, int] = {}
+        self._letters: dict[str, int] = {}
         self._similar = lru_cache(maxsize=1 << 16)(self._similar_positions)
 
     # -- Forme du flux --------------------------------------------------------------------
@@ -190,13 +192,36 @@ class PrefixIndex:
         """{position du flux: similarité} pour chaque mot du flux assez proche de `word`."""
         return self._similar(word)
 
+    def _mask(self, word: str) -> int:
+        mask = 0
+        for letter in word:
+            bit = self._letter_bit.get(letter)
+            if bit is None:
+                bit = self._letter_bit[letter] = 1 << len(self._letter_bit)
+            mask |= bit
+        return mask
+
     def _similar_positions(self, word: str) -> dict[int, float]:
         found: dict[int, float] = {}
         # un mot de longueur m n'est jamais proche si |m - L| > (1 - seuil) x max(m, L)
         shortest = max(1, math.ceil(self._threshold * len(word) - 1e-9))
         longest = math.floor(len(word) / self._threshold + 1e-9)
+        word_mask = self._mask(word)
+
+        def allowed_for(a: str, b: str) -> int:
+            return int((1 - self._threshold) * max(len(a), len(b)) + 1e-9)
+
         for length in range(shortest, longest + 1):
             for token in self._vocabulary_by_length.get(length, ()):
+                # filtre exact : chaque lettre de `word` absente de `token` (et inversement) coûte
+                # au moins une modification
+                mask = self._letters.get(token)
+                if mask is None:
+                    mask = self._letters[token] = self._mask(token)
+                if (word_mask & ~mask).bit_count() > allowed_for(word, token):
+                    continue
+                if (mask & ~word_mask).bit_count() > allowed_for(word, token):
+                    continue
                 similarity = word_similarity(word, token, self._threshold)
                 if similarity > 0:
                     for position in self._positions_of[token]:

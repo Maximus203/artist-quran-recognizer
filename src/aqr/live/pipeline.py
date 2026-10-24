@@ -63,6 +63,14 @@ class PipelineStats:
     checks_skipped: dict[str, int] = field(default_factory=dict)
     windows_lost: int = 0
     block_compute_s: list[float] = field(default_factory=list)
+    block_lag_s: list[float] = field(default_factory=list)
+    """Retard de chaque bloc (hors fin de flux) : fin de traitement - heure de réception."""
+    word_delay_s: list[float] = field(default_factory=list)
+    """Pour chaque mot stabilisé : heure de sortie - fin du mot dans l'audio."""
+    first_partial_at_s: float | None = None
+    """Heure de sortie du premier texte provisoire."""
+    first_word_at_s: float | None = None
+    """Heure de sortie du premier mot stabilisé."""
 
     @property
     def compute_s(self) -> float:
@@ -179,7 +187,7 @@ class LivePipeline:
         out.extend(self._run_checks(out, update.received_s))
         self._stats.blocks += 1
         self._stats.audio_s = update.received_s
-        return self._emit(out, started, received_at, degraded=self._degraded())
+        return self._emit(out, update, started, received_at, degraded=self._degraded())
 
     def finish(self, *, received_at_s: float | None = None) -> list[Emission]:
         """Fin du flux : l'ASR vide ses tampons, le suivi clôt le passage ouvert."""
@@ -196,7 +204,7 @@ class LivePipeline:
         out.extend(self._tracker.finish(update.received_s))
         out.extend(self._run_checks(out, update.received_s))
         self._stats.audio_s = update.received_s
-        return self._emit(out, started, received_at, degraded=self._degraded())
+        return self._emit(out, update, started, received_at, degraded=self._degraded())
 
     # ------------------------------------------------------------------ étapes
     def _track(self, update: AsrUpdate) -> list[LiveEvent]:
@@ -277,15 +285,30 @@ class LivePipeline:
         return [_revision(now_s, event.ref, check.name, verdict.reason)]
 
     def _emit(
-        self, events: Sequence[LiveEvent], started: float, received_at: float, *, degraded: bool
+        self,
+        events: Sequence[LiveEvent],
+        update: AsrUpdate,
+        started: float,
+        received_at: float,
+        *,
+        degraded: bool,
     ) -> list[Emission]:
         done = self._clock()
         lag = max(0.0, done - received_at)
         stats = self._stats
         stats.max_lag_s = max(stats.max_lag_s, lag)
         stats.block_compute_s.append(done - started)
+        if not self._closed:
+            stats.block_lag_s.append(lag)
         if degraded:
             stats.degraded_blocks += 1
+        stats.word_delay_s.extend(done - w.word.time.end_s for w in update.stable)
+        if update.stable and stats.first_word_at_s is None:
+            stats.first_word_at_s = done
+        if stats.first_partial_at_s is None and any(
+            isinstance(e, PartialTranscript) for e in events
+        ):
+            stats.first_partial_at_s = done
         return [Emission(event, emitted_at_s=done, lag_s=lag) for event in events]
 
 

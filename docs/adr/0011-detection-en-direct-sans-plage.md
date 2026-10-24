@@ -2,7 +2,8 @@
 
 - Statut : **accepté** — décisions du mainteneur du 2026-10-23 ; **étape 1 (simulation hors ligne) livrée**,
   critère de sortie atteint en vérité calculée et sur la parole, non démontré sur la voix réelle (voir
-  « Résultats de l'étape 1 »). Étapes 2 à 4 : à faire.
+  « Résultats de l'étape 1 ») ; **étape 2 (moteur incrémental) livrée** (voir « Résultats de l'étape 2 »).
+  Étapes 3 et 4 : à faire.
 - Précise : ADR-0004 (recherche sur le flux continu), ADR-0007 (preuve cumulée), ADR-0008
   (vérification acoustique), ADR-0009 (cascade), ADR-0010 (promotion par le voisin reconnu et temps au
   mot). Remplace la ligne « V2+ : mode temps réel » de
@@ -363,6 +364,29 @@ vrais versets, 42:14 suspect), faute de vérité terrain humaine. Ce qui reste e
 sosie, densité des mots, confiance, mots exacts) ; un début qui est la suite attendue entendue sans son
 premier mot n'est plus un saut. `prior` 0,9 et `min_words_lock` 3 sont inchangés.
 
+## Résultats de l'étape 2
+Rapport complet : `docs/evaluation/live-etape2-2026-10-24.md`. Le port `StreamingAsr`, l'adaptateur Muno
+incrémental (caches gardés d'un bloc de 1,12 s à l'autre, mêmes mots que l'adaptateur hors ligne), le
+pipeline `LivePipeline` et le budget (`LiveBudget`) sont en place. Sur les 91 entrées du banc de l'étape 1,
+avec le vrai modèle, CPU, 4 fils ONNX, blocs de 100 ms :
+- **facteur temps réel 0,060** (ASR 0,052, suivi 0,009), retard maximal d'un bloc 0,36 s, aucune
+  dégradation ; 0,21 sur une machine saturée par un autre processus ; **GPU sans intérêt** (ONNX CUDA sur le
+  modèle int8 : 1,0) ;
+- latence de bout en bout (calcul compris) : premier `CANDIDATES` **2,53 / 4,12 s**, `LOCKED` **5,30 / 9,07 s**
+  (médiane / p90) ; premier texte provisoire 1,05 s, premier mot stable 1,92 s ; **0 faux verrou** sur 308
+  verrous (322 à l'étape 1), 0 verrou sur la parole ; mémoire 780 à 870 Mio, stable ;
+- les cibles de l'étape 1 (2,5 / 4,5 s et 6 / 10 s) sont **atteintes sur une récitation propre, non sur la
+  voix réelle difficile** (p90 du verrou jusqu'à 21 s) ; le calcul n'y est pour rien (0,06 s), le délai
+  vient des morceaux de 1,12 s et de la stabilité des mots (`settle_s`).
+
+Écarts avec ce qui est décidé plus haut : `LiveSession` s'appelle `LivePipeline` ; `settle_s` (0,8 s)
+est ajouté (80 ms coupait un mot sur trois, le CTC espaçant parfois les pièces d'un mot de plus d'une demi-
+seconde) ; le §7 gagne un état de **surcharge** (palier 1 en retard) avec sa règle de verrou durcie ; les
+contrôles des paliers 2 et 3 passent par le contrat `VerseCheck`, **sans adaptateur réel encore** (la
+vérification acoustique et la réécoute ne sont pas appelables en direct). Découverte annexe : le suivi
+comparait chaque mot nouveau à tout le vocabulaire (0,6 s par mot sur de la parole étrangère) ; corrigé
+sans changer un résultat.
+
 ## Plan par étapes
 Chaque étape a son playbook (`.artist/acceptance-playbooks/`) et ne démarre qu'avec l'étape précédente
 verte. TDD strict.
@@ -371,8 +395,10 @@ verte. TDD strict.
    `HypothesisTracker`, `LiveConfig` et les mesures : temps jusqu'au premier `CANDIDATES`, au `LOCKED`,
    nombre de faux verrous (**doit être 0**, I3), `JUMP`/`LOST` sur les mixages. Poser les cibles de
    latence. Aucun réseau, aucun modèle ajouté.
-2. **Moteur incrémental.** Adapter `StreamingAsr` (caches Muno conservés d'un bloc à l'autre) ; tests de
-   contrat `tests/contract/` ; budget et mode dégradé (palier 2 puis 3).
+2. **Moteur incrémental — livré (PR de l'issue #84), cibles de latence tenues sur récitation propre, non
+   sur la voix réelle difficile.** Adapter `StreamingAsr` (caches Muno conservés d'un bloc à l'autre) ;
+   tests de contrat `tests/contract/` ; budget et mode dégradé (paliers, règle de verrou durcie ; les
+   contrôles des paliers 2 et 3 restent à brancher).
 3. **Service WebSocket.** `aqr.live/1`, sessions, reprise, authentification par jeton, cas négatifs
    (format audio faux, flux trop long, coupure, jeton expiré), documentation du contrat.
 4. **Interface.** Brief de Sofia, puis écran « En direct » dans l'atelier ; parcours validé au

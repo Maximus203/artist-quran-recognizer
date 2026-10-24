@@ -78,6 +78,21 @@ def test_the_chunks_equal_the_offline_features_whatever_the_block_size() -> None
         assert [c.shape[2] for c in chunks[:-1]] == [CHUNK_MEL_FRAMES] * (len(chunks) - 1)
 
 
+def test_a_shorter_chunk_gives_the_same_features_cut_differently() -> None:
+    raw = ramp(3.0)
+    expected = offline_features(raw)
+    chunks = collect(MelStream(stub_mel, chunk_frames=56), raw, RATE // 10)
+    assert [c.shape[2] for c in chunks[:-1]] == [56] * (len(chunks) - 1)
+    got = np.concatenate([c[0] for c in chunks], axis=1)
+    assert np.allclose(got[:, : expected.shape[1]], expected, atol=1e-6)
+
+
+@pytest.mark.parametrize("frames", [9, 113, 0])
+def test_a_chunk_size_the_model_cannot_take_is_refused(frames: int) -> None:
+    with pytest.raises(ValueError):
+        MunoIncrementalConfig(chunk_frames=frames)
+
+
 def test_a_chunk_is_ready_only_when_its_last_window_is_complete() -> None:
     stream = MelStream(stub_mel)
     raw = ramp(3.0)

@@ -20,6 +20,8 @@ def word_similarity(a: str, b: str, threshold: float) -> float:
         current = [i]
         for j, cb in enumerate(b, 1):
             current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (ca != cb)))
+        if min(current) > allowed:
+            return 0.0  # aucune case de la ligne ne peut redescendre : la distance dépasse déjà
         previous = current
     similarity = 1 - previous[-1] / longest
     return similarity if similarity >= threshold else 0.0
