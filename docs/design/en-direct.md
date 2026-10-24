@@ -2,8 +2,10 @@
 
 Complète `atelier-direction.md` (tokens, composants, codes visuels, « Encre & lapis »), `phase2.md`, `revue-humaine.md` et `export-sous-titres.md`.
 C'est l'**étape 4** du plan de l'[ADR-0011](../adr/0011-detection-en-direct-sans-plage.md) (issue #84) : le brief de l'écran, avant toute interface.
-**État (2026-10-24).** Conçu ici, **non codé**. Le moteur incrémental existe (étape 2) ; le service WebSocket `aqr.live/1` (étape 3) et l'écran
-(ce document) restent à construire. **Aucun code dans `web/` ni `src/`.**
+**État (2026-10-24).** Conçu par Sofia (PR #108), puis **implémenté** (PR #110) : page `/direct`, `web/app/atelier/live/*`, `web/lib/live-*.ts`. Les 15
+arbitrages par défaut sont ceux de l'implémentation ; les écarts d'implémentation (barre du haut, pause, écran maintenu allumé, ligne « corrigé »…) sont
+listés dans `docs/evaluation/live-etape4-2026-10-24.md`. Le texte ci-dessous reste le brief d'origine, y compris ses propositions de protocole (§9),
+livrées à l'étape 3.
 
 Prototypes statiques, données **factices** (ouvrir par un petit serveur statique ou en `file://`) : `prototype/live.html` (parcours animé, huit
 scénarios), `prototype/live-etats.html` (tous les états côte à côte), avec `live.css`, `live-core.js` (le réducteur d'événements et le rendu),

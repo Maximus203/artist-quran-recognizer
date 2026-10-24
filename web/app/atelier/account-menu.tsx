@@ -19,6 +19,7 @@ const GO_TO: { id: NavId; href: string; label: string; icon: IconName }[] = [
   { id: "revue", href: "/", label: "Revue", icon: "wave" },
   { id: "sessions", href: "/sessions", label: "Sessions", icon: "list" },
   { id: "perf", href: "/performance", label: "Performance", icon: "gauge" },
+  { id: "live", href: "/direct", label: "En direct", icon: "live" },
   { id: "docs", href: "/docs", label: "Documentation", icon: "book" },
 ];
 

@@ -429,7 +429,37 @@ L'écran « En direct » (étape 4) parle en WebSocket à `aqr live-serve` (serv
 | `AQR_LIVE_TOKEN_TTL_S` | durée de vie du jeton (1 à 300) | 60 |
 | `AQR_LIVE_KEY` / `AQR_LIVE_KEY_FILE` | clé de signature (≥ 32 caractères), commune à l'atelier et au service ; à défaut un fichier `live-signing.key` créé au premier démarrage dans `AQR_REVIEW_DIR`, jamais dans le dépôt | fichier local |
 
-Lancer le service : `pip install -e ".[live,muno]"`, puis `aqr live-serve` (charge le modèle une fois, écoute sur `127.0.0.1:8765`). Derrière le tunnel Cloudflare, router `/live` vers ce service et donner `AQR_LIVE_URL=wss://…/live`.
+Lancer le service : `pip install -e ".[live,muno]"`, puis `aqr live-serve` (charge le modèle une fois, écoute sur `127.0.0.1:8765` ; `--corpus-dir` si le corpus n'est pas dans le dossier courant). Le WebSocket ne passe pas par le port de l'atelier : derrière le tunnel Cloudflare, le service a **son propre tunnel** et l'atelier reçoit `AQR_LIVE_URL=wss://<hôte du tunnel du direct>/live` (voir « Écran En direct » ci-dessous : le script des testeurs fait tout cela).
+
+## Écran En direct (`/direct`)
+
+Page connectée, entrée « En direct » de la barre du haut (onglet avec disque lapis sur bureau, bouton-icône à gauche de « + » sur téléphone, entrée du menu du compte) et carte « Écouter en direct » de « Nouvel essai ». Conception : `docs/design/en-direct.md` ; contrat : `docs/LIVE-PROTOCOL.md` ; décisions : ADR-0011.
+
+**Parcours.** « Démarrer l'écoute » (le micro ne s'ouvre qu'au clic) → jeton (`POST /api/live/token`) → WebSocket `AQR_LIVE_URL` → `START` → blocs de 100 ms en PCM 16 kHz mono 16 bits → la carte « Passage en cours » se précise pendant la récitation : écoute, candidats (le nombre, les mots communs du corpus, jamais le texte d'un candidat non nommé), verset nommé (arabe du corpus mot à mot selon `PROGRESS`, traduction QuranEnc entière avec son attribution), « déduit de la position », « pas de verset nommé pour l'instant » (état normal). `REVISION` garde la ligne, la marque « Corrigé » et n'affiche plus son texte ; `JUMP` et le trou (`GAP`, dérivé côté client) ; `DEGRADED` (bandeau permanent). Pause (le micro ne part plus, une trame de silence de 20 ms par seconde garde la connexion), arrêt (`END`, attente de `FINAL`), puis fin d'écoute : durée, versets nommés, passages non nommés, et le seul geste qui crée quelque chose, « Garder cet enregistrement ».
+
+**Rien n'est conservé par le serveur.** Le navigateur garde le son **en mémoire** (un `MediaRecorder` parallèle, borné à `LIVE_UI.keepMaxBytes`) pendant l'écoute ; il n'en sort que sur le geste « Garder », qui l'envoie comme un import classique (`POST /api/sessions?autorun=1`, `x-aqr-source-kind: microphone`, avec une vraie barre de transfert) ; « Ne rien garder » l'efface (annulable 6 s). Cela est dit avant de démarrer. Les résultats du direct ne sont pas réutilisés par la session gardée : le lot reste la référence. Le décalage audio (`audioOffsetMs`) n'est pas appliqué en direct (aucune lecture).
+
+**Coupure.** Le micro continue, le son est gardé dans un tampon borné (`LIVE_UI.bufferMaxS`, 5 min ≈ 9,6 Mo) ; un nouvel essai part toutes les 5 s avec un nouveau jeton et `START{resume}` ; le son est renvoyé à partir de `audio_received_samples`, sans trou ni doublon (un trou que le tampon ne peut plus combler est rempli de silence, compté et non caché). Au-delà du délai de reprise du service (`resume_ttl_s` + 5 s), l'écoute se termine localement avec « coupée trop longtemps » et le son local reste gardable. Les erreurs (micro, jeton, service plein, session expirée) sont dites en cause, impact, quoi faire (`lib/live-errors.ts`) ; `server_busy` et `rate_limited` relancent seuls après le délai du service.
+
+**Architecture** (la logique est pure et testée, `app/atelier/live/*` ne fait que l'afficher) :
+
+| Fichier | Rôle |
+| --- | --- |
+| `lib/live-config.ts` | **Tous** les seuils et délais (patience 6 / 12 / 21 s, silence 8 s, nouvel essai 5 s, correction 14 s, tampon 5 min…) : un seul endroit |
+| `lib/live-protocol.ts` | types et validation des messages `aqr.live/1` (un message mal formé est écarté, jamais réparé) |
+| `lib/live-store.ts` | **réducteur pur** (état, action) → état, rejoué en test sur des scénarios ; sélecteurs (vue, patience, trous, annonces) |
+| `lib/live-client.ts` | client du flux : jeton, `START`, envoi par blocs, contre-pression, reprise, tampon ; réseau, horloge et minuteries injectés |
+| `lib/live-pcm.ts` | rééchantillonnage vers 16 kHz (moyenne d'aire, indépendant du découpage), 16 bits petit-boutiste, blocs, tampon de coupure borné |
+| `lib/live-audio.ts`, `public/worklets/live-capture.js` | `getUserMedia` + `AudioWorklet` + `MediaRecorder` (navigateur seulement) |
+| `lib/live-net.ts` | jeton, WebSocket du navigateur, envoi « Garder » avec progression |
+| `lib/live-errors.ts`, `lib/live-format.ts` | textes d'erreur et classement des codes, noms de versets et durées |
+| `app/atelier/live/*`, `app/live.css` | `use-live.ts` (colle navigateur : micro, verrou d'écran, visibilité, fermeture de page), carte, console, liste, fin d'écoute, mode technique |
+
+**Variables.** `AQR_LIVE_URL`, `AQR_LIVE_TOKEN_TTL_S`, `AQR_LIVE_KEY` (voir plus haut). Aucune variable ne règle l'écran : tout vient de `lib/live-config.ts`.
+
+**Démarrer atelier + service pour des testeurs.** `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\testeurs\atelier-testeurs.ps1 -Action restart` (ajouter `-Build` après un `git pull`) lance l'atelier, le service `aqr live-serve`, un tunnel Cloudflare pour chacun, une clé de signature commune (créée au premier départ dans le dossier d'état, jamais dans Git) et écrit les deux adresses (`url.txt`, `live-url.txt`). `-NoLive` pour ne pas lancer le direct. Le micro exige https : les testeurs passent par le lien du tunnel, jamais par `http://192.168…` (l'écran le dit).
+
+**Preuve dans un vrai navigateur** (build de production, jamais `next dev`) : `e2e/live-browser.mjs` pilote Chrome avec un micro simulé (`--use-fake-device-for-media-stream --use-file-for-fake-audio-capture=<wav>`) qui rejoue une récitation EveryAyah en temps réel, mesure le délai voix → affichage et rejoue les pannes (`nominal`, `cut` avec `e2e/live-proxy.mjs`, `token`, `deny`, `nomic`, `micbusy`, `busy`, `pause`) ; chaque scénario écrit ses captures et un JSON de mesures. Rapport : `docs/evaluation/live-etape4-2026-10-24.md`. `npm run check:layout` couvre aussi `/direct`.
 
 ## Mode test distant (optionnel, protégé)
 
