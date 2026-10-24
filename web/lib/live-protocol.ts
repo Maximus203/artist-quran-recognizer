@@ -41,7 +41,8 @@ export type LiveInterval = z.infer<typeof interval>;
 const envelope = {
   schema: z.literal(LIVE_SCHEMA),
   seq: z.number().int().nonnegative(),
-  t: num,
+  /** Heure du flux ; `READY` et `ERROR` (hors flux d'événements) n'en portent pas. */
+  t: num.default(0),
 };
 const kind = <T extends string>(type: T) => ({
   type: z.literal(type),

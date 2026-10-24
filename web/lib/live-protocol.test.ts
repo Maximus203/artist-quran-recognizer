@@ -26,6 +26,21 @@ describe("parseServerMessage", () => {
     }
   });
 
+  it("accepte le READY réel du service, qui ne porte pas de t (docs/LIVE-PROTOCOL.md §4)", () => {
+    const parsed = parseServerMessage(
+      '{"schema":"aqr.live/1","type":"READY","seq":0,"session_id":"c0ZxUo2m3VnJ8pQ0yH4d1A","resumed":false,"last_seq":0,"replay_from":null,"audio_received_s":0.0,"audio_received_samples":0,"degraded":[],"technical":false,"resume_ttl_s":30.0,"limits":{"max_block_bytes":32000}}',
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok && parsed.message.type === "READY") {
+      expect(parsed.message.t).toBe(0);
+      expect(parsed.message.resume_ttl_s).toBe(30);
+    }
+    const error = parseServerMessage(
+      '{"schema":"aqr.live/1","type":"ERROR","seq":0,"code":"server_busy","message":"Le service est complet.","recoverable":true,"retry_after_s":5}',
+    );
+    expect(error.ok).toBe(true);
+  });
+
   it("accepte un LOCKED inferred et un passage clos non nommé", () => {
     const locked = parseServerMessage({
       ...base,

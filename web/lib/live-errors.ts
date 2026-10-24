@@ -14,6 +14,7 @@ export type LiveErrorKey =
   | "too_many_streams"
   | "unreachable"
   | "signin"
+  | "token"
   | "unavailable"
   | "rate_limited"
   | "expired"
@@ -112,6 +113,15 @@ export const LIVE_ERRORS: Record<LiveErrorKey, LiveErrorText> = {
     todo: "Reconnecte-toi à l’atelier, puis relance l’écoute.",
     retry: false,
   },
+  token: {
+    icon: "lock",
+    title: "Le laissez-passer d’écoute n’a pas été accepté",
+    cause:
+      "Il ne vaut qu’une minute et ne sert qu’une fois : celui de cette écoute a expiré ou avait déjà servi.",
+    impact: "L’écoute n’a pas démarré ; rien n’a été envoyé.",
+    todo: "Réessaie : un nouveau laissez-passer est demandé à chaque départ. Si cela revient, recharge la page.",
+    retry: true,
+  },
   unavailable: {
     icon: "alert",
     title: "L’écoute en direct n’est pas configurée",
@@ -177,6 +187,7 @@ export function serviceErrorKey(code: string): LiveErrorKey {
     case "token_invalid":
     case "token_expired":
     case "token_replayed":
+      return "token";
     case "unauthenticated":
       return "signin";
     case "live_unavailable":

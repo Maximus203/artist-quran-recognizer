@@ -34,7 +34,9 @@ describe("serviceErrorKey et classifyError", () => {
   it("relie les codes du service à un écran", () => {
     expect(serviceErrorKey("server_busy")).toBe("server_busy");
     expect(serviceErrorKey("too_many_streams")).toBe("too_many_streams");
-    expect(serviceErrorKey("token_expired")).toBe("signin");
+    expect(serviceErrorKey("token_expired")).toBe("token");
+    expect(serviceErrorKey("token_replayed")).toBe("token");
+    expect(serviceErrorKey("unauthenticated")).toBe("signin");
     expect(serviceErrorKey("session_expired")).toBe("expired");
     expect(serviceErrorKey("inconnu")).toBe("internal");
   });

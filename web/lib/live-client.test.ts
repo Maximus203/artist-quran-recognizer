@@ -260,6 +260,37 @@ describe("démarrage", () => {
     expect(h.kinds()).not.toContain("link_lost");
   });
 
+  it("jeton expiré ou déjà utilisé au départ : un seul nouvel essai automatique, avec un jeton neuf", async () => {
+    const h = harness();
+    h.client.open();
+    await h.flush();
+    h.last.open();
+    h.last.say({
+      type: "ERROR",
+      seq: 0,
+      code: "token_expired",
+      message: "Le jeton a expiré.",
+      recoverable: true,
+    });
+    await h.flush();
+    expect(h.sockets).toHaveLength(2);
+    expect(h.tokenCalls).toBe(2);
+    expect(h.actions.some((a) => a.type === "server")).toBe(false);
+    h.last.open();
+    expect(h.last.texts[0]).toMatchObject({ type: "START", token: "jeton-2" });
+    // Une deuxième erreur de jeton est dite à l'utilisateur, sans boucle.
+    h.last.say({
+      type: "ERROR",
+      seq: 0,
+      code: "token_replayed",
+      message: "Jeton déjà utilisé.",
+      recoverable: true,
+    });
+    await h.flush();
+    expect(h.sockets).toHaveLength(2);
+    expect(h.actions.filter((a) => a.type === "server")).toHaveLength(1);
+  });
+
   it("refus avant READY sans message (fermeture 1013) : 'service complet' plutôt qu'un silence", async () => {
     const h = harness();
     h.client.open();

@@ -67,6 +67,7 @@ export class LiveClient {
   private socket: SocketLike | null = null;
   private generation = 0;
   private attempting = false;
+  private tokenRetried = false;
   private everReady = false;
   private connReady = false;
   private startErrorForwarded = false;
@@ -313,6 +314,18 @@ export class LiveClient {
         code === "session_expired" || code === "replay_unavailable"
           ? "terminal"
           : "retry_link";
+    if (
+      action === "start_failure" &&
+      !this.tokenRetried &&
+      (code === "token_expired" || code === "token_replayed")
+    ) {
+      // Un jeton périmé n'est pas la faute de l'utilisateur : un seul nouvel essai, avec un jeton neuf.
+      this.tokenRetried = true;
+      this.clear("connect");
+      this.detach(1000);
+      void this.attempt(false);
+      return;
+    }
     if (action === "start_failure") {
       this.startErrorForwarded = true;
       this.deps.dispatch({
