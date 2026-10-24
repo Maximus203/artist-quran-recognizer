@@ -452,6 +452,7 @@ class LiveWebSocketServer:
                 elif isinstance(item, _Expire):
                     messages = await loop.run_in_executor(self._pool, _end, stream, stream.now())
                     self._remember(runner.session, messages, self._clock())
+                    self._log_stats(runner, "expired")
                     self._release(runner)
                     return
                 else:
@@ -479,8 +480,24 @@ class LiveWebSocketServer:
             await self._send_error(runner.ws, error)
         await self._send_new(runner, messages)
         self._hub.finish(runner.session)
+        self._log_stats(runner, error or "end")
         self._release(runner)
         await self._close(runner, CLOSE_NORMAL if error is None else CLOSE_POLICY, error or "fin")
+
+    def _log_stats(self, runner: _Runner, outcome: str) -> None:
+        """Le bilan d'un flux, en nombres seulement : de quoi mesurer la charge sans rien révéler."""
+        stats = runner.session.stream.pipeline.stats
+        journal.info(
+            "session.stats",
+            session=runner.session.id,
+            outcome=outcome,
+            audio_s=round(stats.audio_s, 1),
+            blocks=stats.blocks,
+            compute_s=round(stats.compute_s, 2),
+            rtf=round(stats.realtime_factor, 4),
+            max_lag_s=round(stats.max_lag_s, 3),
+            degraded_blocks=stats.degraded_blocks,
+        )
 
     def _release(self, runner: _Runner) -> None:
         runner.done.set()

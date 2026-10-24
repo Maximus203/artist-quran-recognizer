@@ -528,4 +528,5 @@ def test_the_log_never_contains_a_token_audio_or_quranic_text(
     assert not any("؀" <= ch <= "ۿ" for ch in text)
     assert "\\x00" not in text
     assert "session.open" in text and "token.replayed" in text
+    assert "session.stats" in text and "max_lag_s=" in text
     assert script_of("112:1")[0][0] not in text

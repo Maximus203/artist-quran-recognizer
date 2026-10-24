@@ -99,6 +99,7 @@ class ServiceHarness:
         self,
         *,
         script: list[tuple[str, float, float]] | None = None,
+        engine: LiveEngine | None = None,
         cost_s: float = 0.0,
         budget: BudgetConfig | None = None,
         env: dict[str, str] | None = None,
@@ -106,13 +107,14 @@ class ServiceHarness:
     ) -> None:
         self.config = LiveServiceConfig(**{"port": 0, "max_streams": 4, **config})
         self.codec = HmacTokenCodec(KEY)
-        self.hub = LiveHub(
-            self.config,
-            self.codec,
-            stream_factory(
+        self.factory = (
+            make_stream_factory(engine, self.config)
+            if engine is not None
+            else stream_factory(
                 script or script_of("112:1"), cost_s=cost_s, budget=budget, config=self.config
-            ),
+            )
         )
+        self.hub = LiveHub(self.config, self.codec, self.factory)
         self.server = LiveWebSocketServer(self.config, self.hub, AccessPolicy.from_env(env or {}))
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -164,3 +166,22 @@ class ServiceHarness:
         return self.codec.issue(
             subject, ttl_s, now=time.time() if now is None else now, technical=technical
         )
+
+
+def real_engine(*, threads: int = 4) -> LiveEngine:
+    """Le vrai modèle (Muno incrémental) ; le test saute si les poids sont absents."""
+    from tests.support.real import LOCK_PATH, models_dir
+
+    from aqr.adapters.muno_incremental import MunoIncrementalASR, MunoIncrementalConfig
+
+    w = world()
+    asr = MunoIncrementalASR(
+        MunoIncrementalConfig(models_dir=models_dir(), lock_path=LOCK_PATH, intra_op_threads=threads)
+    )
+    return LiveEngine(
+        asr=asr,
+        index=w.index,
+        skeleton=w.skeleton,
+        corpus=w.corpus,
+        renderer=HomeRenderer(w.corpus, FakeTranslations()),
+    )

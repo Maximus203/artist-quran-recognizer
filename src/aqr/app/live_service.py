@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import signal
+import sys
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -255,6 +257,11 @@ def run(
 ) -> int:  # pragma: no cover - lance le vrai service
     """`aqr live-serve` : charge le moteur une fois, puis sert jusqu'à Ctrl+C. 2 = utilisation
     impossible (extra [live] absent, variable manquante, poids ou corpus introuvables)."""
+    logging.basicConfig(
+        level=getattr(logging, str(env.get("AQR_LIVE_LOG_LEVEL", "INFO")).upper(), logging.INFO),
+        format="%(asctime)s %(levelname)s %(message)s",
+        stream=sys.stderr,
+    )
     try:
         import websockets  # noqa: F401
     except ImportError:
