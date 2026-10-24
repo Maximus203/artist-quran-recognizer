@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-24 — Détection en direct : l'étape 3, le service WebSocket
+Étiquettes : technique, décision
+PR : #109
+
+**Ce qui change.** Rien de visible pour l'instant : le moteur en direct a maintenant son service. `aqr live-serve` charge le modèle une fois et sert des flux audio par WebSocket (`aqr.live/1`, contrat dans `docs/LIVE-PROTOCOL.md`). L'atelier émet un jeton court, signé et à usage unique (`POST /api/live/token`) que le navigateur présente au service ; le service vérifie le jeton, l'origine et le nombre de flux (16 au plus, 2 par compte). Une coupure courte se reprend sans perdre ni répéter un message ; le son n'est jamais conservé ni journalisé. Mesuré avec le vrai modèle : le service ajoute 10 ms en médiane (14 à 39 ms avec le modèle, p90 sous 55 ms) et tient au moins 24 flux simultanés à moins d'une seconde de retard (32 à 1,1 s). Le protocole gagne `PROGRESS` (mot à mot), la clôture d'un passage non nommé, `DEGRADED`, `FINALIZING` et la traduction commune des candidats, demandés par la conception de l'écran.
+
+**Pourquoi / décision.** WebSocket et non WebRTC (ADR-0011) : le service est joignable et le modèle veut du son fidèle. Le jeton n'est pas dans l'adresse (elle finit dans des journaux). `GAP` reste dérivé côté client ; `settle_s` passe à 1,5 s (arbitrage du mainteneur) ; le mode technique est ouvert à tous, éteint par défaut. Limites : une machine, voix propre, aucun navigateur réel ni tunnel avant l'étape 4, pas de vérification acoustique en direct. Voir l'ADR-0011 et `docs/evaluation/live-etape3-2026-10-24.md`.
+
 ## 2026-10-24 — Détection en direct : conception de l'écran En direct
 Étiquettes : utilisateur, décision
 PR : #108

@@ -37,6 +37,7 @@ from aqr.live.events import (
     LiveEvent,
     Locked,
     Lost,
+    Progress,
     Revision,
     Unresolved,
 )
@@ -218,6 +219,7 @@ class HypothesisTracker:
         if self._check_restart(passage, summary, word, events):
             return
         if passage.locked is not None and self._lock_holds(passage, summary, word, events):
+            self._progress(passage, summary, word, events)
             self._close_if_complete(passage, summary, word, events)
             return
         if self._check_lost(passage, summary, word, events):
@@ -576,6 +578,27 @@ class HypothesisTracker:
         passage.locked = None
         return False
 
+    def _progress(
+        self, passage: _Passage, summary: _Summary, word: HeardWord, events: list[LiveEvent]
+    ) -> None:
+        """Le mot qui vient d'arriver prolonge le verset verrouillé : on le dit (mot à mot)."""
+        lock = passage.locked
+        assert lock is not None
+        best = summary.best.get(lock.ref)
+        if best is None or best.last_end_s != word.end_s:
+            return  # le mot n'est pas expliqué par le verset
+        rank = self._index.verse_at(min(best.ptr - 1, best.end))[1]
+        events.append(
+            Progress(
+                t=word.arrival_s,
+                ref=lock.ref,
+                words_heard=best.matched,
+                last_word=rank,
+                word_start_s=word.start_s,
+                word_end_s=word.end_s,
+            )
+        )
+
     # ------------------------------------------------------------------ clôture
     def _close_if_complete(
         self, passage: _Passage, summary: _Summary, word: HeardWord, events: list[LiveEvent]
@@ -670,8 +693,14 @@ class HypothesisTracker:
                 next_word=(
                     None if summary.best[v].complete else index.verse_at(summary.best[v].ptr)[1]
                 ),
+                first_word=index.verse_at(summary.best[v].start)[1],
             )
             for v in plausible[: cfg.max_items]
+        )
+        sources = (
+            tuple((v, index.verse_at(summary.best[v].start)[1]) for v in plausible)
+            if len(plausible) <= _SHARED_WORDS_SAMPLE
+            else ()
         )
         events.append(
             Candidates(
@@ -685,6 +714,7 @@ class HypothesisTracker:
                 leader_posterior=summary.posterior[ranked[0]],
                 shared_words=self._shared_words(summary, plausible),
                 non_quran_posterior=summary.none_posterior,
+                sources=sources,
             )
         )
 

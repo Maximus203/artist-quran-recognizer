@@ -419,6 +419,18 @@ Les sessions micro sont marquées `source_kind: microphone` dans `session.json`.
 
 Le serveur est réservé à un usage local de confiance. Le pack de revue ne modifie jamais la prédiction. Les signalements partiels ne sont pas évalués comme vérité terrain. Les données conservées ne sont pas supprimées automatiquement.
 
+## Détection en direct : jeton de session (`POST /api/live/token`)
+
+L'écran « En direct » (étape 4) parle en WebSocket à `aqr live-serve` (service Python à part, voir `docs/LIVE-PROTOCOL.md`). L'atelier n'émet que le **jeton** : `POST /api/live/token` avec le cookie de session (mêmes contrôles d'hôte et d'origine que les autres écritures), corps `{"technical"?: boolean}` (mode technique, éteint par défaut, ouvert à tous) → `200 { schema, token, expires_at, ttl_s, url, technical }`. `401` sans connexion, `429` (30 jetons par minute et par compte) avec `Retry-After`, `503` si le service n'est pas configuré (`code: "live_unavailable"`). Le jeton dure 60 s, ne sert qu'une fois et se présente dans le message `START`, jamais dans l'adresse.
+
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `AQR_LIVE_URL` | adresse `ws://` ou `wss://` du service, donnée au navigateur (sans identifiant ni paramètre) | `ws://127.0.0.1:8765/live` |
+| `AQR_LIVE_TOKEN_TTL_S` | durée de vie du jeton (1 à 300) | 60 |
+| `AQR_LIVE_KEY` / `AQR_LIVE_KEY_FILE` | clé de signature (≥ 32 caractères), commune à l'atelier et au service ; à défaut un fichier `live-signing.key` créé au premier démarrage dans `AQR_REVIEW_DIR`, jamais dans le dépôt | fichier local |
+
+Lancer le service : `pip install -e ".[live,muno]"`, puis `aqr live-serve` (charge le modèle une fois, écoute sur `127.0.0.1:8765`). Derrière le tunnel Cloudflare, router `/live` vers ce service et donner `AQR_LIVE_URL=wss://…/live`.
+
 ## Mode test distant (optionnel, protégé)
 
 Par défaut l'atelier n'accepte que la boucle locale (`127.0.0.1`, `localhost`, `[::1]`). Pour un test depuis une autre machine (VM, tunnel, proxy), activer explicitement :

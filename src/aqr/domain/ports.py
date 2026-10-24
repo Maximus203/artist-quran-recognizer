@@ -110,6 +110,35 @@ class StreamingAsr(Protocol):
     def open(self) -> StreamingAsrSession: ...
 
 
+# --- Service du direct (ADR-0011, étape 3) ---------------------------------------------------
+@dataclass(frozen=True)
+class LiveClaims:
+    """Ce qu'un jeton de session prouve : quel compte, jusqu'à quand, sous quel identifiant."""
+
+    subject: str
+    """Identifiant opaque du compte (jamais un nom, un courriel ou de l'audio)."""
+    token_id: str
+    """Identifiant unique du jeton : un jeton ne sert qu'une fois."""
+    expires_at: float
+    """Secondes depuis l'epoch."""
+    technical: bool = False
+    """Le compte peut recevoir la transcription provisoire (`PARTIAL`, mode technique)."""
+
+
+class TokenError(Exception):
+    """Jeton refusé. `code` : `token_invalid` ou `token_expired` (protocole `aqr.live/1`)."""
+
+    def __init__(self, code: str, detail: str = "") -> None:
+        super().__init__(detail or code)
+        self.code = code
+
+
+class SessionTokenVerifier(Protocol):
+    """Vérifie un jeton de session émis par l'atelier (signature, audience, validité)."""
+
+    def verify(self, token: str, *, now: float) -> LiveClaims: ...
+
+
 @dataclass(frozen=True)
 class Transcript:
     words: tuple[TranscribedWord, ...]

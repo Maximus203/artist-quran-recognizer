@@ -1,0 +1,10 @@
+{
+  "comment": "Vecteurs communs Python / TypeScript du jeton de session du direct (aqr.live/1). Clé de test sans valeur.",
+  "key": "vector-key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "subject": "7",
+  "ttl_s": 60,
+  "now_ms": 1800000000000,
+  "jti": "vector-token-id-01",
+  "python_token": "v1.eyJhdWQiOiJhcXIubGl2ZS8xIiwic3ViIjoiNyIsImp0aSI6IkE2LXZZUnBYQ2J4NjlqaHJMdnlST0EiLCJpYXQiOjE4MDAwMDAwMDAsImV4cCI6MTgwMDAwMDA2MCwidGVjaCI6ZmFsc2V9.u6d1hNrCgHvX1Syc2RbsuO2bLrdbkDucl5QEYNLiFK0",
+  "ts_token": "v1.eyJhdWQiOiJhcXIubGl2ZS8xIiwic3ViIjoiNyIsImp0aSI6InZlY3Rvci10b2tlbi1pZC0wMSIsImlhdCI6MTgwMDAwMDAwMCwiZXhwIjoxODAwMDAwMDYwLCJ0ZWNoIjpmYWxzZX0.vAt38Z15NfGQGe8PF99pQdewH-3vmO1P9GALSlZ9Sk4"
+}

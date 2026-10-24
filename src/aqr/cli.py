@@ -41,6 +41,7 @@ from aqr.alignment.service import (
     passage_of,
     read_plan,
 )
+from aqr.app.live_service import ServiceOptions
 from aqr.corpus.checksums import CorpusChecksumError
 from aqr.data.alignment_import import import_alignment
 from aqr.data.config import DataConfig
@@ -68,6 +69,7 @@ from aqr.export.service import (
     run_readiness,
 )
 from aqr.export.service import Inputs as ExportInputs
+from aqr.live.service_config import LiveServiceConfig
 from aqr.pipeline.factory import (
     ASR_CHOICES,
     CASCADE,
@@ -84,6 +86,7 @@ _DEFAULT_MANIFEST = Path("tests/fixtures/audio/manifest.yaml")
 _FORMATS = ("json", "srt", "vtt")
 RecognizerFactory = Callable[[RecognizeOptions, Mapping[str, str]], Recognizer]
 AlignerFactory = Callable[[AlignOptions, Mapping[str, str]], AlignmentService]
+LiveRunner = Callable[[LiveServiceConfig, ServiceOptions, Mapping[str, str], TextIO, TextIO], int]
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -197,7 +200,65 @@ def _build_parser() -> argparse.ArgumentParser:
     pla.add_argument("prediction", type=Path, help="<fichier>.recognition.json")
     pla.add_argument("--out", type=Path, help="défaut : sortie standard")
     _add_export_commands(commands)
+    _add_live_command(commands)
     return parser
+
+
+def _add_live_command(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    live = commands.add_parser(
+        "live-serve",
+        help="service WebSocket de la détection en direct (aqr.live/1, ADR-0011) ; extra [live]",
+    )
+    live.add_argument("--host", help="défaut : $AQR_LIVE_HOST ou 127.0.0.1")
+    live.add_argument("--port", type=int, help="défaut : $AQR_LIVE_PORT ou 8765")
+    live.add_argument("--models-dir", type=Path, help="défaut : $AQR_MODELS_DIR")
+    live.add_argument("--lock", type=Path, default=Path("models/LOCK.json"))
+    live.add_argument("--corpus-dir", type=Path, default=Path("data/corpus"))
+    live.add_argument(
+        "--asr-threads",
+        type=int,
+        default=1,
+        help="fils ONNX par appel (1 : le mieux avec plusieurs flux ; 4 pour un flux unique)",
+    )
+    live.add_argument("--settle-s", type=float, default=1.5)
+    live.add_argument("--no-warm-up", dest="warm_up", action="store_false")
+    live.add_argument(
+        "--warm-translations",
+        default="",
+        help="identifiants QuranEnc à précharger en tâche de fond, séparés par des virgules",
+    )
+
+
+def _live_serve(
+    args: argparse.Namespace,
+    env: Mapping[str, str],
+    out: TextIO,
+    err: TextIO,
+    runner: LiveRunner | None,
+) -> int:
+    try:
+        config = LiveServiceConfig.from_env(env)
+        overrides = {k: v for k, v in (("host", args.host), ("port", args.port)) if v is not None}
+        if overrides:
+            config = replace(config, **overrides)
+    except ValueError as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 2
+    options = ServiceOptions(
+        models_dir=args.models_dir
+        or (Path(env["AQR_MODELS_DIR"]) if env.get("AQR_MODELS_DIR") else None),
+        lock_path=args.lock,
+        corpus_dir=args.corpus_dir,
+        asr_threads=args.asr_threads,
+        settle_s=args.settle_s,
+        warm_up=args.warm_up,
+        warm_translations=tuple(x.strip() for x in args.warm_translations.split(",") if x.strip()),
+    )
+    if runner is None:
+        from aqr.app.live_service import run
+
+        runner = run
+    return runner(config, options, env, out, err)
 
 
 def _add_export_commands(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
@@ -643,6 +704,7 @@ def main(
     convert: Converter = ffmpeg_converter,
     recognizer_factory: RecognizerFactory = build_recognizer,
     aligner_factory: AlignerFactory = build_alignment_service,
+    live_runner: LiveRunner | None = None,
 ) -> int:
     out, err = out or sys.stdout, err or sys.stderr
     env = os.environ if env is None else env
@@ -654,6 +716,8 @@ def main(
         return _align(args, env, out, err, aligner_factory)
     if args.command == "plan-alignment":
         return _plan_alignment(args, out, err)
+    if args.command == "live-serve":
+        return _live_serve(args, env, out, err, live_runner)
     if args.command == "export-subtitles":
         return _export_subtitles(args, env, out, err)
     if args.command == "export-readiness":

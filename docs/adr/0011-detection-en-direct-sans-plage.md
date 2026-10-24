@@ -3,7 +3,7 @@
 - Statut : **accepté** — décisions du mainteneur du 2026-10-23 ; **étape 1 (simulation hors ligne) livrée**,
   critère de sortie atteint en vérité calculée et sur la parole, non démontré sur la voix réelle (voir
   « Résultats de l'étape 1 ») ; **étape 2 (moteur incrémental) livrée** (voir « Résultats de l'étape 2 »).
-  Étape 3 : à faire. Étape 4 : **conception livrée** (`docs/design/en-direct.md`, prototypes et captures), écran non codé.
+  **Étape 3 (service WebSocket) livrée** (voir « Résultats de l'étape 3 » et `docs/LIVE-PROTOCOL.md`). Étape 4 : **conception livrée** (`docs/design/en-direct.md`, prototypes et captures), écran non codé.
 - Précise : ADR-0004 (recherche sur le flux continu), ADR-0007 (preuve cumulée), ADR-0008
   (vérification acoustique), ADR-0009 (cascade), ADR-0010 (promotion par le voisin reconnu et temps au
   mot). Remplace la ligne « V2+ : mode temps réel » de
@@ -387,6 +387,27 @@ vérification acoustique et la réécoute ne sont pas appelables en direct). Dé
 comparait chaque mot nouveau à tout le vocabulaire (0,6 s par mot sur de la parole étrangère) ; corrigé
 sans changer un résultat.
 
+## Résultats de l'étape 3
+Rapport complet : `docs/evaluation/live-etape3-2026-10-24.md` ; contrat : `docs/LIVE-PROTOCOL.md`. Service `aqr live-serve`
+(bibliothèque `websockets`, extra `[live]`), un processus qui garde le modèle chargé, derrière `LiveHub` (jetons à usage unique,
+quotas, reprise) et `LiveStream` (validation de l'audio, numérotation, anneau borné de messages). Avec le vrai modèle, un vrai
+client et de l'audio EveryAyah `dev` :
+- **ce que le client reçoit est identique à ce que le moteur rend hors réseau**, au plus vite comme à la vitesse de la voix ;
+- **délai ajouté** : 10 ms en médiane (46 ms au maximum) sans calcul ; avec le vrai modèle médiane 14 à 39 ms, p90 49 à 53 ms,
+  deux messages sur 142 au-dessus de 100 ms (borne haute, différence de deux passages bruités) ;
+- **flux tenus** : au moins 24 sous 1 s de retard, 32 à 1,1 s, 48 à 1,9 s, aucun dégradé ; `max_streams` = 16 par prudence ;
+  démarrage 7 à 9 s, mémoire 719 Mio au repos et environ 30 Mio par flux ;
+- aucun audio conservé (ni disque, ni journal) ; journal en nombres seulement ; reprise sans trou ni doublon ; plus de 50 cas
+  d'intégration dont tous les cas négatifs demandés.
+
+Décisions prises en route (additives sauf mention) : `PROGRESS`, `DEGRADED`, `FINALIZING`, clôture d'un passage non nommé
+(`CONTINUE` avec `closed.status: uncertain`), `heard.translation`, `resume_ttl_s` (demandés par la conception de l'étape 4) ;
+`GAP` dérivé côté client (le service émet toujours `JUMP`) ; `settle_s` = **1,5 s** (arbitrage 10) ; mode technique (`PARTIAL`) ouvert
+à tous, éteint par défaut ; jeton dans `START` et non dans l'adresse ; `t` scalaire et intervalles `span`.
+
+Écarts avec le §6 : voir `docs/LIVE-PROTOCOL.md` §8. Limites : une machine, voix propre, pas de navigateur réel ni de tunnel
+(étape 4), pas de vérification acoustique en direct, jeton à usage unique oublié au redémarrage du service (valable 60 s).
+
 ## Ce que la conception de l'étape 4 demande au protocole
 `docs/design/en-direct.md` (§9) : construire l'écran a montré que le §6 ne suffit pas à tenir la promesse du §3. Ajouts **additifs** proposés, à trancher avant
 l'étape 3 : `PROGRESS` (mots entendus après `LOCKED`, sans lui pas de surlignage mot à mot), clôture d'un passage non nommé (`CONTINUE.closed.status: uncertain`),
@@ -406,8 +427,9 @@ verte. TDD strict.
    sur la voix réelle difficile.** Adapter `StreamingAsr` (caches Muno conservés d'un bloc à l'autre) ;
    tests de contrat `tests/contract/` ; budget et mode dégradé (paliers, règle de verrou durcie ; les
    contrôles des paliers 2 et 3 restent à brancher).
-3. **Service WebSocket.** `aqr.live/1`, sessions, reprise, authentification par jeton, cas négatifs
-   (format audio faux, flux trop long, coupure, jeton expiré), documentation du contrat.
+3. **Service WebSocket — livré (PR de l'issue #84).** `aqr.live/1`, sessions, reprise, authentification par jeton, cas
+   négatifs (format audio faux, flux trop long, coupure, jeton expiré), documentation du contrat
+   (`docs/LIVE-PROTOCOL.md`).
 4. **Interface — conception livrée, écran à coder.** Brief de Sofia : `docs/design/en-direct.md` (prototypes `docs/design/prototype/live.html` et
    `live-etats.html`, données factices). Puis écran « En direct » dans l'atelier ; parcours validé au navigateur, puis par Cherif QA.
 

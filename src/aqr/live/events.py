@@ -32,6 +32,9 @@ class CandidateItem:
     """Mots entendus qui correspondent à ce verset."""
     next_word: int | None
     """Rang (à partir de 1) du mot attendu ensuite ; None si le verset est entièrement dit."""
+    first_word: int = 1
+    """Rang (à partir de 1) du premier mot entendu dans ce verset. Rangs du FLUX du Coran (basmala
+    du verset 1 retirée), comme `next_word`."""
 
 
 @dataclass(frozen=True)
@@ -53,6 +56,10 @@ class Candidates:
     """Mots entendus que tous les candidats plausibles expliquent par le même texte : le « passage
     entendu » affichable sans nommer de verset."""
     non_quran_posterior: float
+    sources: tuple[tuple[VerseRef, int], ...] = ()
+    """(verset, rang du premier mot entendu) de chaque candidat plausible, pour comparer dans le
+    corpus la graphie du texte commun. Vide si les candidats sont trop nombreux pour être tous
+    comparés (aucun texte commun ne peut alors être montré)."""
 
 
 @dataclass(frozen=True)
@@ -75,6 +82,20 @@ class Locked:
     """Confiance moyenne de l'ASR sur les mots qui correspondent au verset."""
     exact_words: int = 0
     """Mots entendus identiques (et non seulement proches) à ceux du verset."""
+
+
+@dataclass(frozen=True)
+class Progress:
+    """Un mot de plus du verset verrouillé a été entendu (surlignage mot à mot, `PROGRESS`)."""
+
+    t: float
+    ref: VerseRef
+    words_heard: int
+    """Mots du verset entendus depuis le début du passage."""
+    last_word: int
+    """Rang (flux du Coran) du dernier mot entendu dans le verset."""
+    word_start_s: float
+    word_end_s: float
 
 
 @dataclass(frozen=True)
@@ -167,6 +188,7 @@ class DegradationChanged:
 LiveEvent = (
     Candidates
     | Locked
+    | Progress
     | Continue
     | Unresolved
     | Jump

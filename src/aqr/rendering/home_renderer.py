@@ -93,17 +93,20 @@ class HomeRenderer:
     def span_text(self, det: Detection) -> str:
         """Texte du passage : sous-chaîne exacte du Mushaf (I1), marques de pause comprises ;
         le verset entier si tous ses mots sont couverts. Jamais un texte venu de l'ASR."""
-        ref = det.span.ref
+        return self.passage_text(det.span.ref, det.span.first_word, det.span.last_word)
+
+    def passage_text(self, ref: VerseRef, first_word: int, last_word: int) -> str:
+        """Texte des mots `first_word..last_word` (rangs du corpus, à partir de 1) du verset `ref` :
+        sous-chaîne exacte du Mushaf, le verset entier si tous ses mots sont couverts."""
         full = self._corpus.text(ref)
-        if not self._is_partial(det):
+        if first_word == 1 and last_word >= len(self._corpus.words(ref)):
             return full
-        first, last = det.span.first_word, det.span.last_word
         kept: list[str] = []
         words_seen = 0
         for token in full.split():
             if normalize_arabic(token):
                 words_seen += 1
-            if first <= words_seen <= last:
+            if first_word <= words_seen <= last_word:
                 kept.append(token)
         return " ".join(kept)
 

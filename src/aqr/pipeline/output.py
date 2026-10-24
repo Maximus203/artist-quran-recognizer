@@ -69,27 +69,35 @@ def _non_quran_json(
     return base if label_ar is None else {**base, "label_ar": label_ar}
 
 
+def verse_interval_json(
+    item: Detection, renderer: HomeRenderer, translation_id: str | None
+) -> dict[str, object]:
+    """Intervalle `kind: "verse"` d'`aqr.recognition/1` : texte du corpus (I1), traduction
+    QuranEnc sans modification (I2). Partagé avec le direct (`aqr.live/1`, même contrat)."""
+    rendered = renderer.render_item(item, translation_id)
+    return {
+        "kind": "verse",
+        "ref": rendered["ref"],
+        "words": rendered["words"],
+        "partial": rendered["partial"],
+        "status": rendered["status"],
+        "t": _span(item.time),
+        "time_interpolated": item.time_interpolated,
+        "confidence": round(item.confidence, 4),
+        "candidates": rendered["candidates"],
+        "repetition": rendered["repetition"],
+        "text": rendered["text"],
+        "translation": rendered["translation"],
+        **_word_fields(item, renderer),
+        **({} if item.promoted_by is None else {"promoted_by": item.promoted_by}),
+    }
+
+
 def _interval_json(
     item: Interval, renderer: HomeRenderer, translation_id: str | None
 ) -> dict[str, object]:
     if isinstance(item, Detection):
-        rendered = renderer.render_item(item, translation_id)
-        return {
-            "kind": "verse",
-            "ref": rendered["ref"],
-            "words": rendered["words"],
-            "partial": rendered["partial"],
-            "status": rendered["status"],
-            "t": _span(item.time),
-            "time_interpolated": item.time_interpolated,
-            "confidence": round(item.confidence, 4),
-            "candidates": rendered["candidates"],
-            "repetition": rendered["repetition"],
-            "text": rendered["text"],
-            "translation": rendered["translation"],
-            **_word_fields(item, renderer),
-            **({} if item.promoted_by is None else {"promoted_by": item.promoted_by}),
-        }
+        return verse_interval_json(item, renderer, translation_id)
     if isinstance(item, NonQuranSpan):
         return _non_quran_json(item, renderer, translation_id)
     assert isinstance(item, AbstentionSpan)

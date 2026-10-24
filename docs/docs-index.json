@@ -56,6 +56,13 @@
     "summary": "Le format JSON aqr.recognition/1 produit par aqr recognize, ce que chaque statut affirme, les sous-titres SRT et VTT."
   },
   {
+    "slug": "protocole-direct",
+    "title": "Protocole du direct (aqr.live/1)",
+    "section": "Architecture",
+    "file": "docs/LIVE-PROTOCOL.md",
+    "summary": "Le contrat WebSocket de la détection en direct : jeton de session, messages du client et du serveur avec exemples, erreurs, reprise après coupure, contre-pression, quotas et vie privée."
+  },
+  {
     "slug": "sortie-alignement",
     "title": "Alignement forcé et vérité terrain",
     "section": "Architecture",
@@ -292,6 +299,13 @@
     "section": "Évaluation",
     "file": "docs/evaluation/live-etape2-2026-10-24.md",
     "summary": "Facteur temps réel du Muno incrémental sur CPU (0,06) et GPU (1,0), retard, latence de bout en bout du premier mot et du verrou contre les cibles de l'étape 1, mémoire, flux simultanés, vitesse réelle contre temps simulé, mode dégradé et limites."
+  },
+  {
+    "slug": "live-etape3-2026-10-24",
+    "title": "Détection en direct, étape 3 : service WebSocket",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape3-2026-10-24.md",
+    "summary": "Délai ajouté par le service, flux simultanés tenus avec le vrai modèle, mémoire, reprise, quotas, ce qui est prouvé dans un vrai client et les limites."
   },
   {
     "slug": "corpus-de-test",
