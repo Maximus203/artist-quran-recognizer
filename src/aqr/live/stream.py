@@ -101,6 +101,9 @@ class LiveStream:
     def ended(self) -> bool:
         return self._ended
 
+    def degradation(self) -> tuple[str, ...]:
+        return self.pipeline.degradation
+
     def now(self) -> float:
         """Heure du flux (horloge du pipeline) : à donner comme `received_at_s` d'un bloc reçu."""
         return self._clock()
@@ -132,7 +135,8 @@ class LiveStream:
         if self._ended:
             return []
         self._ended = True
-        messages = self._wrap(self.pipeline.finish(received_at_s=received_at_s))
+        messages = [self._emit("FINALIZING", self.audio_received_s, {"pending_s": None})]
+        messages += self._wrap(self.pipeline.finish(received_at_s=received_at_s))
         stats = self.pipeline.stats
         document = self._final.build(
             session_id=self.session_id,

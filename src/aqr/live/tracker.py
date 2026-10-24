@@ -37,6 +37,7 @@ from aqr.live.events import (
     LiveEvent,
     Locked,
     Lost,
+    Progress,
     Revision,
     Unresolved,
 )
@@ -218,6 +219,7 @@ class HypothesisTracker:
         if self._check_restart(passage, summary, word, events):
             return
         if passage.locked is not None and self._lock_holds(passage, summary, word, events):
+            self._progress(passage, summary, word, events)
             self._close_if_complete(passage, summary, word, events)
             return
         if self._check_lost(passage, summary, word, events):
@@ -575,6 +577,27 @@ class HypothesisTracker:
         events.append(Revision(word.arrival_s, lock.ref, "contradicted"))
         passage.locked = None
         return False
+
+    def _progress(
+        self, passage: _Passage, summary: _Summary, word: HeardWord, events: list[LiveEvent]
+    ) -> None:
+        """Le mot qui vient d'arriver prolonge le verset verrouillé : on le dit (mot à mot)."""
+        lock = passage.locked
+        assert lock is not None
+        best = summary.best.get(lock.ref)
+        if best is None or best.last_end_s != word.end_s:
+            return  # le mot n'est pas expliqué par le verset
+        rank = self._index.verse_at(min(best.ptr - 1, best.end))[1]
+        events.append(
+            Progress(
+                t=word.arrival_s,
+                ref=lock.ref,
+                words_heard=best.matched,
+                last_word=rank,
+                word_start_s=word.start_s,
+                word_end_s=word.end_s,
+            )
+        )
 
     # ------------------------------------------------------------------ clôture
     def _close_if_complete(

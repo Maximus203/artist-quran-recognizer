@@ -113,7 +113,7 @@ class ServiceOptions:
     asr_threads: int = 1
     """Fils ONNX par appel. Le modèle est partagé : avec N flux, 1 fil par appel évite la
     sur-souscription (mesuré à l'étape 2) ; un flux unique va un peu plus vite à 4."""
-    settle_s: float = 0.8
+    settle_s: float = 1.5
     device: str = "cpu"
     warm_up: bool = True
     warm_translations: tuple[str, ...] = ()

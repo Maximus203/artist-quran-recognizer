@@ -220,7 +220,7 @@ def _add_live_command(commands: argparse._SubParsersAction[argparse.ArgumentPars
         default=1,
         help="fils ONNX par appel (1 : le mieux avec plusieurs flux ; 4 pour un flux unique)",
     )
-    live.add_argument("--settle-s", type=float, default=0.8)
+    live.add_argument("--settle-s", type=float, default=1.5)
     live.add_argument("--no-warm-up", dest="warm_up", action="store_false")
     live.add_argument(
         "--warm-translations",

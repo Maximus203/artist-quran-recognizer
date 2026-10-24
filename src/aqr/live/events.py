@@ -85,6 +85,20 @@ class Locked:
 
 
 @dataclass(frozen=True)
+class Progress:
+    """Un mot de plus du verset verrouillé a été entendu (surlignage mot à mot, `PROGRESS`)."""
+
+    t: float
+    ref: VerseRef
+    words_heard: int
+    """Mots du verset entendus depuis le début du passage."""
+    last_word: int
+    """Rang (flux du Coran) du dernier mot entendu dans le verset."""
+    word_start_s: float
+    word_end_s: float
+
+
+@dataclass(frozen=True)
 class Continue:
     """Niveau 4 : le verset verrouillé est clos, la suite est attendue."""
 
@@ -174,6 +188,7 @@ class DegradationChanged:
 LiveEvent = (
     Candidates
     | Locked
+    | Progress
     | Continue
     | Unresolved
     | Jump

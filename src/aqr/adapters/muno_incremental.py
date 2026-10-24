@@ -69,7 +69,7 @@ class MunoIncrementalConfig:
     chunk_frames: int = CHUNK_MEL_FRAMES
     """Trames mel (10 ms) par morceau. 112 (1,12 s) est la valeur du modèle ; moins est
     EXPÉRIMENTAL (mesuré dans docs/evaluation/live-etape2-2026-10-24.md)."""
-    settle_s: float = 0.8
+    settle_s: float = 1.5
     """Un mot est stable quand un autre mot commence, ou quand cette durée de sortie s'est écoulée
     après sa dernière pièce sans qu'une autre vienne le prolonger. Mesuré le 2026-10-24 sur 6 clips
     EveryAyah (65 mots, 3 récitants) : le CTC espace parfois les pièces d'un même mot de plus de
@@ -77,7 +77,8 @@ class MunoIncrementalConfig:
     tardives), à 0,48 s encore 3, à 0,8 s aucune et les mots sont ceux du hors ligne. Coût : la
     livraison du dernier mot d'un morceau attend ce délai (médiane fin du mot -> livraison 1,08 s
     contre 0,58 s à 80 ms). Un mot coupé en deux est un mot faux pour le suivi (I3) : la
-    précision d'abord."""
+    précision d'abord. 1,5 s depuis la décision du mainteneur (design « En direct », arbitrage 10) :
+    315 versets nommés contre 308 à 0,8 s, p90 du verrou 8,94 s contre 9,07 s, médiane +0,16 s."""
 
     def __post_init__(self) -> None:
         if self.device not in ("cpu", "cuda"):

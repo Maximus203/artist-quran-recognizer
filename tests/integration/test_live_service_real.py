@@ -1,8 +1,9 @@
 """Le service du direct avec le VRAI modèle et de l'audio EveryAyah, par un vrai socket.
 
-Marqué `slow` (modèle ONNX réel, 40 s d'audio rejoué en temps réel). Il saute sans `AQR_MODELS_DIR` ni
-`AQR_AUDIO_DIR`. Preuve : ce que le service envoie est EXACTEMENT ce que le moteur rend hors réseau,
-quelle que soit l'allure du client (aussi vite que possible, ou à la vitesse de la voix).
+Marqué `slow` (modèle ONNX réel, 40 s d'audio rejoué en temps réel). Il saute sans
+`AQR_MODELS_DIR` ni `AQR_AUDIO_DIR`. Preuve : ce que le service envoie est EXACTEMENT ce que le
+moteur rend hors réseau, quelle que soit l'allure du client (au plus vite, ou à la vitesse de la
+voix).
 """
 
 from __future__ import annotations
@@ -16,11 +17,11 @@ import pytest
 pytest.importorskip("websockets")
 pytest.importorskip("onnxruntime")
 
-from tests.support.live_service import ServiceHarness, real_engine  # noqa: E402
-from tests.support.real import concat, everyayah_clip  # noqa: E402
+from tests.support.live_service import ServiceHarness, real_engine
+from tests.support.real import concat, everyayah_clip
 
-from aqr.adapters.ws.client import LiveClient, pcm_from_floats  # noqa: E402
-from aqr.eval.recognition import parse_recognition_text  # noqa: E402
+from aqr.adapters.ws.client import LiveClient, pcm_from_floats
+from aqr.eval.recognition import parse_recognition_text
 
 pytestmark = pytest.mark.slow
 RECITER = "Alafasy_128kbps"

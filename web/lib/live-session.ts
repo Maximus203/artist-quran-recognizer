@@ -17,7 +17,7 @@ export type LiveSessionBody = {
   expires_at: string;
   ttl_s: number;
   url: string;
-  /** Vrai seulement si le compte y a droit ET l'a demandé : le service enverra alors `PARTIAL`. */
+  /** Vrai si le client l'a demandé (mode technique, éteint par défaut, ouvert à tous) : le service enverra alors `PARTIAL`. */
   technical: boolean;
 };
 
@@ -82,7 +82,7 @@ export function createLiveSession({
       code: "live_unavailable",
     };
   }
-  const technical = asked === true && user.role === "admin";
+  const technical = asked === true;
   const token = issueLiveToken({
     key,
     subject: String(user.id),

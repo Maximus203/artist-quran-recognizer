@@ -10,6 +10,7 @@ délai que le service ajoute.
 from __future__ import annotations
 
 import json
+import threading
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
@@ -145,6 +146,23 @@ class LiveClient:
             out.append(message)
             if stop(message):
                 return out
+
+    def listen(self) -> threading.Thread:
+        """Reçoit en tâche de fond jusqu'à `FINAL` ou la fermeture : l'heure d'arrivée de chaque
+        message est alors celle du réseau, pas celle où l'on appelle `recv` (mesure du délai)."""
+
+        def loop() -> None:
+            try:
+                while True:
+                    message = self.recv(timeout=0.5)
+                    if message is not None and message["type"] == "FINAL":
+                        return
+            except ConnectionClosed:
+                return
+
+        thread = threading.Thread(target=loop, daemon=True, name="aqr-live-client")
+        thread.start()
+        return thread
 
     def drain(self, timeout: float = 5.0) -> list[dict[str, Any]]:
         """Tout jusqu'à la fermeture de la connexion (ou `timeout`)."""

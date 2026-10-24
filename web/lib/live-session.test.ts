@@ -60,14 +60,14 @@ describe("émission du jeton de session du direct", () => {
     expect(claims.technical).toBe(false);
   });
 
-  it("n'accorde le mode technique qu'à un administrateur qui le demande", () => {
+  it("n'accorde le mode technique qu'à qui le demande, éteint par défaut, ouvert à tous", () => {
     const ask = { technical: true };
-    const plain = run({ user, body: ask }).result;
-    const boss = run({ user: admin, body: ask }).result;
-    const bossQuiet = run({ user: admin, body: {} }).result;
-    expect(plain.status === 200 && plain.body.technical).toBe(false);
-    expect(boss.status === 200 && boss.body.technical).toBe(true);
-    expect(bossQuiet.status === 200 && bossQuiet.body.technical).toBe(false);
+    for (const who of [user, admin]) {
+      const asked = run({ user: who, body: ask }).result;
+      const quiet = run({ user: who, body: {} }).result;
+      expect(asked.status === 200 && asked.body.technical).toBe(true);
+      expect(quiet.status === 200 && quiet.body.technical).toBe(false);
+    }
   });
 
   it("limite les émissions par compte", () => {

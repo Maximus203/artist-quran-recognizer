@@ -157,6 +157,11 @@ class LivePipeline:
         return self._budget.tier
 
     @property
+    def degradation(self) -> tuple[str, ...]:
+        """Ce qui ne tourne pas en ce moment : paliers branchés sautés, puis `overload`."""
+        return (*self._budget.skipped(), *(("overload",) if self._budget.overloaded else ()))
+
+    @property
     def retained_audio_s(self) -> float:
         return self._ring.seconds if self._ring is not None else 0.0
 

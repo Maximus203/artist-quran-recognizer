@@ -6,11 +6,12 @@ Le présentateur est l'unique endroit où un événement du domaine devient du t
   texte provisoire de l'ASR, étiqueté comme tel et réservé au mode technique ;
 - une traduction est celle de QuranEnc, entière et sans modification (I2) ;
 - un candidat non nommé n'a ni texte ni traduction (I3) ;
-- un saut après un passage resté sans nom n'est pas un `JUMP` (on ne sait pas d'où l'on saute) :
-  c'est un `GAP` (décision du coordinateur).
+- un passage clos sans nom est un état normal : `CONTINUE` avec `closed.status = uncertain` ; le
+  `GAP` (saut après un passage sans nom) est dérivé par le client d'un `JUMP` qui suit (design
+  « En direct », arbitrage 13).
 
-Le présentateur garde peu d'état : le dernier passage clos (pour distinguer `JUMP` de `GAP`) et la
-confiance de chaque verrou (pour l'intervalle clos).
+Le présentateur garde peu d'état : la confiance et le premier mot de chaque verrou (pour
+l'intervalle clos et la progression).
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from aqr.live.events import (
     Locked,
     Lost,
     PartialTranscript,
+    Progress,
     Revision,
     Unresolved,
 )
@@ -58,8 +60,8 @@ class LivePresenter:
         self._content = content
         self._translation = translation_id
         self._technical = technical
-        self._last_closed: Continue | Unresolved | None = None
         self._lock_posterior: dict[str, float] = {}
+        self._lock_first_word: dict[str, int] = {}
 
     # ------------------------------------------------------------------ API
     def present(self, event: LiveEvent) -> list[Presented]:
@@ -67,6 +69,8 @@ class LivePresenter:
             return [self._candidates(event)]
         if isinstance(event, Locked):
             return [self._locked(event)]
+        if isinstance(event, Progress):
+            return [self._progress(event)]
         if isinstance(event, Continue):
             return [self._continue(event)]
         if isinstance(event, Unresolved):
@@ -74,12 +78,12 @@ class LivePresenter:
         if isinstance(event, Jump):
             return [self._jump(event)]
         if isinstance(event, Lost):
-            self._last_closed = None
             return [Presented("LOST", event.t, {"reason": event.reason})]
         if isinstance(event, BasmalaHeard):
             return [Presented("BASMALA", event.t, self._content.basmala(self._translation))]
         if isinstance(event, Revision):
             self._lock_posterior.pop(str(event.ref), None)
+            self._lock_first_word.pop(str(event.ref), None)
             return [
                 Presented(
                     "REVISION",
@@ -124,6 +128,11 @@ class LivePresenter:
             text = content.common_text(event.sources, event.shared_words) if comparable else None
             if text is not None:
                 heard["text"] = text
+            translation = (
+                content.common_translation(event.sources, self._translation) if comparable else None
+            )
+            if translation is not None:
+                heard["translation"] = translation
         body: dict[str, Any] = {
             "state": "ambiguous",
             "span": [event.start_s, event.end_s],
@@ -146,6 +155,7 @@ class LivePresenter:
     # ------------------------------------------------------------------ verrou et clôture
     def _locked(self, event: Locked) -> Presented:
         self._lock_posterior[str(event.ref)] = event.posterior
+        self._lock_first_word[str(event.ref)] = event.first_word
         interval = self._content.verse(
             ref=event.ref,
             status=event.status,
@@ -161,8 +171,23 @@ class LivePresenter:
         interval["words_heard"] = event.words_heard
         return Presented("LOCKED", event.t, {"interval": interval})
 
+    def _progress(self, event: Progress) -> Presented:
+        content = self._content
+        first = self._lock_first_word.get(str(event.ref), 1)
+        rank = content.corpus_rank(event.ref, event.last_word)
+        return Presented(
+            "PROGRESS",
+            event.t,
+            {
+                "ref": str(event.ref),
+                "words_heard": event.words_heard,
+                "words": [content.corpus_rank(event.ref, first), rank],
+                "word": {"index": rank, "t": [event.word_start_s, event.word_end_s]},
+            },
+        )
+
     def _continue(self, event: Continue) -> Presented:
-        self._last_closed = event
+        self._lock_first_word.pop(str(event.ref), None)
         confidence = self._lock_posterior.pop(str(event.ref), 0.0)
         interval = self._content.verse(
             ref=event.ref,
@@ -184,40 +209,25 @@ class LivePresenter:
         )
 
     def _unresolved(self, event: Unresolved) -> Presented:
-        self._last_closed = event
+        """Un passage clos sans nom est un état normal (un verset sur trois) : il se ferme comme un
+        autre, avec le statut `uncertain` et sans suite annoncée."""
+        interval = self._content.uncertain(
+            event.candidates[:MAX_UNCERTAIN_REFS], event.words_heard, event.start_s, event.end_s
+        )
+        interval["candidate_count"] = len(event.candidates)
         return Presented(
-            "UNCERTAIN",
-            event.t,
-            {
-                "span": [event.start_s, event.end_s],
-                "words_heard": event.words_heard,
-                "count": len(event.candidates),
-                "candidates": [str(r) for r in event.candidates[:MAX_UNCERTAIN_REFS]],
-            },
+            "CONTINUE", event.t, {"closed": interval, "complete": False, "expected": None}
         )
 
     # ------------------------------------------------------------------ saut, perte, budget
     def _jump(self, event: Jump) -> Presented:
-        closed = self._last_closed
-        if isinstance(closed, Continue) and closed.ref == event.from_ref:
-            return Presented(
-                "JUMP",
-                event.t,
-                {
-                    "from": str(event.from_ref),
-                    "reason": "mismatch_with_expected",
-                    "kind": event.kind,
-                },
-            )
-        if isinstance(closed, Unresolved):
-            after: dict[str, Any] = {
-                "span": [closed.start_s, closed.end_s],
-                "count": len(closed.candidates),
-                "candidates": [str(r) for r in closed.candidates[:MAX_UNCERTAIN_REFS]],
-            }
-        else:
-            after = {"span": None, "count": 0, "candidates": []}
-        return Presented("GAP", event.t, {"after": after, "reason": "previous_unnamed"})
+        """Toujours un `JUMP` sur le fil : `GAP` est dérivé par le client d'un `JUMP` qui suit un
+        passage clos `uncertain` (décision du coordinateur, design « En direct » arbitrage 13)."""
+        return Presented(
+            "JUMP",
+            event.t,
+            {"from": str(event.from_ref), "reason": "mismatch_with_expected", "kind": event.kind},
+        )
 
     def _degraded(self, event: DegradationChanged) -> Presented:
         return Presented(

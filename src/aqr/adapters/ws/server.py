@@ -339,7 +339,8 @@ class LiveWebSocketServer:
             replay_from=replay_from,
             audio_received_s=round(stream.audio_received_s, 3),
             audio_received_samples=stream.audio_received_samples,
-            degraded=[],
+            degraded=list(stream.degradation()),
+            resume_ttl_s=config.resume_ttl_s,
             limits={
                 "max_block_bytes": config.max_block_bytes,
                 "max_stream_s": config.max_stream_s,
@@ -485,7 +486,7 @@ class LiveWebSocketServer:
         await self._close(runner, CLOSE_NORMAL if error is None else CLOSE_POLICY, error or "fin")
 
     def _log_stats(self, runner: _Runner, outcome: str) -> None:
-        """Le bilan d'un flux, en nombres seulement : de quoi mesurer la charge sans rien révéler."""
+        """Le bilan d'un flux, en nombres seulement : mesurer la charge sans rien révéler."""
         stats = runner.session.stream.pipeline.stats
         journal.info(
             "session.stats",

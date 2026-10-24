@@ -24,6 +24,7 @@ from aqr.live.events import (
     Locked,
     Lost,
     PartialTranscript,
+    Progress,
     Revision,
     Unresolved,
 )
@@ -39,15 +40,16 @@ ARABIC = re.compile("[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]")
 
 
 class FakeTranslations:
-    def __init__(self, fail: bool = False) -> None:
+    def __init__(self, fail: bool = False, same: bool = False) -> None:
         self.fail = fail
+        self.same = same
 
     def get(self, ref: VerseRef, translation_id: str) -> Translation:
         if self.fail:
             raise OSError("réseau coupé")
         return Translation(
             ref=ref,
-            text=f"Traduction de {ref}.[1]",
+            text="Traduction commune." if self.same else f"Traduction de {ref}.[1]",
             translation_id=translation_id,
             version="v-test",
             attribution="QuranEnc.com — test",
@@ -64,8 +66,10 @@ def index():  # type: ignore[no-untyped-def]
     return load_prefix_index(CORPUS_DIR)[0]
 
 
-def make(corpus, index, *, technical=False, translation="french_hameedullah", fail=False):  # type: ignore[no-untyped-def]
-    renderer = HomeRenderer(corpus, FakeTranslations(fail))
+def make(
+    corpus, index, *, technical=False, translation="french_hameedullah", fail=False, same=False
+):  # type: ignore[no-untyped-def]
+    renderer = HomeRenderer(corpus, FakeTranslations(fail, same))
     return LivePresenter(LiveContent(index, corpus, renderer), translation, technical=technical)
 
 
@@ -297,7 +301,9 @@ def test_a_jump_after_a_named_verse_is_a_jump(corpus, index) -> None:  # type: i
     }
 
 
-def test_a_jump_after_an_unnamed_passage_is_a_gap(corpus, index) -> None:  # type: ignore[no-untyped-def]
+def test_a_jump_is_always_a_jump_on_the_wire_the_client_derives_the_gap(corpus, index) -> None:  # type: ignore[no-untyped-def]
+    """Décision du coordinateur (design « En direct », arbitrage 13) : `GAP` est dérivé côté client,
+    d'un `JUMP` qui suit un passage clos sans nom. Le service n'émet jamais de `GAP`."""
     presenter = make(corpus, index)
     presenter.present(
         Unresolved(
@@ -309,20 +315,8 @@ def test_a_jump_after_an_unnamed_passage_is_a_gap(corpus, index) -> None:  # typ
         )
     )
     message = only(presenter.present(Jump(12.0, ref("55:13"), "skip")))
-    assert message.type == "GAP"
-    assert message.fields["reason"] == "previous_unnamed"
-    assert message.fields["after"]["candidates"] == ["55:13", "55:16", "55:18"]
-    assert message.fields["after"]["count"] == 3
-    assert message.fields["after"]["span"] == [1.0, 8.0]
-    assert "kind" not in message.fields
-
-
-def test_a_jump_after_a_loss_is_a_gap(corpus, index) -> None:  # type: ignore[no-untyped-def]
-    presenter = make(corpus, index)
-    presenter.present(locked("112:1"))
-    presenter.present(_continue())
-    presenter.present(Lost(15.0, "silence"))
-    assert only(presenter.present(Jump(20.0, ref("112:1"), "skip"))).type == "GAP"
+    assert message.type == "JUMP"
+    assert message.fields["from"] == "55:13"
 
 
 def test_lost_carries_its_reason(corpus, index) -> None:  # type: ignore[no-untyped-def]
@@ -331,16 +325,27 @@ def test_lost_carries_its_reason(corpus, index) -> None:  # type: ignore[no-unty
 
 
 # --------------------------------------------------------------------------- UNCERTAIN (I3)
-def test_an_unresolved_passage_lists_references_only_never_text(corpus, index) -> None:  # type: ignore[no-untyped-def]
+def test_an_unresolved_passage_closes_as_uncertain_with_references_only(corpus, index) -> None:  # type: ignore[no-untyped-def]
     event = Unresolved(
         t=9.0, candidates=(ref("55:13"), ref("55:16")), words_heard=5, start_s=1.0, end_s=8.0
     )
     message = only(make(corpus, index).present(event))
-    assert message.type == "UNCERTAIN"
-    assert message.fields["candidates"] == ["55:13", "55:16"]
-    assert message.fields["count"] == 2
+    assert message.type == "CONTINUE"
+    closed = message.fields["closed"]
+    assert closed["status"] == "uncertain"
+    assert closed["candidates"] == ["55:13", "55:16"]
+    assert closed["t"] == [1.0, 8.0]
+    assert closed["text"] is None and closed["translation"] is None
+    assert message.fields["expected"] is None
+    assert message.fields["complete"] is False
     assert not ARABIC.search(json.dumps(message.fields, ensure_ascii=False))
-    assert "translation" not in message.fields
+
+
+def test_a_single_unnamed_candidate_is_still_not_named(corpus, index) -> None:  # type: ignore[no-untyped-def]
+    event = Unresolved(t=9.0, candidates=(ref("55:13"),), words_heard=3, start_s=1.0, end_s=4.0)
+    closed = only(make(corpus, index).present(event)).fields["closed"]
+    assert closed["status"] == "uncertain"
+    assert closed["text"] is None and closed["translation"] is None
 
 
 def test_unnamed_candidates_never_carry_a_translation(corpus, index) -> None:  # type: ignore[no-untyped-def]
@@ -391,3 +396,31 @@ def test_a_basmala_is_read_from_the_corpus(corpus, index) -> None:  # type: igno
     assert message.fields["ref"] == "1:1"
     assert message.fields["text"] == corpus.text(ref("1:1"))
     assert message.fields["translation"]["text"] == "Traduction de 1:1.[1]"
+
+
+def test_progress_gives_the_words_heard_with_corpus_ranks_and_time(corpus, index) -> None:  # type: ignore[no-untyped-def]
+    presenter = make(corpus, index)
+    presenter.present(locked("112:1"))
+    event = Progress(
+        t=7.0, ref=ref("112:1"), words_heard=3, last_word=3, word_start_s=6.0, word_end_s=6.5
+    )
+    message = only(presenter.present(event))
+    assert message.type == "PROGRESS"
+    assert message.fields == {
+        "ref": "112:1",
+        "words_heard": 3,
+        "words": [5, 7],
+        "word": {"index": 7, "t": [6.0, 6.5]},
+    }
+
+
+def test_candidates_share_a_translation_only_when_it_is_identical_for_all(corpus, index) -> None:  # type: ignore[no-untyped-def]
+    event = candidates([item("55:13"), item("55:16")], shared=2)
+    same = only(make(corpus, index, same=True).present(event)).fields["heard"]
+    assert same["translation"]["text"] == "Traduction commune."
+    assert same["translation"]["attribution"] == "QuranEnc.com — test"
+    assert same["translation"]["scope"] == "verse"
+    different = only(make(corpus, index).present(event)).fields["heard"]
+    assert "translation" not in different
+    none = only(make(corpus, index, same=True, translation=None).present(event)).fields["heard"]
+    assert "translation" not in none

@@ -3,19 +3,19 @@
 
     python scripts/measure_live_service.py overhead --out o.json
     python scripts/measure_live_service.py latency  --audio A.wav [--audio B.wav ...] --out l.json
-    python scripts/measure_live_service.py capacity --audio A.wav [--audio B.wav ...] --streams 1,4,8,12,16 --out c.json
+    python scripts/measure_live_service.py capacity --audio A.wav --streams 1,4,8,12,16 --out c.json
 
 Trois mesures, chacune avec un vrai client WebSocket sur le vrai serveur (loopback) :
 
-- `overhead` : le service avec un faux ASR (zéro calcul) dans ce processus. Le délai « bloc envoyé ->
-  message reçu » est alors tout ce que le service ajoute (JSON, fil, boucle réseau, TCP). Les mesures
-  internes du service (attente avant traitement, écriture) sont données à côté.
-- `latency` : le vrai service dans un AUTRE processus (`aqr live-serve`, vrai modèle), un client en
-  temps réel. Le délai ajouté est la différence, événement par événement, entre « bloc envoyé ->
-  message reçu » et « durée du calcul du même bloc hors réseau » (référence : le même moteur appelé
-  directement, mêmes blocs). Même horloge (`perf_counter`) des deux côtés : même machine.
-- `capacity` : N clients en temps réel en même temps sur le vrai service ; le bilan de chaque flux est
-  lu dans le journal du service (`session.stats` : retard maximal, facteur temps réel).
+- `overhead` : le service avec un faux ASR (zéro calcul) dans ce processus. Le délai « bloc envoyé
+  -> message reçu » est alors tout ce que le service ajoute (JSON, fil, boucle réseau, TCP). Les
+  mesures internes du service (attente avant traitement, écriture) sont données à côté.
+- `latency` : le vrai service dans un AUTRE processus (`aqr live-serve`, vrai modèle), un client
+  en temps réel. Le délai ajouté est la différence, événement par événement, entre « bloc envoyé
+  -> message reçu » et « durée du calcul du même bloc hors réseau » (référence : le même moteur
+  appelé directement, mêmes blocs). Même horloge (`perf_counter`) des deux côtés.
+- `capacity` : N clients en temps réel en même temps sur le vrai service ; le bilan de chaque
+  flux est lu dans le journal du service (`session.stats` : retard maximal, facteur temps réel).
 
 Aucun texte coranique n'est écrit : des nombres et des références. Les audios sont lus, jamais
 écrits. Variables : AQR_MODELS_DIR (le service réel). Dans un worktree : PYTHONPATH=<worktree>/src.
@@ -152,10 +152,11 @@ def stream_once(
     def on_block(_number: int, sent_at: float) -> None:
         run.block_sent_at.append(sent_at)
 
+    listener = client.listen()
     run.started_at = client.stream(pcm, block_ms=BLOCK_MS, realtime=realtime, on_block=on_block)
     client.end()
     run.end_sent_at = time.perf_counter()
-    client.recv_until(lambda m: m["type"] == "FINAL", timeout=timeout_s)
+    listener.join(timeout_s)
     run.messages = [r.message for r in client.received if r.message["seq"] > 0]
     run.arrivals = [r.arrived_at for r in client.received if r.message["seq"] > 0]
     run.close_code = client.close_code
@@ -164,7 +165,9 @@ def stream_once(
 
 
 # --------------------------------------------------------------------------- référence hors réseau
-def reference_blocks(factory: Any, pcm: bytes, translation: str | None) -> list[tuple[int, float, dict[str, Any]]]:
+def reference_blocks(
+    factory: Any, pcm: bytes, translation: str | None
+) -> list[tuple[int, float, dict[str, Any]]]:
     """(numéro de bloc, durée de calcul du bloc, message) pour chaque message du même flux appelé
     directement. Le bloc `-1` est la fin (END)."""
     stream = factory("reference-0001", translation, False)
@@ -182,8 +185,10 @@ def reference_blocks(factory: Any, pcm: bytes, translation: str | None) -> list[
 
 
 def added_delays(run: Run, reference: list[tuple[int, float, dict[str, Any]]]) -> list[float]:
-    """Pour chaque message : (réception - envoi du bloc qui l'a produit) - calcul de ce bloc hors réseau."""
-    served = [(m, a) for m, a in zip(run.messages, run.arrivals, strict=True) if m["type"] != "PARTIAL"]
+    """Par message : (réception - envoi du bloc qui l'a produit) - calcul de ce bloc hors réseau."""
+    served = [
+        (m, a) for m, a in zip(run.messages, run.arrivals, strict=True) if m["type"] != "PARTIAL"
+    ]
     expected = [r for r in reference if r[2]["type"] != "PARTIAL"]
     if [m["type"] for m, _a in served] != [r[2]["type"] for r in expected]:
         raise RuntimeError("le service et la référence n'ont pas produit les mêmes messages")
@@ -212,7 +217,13 @@ def cmd_overhead(args: argparse.Namespace) -> dict[str, Any]:
     for realtime in (True, False):
         with ServiceHarness(script=script, max_streams=4) as harness:
             run = stream_once(
-                harness.url, harness.codec, "1", pcm, realtime=realtime, translation=None, timeout_s=120
+                harness.url,
+                harness.codec,
+                "1",
+                pcm,
+                realtime=realtime,
+                translation=None,
+                timeout_s=120,
             )
             reference = reference_blocks(harness.factory, pcm, None)
             delays = added_delays(run, reference)
@@ -253,7 +264,14 @@ class RealService:
         self._log = self.log_path.open("w", encoding="utf-8")
         self.started_at = time.perf_counter()
         self.proc = subprocess.Popen(
-            [sys.executable, "-m", "aqr.cli", "live-serve", "--asr-threads", str(limits.get("threads", 1))],
+            [
+                sys.executable,
+                "-m",
+                "aqr.cli",
+                "live-serve",
+                "--asr-threads",
+                str(limits.get("threads", 1)),
+            ],
             cwd=ROOT,
             env=env,
             stdout=self._log,
@@ -262,7 +280,9 @@ class RealService:
         deadline = time.time() + 120
         while time.time() < deadline:
             if self.proc.poll() is not None:
-                raise RuntimeError("le service s'est arrêté au démarrage :\n" + self.log_path.read_text("utf-8"))
+                raise RuntimeError(
+                    "le service s'est arrêté au démarrage :\n" + self.log_path.read_text("utf-8")
+                )
             if "à l'écoute" in self.log_path.read_text("utf-8", errors="replace"):
                 break
             time.sleep(0.3)
@@ -346,10 +366,20 @@ def cmd_latency(args: argparse.Namespace) -> dict[str, Any]:
                         "messages": len(run.messages),
                         "by_type": {
                             kind: spread(
-                                [d for d, m in zip(delays, [x for x in run.messages if x["type"] != "PARTIAL"], strict=True) if m["type"] == kind],
+                                [
+                                    d
+                                    for d, m in zip(
+                                        delays,
+                                        [x for x in run.messages if x["type"] != "PARTIAL"],
+                                        strict=True,
+                                    )
+                                    if m["type"] == kind
+                                ],
                                 1000.0,
                             )
-                            for kind in sorted({m["type"] for m in run.messages if m["type"] != "PARTIAL"})
+                            for kind in sorted(
+                                {m["type"] for m in run.messages if m["type"] != "PARTIAL"}
+                            )
                         },
                         "added_delay_ms": spread(delays, 1000.0),
                         "connect_to_ready_ms": round(run.connect_s * 1000, 1),
@@ -361,13 +391,75 @@ def cmd_latency(args: argparse.Namespace) -> dict[str, Any]:
         service.stop()
     return {
         "service_startup_s": round(service.startup_s, 1),
-        "service_memory_mb": {"idle": idle_mb and round(idle_mb), "after": busy_mb and round(busy_mb)},
+        "service_memory_mb": {
+            "idle": idle_mb and round(idle_mb),
+            "after": busy_mb and round(busy_mb),
+        },
         "runs": results,
         "session_stats": stats,
     }
 
 
 # --------------------------------------------------------------------------- mesure 3 : capacity
+def run_point(
+    service: RealService, clips: list[bytes], codec: HmacTokenCodec, count: int, seconds: int
+) -> dict[str, Any]:
+    """`count` clients en temps réel en même temps ; le bilan de chaque flux vient du journal."""
+    before = len(service.stats())
+    runs: dict[int, Run] = {}
+    errors: list[str] = []
+
+    def one(number: int) -> None:
+        pcm = clips[number % len(clips)][: seconds * RATE * 2]
+        try:
+            runs[number] = stream_once(
+                service.url,
+                codec,
+                f"acct-{count}-{number}",
+                pcm,
+                translation=None,
+                timeout_s=seconds + 120,
+            )
+        except Exception as error:  # le banc dit ce qui a échoué
+            errors.append(f"{type(error).__name__}: {error}")
+
+    threads = [threading.Thread(target=one, args=(n,), daemon=True) for n in range(count)]
+    peak = [0.0]
+
+    def watch() -> None:
+        while any(t.is_alive() for t in threads):
+            peak[0] = max(peak[0], memory_mb(service.proc.pid) or 0.0)
+            time.sleep(1.0)
+
+    watcher = threading.Thread(target=watch, daemon=True)
+    started = time.perf_counter()
+    for t in threads:
+        t.start()
+    watcher.start()
+    for t in threads:
+        t.join(seconds + 180)
+    time.sleep(1.5)
+    rows = service.stats()[before:]
+    # retard perçu du client : (réception - heure de la voix) de chaque événement du flux
+    delays = [
+        (arrived - run.started_at) - message["t"]
+        for run in runs.values()
+        for message, arrived in zip(run.messages, run.arrivals, strict=True)
+        if message["type"] in ("CANDIDATES", "LOCKED")
+    ]
+    return {
+        "streams": count,
+        "completed": len(runs),
+        "errors": errors[:3],
+        "wall_s": round(time.perf_counter() - started, 1),
+        "max_lag_s": spread([r["max_lag_s"] for r in rows]),
+        "rtf": spread([r["rtf"] for r in rows]),
+        "degraded_blocks": sum(r["degraded_blocks"] for r in rows),
+        "event_delay_s": spread(delays),
+        "memory_peak_mb": round(peak[0]),
+    }
+
+
 def cmd_capacity(args: argparse.Namespace) -> dict[str, Any]:
     work = Path(args.work_dir)
     work.mkdir(parents=True, exist_ok=True)
@@ -378,63 +470,21 @@ def cmd_capacity(args: argparse.Namespace) -> dict[str, Any]:
     try:
         idle_mb = memory_mb(service.proc.pid)
         for count in [int(x) for x in args.streams.split(",")]:
-            before = len(service.stats())
-            runs: dict[int, Run] = {}
-            errors: list[str] = []
-
-            def one(number: int) -> None:
-                pcm = clips[number % len(clips)][: args.seconds * RATE * 2]
-                try:
-                    runs[number] = stream_once(
-                        service.url, codec, f"acct-{count}-{number}", pcm, translation=None, timeout_s=args.seconds + 120
-                    )
-                except Exception as error:  # le banc dit ce qui a échoué
-                    errors.append(f"{type(error).__name__}: {error}")
-
-            threads = [threading.Thread(target=one, args=(n,), daemon=True) for n in range(count)]
-            peak = [0.0]
-
-            def watch() -> None:
-                while any(t.is_alive() for t in threads):
-                    peak[0] = max(peak[0], memory_mb(service.proc.pid) or 0.0)
-                    time.sleep(1.0)
-
-            watcher = threading.Thread(target=watch, daemon=True)
-            started = time.perf_counter()
-            for t in threads:
-                t.start()
-            watcher.start()
-            for t in threads:
-                t.join(args.seconds + 180)
-            time.sleep(1.5)
-            rows = service.stats()[before:]
-            # retard perçu du client : (réception - heure de la voix) de chaque événement du flux
-            delays = []
-            for number, run in runs.items():
-                for message, arrived in zip(run.messages, run.arrivals, strict=True):
-                    if message["type"] in ("CANDIDATES", "LOCKED"):
-                        delays.append((arrived - run.started_at) - message["t"])
-            points.append(
-                {
-                    "streams": count,
-                    "completed": len(runs),
-                    "errors": errors[:3],
-                    "wall_s": round(time.perf_counter() - started, 1),
-                    "max_lag_s": spread([r["max_lag_s"] for r in rows]),
-                    "rtf": spread([r["rtf"] for r in rows]),
-                    "degraded_blocks": sum(r["degraded_blocks"] for r in rows),
-                    "event_delay_s": spread(delays),
-                    "memory_peak_mb": round(peak[0]),
-                }
-            )
+            points.append(run_point(service, clips, codec, count, args.seconds))
             print(json.dumps(points[-1], ensure_ascii=False), flush=True)
     finally:
         service.stop()
-    return {"service_startup_s": round(service.startup_s, 1), "idle_memory_mb": idle_mb and round(idle_mb), "points": points}
+    return {
+        "service_startup_s": round(service.startup_s, 1),
+        "idle_memory_mb": idle_mb and round(idle_mb),
+        "points": points,
+    }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("overhead", "latency", "capacity"):
         cmd = sub.add_parser(name)
@@ -446,7 +496,9 @@ def main() -> None:
         cmd.add_argument("--streams", default="1,4,8,12,16")
         cmd.add_argument("--seconds", type=int, default=90)
     args = parser.parse_args()
-    result = {"overhead": cmd_overhead, "latency": cmd_latency, "capacity": cmd_capacity}[args.command](args)
+    result = {"overhead": cmd_overhead, "latency": cmd_latency, "capacity": cmd_capacity}[
+        args.command
+    ](args)
     args.out.write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=1))
 

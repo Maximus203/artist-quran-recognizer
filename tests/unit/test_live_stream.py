@@ -274,3 +274,31 @@ def test_no_audio_is_kept_in_memory_on_disk_or_in_the_log(  # type: ignore[no-un
     for value in vars(stream).values():
         assert not isinstance(value, bytes | bytearray)
     assert "\\x" not in caplog.text
+
+
+def test_the_end_announces_the_finalization_before_the_final_document(world) -> None:  # type: ignore[no-untyped-def]
+    stream = make(world)
+    run(stream, 3.0)
+    messages = stream.end(received_at_s=3.0)
+    kinds = types(messages)
+    assert kinds[0] == "FINALIZING"
+    assert kinds[-1] == "FINAL"
+    assert messages[0]["pending_s"] is None
+
+
+def test_progress_follows_the_lock_word_by_word(world) -> None:  # type: ignore[no-untyped-def]
+    messages = run(make(world), 4.0)
+    kinds = types(messages)
+    assert "PROGRESS" in kinds
+    assert kinds.index("LOCKED") < kinds.index("PROGRESS")
+    heard = [m["words_heard"] for m in messages if m["type"] == "PROGRESS"]
+    assert heard == sorted(heard)
+
+
+def test_the_current_degradation_is_readable_for_a_resuming_client(world) -> None:  # type: ignore[no-untyped-def]
+    clock = ManualClock()
+    stream = make(world, clock=clock)
+    assert stream.degradation() == ()
+    clock.begin(100.0)
+    stream.push(pcm(0.1), received_at_s=0.0)
+    assert "overload" in stream.degradation()

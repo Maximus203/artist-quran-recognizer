@@ -170,13 +170,14 @@ class ServiceHarness:
 
 def real_engine(*, threads: int = 4) -> LiveEngine:
     """Le vrai modèle (Muno incrémental) ; le test saute si les poids sont absents."""
-    from tests.support.real import LOCK_PATH, models_dir
-
     from aqr.adapters.muno_incremental import MunoIncrementalASR, MunoIncrementalConfig
+    from tests.support.real import LOCK_PATH, models_dir
 
     w = world()
     asr = MunoIncrementalASR(
-        MunoIncrementalConfig(models_dir=models_dir(), lock_path=LOCK_PATH, intra_op_threads=threads)
+        MunoIncrementalConfig(
+            models_dir=models_dir(), lock_path=LOCK_PATH, intra_op_threads=threads
+        )
     )
     return LiveEngine(
         asr=asr,

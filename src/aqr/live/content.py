@@ -25,6 +25,8 @@ from aqr.rendering.home_renderer import HomeRenderer
 _OPEN_MIN_S = 1e-3
 """Un intervalle ouvert (verset en cours) reste un `TimeSpan` valide pour le rendu."""
 _WORD_TIMES = ("word_times", "word_times_source")
+_MAX_TRANSLATION_COMPARED = 40
+"""Versets comparés pour une traduction commune (au-delà, aucune traduction avant le verrou)."""
 
 
 class LiveContent:
@@ -71,6 +73,49 @@ class LiveContent:
         ref, flow_first = sources[0]
         first = self.corpus_rank(ref, flow_first)
         return self._renderer.passage_text(ref, first, first + shared_words - 1)
+
+    def common_translation(
+        self, sources: Sequence[tuple[VerseRef, int]], translation_id: str | None
+    ) -> dict[str, Any] | None:
+        """La traduction QuranEnc commune à tous les candidats (versets au texte identique), telle
+        quelle (I2), ou None : traduction différente, trop de candidats pour les comparer tous, ou
+        traduction indisponible."""
+        refs = {ref for ref, _first in sources}
+        if translation_id is None or not refs or len(refs) > _MAX_TRANSLATION_COMPARED:
+            return None
+        found: dict[str, Any] | None = None
+        try:
+            for ref in sorted(refs):
+                current = self._renderer.translation_json(ref, translation_id)
+                if current is None or (found is not None and current["text"] != found["text"]):
+                    return None
+                found = found or current
+        except Exception as error:
+            journal.warning("translation.unavailable", error=type(error).__name__)
+            return None
+        assert found is not None
+        keys = ("text", "translation_id", "version", "attribution", "scope")
+        return {key: found[key] for key in keys}
+
+    def uncertain(
+        self, candidates: Sequence[VerseRef], words_heard: int, start_s: float, end_s: float
+    ) -> dict[str, Any]:
+        """Passage clos resté sans nom : des références, jamais de texte ni de traduction (I3)."""
+        head = candidates[0]
+        return {
+            "kind": "verse",
+            "ref": str(head),
+            "words": [1, max(1, min(words_heard, self.word_count(head)))],
+            "partial": True,
+            "status": "uncertain",
+            "t": [round(start_s, 3), round(max(end_s, start_s + _OPEN_MIN_S), 3)],
+            "time_interpolated": False,
+            "confidence": 0.0,
+            "candidates": [str(ref) for ref in candidates],
+            "repetition": False,
+            "text": None,
+            "translation": None,
+        }
 
     # ------------------------------------------------------------------ intervalles
     def verse(
