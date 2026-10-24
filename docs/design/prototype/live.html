@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>En direct — Atelier de revue</title>
+<!--
+  PROTOTYPE STATIQUE ANIMÉ — données factices (live-data.js), aucun micro, aucun serveur, aucune reconnaissance.
+  Le texte arabe (Tanzil, CC BY 3.0) et la traduction (QuranEnc) viennent de sorties réelles du moteur (live-verses.js) ;
+  tous les temps, nombres de candidats et niveaux sonores sont inventés. Spécification : ../en-direct.md.
+  Tokens : ../tokens.css ; composants : base.css + live.css ; noyau : live-core.js ; contrôleur : live.js.
+  États par l'adresse : #sc=fatiha|lente|refrain|sauts|correction|coupure|expiree|surcharge · t=12.4 · theme=light|dark ·
+  font=amiri-quran|scheherazade|noto-naskh · tech=1 · bench=0 · err=denied|insecure|nomic|busy|server_busy|unsupported|internal
+  Tous les états côte à côte : live-etats.html.
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="live.css">
+</head>
+<body>
+<div class="sr-only-live" id="live" role="status" aria-live="polite" aria-atomic="true"></div>
+<header class="header">
+  <a class="brand" href="index.html" aria-label="Atelier de revue, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Atelier <em class="hide-m">de revue</em></b></a>
+  <nav class="hdr-nav" aria-label="Pages"><a href="index.html">Revue</a><a href="sessions.html">Sessions</a><a href="index.html#perf">Performance</a><a href="live.html" aria-current="page"><span class="livedot livedot--on" aria-hidden="true"></span>En direct</a><a href="docs.html">Documentation</a></nav>
+  <span class="spacer"></span>
+  <a class="btn btn--secondary btn--sm btn--icon only-m" href="live.html" aria-label="En direct" aria-current="page"><span class="livedot livedot--on" aria-hidden="true"></span></a>
+  <a class="btn btn--primary btn--sm" href="index.html#new" aria-label="Nouvel essai"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M12 5v14M5 12h14"/></svg><span class="hide-m">Nouvel essai</span></a>
+  <button class="btn btn--ghost btn--icon" id="theme" type="button" aria-label="Changer de thème"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+  <span class="avatar hide-m" aria-label="Compte : cherif" role="img">C</span>
+</header>
+
+<div class="bench" id="bench" role="region" aria-label="Banc de démonstration (prototype)">
+  <b>Démo<span> · données factices</span></b>
+  <select id="scn" aria-label="Scénario"></select>
+  <button class="btn btn--secondary" id="btn-play" type="button">Lecture démo</button>
+  <button class="btn btn--ghost" id="btn-restart" type="button">Début</button>
+  <label class="fact" for="speed">Vitesse</label>
+  <select id="speed"><option value="1">×1</option><option value="2">×2</option><option value="4">×4</option></select>
+  <input id="scrub" type="range" min="0" max="40" step="0.1" value="0" aria-label="Position dans la démo">
+  <span class="mono" id="tnow">0,0 s</span>
+  <span class="sp"></span>
+  <span class="fact" id="about"></span>
+</div>
+
+<main class="lv">
+  <div class="lv-wrap">
+    <h1 class="lv-title">En direct <em>— récite, je t’écoute</em></h1>
+    <p class="lv-lead">Ce que tu récites est reconnu pendant que tu parles. Tu vois ce que je sais, et seulement ce que je sais : un nom de verset n’apparaît que lorsque je suis sûr.</p>
+    <div class="lv-grid">
+      <section class="lv-main" aria-label="Écoute en direct">
+        <div id="dock-slot"></div>
+        <div class="statusbar" id="bar"></div>
+        <div class="notices" id="notices"></div>
+        <div id="stage"></div>
+        <div id="know"></div>
+      </section>
+      <aside class="lv-side" aria-label="Passages de l’écoute et mode technique">
+        <div id="hist"></div>
+        <div class="techsw"><button class="switch" id="tech-sw" type="button" role="switch" aria-checked="false"><i></i><span>Mode technique <span class="muted" style="font-weight:400">· touche T</span></span></button></div>
+        <div id="tech"></div>
+      </aside>
+    </div>
+    <p class="foot">Prototype : aucune reconnaissance réelle, aucun micro. Texte coranique : Tanzil Project (CC BY 3.0, <a href="https://tanzil.net">tanzil.net</a>), non modifié. Traductions : QuranEnc.com, non modifiées, avec attribution. Tous les temps, nombres de candidats, pistes et niveaux sonores sont factices ; les ordres de grandeur de latence viennent de <a href="../../evaluation/live-etape2-2026-10-24.md">docs/evaluation/live-etape2-2026-10-24.md</a>.</p>
+  </div>
+</main>
+<script src="live-verses.js"></script>
+<script src="live-data.js"></script>
+<script src="live-core.js"></script>
+<script src="live.js"></script>
+</body>
+</html>

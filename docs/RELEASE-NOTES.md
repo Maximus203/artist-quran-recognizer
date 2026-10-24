@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-24 — Détection en direct : conception de l'écran En direct
+Étiquettes : utilisateur, décision
+PR : #108
+
+**Ce qui change.** Rien de visible dans l'atelier pour l'instant : l'écran « En direct » est conçu, pas codé. Le brief décrit le parcours complet (bouton dans la barre du haut, demande d'accès au micro, niveau sonore, durée, connexion, mode allégé, coupure et reprise, arrêt, puis le geste « Garder cet enregistrement »), les niveaux d'affichage (écoute, candidats sans aucun texte de verset non nommé, verset nommé avec traduction, déduit de la position, « pas de verset nommé pour l'instant » présenté comme un état normal) et la façon de rendre l'attente de 5 à 20 s lisible. Des prototypes animés (données factices) et leurs captures accompagnent le document.
+
+**Pourquoi / décision.** Le brief propose les choix à valider par le mainteneur (rien conservé par défaut, son gardé en mémoire du navigateur seulement, décalage audio sans effet en direct, libellé « Déduit de la position » à harmoniser dans la revue) et liste ce que `aqr.live/1` doit encore ajouter : progression après le verrou, clôture d'un passage non nommé, changement de dégradation en cours de flux. Voir `docs/design/en-direct.md` et l'ADR-0011.
+
 ## 2026-10-24 — Détection en direct : l'étape 2, le moteur incrémental
 Étiquettes : technique, décision
 PR : #107
