@@ -3,7 +3,7 @@ import Link from "next/link";
 import { forwardRef } from "react";
 import { LIVE_ERRORS } from "@/lib/live-errors";
 import { formatClock } from "@/lib/live-format";
-import { counts, type LiveState } from "@/lib/live-store";
+import { counts, revisedCount, type LiveState } from "@/lib/live-store";
 import { Icon } from "../icons";
 
 type Props = {
@@ -23,6 +23,7 @@ export const EndCard = forwardRef<HTMLHeadingElement, Props>(function EndCard(
   titleRef,
 ) {
   const { named, unnamed } = counts(state);
+  const revised = revisedCount(state);
   const degraded = state.degLog.map(
     ([a, b]) =>
       `${formatClock(a)}–${b === null ? formatClock(state.endAtS ?? a) : formatClock(b)}`,
@@ -74,6 +75,12 @@ export const EndCard = forwardRef<HTMLHeadingElement, Props>(function EndCard(
           <b>{unnamed}</b>{" "}
           {unnamed > 1 ? "passages non nommés" : "passage non nommé"}
         </span>
+        {revised > 0 ? (
+          <span>
+            <b>{revised}</b>{" "}
+            {revised > 1 ? "versets corrigés" : "verset corrigé"}
+          </span>
+        ) : null}
         {degraded.length ? (
           <span>mode allégé {degraded.join(", ")}</span>
         ) : null}

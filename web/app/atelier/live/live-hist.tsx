@@ -6,6 +6,7 @@ import {
   counts,
   cutSeconds,
   historyRows,
+  revisedCount,
   type HistRow,
   type LiveState,
 } from "@/lib/live-store";
@@ -212,6 +213,7 @@ export function History({
 }) {
   const rows = historyRows(state);
   const { named, unnamed } = counts(state);
+  const revised = revisedCount(state);
   const lock = state.lock;
   return (
     <section className="hist" aria-labelledby="hist-t" data-testid="live-hist">
@@ -222,6 +224,13 @@ export function History({
         <b data-testid="live-named">{named}</b> {named > 1 ? "nommés" : "nommé"}{" "}
         · <b data-testid="live-unnamed">{unnamed}</b> non{" "}
         {unnamed > 1 ? "nommés" : "nommé"}
+        {revised > 0 ? (
+          <>
+            {" "}
+            · <b data-testid="live-revised">{revised}</b>{" "}
+            {revised > 1 ? "corrigés" : "corrigé"}
+          </>
+        ) : null}
       </p>
       {rows.length || lock ? (
         <ul aria-label="Passages de cette écoute, du plus récent au plus ancien">

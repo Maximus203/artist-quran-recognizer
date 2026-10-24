@@ -969,6 +969,11 @@ export function counts(state: LiveState): { named: number; unnamed: number } {
   return { named, unnamed };
 }
 
+/** Versets nommés puis retirés par une `REVISION` : ni nommés, ni « non nommés », mais jamais passés sous silence. */
+export function revisedCount(state: LiveState): number {
+  return state.hist.filter((h) => h.kind === "verse" && h.revised).length;
+}
+
 /** Le bandeau « Correction » : visible `revisionShownS` secondes après la révision. */
 export function recentRevision(state: LiveState): string | null {
   return state.rev &&

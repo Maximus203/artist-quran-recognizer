@@ -11,6 +11,7 @@ import {
   patienceStage,
   quietHint,
   recentRevision,
+  revisedCount,
   reduce,
   silenceS,
   viewOf,
@@ -502,6 +503,8 @@ describe("correction (REVISION) : jamais effacée, jamais présentée comme sûr
       translation: null,
     });
     expect(counts(s).named).toBe(1);
+    expect(revisedCount(s)).toBe(1); // dit à part, jamais passé sous silence
+    expect(revisedCount(before)).toBe(0);
   });
   it("le bandeau reste 14 s puis disparaît, la ligne reste", () => {
     const s = upTo(script, 18500);

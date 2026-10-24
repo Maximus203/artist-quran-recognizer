@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-24 — Détection en direct : l'écran En direct
+Étiquettes : utilisateur, technique, décision
+PR : #110
+
+**Ce qui change.** L'atelier a un écran « En direct » (page `/direct`, onglet dans la barre du haut, icône sur téléphone, carte « Écouter en direct » dans « Nouvel essai »). Un clic ouvre le micro, et le passage reconnu s'affiche pendant la récitation : d'abord le nombre de versets possibles et leurs mots communs, puis le verset nommé avec son texte du Mushaf mot à mot et sa traduction. Un verset sur trois environ n'est jamais nommé en direct : l'écran le dit comme un état normal (« Pas de verset nommé pour l'instant »), ne montre jamais le texte d'un verset qu'il n'est pas sûr d'avoir entendu, et écrit « Déduit de la position » (et non « Reconnu ») quand le numéro vient de la suite de ce que tu récitais. Une coupure de réseau ne perd rien : le son est gardé puis renvoyé, l'écran le dit. Une panne (micro refusé, service plein, jeton expiré) est expliquée en cause, conséquence et quoi faire. À la fin, « Garder cet enregistrement » envoie le son comme un import classique ; sinon rien n'est conservé par le serveur. Le libellé « Déduit · non entendu » devient « Déduit de la position » partout. Pour les testeurs, le script de démarrage lance maintenant aussi le service d'écoute et son tunnel.
+
+**Pourquoi / décision.** Dernière brique de l'ADR-0011 (étape 4) : sans écran, le moteur en direct de l'étape 3 n'est pas utilisable. Éprouvé dans un vrai Chrome avec le vrai service (micro simulé par une récitation EveryAyah) : les premiers candidats s'affichent 2,2 s après le début de la voix en médiane (p90 3,2 s), le verset nommé 4,0 s (p90 6,9 s), et l'écran ajoute 2 ms au délai du moteur ; 19 versets nommés sur 48, aucun faux. Une coupure de 10 s se répare toute seule, une pause de 130 s tient (une trame de silence par seconde garde la connexion), le micro et le WebSocket passent par le tunnel Cloudflare. Le mode allégé et la correction ne sont éprouvés que par des messages injectés (le service ne les émet pas encore en conditions normales). Pas de voix réelle ni de téléphone réel dans cette preuve. Voir `docs/evaluation/live-etape4-2026-10-24.md`, `docs/design/en-direct.md` et l'ADR-0011.
+
 ## 2026-10-24 — Détection en direct : l'étape 3, le service WebSocket
 Étiquettes : technique, décision
 PR : #109

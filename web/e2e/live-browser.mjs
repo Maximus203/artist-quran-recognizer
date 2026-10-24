@@ -267,12 +267,12 @@ async function signIn(page) {
   const user = process.env.AQR_SMOKE_USER;
   const password = process.env.AQR_SMOKE_PASSWORD;
   if (user && password) {
-    await page.goto(`${base}/login`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/login`, { waitUntil: "networkidle" }); // hydraté avant de saisir : un envoi natif mettrait le mot de passe dans l’adresse
     await page.getByLabel("Pseudonyme").fill(user);
     await page.getByLabel("Mot de passe", { exact: true }).fill(password);
     await page.getByTestId("login-submit").click();
   } else {
-    await page.goto(`${base}/register`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/register`, { waitUntil: "networkidle" });
     await page
       .getByLabel("Pseudonyme")
       .fill(`direct-${randomBytes(4).toString("hex")}`);
