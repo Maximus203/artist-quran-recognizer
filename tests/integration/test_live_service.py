@@ -584,15 +584,16 @@ def test_a_late_arrival_is_a_visible_degradation() -> None:
 
 
 # --------------------------------------------------------------------------- arrêt et vie privée
-def test_stopping_the_service_says_why_then_closes_with_a_going_away_code() -> None:
+def test_stopping_the_service_says_why_to_every_stream_then_closes_with_a_going_away_code() -> None:
     harness = ServiceHarness().__enter__()
     try:
-        client = started(harness)
+        clients = [started(harness, str(n)) for n in range(3)]
         harness.stop()
-        with pytest.raises(ConnectionClosed):
-            client.recv_until(lambda m: False, timeout=5.0)
-        assert [m["code"] for m in client.of_type("ERROR")] == ["service_stopping"]
-        assert client.close_code == 1001
+        for client in clients:
+            with pytest.raises(ConnectionClosed):
+                client.recv_until(lambda m: False, timeout=5.0)
+            assert [m["code"] for m in client.of_type("ERROR")] == ["service_stopping"]
+            assert client.close_code == 1001
     finally:
         harness.stop()
 

@@ -184,12 +184,17 @@ class LiveWebSocketServer:
         self._stopping = True
         if self._reaper is not None:
             self._reaper.cancel()
+        runners = list(self._runners.values())
+        # d'abord dire pourquoi à TOUS les flux, ensuite seulement fermer (fermer le serveur coupe
+        # les connexions d'un coup, avant que la phrase ne parte)
+        await asyncio.gather(
+            *(self._send_error(r.ws, "service_stopping") for r in runners), return_exceptions=True
+        )
         if self._server is not None:
             self._server.close()
-        for runner in list(self._runners.values()):
+        for runner in runners:
             if runner.ws is not None:
                 with contextlib.suppress(Exception):
-                    await self._send_error(runner.ws, "service_stopping")
                     await runner.ws.close(CLOSE_GOING_AWAY, "arret_du_service")
             if runner.task is not None:
                 runner.task.cancel()
