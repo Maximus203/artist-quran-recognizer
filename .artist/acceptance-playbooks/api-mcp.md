@@ -21,3 +21,14 @@
 1. Créer un jeton « écriture », importer un audio par `create_recording`, attendre `done`, lire.
 2. Créer un jeton « lecture », vérifier les refus, le révoquer, vérifier le `401`.
 3. Brancher le MCP dans un vrai client (Claude Code) et lister les essais.
+
+## Export par l'API (sous-titres et vidéo)
+
+- `GET /api/v1/export/options` liste les options ; une option inconnue ou hors plage répond `400`
+  avec le détail.
+- `POST …/export/video/jobs` (JSON, puis multipart avec `background_image`) répond `202` ; le job
+  passe `running` (avancement lisible) puis `done` ; le `file` est un MP4 H.264 + AAC aux dimensions
+  demandées, de la durée de l'audio. Un jeton en lecture peut le faire.
+- Troisième job actif du même compte : `429`. Aucun Chrome/Edge : `503` lisible. Job d'un autre
+  compte ou expiré : `404`.
+- Le MCP fait de même : `export_video`, `get_video_export`, `get_export_options`, `get_verse`.

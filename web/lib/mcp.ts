@@ -227,6 +227,128 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    name: "get_export_options",
+    description:
+      "Catalogue des options d'export : sous-titres (format, contenu, durées, police…) et vidéo (format, tailles, fonds proposés…), avec valeurs permises et défauts.",
+    inputSchema: { type: "object", properties: {} },
+    run: async (_args, ctx) =>
+      unwrap(
+        await ctx.call("GET", "/api/v1/export/options"),
+        "Lecture impossible",
+      ),
+  },
+  {
+    name: "export_video",
+    description:
+      "Demande la vidéo MP4 d'un essai terminé (verset surligné mot à mot, traduction, onde audio) : mêmes réglages que le formulaire de l'atelier. Renvoie un job ; suivre avec get_video_export jusqu'à « done », puis télécharger `download_path` avec le même jeton. Le rendu dure à peu près la moitié de la durée de l'audio.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: idSchema,
+        orientation: {
+          type: "string",
+          enum: ["16:9", "9:16", "1:1", "source"],
+        },
+        arabic_size: {
+          description: "Points (40-140) ou small | medium | large | xlarge.",
+        },
+        translation_size: {
+          description: "Points (16-64) ou small | medium | large | xlarge.",
+        },
+        show_translation: { type: "boolean" },
+        background: {
+          type: "string",
+          description:
+            "Identifiant d'un fond proposé, « source » (vidéo d'origine) ou « color » ; voir get_export_options.",
+        },
+        color: {
+          type: "string",
+          description: "Couleur unie #rrggbb (avec background « color »).",
+        },
+      },
+      required: ["id"],
+    },
+    run: async (args, ctx) => {
+      const id = asId(args);
+      const options: Json = {};
+      for (const key of [
+        "orientation",
+        "arabic_size",
+        "translation_size",
+        "show_translation",
+        "background",
+        "color",
+      ])
+        if (args[key] !== undefined) options[key] = args[key];
+      const body = unwrap(
+        await ctx.call("POST", `/api/sessions/${id}/export/video/jobs`, {
+          json: { options },
+        }),
+        "Export vidéo impossible",
+      );
+      return { ...body, status_tool: "get_video_export" };
+    },
+  },
+  {
+    name: "get_video_export",
+    description:
+      "État d'un export vidéo demandé par export_video. Quand l'état est « done », `download_path` est l'adresse du MP4 (GET avec le même jeton ; conservé une heure).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: idSchema,
+        job: {
+          type: "string",
+          description: "Identifiant du job renvoyé par export_video.",
+        },
+      },
+      required: ["id", "job"],
+    },
+    run: async (args, ctx) => {
+      const id = asId(args);
+      const job = args.job;
+      if (typeof job !== "string" || !/^[0-9a-f-]{36}$/i.test(job))
+        throw new ToolError("job : l'identifiant du job est requis.");
+      const body = unwrap(
+        await ctx.call("GET", `/api/sessions/${id}/export/video/jobs/${job}`),
+        "Lecture impossible",
+      );
+      const state = (body.job as Json | undefined)?.state;
+      return {
+        ...body,
+        ...(state === "done"
+          ? {
+              download_path: `/api/v1/recordings/${id}/export/video/jobs/${job}/file`,
+            }
+          : {}),
+      };
+    },
+  },
+  {
+    name: "get_verse",
+    description:
+      "Texte exact d'un verset du corpus (Mushaf Hafs, Tanzil) et sa traduction officielle, par référence `sourate:verset`. Utile pour vérifier ou citer un verset.",
+    inputSchema: {
+      type: "object",
+      properties: { ref: { type: "string", description: "Ex. « 2:255 »." } },
+      required: ["ref"],
+    },
+    run: async (args, ctx) => {
+      const ref = args.ref;
+      if (typeof ref !== "string" || !/^\d{1,3}:\d{1,3}$/.test(ref))
+        throw new ToolError(
+          "ref : une référence « sourate:verset » est requise.",
+        );
+      return unwrap(
+        await ctx.call(
+          "GET",
+          `/api/corpus/verse?ref=${encodeURIComponent(ref)}`,
+        ),
+        "Lecture impossible",
+      );
+    },
+  },
+  {
     name: "export_subtitles",
     description:
       "Génère les sous-titres d'un essai terminé : srt, vtt, ass (karaoké mot à mot quand les temps sont mesurés) ou json. Renvoie le contenu du fichier. L'arabe et la traduction sont ceux du résultat, sans modification.",

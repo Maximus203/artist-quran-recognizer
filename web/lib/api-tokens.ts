@@ -158,9 +158,18 @@ export function resolveApiToken(
 }
 
 /** Ce qu'un jeton a le droit de toucher : les essais, rien du compte ni de l'administration. */
-const API_PATHS = [/^\/api\/sessions(\/|$)/, /^\/(api\/)?mcp$/, /^\/api\/v1\//];
+const API_PATHS = [
+  /^\/api\/sessions(\/|$)/,
+  /^\/(api\/)?mcp$/,
+  /^\/api\/v1\//,
+  // Statistiques, préférences d'affichage et texte d'un verset du corpus (jamais le reste du compte).
+  /^\/api\/(me\/(stats|preferences)|stats|corpus\/verse)$/,
+];
 /** Calculs sans effet sur les données : permis même à un jeton en lecture seule. */
-const READ_ONLY_POSTS = [/\/export\/(subtitles|readiness)$/];
+const READ_ONLY_POSTS = [
+  /\/export\/(subtitles|readiness)$/,
+  /\/export\/video(\/jobs)?$/,
+];
 
 export function tokenMayCall(
   scope: TokenScope,
