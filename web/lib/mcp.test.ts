@@ -256,4 +256,48 @@ describe("outils d'export vidéo et de gestion", () => {
     );
     expect(reply.result.isError).toBe(true);
   });
+
+  it("suggest_video_ranges appelle la route de suggestions avec les marges", async () => {
+    const call = vi.fn(async () => ({
+      status: 200,
+      body: { ranges: [] },
+    })) as unknown as ApiCall;
+    await callTool(
+      "suggest_video_ranges",
+      {
+        id: ID,
+        lead_in: 1,
+        tail_out: 0.5,
+        snap_to_silence: false,
+        group: "passage",
+        include_silences: true,
+      },
+      call,
+    );
+    expect(call).toHaveBeenCalledWith(
+      "GET",
+      `/api/sessions/${ID}/export/suggestions?lead_in=1&tail_out=0.5&snap=0&group=passage&silences=1`,
+    );
+  });
+
+  it("export_video transmet la découpe protégée", async () => {
+    const call = vi.fn(async () => ({
+      status: 202,
+      body: { job: { id: "j" } },
+    })) as unknown as ApiCall;
+    await callTool(
+      "export_video",
+      { id: ID, suggest: "verse", lead_in: 1, snap_to_silence: true },
+      call,
+    );
+    expect(call).toHaveBeenCalledWith(
+      "POST",
+      `/api/sessions/${ID}/export/video/jobs`,
+      {
+        json: {
+          options: { suggest: "verse", lead_in: 1, snap_to_silence: true },
+        },
+      },
+    );
+  });
 });

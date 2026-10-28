@@ -7,11 +7,13 @@ import { api } from "./api-client";
 import { even, type VideoOrientation } from "./export-video-args";
 import { videoDimensions } from "./export-video-format";
 import { videoRangeFileName, videoFileName } from "./export-video-name";
+import { normalizeRanges, type ExportRange } from "./export-video-ranges";
 import {
-  normalizeRanges,
-  rangesFromCards,
-  type ExportRange,
-} from "./export-video-ranges";
+  padRanges,
+  suggestRanges,
+  type SuggestGroup,
+  type SuggestOptions,
+} from "./export-video-suggest";
 import {
   h264Config,
   VideoEncoderUnavailableError,
@@ -66,8 +68,14 @@ export type RenderVideoInputs = {
   fileName?: string;
   /** Parties à exporter (une vidéo chacune) ; absent = tout l'audio, une seule vidéo. */
   ranges?: ExportRange[];
-  /** Une vidéo par verset reconnu (remplace `ranges`). */
+  /** Une vidéo par verset reconnu (= `suggest: "verse"`, remplace `ranges`). */
   perVerse?: boolean;
+  /** Découpe automatique protégée : un verset ou un passage par vidéo, avec marges et aimantation au silence. */
+  suggest?: SuggestGroup;
+  /** Marges (avant, après la récitation), aimantation au silence, écart de regroupement. */
+  margins?: SuggestOptions;
+  /** Élargit aussi les `ranges` donnés avec ces marges. */
+  padRanges?: boolean;
   /** Annonce le nombre de vidéos qui vont être produites (avant la première). */
   onCount?: (count: number) => void;
   onProgress: RenderProgress;
@@ -114,12 +122,16 @@ export async function renderSessionVideo(
   const cards = frameCards(result.intervals, prefs.showTranslation);
   if (cards.length === 0)
     throw new Error("Aucun passage coranique avec texte : rien à montrer.");
-  const requested = inputs.perVerse
-    ? rangesFromCards(
-        cards.map((c) => c.card),
-        duration,
-      )
-    : inputs.ranges;
+  const mode = inputs.suggest ?? (inputs.perVerse ? "verse" : undefined);
+  const margins = inputs.margins ?? {};
+  const requested: ExportRange[] | undefined = mode
+    ? suggestRanges(result.intervals, duration, peaks, {
+        ...margins,
+        group: mode,
+      }).map((r) => ({ start: r.start, end: r.end }))
+    : inputs.padRanges && inputs.ranges && inputs.ranges.length > 0
+      ? padRanges(inputs.ranges, result.intervals, duration, peaks, margins)
+      : inputs.ranges;
   const plan = normalizeRanges(requested, duration);
   if (!plan.ok) throw new Error(plan.error);
   const ranges = plan.ranges;

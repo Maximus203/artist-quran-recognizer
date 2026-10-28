@@ -11,6 +11,14 @@ import {
 } from "./export-video-format";
 import { MAX_RANGES, MIN_RANGE_SECONDS } from "./export-video-ranges";
 import {
+  DEFAULT_LEAD_IN,
+  DEFAULT_MERGE_GAP,
+  DEFAULT_TAIL_OUT,
+  MAX_PADDING,
+  type SuggestGroup,
+  type SuggestOptions,
+} from "./export-video-suggest";
+import {
   accentSchema,
   ARABIC_SIZE_PRESETS,
   DEFAULT_VIDEO_PREFS,
@@ -84,8 +92,24 @@ export const videoJobOptionsSchema = z
       .min(1, "au moins une plage")
       .max(MAX_RANGES)
       .optional(),
-    /** Une vidéo par verset reconnu (exclusif avec `ranges`). */
+    /** Une vidéo par verset reconnu (= `suggest: "verse"`, exclusif avec `ranges`). */
     per_verse: z.boolean().optional(),
+    /**
+     * Découpe automatique, protégée : « verse » = une vidéo par verset, « passage » = les versets
+     * enchaînés dans une seule vidéo ; chaque plage commence avant et finit après la récitation
+     * (`lead_in`, `tail_out`), aimantée au silence (`snap_to_silence`).
+     */
+    suggest: z.enum(["verse", "passage"]).optional(),
+    /** Secondes gardées avant la récitation (0 à 5, défaut 0,6). */
+    lead_in: z.number().min(0).max(MAX_PADDING).optional(),
+    /** Secondes gardées après la récitation (0 à 5, défaut 0,4). */
+    tail_out: z.number().min(0).max(MAX_PADDING).optional(),
+    /** Aimante les bords vers le silence le plus proche (défaut oui). */
+    snap_to_silence: z.boolean().optional(),
+    /** Écart maximal (s) entre deux versets d'un même passage (`suggest: "passage"`). */
+    merge_gap: z.number().min(0).max(30).optional(),
+    /** Élargit aussi les `ranges` donnés avec ces marges, sans empiéter sur la récitation voisine. */
+    pad_ranges: z.boolean().optional(),
     /** Remplir l'espace : le texte grandit pour occuper la zone libre. */
     fill: z.boolean().optional(),
     /** Hauteur du texte : 0 (haut) à 100 (bas), ou « top », « middle », « bottom ». */
@@ -107,9 +131,10 @@ export const videoJobOptionsSchema = z
       .optional(),
   })
   .strict()
-  .refine((o) => !(o.per_verse && o.ranges), {
-    message: "per_verse et ranges s'excluent : choisis l'un ou l'autre",
-    path: ["per_verse"],
+  .refine((o) => !((o.per_verse || o.suggest) && o.ranges), {
+    message:
+      "per_verse / suggest et ranges s'excluent : choisis une découpe automatique ou tes propres plages",
+    path: ["suggest"],
   });
 
 export type VideoJobOptions = z.infer<typeof videoJobOptionsSchema>;
@@ -207,7 +232,29 @@ export function videoOptionsCatalog() {
         "Une plage = une vidéo, dans l'ordre donné ; sans plage, tout l'audio. Une fin au-delà de la durée est ramenée à la durée.",
     },
     per_verse:
-      "boolean : une vidéo par verset reconnu (exclusif avec `ranges`).",
+      "boolean : une vidéo par verset reconnu (= suggest « verse », exclusif avec `ranges`).",
+    suggest: {
+      values: ["verse", "passage"],
+      notes:
+        "Découpe automatique PROTÉGÉE : chaque vidéo commence avant la récitation et finit après, aimantée au silence, sans empiéter sur le voisin : aucune voix coupée. « verse » = une vidéo par verset ; « passage » = les versets enchaînés (écart ≤ merge_gap) dans une seule vidéo. Les passages incertains ne sont jamais proposés. Pour voir les plages avant d'exporter : GET /api/v1/recordings/{id}/export/suggestions (outil MCP suggest_video_ranges).",
+    },
+    lead_in: {
+      seconds: { min: 0, max: MAX_PADDING, default: DEFAULT_LEAD_IN },
+      notes: "Marge gardée AVANT la récitation (suggest et pad_ranges).",
+    },
+    tail_out: {
+      seconds: { min: 0, max: MAX_PADDING, default: DEFAULT_TAIL_OUT },
+      notes: "Marge gardée APRÈS la récitation (suggest et pad_ranges).",
+    },
+    snap_to_silence:
+      "boolean (défaut true) : aimante chaque bord au silence le plus proche.",
+    merge_gap: {
+      seconds: { min: 0, max: 30, default: DEFAULT_MERGE_GAP },
+      notes:
+        "Écart maximal entre deux versets d'un même passage (suggest « passage »).",
+    },
+    pad_ranges:
+      "boolean : élargit aussi tes `ranges` avec lead_in / tail_out sans empiéter sur la récitation voisine (sinon tes plages sont prises telles quelles).",
     fill: "boolean (le texte occupe toute la zone libre)",
     text_position: "0 (haut) à 100 (bas), ou top | middle | bottom",
     show_wave: "boolean (onde audio en bas)",
@@ -236,4 +283,60 @@ export function videoOptionsCatalog() {
       accent: DEFAULT_VIDEO_PREFS.accent,
     },
   };
+}
+
+/** Marges et aimantation d'une demande d'export (valeurs par défaut comprises). */
+export function suggestOptionsOf(
+  options: Pick<
+    VideoJobOptions,
+    "lead_in" | "tail_out" | "snap_to_silence" | "merge_gap" | "suggest"
+  >,
+): Required<SuggestOptions> {
+  return {
+    leadIn: options.lead_in ?? DEFAULT_LEAD_IN,
+    tailOut: options.tail_out ?? DEFAULT_TAIL_OUT,
+    snapToSilence: options.snap_to_silence ?? true,
+    group: (options.suggest ?? "verse") as SuggestGroup,
+    mergeGap: options.merge_gap ?? DEFAULT_MERGE_GAP,
+    includeInferred: true,
+  };
+}
+
+const flagOf = (value: string | null): boolean | undefined =>
+  value === null ? undefined : value === "1" || value === "true";
+
+/** Lit les paramètres de `GET …/export/suggestions` (mêmes noms que les options de l'export). */
+export function suggestOptionsFromQuery(
+  query: URLSearchParams,
+):
+  | { ok: true; options: Required<SuggestOptions> }
+  | { ok: false; error: string } {
+  const read: Record<string, number | undefined> = {};
+  for (const name of ["lead_in", "tail_out", "merge_gap"]) {
+    const raw = query.get(name);
+    if (raw === null || raw === "") continue;
+    const value = Number(raw);
+    if (!Number.isFinite(value))
+      return {
+        ok: false,
+        error: `${name} : un nombre de secondes est attendu.`,
+      };
+    read[name] = value;
+  }
+  const group = query.get("group");
+  if (group !== null && group !== "verse" && group !== "passage")
+    return { ok: false, error: "group : « verse » ou « passage »." };
+  const candidate: Record<string, unknown> = { ...read };
+  const snap = flagOf(query.get("snap"));
+  if (snap !== undefined) candidate.snap_to_silence = snap;
+  if (group !== null) candidate.suggest = group;
+  const parsed = videoJobOptionsSchema.safeParse(candidate);
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: parsed.error.issues
+        .map((i) => `${i.path.join(".")} (${i.message})`)
+        .join(" ; "),
+    };
+  return { ok: true, options: suggestOptionsOf(parsed.data) };
 }

@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { sessionDir } from "./store";
 import {
+  suggestOptionsOf,
   videoPrefsFromOptions,
   type VideoJobOptions,
 } from "./video-job-options";
@@ -235,6 +236,9 @@ async function renderInBrowser(job: VideoJob): Promise<void> {
         fileName: job.options.file_name,
         ranges: job.options.ranges,
         perVerse: job.options.per_verse === true,
+        suggest: job.options.suggest,
+        margins: suggestOptionsOf(job.options),
+        padRanges: job.options.pad_ranges === true,
         prefs,
         hasBackground: job.background !== null,
       },

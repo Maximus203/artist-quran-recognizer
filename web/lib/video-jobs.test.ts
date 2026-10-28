@@ -17,6 +17,7 @@ import {
   type VideoJob,
 } from "./video-jobs";
 import {
+  suggestOptionsFromQuery,
   videoJobOptionsSchema,
   videoOptionsCatalog,
   videoPrefsFromOptions,
@@ -94,6 +95,54 @@ describe("options de l'export vidéo par l'API", () => {
       { ranges: [{ start: 0, end: 5 }], per_verse: true },
     ])
       expect(videoJobOptionsSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("accepte la découpe automatique protégée et ses marges ; refuse les valeurs absurdes", () => {
+    expect(
+      videoJobOptionsSchema.safeParse({
+        suggest: "passage",
+        lead_in: 1.2,
+        tail_out: 0.8,
+        snap_to_silence: false,
+        merge_gap: 2,
+      }).success,
+    ).toBe(true);
+    expect(
+      videoJobOptionsSchema.safeParse({
+        ranges: [{ start: 1, end: 9 }],
+        pad_ranges: true,
+        lead_in: 1,
+      }).success,
+    ).toBe(true);
+    for (const bad of [
+      { suggest: "chapitre" },
+      { lead_in: -1 },
+      { lead_in: 99 },
+      { tail_out: 6 },
+      { merge_gap: 100 },
+      { suggest: "verse", ranges: [{ start: 0, end: 5 }] },
+    ])
+      expect(videoJobOptionsSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("lit les paramètres de la route de suggestions et applique les défauts", () => {
+    const ok = suggestOptionsFromQuery(
+      new URLSearchParams("lead_in=1&snap=0&group=passage"),
+    );
+    expect(ok).toMatchObject({
+      ok: true,
+      options: {
+        leadIn: 1,
+        tailOut: 0.4,
+        snapToSilence: false,
+        group: "passage",
+      },
+    });
+    expect(suggestOptionsFromQuery(new URLSearchParams("")).ok).toBe(true);
+    for (const query of ["lead_in=abc", "tail_out=9", "group=chapitre"])
+      expect(suggestOptionsFromQuery(new URLSearchParams(query)).ok).toBe(
+        false,
+      );
   });
 
   it("reporte cadence et résolution dans les réglages du rendu (défauts 30 et 1080)", () => {
