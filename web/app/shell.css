@@ -264,7 +264,7 @@
   .brand {
     padding: 0 var(--sp-1);
   }
-  /* Six commandes dans 320 px : le logo seul (son nom accessible reste « Atelier de revue, accueil »). */
+  /* Six commandes dans 320 px : le logo seul (son nom accessible reste « Quran TR, accueil »). */
   .brand b {
     display: none;
   }
