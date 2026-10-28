@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-28 — Export vidéo : format, tailles, fonds proposés et texte sans chevauchement
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** La page Exporter a trois onglets visibles sur téléphone comme sur ordinateur — « 1 · Vérifier », « 2 · Réglages » (sous-titres) et « 3 · Vidéo » — et le formulaire vidéo est indépendant. On règle en regardant un aperçu réel (le verset le plus long de la session) : format horizontal, vertical (Reels, Shorts, TikTok), carré, ou « comme la vidéo importée » ; taille de l'arabe et de la traduction en un clic (Petit à Très grand, réglage précis possible) ; traduction affichée ou non ; fond choisi dans une galerie — cinq dégradés, neuf photos libres (mosquées, déserts, nature), la vidéo d'origine pour une session vidéo, une couleur unie, ou sa propre image — avec des liens vers Unsplash, Pexels, Pixabay et Freepik pour en trouver d'autres. Plus de fond noir par défaut. Le texte passe à la ligne tout seul et se réduit si un verset est très long : référence, arabe et traduction ne se chevauchent jamais et restent au-dessus de l'onde ; sur photo ou vidéo ils reposent sur un support gris aux bords doux. Le mot récité est surligné et l'onde défile avec la tête de lecture, comme dans l'atelier. La source de la traduction n'est plus écrite sous chaque verset. Format et tailles se mémorisent. Une vidéo importée garde son format et reçoit la traduction par-dessus.
+
+**Pourquoi / décision.** Vérifié sur de vrais exports : la première version produisait une vidéo de 2 secondes sans aucun son (FFmpeg `-shortest` sur un flux H.264 brut, et horodatage déclaré par l'encodeur du navigateur), et une session MP4 n'était jamais reconnue comme vidéo (`.mp4` typé « audio »). Le mux assemble désormais les segments, impose 25 im/s (`setts`) et n'utilise plus `-shortest` ; un test avec le vrai FFmpeg garde ce défaut. La mise en page est un module pur testé (`lib/export-video-layout.ts`). Les photos viennent de Pexels (usage libre, crédits dans `web/public/backgrounds/CREDITS.md`) ; le code n'appelle aucun site de photos. L'attribution QuranEnc reste à l'export des sous-titres, pas dans l'image (choix du mainteneur, 2026-10-27). Voir §7 ter de `docs/ARCHITECTURE-ATELIER.md`.
+
 ## 2026-10-24 — Détection en direct : l'étape 3, le service WebSocket
 Étiquettes : technique, décision
 PR : #109
