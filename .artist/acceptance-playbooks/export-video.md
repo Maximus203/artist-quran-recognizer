@@ -70,6 +70,13 @@ conteneur vidéo).
 - Nom du fichier : proposé = nom de l'audio ; modifiable ; le fichier téléchargé porte exactement ce nom en `.mp4`.
 - Onglet « 2 · Réglages » sur grand écran : pas de colonne vide, réglages et aperçu côte à côte.
 
+## Vidéo importée : toute la vidéo, pas une image
+
+- `GET /api/sessions/<id>/video` accepte `Range: bytes=…` (`206`, `Accept-Ranges`, `416` hors fichier) : sans cela le
+  navigateur ne peut pas se positionner et le fond reste figé.
+- Export d'une session vidéo avec le fond « Vidéo d'origine » sur une vidéo en mouvement (ex. compteur d'images) :
+  l'image à 3 s, 15 s et 30 s du MP4 produit montre le contenu de la vidéo à 3 s, 15 s et 30 s, avec la traduction par-dessus.
+
 ## À couvrir à la main (non automatisé)
 
 - Fond vidéo de bout en bout sur une vraie session importée en vidéo (aucune en base de test) :
