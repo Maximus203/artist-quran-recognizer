@@ -27,7 +27,7 @@ from aqr.live.protocol import ProtocolError, ResumeRequest, StartMessage
 from aqr.live.service_config import LiveServiceConfig
 from aqr.live.stream import LiveStream
 
-StreamFactory = Callable[[str, str | None, bool], LiveStream]
+StreamFactory = Callable[[str, str | None, bool, int | None], LiveStream]
 """(identifiant de session, traduction, mode technique) -> flux neuf, avec son modèle chargé."""
 
 _SESSION_ID_BYTES = 16
@@ -103,7 +103,7 @@ class LiveHub:
                 raise ProtocolError("too_many_streams", "limite par compte atteinte")
             session_id = secrets.token_urlsafe(_SESSION_ID_BYTES)
             technical = claims.technical and start.technical
-            stream = self._factory(session_id, start.translation, technical)
+            stream = self._factory(session_id, start.translation, technical, start.surah)
             session = LiveSession(session_id, claims.subject, stream, created_at=now)
             self._sessions[session_id] = session
         journal.info(

@@ -15,6 +15,7 @@ import { Icon } from "../icons";
 export function Console({
   state,
   onStart,
+  startDisabled = false,
   onPause,
   onResume,
   onStop,
@@ -22,6 +23,8 @@ export function Console({
 }: {
   state: LiveState;
   onStart: () => void;
+  /** Récitation guidée sans sourate choisie : on ne démarre pas. */
+  startDisabled?: boolean;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -41,6 +44,7 @@ export function Console({
           type="button"
           className="btn btn--primary btn--lg btn--wide"
           data-testid="live-start"
+          disabled={startDisabled}
           onClick={onStart}
         >
           <Icon name="mic" />

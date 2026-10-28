@@ -1124,3 +1124,60 @@
     animation: none;
   }
 }
+
+/* ── Mode d'écoute : récitation guidée ou classique ── */
+.lv-mode {
+  display: grid;
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-3);
+}
+.lv-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-2);
+}
+.lv-mode-tabs button {
+  display: grid;
+  gap: 2px;
+  min-block-size: 56px;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md, 10px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.lv-mode-tabs button small {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+.lv-mode-tabs button.is-active {
+  border-color: var(--accent, currentColor);
+  box-shadow: inset 0 0 0 1px var(--accent, currentColor);
+  background: var(--surface-2);
+}
+.lv-mode-surah {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm);
+}
+.lv-mode-surah select {
+  min-block-size: 48px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md, 10px);
+  background: var(--surface-2);
+  color: inherit;
+  font: inherit;
+}
+.lv-mode-surah small {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+.lv-mode-locked {
+  margin: 0 0 var(--sp-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}

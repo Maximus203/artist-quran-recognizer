@@ -28,7 +28,9 @@ class StubStream:
 def make_hub(**changes: Any) -> LiveHub:
     config = LiveServiceConfig(**{"max_streams": 3, "max_streams_per_account": 2, **changes})
 
-    def factory(session_id: str, translation: str | None, technical: bool) -> StubStream:
+    def factory(
+        session_id: str, translation: str | None, technical: bool, surah: int | None = None
+    ) -> StubStream:
         stream = StubStream(session_id)
         stream.translation = translation  # type: ignore[attr-defined]
         stream.technical = technical  # type: ignore[attr-defined]

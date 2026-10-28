@@ -152,6 +152,8 @@ type Props = {
   showTranslation: boolean;
   retryIn: number | null;
   onStart: () => void;
+  /** Nom de la sourate annoncée en récitation guidée (texte d'accueil adapté). */
+  guidedSurah?: string | null;
 };
 
 export function Stage({
@@ -160,6 +162,7 @@ export function Stage({
   showTranslation,
   retryIn,
   onStart,
+  guidedSurah = null,
 }: Props) {
   const view = viewOf(state);
   const wrap = (children: React.ReactNode, extra = "") => (
@@ -180,8 +183,9 @@ export function Stage({
           Récite, je t’écoute.
         </h2>
         <p className="pass-sub">
-          Le moteur reconnaît les versets pendant que tu récites, sans que tu
-          aies à dire de quelle sourate il s’agit.
+          {guidedSurah
+            ? `Tu as annoncé la sourate ${guidedSurah} : le moteur ne cherche que dedans et suit les versets qui viennent après.`
+            : "Le moteur reconnaît les versets pendant que tu récites, sans que tu aies à dire de quelle sourate il s’agit."}
         </p>
         <ul className="lv-legend" aria-label="Comment lire l’écran">
           <li>

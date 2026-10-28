@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef } from "react";
 import { clampQuranSize, QURAN_SIZE } from "@/lib/ui-prefs";
+import { canStartWith, modeSurah } from "@/lib/live-mode";
+import { SURAH_NAMES } from "@/lib/surahs";
 import { isLive } from "@/lib/live-store";
 import { FontPicker, FONT_SAMPLE } from "../font-picker";
 import { useMedia } from "../hooks";
@@ -8,6 +10,7 @@ import { useShell } from "../shell";
 import { Console, Know, Notices, StatusBar } from "./live-console";
 import { EndCard } from "./live-end";
 import { History, Tech, TechSwitch } from "./live-hist";
+import { ModePicker } from "./live-mode-picker";
 import { Stage } from "./live-stage";
 import { useLive } from "./use-live";
 
@@ -101,9 +104,19 @@ export function LiveView() {
         </p>
         <div className="lv-grid">
           <div className="lv-main">
+            <ModePicker
+              mode={live.mode}
+              onChange={live.setMode}
+              locked={
+                state.phase !== "idle" &&
+                state.phase !== "error" &&
+                state.phase !== "ended"
+              }
+            />
             <Console
               state={state}
               onStart={() => void live.start()}
+              startDisabled={!canStartWith(live.mode)}
               onPause={live.pause}
               onResume={live.resume}
               onStop={() => void live.stop()}
@@ -130,6 +143,11 @@ export function LiveView() {
                 showTranslation={prefs.translation}
                 retryIn={live.retryIn}
                 onStart={() => void live.start()}
+                guidedSurah={
+                  modeSurah(live.mode) === null
+                    ? null
+                    : `${modeSurah(live.mode)} · ${SURAH_NAMES[(modeSurah(live.mode) ?? 1) - 1]}`
+                }
               />
             )}
             <Know state={state} />

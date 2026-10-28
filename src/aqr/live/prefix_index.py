@@ -117,6 +117,19 @@ class PrefixIndex:
         self._letters: dict[str, int] = {}
         self._similar = lru_cache(maxsize=1 << 16)(self._similar_positions)
 
+    def restricted_to_surah(self, surah: int) -> PrefixIndex:
+        """Le même flux de mots limité à UNE sourate (récitation guidée, ADR-0015) : le suivi ne
+        peut plus nommer un verset d'ailleurs. Les mots, leur rang et leur verset sont ceux du
+        flux entier ; seuls les positions globales sont renumérotées depuis 0."""
+        verses = [verse for verse in self._refs if verse.surah == surah]
+        if not verses:
+            raise ValueError(f"sourate inconnue : {surah}")
+        flow = {
+            verse: tuple(self._tokens[self._start[verse] : self._end[verse] + 1])
+            for verse in verses
+        }
+        return PrefixIndex(flow, basmala=self.basmala, word_threshold=self._threshold)
+
     # -- Forme du flux --------------------------------------------------------------------
     @property
     def size(self) -> int:

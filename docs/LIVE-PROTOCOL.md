@@ -54,6 +54,8 @@ murale. Toute connexion qui n'envoie pas `START` dans `start_timeout_s` (10 s) r
  "options":{"translation":"french_hameedullah","technical":false},
  "resume":{"session_id":"…","last_seq":17}}
 ```
+- `options.surah` (facultatif, entier 1 à 114) : **récitation guidée** (ADR-0015). Le service ne cherche que dans
+  cette sourate et enchaîne ses versets ; absent = écoute classique, tout le Coran. Hors bornes : `bad_message`.
 - `audio` est exigé tel quel ; `options.translation` : un identifiant QuranEnc connu ou `"none"` (défaut
   `french_hameedullah`) ; `options.technical` : demande `PARTIAL` (mode technique, éteint par défaut, ouvert à tous les
   comptes : l'atelier l'inscrit dans le jeton quand l'utilisateur le demande) ; `resume` : voir §6.

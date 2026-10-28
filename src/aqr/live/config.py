@@ -21,6 +21,14 @@ def _check_unit(name: str, value: float) -> None:
         raise ValueError(f"{name} doit être dans [0, 1] (reçu {value})")
 
 
+# Valeurs de départ de la récitation guidée, à recaler par mesure (scripts/measure_live_guided.py).
+GUIDED_PRIOR = 0.97
+GUIDED_NON_QURAN_PRIOR = 0.03
+GUIDED_MIN_WORDS_LOCK = 2
+GUIDED_MIN_LOCK_DENSITY = 0.5
+GUIDED_TAU_LOCK = 0.95
+
+
 @dataclass(frozen=True)
 class LiveConfig:
     # -- A priori des hypothèses de position (ADR-0011 §2) ---------------------------------
@@ -160,6 +168,20 @@ class LiveConfig:
 
     def replace(self, **changes: Any) -> LiveConfig:
         return replace(self, **changes)
+
+    def guided(self) -> LiveConfig:
+        """Réglages de la récitation guidée (ADR-0015) : la sourate est annoncée et le suivi
+        ne cherche que dans celle-ci. Le risque d'un verset d'ailleurs disparaît et la parole
+        étrangère est rare : on exige moins de preuves pour nommer un verset de CETTE sourate
+        (moins de mots, une densité plus basse, un a priori de suite plus fort, moins de « pas du
+        Coran »), ce qui évite les versets sautés de l'écoute classique."""
+        return self.replace(
+            prior=GUIDED_PRIOR,
+            non_quran_prior=GUIDED_NON_QURAN_PRIOR,
+            min_words_lock=GUIDED_MIN_WORDS_LOCK,
+            min_lock_density=GUIDED_MIN_LOCK_DENSITY,
+            tau_lock=GUIDED_TAU_LOCK,
+        )
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

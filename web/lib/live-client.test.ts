@@ -51,6 +51,7 @@ class FakeSocket implements SocketLike {
 function harness(
   over: Partial<{
     tokens: (n: number) => ReturnType<LiveDeps["fetchToken"]>;
+    surah: number | null;
   }> = {},
 ) {
   let clock = 1_000_000;
@@ -86,7 +87,11 @@ function harness(
           };
     },
     dispatch: (action) => actions.push(action),
-    options: { translation: "french_hameedullah", technical: false },
+    options: {
+      translation: "french_hameedullah",
+      technical: false,
+      surah: over.surah ?? null,
+    },
   };
   const advance = async (ms: number) => {
     const end = clock + ms;
@@ -164,6 +169,27 @@ describe("démarrage", () => {
       options: { translation: "french_hameedullah", technical: false },
     });
     expect(start).not.toHaveProperty("resume");
+  });
+
+  it("annonce la sourate dans START en récitation guidée, et rien en écoute classique", async () => {
+    const guided = harness({ surah: 18 });
+    guided.client.open();
+    await guided.flush();
+    guided.last.open();
+    expect(guided.last.texts[0]).toMatchObject({
+      options: {
+        translation: "french_hameedullah",
+        technical: false,
+        surah: 18,
+      },
+    });
+    const classic = harness();
+    classic.client.open();
+    await classic.flush();
+    classic.last.open();
+    expect(
+      (classic.last.texts[0] as { options: object }).options,
+    ).not.toHaveProperty("surah");
   });
 
   it("aucun son ne part avant READY ; le son capté entre-temps est envoyé ensuite, dans l'ordre", async () => {

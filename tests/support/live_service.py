@@ -73,7 +73,7 @@ def stream_factory(
     cost_s: float = 0.0,
     budget: BudgetConfig | None = None,
     config: LiveServiceConfig,
-) -> Callable[[str, str | None, bool], LiveStream]:
+) -> Callable[..., LiveStream]:
     """La vraie fabrique du service (`make_stream_factory`), avec un faux ASR."""
     w = world()
 

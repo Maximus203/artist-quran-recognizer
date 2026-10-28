@@ -69,8 +69,23 @@ def make_stream_factory(engine: LiveEngine, config: LiveServiceConfig) -> Stream
         decoder=DECODER_NOTE,
     )
     limits = config.stream_limits()
+    guided_indexes: dict[int, PrefixIndex] = {}
 
-    def factory(session_id: str, translation: str | None, technical: bool) -> LiveStream:
+    def index_for(surah: int | None) -> PrefixIndex:
+        """Écoute classique : l'index du Coran entier. Récitation guidée : celui de la sourate
+        annoncée, construit une fois puis partagé (immuable)."""
+        if surah is None:
+            return engine.index
+        if surah not in guided_indexes:
+            guided_indexes[surah] = engine.index.restricted_to_surah(surah)
+        return guided_indexes[surah]
+
+    def factory(
+        session_id: str,
+        translation: str | None,
+        technical: bool,
+        surah: int | None = None,
+    ) -> LiveStream:
         origin = time.perf_counter()
 
         def clock() -> float:
@@ -78,9 +93,9 @@ def make_stream_factory(engine: LiveEngine, config: LiveServiceConfig) -> Stream
 
         pipeline = LivePipeline(
             engine.asr,
-            engine.index,
+            index_for(surah),
             engine.skeleton,
-            config=engine.live,
+            config=engine.live.guided() if surah is not None else engine.live,
             budget=engine.budget,
             clock=clock,
         )
