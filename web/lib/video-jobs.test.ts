@@ -81,6 +81,34 @@ describe("options de l'export vidéo par l'API", () => {
     expect(prefs.background).toBeNull();
   });
 
+  it("couvre les options de remplissage, de hauteur, d'onde, d'accent et de nom", () => {
+    const accent = { h: 40, s: 80, l: 60, a: 1 };
+    const options = videoJobOptionsSchema.parse({
+      fill: true,
+      text_position: "top",
+      show_wave: false,
+      accent,
+      file_name: "ma-video",
+      arabic_size: 200,
+    });
+    const prefs = videoPrefsFromOptions(options, false);
+    expect(prefs.fill).toBe(true);
+    expect(prefs.textPosition).toBe(12);
+    expect(prefs.showWave).toBe(false);
+    expect(prefs.accent).toEqual(accent);
+    expect(prefs.arabicSize).toBe(200);
+    expect(
+      videoJobOptionsSchema.safeParse({ accent: { h: 400, s: 1, l: 50, a: 1 } })
+        .success,
+    ).toBe(false);
+    expect(
+      videoJobOptionsSchema.safeParse({ text_position: 150 }).success,
+    ).toBe(false);
+    expect(
+      videoPrefsFromOptions({ text_position: 30 }, false).textPosition,
+    ).toBe(30);
+  });
+
   it("une image envoyée l'emporte sur le fond choisi", () => {
     expect(
       videoPrefsFromOptions({ background: "desert-dunes" }, true).background,

@@ -256,6 +256,23 @@ export const TOOLS: Tool[] = [
           description: "Points (16-64) ou small | medium | large | xlarge.",
         },
         show_translation: { type: "boolean" },
+        fill: {
+          type: "boolean",
+          description: "Le texte occupe toute la zone libre.",
+        },
+        text_position: {
+          description: "0 (haut) à 100 (bas), ou top | middle | bottom.",
+        },
+        show_wave: { type: "boolean", description: "Onde audio en bas." },
+        accent: {
+          type: "object",
+          description:
+            "Couleur d'accent { h, s, l, a } ; absente = automatique.",
+        },
+        file_name: {
+          type: "string",
+          description: "Nom du fichier téléchargé.",
+        },
         background: {
           type: "string",
           description:
@@ -276,6 +293,11 @@ export const TOOLS: Tool[] = [
         "arabic_size",
         "translation_size",
         "show_translation",
+        "fill",
+        "text_position",
+        "show_wave",
+        "accent",
+        "file_name",
         "background",
         "color",
       ])

@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 import { apiError, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { readSession } from "@/lib/store";
+import { videoFileName } from "@/lib/export-video-name";
 import { getVideoJob } from "@/lib/video-jobs";
 export const runtime = "nodejs";
 
@@ -27,7 +28,7 @@ async function handleGET(
     });
   const size = (await stat(job.file)).size;
   const session = await readSession(access.id);
-  const name = `quran-tr-${session.name.replace(/[^\w.-]+/g, "_") || access.id}.mp4`;
+  const name = videoFileName(session.name, job.options.file_name);
   return new Response(
     Readable.toWeb(createReadStream(job.file)) as ReadableStream,
     {

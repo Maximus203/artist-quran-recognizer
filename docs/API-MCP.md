@@ -80,6 +80,7 @@ passe par la page technique `/render/video`. Il faut donc Chrome ou Edge sur la 
 (`AQR_CHROME` pour désigner l'exécutable ; sinon l'installation standard est cherchée). Un compte
 a au plus deux exports actifs, rendus un par un ; le MP4 est gardé une heure. Réglages : format
 (`16:9`, `9:16`, `1:1`, `source`), taille de l'arabe et de la traduction, traduction affichée ou non,
+remplissage de l'espace, hauteur du texte, onde, couleur d'accent, nom du fichier,
 fond (dix-sept choix proposés, vidéo d'origine, couleur unie, ou image envoyée).
 
 ## Compétence pour l'agent
