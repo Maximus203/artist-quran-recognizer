@@ -7,7 +7,8 @@ import { api } from "./api-client";
 import { even, type VideoOrientation } from "./export-video-args";
 import { videoDimensions } from "./export-video-format";
 import { videoRangeFileName, videoFileName } from "./export-video-name";
-import { normalizeRanges, type ExportRange } from "./export-video-ranges";
+import { normalizeRanges, type NamedRange } from "./export-video-ranges";
+import { fileProgressText, type FileProgress } from "./export-video-progress";
 import {
   padRanges,
   suggestRanges,
@@ -52,6 +53,32 @@ type SessionInfo = {
 
 export type RenderProgress = (message: string) => void;
 
+/** Une vidéo produite (téléchargée dès qu'elle est prête). */
+export type RenderedFile = { name: string; bytes: number };
+
+/**
+ * Échec pendant la vidéo `index` : les vidéos précédentes sont déjà téléchargées (`done`), rien
+ * n'est perdu ; `memory` signale un manque de mémoire de l'encodeur (proposer une qualité plus basse).
+ */
+export class VideoFileError extends Error {
+  constructor(
+    message: string,
+    readonly index: number,
+    readonly done: RenderedFile[],
+    readonly memory: boolean,
+  ) {
+    super(message);
+    this.name = "VideoFileError";
+  }
+}
+
+/** Erreur d'allocation ou d'encodeur : le navigateur a manqué de mémoire (souvent sur téléphone). */
+export function looksLikeMemoryError(error: unknown): boolean {
+  const text =
+    error instanceof Error ? `${error.name} ${error.message}` : String(error);
+  return /memory|allocation|quota|RangeError|EncodingError|out of/i.test(text);
+}
+
 /** Couleurs fixes de la vidéo (thème sombre lisible sur fond clair comme sombre). */
 export const VIDEO_COLORS: FrameColors = {
   text: "#f5f1e8",
@@ -66,8 +93,8 @@ export type RenderVideoInputs = {
   bgImage: File | null;
   /** Nom du fichier téléchargé (avec .mp4) ; sinon celui de l'audio. */
   fileName?: string;
-  /** Parties à exporter (une vidéo chacune) ; absent = tout l'audio, une seule vidéo. */
-  ranges?: ExportRange[];
+  /** Parties à exporter (une vidéo chacune, nom facultatif) ; absent = tout l'audio, une seule vidéo. */
+  ranges?: NamedRange[];
   /** Une vidéo par verset reconnu (= `suggest: "verse"`, remplace `ranges`). */
   perVerse?: boolean;
   /** Découpe automatique protégée : un verset ou un passage par vidéo, avec marges et aimantation au silence. */
@@ -76,10 +103,16 @@ export type RenderVideoInputs = {
   margins?: SuggestOptions;
   /** Élargit aussi les `ranges` donnés avec ces marges. */
   padRanges?: boolean;
-  /** Annonce le nombre de vidéos qui vont être produites (avant la première). */
-  onCount?: (count: number) => void;
+  /** Annonce les vidéos qui vont être produites, avec leur nom de fichier (avant la première). */
+  onCount?: (count: number, names: string[]) => void;
+  /** Avancement structuré, fichier par fichier. */
+  onFile?: (progress: FileProgress) => void;
+  /** Lu entre deux vidéos : vrai = s'arrêter après la vidéo en cours (« Arrêter après cette vidéo »). */
+  shouldStop?: () => boolean;
   onProgress: RenderProgress;
 };
+
+export type RenderOutcome = { files: RenderedFile[]; stopped: boolean };
 
 /** Dimensions de la vidéo d'origine (métadonnées seulement), null si illisible. */
 async function sourceVideoSize(
@@ -102,7 +135,7 @@ async function sourceVideoSize(
  */
 export async function renderSessionVideo(
   inputs: RenderVideoInputs,
-): Promise<void> {
+): Promise<RenderOutcome> {
   const { sessionId, prefs, bgImage, onProgress, fileName } = inputs;
   const fps = prefs.fps;
   onProgress("Lecture du résultat…");
@@ -124,7 +157,7 @@ export async function renderSessionVideo(
     throw new Error("Aucun passage coranique avec texte : rien à montrer.");
   const mode = inputs.suggest ?? (inputs.perVerse ? "verse" : undefined);
   const margins = inputs.margins ?? {};
-  const requested: ExportRange[] | undefined = mode
+  const requested: NamedRange[] | undefined = mode
     ? suggestRanges(result.intervals, duration, peaks, {
         ...margins,
         group: mode,
@@ -136,7 +169,23 @@ export async function renderSessionVideo(
   if (!plan.ok) throw new Error(plan.error);
   const ranges = plan.ranges;
   const whole = !requested || requested.length === 0;
-  inputs.onCount?.(ranges.length);
+  const names = ranges.map((range) =>
+    whole
+      ? fileName || videoFileName(detail.session.name ?? "video")
+      : videoRangeFileName(
+          detail.session.name ?? "video",
+          fileName,
+          range,
+          ranges.length,
+          range.name,
+        ),
+  );
+  inputs.onCount?.(ranges.length, names);
+  const files: RenderedFile[] = [];
+  const report = (progress: FileProgress) => {
+    inputs.onFile?.(progress);
+    onProgress(fileProgressText(progress));
+  };
 
   // Fond : image téléversée, sinon choix mémorisé, sinon vidéo d'origine / dégradé par défaut.
   onProgress("Préparation du fond…");
@@ -190,66 +239,81 @@ export async function renderSessionVideo(
     const seek = background.video ? videoSeeker(background.video, fps) : null;
 
     for (const [position, range] of ranges.entries()) {
-      const label =
-        ranges.length > 1 ? `Vidéo ${position + 1}/${ranges.length} : ` : "";
+      if (position > 0 && inputs.shouldStop?.())
+        return { files, stopped: true };
+      const total = ranges.length;
       const length = range.end - range.start;
       const frameCount = frameCountFor(length, fps);
       const job = newVideoJob();
 
-      onProgress(`${label}rendu des images (0 / ${frameCount})…`);
-      const encoded = await encodeFrames({
-        canvas,
-        config,
-        fps,
-        frameCount,
-        beforeFrame: seek
-          ? async (index) => {
-              await seek(Math.min(range.start + index / fps, duration - 0.001));
-            }
-          : undefined,
-        draw: (ctx, index) => {
-          const t = Math.min(range.start + index / fps, duration - 0.001);
-          drawFrame(ctx, {
-            width,
-            height,
-            t,
-            duration,
-            cards,
-            peaks,
-            colors,
-            prefs,
-            background: {
-              color: prefs.bg,
-              image: background.image,
-              gradient: background.gradient,
-            },
-            scrim: background.scrim,
-            measureContext,
-            fontFamily: fonts.fontFamily,
-            translationFontFamily: fonts.translationFontFamily,
-          });
-          if (index % 50 === 0)
-            onProgress(`${label}rendu des images (${index} / ${frameCount})…`);
-        },
-      });
+      report({ index: position, total, phase: "render", ratio: 0 });
+      try {
+        const encoded = await encodeFrames({
+          canvas,
+          config,
+          fps,
+          frameCount,
+          beforeFrame: seek
+            ? async (index) => {
+                await seek(
+                  Math.min(range.start + index / fps, duration - 0.001),
+                );
+              }
+            : undefined,
+          draw: (ctx, index) => {
+            const t = Math.min(range.start + index / fps, duration - 0.001);
+            drawFrame(ctx, {
+              width,
+              height,
+              t,
+              duration,
+              cards,
+              peaks,
+              colors,
+              prefs,
+              background: {
+                color: prefs.bg,
+                image: background.image,
+                gradient: background.gradient,
+              },
+              scrim: background.scrim,
+              measureContext,
+              fontFamily: fonts.fontFamily,
+              translationFontFamily: fonts.translationFontFamily,
+            });
+            if (index % 50 === 0)
+              report({
+                index: position,
+                total,
+                phase: "render",
+                ratio: index / Math.max(1, frameCount),
+              });
+          },
+        });
 
-      const name = whole
-        ? fileName || videoFileName(detail.session.name ?? "video")
-        : videoRangeFileName(
-            detail.session.name ?? "video",
-            fileName,
-            range,
-            ranges.length,
-          );
-      await sendSegments(
-        sessionId,
-        job,
-        encoded.segments,
-        onProgress,
-        name,
-        whole ? { fps } : { fps, start: range.start, duration: length },
-      );
+        const name = names[position];
+        const bytes = await sendSegments(
+          sessionId,
+          job,
+          encoded.segments,
+          (ratio) => report({ index: position, total, phase: "send", ratio }),
+          name,
+          whole ? { fps } : { fps, start: range.start, duration: length },
+        );
+        files.push({ name, bytes });
+        report({ index: position, total, phase: "done", ratio: 1, bytes });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Rendu impossible.";
+        throw new VideoFileError(
+          message,
+          position,
+          [...files],
+          looksLikeMemoryError(error),
+        );
+      }
     }
+    return { files, stopped: false };
   } finally {
     background.close();
   }
@@ -264,13 +328,13 @@ async function sendSegments(
     last: boolean;
     data: Uint8Array;
   }[],
-  onProgress: RenderProgress,
+  onSend: (ratio: number) => void,
   fileName: string,
   mux: { fps: number; start?: number; duration?: number },
-): Promise<void> {
+): Promise<number> {
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
-    onProgress(`Envoi des segments (${i + 1} / ${segments.length})…`);
+    onSend(i / segments.length);
     const response = await fetch(`/api/sessions/${sessionId}/export/video`, {
       method: "POST",
       headers: {
@@ -311,8 +375,9 @@ async function sendSegments(
     link.href = url;
     link.download = fileName;
     link.click();
-    URL.revokeObjectURL(url);
-    return;
+    // Le navigateur lit l'URL au clic ; la libérer tout de suite peut annuler le téléchargement.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return blob.size;
   }
   throw new Error("La vidéo n'a pas été assemblée : segment final manquant.");
 }

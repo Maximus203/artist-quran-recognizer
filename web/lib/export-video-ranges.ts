@@ -4,12 +4,15 @@
  * dans l'ordre donné. Pur : validé ici, utilisé par le formulaire, l'API et le rendu.
  */
 export type ExportRange = { start: number; end: number };
+/** Une plage peut porter un nom : il remplace l'intervalle dans le nom de son fichier. */
+export type NamedRange = ExportRange & { name?: string };
 
 export const MAX_RANGES = 50;
+export const MAX_RANGE_NAME = 80;
 export const MIN_RANGE_SECONDS = 0.5;
 
 export type RangesResult =
-  | { ok: true; ranges: ExportRange[] }
+  | { ok: true; ranges: NamedRange[] }
   | { ok: false; error: string };
 
 const seconds = (value: number): string =>
@@ -20,14 +23,14 @@ const seconds = (value: number): string =>
  * l'audio (une seule vidéo). Une fin au-delà de la durée est ramenée à la durée.
  */
 export function normalizeRanges(
-  ranges: readonly ExportRange[] | undefined,
+  ranges: readonly NamedRange[] | undefined,
   duration: number,
 ): RangesResult {
   if (!ranges || ranges.length === 0)
     return { ok: true, ranges: [{ start: 0, end: duration }] };
   if (ranges.length > MAX_RANGES)
     return { ok: false, error: `${MAX_RANGES} plages au plus par export.` };
-  const out: ExportRange[] = [];
+  const out: NamedRange[] = [];
   for (const [i, range] of ranges.entries()) {
     const label = `Plage ${i + 1}`;
     if (!Number.isFinite(range.start) || !Number.isFinite(range.end))
@@ -45,7 +48,8 @@ export function normalizeRanges(
         ok: false,
         error: `${label} : trop courte (${seconds(MIN_RANGE_SECONDS)} au moins).`,
       };
-    out.push({ start: range.start, end });
+    const name = range.name?.trim();
+    out.push(name ? { start: range.start, end, name } : { start: range.start, end });
   }
   return { ok: true, ranges: out };
 }

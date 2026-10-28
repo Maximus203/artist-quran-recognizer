@@ -15,7 +15,7 @@ type Payload = {
   prefs: VideoPrefs;
   hasBackground: boolean;
   fileName?: string;
-  ranges?: { start: number; end: number }[];
+  ranges?: { start: number; end: number; name?: string }[];
   perVerse?: boolean;
   suggest?: "verse" | "passage";
   margins?: {
@@ -32,6 +32,8 @@ type State = {
   done?: boolean;
   /** Nombre de vidéos attendues (une par plage) : le serveur attend autant de téléchargements. */
   total?: number;
+  files_done?: number;
+  files_total?: number;
 };
 
 export function RenderClient() {
@@ -69,6 +71,11 @@ export function RenderClient() {
         padRanges: payload.padRanges,
         onCount: (count) => {
           state.total = count;
+          state.files_total = count;
+          state.files_done = 0;
+        },
+        onFile: (progress) => {
+          if (progress.phase === "done") state.files_done = progress.index + 1;
         },
         onProgress: (message) => {
           state.progress = message;

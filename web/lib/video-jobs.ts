@@ -23,7 +23,11 @@ export type VideoJob = {
   sessionId: string;
   userId: number;
   state: VideoJobState;
+  /** « Vidéo 2/5 : rendu 64 % » : lisible tel quel par un humain ou un agent. */
   progress: string;
+  /** Vidéos déjà produites et nombre attendu (connu une fois les plages calculées). */
+  files_done: number;
+  files_total: number | null;
   error: string | null;
   createdAt: string;
   finishedAt: string | null;
@@ -169,6 +173,8 @@ export async function startVideoJob(input: {
     userId: input.userId,
     state: "queued",
     progress: "En attente",
+    files_done: 0,
+    files_total: null,
     error: null,
     createdAt: new Date().toISOString(),
     finishedAt: null,
@@ -193,6 +199,8 @@ export async function startVideoJob(input: {
         job.files = [{ name: path.basename(job.file), path: job.file }];
       job.state = "done";
       job.progress = "Terminé";
+      job.files_done = job.files.length;
+      job.files_total = job.files.length;
     } catch (error) {
       job.state = "failed";
       job.error = error instanceof Error ? error.message : "Rendu impossible.";
@@ -203,6 +211,20 @@ export async function startVideoJob(input: {
     }
   });
   return job;
+}
+
+/** État publié par la page de rendu (`window.__AQR_STATE`). */
+export type RenderPageState = {
+  progress?: string;
+  files_done?: number;
+  files_total?: number;
+};
+
+/** Reporte l'avancement lu dans la page de rendu sur le job (champs absents : inchangés). */
+export function applyRenderState(job: VideoJob, state: RenderPageState): void {
+  if (state.progress) job.progress = state.progress;
+  if (typeof state.files_total === "number") job.files_total = state.files_total;
+  if (typeof state.files_done === "number") job.files_done = state.files_done;
 }
 
 /** Rendu réel : page technique `/render/video` dans Chrome/Edge sans interface. */
@@ -272,14 +294,18 @@ async function renderInBrowser(job: VideoJob): Promise<void> {
       });
     const progress = setInterval(() => {
       page
-        .evaluate(
-          () =>
-            (window as unknown as { __AQR_STATE?: { progress?: string } })
-              .__AQR_STATE?.progress ?? "",
-        )
-        .then((text) => {
-          if (text) job.progress = text;
+        .evaluate(() => {
+          const state = (window as unknown as { __AQR_STATE?: RenderPageState })
+            .__AQR_STATE;
+          return state
+            ? {
+                progress: state.progress,
+                files_done: state.files_done,
+                files_total: state.files_total,
+              }
+            : {};
         })
+        .then((state) => applyRenderState(job, state))
         .catch(() => undefined);
     }, 1500);
     try {

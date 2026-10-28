@@ -9,6 +9,7 @@ vi.mock("./store", () => ({
 }));
 
 import {
+  applyRenderState,
   browserExecutable,
   getVideoJob,
   publicJob,
@@ -95,6 +96,19 @@ describe("options de l'export vidéo par l'API", () => {
       { ranges: [{ start: 0, end: 5 }], per_verse: true },
     ])
       expect(videoJobOptionsSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("accepte un nom par plage (suffixe du fichier) ; refuse un nom vide ou trop long", () => {
+    expect(
+      videoJobOptionsSchema.safeParse({
+        ranges: [{ start: 0, end: 5, name: "2:255" }, { start: 6, end: 9 }],
+      }).success,
+    ).toBe(true);
+    for (const name of ["", "   ", "x".repeat(81)])
+      expect(
+        videoJobOptionsSchema.safeParse({ ranges: [{ start: 0, end: 5, name }] })
+          .success,
+      ).toBe(false);
   });
 
   it("accepte la découpe automatique protégée et ses marges ; refuse les valeurs absurdes", () => {
@@ -258,6 +272,42 @@ describe("jobs d'export vidéo", () => {
     const c = await startVideoJob({ ...base, userId: 8, runner: slow });
     release();
     for (const j of [a, b, c]) expect((await settle(j.id)).state).toBe("done");
+  });
+});
+
+describe("avancement d'un job, fichier par fichier", () => {
+  it("publie progress, files_done et files_total ; tout est fait à la fin", async () => {
+    const job = await startVideoJob({
+      ...base,
+      userId: 41,
+      runner: async (j) => {
+        applyRenderState(j, {
+          progress: "Vidéo 2/3 : rendu 64 %",
+          files_done: 1,
+          files_total: 3,
+        });
+        expect(publicJob(j)).toMatchObject({
+          progress: "Vidéo 2/3 : rendu 64 %",
+          files_done: 1,
+          files_total: 3,
+        });
+        const files = [0, 1, 2].map((n) => path.join(j.dir, `v${n}.mp4`));
+        for (const f of files) await writeFile(f, "x");
+        j.files = files.map((f) => ({ name: path.basename(f), path: f }));
+        j.file = files[0];
+      },
+    });
+    const done = await settle(job.id);
+    expect(publicJob(done)).toMatchObject({
+      state: "done",
+      files_done: 3,
+      files_total: 3,
+    });
+  });
+  it("un état partiel ne remet rien à zéro", () => {
+    const job = { progress: "x", files_done: 2, files_total: 4 } as VideoJob;
+    applyRenderState(job, {});
+    expect(job).toMatchObject({ progress: "x", files_done: 2, files_total: 4 });
   });
 });
 

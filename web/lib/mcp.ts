@@ -313,10 +313,17 @@ export const TOOLS: Tool[] = [
         ranges: {
           type: "array",
           description:
-            "Parties à exporter : une vidéo par plage { start, end } en secondes de l'audio (50 au plus). Absent = tout l'audio.",
+            "Parties à exporter : une vidéo par plage { start, end, name? } en secondes de l'audio (50 au plus). Absent = tout l'audio. `name` (80 caractères au plus) nomme le fichier de la plage, par exemple la référence « 2:255 ».",
           items: {
             type: "object",
-            properties: { start: { type: "number" }, end: { type: "number" } },
+            properties: {
+              start: { type: "number" },
+              end: { type: "number" },
+              name: {
+                type: "string",
+                description: "Nom de la plage, suffixe du fichier MP4.",
+              },
+            },
             required: ["start", "end"],
           },
         },
@@ -424,7 +431,7 @@ export const TOOLS: Tool[] = [
   {
     name: "get_video_export",
     description:
-      "État d'un export vidéo demandé par export_video. Quand l’état est « done », `download_paths` liste les MP4 (un par plage ; `download_path` = le premier), à télécharger en GET avec le même jeton (conservés une heure).",
+      "État d'un export vidéo demandé par export_video : `progress` dit où en est le rendu (« Vidéo 2/5 : rendu 64 % »), `files_done` / `files_total` comptent les vidéos produites. Quand l’état est « done », `download_paths` liste les MP4 (un par plage ; `download_path` = le premier), à télécharger en GET avec le même jeton (conservés une heure).",
     inputSchema: {
       type: "object",
       properties: {
