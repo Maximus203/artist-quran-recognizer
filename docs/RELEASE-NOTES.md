@@ -17,6 +17,14 @@ PR : -
 
 **Pourquoi / décision.** Tous les audios d'un atelier ouvert se retrouvaient dans un même espace public : le défaut passe à « privé » (le partage devient explicite). Un jeton n'a que les droits de son compte, jamais l'administration ni la gestion des jetons ; la base ne garde que son empreinte SHA-256. Les outils MCP passent par l'API (mêmes contrôles et quotas) et ne renvoient que le texte du corpus et la traduction QuranEnc (I1, I2). Les essais déjà créés gardent leur portée. Voir `docs/API-MCP.md`.
 
+## 2026-10-28 — Export vidéo : remplir l'espace, hauteur du texte, couleur d'accent, aperçu animé et nom du fichier
+Étiquettes : utilisateur, technique
+PR : #114
+
+**Ce qui change.** Dans l'onglet « 3 · Vidéo » : « Remplir tout l'espace » agrandit les écritures jusqu'à occuper la vidéo (les tailles Petit à Très grand montent jusqu'à 240 px pour l'arabe, 140 px pour la traduction) ; la hauteur du texte se règle (Haut, Centre, Bas, ou au pourcentage) et l'onde audio peut être masquée pour libérer toute la hauteur ; un verset trop long réduit toujours ses écritures plutôt que de déborder. La couleur d'accent du mot récité et de la référence est automatique par défaut (couleur principale du fond) ou se choisit dans une fenêtre : huit couleurs douces, ou quatre curseurs — teinte, intensité, luminosité, opacité. Le bouton « Lire l'aperçu animé » joue dix secondes de la vidéo avec le son, avec exactement le rendu final, avant tout téléchargement. Le nom du fichier est modifiable avant le téléchargement ; par défaut c'est celui de l'audio. Sur grand écran, l'onglet « 2 · Réglages » des sous-titres occupe toute la largeur (réglages à gauche, aperçu à droite) au lieu de laisser une colonne vide.
+
+**Pourquoi.** Demandes du mainteneur après la première version : plus de contrôle sur l'occupation de l'écran, la position et la couleur, voir le résultat animé avant d'exporter, nommer le fichier. L'aperçu animé n'encode rien : il dessine image par image avec la même fonction que l'export, sur l'audio de la session.
+
 ## 2026-10-28 — Export vidéo : format, tailles, fonds proposés et texte sans chevauchement
 Étiquettes : utilisateur, technique, décision
 PR : #111

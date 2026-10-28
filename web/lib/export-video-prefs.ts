@@ -18,14 +18,33 @@ export type VideoPrefsOrientation =
 
 export const VIDEO_PREFS_KEY = "aqr.ui.v1.export-video";
 
+/** Couleur d'accent personnalisée : teinte, intensité (saturation), luminosité, opacité. */
+export const accentSchema = z
+  .object({
+    h: z.number().min(0).max(360),
+    s: z.number().min(0).max(100),
+    l: z.number().min(20).max(90),
+    a: z.number().min(0.3).max(1),
+  })
+  .strict();
+export type AccentColor = z.infer<typeof accentSchema>;
+
 export const videoPrefsSchema = z
   .object({
     orientation: z.enum(VIDEO_ORIENTATIONS_WITH_SOURCE),
     /** Taille de l'écriture arabe (px, dans la vidéo 1080p de référence). */
-    arabicSize: z.number().int().min(40).max(140),
+    arabicSize: z.number().int().min(40).max(240),
     /** Taille de la traduction (px). */
-    translationSize: z.number().int().min(16).max(64),
+    translationSize: z.number().int().min(16).max(140),
     showTranslation: z.boolean(),
+    /** « Remplir » : les écritures grandissent jusqu'à occuper toute la zone libre. */
+    fill: z.boolean().default(false),
+    /** Hauteur du texte dans la zone libre : 0 = en haut, 50 = au centre, 100 = en bas. */
+    textPosition: z.number().min(0).max(100).default(50),
+    /** Onde audio affichée en bas (sinon le texte peut occuper toute la hauteur). */
+    showWave: z.boolean().default(true),
+    /** Couleur d'accent (mot récité, référence) ; null = automatique (couleur principale du fond). */
+    accent: accentSchema.nullable().default(null),
     bg: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     /** Fond choisi : id d'un fond proposé, « source », « color », ou null = automatique. */
     background: z.string().min(1).max(40).nullable().default(null),
@@ -55,6 +74,10 @@ export const DEFAULT_VIDEO_PREFS: VideoPrefs = {
   showTranslation: true,
   bg: "#101418",
   background: null,
+  fill: false,
+  textPosition: 50,
+  showWave: true,
+  accent: null,
 };
 
 type Reader = Pick<Storage, "getItem">;

@@ -14,6 +14,8 @@ export type GradientBackground = {
   from: string;
   to: string;
   glow: string;
+  /** Teinte d'accent assortie (HSL), utilisée tant que l'utilisateur n'en choisit pas. */
+  accent: { h: number; s: number; l: number; a: number };
 };
 
 export type PhotoBackground = {
@@ -36,6 +38,7 @@ export const GRADIENT_BACKGROUNDS: readonly GradientBackground[] = [
     from: "#0d1b2a",
     to: "#16263a",
     glow: "rgba(216, 180, 90, 0.20)",
+    accent: { h: 43, s: 62, l: 64, a: 1 },
   },
   {
     kind: "gradient",
@@ -44,6 +47,7 @@ export const GRADIENT_BACKGROUNDS: readonly GradientBackground[] = [
     from: "#0b2a24",
     to: "#123f35",
     glow: "rgba(120, 220, 180, 0.18)",
+    accent: { h: 158, s: 55, l: 70, a: 1 },
   },
   {
     kind: "gradient",
@@ -52,6 +56,7 @@ export const GRADIENT_BACKGROUNDS: readonly GradientBackground[] = [
     from: "#2a1f3d",
     to: "#4a2c4d",
     glow: "rgba(255, 170, 120, 0.22)",
+    accent: { h: 20, s: 85, l: 74, a: 1 },
   },
   {
     kind: "gradient",
@@ -60,6 +65,7 @@ export const GRADIENT_BACKGROUNDS: readonly GradientBackground[] = [
     from: "#2b2218",
     to: "#3d3022",
     glow: "rgba(240, 200, 130, 0.20)",
+    accent: { h: 38, s: 62, l: 68, a: 1 },
   },
   {
     kind: "gradient",
@@ -68,6 +74,7 @@ export const GRADIENT_BACKGROUNDS: readonly GradientBackground[] = [
     from: "#1a1d23",
     to: "#2a2f38",
     glow: "rgba(160, 180, 210, 0.16)",
+    accent: { h: 210, s: 55, l: 76, a: 1 },
   },
 ] as const;
 

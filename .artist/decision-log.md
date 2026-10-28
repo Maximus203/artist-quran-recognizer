@@ -1,5 +1,13 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-10-28 (2) — Export vidéo : aperçu animé sans encodage, accent automatique par le fond
+- **Décision** : l'aperçu animé joue l'audio de la session et dessine à chaque image avec la fonction
+  d'export (aucun encodage, aucun upload) — même rendu garanti. L'accent par défaut est tiré du fond
+  (teinte dominante d'une image réduite à 48×48, teinte propre à chaque dégradé), ramené à une
+  luminosité lisible ; le choix de l'utilisateur (teinte, intensité, luminosité, opacité) le remplace.
+  Mode « remplir » = agrandissement par paliers jusqu'à la limite de la zone libre ; position du bloc
+  paramétrable ; onde masquable. Nom du fichier = nom de l'audio, modifiable, même nettoyage que les sous-titres.
+
 ## 2026-10-28 — Export vidéo : galerie de fonds embarquée, mise en page pure, mux sans -shortest
 - **Constat** (export réel décodé, pas seulement des tests simulés) : le MP4 durait 2 s sans piste son
   (`-shortest` sur un flux H.264 brut + délai déclaré par WebCodecs), le texte n'était ni passé à la

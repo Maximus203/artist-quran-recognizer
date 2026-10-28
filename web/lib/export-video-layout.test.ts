@@ -105,3 +105,45 @@ describe("mise en page des cartes vidéo", () => {
     expect(portrait.arabicSize).toBe(landscape.arabicSize);
   });
 });
+
+describe("remplir, hauteur du texte et onde", () => {
+  const base = (over: Record<string, unknown>) =>
+    layoutCard({
+      width: 1080,
+      height: 1920,
+      parts: layoutArabicWords("بسم الله الرحمن الرحيم").parts,
+      translation: "Au nom d'Allah",
+      arabicSize: 72,
+      translationSize: 30,
+      measureArabic: measure,
+      measureTranslation: measure,
+      ...over,
+    });
+
+  it("agrandit les écritures en mode remplir, sans déborder la zone", () => {
+    const normal = base({});
+    const fill = base({ fill: true });
+    expect(fill.arabicSize).toBeGreaterThan(normal.arabicSize * 1.5);
+    const last = fill.translationLines.at(-1)!;
+    expect(last.y + fill.translationSize * 0.7).toBeLessThanOrEqual(
+      fill.textBottom + 1,
+    );
+    expect(fill.panel.y).toBeGreaterThanOrEqual(0);
+  });
+
+  it("place le bloc plus haut ou plus bas selon la position", () => {
+    const top = base({ position: 0 });
+    const bottom = base({ position: 1 });
+    expect(top.refY).toBeLessThan(bottom.refY);
+    expect(top.translationLines[0].y).toBeLessThan(
+      bottom.translationLines[0].y,
+    );
+  });
+
+  it("libère la hauteur de l'onde quand elle est masquée", () => {
+    const withWave = base({ fill: true });
+    const noWave = base({ fill: true, showWave: false });
+    expect(noWave.textBottom).toBeGreaterThan(withWave.textBottom);
+    expect(noWave.arabicSize).toBeGreaterThanOrEqual(withWave.arabicSize);
+  });
+});

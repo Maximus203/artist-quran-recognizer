@@ -34,6 +34,7 @@ import {
   loadBackground,
   loadFrameFonts,
   loadSourceVideo,
+  videoColors,
   videoSeeker,
   type LoadedBackground,
 } from "./export-video-assets";
@@ -59,6 +60,8 @@ export type RenderVideoInputs = {
   sessionId: string;
   prefs: VideoPrefs;
   bgImage: File | null;
+  /** Nom du fichier téléchargé (avec .mp4) ; sinon celui proposé par le serveur. */
+  fileName?: string;
   onProgress: RenderProgress;
 };
 
@@ -84,7 +87,7 @@ async function sourceVideoSize(
 export async function renderSessionVideo(
   inputs: RenderVideoInputs,
 ): Promise<void> {
-  const { sessionId, prefs, bgImage, onProgress } = inputs;
+  const { sessionId, prefs, bgImage, onProgress, fileName } = inputs;
   onProgress("Lecture du résultat…");
   const [detail, peaks] = await Promise.all([
     api<{
@@ -142,6 +145,7 @@ export async function renderSessionVideo(
     const measureContext = document.createElement("canvas").getContext("2d");
     if (!measureContext) throw new Error("Canvas 2D indisponible.");
 
+    const colors = videoColors(prefs.accent, background);
     const seek = background.video
       ? videoSeeker(background.video, VIDEO_FPS)
       : null;
@@ -168,7 +172,7 @@ export async function renderSessionVideo(
           duration,
           cards,
           peaks,
-          colors: VIDEO_COLORS,
+          colors,
           prefs,
           background: {
             color: prefs.bg,
@@ -185,7 +189,7 @@ export async function renderSessionVideo(
       },
     });
 
-    await sendSegments(sessionId, job, encoded.segments, onProgress);
+    await sendSegments(sessionId, job, encoded.segments, onProgress, fileName);
   } finally {
     background.close();
   }
@@ -201,6 +205,7 @@ async function sendSegments(
     data: Uint8Array;
   }[],
   onProgress: RenderProgress,
+  fileName?: string,
 ): Promise<void> {
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
@@ -235,7 +240,7 @@ async function sendSegments(
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = decodeURIComponent(name);
+    link.download = fileName || decodeURIComponent(name);
     link.click();
     URL.revokeObjectURL(url);
     return;

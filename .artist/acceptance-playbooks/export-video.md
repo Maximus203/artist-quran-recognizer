@@ -60,6 +60,16 @@ conteneur vidéo).
   message clair.
 - MP4 produit : durée = audio, piste son présente, dimensions du format choisi.
 
+## Réglages avancés, aperçu animé et nom du fichier
+
+- « Remplir tout l'espace » : les écritures occupent la zone libre sans jamais déborder ; verset long = réduction.
+- Hauteur du texte (Haut, Centre, Bas, curseur) et case « Afficher l'onde » : le texte se déplace / prend toute la hauteur.
+- Couleur d'accent : automatique par défaut ; fenêtre avec huit couleurs douces et curseurs teinte, intensité,
+  luminosité, opacité ; l'aperçu change en direct ; le choix est mémorisé.
+- « Lire l'aperçu animé » : dix secondes avec le son, le mot récité se surligne, retour au bouton à la fin ou à l'arrêt.
+- Nom du fichier : proposé = nom de l'audio ; modifiable ; le fichier téléchargé porte exactement ce nom en `.mp4`.
+- Onglet « 2 · Réglages » sur grand écran : pas de colonne vide, réglages et aperçu côte à côte.
+
 ## À couvrir à la main (non automatisé)
 
 - Fond vidéo de bout en bout sur une vraie session importée en vidéo (aucune en base de test) :
