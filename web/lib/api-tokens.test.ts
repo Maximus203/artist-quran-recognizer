@@ -116,6 +116,18 @@ describe("jetons d'API", () => {
       true,
     );
     expect(tokenMayCall("read", "POST", "/api/mcp")).toBe(true);
+    // export vidéo : un calcul, permis en lecture ; les statistiques et le corpus se lisent
+    expect(
+      tokenMayCall("read", "POST", "/api/sessions/abc/export/video/jobs"),
+    ).toBe(true);
+    expect(tokenMayCall("read", "POST", "/api/sessions/abc/export/video")).toBe(
+      true,
+    );
+    expect(tokenMayCall("read", "GET", "/api/me/stats")).toBe(true);
+    expect(tokenMayCall("read", "GET", "/api/corpus/verse")).toBe(true);
+    expect(tokenMayCall("read", "PUT", "/api/me/preferences")).toBe(false);
+    expect(tokenMayCall("write", "PUT", "/api/me/preferences")).toBe(true);
+    expect(tokenMayCall("write", "POST", "/api/me/avatar")).toBe(false);
     for (const forbidden of [
       "/api/me/tokens",
       "/api/me/password",

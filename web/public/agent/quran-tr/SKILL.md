@@ -55,8 +55,16 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
 3. **Lire** : `get_recording` renvoie, pour l'essai terminé, la liste `verses` :
    `ref` (`sourate:verset`), `start_s`, `end_s`, `status`, `arabic`, `translation`,
    `translation_source`.
-4. **Sous-titres** (facultatif) : `export_subtitles` avec `format` = `srt`, `vtt`, `ass` ou `json`.
-   Le champ `content` est le fichier complet.
+4. **Sous-titres** (facultatif) : `export_subtitles` avec `format` = `srt`, `vtt`, `ass` ou `json` et
+   toutes les options de l'atelier (`content` ar/fr/ar_fr, durées, longueur de ligne, décalage,
+   police, karaoké…). Le champ `content` est le fichier complet. Les options et leurs valeurs
+   permises : `get_export_options` ou `GET /api/v1/export/options`.
+5. **Vidéo** (facultatif) : `export_video` avec les mêmes réglages que le formulaire de l'atelier —
+   `orientation` (`16:9`, `9:16`, `1:1`, `source`), `arabic_size` et `translation_size` (points ou
+   `small|medium|large|xlarge`), `show_translation`, `background` (un fond proposé, `source` ou
+   `color`) — puis `get_video_export` toutes les 10 s jusqu'à `done` et téléchargement de
+   `download_path` avec le jeton. Une image de fond personnelle s'envoie par l'API REST (multipart).
+   Le rendu dure environ la moitié de la durée de l'audio.
 
 ## Outils MCP
 
@@ -65,7 +73,11 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
 | `whoami` | Compte connecté et droits du jeton | lecture |
 | `list_recordings` | Liste des essais (`q`, `state`, `limit`, `cursor`) | lecture |
 | `get_recording` | État et versets d'un essai (`id`) | lecture |
-| `export_subtitles` | Sous-titres d'un essai terminé (`id`, `format`) | lecture |
+| `get_export_options` | Catalogue des options d'export (sous-titres et vidéo) | lecture |
+| `export_subtitles` | Sous-titres d'un essai terminé (`id`, `format`, `options`) | lecture |
+| `export_video` | Demande la vidéo MP4 (format, tailles, fond…) : renvoie un job | lecture |
+| `get_video_export` | État du job ; `download_path` quand il est `done` | lecture |
+| `get_verse` | Texte exact et traduction d'un verset (`ref` = `2:255`) | lecture |
 | `create_recording` | Importer un audio et lancer l'analyse | écriture |
 
 ## API REST (`/api/v1`)
@@ -76,12 +88,20 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
 | `GET /api/v1/recordings` | Liste paginée (`q`, `state`, `limit`, `cursor`, `scope`) |
 | `POST /api/v1/recordings` | Import : corps brut + `x-aqr-filename`, ou multipart (`audio`) ; `?autorun=1`, `?visibility=private\|global`, `?name=` |
 | `GET /api/v1/recordings/{id}` | Essai et résultat complet (`result.intervals`) |
-| `POST /api/v1/recordings/{id}/export/subtitles` | Corps `{"options":{"format":"srt"}}` |
+| `POST /api/v1/recordings/{id}/export/subtitles` | Corps `{"options":{"format":"srt"}}` ; `?raw=1` répond le fichier |
+| `GET /api/v1/export/options` | Catalogue des options de sous-titres et de vidéo, valeurs permises, défauts |
+| `POST /api/v1/recordings/{id}/export/video/jobs` | Export vidéo : JSON `{"options":{…}}` ou multipart (`options` + `background_image` PNG/JPEG/WebP) → `202` + job |
+| `GET /api/v1/recordings/{id}/export/video/jobs/{job}` | État (`queued`, `running` + avancement, `done`, `failed` + erreur) |
+| `GET /api/v1/recordings/{id}/export/video/jobs/{job}/file` | Le MP4 (conservé une heure) |
+| `GET /api/v1/recordings/{id}/audio`, `…/peaks`, `…/video`, `…/bundle` | Audio d'origine, onde, vidéo source, pack d'archive |
+| `GET/POST /api/v1/recordings/{id}/review`, `…/decisions` | Signalements et décisions de correction avant export |
+| `PUT/DELETE /api/v1/recordings/{id}/favorite`, `PATCH …/{id}` | Favori ; nom, portée (`private`/`global`), archivage |
+| `GET /api/me/stats`, `GET /api/stats`, `GET /api/corpus/verse?ref=2:255` | Statistiques, statistiques globales, texte d'un verset |
 | `DELETE /api/v1/recordings/{id}` | Suppression (jeton en écriture) |
 
 Erreurs : `401` jeton absent, invalide, révoqué ou expiré ; `403` jeton en lecture seule ou action
 interdite ; `404` essai inexistant **ou privé d'un autre compte** ; `413` fichier trop gros ou quota
-dépassé ; `409` export impossible (passages ambigus non résolus).
+dépassé ; `409` export impossible (passages ambigus non résolus) ou vidéo pas prête ; `429` deux exports vidéo déjà en cours ; `503` aucun Chrome/Edge pour le rendu vidéo.
 
 ## Interpréter le résultat
 

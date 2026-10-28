@@ -36,6 +36,10 @@ Tous les appels portent `Authorization: Bearer qtr_…`.
 | `GET /api/v1/recordings/{id}` | Essai et résultat complet |
 | `POST /api/v1/recordings/{id}/export/subtitles` | Sous-titres (`{"options":{"format":"srt"}}`) |
 | `DELETE /api/v1/recordings/{id}` | Suppression (écriture) |
+| `GET /api/v1/export/options` | Catalogue des options de sous-titres et de vidéo |
+| `POST /api/v1/recordings/{id}/export/video/jobs` | Export vidéo (JSON ou multipart avec `background_image`) → `202` + job |
+| `GET …/export/video/jobs/{job}` et `…/file` | Suivi du job, puis le MP4 (conservé une heure) |
+| `GET /api/me/stats`, `/api/stats`, `/api/corpus/verse?ref=` | Statistiques et texte d'un verset |
 
 `/api/v1/recordings` est un alias stable de `/api/sessions` : mêmes routes, mêmes droits, mêmes
 erreurs (`401`, `403`, `404` — un essai privé d'un autre compte répond `404`, `409`, `413`).
@@ -51,7 +55,10 @@ obligatoire. Outils :
 | `whoami` | Compte et droits | lecture |
 | `list_recordings` | Liste des essais | lecture |
 | `get_recording` | État et versets (référence, début/fin, statut de preuve, arabe, traduction) | lecture |
-| `export_subtitles` | SRT, WebVTT, ASS, JSON | lecture |
+| `get_export_options` | Options d'export (sous-titres, vidéo), valeurs permises, défauts | lecture |
+| `export_subtitles` | SRT, WebVTT, ASS, JSON, avec toutes les options | lecture |
+| `export_video` / `get_video_export` | Vidéo MP4 : demande puis suivi, `download_path` à la fin | lecture |
+| `get_verse` | Texte exact et traduction d'un verset du corpus | lecture |
 | `create_recording` | Import en base64 (25 Mo au plus) et analyse | écriture |
 
 Les outils passent par l'API (même origine) : un outil n'a jamais plus de droits que l'API. Le texte
@@ -63,6 +70,17 @@ Brancher Claude Code :
 ```bash
 claude mcp add --transport http quran-tr http://127.0.0.1:3000/mcp --header "Authorization: Bearer qtr_VOTRE_JETON"
 ```
+
+## Export vidéo par l'API
+
+La vidéo est rendue par **le même code que le formulaire de l'atelier** (canvas et WebCodecs), dans
+un Chrome ou Edge sans interface que le serveur lance : une seule mise en page, aucun second moteur.
+Le navigateur de rendu s'identifie avec le jeton de l'appelant (jamais plus de droits que lui) et
+passe par la page technique `/render/video`. Il faut donc Chrome ou Edge sur la machine
+(`AQR_CHROME` pour désigner l'exécutable ; sinon l'installation standard est cherchée). Un compte
+a au plus deux exports actifs, rendus un par un ; le MP4 est gardé une heure. Réglages : format
+(`16:9`, `9:16`, `1:1`, `source`), taille de l'arabe et de la traduction, traduction affichée ou non,
+fond (dix-sept choix proposés, vidéo d'origine, couleur unie, ou image envoyée).
 
 ## Compétence pour l'agent
 
