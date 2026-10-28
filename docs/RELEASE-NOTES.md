@@ -17,6 +17,14 @@ PR : -
 
 **Pourquoi / décision.** Tous les audios d'un atelier ouvert se retrouvaient dans un même espace public : le défaut passe à « privé » (le partage devient explicite). Un jeton n'a que les droits de son compte, jamais l'administration ni la gestion des jetons ; la base ne garde que son empreinte SHA-256. Les outils MCP passent par l'API (mêmes contrôles et quotas) et ne renvoient que le texte du corpus et la traduction QuranEnc (I1, I2). Les essais déjà créés gardent leur portée. Voir `docs/API-MCP.md`.
 
+## 2026-10-28 — Export vidéo : la vidéo importée est exportée en entier, pas figée sur une image
+Étiquettes : utilisateur, technique
+PR : #115
+
+**Ce qui change.** Quand la session vient d'une vidéo importée, la vidéo exportée est bien toute la vidéo d'origine, qui continue de jouer sous le verset et la traduction. Avant, le fond restait figé sur la toute première image pendant l'export.
+
+**Pourquoi.** Le serveur servait la vidéo sans intervalles d'octets (`Range`) : le navigateur ne pouvait pas se positionner dedans et `currentTime` restait à 0. L'adresse `/api/sessions/<id>/video` répond maintenant en `206`. Constaté sur un export réel d'une vidéo avec compteur d'images : les images 3 s, 15 s et 30 s portent désormais leur propre temps.
+
 ## 2026-10-28 — Export vidéo : remplir l'espace, hauteur du texte, couleur d'accent, aperçu animé et nom du fichier
 Étiquettes : utilisateur, technique
 PR : #114
