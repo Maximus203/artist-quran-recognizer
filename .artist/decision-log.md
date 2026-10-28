@@ -1,5 +1,45 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-10-28 — Export vidéo : galerie de fonds embarquée, mise en page pure, mux sans -shortest
+- **Constat** (export réel décodé, pas seulement des tests simulés) : le MP4 durait 2 s sans piste son
+  (`-shortest` sur un flux H.264 brut + délai déclaré par WebCodecs), le texte n'était ni passé à la
+  ligne ni protégé du chevauchement, et `.mp4` était typé « audio » donc jamais traité comme vidéo.
+- **Décision** : mux = segments mis bout à bout + `-f h264 -framerate 25` + `setts` + AAC 44,1 kHz,
+  sans `-shortest` ; test d'intégration avec le vrai FFmpeg. Mise en page = module pur
+  (`export-video-layout.ts`) : retour à la ligne, tailles ajustées ensemble, zone d'onde réservée.
+  Fonds : dégradés dessinés + 9 photos Pexels embarquées (pas d'appel réseau aux sites de photos,
+  cohérent avec « seuls Tanzil et QuranEnc sont appelés ») ; liens externes ouverts à part, image
+  téléversée ensuite. Fond par défaut jamais noir. Aperçu = la même fonction de dessin que l'export.
+
+## 2026-10-27 (2) — Export vidéo : rendu image par image navigateur, mux serveur
+- **Constat** : le montage par cartes PNG statiques ne permet ni le surlignage du mot courant
+  ni la progression jouée/non jouée de l'onde — les deux animations que l'atelier montre et
+  que la vidéo devait reprendre.
+- **Décision** : le navigateur dessine chaque frame (25 im/s) sur canvas en réutilisant les
+  fonctions de l'écran (`live-highlight`, `barHeights` — parité exacte), l'encode en H.264
+  Annex B via WebCodecs, et l'envoie par segments de 5 minutes ; le serveur muxe (concat +
+  copie d'écoute, `-c:v copy`) en MP4. Jamais de mux MP4 côté client (pas de dépendance) ni
+  de frames POSTées en brut (débit prohib) ; jamais d'enregistrement en temps réel
+  (MediaRecorder) : le rendu offline reste pausable et de qualité constante. Fond vidéo :
+  la vidéo originale sert de fond, recherche d'images séquentielle, dégradé sombre de
+  lisibilité derrière le texte ; format « source » reprend ses dimensions. L'attribution
+  QuranEnc n'est plus incrustée dans la vidéo (choix du mainteneur).
+
+## 2026-10-27 — Export vidéo : le texte arabe est rendu par le navigateur, jamais par FFmpeg
+- **Constat** : FFmpeg `drawtext` n'assure pas le shaping arabe sur Windows (liaisons et signes
+  coraniques cassés, police non contrôlée). Le moteur d'export interdit déjà un second rendu de
+  texte divergent.
+- **Décision** : le montage vidéo est coupé en deux — le navigateur rend chaque passage récité en
+  PNG et FFmpeg assemble (fond + `overlay` borné aux intervalles + `showwaves` sur la copie d'écoute)
+  puis encode H.264/AAC. Pour le rendu du texte, le canvas direct a été écarté au banc d'essai :
+  la marque coranique U+06DA y est dessinée grande et déconnectée de son mot. La carte est mise en
+  page par le DOM (le moteur de l'atelier), sérialisée dans un SVG `foreignObject` dont les polices
+  sont embarquées en data-URL et préchargées par `FontFace` (sinon `font-display: block` rend le
+  texte invisible au premier raster), puis dessinée sur canvas — le SVG doit être chargé en `data:`
+  et non en `blob:`, qui tache le canvas sous Chrome. I1/I2 tenus : le corpus reste la source unique
+  des caractères, la traduction part sans modification avec son attribution. La ligne de commande
+  FFmpeg est une fonction pure testée (`web/lib/export-video-args.ts`).
+
 ## 2026-09-24
 - Pas d'entraînement de zéro ni de LLM génératif : assemblage de briques existantes (ADR-0001).
 - Texte arabe et traduction consultés, jamais générés (invariants I1, I2).

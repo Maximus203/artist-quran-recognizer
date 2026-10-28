@@ -367,6 +367,25 @@ try {
   const packed = (await readFile(zipPath)).length;
   ok(`pack ZIP vérifié (${packed} octets) : ${verified.stdout.trim()}`);
 
+  // Export vidéo : en viewport mobile, l'onglet « Vidéo » mène au panneau qui propose
+  // l'export (la carte annoncée). L'encodage FFmpeg complet n'est pas joué ici : c'est le
+  // rôle du playbook d'acceptation `.artist/acceptance-playbooks/export-video.md`.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/s/${sessionId}/exporter`, {
+    waitUntil: "domcontentloaded",
+  });
+  await page.getByTestId("tab-video").click();
+  await page.getByTestId("video-panel").waitFor({ timeout: 15_000 });
+  await page.getByTestId("video-orientation-9:16").waitFor({ timeout: 15_000 });
+  const videoStatus = (
+    await page.getByTestId("video-export").innerText()
+  ).trim();
+  assert(
+    /Exporter la vidéo/.test(videoStatus),
+    `bouton vidéo : ${videoStatus}`,
+  );
+  ok("export vidéo : onglet et panneau affichés, export proposé");
+
   assert(
     consoleErrors.length === 0,
     `erreurs page : ${consoleErrors.join(" | ")}`,

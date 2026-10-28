@@ -215,6 +215,53 @@ toute la page. L'écoute d'un passage est mesurée sur la position lue directeme
 de décision partent en `PUT /decisions` par lots ; hors connexion, elles attendent dans le navigateur (`lib/export-draft.ts`) et un message le dit ; elles partent
 avec la décision suivante.
 
+## 7 ter. L'export vidéo animé (frames navigateur + mux FFmpeg)
+
+Le troisième onglet de la page Exporter produit un MP4 animé de la session entière :
+**le passage actif en haut** (le mot courant est surligné, comme l'écran de revue) et
+**l'onde jouée/non jouée en bas** (mêmes crêtes que la timeline). L'atelier dessine, FFmpeg assemble :
+
+```
+ navigateur ── GET /api/sessions/<id> (résultat : texte, temps de mots) + /peaks (crêtes)
+     │  lib/export-video-frames.ts : drawFrame() image par image (25 im/s) sur canvas —
+     │  mêmes fonctions que l'écran (live-highlight, barHeights) ; mot courant et onde
+     │  jouée identiques à l'atelier. Fond : couleur, image uploadée, ou vidéo source
+     │  (GET /api/sessions/<id>/video, recherche d'images séquentielle, dégradé de lisibilité).
+     │  lib/export-video-codecs.ts : VideoEncoder H.264 (Annex B) ; segments de 5 min.
+     ▼
+ POST /api/sessions/<id>/export/video  (video/h264, en-têtes x-aqr-job/part/last)
+     │  lib/export-video.ts : segments contigus écrits sous exports/video-<job>/,
+     │  lib/export-video-args.ts : muxArgs (fonction pure, testée)…
+     ▼
+ segments mis bout à bout → ffmpeg -f h264 -framerate 25 -i video.h264 -i listening/listen.wav
+     -c:v copy -bsf:v setts=ts=N/(25*TB) -c:a aac → MP4 (jamais -shortest : il coupait toute la bande son)
+```
+
+**Mise en page (`lib/export-video-layout.ts`, fonctions pures testées).** Le verset est découpé
+mot par mot (`layoutArabicWords`) et passe à la ligne tout seul ; la traduction aussi. Les tailles
+d'écriture (réglées pour un côté court de 1080 px) suivent le côté court de la vidéo, donc le
+portrait garde des écritures lisibles. Si un verset est trop long pour la zone libre, toutes les
+tailles sont réduites ensemble (jamais en dessous de 40 %) et le texte n'est **jamais coupé** :
+référence, arabe et traduction s'enchaînent sans chevauchement et restent au-dessus de l'onde
+(zone réservée : 22 % de la hauteur, 16 % en portrait). Sur fond photo ou vidéo, le texte est posé
+sur un support gris sombre aux bords adoucis (couches concentriques, sans coût par image).
+
+**Fonds (`lib/export-video-backgrounds.ts`).** Cinq dégradés dessinés à la volée et neuf photos
+libres Pexels embarquées (`web/public/backgrounds/`, crédits dans `CREDITS.md`) sont proposés avant
+tout téléversement ; « Ma propre image », la vidéo d'origine (sessions vidéo) et une couleur unie
+complètent la galerie. Le défaut n'est jamais le noir : dégradé « Nuit dorée », ou la vidéo d'origine
+pour une session vidéo. Le code n'appelle aucun site de photos : l'interface ne fait que lier
+Unsplash, Pexels, Pixabay et Freepik, l'image se téléverse ensuite. L'onglet affiche un aperçu
+réel (la même fonction de dessin que l'export, sur le verset le plus long de la session).
+
+La police arabe est préchargée (`document.fonts`) : la marque U+06DA y est rendue
+comme dans le DOM. I1/I2 tenus : corpus source unique, traduction sans modification, et
+l'attribution QuranEnc n'est pas incrustée (choix du mainteneur). Réglages (format, tailles
+d'écriture, fond, traduction) mémorisés dans le navigateur (`aqr.ui.v1.export-video`,
+même convention que les réglages de sous-titres). Encodage navigateur requis : WebCodecs
+H.264 (Chrome, Edge) ; sinon message explicite. Un export est un acte : rien n'est
+mémorisé, les segments et le MP4 temporaires sont supprimés dans tous les cas.
+
 ## 8. Stockage sur disque
 
 Tout vit dans `AQR_REVIEW_DIR` (défaut : `%LOCALAPPDATA%\aqr-review` sous Windows, `~/.local/share/aqr-review`
