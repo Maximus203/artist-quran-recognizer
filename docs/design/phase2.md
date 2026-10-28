@@ -528,7 +528,7 @@ session (nom, portée), `PATCH` de l'état utilisateur de session, `PATCH`/`GET`
 
 ## 19. Registre des directions artistiques
 
-La direction « Atelier de revue — Encre & lapis » est **validée et implémentée** : passer sa note du coffre de *Proposée* à *Adoptée*.
+La direction « Quran TR — Encre & lapis » est **validée et implémentée** : passer sa note du coffre de *Proposée* à *Adoptée*.
 Ajouter l'extension « Phase 2 multi-testeurs » : références ouvertes (GitHub Issues, Linear Changelog, Stripe Docs), 37 icônes
 dessinées, aucun nouveau token de couleur, aucune police nouvelle. **Non fait ici** : `vault_cli.py` introuvable
 (`ARTIST_SKILLS_ROOT` non défini dans cette session) et le serveur Obsidian ne répondait pas (ECONNREFUSED) ; à reprendre dès que le

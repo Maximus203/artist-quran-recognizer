@@ -334,5 +334,12 @@
     "section": "Interface",
     "file": "docs/design/en-direct.md",
     "summary": "Conception (non livrée, étape 4 de l'ADR-0011) de l'écoute en direct : parcours du micro à la fin, quatre niveaux d'affichage sans jamais nommer un faux verset, attente de 5 à 20 s, mode allégé, coupure, correction, ce qui reste après l'écoute, et ce que le protocole aqr.live/1 doit ajouter."
+  },
+  {
+    "slug": "api-mcp",
+    "title": "API et MCP de Quran TR",
+    "section": "Architecture",
+    "file": "docs/API-MCP.md",
+    "summary": "Jetons d'API, API REST sous /api/v1, serveur MCP sous /mcp et compétence d'agent : ce qu'un jeton peut faire, les outils, les droits, l'accès par tunnel."
   }
 ]

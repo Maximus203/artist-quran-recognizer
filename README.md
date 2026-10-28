@@ -26,8 +26,8 @@ Une application web **locale** : tu importes un enregistrement, tu l'écoutes, e
 
 <table>
 <tr>
-<td width="50%"><img src="docs/assets/revue-sombre.jpg" alt="Atelier de revue, thème sombre"></td>
-<td width="50%"><img src="docs/assets/revue-claire.jpg" alt="Atelier de revue, thème clair"></td>
+<td width="50%"><img src="docs/assets/revue-sombre.jpg" alt="Quran TR, thème sombre"></td>
+<td width="50%"><img src="docs/assets/revue-claire.jpg" alt="Quran TR, thème clair"></td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/assets/sessions.jpg" alt="Liste des sessions et file d'analyse"></td>

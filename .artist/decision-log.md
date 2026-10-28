@@ -1558,3 +1558,9 @@
   `tests/unit/test_live_{tokens,access,protocol,presenter,stream,hub,journal,progress}.py`, `test_cli_live_serve.py`,
   `tests/integration/test_live_service.py` et `test_live_service_real.py` (vrai modèle), `web/lib/live-*.test.ts`.
 
+## 2026-10-28 — Quran TR : renommage, essais privés par défaut, API et MCP
+- **Nom** : « Atelier de revue » devient « Quran TR » (interface, titres, documentation). Les noms techniques (dépôt, paquet, `aqr`) ne changent pas.
+- **Espace partagé** : constat — tout audio importé était « global » par défaut, donc visible de tous les comptes (tunnel compris). Décision prise seule : défaut **privé** (serveur, préférences, import) ; « Partagé » explicite. Les essais existants gardent leur portée. **À trancher** : de vrais espaces partagés (groupes invités, p. ex. un par classe ou par équipe) au lieu du seul choix privé / tous les comptes.
+- **Jetons** : `qtr_` + 256 bits aléatoires, empreinte SHA-256 seule en base (migration 003), deux droits (lecture, écriture), 20 actifs par compte, jamais d'accès aux comptes, à l'administration ni aux jetons. Un jeton tient lieu de jeton d'accès du tunnel pour `/api/sessions`, `/api/v1`, `/mcp`.
+- **MCP** : Streamable HTTP sans état en JSON-RPC ; outils `whoami`, `list_recordings`, `get_recording`, `export_subtitles`, `create_recording` (base64, 25 Mo) ; chaque outil appelle l'API (même origine) pour hériter de ses contrôles.
+- **Preuve** : `.artist/acceptance-playbooks/api-mcp.md`, `web/lib/api-tokens.test.ts`, `web/lib/mcp.test.ts` ; essais réels (création de jeton, import par MCP, lecture des versets, refus d'un jeton en lecture, révocation) sur un serveur local.

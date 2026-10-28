@@ -372,8 +372,8 @@ describe("queueSummary", () => {
 
 describe("pageTitle / attentionCount", () => {
   it("préfixe le total de non lus", () => {
-    expect(pageTitle(0)).toBe("Atelier de revue");
-    expect(pageTitle(2)).toBe("(2) Atelier de revue");
+    expect(pageTitle(0)).toBe("Quran TR");
+    expect(pageTitle(2)).toBe("(2) Quran TR");
   });
   it("signale quelque chose à voir : non lu ou analyse active", () => {
     expect(attentionCount([view()])).toBe(0);

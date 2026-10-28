@@ -1,4 +1,10 @@
-import { isLocalRequest } from "./local-request";
+import { isLocalRequest, parseAllowedHosts } from "./local-request";
+import {
+  bearerApiToken,
+  resolveApiToken,
+  tokenMayCall,
+  type ApiTokenRow,
+} from "./api-tokens";
 import {
   authConfig,
   createLimiters,
@@ -32,6 +38,8 @@ export type Authenticated = {
   user: User | null;
   token: string | null;
   cfg: AuthConfig;
+  /** Renseigné quand la requête s'identifie par un jeton d'API (et non par la connexion). */
+  api?: ApiTokenRow;
 };
 export type Denied = { ok: false; response: Response };
 
@@ -75,6 +83,8 @@ export async function authenticate(
     anonymous = false,
   }: { mutation?: boolean; anonymous?: boolean } = {},
 ): Promise<Authenticated | Denied> {
+  const apiToken = bearerApiToken(request);
+  if (apiToken) return authenticateApiToken(request, apiToken);
   if (!isLocalRequest(request, mutation))
     return { ok: false, response: localOnly() };
   const db = await ready();
@@ -83,6 +93,72 @@ export async function authenticate(
   const user = token ? resolveLogin(db, token, cfg) : null;
   if (!user && !anonymous) return { ok: false, response: unauthenticated() };
   return { ok: true, db, user, token, cfg };
+}
+
+/**
+ * Entrée API/MCP : un jeton `qtr_…` en `Authorization: Bearer`. Il tient lieu de jeton d'accès
+ * du tunnel (il est lui-même un secret), mais l'hôte doit rester un hôte autorisé ; pas de
+ * cookie donc pas de contrôle d'origine (rien à falsifier depuis un navigateur). Un jeton ne
+ * touche que les essais (`tokenMayCall`) et une clé en lecture ne peut pas écrire.
+ */
+async function authenticateApiToken(
+  request: Request,
+  apiToken: string,
+): Promise<Authenticated | Denied> {
+  const url = new URL(request.url);
+  if (!apiHostAllowed(request)) return { ok: false, response: localOnly() };
+  const db = await ready();
+  const identity = resolveApiToken(db, apiToken);
+  if (!identity) return { ok: false, response: unauthenticated() };
+  if (!tokenMayCall(identity.token.scope, request.method, url.pathname))
+    return {
+      ok: false,
+      response: forbidden(
+        identity.token.scope === "read"
+          ? "Ce jeton est en lecture seule."
+          : "Un jeton d'API ne peut pas faire cela.",
+      ),
+    };
+  return {
+    ok: true,
+    db,
+    user: identity.user,
+    token: null,
+    cfg: authConfig(),
+    api: identity.token,
+  };
+}
+
+/** Hôtes acceptés pour l'API : boucle locale, plus les hôtes déclarés du mode distant. */
+function apiHostAllowed(request: Request): boolean {
+  const extra = process.env.AQR_ACCESS_TOKEN
+    ? parseAllowedHosts(process.env.AQR_ALLOWED_HOSTS)
+    : [];
+  const publicHost = process.env.AQR_ACCESS_TOKEN
+    ? safeHostname(process.env.AQR_PUBLIC_ORIGIN)
+    : null;
+  const allowed = new Set([
+    "127.0.0.1",
+    "localhost",
+    "[::1]",
+    ...extra,
+    ...(publicHost ? [publicHost] : []),
+  ]);
+  for (const name of ["host", "x-forwarded-host"]) {
+    const value = request.headers.get(name);
+    if (value === null) continue;
+    const host = value.trim().toLowerCase().replace(/:\d+$/, "");
+    if (!allowed.has(host)) return false;
+  }
+  return allowed.has(new URL(request.url).hostname);
+}
+
+function safeHostname(raw: string | undefined): string | null {
+  try {
+    return raw ? new URL(raw).hostname : null;
+  } catch {
+    return null;
+  }
 }
 
 export type SignedIn = Authenticated & { user: User; token: string };

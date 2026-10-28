@@ -82,7 +82,7 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   volume: 1,
   shortcutsEnabled: true,
   reviewTab: "sig",
-  defaultVisibility: "global",
+  defaultVisibility: "private",
 };
 
 export const PREFERENCE_KEYS = Object.keys(preferencesShape) as PreferenceKey[];

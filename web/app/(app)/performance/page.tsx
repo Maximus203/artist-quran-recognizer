@@ -4,7 +4,7 @@ import { PageFrame } from "../../atelier/page-frame";
 import { PerfView } from "../../atelier/perf-view";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Performance · Atelier de revue" };
+export const metadata: Metadata = { title: "Performance · Quran TR" };
 
 export default async function PerformancePage({
   searchParams,

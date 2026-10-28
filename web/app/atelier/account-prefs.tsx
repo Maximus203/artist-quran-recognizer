@@ -460,7 +460,7 @@ export function PreferencesPane() {
         <Setting
           id="lab-scope"
           label="Portée des nouveaux essais"
-          help="Les audios importés ou enregistrés sont globaux par défaut. Tu peux changer la portée de chacun ensuite."
+          help="Les audios importés ou enregistrés sont privés par défaut : toi seul les vois, y compris quand l’atelier est ouvert à des testeurs. Tu peux changer la portée de chacun ensuite."
         >
           <SegControl
             labelledBy="lab-scope"
@@ -473,7 +473,7 @@ export function PreferencesPane() {
                 label: (
                   <>
                     <Icon name="globe" />
-                    Global
+                    Partagé
                   </>
                 ),
               },

@@ -7,7 +7,7 @@ import { PageFrame } from "../../../../../atelier/page-frame";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Corriger un passage · Atelier de revue",
+  title: "Corriger un passage · Quran TR",
 };
 
 /** Clé d'un passage à vérifier : l'empreinte de l'intervalle (ou un signalement) et la sorte de passage. */

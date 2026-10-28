@@ -65,7 +65,7 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
           ) : null}
         </button>
       ) : null}
-      <Link className="brand" href="/" aria-label="Atelier de revue, accueil">
+      <Link className="brand" href="/" aria-label="Quran TR, accueil">
         <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <circle
             cx="16"
@@ -82,7 +82,7 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
           />
         </svg>
         <b>
-          Atelier <em>de revue</em>
+          Quran <em>TR</em>
         </b>
       </Link>
       <nav className="nav" aria-label="Pages">

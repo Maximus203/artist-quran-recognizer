@@ -63,7 +63,8 @@ describe("migrations versionnées", () => {
       `INSERT INTO session_meta (id, owner_id, name, original_name, created_at, updated_at)
        VALUES ('s1', 1, 'Session', 'a.mp3', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')`,
     ).run();
-    expect(applyMigrations(db, migrations)).toEqual([2]);
+    // Les migrations suivantes (jetons d'API, 003) s'appliquent aussi : on vérifie 002 et l'ajout.
+    expect(applyMigrations(db, migrations).slice(0, 1)).toEqual([2]);
     expect(applyMigrations(db, migrations)).toEqual([]);
     const user = db.prepare("SELECT * FROM users WHERE id = 1").get() as Record<
       string,

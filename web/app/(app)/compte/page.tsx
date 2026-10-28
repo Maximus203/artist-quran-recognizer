@@ -5,7 +5,7 @@ import { PreferencesPane } from "../../atelier/account-prefs";
 import { PageFrame } from "../../atelier/page-frame";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Préférences · Atelier de revue" };
+export const metadata: Metadata = { title: "Préférences · Quran TR" };
 
 export default async function AccountPage() {
   await requirePageUser("/compte");

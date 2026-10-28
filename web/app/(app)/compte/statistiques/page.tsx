@@ -6,7 +6,7 @@ import { PageFrame } from "../../../atelier/page-frame";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Mes statistiques · Atelier de revue",
+  title: "Mes statistiques · Quran TR",
 };
 
 export default async function AccountStatsPage() {

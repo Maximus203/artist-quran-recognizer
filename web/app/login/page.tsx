@@ -4,7 +4,7 @@ import { AuthShell } from "../atelier/auth-shell";
 import { LoginForm } from "./login-form";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Se connecter · Atelier de revue" };
+export const metadata: Metadata = { title: "Se connecter · Quran TR" };
 
 export default async function LoginPage({
   searchParams,

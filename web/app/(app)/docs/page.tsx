@@ -7,7 +7,7 @@ import { PageFrame } from "../../atelier/page-frame";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Documentation · Atelier de revue",
+  title: "Documentation · Quran TR",
 };
 
 export default async function DocsHome() {

@@ -273,7 +273,7 @@ export function queueSummary(views: readonly ListedSession[]): string | null {
 }
 
 export const pageTitle = (unread: number): string =>
-  unread > 0 ? `(${unread}) Atelier de revue` : "Atelier de revue";
+  unread > 0 ? `(${unread}) Quran TR` : "Quran TR";
 
 /** Ce qui mérite un coup d'œil panneau fermé : résultats non lus + analyses actives. */
 export function attentionCount(views: readonly ListedSession[]): number {
