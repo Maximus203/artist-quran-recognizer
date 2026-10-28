@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-28 — En direct : la récitation guidée, on annonce la sourate
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #119
 
 **Ce qui change.** L'écran « En direct » propose deux modes avant de démarrer. **Récitation guidée** : tu choisis la sourate que tu vas réciter ; le moteur ne cherche que dans cette sourate et enchaîne les versets suivants, même si tu commences au milieu. **Écoute classique** : comme avant, le moteur cherche dans tout le Coran. Le choix est mémorisé. Sur nos mesures, la guidée nomme tous les versets là où l'écoute classique en sautait : Al-Ikhlas 4 versets sur 4 au lieu de 3, et Hud 11:61 à 11:71 (10 minutes) 11 versets sur 11 au lieu de 5.
 
