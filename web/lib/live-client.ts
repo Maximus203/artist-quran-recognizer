@@ -51,7 +51,12 @@ export type LiveDeps = {
   openSocket: (url: string) => SocketLike;
   fetchToken: (technical: boolean) => Promise<TokenResult>;
   dispatch: (action: LiveAction) => void;
-  options: { translation: string; technical: boolean };
+  options: {
+    translation: string;
+    technical: boolean;
+    /** Récitation guidée : la sourate annoncée (1 à 114) ; null = écoute classique. */
+    surah?: number | null;
+  };
 };
 
 type Mode = "idle" | "connecting" | "streaming" | "lost" | "done";
@@ -237,6 +242,9 @@ export class LiveClient {
           options: {
             translation: this.deps.options.translation,
             technical: this.deps.options.technical,
+            ...(this.deps.options.surah
+              ? { surah: this.deps.options.surah }
+              : {}),
           },
           ...(resume && this.sessionId
             ? {

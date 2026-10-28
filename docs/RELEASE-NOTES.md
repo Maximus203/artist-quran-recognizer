@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-28 — En direct : la récitation guidée, on annonce la sourate
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** L'écran « En direct » propose deux modes avant de démarrer. **Récitation guidée** : tu choisis la sourate que tu vas réciter ; le moteur ne cherche que dans cette sourate et enchaîne les versets suivants, même si tu commences au milieu. **Écoute classique** : comme avant, le moteur cherche dans tout le Coran. Le choix est mémorisé. Sur nos mesures, la guidée nomme tous les versets là où l'écoute classique en sautait : Al-Ikhlas 4 versets sur 4 au lieu de 3, et Hud 11:61 à 11:71 (10 minutes) 11 versets sur 11 au lieu de 5.
+
+**Pourquoi / décision.** Sur la voix réelle, l'écoute classique nommait de bons versets mais en sautait d'autres entre eux. Annoncer la sourate supprime ce que le moteur avait à deviner : le suivi est limité à cette sourate (index restreint) et demande moins de preuves pour nommer un verset (2 mots, densité 0,5). Une sourate annoncée par erreur ne nomme rien. Le mode classique n'est pas modifié. Décision du mainteneur du 2026-10-28, ADR-0015 ; protocole : `START.options.surah`.
+
 ## 2026-10-28 — En direct : un script pour démarrer le service d'écoute avec l'atelier
 Étiquettes : technique
 PR : #118

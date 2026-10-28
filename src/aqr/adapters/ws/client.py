@@ -89,6 +89,7 @@ class LiveClient:
         translation: str | None = "french_hameedullah",
         technical: bool = False,
         resume: tuple[str, int] | None = None,
+        surah: int | None = None,
         audio: dict[str, Any] | None = None,
         schema: str = SCHEMA,
     ) -> None:
@@ -100,6 +101,8 @@ class LiveClient:
             or {"encoding": ENCODING, "sample_rate": SAMPLE_RATE, "channels": CHANNELS},
             "options": {"translation": translation or "none", "technical": technical},
         }
+        if surah is not None:
+            body["options"]["surah"] = surah
         if resume is not None:
             body["resume"] = {"session_id": resume[0], "last_seq": resume[1]}
         self.send_text(json.dumps(body))

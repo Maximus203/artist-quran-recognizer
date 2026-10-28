@@ -2,6 +2,13 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { LiveClient } from "@/lib/live-client";
 import { LIVE_UI } from "@/lib/live-config";
+import {
+  canStartWith,
+  modeSurah,
+  readLiveMode,
+  writeLiveMode,
+  type LiveMode,
+} from "@/lib/live-mode";
 import { micErrorKey } from "@/lib/live-errors";
 import { liveSupport, openMic, type MicCapture } from "@/lib/live-audio";
 import { verseName } from "@/lib/live-format";
@@ -66,6 +73,9 @@ export function useLive() {
   prefsRef.current = prefs;
 
   const [technical, setTechnicalState] = useState(false);
+  const [mode, setModeState] = useState<LiveMode>({ kind: "classic" });
+  const modeRef = useRef<LiveMode>(mode);
+  modeRef.current = mode;
   const [announcement, setAnnouncement] = useState({ text: "", n: 0 });
   const [retryIn, setRetryIn] = useState<number | null>(null);
   const [wakeHeld, setWakeHeld] = useState(false);
@@ -81,6 +91,7 @@ export function useLive() {
 
   useEffect(() => {
     setTechnicalState(readTech());
+    setModeState(readLiveMode());
   }, []);
   const setTechnical = useCallback((value: boolean) => {
     setTechnicalState(value);
@@ -108,6 +119,8 @@ export function useLive() {
       (phase !== "idle" && phase !== "error" && phase !== "ended")
     )
       return;
+    // Le bouton est désactivé tant que la sourate manque : ce garde-fou couvre le raccourci clavier.
+    if (!canStartWith(modeRef.current)) return;
     starting.current = true;
     if (discardTimer.current !== null)
       window.clearTimeout(discardTimer.current);
@@ -138,6 +151,7 @@ export function useLive() {
         options: {
           translation: prefsRef.current.translation ? TRANSLATION_ID : "none",
           technical: readTech(),
+          surah: modeSurah(modeRef.current),
         },
       });
       let mic: MicCapture;
@@ -484,8 +498,15 @@ export function useLive() {
     }
   }, [say]);
 
+  const setMode = useCallback((next: LiveMode) => {
+    setModeState(next);
+    writeLiveMode(next);
+  }, []);
+
   return {
     state,
+    mode,
+    setMode,
     technical,
     setTechnical,
     announcement,

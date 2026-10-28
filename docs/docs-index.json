@@ -348,5 +348,12 @@
     "section": "Architecture",
     "file": "docs/API-MCP.md",
     "summary": "Jetons d'API, API REST sous /api/v1, serveur MCP sous /mcp et compétence d'agent : ce qu'un jeton peut faire, les outils, les droits, l'accès par tunnel."
+  },
+  {
+    "slug": "adr-0015",
+    "title": "ADR-0015 — Récitation guidée : la sourate est annoncée, le moteur ne cherche que dans celle-ci",
+    "section": "Décisions",
+    "file": "docs/adr/0015-recitation-guidee.md",
+    "summary": "Accepté le 2026-10-28 : option START.options.surah, index limité à la sourate annoncée, réglages de verrou plus souples ; sur Hud 11:61-71 (10 min) tous les versets sont nommés, aucun sauté, contre 5 sur 11 en écoute classique."
   }
 ]

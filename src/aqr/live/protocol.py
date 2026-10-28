@@ -16,6 +16,8 @@ from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any, Final
 
+from aqr.domain.quran_structure import SURAH_COUNT
+
 SCHEMA: Final = "aqr.live/1"
 ENCODING: Final = "pcm_s16le"
 SAMPLE_RATE: Final = 16000
@@ -165,6 +167,8 @@ class StartMessage:
     translation: str | None
     technical: bool
     resume: ResumeRequest | None
+    surah: int | None = None
+    """Récitation guidée : sourate annoncée (1 à 114) ; None = écoute classique."""
 
 
 @dataclass(frozen=True)
@@ -189,9 +193,11 @@ def _parse_audio(raw: object) -> None:
         raise ProtocolError("bad_audio_format", "audio attendu : pcm_s16le, 16000 Hz, 1 voie")
 
 
-def _parse_options(raw: object, translations: Collection[str] | None) -> tuple[str | None, bool]:
+def _parse_options(
+    raw: object, translations: Collection[str] | None
+) -> tuple[str | None, bool, int | None]:
     if raw is None:
-        return DEFAULT_TRANSLATION, False
+        return DEFAULT_TRANSLATION, False, None
     if not isinstance(raw, dict):
         raise ProtocolError("bad_message", "options : objet attendu")
     translation: object = raw.get("translation", DEFAULT_TRANSLATION)
@@ -204,7 +210,10 @@ def _parse_options(raw: object, translations: Collection[str] | None) -> tuple[s
     technical = raw.get("technical", False)
     if not isinstance(technical, bool):
         raise ProtocolError("bad_message", "options.technical : booléen attendu")
-    return chosen, technical
+    surah: object = raw.get("surah")
+    if surah is not None and not (_is_int(surah) and 1 <= surah <= SURAH_COUNT):  # type: ignore[operator]
+        raise ProtocolError("bad_message", "options.surah : entier de 1 à 114 attendu")
+    return chosen, technical, surah  # type: ignore[return-value]
 
 
 def _parse_resume(raw: object) -> ResumeRequest | None:
@@ -244,5 +253,5 @@ def parse_client_text(
     token = body.get("token")
     if not isinstance(token, str) or not 0 < len(token) <= MAX_TOKEN_CHARS:
         raise ProtocolError("token_invalid", "jeton absent ou illisible")
-    translation, technical = _parse_options(body.get("options"), translations)
-    return StartMessage(token, translation, technical, _parse_resume(body.get("resume")))
+    translation, technical, surah = _parse_options(body.get("options"), translations)
+    return StartMessage(token, translation, technical, _parse_resume(body.get("resume")), surah)

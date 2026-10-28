@@ -1,5 +1,13 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-10-28 (3) — En direct : récitation guidée en plus de l'écoute classique (ADR-0015)
+- **Décision du mainteneur** : proposer, avant de démarrer, « Récitation guidée » (la personne annonce la sourate ;
+  le moteur ne cherche que dedans et enchaîne les versets) en plus de l'écoute classique. Cela nuance « sans
+  plage déclarée » (2026-10-23) pour ce mode seulement, par choix explicite de l'utilisateur ; le classique reste
+  l'option sans plage.
+- **Mise en œuvre** : `START.options.surah`, `PrefixIndex.restricted_to_surah`, `LiveConfig.guided()`, sélecteur
+  de sourate dans l'écran. Mesuré sur le vrai moteur : Hud 11:61-71 tous nommés (classique : 5 sur 11).
+
 ## 2026-10-28 (2) — Export vidéo : aperçu animé sans encodage, accent automatique par le fond
 - **Décision** : l'aperçu animé joue l'audio de la session et dessine à chaque image avec la fonction
   d'export (aucun encodage, aucun upload) — même rendu garanti. L'accent par défaut est tiré du fond
