@@ -153,7 +153,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
               <li>
                 <span>
                   <i className="sw s-inferred" aria-hidden="true" />
-                  Déduit · non entendu
+                  Déduit de la position
                 </span>
               </li>
               <li>

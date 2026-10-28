@@ -62,7 +62,12 @@ export type IconName =
   | "shield"
   | "key"
   | "home"
-  | "filter-x";
+  | "filter-x"
+  | "mic-off"
+  | "link-off"
+  | "live"
+  | "jump"
+  | "keep";
 
 export function IconSprite() {
   return (
@@ -291,6 +296,24 @@ export function IconSprite() {
       </symbol>
       <symbol id="i-filter-x" viewBox="0 0 24 24">
         <path d="M4 5h16l-6 7v6l-4 2v-8z" />
+      </symbol>
+      <symbol id="i-mic-off" viewBox="0 0 24 24">
+        <rect x="9" y="3.5" width="6" height="11" rx="3" />
+        <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5M9 20.5h6M4 4l16 16" />
+      </symbol>
+      <symbol id="i-link-off" viewBox="0 0 24 24">
+        <path d="M10 14a4 4 0 0 0 5.5.4l2.5-2.5a4 4 0 0 0-5.6-5.7l-.9.9M14 10a4 4 0 0 0-5.5-.4L6 12.1a4 4 0 0 0 5.6 5.7l.9-.9M4 4l16 16" />
+      </symbol>
+      <symbol id="i-live" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.6 4.6a10.5 10.5 0 0 0 0 14.8M19.4 4.6a10.5 10.5 0 0 1 0 14.8" />
+      </symbol>
+      <symbol id="i-jump" viewBox="0 0 24 24">
+        <path d="M4 16c3 0 3-8 8-8h5M14 5l3 3-3 3M4 19h6" />
+      </symbol>
+      <symbol id="i-keep" viewBox="0 0 24 24">
+        <path d="M6 3.5h9l3.5 3.5v13a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z" />
+        <path d="M8.5 3.5v5h6v-5M8.5 20.5v-6h7v6" />
       </symbol>
     </svg>
   );

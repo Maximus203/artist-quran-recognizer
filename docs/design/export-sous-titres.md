@@ -95,7 +95,7 @@ dans `decoder` du JSON (`merge_max_gap_s`, `infer_max_gap_s`), jamais des valeur
 | Code | Sorte | Condition | Pourquoi ça compte | Résolutions possibles |
 |---|---|---|---|---|
 | `uncertain` | Incertain | `status == "uncertain"` (≥ 2 `candidates`, ni texte ni traduction) | Le moteur ne nomme pas le verset (I3) | Choisir un candidat · saisir une référence · exclure · ajuster les temps |
-| `inferred` | Supposé, non entendu | `status == "inferred"` | Jamais entendu (I5) ; son temps est interpolé | Confirmer à l'oreille · exclure |
+| `inferred` | Déduit de la position | `status == "inferred"` | Jamais entendu (I5) ; son temps est interpolé | Confirmer à l'oreille · exclure |
 | `cut_end` / `cut_start` | Coupure | Verset `partial` dont les mots manquent **et** le moteur n'a pas de raison de croire que le lecteur s'est arrêté : fin manquante si `words[1] < dernier mot` et que l'intervalle suivant, à moins de `merge_max_gap_s`, est une abstention hors `silence`, un `uncertain`, ou le verset suivant ; début manquant si `words[0] > 1` et le précédent est dans les mêmes conditions | Un verset à moitié sous-titré dans une suite | Étendre à une plage de mots validée · confirmer « le lecteur s'arrête là » · exclure |
 | `report` | Signalement | Annotation confirmée dont un tag est dans `{missing_verse, wrong_verse, extra_verse, repetition_missed, start_early, start_late, end_early, end_late, display_offset, non_quran_as_quran, quran_undetected, abstention_wrong}` | Un humain a déjà dit que le moteur se trompe | Résolu quand une décision recouvre sa plage, ou par « Ignorer » |
 | `approx` | Traduction approximative | Verset partiel dont `translation.scope == "fragment"` et `fragment.approximate == true` | La traduction affichée ne colle qu'à peu près | Traduction du verset entier · garder le fragment · sans traduction |
@@ -133,7 +133,7 @@ que le signe de pause aussi soit exact.*
 - Prêt : cercle à coche encre, « Tout est vérifié : prêt à exporter », « 6 sur 6 résolus » ; l'action primaire est dans la colonne de droite.
 
 ### 4.2 Liste « À vérifier dans la partie coranique »
-- Filtres en pastilles par type avec compteurs (Tous · Supposés · Incertains · Coupures · Signalements · Traduction), état `aria-pressed`.
+- Filtres en pastilles par type avec compteurs (Tous · Déduits · Incertains · Coupures · Signalements · Traduction), état `aria-pressed`.
 - **Ligne** (carte de 64 px mini) : glyphe de statut (mêmes motifs que l'onde), référence (Instrument Serif 22), temps en mono
   (« 00:48.2 → 01:02.6 · mots 11–17 »), **une phrase qui dit pourquoi** (« 2 candidats : 11:61 ou 7:73. L'arabe diffère aux mots 16–17 »),
   puis étiquettes (sorte + impact « Arabe / Traduction / Référence »). Actions à droite : `▶ Écouter` (44 px), **`Corriger`** (secondaire, lien vers

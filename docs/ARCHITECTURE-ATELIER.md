@@ -43,6 +43,7 @@ disque de la machine, dans un dossier hors Git ; aucune base de données, aucun 
 | Sécurité | `web/lib/local-request.ts` | Contrôle des hôtes, origine et jeton (§9). |
 | Polices | `web/lib/font-files.ts`, `quran-fonts.ts`, `app/api/fonts/*` | Polices arabes, dont la Hafs hors Git (§10). |
 | Design | `web/app/tokens.css`, `docs/design/` | Direction « Encre & lapis », variables de style centralisées. |
+| En direct | `web/app/(app)/direct`, `web/app/atelier/live/*`, `web/lib/live-*.ts` | Écran d'écoute en temps réel (§14) : client du flux, réducteur pur, capture micro. |
 
 Principe de code : la logique est dans `web/lib/` sous forme de fonctions **pures et testées** ; les composants
 ne font que l'afficher.
@@ -431,3 +432,53 @@ session `?session=<id>` ou Nouvel essai), `/sessions`, `/performance`, `/docs`, 
 - La barre de stockage ne distingue pas audio et vidéo (le serveur ne mesure que le total).
 - Les limiteurs de débit vivent en mémoire d'un seul processus (voir `web/README.md`).
 - « Récentes » = les plus récentes importées (le serveur ne garde pas encore la date de dernière ouverture).
+
+## 14. L'écran « En direct » (ADR-0011, étape 4) — livré
+
+Page `/direct` (`web/app/(app)/direct/page.tsx`) : le micro du navigateur est écouté en temps réel par le service
+`aqr live-serve` (contrat `docs/LIVE-PROTOCOL.md`), et le passage détecté s'affiche **pendant** la récitation.
+Conception : `docs/design/en-direct.md` ; mode d'emploi et fichiers : `web/README.md`, « Écran En direct ».
+
+```
+ micro ─▶ AudioWorklet ─▶ PcmPipeline ──▶ LiveClient ══ WebSocket aqr.live/1 ══▶ aqr live-serve
+ (public/worklets)        16 kHz mono     jeton, START,        (jeton émis par POST /api/live/token)
+                          16 bits, 100 ms  contre-pression,
+                          │               reprise, tampon 5 min
+                          ▼                      │ messages validés (live-protocol)
+                  MediaRecorder (mémoire)        ▼
+                  « Garder » seulement      reduce(état, action)  ◀── pur, rejoué en test
+                                                 │
+                                       sélecteurs (vue, patience, trous, annonces)
+                                                 ▼
+                                   carte · console · liste · fin d'écoute (React)
+```
+
+**Couches.** Interface (`app/atelier/live/*`, ne contient aucune règle) → colle navigateur (`use-live.ts` : micro,
+verrou d'écran, onglet caché, fermeture de page) → application (`live-client.ts`, `live-store.ts`) → ports injectés
+(réseau, horloge, minuteries) et fonctions pures (`live-pcm.ts`, `live-protocol.ts`, `live-errors.ts`). Tout ce qui
+décide est dans `web/lib/` et testé sans navigateur ; ce qui ne peut pas l'être (micro, worklet) est vérifié dans un
+vrai Chrome (`e2e/live-browser.mjs`).
+
+**Patterns, et pourquoi.**
+
+| Pattern | Où | Raison |
+|---|---|---|
+| Réducteur pur (état + action) avec rejeu | `live-store.ts` | l'écran est une fonction des messages reçus : un scénario rejoué donne toujours le même état, et la dérivation du trou (`GAP`) ou de la patience ne vit nulle part ailleurs |
+| Adapter (ports `SocketLike`, `LiveDeps`) | `live-client.ts`, `live-net.ts` | le WebSocket du navigateur, l'horloge et les minuteries sont remplacés par un faux serveur en test : la reprise est prouvée sans réseau |
+| State (`Mode` du client, `Phase` de l'écran) | `live-client.ts`, `live-store.ts` | connexion, flux, coupure, fin : chaque transition est explicite et testée |
+| Strategy (classement des erreurs) | `live-errors.ts` | un code du service devient « reprendre », « terminer » ou « échec au départ » au même endroit |
+| Observer | `LiveClient.dispatch` → réducteur → React | un seul flux d'actions, aucune logique dans les composants |
+| Configuration unique | `live-config.ts` | aucun seuil en dur : patience 6 / 12 / 21 s, silence 8 s, tampon 5 min, nouvel essai 5 s |
+
+**Invariants tenus par construction.** I1 : le texte arabe n'est que ce que portent les messages (`heard.text`,
+`interval.text`, traduction du verset), jamais un texte du modèle (`PARTIAL` n'alimente que le mode technique) ; I3 :
+un candidat non nommé n'a ni texte ni traduction (le réducteur ne copie que `heard.text`, commun à tous), un verset
+déduit reste « déduit de la position », une `REVISION` garde la ligne et retire son texte ; I5 : le statut de preuve
+est affiché par un motif et un libellé, jamais par la couleur seule.
+
+**Vie privée.** Aucun son sur le serveur. Le navigateur garde l'enregistrement en mémoire, dit avant de démarrer ; il
+n'en sort que sur le geste « Garder cet enregistrement » (import classique). Le jeton du flux dure 60 s, ne sert
+qu'une fois et ne passe jamais par l'adresse.
+
+**Limites.** Voir `docs/evaluation/live-etape4-2026-10-24.md` (une machine, micro simulé par un fichier, pas de
+téléphone réel, voix propre).

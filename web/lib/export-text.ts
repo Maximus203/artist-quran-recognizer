@@ -13,14 +13,14 @@ import { presetLabel } from "./review-presets";
  */
 
 export const TYPE_LABEL: Record<ItemType, string> = {
-  inferred: "Supposé, non entendu",
+  inferred: "Déduit de la position",
   uncertain: "Incertain",
   cut: "Coupure",
   report: "Signalement",
   approx: "Traduction approximative",
 };
 export const TYPE_FILTER_LABEL: Record<ItemType, string> = {
-  inferred: "Supposés",
+  inferred: "Déduits",
   uncertain: "Incertains",
   cut: "Coupures",
   report: "Signalements",

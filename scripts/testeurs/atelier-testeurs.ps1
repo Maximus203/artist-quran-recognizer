@@ -11,8 +11,15 @@
   install : crée la tâche planifiée « AtelierTesteurs » (démarrage à chaque ouverture de session).
   uninstall : supprime cette tâche.
 
+  Écoute en direct (ADR-0011) : `start` lance aussi le service `aqr live-serve` (port 8765) et un second
+  tunnel pour son WebSocket (le micro exige https, donc wss). Atelier et service partagent une clé de
+  signature créée au premier démarrage (live-key.txt, jamais dans Git). -NoLive pour s'en passer.
+
   L'adresse cloudflared (quick tunnel) change à chaque démarrage. Elle est écrite dans
-  D:\01-Dev\Data\aqr-tunnel\url.txt.
+  D:\01-Dev\Data\aqr-tunnel\url.txt (atelier) et live-url.txt (direct).
+
+  Essai jetable, sans toucher au tunnel ni aux données des testeurs :
+  -Port 3420 -LivePort 8770 -StateDir <dossier> -ReviewDir <dossier> (token.txt à créer dans StateDir).
 
 .EXAMPLE
   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\testeurs\atelier-testeurs.ps1 -Action restart
@@ -21,7 +28,15 @@ param(
     [ValidateSet('start', 'stop', 'restart', 'status', 'install', 'uninstall')]
     [string]$Action = 'status',
     [switch]$Build,
-    [int]$Port = 3200
+    [int]$Port = 3200,
+    # Écoute en direct (ADR-0011) : le service `aqr live-serve` démarre à côté de l'atelier, avec son propre
+    # tunnel (le WebSocket ne passe pas par le port de l'atelier). -NoLive pour ne pas le lancer.
+    [int]$LivePort = 8765,
+    [switch]$NoLive,
+    # Dossiers d'état et de données : à changer pour un essai jetable (ne touche alors ni le tunnel ni les
+    # données des testeurs).
+    [string]$StateDir = 'D:\01-Dev\Data\aqr-tunnel',
+    [string]$ReviewDir = 'D:\01-Dev\Data\aqr-review-testeurs'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -31,12 +46,15 @@ $env:Path ='C:\Users\diouf\AppData\Local\nvm\v24.19.0;' + $env:Path
 # Racine du checkout qui contient ce script (web/ et src/ en dépendent).
 $Root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $Web = Join-Path $Root 'web'
-$State = 'D:\01-Dev\Data\aqr-tunnel'
+$State = $StateDir
 $StateFile = Join-Path $State 'etat.json'
 $UrlFile = Join-Path $State 'url.txt'
+$LiveUrlFile = Join-Path $State 'live-url.txt'
 $TokenFile = Join-Path $State 'token.txt'
+# Clé de signature des jetons du direct, partagée par l'atelier et le service : créée au premier démarrage,
+# jamais dans Git.
+$LiveKeyFile = Join-Path $State 'live-key.txt'
 $LogDir = Join-Path $State 'logs'
-$ReviewDir = 'D:\01-Dev\Data\aqr-review-testeurs'
 $ModelsDir = 'D:\01-Dev\Data\aqr-models'
 $FontsDir = 'D:\01-Dev\Data\aqr-fonts'
 # Le venv du checkout principal : son installation éditable est remplacée par PYTHONPATH (voir plus bas).
@@ -55,14 +73,17 @@ function Read-State {
 function Stop-All {
     $state = Read-State
     if ($state) {
-        foreach ($id in @($state.cloudflaredPid, $state.nodePid)) {
+        foreach ($id in @($state.cloudflaredPid, $state.nodePid, $state.liveCloudflaredPid, $state.livePid)) {
             if ($id) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
         }
     }
-    # Orphelins de ce tunnel (même port) ; un autre processus sur le port n'est arrêté que s'il est Next.
-    Get-CimInstance Win32_Process -Filter "Name='cloudflared.exe'" |
-        Where-Object { $_.CommandLine -match "127\.0\.0\.1:$Port" } |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    # Orphelins de ces tunnels (mêmes ports) ; un autre processus sur le port n'est arrêté que s'il est Next
+    # (atelier) ou le service du direct (`aqr live-serve`).
+    foreach ($p in @($Port, $LivePort)) {
+        Get-CimInstance Win32_Process -Filter "Name='cloudflared.exe'" |
+            Where-Object { $_.CommandLine -match "127\.0\.0\.1:$p(\s|$)" } |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    }
     Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
         ForEach-Object {
             $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($_.OwningProcess)"
@@ -70,8 +91,58 @@ function Stop-All {
                 Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
             }
         }
+    Get-NetTCPConnection -LocalPort $LivePort -State Listen -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($_.OwningProcess)"
+            if ($proc -and $proc.CommandLine -match 'live-serve') {
+                Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
+            }
+        }
     if (Test-Path $StateFile) { Remove-Item $StateFile -Force }
     Log 'arrêté'
+}
+
+# Tunnel Cloudflare rapide vers un port local : rend @{ pid; url }. Le réseau peut ne pas être prêt au
+# démarrage : on réessaie jusqu'à 10 minutes.
+function Start-QuickTunnel([int]$TargetPort, [string]$Name) {
+    $deadline = (Get-Date).AddMinutes(10)
+    $url = $null
+    $cfPid = $null
+    $cfLog = Join-Path $LogDir "$Name.log"
+    while (-not $url) {
+        Remove-Item $cfLog -ErrorAction SilentlyContinue
+        $cf = Start-Process -FilePath $Cloudflared `
+            -ArgumentList @('tunnel', '--no-autoupdate', '--url', "http://127.0.0.1:$TargetPort") `
+            -WindowStyle Hidden -PassThru `
+            -RedirectStandardError $cfLog -RedirectStandardOutput (Join-Path $LogDir "$Name.out")
+        $cfPid = $cf.Id
+        $t0 = Get-Date
+        while (-not $url -and ((Get-Date) - $t0).TotalSeconds -lt 60 -and -not $cf.HasExited) {
+            Start-Sleep -Seconds 2
+            if (Test-Path $cfLog) {
+                $match = Select-String -Path $cfLog -Pattern 'https://(?!api\.)[a-z0-9-]+\.trycloudflare\.com' |
+                    Select-Object -First 1
+                if ($match) { $url = $match.Matches[0].Value }
+            }
+        }
+        if (-not $url) {
+            Stop-Process -Id $cfPid -Force -ErrorAction SilentlyContinue
+            if ((Get-Date) -gt $deadline) { throw 'pas d''adresse cloudflared après 10 minutes (réseau ?)' }
+            Log 'pas d''adresse cloudflared, nouvel essai dans 20 s'
+            Start-Sleep -Seconds 20
+        }
+    }
+    return @{ pid = $cfPid; url = $url }
+}
+
+# Clé de signature du direct : lue, ou créée au premier démarrage (32 octets aléatoires, jamais dans Git).
+function Get-LiveKey {
+    if (-not (Test-Path $LiveKeyFile)) {
+        $bytes = New-Object byte[] 32
+        [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+        Set-Content -Encoding ascii $LiveKeyFile ([Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_'))
+    }
+    return (Get-Content $LiveKeyFile -Raw).Trim()
 }
 
 function Start-All {
@@ -90,34 +161,9 @@ function Start-All {
         } finally { Pop-Location }
     }
 
-    # Tunnel : le réseau peut ne pas être prêt au démarrage, on réessaie jusqu'à 10 minutes.
-    $deadline = (Get-Date).AddMinutes(10)
-    $url = $null
-    $cfPid = $null
-    $cfLog = Join-Path $LogDir 'cloudflared.log'
-    while (-not $url) {
-        Remove-Item $cfLog -ErrorAction SilentlyContinue
-        $cf = Start-Process -FilePath $Cloudflared `
-            -ArgumentList @('tunnel', '--no-autoupdate', '--url', "http://127.0.0.1:$Port") `
-            -WindowStyle Hidden -PassThru `
-            -RedirectStandardError $cfLog -RedirectStandardOutput (Join-Path $LogDir 'cloudflared.out')
-        $cfPid = $cf.Id
-        $t0 = Get-Date
-        while (-not $url -and ((Get-Date) - $t0).TotalSeconds -lt 60 -and -not $cf.HasExited) {
-            Start-Sleep -Seconds 2
-            if (Test-Path $cfLog) {
-                $match = Select-String -Path $cfLog -Pattern 'https://(?!api\.)[a-z0-9-]+\.trycloudflare\.com' |
-                    Select-Object -First 1
-                if ($match) { $url = $match.Matches[0].Value }
-            }
-        }
-        if (-not $url) {
-            Stop-Process -Id $cfPid -Force -ErrorAction SilentlyContinue
-            if ((Get-Date) -gt $deadline) { throw 'pas d''adresse cloudflared après 10 minutes (réseau ?)' }
-            Log 'pas d''adresse cloudflared, nouvel essai dans 20 s'
-            Start-Sleep -Seconds 20
-        }
-    }
+    $tunnel = Start-QuickTunnel $Port 'cloudflared'
+    $cfPid = $tunnel.pid
+    $url = $tunnel.url
     $hostName = ([Uri]$url).Host
     Log "tunnel : $url"
 
@@ -130,6 +176,41 @@ function Start-All {
     $env:AQR_FONTS_DIR = $FontsDir
     $env:AQR_PYTHON = $Python
     $env:PYTHONPATH = Join-Path $Root 'src'
+
+    # Écoute en direct : service WebSocket + son tunnel, même clé de signature que l'atelier. Le service
+    # accepte l'hôte de l'atelier (Origin) et le sien (Host) parce que AQR_ACCESS_TOKEN est défini.
+    $liveCfPid = $null
+    $livePid = $null
+    $liveUrl = $null
+    if (-not $NoLive) {
+        $liveTunnel = Start-QuickTunnel $LivePort 'cloudflared-live'
+        $liveCfPid = $liveTunnel.pid
+        $liveHost = ([Uri]$liveTunnel.url).Host
+        $liveUrl = 'wss://' + $liveHost + '/live'
+        Log "tunnel du direct : $liveUrl"
+        $env:AQR_LIVE_KEY = Get-LiveKey
+        $env:AQR_LIVE_URL = $liveUrl
+        $env:AQR_ALLOWED_HOSTS = "$hostName,$liveHost"
+        $env:AQR_LIVE_PORT = "$LivePort"
+        $livePy = Start-Process -FilePath $Python `
+            -ArgumentList @('-m', 'aqr.cli', 'live-serve', '--corpus-dir', $env:AQR_CORPUS_DIR, '--asr-threads', '2', '--warm-translations', 'french_hameedullah') `
+            -WorkingDirectory $Root -WindowStyle Hidden -PassThru `
+            -RedirectStandardOutput (Join-Path $LogDir 'live.log') -RedirectStandardError (Join-Path $LogDir 'live.err.log')
+        $livePid = $livePy.Id
+        $liveReady = $false
+        for ($i = 0; $i -lt 60 -and -not $liveReady; $i++) {
+            Start-Sleep -Seconds 2
+            try {
+                $r = Invoke-WebRequest -Uri "http://127.0.0.1:$LivePort/health" -UseBasicParsing -TimeoutSec 5
+                $liveReady = ($r.StatusCode -eq 200)
+            } catch { $liveReady = $false }
+        }
+        if (-not $liveReady) {
+            foreach ($id in @($livePid, $liveCfPid, $cfPid)) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
+            throw "le service du direct ne répond pas sur le port $LivePort (voir logs\live.err.log)"
+        }
+        Log 'service du direct en ligne'
+    }
 
     $node = (Get-Command node.exe).Source
     $next = Start-Process -FilePath $node `
@@ -146,14 +227,18 @@ function Start-All {
         } catch { $ready = $false }
     }
     if (-not $ready) {
-        Stop-Process -Id $next.Id -Force -ErrorAction SilentlyContinue
-        Stop-Process -Id $cfPid -Force -ErrorAction SilentlyContinue
+        foreach ($id in @($next.Id, $cfPid, $livePid, $liveCfPid)) {
+            if ($id) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
+        }
         throw "l'atelier ne répond pas sur le port $Port (voir logs\next.err.log)"
     }
 
-    @{ cloudflaredPid = $cfPid; nodePid = $next.Id; url = $url; port = $Port; startedAt = (Get-Date).ToString('s') } |
+    @{ cloudflaredPid = $cfPid; nodePid = $next.Id; url = $url; port = $Port
+       liveCloudflaredPid = $liveCfPid; livePid = $livePid; liveUrl = $liveUrl; livePort = $LivePort
+       startedAt = (Get-Date).ToString('s') } |
         ConvertTo-Json | Set-Content -Encoding utf8 $StateFile
     Set-Content -Encoding ascii $UrlFile $url
+    if ($liveUrl) { Set-Content -Encoding ascii $LiveUrlFile $liveUrl }
     Log "en ligne : $url"
 }
 
@@ -183,6 +268,13 @@ function Show-Status {
     $appState = 'arrêté'; if ($appUp) { $appState = 'actif' }
     Log "tunnel : $tunnelState ; atelier : $appState"
     Log "adresse : $($state.url)"
+    if ($state.livePid) {
+        $liveUp = [bool](Get-Process -Id $state.livePid -ErrorAction SilentlyContinue)
+        $liveTunnelUp = [bool](Get-Process -Id $state.liveCloudflaredPid -ErrorAction SilentlyContinue)
+        $liveState = 'arrêté'; if ($liveUp) { $liveState = 'actif' }
+        $liveTunnelState = 'arrêté'; if ($liveTunnelUp) { $liveTunnelState = 'actif' }
+        Log "direct : service $liveState ; tunnel $liveTunnelState ; $($state.liveUrl)"
+    }
 }
 
 try {
