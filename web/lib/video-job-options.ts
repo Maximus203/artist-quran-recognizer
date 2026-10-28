@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
 import {
+  DEFAULT_VIDEO_FPS,
+  DEFAULT_VIDEO_RESOLUTION,
+  VIDEO_FPS_CHOICES,
+  VIDEO_RESOLUTIONS,
+  VIDEO_RESOLUTION_VALUES,
+  type VideoFps,
+  type VideoResolution,
+} from "./export-video-format";
+import { MAX_RANGES, MIN_RANGE_SECONDS } from "./export-video-ranges";
+import {
   accentSchema,
   ARABIC_SIZE_PRESETS,
   DEFAULT_VIDEO_PREFS,
@@ -39,6 +49,43 @@ export const videoJobOptionsSchema = z
       .union([z.number().int().min(16).max(140), sizeName])
       .optional(),
     show_translation: z.boolean().optional(),
+    /** Images par seconde : 30 ou 60 (plus fluide, plus lourd). */
+    fps: z
+      .number()
+      .refine(
+        (v): v is VideoFps =>
+          (VIDEO_FPS_CHOICES as readonly number[]).includes(v),
+        {
+          message: "30 ou 60",
+        },
+      )
+      .optional(),
+    /** Résolution : côté court de l'image en pixels (360, 480, 720, 1080, 1440 ou 2160). */
+    resolution: z
+      .number()
+      .refine(
+        (v): v is VideoResolution =>
+          (VIDEO_RESOLUTION_VALUES as readonly number[]).includes(v),
+        {
+          message: VIDEO_RESOLUTION_VALUES.join(", "),
+        },
+      )
+      .optional(),
+    /** Parties à exporter : une vidéo par plage (début et fin en secondes de l'audio). */
+    ranges: z
+      .array(
+        z
+          .object({ start: z.number().min(0), end: z.number().positive() })
+          .strict()
+          .refine((r) => r.end - r.start >= MIN_RANGE_SECONDS, {
+            message: `${MIN_RANGE_SECONDS} s au moins`,
+          }),
+      )
+      .min(1, "au moins une plage")
+      .max(MAX_RANGES)
+      .optional(),
+    /** Une vidéo par verset reconnu (exclusif avec `ranges`). */
+    per_verse: z.boolean().optional(),
     /** Remplir l'espace : le texte grandit pour occuper la zone libre. */
     fill: z.boolean().optional(),
     /** Hauteur du texte : 0 (haut) à 100 (bas), ou « top », « middle », « bottom ». */
@@ -59,7 +106,11 @@ export const videoJobOptionsSchema = z
       .regex(/^#[0-9a-fA-F]{6}$/)
       .optional(),
   })
-  .strict();
+  .strict()
+  .refine((o) => !(o.per_verse && o.ranges), {
+    message: "per_verse et ranges s'excluent : choisis l'un ou l'autre",
+    path: ["per_verse"],
+  });
 
 export type VideoJobOptions = z.infer<typeof videoJobOptionsSchema>;
 
@@ -99,6 +150,8 @@ export function videoPrefsFromOptions(
     ),
     showTranslation:
       options.show_translation ?? DEFAULT_VIDEO_PREFS.showTranslation,
+    resolution: options.resolution ?? DEFAULT_VIDEO_PREFS.resolution,
+    fps: options.fps ?? DEFAULT_VIDEO_PREFS.fps,
     fill: options.fill ?? DEFAULT_VIDEO_PREFS.fill,
     textPosition: positionOf(options.text_position),
     showWave: options.show_wave ?? DEFAULT_VIDEO_PREFS.showWave,
@@ -134,6 +187,27 @@ export function videoOptionsCatalog() {
       ),
     },
     show_translation: "boolean",
+    fps: {
+      values: VIDEO_FPS_CHOICES,
+      notes: "60 = plus fluide, fichier environ deux fois plus lourd.",
+    },
+    resolution: {
+      values: VIDEO_RESOLUTION_VALUES,
+      labels: Object.fromEntries(
+        VIDEO_RESOLUTIONS.map((r) => [r.short, r.label]),
+      ),
+      notes:
+        "Côté court de l'image : 720 = 1280×720 en 16:9, 720×1280 en 9:16, 720×720 en 1:1. Au-delà de 1080, le rendu est plus long et le fichier plus lourd.",
+    },
+    ranges: {
+      shape: "[{ start: secondes, end: secondes }, …]",
+      max: MAX_RANGES,
+      min_seconds: MIN_RANGE_SECONDS,
+      notes:
+        "Une plage = une vidéo, dans l'ordre donné ; sans plage, tout l'audio. Une fin au-delà de la durée est ramenée à la durée.",
+    },
+    per_verse:
+      "boolean : une vidéo par verset reconnu (exclusif avec `ranges`).",
     fill: "boolean (le texte occupe toute la zone libre)",
     text_position: "0 (haut) à 100 (bas), ou top | middle | bottom",
     show_wave: "boolean (onde audio en bas)",
@@ -154,6 +228,8 @@ export function videoOptionsCatalog() {
       arabic_size: DEFAULT_VIDEO_PREFS.arabicSize,
       translation_size: DEFAULT_VIDEO_PREFS.translationSize,
       show_translation: DEFAULT_VIDEO_PREFS.showTranslation,
+      fps: DEFAULT_VIDEO_FPS,
+      resolution: DEFAULT_VIDEO_RESOLUTION,
       fill: DEFAULT_VIDEO_PREFS.fill,
       text_position: DEFAULT_VIDEO_PREFS.textPosition,
       show_wave: DEFAULT_VIDEO_PREFS.showWave,

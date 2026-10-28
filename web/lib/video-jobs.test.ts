@@ -69,6 +69,42 @@ describe("options de l'export vidéo par l'API", () => {
       expect(videoJobOptionsSchema.safeParse(bad).success).toBe(false);
   });
 
+  it("accepte cadence, résolution et plages ; refuse les valeurs hors liste", () => {
+    expect(
+      videoJobOptionsSchema.safeParse({
+        fps: 60,
+        resolution: 2160,
+        ranges: [
+          { start: 0, end: 12.5 },
+          { start: 30, end: 41 },
+        ],
+      }).success,
+    ).toBe(true);
+    expect(videoJobOptionsSchema.safeParse({ per_verse: true }).success).toBe(
+      true,
+    );
+    for (const bad of [
+      { fps: 24 },
+      { fps: 120 },
+      { resolution: 1000 },
+      { ranges: [] },
+      { ranges: [{ start: 10, end: 10.1 }] },
+      { ranges: [{ start: -1, end: 5 }] },
+      { ranges: [{ start: 0, end: 5, extra: 1 }] },
+      { ranges: [{ start: 0, end: 5 }], per_verse: true },
+    ])
+      expect(videoJobOptionsSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("reporte cadence et résolution dans les réglages du rendu (défauts 30 et 1080)", () => {
+    const prefs = videoPrefsFromOptions({ fps: 60, resolution: 720 }, false);
+    expect(prefs.fps).toBe(60);
+    expect(prefs.resolution).toBe(720);
+    const defaults = videoPrefsFromOptions({}, false);
+    expect(defaults.fps).toBe(30);
+    expect(defaults.resolution).toBe(1080);
+  });
+
   it("traduit les noms de taille et applique les défauts du formulaire", () => {
     const prefs = videoPrefsFromOptions(
       { arabic_size: "xlarge", translation_size: "small" },

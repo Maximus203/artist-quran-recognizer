@@ -45,4 +45,18 @@ describe("muxArgs", () => {
     const args = muxArgs({ video: "v", wav: "w", out: "o", fps: 25 });
     expect(args).not.toContain("-shortest");
   });
+
+  it("ne garde que l'extrait demandé de l'audio, avant son entrée", () => {
+    const args = muxArgs({
+      video: "v",
+      wav: "w.wav",
+      out: "o",
+      fps: 60,
+      audioStart: 12.5,
+      audioDuration: 27.5,
+    });
+    const text = args.join(" ");
+    expect(text).toContain("-ss 12.500 -t 27.500 -i w.wav");
+    expect(text).toContain("setts=ts=N/(60*TB)");
+  });
 });

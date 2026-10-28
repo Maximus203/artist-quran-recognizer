@@ -1,5 +1,13 @@
 import { z } from "zod";
 import type { VideoOrientation } from "./export-video-args";
+import {
+  DEFAULT_VIDEO_FPS,
+  DEFAULT_VIDEO_RESOLUTION,
+  VIDEO_FPS_CHOICES,
+  VIDEO_RESOLUTION_VALUES,
+  type VideoFps,
+  type VideoResolution,
+} from "./export-video-format";
 
 /**
  * Réglages de l'export vidéo, mémorisés dans le navigateur (`aqr.ui.v1.export-video`)
@@ -37,6 +45,20 @@ export const videoPrefsSchema = z
     /** Taille de la traduction (px). */
     translationSize: z.number().int().min(16).max(140),
     showTranslation: z.boolean(),
+    /** Résolution : taille du côté court de l'image (720 = 1280×720 en 16:9). */
+    resolution: z
+      .number()
+      .refine((v): v is VideoResolution =>
+        (VIDEO_RESOLUTION_VALUES as readonly number[]).includes(v),
+      )
+      .default(DEFAULT_VIDEO_RESOLUTION),
+    /** Images par seconde : 30, ou 60 pour plus de fluidité (fichier plus lourd). */
+    fps: z
+      .number()
+      .refine((v): v is VideoFps =>
+        (VIDEO_FPS_CHOICES as readonly number[]).includes(v),
+      )
+      .default(DEFAULT_VIDEO_FPS),
     /** « Remplir » : les écritures grandissent jusqu'à occuper toute la zone libre. */
     fill: z.boolean().default(false),
     /** Hauteur du texte dans la zone libre : 0 = en haut, 50 = au centre, 100 = en bas. */
@@ -72,6 +94,8 @@ export const DEFAULT_VIDEO_PREFS: VideoPrefs = {
   arabicSize: 72,
   translationSize: 30,
   showTranslation: true,
+  resolution: DEFAULT_VIDEO_RESOLUTION,
+  fps: DEFAULT_VIDEO_FPS,
   bg: "#101418",
   background: null,
   fill: false,

@@ -64,8 +64,10 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
    `small|medium|large|xlarge`), `show_translation`, `fill` (le texte occupe la zone libre),
    `text_position` (0 haut à 100 bas, ou `top|middle|bottom`), `show_wave`, `accent` (`{h,s,l,a}`),
    `file_name`, `background` (un fond proposé, `source` ou
-   `color`) — puis `get_video_export` toutes les 10 s jusqu'à `done` et téléchargement de
-   `download_path` avec le jeton. Une image de fond personnelle s'envoie par l'API REST (multipart).
+   `color`), `fps` (30 ou 60), `resolution` (360, 480, 720, 1080, 1440 ou 2160 : côté court de l'image),
+   `ranges` (`[{start, end}]` en secondes : UNE vidéo par plage) ou `per_verse: true` (une vidéo par
+   verset reconnu) — puis `get_video_export` toutes les 10 s jusqu'à `done` et téléchargement de chaque
+   entrée de `download_paths` avec le jeton. Une image de fond personnelle s'envoie par l'API REST (multipart).
    Le rendu dure environ la moitié de la durée de l'audio.
 
 ## Outils MCP
@@ -81,6 +83,12 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
 | `get_video_export` | État du job ; `download_path` quand il est `done` | lecture |
 | `get_verse` | Texte exact et traduction d'un verset (`ref` = `2:255`) | lecture |
 | `create_recording` | Importer un audio et lancer l'analyse | écriture |
+| `update_recording` | Renommer, changer la portée (privé / global) ou archiver | écriture |
+| `delete_recording` | Supprimer définitivement (exige `confirm: true`) | écriture |
+| `run_analysis` / `cancel_analysis` | Lancer, relancer ou annuler l'analyse | écriture |
+| `set_favorite` | Mettre ou retirer des favoris | écriture |
+| `get_review` / `save_review`, `get_decisions` / `save_decisions` | Lire et enregistrer la revue et les décisions de relecture | lecture / écriture |
+| `get_stats`, `get_preferences` / `set_preferences` | Statistiques et préférences du compte | lecture / écriture |
 
 ## API REST (`/api/v1`)
 

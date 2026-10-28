@@ -8,7 +8,10 @@ import { videoFileName } from "@/lib/export-video-name";
 import { getVideoJob } from "@/lib/video-jobs";
 export const runtime = "nodejs";
 
-/** Le MP4 d'un export vidéo terminé (`409` tant qu'il n'est pas prêt). Conservé une heure. */
+/**
+ * Le MP4 d'un export vidéo terminé (`409` tant qu'il n'est pas prêt). Un export à plusieurs plages
+ * produit plusieurs MP4 : `?index=N` (0 par défaut, voir `downloads` du job). Conservé une heure.
+ */
 async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string; job: string }> },
@@ -26,11 +29,20 @@ async function handleGET(
     return apiError(409, `Export ${job.state} : la vidéo n'est pas prête.`, {
       code: "not_ready",
     });
-  const size = (await stat(job.file)).size;
+  const raw = new URL(request.url).searchParams.get("index");
+  const index = raw === null ? 0 : Number(raw);
+  const entry = Number.isInteger(index) ? job.files[index] : undefined;
+  if (!entry)
+    return apiError(
+      404,
+      `Cet export n'a pas de vidéo n° ${raw} (il y en a ${job.files.length}).`,
+      { code: "not_found" },
+    );
+  const size = (await stat(entry.path)).size;
   const session = await readSession(access.id);
-  const name = videoFileName(session.name, job.options.file_name);
+  const name = entry.name || videoFileName(session.name, job.options.file_name);
   return new Response(
-    Readable.toWeb(createReadStream(job.file)) as ReadableStream,
+    Readable.toWeb(createReadStream(entry.path)) as ReadableStream,
     {
       headers: {
         "Content-Type": "video/mp4",

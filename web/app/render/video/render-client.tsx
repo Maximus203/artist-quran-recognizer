@@ -14,8 +14,17 @@ type Payload = {
   jobId: string;
   prefs: VideoPrefs;
   hasBackground: boolean;
+  fileName?: string;
+  ranges?: { start: number; end: number }[];
+  perVerse?: boolean;
 };
-type State = { progress?: string; error?: string; done?: boolean };
+type State = {
+  progress?: string;
+  error?: string;
+  done?: boolean;
+  /** Nombre de vidéos attendues (une par plage) : le serveur attend autant de téléchargements. */
+  total?: number;
+};
 
 export function RenderClient() {
   const [text, setText] = useState("Rendu en préparation…");
@@ -44,6 +53,12 @@ export function RenderClient() {
         sessionId: payload.sessionId,
         prefs: payload.prefs,
         bgImage,
+        fileName: payload.fileName,
+        ranges: payload.ranges,
+        perVerse: payload.perVerse,
+        onCount: (count) => {
+          state.total = count;
+        },
         onProgress: (message) => {
           state.progress = message;
           setText(message);

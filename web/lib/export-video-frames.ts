@@ -34,7 +34,7 @@ import {
   type GradientBackground,
 } from "./export-video-backgrounds";
 
-export const VIDEO_FPS = 25;
+export const VIDEO_FPS = 30;
 /** Onde : une barre toutes les 4,2 px et 2,6 px de large, comme la timeline de l'atelier. */
 const BAR_WIDTH = 2.6;
 const BAR_PITCH = 4.2;

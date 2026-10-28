@@ -32,3 +32,7 @@
 - Troisième job actif du même compte : `429`. Aucun Chrome/Edge : `503` lisible. Job d'un autre
   compte ou expiré : `404`.
 - Le MCP fait de même : `export_video`, `get_video_export`, `get_export_options`, `get_verse`.
+- Export vidéo par plages : `ranges` à deux plages donne deux MP4 (`downloads`), chacun de la durée de sa plage avec le son
+  de même durée ; `per_verse` donne une vidéo par verset ; `fps` 24 ou `resolution` 1000 : `400` ; plage hors audio : job
+  `failed` avec « Plage 1 : commence à … » ; `fps` 60 et `resolution` 2160 : MP4 3840×2160 à 60 im/s (ffprobe).
+- MCP : `delete_recording` sans `confirm: true` refuse sans appeler l'API ; `get_video_export` liste `download_paths`.

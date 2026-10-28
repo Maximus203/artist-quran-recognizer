@@ -147,3 +147,113 @@ describe("serveur MCP", () => {
     expect(compactResult(null)).toBeNull();
   });
 });
+
+describe("outils d'export vidéo et de gestion", () => {
+  const callTool = async (
+    name: string,
+    args: Record<string, unknown>,
+    call: ApiCall,
+  ) =>
+    (await handleRpc(
+      rpc("tools/call", { name, arguments: args }),
+      ctx("write", call),
+    )) as { result: { isError?: boolean; content: { text: string }[] } };
+
+  it("transmet cadence, résolution, plages et un verset par vidéo à l'API", async () => {
+    const call = vi.fn(async () => ({
+      status: 202,
+      body: { job: { id: "j" } },
+    })) as unknown as ApiCall;
+    await callTool(
+      "export_video",
+      {
+        id: ID,
+        fps: 60,
+        resolution: 2160,
+        ranges: [{ start: 1, end: 9 }],
+        per_verse: false,
+        orientation: "9:16",
+      },
+      call,
+    );
+    expect(call).toHaveBeenCalledWith(
+      "POST",
+      `/api/sessions/${ID}/export/video/jobs`,
+      {
+        json: {
+          options: {
+            orientation: "9:16",
+            fps: 60,
+            resolution: 2160,
+            ranges: [{ start: 1, end: 9 }],
+            per_verse: false,
+          },
+        },
+      },
+    );
+  });
+
+  it("liste un lien par vidéo quand l'export est terminé", async () => {
+    const call = vi.fn(async () => ({
+      status: 200,
+      body: {
+        job: {
+          state: "done",
+          downloads: [
+            { index: 0, name: "a.mp4", url: "file" },
+            { index: 1, name: "b.mp4", url: "file?index=1" },
+          ],
+        },
+      },
+    })) as unknown as ApiCall;
+    const reply = await callTool("get_video_export", { id: ID, job: ID }, call);
+    const body = JSON.parse(reply.result.content[0].text) as {
+      download_paths: { name: string; path: string }[];
+    };
+    expect(body.download_paths.map((d) => d.path)).toEqual([
+      `/api/v1/recordings/${ID}/export/video/jobs/${ID}/file`,
+      `/api/v1/recordings/${ID}/export/video/jobs/${ID}/file?index=1`,
+    ]);
+  });
+
+  it("refuse de supprimer sans confirmation explicite, sans appeler l'API", async () => {
+    const call = vi.fn() as unknown as ApiCall;
+    const reply = await callTool("delete_recording", { id: ID }, call);
+    expect(reply.result.isError).toBe(true);
+    expect(call).not.toHaveBeenCalled();
+    const ok = vi.fn(async () => ({
+      status: 200,
+      body: { ok: true },
+    })) as unknown as ApiCall;
+    await callTool("delete_recording", { id: ID, confirm: true }, ok);
+    expect(ok).toHaveBeenCalledWith("DELETE", `/api/sessions/${ID}`);
+  });
+
+  it("renomme, met en favori et lance l'analyse par les bonnes routes", async () => {
+    const call = vi.fn(async () => ({
+      status: 200,
+      body: {},
+    })) as unknown as ApiCall;
+    await callTool("update_recording", { id: ID, name: "Yasin" }, call);
+    await callTool("set_favorite", { id: ID, favorite: true }, call);
+    await callTool("set_favorite", { id: ID, favorite: false }, call);
+    await callTool("run_analysis", { id: ID }, call);
+    expect(call).toHaveBeenCalledWith("PATCH", `/api/sessions/${ID}`, {
+      json: { name: "Yasin" },
+    });
+    expect(call).toHaveBeenCalledWith("PUT", `/api/sessions/${ID}/favorite`);
+    expect(call).toHaveBeenCalledWith("DELETE", `/api/sessions/${ID}/favorite`);
+    expect(call).toHaveBeenCalledWith("POST", `/api/sessions/${ID}/run`, {
+      json: {},
+    });
+  });
+
+  it("n'accepte pas une modification vide", async () => {
+    const reply = await callTool(
+      "update_recording",
+      { id: ID },
+      vi.fn() as unknown as ApiCall,
+    );
+    expect(reply.result.isError).toBe(true);
+  });
+});

@@ -19,7 +19,6 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { NotReadyError } from "./export-engine";
 import { muxArgs } from "./export-video-args";
-import { VIDEO_FPS } from "./export-video-frames";
 import { ensureListening, ffmpegCommand } from "./listening";
 import { audioPath, readSession, sessionDir } from "./store";
 
@@ -39,6 +38,45 @@ export class InvalidJobError extends Error {
     super("Identifiant de job vidéo invalide.");
     this.name = "InvalidJobError";
   }
+}
+
+export class InvalidMuxOptionsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidMuxOptionsError";
+  }
+}
+
+/** Cadence des clients qui n'envoient pas `x-aqr-fps` (avant le choix 30/60). */
+export const LEGACY_MUX_FPS = 25;
+
+/** Cadences que le mux accepte (25 : anciens clients). */
+export const MUX_FPS = [25, 30, 60] as const;
+
+/** Réglages du mux envoyés avec le dernier segment : cadence et extrait de l'audio à garder. */
+export type MuxOptions = {
+  fps?: number;
+  start?: number;
+  duration?: number;
+};
+
+export function validMuxOptions(options: MuxOptions): MuxOptions {
+  const { fps, start, duration } = options;
+  if (fps !== undefined && !(MUX_FPS as readonly number[]).includes(fps))
+    throw new InvalidMuxOptionsError(
+      `Cadence refusée (${fps}) : 30 ou 60 images par seconde.`,
+    );
+  if ((start === undefined) !== (duration === undefined))
+    throw new InvalidMuxOptionsError(
+      "Plage incomplète : début et durée vont ensemble.",
+    );
+  if (start !== undefined && duration !== undefined) {
+    if (!(start >= 0 && Number.isFinite(start)))
+      throw new InvalidMuxOptionsError("Début de plage invalide.");
+    if (!(duration > 0 && duration <= 24 * 3600))
+      throw new InvalidMuxOptionsError("Durée de plage invalide.");
+  }
+  return options;
 }
 
 export type VideoExportFile = {
@@ -91,7 +129,9 @@ export async function muxVideoFrames(
   id: string,
   job: string,
   run: typeof exec = exec,
+  mux: MuxOptions = {},
 ): Promise<VideoExportFile> {
+  validMuxOptions(mux);
   const session = await readSession(id);
   if (session.state !== "done") throw new NotReadyError();
   const dir = jobDir(id, job);
@@ -125,7 +165,14 @@ export async function muxVideoFrames(
     try {
       await run(
         ffmpegCommand(),
-        muxArgs({ video, wav: listening.wav, out, fps: VIDEO_FPS }),
+        muxArgs({
+          video,
+          wav: listening.wav,
+          out,
+          fps: mux.fps ?? LEGACY_MUX_FPS,
+          audioStart: mux.start,
+          audioDuration: mux.duration,
+        }),
         {
           windowsHide: true,
           timeout: VIDEO_TIMEOUT_MS,

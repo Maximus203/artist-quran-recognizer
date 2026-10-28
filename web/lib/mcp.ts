@@ -18,7 +18,7 @@ export const SERVER_INFO = { name: "quran-tr", version: "1.0.0" } as const;
 export const MAX_MCP_AUDIO_BYTES = 25 * 1024 * 1024;
 
 export type ApiCall = (
-  method: "GET" | "POST" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   options?: {
     json?: unknown;
@@ -240,7 +240,7 @@ export const TOOLS: Tool[] = [
   {
     name: "export_video",
     description:
-      "Demande la vidéo MP4 d'un essai terminé (verset surligné mot à mot, traduction, onde audio) : mêmes réglages que le formulaire de l'atelier. Renvoie un job ; suivre avec get_video_export jusqu'à « done », puis télécharger `download_path` avec le même jeton. Le rendu dure à peu près la moitié de la durée de l'audio.",
+      "Demande la vidéo MP4 d'un essai terminé (verset surligné mot à mot, traduction, onde audio) : mêmes réglages que le formulaire de l'atelier. Renvoie un job ; suivre avec get_video_export jusqu'à « done », puis télécharger chaque entrée de `download_paths` (ou `download_path` s'il n'y a qu'une vidéo) avec le même jeton. Plusieurs plages (ranges) ou per_verse donnent plusieurs vidéos, une par plage. Le rendu dure à peu près la moitié de la durée de l'audio à 30 im/s, davantage à 60 im/s ou en 1440p/4K.",
     inputSchema: {
       type: "object",
       properties: {
@@ -256,6 +256,32 @@ export const TOOLS: Tool[] = [
           description: "Points (16-64) ou small | medium | large | xlarge.",
         },
         show_translation: { type: "boolean" },
+        fps: {
+          type: "number",
+          enum: [30, 60],
+          description:
+            "Images par seconde : 30 (défaut) ou 60 (plus fluide, plus lourd).",
+        },
+        resolution: {
+          type: "number",
+          enum: [360, 480, 720, 1080, 1440, 2160],
+          description:
+            "Côté court de l'image en pixels (720 = 1280×720 en 16:9). Défaut 1080.",
+        },
+        ranges: {
+          type: "array",
+          description:
+            "Parties à exporter : une vidéo par plage { start, end } en secondes de l'audio (50 au plus). Absent = tout l'audio.",
+          items: {
+            type: "object",
+            properties: { start: { type: "number" }, end: { type: "number" } },
+            required: ["start", "end"],
+          },
+        },
+        per_verse: {
+          type: "boolean",
+          description: "Une vidéo par verset reconnu (exclusif avec ranges).",
+        },
         fill: {
           type: "boolean",
           description: "Le texte occupe toute la zone libre.",
@@ -293,6 +319,10 @@ export const TOOLS: Tool[] = [
         "arabic_size",
         "translation_size",
         "show_translation",
+        "fps",
+        "resolution",
+        "ranges",
+        "per_verse",
         "fill",
         "text_position",
         "show_wave",
@@ -314,7 +344,7 @@ export const TOOLS: Tool[] = [
   {
     name: "get_video_export",
     description:
-      "État d'un export vidéo demandé par export_video. Quand l'état est « done », `download_path` est l'adresse du MP4 (GET avec le même jeton ; conservé une heure).",
+      "État d'un export vidéo demandé par export_video. Quand l’état est « done », `download_paths` liste les MP4 (un par plage ; `download_path` = le premier), à télécharger en GET avec le même jeton (conservés une heure).",
     inputSchema: {
       type: "object",
       properties: {
@@ -335,15 +365,247 @@ export const TOOLS: Tool[] = [
         await ctx.call("GET", `/api/sessions/${id}/export/video/jobs/${job}`),
         "Lecture impossible",
       );
-      const state = (body.job as Json | undefined)?.state;
+      const record = body.job as Json | undefined;
+      const base = `/api/v1/recordings/${id}/export/video/jobs/${job}`;
+      const downloads = Array.isArray(record?.downloads)
+        ? (record.downloads as { index: number; name: string; url: string }[])
+        : [];
       return {
         ...body,
-        ...(state === "done"
+        ...(record?.state === "done"
           ? {
-              download_path: `/api/v1/recordings/${id}/export/video/jobs/${job}/file`,
+              download_path: `${base}/file`,
+              download_paths: downloads.map((d) => ({
+                index: d.index,
+                name: d.name,
+                path: `${base}/${d.url}`,
+              })),
             }
           : {}),
       };
+    },
+  },
+  {
+    name: "update_recording",
+    write: true,
+    description:
+      "Renomme un essai (`name`, null = nom par défaut), change sa portée (`visibility` : private = vous seul, global = tous les comptes) ou l'archive (`archived`). Propriétaire ou administrateur.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: idSchema,
+        name: { type: ["string", "null"] },
+        visibility: { type: "string", enum: ["private", "global"] },
+        archived: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+    run: async (args, ctx) => {
+      const id = asId(args);
+      const patch: Json = {};
+      for (const key of ["name", "visibility", "archived"])
+        if (args[key] !== undefined) patch[key] = args[key];
+      if (Object.keys(patch).length === 0)
+        throw new ToolError("Rien à modifier : name, visibility ou archived.");
+      return unwrap(
+        await ctx.call("PATCH", `/api/sessions/${id}`, { json: patch }),
+        "Modification impossible",
+      );
+    },
+  },
+  {
+    name: "delete_recording",
+    write: true,
+    description:
+      "Supprime DÉFINITIVEMENT un essai (audio, résultat, revue). Irréversible : exige `confirm: true`.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: idSchema,
+        confirm: {
+          type: "boolean",
+          description: "Doit valoir true : la suppression est définitive.",
+        },
+      },
+      required: ["id", "confirm"],
+    },
+    run: async (args, ctx) => {
+      const id = asId(args);
+      if (args.confirm !== true)
+        throw new ToolError(
+          "Suppression non confirmée : passe confirm à true (irréversible).",
+        );
+      return unwrap(
+        await ctx.call("DELETE", `/api/sessions/${id}`),
+        "Suppression impossible",
+      );
+    },
+  },
+  {
+    name: "run_analysis",
+    write: true,
+    description:
+      "Lance (ou relance) l'analyse d'un essai : il passe en file puis « running ». Suivre avec get_recording jusqu'à « done ».",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema },
+      required: ["id"],
+    },
+    run: async (args, ctx) =>
+      unwrap(
+        await ctx.call("POST", `/api/sessions/${asId(args)}/run`, { json: {} }),
+        "Lancement impossible",
+      ),
+  },
+  {
+    name: "cancel_analysis",
+    write: true,
+    description:
+      "Annule l'analyse d'un essai : retirée de la file si elle attend, arrêtée si elle tourne.",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema },
+      required: ["id"],
+    },
+    run: async (args, ctx) =>
+      unwrap(
+        await ctx.call("DELETE", `/api/sessions/${asId(args)}/run`),
+        "Annulation impossible",
+      ),
+  },
+  {
+    name: "set_favorite",
+    write: true,
+    description:
+      "Ajoute ou retire un essai des favoris du compte (les favoris sont personnels).",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema, favorite: { type: "boolean" } },
+      required: ["id", "favorite"],
+    },
+    run: async (args, ctx) => {
+      const id = asId(args);
+      if (typeof args.favorite !== "boolean")
+        throw new ToolError("favorite : true ou false est requis.");
+      return unwrap(
+        await ctx.call(
+          args.favorite ? "PUT" : "DELETE",
+          `/api/sessions/${id}/favorite`,
+        ),
+        "Favori impossible",
+      );
+    },
+  },
+  {
+    name: "get_review",
+    description:
+      "Revue d'un essai (corrections et état de relecture saisis dans l'atelier).",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema },
+      required: ["id"],
+    },
+    run: async (args, ctx) =>
+      unwrap(
+        await ctx.call("GET", `/api/sessions/${asId(args)}/review`),
+        "Lecture impossible",
+      ),
+  },
+  {
+    name: "save_review",
+    write: true,
+    description:
+      "Enregistre la revue d'un essai. `review` est l'objet renvoyé par get_review (modifié) : le serveur le valide et refuse toute forme inattendue.",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema, review: { type: "object" } },
+      required: ["id", "review"],
+    },
+    run: async (args, ctx) => {
+      if (!args.review || typeof args.review !== "object")
+        throw new ToolError("review : un objet est requis.");
+      return unwrap(
+        await ctx.call("PUT", `/api/sessions/${asId(args)}/review`, {
+          json: args.review,
+        }),
+        "Enregistrement impossible",
+      );
+    },
+  },
+  {
+    name: "get_decisions",
+    description:
+      "Décisions de relecture d'un essai (versets acceptés, rejetés ou corrigés par le relecteur).",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema },
+      required: ["id"],
+    },
+    run: async (args, ctx) =>
+      unwrap(
+        await ctx.call("GET", `/api/sessions/${asId(args)}/decisions`),
+        "Lecture impossible",
+      ),
+  },
+  {
+    name: "save_decisions",
+    write: true,
+    description:
+      "Enregistre les décisions de relecture d'un essai. `decisions` est l'objet renvoyé par get_decisions (modifié) ; le serveur le valide.",
+    inputSchema: {
+      type: "object",
+      properties: { id: idSchema, decisions: { type: "object" } },
+      required: ["id", "decisions"],
+    },
+    run: async (args, ctx) => {
+      if (!args.decisions || typeof args.decisions !== "object")
+        throw new ToolError("decisions : un objet est requis.");
+      return unwrap(
+        await ctx.call("PUT", `/api/sessions/${asId(args)}/decisions`, {
+          json: args.decisions,
+        }),
+        "Enregistrement impossible",
+      );
+    },
+  },
+  {
+    name: "get_stats",
+    description:
+      "Statistiques du compte : essais, durée écoutée, versets reconnus, performances.",
+    inputSchema: { type: "object", properties: {} },
+    run: async (_args, ctx) =>
+      unwrap(await ctx.call("GET", "/api/me/stats"), "Lecture impossible"),
+  },
+  {
+    name: "get_preferences",
+    description:
+      "Préférences d'affichage du compte (thème, police du Coran, visibilité par défaut des essais…).",
+    inputSchema: { type: "object", properties: {} },
+    run: async (_args, ctx) =>
+      unwrap(
+        await ctx.call("GET", "/api/me/preferences"),
+        "Lecture impossible",
+      ),
+  },
+  {
+    name: "set_preferences",
+    write: true,
+    description:
+      "Modifie des préférences du compte : `preferences` est un objet partiel (clés de get_preferences) ; le serveur refuse les clés ou valeurs inconnues.",
+    inputSchema: {
+      type: "object",
+      properties: { preferences: { type: "object" } },
+      required: ["preferences"],
+    },
+    run: async (args, ctx) => {
+      if (!args.preferences || typeof args.preferences !== "object")
+        throw new ToolError("preferences : un objet est requis.");
+      return unwrap(
+        await ctx.call("PATCH", "/api/me/preferences", {
+          json: args.preferences,
+        }),
+        "Modification impossible",
+      );
     },
   },
   {
