@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-28 — Export vidéo : format, tailles, fonds proposés et texte sans chevauchement
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #112
 
 **Ce qui change.** La page Exporter a trois onglets visibles sur téléphone comme sur ordinateur — « 1 · Vérifier », « 2 · Réglages » (sous-titres) et « 3 · Vidéo » — et le formulaire vidéo est indépendant. On règle en regardant un aperçu réel (le verset le plus long de la session) : format horizontal, vertical (Reels, Shorts, TikTok), carré, ou « comme la vidéo importée » ; taille de l'arabe et de la traduction en un clic (Petit à Très grand, réglage précis possible) ; traduction affichée ou non ; fond choisi dans une galerie — cinq dégradés, neuf photos libres (mosquées, déserts, nature), la vidéo d'origine pour une session vidéo, une couleur unie, ou sa propre image — avec des liens vers Unsplash, Pexels, Pixabay et Freepik pour en trouver d'autres. Plus de fond noir par défaut. Le texte passe à la ligne tout seul et se réduit si un verset est très long : référence, arabe et traduction ne se chevauchent jamais et restent au-dessus de l'onde ; sur photo ou vidéo ils reposent sur un support gris aux bords doux. Le mot récité est surligné et l'onde défile avec la tête de lecture, comme dans l'atelier. La source de la traduction n'est plus écrite sous chaque verset. Format et tailles se mémorisent. Une vidéo importée garde son format et reçoit la traduction par-dessus.
 
