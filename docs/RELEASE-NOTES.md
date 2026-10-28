@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-28 — En direct : un script pour démarrer le service d'écoute avec l'atelier
+Étiquettes : technique
+PR : #118
+
+**Ce qui change.** Un atelier lancé à la main n'avait pas le service d'écoute : l'écran « En direct » affichait « Impossible de joindre le service d'écoute ». `scripts/live-serve.ps1` le démarre (port 8765) avec la clé de signature de l'atelier, attend qu'il réponde, et ne fait rien s'il tourne déjà ; `-Stop` l'arrête.
+
+**Pourquoi.** Seul le script de l'atelier de test lançait le service ; un `npm run dev` ou `next start` ne le faisait pas. Vérifié de bout en bout : jeton signé avec la clé de l'atelier accepté, vrai son envoyé, versets reconnus puis `FINAL`.
+
 ## 2026-10-28 — API : toutes les options d'export, vidéo comprise
 Étiquettes : utilisateur, technique
 PR : -
