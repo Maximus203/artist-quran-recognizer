@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import path from "node:path";
 import {
   DEFAULT_CHROMIUM,
   decide,
@@ -10,10 +11,12 @@ import {
 } from "./smoke-support.mjs";
 
 const WEB = "/repo/web";
+// Même séparateur que `findMissingResources` (path.join de la plateforme) :
+// sous Windows, un Set en séparateurs POSIX ne matcherait jamais.
 const present = new Set([
   "/data/s112.wav",
   DEFAULT_CHROMIUM,
-  `${WEB}/.next/BUILD_ID`,
+  path.join(WEB, ".next", "BUILD_ID"),
 ]);
 
 async function missingFor({
@@ -81,7 +84,7 @@ describe("findMissingResources", () => {
 
   it("nomme Chromium absent ou non exécutable, y compris un chemin personnalisé", async () => {
     const absent = await missingFor({
-      files: new Set(["/data/s112.wav", `${WEB}/.next/BUILD_ID`]),
+      files: new Set(["/data/s112.wav", path.join(WEB, ".next", "BUILD_ID")]),
     });
     expect(absent.map((m) => m.resource)).toEqual(["chromium"]);
     expect(absent[0].reason).toContain(DEFAULT_CHROMIUM);
