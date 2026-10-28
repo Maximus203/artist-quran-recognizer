@@ -61,7 +61,9 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
    permises : `get_export_options` ou `GET /api/v1/export/options`.
 5. **Vidéo** (facultatif) : `export_video` avec les mêmes réglages que le formulaire de l'atelier —
    `orientation` (`16:9`, `9:16`, `1:1`, `source`), `arabic_size` et `translation_size` (points ou
-   `small|medium|large|xlarge`), `show_translation`, `background` (un fond proposé, `source` ou
+   `small|medium|large|xlarge`), `show_translation`, `fill` (le texte occupe la zone libre),
+   `text_position` (0 haut à 100 bas, ou `top|middle|bottom`), `show_wave`, `accent` (`{h,s,l,a}`),
+   `file_name`, `background` (un fond proposé, `source` ou
    `color`) — puis `get_video_export` toutes les 10 s jusqu'à `done` et téléchargement de
    `download_path` avec le jeton. Une image de fond personnelle s'envoie par l'API REST (multipart).
    Le rendu dure environ la moitié de la durée de l'audio.
