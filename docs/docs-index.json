@@ -308,6 +308,13 @@
     "summary": "Délai ajouté par le service, flux simultanés tenus avec le vrai modèle, mémoire, reprise, quotas, ce qui est prouvé dans un vrai client et les limites."
   },
   {
+    "slug": "live-etape4-2026-10-24",
+    "title": "Détection en direct, étape 4 : l'écran En direct dans un vrai navigateur",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape4-2026-10-24.md",
+    "summary": "Écran d'écoute en temps réel éprouvé dans Chrome (micro simulé, vrai service, tunnel Cloudflare) : délais voix vers écran, coupure et reprise, pause, pannes dites en clair, mode allégé et correction injectés, écarts avec la conception et limites."
+  },
+  {
     "slug": "corpus-de-test",
     "title": "Corpus de test audio",
     "section": "Données",

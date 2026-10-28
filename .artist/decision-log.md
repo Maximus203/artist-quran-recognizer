@@ -1564,3 +1564,39 @@
 - **Jetons** : `qtr_` + 256 bits aléatoires, empreinte SHA-256 seule en base (migration 003), deux droits (lecture, écriture), 20 actifs par compte, jamais d'accès aux comptes, à l'administration ni aux jetons. Un jeton tient lieu de jeton d'accès du tunnel pour `/api/sessions`, `/api/v1`, `/mcp`.
 - **MCP** : Streamable HTTP sans état en JSON-RPC ; outils `whoami`, `list_recordings`, `get_recording`, `export_subtitles`, `create_recording` (base64, 25 Mo) ; chaque outil appelle l'API (même origine) pour hériter de ses contrôles.
 - **Preuve** : `.artist/acceptance-playbooks/api-mcp.md`, `web/lib/api-tokens.test.ts`, `web/lib/mcp.test.ts` ; essais réels (création de jeton, import par MCP, lecture des versets, refus d'un jeton en lecture, révocation) sur un serveur local.
+
+## 2026-10-24 — Détection en direct, étape 4 (écran « En direct »)
+- **Architecture** : tout ce qui décide vit dans `web/lib/live-*.ts`, testé sans navigateur : réducteur pur (`live-store`),
+  client du flux avec réseau, horloge et minuteries injectés (`live-client`), chaîne audio pure (`live-pcm`), validation des
+  messages (`live-protocol`), textes d'erreur (`live-errors`), réglages uniques (`live-config`). Les composants
+  (`app/atelier/live/*`) n'ont aucune règle. Patterns : réducteur pur avec rejeu, Adapter (ports `SocketLike`, `LiveDeps`),
+  State, Strategy (classement des erreurs du service), Observer (un flux d'actions).
+- **Décisions de la conception appliquées** (les défauts des 15 arbitrages) : rien n'est conservé par le serveur ; le
+  navigateur garde le son en mémoire, dit avant de démarrer, et ne l'envoie que sur « Garder » (import classique) ; `GAP` dérivé
+  côté client ; mode technique local éteint par défaut ; décalage audio non appliqué en direct ; pause incluse ; seuils 6 / 12 /
+  21 s dans `LIVE_UI`.
+- **Pause** : le micro est coupé, mais une trame de silence de 20 ms part chaque seconde. Sans elle, le service ferme la
+  session après 30 s sans trame (`idle_timeout`) et un tunnel peut couper la connexion ; avec elle, 40 s de pause ont tenu en
+  réel. Seule la voix est « rien envoyé » : le silence n'est pas une donnée de personne.
+- **Coupure** : un nouvel essai toutes les 5 s, chacun avec un NOUVEAU jeton (usage unique) ; abandon après `resume_ttl_s` + 5 s
+  avec une fin locale qui le dit ; un trou que le tampon de 5 min ne peut plus combler est rempli de silence et compté, jamais
+  caché. Un jeton périmé ou rejoué au départ est réessayé UNE fois automatiquement (ce n'est pas la faute de l'utilisateur).
+- **Bug trouvé par le premier vrai essai** : le `READY` réel ne porte pas de `t` ; les messages écrits à la main dans les tests
+  en avaient un, et l'écran restait sur « Connexion… ». Corrigé (`t` facultatif sur le schéma) et verrouillé par une fixture tirée
+  d'une écoute réelle (`web/lib/__fixtures__/live-session-fatiha.json`, textes remplacés par du remplissage : aucun texte
+  coranique dans les fixtures).
+- **Mesure** : le micro simulé de Chrome ne tourne pas en temps réel sur cette machine Windows (environ 0,8 fois la vitesse,
+  mesuré). Les délais voix -> écran sont donc comptés en secondes d'audio reçues, pas en horloge murale : c'est ce qu'un vrai
+  micro donnerait. Sans cette correction, les délais des versets tardifs étaient gonflés.
+- **Mode allégé et correction** : le service ne les émet pas en conditions normales (surcharge rare, vérification acoustique non
+  branchée en direct). Ils sont éprouvés dans un vrai navigateur par des messages INJECTÉS par le relais de test (`seq` 0, donc
+  hors flux), et le rapport le dit : ce n'est pas une sortie du moteur.
+- **Libellé** : « Déduit · non entendu » devient « Déduit de la position » partout (légende de la revue, pastille du passage,
+  écran d'accueil, export), puisque `INFERRED` peut maintenant porter un texte entendu (`identity_basis: context`).
+- **Choix pris seul** : le traducteur n'est affiché que si la préférence « traduction » est active ; `Garder` envoie le nom
+  « Récitation en direct, hh:mm » ; un lien interne de l'atelier pendant une écoute demande confirmation (la navigation côté
+  client ne déclenche pas `beforeunload`) ; le script des testeurs lance le service du direct avec son propre tunnel
+  (`-NoLive` pour s'en passer).
+- **Preuve** : `.artist/acceptance-playbooks/live-etape4.md`, `docs/evaluation/live-etape4-2026-10-24.md`, `web/lib/live-*.test.ts`,
+  `web/e2e/live-browser.mjs` (vrai Chrome, vrai service).
+

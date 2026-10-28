@@ -6,7 +6,7 @@ import { Icon } from "./icons";
 import { AccountMenu } from "./account-menu";
 import { useShell } from "./shell";
 
-export type NavId = "revue" | "sessions" | "perf" | "docs" | "account";
+export type NavId = "revue" | "sessions" | "perf" | "live" | "docs" | "account";
 
 type PanelToggle = {
   open: boolean;
@@ -31,6 +31,7 @@ const NAV: { id: NavId; href: string; label: string }[] = [
   { id: "revue", href: "/", label: "Revue" },
   { id: "sessions", href: "/sessions", label: "Sessions" },
   { id: "perf", href: "/performance", label: "Performance" },
+  { id: "live", href: "/direct", label: "En direct" },
   { id: "docs", href: "/docs", label: "Documentation" },
 ];
 
@@ -99,11 +100,23 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
               }
             }}
           >
+            {item.id === "live" ? (
+              <span className="livedot" aria-hidden="true" />
+            ) : null}
             {item.label}
           </Link>
         ))}
       </nav>
       <span className="spacer" />
+      <Link
+        className="btn btn--secondary btn--icon btn--sm live-link"
+        data-testid="nav-live-icon"
+        href="/direct"
+        aria-label="En direct"
+        aria-current={active === "live" ? "page" : undefined}
+      >
+        <Icon name="live" />
+      </Link>
       {onNew ? (
         <button
           type="button"

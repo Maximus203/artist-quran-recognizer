@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { acceptedMediaFiles, mediaAccept } from "@/lib/audio-upload";
 import { formatBytesFr } from "@/lib/format";
@@ -147,6 +148,25 @@ export function NewTrial(props: Props) {
             .
           </p>
         </fieldset>
+        <section className="live-card" data-testid="live-card">
+          <span className="live-card-icon" aria-hidden="true">
+            <Icon name="live" />
+          </span>
+          <div className="live-card-text">
+            <h2>Écouter en direct</h2>
+            <p>
+              Le moteur nomme les versets pendant que tu récites. Le son n’est
+              pas conservé.
+            </p>
+          </div>
+          <Link
+            className="btn btn--secondary"
+            href="/direct"
+            data-testid="live-open"
+          >
+            Écouter en direct
+          </Link>
+        </section>
         <Recorder onAnalyze={props.onRecording} />
         <div className="or">ou</div>
         <label className="drop" htmlFor="media-input" data-testid="drop-zone">

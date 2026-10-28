@@ -227,7 +227,7 @@ function Body({
           <div className="p-meta">
             <span className="badge" data-testid="badges">
               <span className="sw s-inferred" />
-              Hypothèse · non entendue
+              Déduit de la position
             </span>
             <span className="p-ref ref" data-testid="ref">
               {model.ref}
@@ -236,8 +236,8 @@ function Body({
           </div>
           <div className="p-empty">
             <p>
-              Verset déduit du contexte, jamais entendu. Il n’est pas une
-              preuve.
+              Verset déduit de la position, pas reconnu à la voix. Il n’est pas
+              une preuve.
             </p>
           </div>
         </>
