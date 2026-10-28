@@ -161,6 +161,26 @@ export function mediaType(extension: string): string {
   return MEDIA_TYPES[extension.toLowerCase()] || "application/octet-stream";
 }
 
+/** Conteneurs pouvant porter une piste image (MP4 et WebM peuvent aussi n'être que du son). */
+const VIDEO_TYPES: Record<string, string> = {
+  ".mp4": "video/mp4",
+  ".m4v": "video/x-m4v",
+  ".mov": "video/quicktime",
+  ".webm": "video/webm",
+  ".mkv": "video/x-matroska",
+  ".avi": "video/x-msvideo",
+};
+
+/** Le fichier source est-il un conteneur vidéo (piste image utilisable comme fond) ? */
+export function isVideoContainer(extension: string): boolean {
+  return extension.toLowerCase() in VIDEO_TYPES;
+}
+
+/** Type MIME du fichier source quand il est servi comme vidéo. */
+export function videoMediaType(extension: string): string {
+  return VIDEO_TYPES[extension.toLowerCase()] || mediaType(extension);
+}
+
 async function fresh(file: string, sourceMtimeMs: number): Promise<boolean> {
   try {
     return (await stat(file)).mtimeMs >= sourceMtimeMs;

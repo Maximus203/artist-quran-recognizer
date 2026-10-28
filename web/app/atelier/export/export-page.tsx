@@ -37,13 +37,14 @@ import { ExportPreview } from "./export-preview";
 import { ExportResult } from "./export-result";
 import { ExportSettings } from "./export-settings";
 import { ForceDialog } from "./force-dialog";
+import { VideoPanel } from "./video-panel";
 import { NonQuranLine, VerdictCard } from "./readiness-card";
 import { Filters, ReadinessList, type RowActions } from "./readiness-list";
 import { usePreview, useReadiness } from "./use-export-data";
 
 const PAGE_SIZE = 10;
 
-type Tab = "verifier" | "reglages";
+type Tab = "verifier" | "reglages" | "video";
 
 export const correctionHref = (sessionId: string, key: string): string =>
   `/s/${sessionId}/exporter/corriger?item=${encodeURIComponent(key)}`;
@@ -384,7 +385,15 @@ function ExportView({
       >
         <div className="ex-xp-head">
           <h1 className="ex-xp-title">
-            Exporter les <em>sous-titres</em>
+            {tab === "video" ? (
+              <>
+                Exporter la <em>vidéo</em>
+              </>
+            ) : (
+              <>
+                Exporter les <em>sous-titres</em>
+              </>
+            )}
           </h1>
           {session && verdict && data ? (
             <p className="ex-xp-facts">
@@ -452,6 +461,16 @@ function ExportView({
               onClick={() => setTab("reglages")}
             >
               2 · Réglages
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="ex-tab-video"
+              aria-selected={tab === "video"}
+              data-testid="tab-video"
+              onClick={() => setTab("video")}
+            >
+              3 · Vidéo
             </button>
           </div>
         </div>
@@ -589,13 +608,23 @@ function ExportView({
             </div>
           </form>
         </aside>
+
+        <section
+          className="ex-xcol ex-xcol--video"
+          aria-labelledby="ex-video-h"
+          hidden={failed}
+        >
+          {tab === "video" && !failed ? (
+            <VideoPanel sessionId={sessionId} onError={toast.show} />
+          ) : null}
+        </section>
       </div>
 
       <div
         className="ex-stickybar"
         data-tab={tab}
         data-testid="stickybar"
-        hidden={failed}
+        hidden={failed || tab === "video"}
       >
         <button
           type="button"
