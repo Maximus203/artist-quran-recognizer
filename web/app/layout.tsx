@@ -19,7 +19,7 @@ import "./live.css";
 import "./export.css";
 
 export const metadata: Metadata = {
-  title: "Atelier de revue",
+  title: "Quran TR",
   description:
     "Écouter, vérifier et corriger la reconnaissance des versets du Coran",
 };

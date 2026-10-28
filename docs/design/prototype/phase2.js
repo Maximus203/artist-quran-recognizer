@@ -92,7 +92,7 @@
         const v = inp.value.trim().replace(/\s+/g, ' ');
         if (save) {
           const name = v || defaultName; h1.textContent = name;
-          document.title = name + ' — Atelier de revue';
+          document.title = name + ' — Quran TR';
           P2.say(v ? 'Nom enregistré : ' + name : 'Nom par défaut rétabli : ' + name);
           P2.autosave && P2.autosave('ok', 'Nom enregistré');
         } else P2.say('Modification annulée');

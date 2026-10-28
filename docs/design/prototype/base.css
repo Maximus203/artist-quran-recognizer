@@ -1,4 +1,4 @@
-/* Atelier de revue — styles de base du prototype (extraits d'index.html en phase 2, inchangés).
+/* Quran TR — styles de base du prototype (extraits d'index.html en phase 2, inchangés).
    Les valeurs viennent de ../tokens.css ; les composants de la phase 2 sont dans phase2.css. */
 @font-face { font-family: "Noto Naskh Arabic"; src: url("../../../web/public/fonts/NotoNaskhArabic.ttf") format("truetype"); font-weight: 400 700; font-display: swap; }
 

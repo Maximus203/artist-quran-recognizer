@@ -164,7 +164,7 @@ export function DocsShell({ docs, links, current }: Props) {
   useEffect(() => {
     document.title = current
       ? `${current.doc.title} · Documentation`
-      : "Documentation · Atelier de revue";
+      : "Documentation · Quran TR";
   }, [current]);
 
   return (

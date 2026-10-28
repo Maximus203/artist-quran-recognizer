@@ -7,7 +7,7 @@ import { RegisterForm } from "./register-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Créer un compte · Atelier de revue",
+  title: "Créer un compte · Quran TR",
 };
 
 export default async function RegisterPage() {

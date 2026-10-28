@@ -7,7 +7,7 @@ import { PageFrame } from "../../../../atelier/page-frame";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Exporter les sous-titres · Atelier de revue",
+  title: "Exporter les sous-titres · Quran TR",
 };
 
 /**

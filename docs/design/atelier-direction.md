@@ -1,4 +1,4 @@
-# Atelier de revue — direction « Encre & lapis »
+# Quran TR — direction « Encre & lapis »
 
 Brief de direction artistique pour le redesign complet de l'atelier (`web/app`). Livré avec
 `tokens.css` (variables prêtes à coller) et `prototype/index.html` (écran statique, données factices,
@@ -221,7 +221,7 @@ somme des ETA devant + estimation propre.
 
 **Regroupement et filtres** : « File d'analyse » (en cours + en attente) puis « Terminées ». Ligne de synthèse
 (« 1 en cours · 1 en attente · fin estimée dans ≈ 12 min »), pastilles *Toutes · En cours · Non lues* avec compteurs.
-Le titre de l'onglet porte le total non lu (« (2) Atelier de revue »).
+Le titre de l'onglet porte le total non lu (« (2) Quran TR »).
 
 ## 8. Carte du passage actif
 
@@ -360,5 +360,5 @@ Tout est `gsap.matchMedia()` : sous `prefers-reduced-motion` les valeurs sont po
 
 ## 17. Registre
 
-Note « Atelier de revue — Encre & lapis » dans le coffre (`50-Creation/Directions-artistiques/`), statut
+Note « Quran TR — Encre & lapis » dans le coffre (`50-Creation/Directions-artistiques/`), statut
 *Proposée*, passer à *Adoptée* une fois implémentée.

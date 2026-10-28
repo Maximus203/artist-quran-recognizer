@@ -96,7 +96,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     <div className="auth-shell">
       <IconSprite />
       <header className="auth-top">
-        <Link className="brand" href="/login" aria-label="Atelier de revue">
+        <Link className="brand" href="/login" aria-label="Quran TR">
           <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
             <circle
               cx="16"
@@ -113,7 +113,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             />
           </svg>
           <b>
-            Atelier <em>de revue</em>
+            Quran <em>TR</em>
           </b>
         </Link>
         <span className="spacer" />
@@ -121,7 +121,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </header>
       <div className="auth">
         <section className="auth-visual" aria-labelledby="vis-h">
-          <p className="eyebrow">Atelier de revue</p>
+          <p className="eyebrow">Quran TR</p>
           <h2 id="vis-h">
             Écoute, compare, <em>corrige.</em>
           </h2>

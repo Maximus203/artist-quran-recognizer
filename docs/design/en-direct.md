@@ -348,7 +348,7 @@ Mobile d'abord (375), puis 768, puis 1440. Tout vient de `tokens.css` ; les comp
 | 9 | Pause | incluse (le micro se coupe, rien n'est envoyé) | non |
 | 10 | `settle_s` 0,8 ou 1,5 s (laissé ouvert par l'étape 2) | **1,5 s** : p90 du verrou un peu meilleur (8,94 contre 9,07 s), 7 versets nommés de plus (315 contre 308), médiane +0,16 s sur 5,3 s, imperceptible | 0,8 s |
 | 11 | Seuils de patience 6 / 12 / 21 s | valeurs de départ, en configuration | à recaler avec une vraie mesure |
-| 12 | Registre des directions artistiques | à compléter par le mainteneur (note « Atelier de revue — En direct », *Proposée*) | — |
+| 12 | Registre des directions artistiques | à compléter par le mainteneur (note « Quran TR — En direct », *Proposée*) | — |
 | 13 | `GAP` | dérivé côté client (§6.5) | message explicite |
 | 14 | Dire ce que ce serveur fait ou non en direct (vérification acoustique, réécoute non branchées) | volet « À propos de cette écoute », pas dans la barre d'état | rien tant que ce n'est pas branché |
 | 15 | Arrêt sans annulation | oui : la reprise est une nouvelle écoute | confirmation avant d'arrêter |
@@ -397,5 +397,5 @@ Mobile d'abord (375), puis 768, puis 1440. Tout vient de `tokens.css` ; les comp
 
 ## 15. Registre
 
-Note « Atelier de revue — En direct » à créer dans le coffre (`50-Creation/Directions-artistiques/`), statut *Proposée* : **non créée** (registre inaccessible depuis cet
+Note « Quran TR — En direct » à créer dans le coffre (`50-Creation/Directions-artistiques/`), statut *Proposée* : **non créée** (registre inaccessible depuis cet
 environnement, voir §1). Direction : « Encre & lapis », inchangée ; ajouts : la pastille « en cours d'écoute » (rayures verticales) et le parti pris du calque.

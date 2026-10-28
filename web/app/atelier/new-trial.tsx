@@ -72,17 +72,11 @@ export function NewTrial(props: Props) {
               <span className="radio" aria-hidden="true" />
               <b>
                 <Icon name="globe" />
-                Global{" "}
-                <span
-                  className="badge badge--plain badge--outline"
-                  style={{ minHeight: 20, padding: "0 6px" }}
-                >
-                  par défaut
-                </span>
+                Partagé
               </b>
               <span className="d">
-                Tous les testeurs l’écoutent et voient ses résultats et ses
-                performances.
+                Tous les comptes de l’atelier l’écoutent et voient ses résultats
+                et ses performances.
               </span>
             </button>
             <button
@@ -96,7 +90,13 @@ export function NewTrial(props: Props) {
               <span className="radio" aria-hidden="true" />
               <b>
                 <Icon name="lock" />
-                Privé
+                Privé{" "}
+                <span
+                  className="badge badge--plain badge--outline"
+                  style={{ minHeight: 20, padding: "0 6px" }}
+                >
+                  par défaut
+                </span>
               </b>
               <span className="d">
                 Toi seul. Il n’apparaît pas dans les listes des autres testeurs.

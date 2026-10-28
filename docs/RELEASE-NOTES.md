@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-28 — Quran TR : nouveau nom, essais privés par défaut, API et MCP
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** L'outil s'appelle désormais **Quran TR** (titres, en-tête, documentation). Les nouveaux audios sont **privés par défaut** — chaque compte ne voit que les siens, y compris pour les testeurs qui arrivent par le tunnel ; « Partagé » reste un choix par essai (réglage de compte et à l'import). Nouvelle page **Compte → API & MCP** : on y crée des jetons d'accès (lecture seule ou écriture, durée facultative), affichés une seule fois et révocables. Avec un jeton, une application ou un agent IA utilise Quran TR au nom du compte, même en local : API REST sous `/api/v1/recordings`, serveur MCP sous `/mcp` (lister les essais, lire les versets avec leur statut de preuve, générer des sous-titres, importer un audio), et une compétence `SKILL.md` téléchargeable qui apprend à l'agent à s'en servir.
+
+**Pourquoi / décision.** Tous les audios d'un atelier ouvert se retrouvaient dans un même espace public : le défaut passe à « privé » (le partage devient explicite). Un jeton n'a que les droits de son compte, jamais l'administration ni la gestion des jetons ; la base ne garde que son empreinte SHA-256. Les outils MCP passent par l'API (mêmes contrôles et quotas) et ne renvoient que le texte du corpus et la traduction QuranEnc (I1, I2). Les essais déjà créés gardent leur portée. Voir `docs/API-MCP.md`.
+
 ## 2026-10-28 — Export vidéo : format, tailles, fonds proposés et texte sans chevauchement
 Étiquettes : utilisateur, technique, décision
 PR : #111

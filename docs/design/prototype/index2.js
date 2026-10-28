@@ -15,7 +15,7 @@
   });
 
   /* Nom proposé par le système : le contenu détecté n'est jamais le nom, mais peut le devenir */
-  $('#use-det')?.addEventListener('click', () => { const h1 = $('.title-row h1'); h1.textContent = $('.detected b').textContent; document.title = h1.textContent + ' — Atelier de revue'; P2.say('Nom remplacé par le contenu détecté'); P2.autosave?.('ok'); });
+  $('#use-det')?.addEventListener('click', () => { const h1 = $('.title-row h1'); h1.textContent = $('.detected b').textContent; document.title = h1.textContent + ' — Quran TR'; P2.say('Nom remplacé par le contenu détecté'); P2.autosave?.('ok'); });
 
   /* Archiver : bascule réversible */
   const toast = (msg, label, fn) => { $('.toast')?.remove(); const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.innerHTML = `<span>${msg}</span>${label ? `<button type="button">${label}</button>` : ''}`; document.body.appendChild(t); if (label) $('button', t).addEventListener('click', () => { fn(); t.remove(); }); setTimeout(() => t.remove(), 6000); };
@@ -41,7 +41,7 @@
     $('#scope-btn').outerHTML = '<span class="badge badge--global" id="scope-badge">' + $('#scope-badge').innerHTML + '</span>';
     $('#owner-fact').hidden = false; $('#owner-name').textContent = H.owner; $('#btn-archive').hidden = true; $('#use-det').hidden = true;
     $('.detected b').textContent = 'Aucun verset reconnu (parole non coranique)';
-    document.title = 'Tajwid cours 4 — Atelier de revue';
+    document.title = 'Tajwid cours 4 — Quran TR';
   }
   if (H.prive) { $('#scope-badge').className = 'badge badge--private'; $('#scope-badge').innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Privé'; $('#scope-pop').dataset.current = 'private'; $$('#scope-pop .radio-card').forEach(r => r.setAttribute('aria-checked', String(r.dataset.scope === 'private'))); }
   if (H.rename) { $('.rename-btn').click(); }

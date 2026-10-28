@@ -5,7 +5,7 @@ import { SecurityPane } from "../../../atelier/account-security";
 import { PageFrame } from "../../../atelier/page-frame";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sécurité · Atelier de revue" };
+export const metadata: Metadata = { title: "Sécurité · Quran TR" };
 
 export default async function AccountSecurityPage() {
   await requirePageUser("/compte/securite");

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon, type IconName } from "./icons";
 import { useShell } from "./shell";
 
-export type AccountTab = "preferences" | "statistiques" | "securite";
+export type AccountTab = "preferences" | "statistiques" | "securite" | "api";
 
 const TABS: { id: AccountTab; href: string; label: string; icon: IconName }[] =
   [
@@ -25,6 +25,12 @@ const TABS: { id: AccountTab; href: string; label: string; icon: IconName }[] =
       href: "/compte/securite",
       label: "Sécurité",
       icon: "shield",
+    },
+    {
+      id: "api",
+      href: "/compte/api",
+      label: "API & MCP",
+      icon: "code",
     },
   ];
 
@@ -104,7 +110,10 @@ export function AccountFrame({
       <div className="pg-title">
         <div>
           <h1>Compte</h1>
-          <p>Tes préférences, tes chiffres et ta sécurité.</p>
+          <p>
+            Tes préférences, tes chiffres, ta sécurité et l’accès des
+            applications.
+          </p>
         </div>
       </div>
       <Autosave />

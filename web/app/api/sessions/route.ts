@@ -41,7 +41,7 @@ async function handleGET(request: NextRequest) {
 
 type Chosen = { visibility: "global" | "private"; name: string | null };
 
-/** `visibility` (défaut global) et `name` (facultatif) : adresse, formulaire ou en-tête `x-aqr-name`. */
+/** `visibility` (défaut privé : chacun son espace, le partage est un choix) et `name` (facultatif) : adresse, formulaire ou en-tête `x-aqr-name`. */
 function chosenOptions(
   request: Request,
   form: FormData | null,
@@ -51,7 +51,7 @@ function chosenOptions(
     const value = form?.get(name);
     return typeof value === "string" ? value : null;
   };
-  const visibility = url.get("visibility") ?? field("visibility") ?? "global";
+  const visibility = url.get("visibility") ?? field("visibility") ?? "private";
   if (visibility !== "global" && visibility !== "private")
     return { error: "visibility : « global » ou « private »." };
   let rawName = url.get("name") ?? field("name");

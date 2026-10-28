@@ -4,7 +4,7 @@ import { PageFrame } from "../../atelier/page-frame";
 import { SessionsPage } from "../../atelier/sessions-page";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sessions · Atelier de revue" };
+export const metadata: Metadata = { title: "Sessions · Quran TR" };
 
 export default async function Page({
   searchParams,
