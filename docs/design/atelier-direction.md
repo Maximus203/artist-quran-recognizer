@@ -91,7 +91,7 @@ Une personne n'est ni un statut ni l'accent : ses initiales ont leurs propres je
 | État | Motif (aplat + trait supérieur 3 px) | Couleur | Libellé |
 |---|---|---|---|
 | Reconnu | aplat plein, trait plein | lapis | Reconnu |
-| Déduit / hypothèse | hachures 45°, trait en tirets longs | lapis | Déduit · non entendu |
+| Déduit / hypothèse | hachures 45°, trait en tirets longs | lapis | Déduit de la position |
 | Incertain | points, trait pointillé | ambre | Incertain |
 | Formule | aplat gris, **double** trait | ardoise | Formule |
 | Abstention | **aucun** aplat, contour pointillé | gris | Abstention |
@@ -235,7 +235,7 @@ max) + attribution QuranEnc (12 px) → actions.
 |---|---|
 | Verset reconnu | badge « Reconnu » (échantillon plein) |
 | **Basmala** | **même carte qu'un verset** : badge encre « Basmala », libellé arabe « البسملة », petit ornement losange, texte arabe du corpus (1:1) un peu plus grand (×1,15), traduction française et attribution. Pas de médaillon de numéro |
-| Verset déduit | badge « Hypothèse · non entendue » (hachures) ; pas de texte, message « jamais entendu, pas une preuve » |
+| Verset déduit | badge « Déduit de la position » (hachures) ; pas de texte, message « jamais entendu, pas une preuve » |
 | Incertain | badge ambre « Incertain », « Identification ambiguë », références candidates |
 | Formule (isti'adha, takbir, amin) | **reste une étiquette**, mais avec libellé arabe lisible : « الاستعاذة », « التكبير », « آمين » (en `--font-quran`, 2,2 rem) + translittération en puce. Aucun texte du Mushaf |
 | Abstention | badge « Abstention » (contour pointillé) + motif (« Score insuffisant ») et rappel de la règle « précision d'abord » |

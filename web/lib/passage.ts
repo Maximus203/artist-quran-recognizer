@@ -197,7 +197,7 @@ export function intervalStyle(item: Interval): IntervalStyle {
 
 const STATE_LABELS: Record<IntervalStyle, string> = {
   recognized: "Reconnu",
-  inferred: "Déduit · non entendu",
+  inferred: "Déduit de la position",
   uncertain: "Incertain",
   formula: "Formule",
   abstention: "Abstention",

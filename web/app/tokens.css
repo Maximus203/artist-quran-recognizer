@@ -128,6 +128,14 @@
   --live-fill: color-mix(in srgb, var(--accent) 20%, transparent);
   --live-edge: var(--accent);
   --live-soft: color-mix(in srgb, var(--accent) 7%, transparent);
+  /* Écran « En direct » : candidats (en cours d'écoute) = rayures verticales ; point « micro actif ». */
+  --pend-fill: color-mix(in srgb, var(--accent) 9%, transparent);
+  --bars: repeating-linear-gradient(
+    90deg,
+    currentColor 0 1.5px,
+    transparent 1.5px 5px
+  );
+  --rec: var(--danger);
   /* Signalements humains sur l'onde : confirmé = losange plein + trait plein ; brouillon = losange creux + pointillé */
   --review-fill: color-mix(in srgb, var(--ink-human) 11%, transparent);
   --review-draft-fill: color-mix(in srgb, var(--ink-human) 6%, transparent);

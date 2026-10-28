@@ -408,6 +408,31 @@ Décisions prises en route (additives sauf mention) : `PROGRESS`, `DEGRADED`, `F
 Écarts avec le §6 : voir `docs/LIVE-PROTOCOL.md` §8. Limites : une machine, voix propre, pas de navigateur réel ni de tunnel
 (étape 4), pas de vérification acoustique en direct, jeton à usage unique oublié au redémarrage du service (valable 60 s).
 
+## Résultats de l'étape 4
+Rapport complet : `docs/evaluation/live-etape4-2026-10-24.md` ; écran : `web/app/(app)/direct`, `web/app/atelier/live/*`, `web/lib/live-*.ts` ;
+captures : `docs/evaluation/live-etape4-captures/`. Chrome (canal `chrome`), build de production, micro simulé par une récitation EveryAyah
+jouée en temps réel, vrai service `aqr live-serve` avec le vrai modèle :
+- **le parcours tient** : candidats puis verset nommé avec traduction pendant la lecture ; 11 scénarios, 20 exécutions, 168 contrôles, 0 en
+  échec (mobile 375 px et bureau 1 280 px, thèmes clair et sombre, aucun défilement horizontal, console propre) ;
+- **délais voix → écran** (48 versets, secondes d'audio reçues) : premiers candidats 2,2 s en médiane (p90 3,2 s), verset nommé 4,0 s (p90 6,9 s) ;
+  du message à l'image, 2 ms en médiane (14 ms au maximum) : l'écran n'ajoute rien, tout le délai est celui du moteur ; 19 versets nommés sur 48
+  (40 %, versets courts, petit échantillon), aucun faux verset ;
+- **coupure et reprise** : coupure sans trame de fermeture en plein verset, retour 10 s plus tard avec un nouveau jeton, `READY resumed`, aucun
+  message en double, tout le son renvoyé ; **pause de 40 s puis de 130 s** sans fermeture grâce à une trame de silence de 20 ms par seconde
+  (sans elle le service ferme à 30,0 s, mesuré) ; service plein, jeton expiré, micro refusé : écrans qui s'expliquent ;
+- **tunnel Cloudflare** : micro, WebSocket (`wss`) et pause de 130 s passent ; le délai d'inactivité du tunnel lui-même n'est pas mesuré ;
+- **mode allégé et correction éprouvés par messages injectés** (le service ne les émet pas encore en conditions normales) ; mode technique.
+
+Décisions prises en route (voir `.artist/decision-log.md`) : un client en trois couches testées sans navigateur (réducteur pur, client du flux
+avec réseau et horloge injectés, chaîne audio pure) ; trame de silence pendant la pause ; nouvel essai toutes les 5 s avec un jeton neuf,
+abandon après `resume_ttl_s` + 5 s ; un jeton périmé au départ est réessayé une fois ; « Déduit · non entendu » devient « Déduit de la
+position » partout. Le premier vrai essai a révélé un bogue que les tests écrits à la main cachaient : le `READY` réel n'a pas de `t`.
+
+Écarts avec la conception : voir le rapport (aucun arbitrage défaut n'a été changé ; la carte « Passage en cours » ne montre plus
+« Passage partiel » ni « Traduction du verset entier », trompeurs pour un verset encore en cours). Limites : une machine, voix de studio, pas
+de téléphone réel (verrou d'écran et onglet en arrière-plan non éprouvés sur appareil), micro simulé plus lent que le temps réel (mesure en
+horloge audio), Chrome seulement.
+
 ## Ce que la conception de l'étape 4 demande au protocole
 `docs/design/en-direct.md` (§9) : construire l'écran a montré que le §6 ne suffit pas à tenir la promesse du §3. Ajouts **additifs** proposés, à trancher avant
 l'étape 3 : `PROGRESS` (mots entendus après `LOCKED`, sans lui pas de surlignage mot à mot), clôture d'un passage non nommé (`CONTINUE.closed.status: uncertain`),
@@ -430,8 +455,9 @@ verte. TDD strict.
 3. **Service WebSocket — livré (PR de l'issue #84).** `aqr.live/1`, sessions, reprise, authentification par jeton, cas
    négatifs (format audio faux, flux trop long, coupure, jeton expiré), documentation du contrat
    (`docs/LIVE-PROTOCOL.md`).
-4. **Interface — conception livrée, écran à coder.** Brief de Sofia : `docs/design/en-direct.md` (prototypes `docs/design/prototype/live.html` et
-   `live-etats.html`, données factices). Puis écran « En direct » dans l'atelier ; parcours validé au navigateur, puis par Cherif QA.
+4. **Interface — livrée (PR #110), éprouvée dans un vrai navigateur ; voix réelle et téléphone réel restent à faire.** Brief de Sofia :
+   `docs/design/en-direct.md` (prototypes `docs/design/prototype/live.html` et `live-etats.html`, données factices). Écran `/direct` de
+   l'atelier ; parcours validé dans Chrome (micro simulé, vrai service, tunnel Cloudflare), puis par Cherif QA.
 
 ## Questions ouvertes pour le mainteneur
 Les quatre questions de la première version sont **tranchées le 2026-10-23** (section « Décisions du

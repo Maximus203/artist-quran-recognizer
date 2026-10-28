@@ -146,6 +146,8 @@ try {
     ["revue", reviewPath],
     ["/docs", "/docs"],
     ["/performance", "/performance"],
+    ["/direct", "/direct"],
+    ["nouvel essai", "/?vue=new"],
     ["/compte", "/compte"],
   ];
 
