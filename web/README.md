@@ -431,7 +431,7 @@ L'écran « En direct » (étape 4) parle en WebSocket à `aqr live-serve` (serv
 | `AQR_LIVE_TOKEN_TTL_S` | durée de vie du jeton (1 à 300) | 60 |
 | `AQR_LIVE_KEY` / `AQR_LIVE_KEY_FILE` | clé de signature (≥ 32 caractères), commune à l'atelier et au service ; à défaut un fichier `live-signing.key` créé au premier démarrage dans `AQR_REVIEW_DIR`, jamais dans le dépôt | fichier local |
 
-Lancer le service : `pip install -e ".[live,muno]"`, puis `aqr live-serve` (charge le modèle une fois, écoute sur `127.0.0.1:8765` ; `--corpus-dir` si le corpus n'est pas dans le dossier courant). Le WebSocket ne passe pas par le port de l'atelier : derrière le tunnel Cloudflare, le service a **son propre tunnel** et l'atelier reçoit `AQR_LIVE_URL=wss://<hôte du tunnel du direct>/live` (voir « Écran En direct » ci-dessous : le script des testeurs fait tout cela).
+Atelier lancé à la main (sans le script des testeurs) : `.\scripts\live-serve.ps1` démarre le service avec la clé de l'atelier et attend qu'il réponde (`-Stop` l'arrête) ; sans lui, l'écran affiche « Impossible de joindre le service d'écoute». Lancer le service : `pip install -e ".[live,muno]"`, puis `aqr live-serve` (charge le modèle une fois, écoute sur `127.0.0.1:8765` ; `--corpus-dir` si le corpus n'est pas dans le dossier courant). Le WebSocket ne passe pas par le port de l'atelier : derrière le tunnel Cloudflare, le service a **son propre tunnel** et l'atelier reçoit `AQR_LIVE_URL=wss://<hôte du tunnel du direct>/live` (voir « Écran En direct » ci-dessous : le script des testeurs fait tout cela).
 
 ## Écran En direct (`/direct`)
 
