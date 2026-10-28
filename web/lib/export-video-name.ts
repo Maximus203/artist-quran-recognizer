@@ -3,6 +3,8 @@
  * modifiable avant le téléchargement. Même nettoyage que les sous-titres : aucun séparateur de
  * chemin, de `..` ni de caractère de contrôle ; 120 caractères au plus.
  */
+import { rangeLabel, type ExportRange } from "./export-video-ranges";
+
 const MAX_NAME = 120;
 const TAIL = ".mp4";
 
@@ -26,4 +28,20 @@ export function videoFileName(sessionName: string, custom?: string): string {
       .slice(0, MAX_NAME - TAIL.length)
       .join("") + TAIL
   );
+}
+
+/**
+ * Nom du fichier d'une plage : le nom de base (saisi ou celui de l'audio) suivi de l'intervalle
+ * (« ... 0m12s-0m40s.mp4 »). Un export entier, ou une plage unique avec un nom saisi, garde le nom tel quel.
+ */
+export function videoRangeFileName(
+  sessionName: string,
+  custom: string | undefined,
+  range: ExportRange | null,
+  total: number,
+): string {
+  const base = videoFileName(sessionName, custom);
+  if (!range) return base;
+  if (total === 1 && custom?.trim()) return base;
+  return videoFileName(`${base.replace(/\.mp4$/i, "")} ${rangeLabel(range)}`);
 }

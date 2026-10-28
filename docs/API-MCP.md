@@ -57,9 +57,15 @@ obligatoire. Outils :
 | `get_recording` | État et versets (référence, début/fin, statut de preuve, arabe, traduction) | lecture |
 | `get_export_options` | Options d'export (sous-titres, vidéo), valeurs permises, défauts | lecture |
 | `export_subtitles` | SRT, WebVTT, ASS, JSON, avec toutes les options | lecture |
-| `export_video` / `get_video_export` | Vidéo MP4 : demande puis suivi, `download_path` à la fin | lecture |
+| `export_video` / `get_video_export` | Vidéo MP4 : demande puis suivi, `download_paths` (une par plage) à la fin | lecture |
 | `get_verse` | Texte exact et traduction d'un verset du corpus | lecture |
 | `create_recording` | Import en base64 (25 Mo au plus) et analyse | écriture |
+| `update_recording` | Renommer, changer la portée (privé / global) ou archiver | écriture |
+| `delete_recording` | Supprimer définitivement (exige `confirm: true`) | écriture |
+| `run_analysis` / `cancel_analysis` | Lancer, relancer ou annuler l'analyse | écriture |
+| `set_favorite` | Mettre ou retirer des favoris | écriture |
+| `get_review` / `save_review`, `get_decisions` / `save_decisions` | Lire et enregistrer la revue et les décisions de relecture | lecture / écriture |
+| `get_stats`, `get_preferences` / `set_preferences` | Statistiques et préférences du compte | lecture / écriture |
 
 Les outils passent par l'API (même origine) : un outil n'a jamais plus de droits que l'API. Le texte
 arabe et la traduction viennent du résultat (corpus et QuranEnc), jamais d'un modèle (I1, I2) ; le
@@ -82,6 +88,15 @@ a au plus deux exports actifs, rendus un par un ; le MP4 est gardé une heure. R
 (`16:9`, `9:16`, `1:1`, `source`), taille de l'arabe et de la traduction, traduction affichée ou non,
 remplissage de l'espace, hauteur du texte, onde, couleur d'accent, nom du fichier,
 fond (dix-sept choix proposés, vidéo d'origine, couleur unie, ou image envoyée).
+
+**Qualité et parties.** `fps` : 30 (défaut) ou 60 (plus fluide, fichier environ deux fois plus lourd) ;
+`resolution` : côté court de l'image, 360, 480, 720, 1080 (défaut), 1440 ou 2160 (720 = 1280×720 en 16:9,
+720×1280 en 9:16). `ranges` : `[{ "start": 12, "end": 40 }, …]` en secondes de l'audio, **une vidéo par
+plage** (50 au plus, 0,5 s au moins, une fin au-delà de la durée est ramenée à la durée) ; `per_verse: true` :
+une vidéo par verset reconnu (exclusif avec `ranges`). Sans plage, une seule vidéo de tout l'audio. Le job
+terminé liste ses fichiers dans `downloads` (`index`, `name`, `url`) : `…/file` pour la première vidéo,
+`…/file?index=N` pour les suivantes. Un export est plus long à 60 im/s et en 1440p ou 4K (mesuré : 3 s
+de 4K à 60 im/s en 14 s).
 
 ## Compétence pour l'agent
 

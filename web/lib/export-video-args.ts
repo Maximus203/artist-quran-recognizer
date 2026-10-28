@@ -38,6 +38,9 @@ export function muxArgs(options: {
   wav: string;
   out: string;
   fps: number;
+  /** Extrait de l'audio à garder (secondes) : la vidéo d'une plage ne porte que son passage. */
+  audioStart?: number;
+  audioDuration?: number;
 }): string[] {
   return [
     "-nostdin",
@@ -52,6 +55,14 @@ export function muxArgs(options: {
     String(options.fps),
     "-i",
     options.video,
+    ...(options.audioStart !== undefined && options.audioDuration !== undefined
+      ? [
+          "-ss",
+          options.audioStart.toFixed(3),
+          "-t",
+          options.audioDuration.toFixed(3),
+        ]
+      : []),
     "-i",
     options.wav,
     "-map",

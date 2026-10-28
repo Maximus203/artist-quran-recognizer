@@ -89,7 +89,7 @@ describe("playedBarCount / waveBarGeometry / frameCountFor", () => {
   });
 
   it("nombre de frames : durée × fps, arrondi supérieur, au moins 1", () => {
-    expect(frameCountFor(19.02, VIDEO_FPS)).toBe(476);
+    expect(frameCountFor(19.02, VIDEO_FPS)).toBe(571);
     expect(frameCountFor(0.01, VIDEO_FPS)).toBe(1);
   });
 });

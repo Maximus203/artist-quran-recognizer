@@ -11,9 +11,20 @@ import {
   type GradientBackground,
 } from "@/lib/export-video-backgrounds";
 import { isVideoExtension, loadSourceVideo } from "@/lib/export-video-assets";
+import { h264Bitrate } from "@/lib/export-video-codecs";
+import {
+  estimateVideoMegabytes,
+  videoDimensions,
+} from "@/lib/export-video-format";
+import {
+  parseRangeRows,
+  rangesFromCards,
+  type RangeRow,
+} from "@/lib/export-video-ranges";
 import {
   ARABIC_SIZE_PRESETS,
   DEFAULT_VIDEO_PREFS,
+  resolveOrientation,
   loadVideoPrefs,
   saveVideoPrefs,
   TRANSLATION_SIZE_PRESETS,
@@ -26,6 +37,7 @@ import { accentSolidCss, DEFAULT_ACCENT } from "@/lib/export-video-accent";
 import { AccentDialog } from "./accent-dialog";
 import { videoFileName } from "@/lib/export-video-name";
 import { VideoPreview } from "./video-preview";
+import { VideoQuality, VideoRanges, type RangeMode } from "./video-delivery";
 
 const POSITIONS = [
   { id: "top", label: "Haut", value: 12 },
@@ -116,6 +128,8 @@ export function VideoPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [bgFile, setBgFile] = useState<File | null>(null);
   const [bgThumb, setBgThumb] = useState<string | null>(null);
+  const [rangeMode, setRangeMode] = useState<RangeMode>("all");
+  const [rangeRows, setRangeRows] = useState<RangeRow[]>([]);
   const thumbUrl = useRef<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -160,6 +174,49 @@ export function VideoPanel({
     () => (intervals ? videoCardInputs(intervals).length : null),
     [intervals],
   );
+
+  const duration = peaks?.duration ?? null;
+  const verseRanges = useMemo(
+    () =>
+      intervals && duration
+        ? rangesFromCards(videoCardInputs(intervals), duration)
+        : [],
+    [intervals, duration],
+  );
+  const parsedRows = useMemo(
+    () => (duration ? parseRangeRows(rangeRows, duration) : null),
+    [rangeRows, duration],
+  );
+  const rangeError =
+    rangeMode === "ranges" && parsedRows && !parsedRows.ok
+      ? parsedRows.error
+      : null;
+  const exportedSeconds =
+    duration === null
+      ? null
+      : rangeMode === "all"
+        ? duration
+        : rangeMode === "verses"
+          ? verseRanges.reduce((sum, r) => sum + (r.end - r.start), 0)
+          : parsedRows?.ok
+            ? parsedRows.ranges.reduce((sum, r) => sum + (r.end - r.start), 0)
+            : 0;
+  const frameSize = useMemo(() => {
+    const orientation = resolveOrientation(prefs, sourceSize);
+    const useSource = prefs.orientation === "source" && sourceSize !== null;
+    return videoDimensions(
+      orientation,
+      prefs.resolution,
+      useSource ? sourceSize : null,
+    );
+  }, [prefs, sourceSize]);
+  const megabytes =
+    exportedSeconds === null
+      ? null
+      : estimateVideoMegabytes(
+          h264Bitrate(frameSize.width, frameSize.height, prefs.fps),
+          exportedSeconds,
+        );
 
   const patch = useCallback((next: Partial<VideoPrefs>) => {
     setPrefs((current) => {
@@ -218,11 +275,20 @@ export function VideoPanel({
         sessionId,
         prefs,
         bgImage: bgFile,
-        fileName: videoFileName(sessionName, fileName),
+        fileName: fileName.trim()
+          ? videoFileName(sessionName, fileName)
+          : undefined,
+        ranges:
+          rangeMode === "ranges" && parsedRows?.ok
+            ? parsedRows.ranges
+            : undefined,
+        perVerse: rangeMode === "verses",
         onProgress: (text) => setMessage(text),
       });
       setPhase("done");
-      setMessage("Vidéo téléchargée.");
+      setMessage(
+        rangeMode === "all" ? "Vidéo téléchargée." : "Vidéos téléchargées.",
+      );
     } catch (error) {
       setPhase("error");
       const text =
@@ -230,7 +296,16 @@ export function VideoPanel({
       setMessage(text);
       onError(text);
     }
-  }, [bgFile, fileName, onError, prefs, sessionId, sessionName]);
+  }, [
+    bgFile,
+    fileName,
+    onError,
+    parsedRows,
+    prefs,
+    rangeMode,
+    sessionId,
+    sessionName,
+  ]);
 
   const busy = phase === "busy";
   const orientationLabel =
@@ -615,6 +690,26 @@ export function VideoPanel({
         </p>
       </fieldset>
 
+      <VideoQuality
+        resolution={prefs.resolution}
+        fps={prefs.fps}
+        width={frameSize.width}
+        height={frameSize.height}
+        megabytes={megabytes}
+        onResolution={(resolution) => patch({ resolution })}
+        onFps={(fps) => patch({ fps })}
+      />
+
+      <VideoRanges
+        mode={rangeMode}
+        rows={rangeRows}
+        duration={duration}
+        error={rangeError}
+        verseCount={verseRanges.length}
+        onMode={setRangeMode}
+        onRows={setRangeRows}
+      />
+
       <div className="ex-video-foot">
         <label className="ex-video-name">
           <span>Nom du fichier</span>
@@ -632,10 +727,22 @@ export function VideoPanel({
           type="button"
           className="btn btn--primary btn--lg btn--block"
           data-testid="video-export"
-          disabled={busy || !prefsReady || cardCount === 0}
+          disabled={
+            busy ||
+            !prefsReady ||
+            cardCount === 0 ||
+            rangeError !== null ||
+            (rangeMode === "verses" && verseRanges.length === 0)
+          }
           onClick={() => void exportVideo()}
         >
-          {busy ? "Création de la vidéo…" : "Exporter la vidéo"}
+          {busy
+            ? "Création de la vidéo…"
+            : rangeMode === "all"
+              ? "Exporter la vidéo"
+              : rangeMode === "verses"
+                ? `Exporter ${verseRanges.length} vidéo${verseRanges.length > 1 ? "s" : ""}`
+                : `Exporter ${rangeRows.length} vidéo${rangeRows.length > 1 ? "s" : ""}`}
         </button>
         <p className="ex-micro" role={phase === "error" ? "alert" : "status"}>
           {busy && message

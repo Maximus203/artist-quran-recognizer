@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-28 — Export vidéo : parties, 30/60 images par seconde et résolutions jusqu'au 4K
+Étiquettes : utilisateur, technique, décision
+PR : #120
+
+**Ce qui change.** L'export vidéo se règle maintenant sur trois points de plus, à l'écran comme par l'API et le MCP. **Parties à exporter** : tout l'audio (une vidéo), des plages choisies (début et fin comme 1:23, une vidéo par plage), ou un verset = une vidéo ; le son et l'image ne gardent que le passage. **Fluidité** : 30 ou 60 images par seconde. **Résolution** : 360p, 480p, 720p, 1080p, 1440p (2K) ou 2160p (4K), comptée sur le côté court (720p = 1280×720 en horizontal, 720×1280 en vertical). Le formulaire affiche la taille de l'image et le poids approximatif des fichiers. Côté agents, `export_video` accepte `fps`, `resolution`, `ranges` et `per_verse`, et `get_video_export` rend un lien par vidéo ; le MCP gagne aussi renommer, supprimer (avec confirmation), lancer/annuler l'analyse, favoris, revue, décisions, statistiques et préférences, pour couvrir tout ce que fait l'interface.
+
+**Pourquoi / décision.** Mesuré sur de vrais exports par l'API (essai de 41,5 s) : deux plages en 720×1280 à 60 im/s donnent 7,6 s et 10 s avec un son de même durée ; un verset = une vidéo donne 5 fichiers en 1080p ; 3 s de 4K à 60 im/s en 14 s ; 360×360 et 1440p acceptés. Le niveau H.264 monte tout seul avec la taille et la cadence (le 4K à 60 demande le niveau 5.2), le débit est plafonné à 40 Mbit/s et un segment ne dépasse jamais 128 Mo. Les résolutions demandées en « 1040/1024 » et « 2140 » sont les formats usuels 1080p et 2160p. Limites : tout le rendu se fait dans le navigateur, donc la mémoire borne la durée en 4K à 60 im/s ; plusieurs vidéos se téléchargent l'une après l'autre (Chrome peut demander d'autoriser les téléchargements multiples). Détail : `.artist/decision-log.md`.
+
 ## 2026-10-28 — En direct : la récitation guidée, on annonce la sourate
 Étiquettes : utilisateur, technique, décision
 PR : #119

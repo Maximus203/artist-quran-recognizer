@@ -1,5 +1,20 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-10-28 (4) — Export vidéo : parties, 30/60 im/s, résolutions jusqu'au 4K, MCP complet
+- **Plages** : une plage = une vidéo (`ranges` ou `per_verse`) ; le mux garde l'extrait de l'audio (`-ss`/`-t` avant l'entrée
+  son) et reçoit début, durée et cadence par en-têtes du dernier segment. Sans l'en-tête de cadence, le serveur suppose 25 im/s
+  (anciens clients) : un onglet resté ouvert avant la mise à jour ne casse pas.
+- **Résolution** = côté court (360, 480, 720, 1080, 1440, 2160) : même mise à l'échelle des écritures que la référence 1080,
+  donc aucune retouche de la mise en page. « 1040/1024 » lu comme 1080 et « 2140 » comme 2160 (formats usuels).
+- **Encodage** : niveau H.264 déduit des macroblocs par image et par seconde ; débit plafonné à 40 Mbit/s ; segments coupés
+  à 128 Mo à l'image clé suivante (le serveur en accepte 256). Limite assumée : le navigateur garde les segments en mémoire.
+- **Jobs API** : plusieurs fichiers par job (`downloads`, `file?index=N`) ; le navigateur de rendu annonce le nombre de vidéos
+  attendues et le serveur attend autant de téléchargements.
+- **MCP** : ajout des fonctions de l'interface qui manquaient (renommer/portée/archive, suppression avec `confirm`, lancer et
+  annuler l'analyse, favoris, revue, décisions, statistiques, préférences). Aucun outil n'a plus de droits que l'API.
+- **Preuve** : exports réels par l'API (ffprobe : 720×1280 à 60 im/s, 1080p à 30, 3840×2160 à 60, 360×360), refus 400 des
+  valeurs hors liste, échec lisible d'une plage hors audio, et le formulaire éprouvé dans un vrai navigateur.
+
 ## 2026-10-28 (3) — En direct : récitation guidée en plus de l'écoute classique (ADR-0015)
 - **Décision du mainteneur** : proposer, avant de démarrer, « Récitation guidée » (la personne annonce la sourate ;
   le moteur ne cherche que dedans et enchaîne les versets) en plus de l'écoute classique. Cela nuance « sans

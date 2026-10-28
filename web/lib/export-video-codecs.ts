@@ -5,7 +5,9 @@
  * uns après les autres (POST par segment), sans jamais monter un énorme corps en mémoire.
  */
 
-export const VIDEO_SEGMENT_FRAMES = 25 * 60 * 5; // 5 minutes à 25 im/s
+export const VIDEO_SEGMENT_FRAMES = 30 * 60 * 5; // 5 minutes à 30 im/s
+/** Un segment n'est jamais plus gros que ça (le serveur en accepte 256 Mio) : coupé à l'image clé suivante. */
+export const VIDEO_SEGMENT_BYTES = 128 * 1024 * 1024;
 
 export class VideoEncoderUnavailableError extends Error {
   constructor() {
@@ -39,9 +41,30 @@ export function h264Bitrate(
   fps: number,
 ): number {
   return Math.min(
-    12_000_000,
-    Math.max(2_000_000, Math.round(width * height * fps * 0.08)),
+    40_000_000,
+    Math.max(1_000_000, Math.round(width * height * fps * 0.08)),
   );
+}
+
+/**
+ * Niveau H.264 (profil High) le plus bas qui accepte la taille et la cadence demandées
+ * (limites de macroblocs par image et par seconde de la norme) : un niveau trop bas fait refuser
+ * la configuration pour le 1440p ou le 4K, surtout à 60 images par seconde.
+ */
+export function h264Codec(width: number, height: number, fps: number): string {
+  const frameMbs = Math.ceil(width / 16) * Math.ceil(height / 16);
+  const rateMbs = frameMbs * fps;
+  const levels: [number, number, string][] = [
+    [3600, 108_000, "avc1.64001f"], // 3.1
+    [5120, 216_000, "avc1.640020"], // 3.2
+    [8192, 245_760, "avc1.640028"], // 4.0
+    [8704, 522_240, "avc1.64002a"], // 4.2
+    [22_080, 589_824, "avc1.640032"], // 5.0
+    [36_864, 983_040, "avc1.640033"], // 5.1
+    [36_864, 2_073_600, "avc1.640034"], // 5.2
+  ];
+  const found = levels.find(([fs, mbs]) => frameMbs <= fs && rateMbs <= mbs);
+  return found ? found[2] : "avc1.640034";
 }
 
 /** Configuration encodeur pour la taille demandée, ou null si non supportée. */
@@ -53,7 +76,7 @@ export async function h264Config(
   if (typeof VideoEncoder === "undefined" || typeof VideoFrame === "undefined")
     return null;
   const config: VideoEncoderConfig = {
-    codec: "avc1.640028", // High 4.0 : 1080p
+    codec: h264Codec(width, height, fps),
     width,
     height,
     bitrate: h264Bitrate(width, height, fps),
@@ -69,7 +92,8 @@ export async function h264Config(
   }
 }
 
-const KEYFRAME_INTERVAL = 25 * 5; // une image clé toutes les 5 s (seek, découpe propre)
+/** Une image clé toutes les 5 s (recherche, découpe propre). */
+const keyframeInterval = (fps: number): number => Math.round(fps * 5);
 
 /**
  * Encode `frameCount` frames dessinées par `draw` sur le canvas fourni. Le moteur appelle
@@ -83,6 +107,7 @@ export async function encodeFrames(options: {
   fps: number;
   frameCount: number;
   segmentFrames?: number;
+  segmentBytes?: number;
   draw: (ctx: CanvasRenderingContext2D, index: number) => void;
   beforeFrame?: (index: number) => Promise<void> | void;
   onProgress?: (done: number, total: number) => void;
@@ -91,14 +116,17 @@ export async function encodeFrames(options: {
     options;
   const segmentFrames = Math.max(
     1,
-    options.segmentFrames ?? VIDEO_SEGMENT_FRAMES,
+    options.segmentFrames ?? Math.round(fps * 60 * 5),
   );
+  const segmentBytes = options.segmentBytes ?? VIDEO_SEGMENT_BYTES;
+  const keyEvery = keyframeInterval(fps);
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Canvas 2D indisponible.");
 
   const segments: VideoSegment[] = [];
   let pending: Uint8Array[] = [];
   let pendingFrames = 0;
+  let pendingBytes = 0;
   let encoded = 0;
 
   const encoder = new VideoEncoder({
@@ -107,7 +135,11 @@ export async function encodeFrames(options: {
       chunk.copyTo(buffer);
       pending.push(new Uint8Array(buffer));
       pendingFrames += 1;
-      if (pendingFrames >= segmentFrames && chunk.type === "key") {
+      pendingBytes += buffer.byteLength;
+      if (
+        (pendingFrames >= segmentFrames || pendingBytes >= segmentBytes) &&
+        chunk.type === "key"
+      ) {
         // Un segment ne démarre qu'sur une image clé : découpe propre pour le mux.
         segments.push({
           index: segments.length,
@@ -117,6 +149,7 @@ export async function encodeFrames(options: {
         });
         pending = [];
         pendingFrames = 0;
+        pendingBytes = 0;
       }
     },
     error: (e) => {
@@ -133,7 +166,7 @@ export async function encodeFrames(options: {
       timestamp: Math.round(index * microsPerFrame),
       duration: Math.round(microsPerFrame),
     });
-    encoder.encode(frame, { keyFrame: index % KEYFRAME_INTERVAL === 0 });
+    encoder.encode(frame, { keyFrame: index % keyEvery === 0 });
     frame.close();
     encoded += 1;
     if (encoded % 25 === 0) {

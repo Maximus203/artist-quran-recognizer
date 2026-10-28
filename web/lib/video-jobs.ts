@@ -28,7 +28,9 @@ export type VideoJob = {
   finishedAt: string | null;
   options: VideoJobOptions;
   dir: string;
+  /** Premier MP4 (le seul sans plages) ; tous les MP4, dans l'ordre des plages, sont dans `files`. */
   file: string | null;
+  files: { name: string; path: string }[];
   background: string | null;
   /** Jeton de l'appelant, gardé en mémoire le temps du rendu seulement. */
   bearer: string | null;
@@ -37,8 +39,12 @@ export type VideoJob = {
 
 export type PublicVideoJob = Omit<
   VideoJob,
-  "dir" | "file" | "background" | "bearer" | "origin" | "userId"
-> & { download: string | null };
+  "dir" | "file" | "files" | "background" | "bearer" | "origin" | "userId"
+> & {
+  download: string | null;
+  /** Un fichier par plage (même ordre que les plages) ; `url` est relative au job. */
+  downloads: { index: number; name: string; url: string }[];
+};
 
 const RETENTION_MS = 60 * 60 * 1000;
 const MAX_ACTIVE_PER_USER = 2;
@@ -88,7 +94,7 @@ export function browserExecutable(
 }
 
 export function publicJob(job: VideoJob): PublicVideoJob {
-  const { dir, file, background, bearer, origin, userId, ...rest } = job;
+  const { dir, file, files, background, bearer, origin, userId, ...rest } = job;
   void dir;
   void background;
   void bearer;
@@ -97,6 +103,14 @@ export function publicJob(job: VideoJob): PublicVideoJob {
   return {
     ...rest,
     download: job.state === "done" && file ? "file" : null,
+    downloads:
+      job.state === "done"
+        ? files.map((f, index) => ({
+            index,
+            name: f.name,
+            url: index === 0 ? "file" : `file?index=${index}`,
+          }))
+        : [],
   };
 }
 
@@ -160,6 +174,7 @@ export async function startVideoJob(input: {
     options: input.options,
     dir,
     file: null,
+    files: [],
     background,
     bearer: input.bearer,
     origin: input.origin,
@@ -173,6 +188,8 @@ export async function startVideoJob(input: {
     try {
       await run(job);
       if (!job.file) throw new Error("Aucune vidéo produite.");
+      if (job.files.length === 0)
+        job.files = [{ name: path.basename(job.file), path: job.file }];
       job.state = "done";
       job.progress = "Terminé";
     } catch (error) {
@@ -215,23 +232,39 @@ async function renderInBrowser(job: VideoJob): Promise<void> {
       {
         sessionId: job.sessionId,
         jobId: job.id,
+        fileName: job.options.file_name,
+        ranges: job.options.ranges,
+        perVerse: job.options.per_verse === true,
         prefs,
         hasBackground: job.background !== null,
       },
     );
-    const download = page.waitForEvent("download", {
-      timeout: RENDER_TIMEOUT_MS,
+    // Chaque MP4 produit (un par plage) arrive comme un téléchargement : on les enregistre au fil de l'eau.
+    const saves: Promise<void>[] = [];
+    page.on("download", (file) => {
+      const n = saves.length;
+      const target = path.join(job.dir, `video-${n}.mp4`);
+      saves.push(
+        file.saveAs(target).then(() => {
+          job.files[n] = { name: file.suggestedFilename(), path: target };
+        }),
+      );
     });
-    const failure = page
+    type RenderState = { error?: string; done?: boolean; total?: number };
+    const finished = page
       .waitForFunction(
-        () =>
-          (window as unknown as { __AQR_STATE?: { error?: string } })
-            .__AQR_STATE?.error,
+        () => {
+          const state = (window as unknown as { __AQR_STATE?: RenderState })
+            .__AQR_STATE;
+          return state?.error || state?.done ? state : null;
+        },
         undefined,
-        { timeout: RENDER_TIMEOUT_MS },
+        { timeout: RENDER_TIMEOUT_MS, polling: 500 },
       )
       .then(async (handle) => {
-        throw new Error(String(await handle.jsonValue()));
+        const state = (await handle.jsonValue()) as RenderState;
+        if (state.error) throw new Error(state.error);
+        return state;
       });
     const progress = setInterval(() => {
       page
@@ -247,15 +280,17 @@ async function renderInBrowser(job: VideoJob): Promise<void> {
     }, 1500);
     try {
       await page.goto(`${job.origin}/render/video`, { waitUntil: "load" });
-      const file = await Promise.race([download, failure]);
-      const target = path.join(job.dir, "video.mp4");
-      await file.saveAs(target);
-      job.file = target;
+      const state = await finished;
+      // Les téléchargements partent avant la fin du rendu : on attend qu'ils soient tous enregistrés.
+      const deadline = Date.now() + 60_000;
+      while (saves.length < (state.total ?? 1) && Date.now() < deadline)
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      await Promise.all(saves);
+      job.files = job.files.filter(Boolean);
+      job.file = job.files[0]?.path ?? null;
     } finally {
       clearInterval(progress);
-      // Évite un rejet non géré de l'autre branche de la course.
-      failure.catch(() => undefined);
-      download.catch(() => undefined);
+      finished.catch(() => undefined);
     }
   } finally {
     await browser.close().catch(() => undefined);
