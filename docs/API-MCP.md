@@ -57,6 +57,7 @@ obligatoire. Outils :
 | `get_recording` | État et versets (référence, début/fin, statut de preuve, arabe, traduction) | lecture |
 | `get_export_options` | Options d'export (sous-titres, vidéo), valeurs permises, défauts | lecture |
 | `export_subtitles` | SRT, WebVTT, ASS, JSON, avec toutes les options | lecture |
+| `suggest_video_ranges` | Plages protégées (marge avant/après, aimantées au silence) : à appeler avant `export_video` | lecture |
 | `export_video` / `get_video_export` | Vidéo MP4 : demande puis suivi, `download_paths` (une par plage) à la fin | lecture |
 | `get_verse` | Texte exact et traduction d'un verset du corpus | lecture |
 | `create_recording` | Import en base64 (25 Mo au plus) et analyse | écriture |
@@ -93,7 +94,9 @@ fond (dix-sept choix proposés, vidéo d'origine, couleur unie, ou image envoyé
 `resolution` : côté court de l'image, 360, 480, 720, 1080 (défaut), 1440 ou 2160 (720 = 1280×720 en 16:9,
 720×1280 en 9:16). `ranges` : `[{ "start": 12, "end": 40 }, …]` en secondes de l'audio, **une vidéo par
 plage** (50 au plus, 0,5 s au moins, une fin au-delà de la durée est ramenée à la durée) ; `per_verse: true` :
-une vidéo par verset reconnu (exclusif avec `ranges`). Sans plage, une seule vidéo de tout l'audio. Le job
+une vidéo par verset reconnu (exclusif avec `ranges`). Sans plage, une seule vidéo de tout l'audio.
+
+**Découpe protégée (aucune voix coupée).** `suggest: "verse"` ou `"passage"` découpe automatiquement : chaque plage commence `lead_in` secondes avant la récitation (0,6 par défaut) et finit `tail_out` secondes après (0,4), aimantée au silence le plus proche (`snap_to_silence`), sans empiéter sur la récitation voisine ; les passages incertains ne sont jamais proposés. `pad_ranges: true` applique les mêmes marges à ses propres `ranges`. Pour voir les plages avant d'exporter : `GET /api/v1/recordings/{id}/export/suggestions?lead_in=&tail_out=&snap=&group=&merge_gap=&silences=1` → `ranges` (`start`, `end`, `core_start`, `core_end`, `lead_in`, `tail_out`, `refs`, `status`, `snapped`, `warnings`), `silence_count`, `notes`, `options`, `session` (type audio/vidéo, durée). Le job
 terminé liste ses fichiers dans `downloads` (`index`, `name`, `url`) : `…/file` pour la première vidéo,
 `…/file?index=N` pour les suivantes. Un export est plus long à 60 im/s et en 1440p ou 4K (mesuré : 3 s
 de 4K à 60 im/s en 14 s).

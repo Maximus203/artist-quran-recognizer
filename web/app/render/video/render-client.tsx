@@ -17,6 +17,14 @@ type Payload = {
   fileName?: string;
   ranges?: { start: number; end: number }[];
   perVerse?: boolean;
+  suggest?: "verse" | "passage";
+  margins?: {
+    leadIn?: number;
+    tailOut?: number;
+    snapToSilence?: boolean;
+    mergeGap?: number;
+  };
+  padRanges?: boolean;
 };
 type State = {
   progress?: string;
@@ -56,6 +64,9 @@ export function RenderClient() {
         fileName: payload.fileName,
         ranges: payload.ranges,
         perVerse: payload.perVerse,
+        suggest: payload.suggest,
+        margins: payload.margins,
+        padRanges: payload.padRanges,
         onCount: (count) => {
           state.total = count;
         },

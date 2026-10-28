@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-28 — Export vidéo : découpe protégée, aucune voix coupée
+Étiquettes : utilisateur, technique, décision
+PR : #121
+
+**Ce qui change.** Les vidéos découpées par verset (ou par passage) ne coupent plus la voix : chaque plage commence un peu avant la récitation (0,6 s par défaut) et finit un peu après (0,4 s), et chaque bord est aimanté vers le silence le plus proche lu dans l'onde, sans jamais empiéter sur la récitation voisine. Pour les agents et les programmes : `GET /api/v1/recordings/{id}/export/suggestions` (outil MCP `suggest_video_ranges`) renvoie les plages prêtes à exporter avec `start`/`end`, la récitation seule (`core_*`), les marges réellement gardées, les références, le statut de preuve, des avertissements et, sur demande, les silences de l'audio. L'export accepte `suggest` (`verse` ou `passage`), `lead_in`, `tail_out`, `snap_to_silence`, `merge_gap`, et `pad_ranges` pour appliquer les mêmes marges à ses propres plages.
+
+**Pourquoi / décision.** Découper pile sur les temps du moteur coupait le début ou la fin d'un mot : la voix d'un verset attaque avant son début mesuré. Les marges sont réglables (0 à 5 s) et l'aimantation désactivable ; un passage incertain n'est jamais proposé (I3) et un passage déduit est marqué `inferred` (I5). Même fonction pure pour l'API, le MCP, le rendu et le futur sélecteur visuel (`web/lib/export-video-suggest.ts`, 12 tests).
+
 ## 2026-10-28 — Export vidéo : parties, 30/60 images par seconde et résolutions jusqu'au 4K
 Étiquettes : utilisateur, technique, décision
 PR : #120

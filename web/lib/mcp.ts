@@ -238,6 +238,48 @@ export const TOOLS: Tool[] = [
       ),
   },
   {
+    name: "suggest_video_ranges",
+    description:
+      "À appeler AVANT export_video pour choisir quoi découper. Renvoie les plages protégées d'un essai terminé : une par verset (ou par passage), qui commencent un peu avant la récitation et finissent un peu après, aimantées au silence pour ne jamais couper une voix. Chaque plage donne start/end (à passer tels quels à export_video dans `ranges`), core_start/core_end (la récitation seule), lead_in/tail_out réellement gardés, refs (références sourate:verset), status (recognized ou inferred) et warnings (voisin trop proche, aucun silence trouvé, bord de l'audio…). Les passages incertains ne sont jamais proposés. Sans réglage, la marge est 0,6 s avant et 0,4 s après.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: idSchema,
+        lead_in: { type: "number", description: "Marge avant (s, 0-5)." },
+        tail_out: { type: "number", description: "Marge après (s, 0-5)." },
+        snap_to_silence: { type: "boolean" },
+        group: {
+          type: "string",
+          enum: ["verse", "passage"],
+          description: "Une plage par verset (défaut) ou par passage enchaîné.",
+        },
+        merge_gap: { type: "number" },
+        include_silences: {
+          type: "boolean",
+          description: "Ajoute la liste des silences de l'audio.",
+        },
+      },
+      required: ["id"],
+    },
+    run: async (args, ctx) => {
+      const id = asId(args);
+      const params = new URLSearchParams();
+      for (const key of ["lead_in", "tail_out", "merge_gap"])
+        if (typeof args[key] === "number") params.set(key, String(args[key]));
+      if (typeof args.snap_to_silence === "boolean")
+        params.set("snap", args.snap_to_silence ? "1" : "0");
+      if (typeof args.group === "string") params.set("group", args.group);
+      if (args.include_silences === true) params.set("silences", "1");
+      return unwrap(
+        await ctx.call(
+          "GET",
+          `/api/sessions/${id}/export/suggestions?${params}`,
+        ),
+        "Suggestion impossible",
+      );
+    },
+  },
+  {
     name: "export_video",
     description:
       "Demande la vidéo MP4 d'un essai terminé (verset surligné mot à mot, traduction, onde audio) : mêmes réglages que le formulaire de l'atelier. Renvoie un job ; suivre avec get_video_export jusqu'à « done », puis télécharger chaque entrée de `download_paths` (ou `download_path` s'il n'y a qu'une vidéo) avec le même jeton. Plusieurs plages (ranges) ou per_verse donnent plusieurs vidéos, une par plage. Le rendu dure à peu près la moitié de la durée de l'audio à 30 im/s, davantage à 60 im/s ou en 1440p/4K.",
@@ -280,7 +322,39 @@ export const TOOLS: Tool[] = [
         },
         per_verse: {
           type: "boolean",
-          description: "Une vidéo par verset reconnu (exclusif avec ranges).",
+          description:
+            "Une vidéo par verset reconnu (= suggest « verse », exclusif avec ranges).",
+        },
+        suggest: {
+          type: "string",
+          enum: ["verse", "passage"],
+          description:
+            "Découpe automatique protégée (marges avant/après la récitation, aimantée au silence : aucune voix coupée). « passage » regroupe les versets enchaînés. Voir suggest_video_ranges pour prévisualiser.",
+        },
+        lead_in: {
+          type: "number",
+          description:
+            "Marge avant la récitation, en secondes (0-5, défaut 0,6).",
+        },
+        tail_out: {
+          type: "number",
+          description:
+            "Marge après la récitation, en secondes (0-5, défaut 0,4).",
+        },
+        snap_to_silence: {
+          type: "boolean",
+          description:
+            "Aimante les bords au silence le plus proche (défaut true).",
+        },
+        merge_gap: {
+          type: "number",
+          description:
+            "Écart max (s) entre versets d'un même passage (défaut 1).",
+        },
+        pad_ranges: {
+          type: "boolean",
+          description:
+            "Applique lead_in / tail_out (et l'aimantation) à tes propres ranges.",
         },
         fill: {
           type: "boolean",
@@ -323,6 +397,12 @@ export const TOOLS: Tool[] = [
         "resolution",
         "ranges",
         "per_verse",
+        "suggest",
+        "lead_in",
+        "tail_out",
+        "snap_to_silence",
+        "merge_gap",
+        "pad_ranges",
         "fill",
         "text_position",
         "show_wave",
