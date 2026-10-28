@@ -43,14 +43,25 @@ export type LayoutInput = {
   translationSize: number;
   measureArabic: MeasureText;
   measureTranslation: MeasureText;
+  /** Les écritures grandissent jusqu'à occuper toute la zone libre (au lieu de rester à la taille choisie). */
+  fill?: boolean;
+  /** Hauteur du bloc dans la zone libre : 0 = en haut, 0,5 = au centre, 1 = en bas. */
+  position?: number;
+  /** Onde affichée en bas : sinon la zone de texte prend toute la hauteur. */
+  showWave?: boolean;
 };
 
 /** Côté court de référence : les tailles des préférences s'y rapportent. */
 export const REFERENCE_SHORT_SIDE = 1080;
 /** Part de la hauteur réservée à l'onde, en bas (plus basse en portrait : l'écran est déjà haut). */
-export const waveZoneFraction = (width: number, height: number): number =>
-  height > width ? 0.16 : 0.22;
+export const waveZoneFraction = (
+  width: number,
+  height: number,
+  showWave = true,
+): number => (!showWave ? 0 : height > width ? 0.16 : 0.22);
 const MIN_FIT = 0.4;
+/** Plafond de l'agrandissement automatique (mode « remplir »). */
+const MAX_FIT = 4;
 const ARABIC_LINE_HEIGHT = 1.75;
 const TRANSLATION_LINE_HEIGHT = 1.4;
 
@@ -177,8 +188,10 @@ export function layoutCard(input: LayoutInput): CardLayout {
   const sideMargin = width * (width < height ? 0.07 : 0.08);
   const maxWidth = width - sideMargin * 2;
   const top = height * 0.05;
+  const waveFraction = waveZoneFraction(width, height, input.showWave ?? true);
   const textBottom =
-    height * (1 - waveZoneFraction(width, height)) - height * 0.025;
+    height * (1 - waveFraction) -
+    (waveFraction > 0 ? height * 0.025 : height * 0.05);
   const zoneHeight = textBottom - top;
   const pad = sizeScale(width, height) * 40;
   // Le support de lisibilité est inclus dans la zone : on lui réserve sa marge.
@@ -186,6 +199,19 @@ export function layoutCard(input: LayoutInput): CardLayout {
 
   let fit = 1;
   let current = pass(input, fit, maxWidth);
+  if (input.fill) {
+    // Agrandit par paliers tant que tout tient, puis affine : le bloc occupe la zone libre.
+    let step = 1.15;
+    for (let i = 0; i < 18; i++) {
+      const next = pass(input, Math.min(MAX_FIT, fit * step), maxWidth);
+      if (next.height <= available && fit < MAX_FIT) {
+        fit = Math.min(MAX_FIT, fit * step);
+        current = next;
+      } else {
+        step = 1 + (step - 1) / 2;
+      }
+    }
+  }
   for (let i = 0; i < 10 && current.height > available && fit > MIN_FIT; i++) {
     fit = Math.max(
       MIN_FIT,
@@ -194,7 +220,9 @@ export function layoutCard(input: LayoutInput): CardLayout {
     current = pass(input, fit, maxWidth);
   }
 
-  let y = top + (zoneHeight - current.height) / 2;
+  const position = Math.min(1, Math.max(0, input.position ?? 0.5));
+  const blockTop = top + (zoneHeight - current.height) * position;
+  let y = blockTop;
   const refY = y + (current.refSize * 1.4) / 2;
   y += current.refSize * 1.4 + current.gapRef;
 
@@ -233,7 +261,6 @@ export function layoutCard(input: LayoutInput): CardLayout {
   );
   const refWidth = current.refSize * 8;
   const panelWidth = Math.min(width, Math.max(widest, refWidth) + pad * 2);
-  const blockTop = top + (zoneHeight - current.height) / 2;
   const panel: Rect = {
     x: (width - panelWidth) / 2,
     y: Math.max(0, blockTop - pad),

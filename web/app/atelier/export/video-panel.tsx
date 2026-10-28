@@ -22,7 +22,16 @@ import {
 import { renderSessionVideo } from "@/lib/export-video-render";
 import type { ListeningPeaks } from "@/lib/listening";
 import type { Interval, Recognition } from "@/lib/recognition";
+import { accentSolidCss, DEFAULT_ACCENT } from "@/lib/export-video-accent";
+import { AccentDialog } from "./accent-dialog";
+import { videoFileName } from "@/lib/export-video-name";
 import { VideoPreview } from "./video-preview";
+
+const POSITIONS = [
+  { id: "top", label: "Haut", value: 12 },
+  { id: "middle", label: "Centre", value: 50 },
+  { id: "bottom", label: "Bas", value: 88 },
+] as const;
 
 /**
  * Onglet « Vidéo » de l'export : formulaire indépendant de celui des sous-titres. Tout se règle
@@ -40,8 +49,8 @@ const ORIENTATIONS = [
   { id: "1:1", label: "Carré", hint: "1:1 · publications" },
 ] as const;
 
-const ARABIC_RANGE = { min: 40, max: 140 };
-const TRANSLATION_RANGE = { min: 16, max: 64 };
+const ARABIC_RANGE = { min: 40, max: 240 };
+const TRANSLATION_RANGE = { min: 16, max: 140 };
 
 function SizeChips({
   label,
@@ -93,6 +102,9 @@ export function VideoPanel({
   const [prefsReady, setPrefsReady] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
   const [videoChecked, setVideoChecked] = useState(false);
+  const [accentOpen, setAccentOpen] = useState(false);
+  const [sessionName, setSessionName] = useState("");
+  const [fileName, setFileName] = useState("");
   const [videoCandidate, setVideoCandidate] = useState(false);
   const [intervals, setIntervals] = useState<readonly Interval[] | null>(null);
   const [peaks, setPeaks] = useState<ListeningPeaks | null>(null);
@@ -121,6 +133,7 @@ export function VideoPanel({
         if (cancelled) return;
         const candidate = isVideoExtension(data.session.extension ?? "");
         setVideoCandidate(candidate);
+        setSessionName((data.session as { name?: string }).name ?? "");
         setIntervals(data.result?.intervals ?? []);
         setPeaks(peakData);
         if (candidate)
@@ -205,6 +218,7 @@ export function VideoPanel({
         sessionId,
         prefs,
         bgImage: bgFile,
+        fileName: videoFileName(sessionName, fileName),
         onProgress: (text) => setMessage(text),
       });
       setPhase("done");
@@ -216,7 +230,7 @@ export function VideoPanel({
       setMessage(text);
       onError(text);
     }
-  }, [bgFile, onError, prefs, sessionId]);
+  }, [bgFile, fileName, onError, prefs, sessionId, sessionName]);
 
   const busy = phase === "busy";
   const orientationLabel =
@@ -311,6 +325,18 @@ export function VideoPanel({
         <label className="ex-video-check">
           <input
             type="checkbox"
+            checked={prefs.fill}
+            data-testid="video-fill"
+            onChange={(event) => patch({ fill: event.target.checked })}
+          />
+          <span>
+            Remplir tout l&rsquo;espace : les écritures grandissent
+            jusqu&rsquo;à occuper la vidéo
+          </span>
+        </label>
+        <label className="ex-video-check">
+          <input
+            type="checkbox"
             checked={prefs.showTranslation}
             data-testid="video-show-translation"
             onChange={(event) =>
@@ -320,7 +346,7 @@ export function VideoPanel({
           <span>Afficher la traduction</span>
         </label>
         <details className="ex-video-fine">
-          <summary>Réglage précis</summary>
+          <summary>Réglage précis des tailles</summary>
           <label className="ex-video-slider">
             <span>
               Arabe&nbsp;: <b className="mono">{prefs.arabicSize}</b>
@@ -361,7 +387,89 @@ export function VideoPanel({
       </fieldset>
 
       <fieldset className="ex-video-row">
-        <legend className="ex-video-legend">3 · Fond</legend>
+        <legend className="ex-video-legend">3 · Position et couleur</legend>
+        <div className="ex-video-size">
+          <span className="ex-video-size-label">Hauteur du texte</span>
+          <div
+            className="ex-seg-tabs ex-seg-tabs--wrap"
+            role="radiogroup"
+            aria-label="Hauteur du texte"
+          >
+            {POSITIONS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="radio"
+                aria-checked={prefs.textPosition === item.value}
+                data-testid={`video-position-${item.id}`}
+                className={
+                  prefs.textPosition === item.value ? "is-active" : undefined
+                }
+                onClick={() => patch({ textPosition: item.value })}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <label className="ex-video-slider">
+            <span>
+              Réglage fin&nbsp;: <b className="mono">{prefs.textPosition} %</b>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={prefs.textPosition}
+              data-testid="video-position"
+              onChange={(event) =>
+                patch({ textPosition: Number(event.target.value) })
+              }
+            />
+          </label>
+        </div>
+        <label className="ex-video-check">
+          <input
+            type="checkbox"
+            checked={prefs.showWave}
+            data-testid="video-show-wave"
+            onChange={(event) => patch({ showWave: event.target.checked })}
+          />
+          <span>Afficher l&rsquo;onde audio en bas</span>
+        </label>
+        <button
+          type="button"
+          className="ex-accent-open"
+          data-testid="accent-open"
+          onClick={() => setAccentOpen(true)}
+        >
+          <span
+            className="ex-accent-dot"
+            style={{
+              background: accentSolidCss(prefs.accent ?? DEFAULT_ACCENT),
+              opacity: prefs.accent ? prefs.accent.a : 1,
+            }}
+            aria-hidden="true"
+          />
+          <span>
+            Couleur d&rsquo;accent
+            <small>
+              {prefs.accent
+                ? "personnalisée"
+                : "automatique, couleur principale du fond"}
+            </small>
+          </span>
+        </button>
+        <AccentDialog
+          open={accentOpen}
+          value={prefs.accent}
+          onChange={(accent) => patch({ accent })}
+          onClose={() => setAccentOpen(false)}
+        />
+      </fieldset>
+
+      <fieldset className="ex-video-row">
+        <legend className="ex-video-legend">4 · Fond</legend>
         {videoCandidate && videoChecked && !isVideo ? (
           <p className="ex-micro" data-testid="video-source-unreadable">
             La vidéo d&rsquo;origine n&rsquo;a pas pu servir de fond (ce
@@ -508,6 +616,18 @@ export function VideoPanel({
       </fieldset>
 
       <div className="ex-video-foot">
+        <label className="ex-video-name">
+          <span>Nom du fichier</span>
+          <input
+            type="text"
+            value={fileName}
+            placeholder={videoFileName(sessionName)}
+            autoComplete="off"
+            spellCheck={false}
+            data-testid="video-file-name"
+            onChange={(event) => setFileName(event.target.value)}
+          />
+        </label>
         <button
           type="button"
           className="btn btn--primary btn--lg btn--block"

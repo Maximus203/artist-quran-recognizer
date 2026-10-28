@@ -2,6 +2,14 @@
  * Ressources navigateur de la vidéo d'export (aperçu comme rendu final) : fond choisi
  * (image téléversée, photo proposée, vidéo d'origine, dégradé), polices, vidéo source.
  */
+import {
+  accentCss,
+  accentFromPixels,
+  DEFAULT_ACCENT,
+  resolveAccent,
+} from "./export-video-accent";
+import type { FrameColors } from "./export-video-frames";
+import type { AccentColor } from "./export-video-prefs";
 import type {
   BackgroundChoice,
   GradientBackground,
@@ -159,4 +167,36 @@ export async function loadFrameFonts(sample: string): Promise<FrameFonts> {
     .catch(() => undefined);
   await document.fonts.ready;
   return { fontFamily, translationFontFamily };
+}
+
+/** Couleur principale du fond chargé : teinte du dégradé, ou teinte dominante de l'image / de la vidéo. */
+export function automaticAccent(background: LoadedBackground): AccentColor {
+  if (background.gradient) return background.gradient.accent;
+  const source = background.image;
+  if (!source) return DEFAULT_ACCENT;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 48;
+    canvas.height = 48;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return DEFAULT_ACCENT;
+    ctx.drawImage(source, 0, 0, 48, 48);
+    return accentFromPixels(ctx.getImageData(0, 0, 48, 48).data);
+  } catch {
+    return DEFAULT_ACCENT;
+  }
+}
+
+/** Couleurs de la vidéo : texte crème, accent choisi ou automatique, onde claire. */
+export function videoColors(
+  chosen: AccentColor | null,
+  background: LoadedBackground,
+): FrameColors {
+  const accent = resolveAccent(chosen, automaticAccent(background));
+  return {
+    text: "#f5f1e8",
+    accent: accentCss(accent),
+    wave: "rgba(245, 241, 232, 0.32)",
+    wavePlayed: "rgba(245, 241, 232, 0.92)",
+  };
 }

@@ -145,7 +145,10 @@ export type FrameState = {
   cards: readonly FrameCard[];
   peaks: ListeningPeaks;
   colors: FrameColors;
-  prefs: Pick<VideoPrefs, "arabicSize" | "translationSize">;
+  prefs: Pick<
+    VideoPrefs,
+    "arabicSize" | "translationSize" | "fill" | "textPosition" | "showWave"
+  >;
   /** Fond : image/vidéo (image courante), sinon dégradé, sinon couleur unie. */
   background: {
     color: string;
@@ -232,7 +235,7 @@ const layoutMemo = new WeakMap<
 /** Mise en page d'une carte (mémorisée : les tailles ne changent pas pendant le rendu). */
 export function cardLayoutFor(state: FrameState, card: FrameCard): CardLayout {
   const { width, height, prefs } = state;
-  const key = `${width}x${height}:${prefs.arabicSize}:${prefs.translationSize}:${state.fontFamily}`;
+  const key = `${width}x${height}:${prefs.arabicSize}:${prefs.translationSize}:${prefs.fill}:${prefs.textPosition}:${prefs.showWave}:${state.fontFamily}`;
   const known = layoutMemo.get(card);
   if (known && known.key === key) return known.layout;
   const measure = state.measureContext;
@@ -243,6 +246,9 @@ export function cardLayoutFor(state: FrameState, card: FrameCard): CardLayout {
     translation: card.card.translation,
     arabicSize: prefs.arabicSize,
     translationSize: prefs.translationSize,
+    fill: prefs.fill,
+    position: prefs.textPosition / 100,
+    showWave: prefs.showWave,
     measureArabic: (text, size) => {
       measure.font = `${size}px ${state.fontFamily}`;
       return measure.measureText(text).width;
@@ -311,6 +317,7 @@ export function drawFrame(
 
   // Onde : comme la timeline de l'atelier, une fenêtre qui défile avec la tête de lecture,
   // barres jouées en clair, à venir en sombre, tête de lecture en accent.
+  if (!state.prefs.showWave) return;
   if (state.scrim) paintWaveScrim(ctx, width, height);
   const geometry = waveBarGeometry(width, height);
   const windowSec = Math.min(duration, WAVE_WINDOW_SECONDS);

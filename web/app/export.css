@@ -2147,3 +2147,182 @@ fieldset {
 .ex-video-site-note {
   color: var(--text-2, var(--muted));
 }
+
+/* ── Export vidéo : aperçu animé, position/couleur, sélecteur d'accent ── */
+.ex-video-preview-bar {
+  display: flex;
+  justify-content: center;
+}
+.ex-accent-open {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-block-size: 48px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.ex-accent-open small {
+  display: block;
+  color: var(--text-2, var(--muted));
+  font-size: var(--fs-xs, 0.75rem);
+}
+.ex-accent-dot {
+  inline-size: 28px;
+  block-size: 28px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong, var(--border));
+}
+.ex-accent {
+  inline-size: min(420px, calc(100vw - 32px));
+  max-block-size: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--radius-lg, 12px);
+  background: var(--surface-1);
+  color: var(--text, inherit);
+}
+.ex-accent::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+.ex-accent-body {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+}
+.ex-accent-body h3 {
+  margin: 0;
+  font-size: var(--fs-lg, 1.15rem);
+}
+.ex-accent-auto {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ex-accent-auto small {
+  color: var(--text-2, var(--muted));
+}
+.ex-accent-auto.is-active,
+.ex-accent-swatch[aria-pressed="true"] {
+  border-color: var(--accent, #d8b45a);
+  box-shadow: 0 0 0 2px var(--accent, #d8b45a);
+}
+.ex-accent-swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--sp-2);
+}
+.ex-accent-swatch {
+  aspect-ratio: 1;
+  min-inline-size: 28px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.ex-accent-sample {
+  display: flex;
+  justify-content: center;
+  gap: 0.6em;
+  padding: var(--sp-3);
+  border-radius: var(--radius, 8px);
+  background: linear-gradient(#0d1b2a, #16263a);
+  color: #f5f1e8;
+  font-family: var(--font-quran);
+  font-size: 1.7rem;
+}
+.ex-accent-sliders {
+  display: grid;
+  gap: var(--sp-3);
+}
+.ex-accent-slider {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm, 0.875rem);
+}
+.ex-accent-slider > span {
+  display: flex;
+  justify-content: space-between;
+}
+.ex-accent-slider input[type="range"] {
+  inline-size: 100%;
+  block-size: 14px;
+  border-radius: 7px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.ex-accent-slider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #20242b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.ex-accent-slider input[type="range"]::-moz-range-thumb {
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #20242b;
+}
+.ex-accent-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Onglet « Réglages » sur grand écran : la colonne vide laisse place à une grille à deux colonnes. */
+@media (min-width: 1100px) {
+  .ex-xp[data-tab="reglages"] > .ex-xcol--set {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    position: static;
+    max-height: none;
+    display: block;
+  }
+  .ex-xp[data-tab="reglages"] > .ex-xcol--set > .ex-set {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--sp-6);
+    overflow: visible;
+    align-items: start;
+  }
+  .ex-xp[data-tab="reglages"] .ex-set > .ex-set-head,
+  .ex-xp[data-tab="reglages"] .ex-set > .ex-set-foot {
+    grid-column: 1 / -1;
+  }
+  .ex-xp[data-tab="reglages"] .ex-set > [data-testid="preview"] {
+    grid-column: 2;
+    grid-row: 2 / span 6;
+  }
+}
+
+.ex-video-name {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm, 0.875rem);
+}
+.ex-video-name input {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-2, transparent);
+  color: inherit;
+  font: inherit;
+}
