@@ -2,6 +2,9 @@
   "name": "artist-quran-review",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
+  },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
@@ -15,7 +18,7 @@
   },
   "dependencies": {
     "gsap": "^3.13.0",
-    "next": "^16.4.2",
+    "next": "^16.4.3",
     "playwright-core": "1.56.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
