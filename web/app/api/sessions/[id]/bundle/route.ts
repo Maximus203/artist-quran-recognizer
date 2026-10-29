@@ -1,4 +1,5 @@
 import { safe } from "@/lib/http";
+import { log } from "@/lib/log";
 import { randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { createReadStream } from "node:fs";
@@ -43,10 +44,15 @@ async function handleGET(
         },
       },
     );
-  } catch (e) {
+  } catch (error) {
+    // Le message d'origine (sortie du script Python) peut citer des chemins : il va au journal, pas à l'appelant.
+    log.error("export", "pack de revue impossible", error);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Pack impossible" },
-      { status: 400 },
+      {
+        error: "Pack impossible pour l'instant : réessaie dans un instant.",
+        code: "bundle_failed",
+      },
+      { status: 500, headers: { "Cache-Control": "private, no-store" } },
     );
   }
 }
