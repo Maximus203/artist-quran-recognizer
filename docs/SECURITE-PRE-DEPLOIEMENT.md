@@ -29,16 +29,16 @@ ni `.nvmrc` ni champ `engines` n'est déclaré : la version de Node de productio
 
 Tant que ces points ne sont pas prouvés, on ne déploie rien.
 
-- [ ] ❌ **Une seule file pour toutes les charges lourdes.** Aujourd'hui, les analyses (`web/lib/queue.ts`,
+- [x] ✅ **Une seule file pour toutes les charges lourdes.** (PR #124 : `web/lib/queue-scheduler.test.ts`, `video-jobs.test.ts`.) Texte d'origine : Aujourd'hui, les analyses (`web/lib/queue.ts`,
   `web/lib/jobs.ts`) et les exports vidéo (`web/lib/video-jobs.ts`) ont chacun leur file : deux charges
   lourdes peuvent tourner à la fois. Objectif : un ordonnanceur, une place, FIFO.
-- [ ] ❌ **Modèle chargé une fois** (worker chaud) : aujourd'hui, un processus Python par analyse, environ 50 s
+- [x] ✅ **Modèle chargé une fois** (worker chaud) (PR #125 : mesure réelle 32,5 s puis 0,5 s ; `tests/unit/test_worker.py`). Texte d'origine : aujourd'hui, un processus Python par analyse, environ 50 s
   de chargement à chaque fois.
-- [ ] ❌ **Équité entre comptes** : plafond de jobs en attente par compte (ou tour à tour). La FIFO globale
+- [x] ✅ **Équité entre comptes** (PR #124 : tour à tour + plafond de 5 en attente, 429). Texte d'origine : plafond de jobs en attente par compte (ou tour à tour). La FIFO globale
   laisse un compte bloquer les autres.
-- [ ] ❌ **Watchdog** : délai maximal par job (multiple de la durée estimée), arrêt du processus, passage au suivant.
-- [ ] ❌ **Annulation** en file et en cours : la place est libérée, le processus tué, les fichiers partiels supprimés.
-- [ ] ❌ **Redémarrage pendant un job** : état `running` orphelin traité explicitement (remise en file ou échec
+- [x] ✅ **Watchdog** (PR #124 : arrêt du processus ou du navigateur, place reprise). Texte d'origine : délai maximal par job (multiple de la durée estimée), arrêt du processus, passage au suivant.
+- [ ] 🟡 **Annulation** en file et en cours (analyses : OK ; export vidéo en cours : pas encore d'annulation par l'API). Texte d'origine : la place est libérée, le processus tué, les fichiers partiels supprimés.
+- [x] ✅ **Redémarrage pendant un job** (PR de ce lot : `web/lib/jobs-orphans.test.ts` ; les exports vidéo en cours, eux, sont perdus au redémarrage : leur registre est en mémoire). Texte d'origine : état `running` orphelin traité explicitement (remise en file ou échec
   visible). Vérifier `recoverQueue`.
 - [ ] ❌ **Fichiers très longs** : découpage en tronçons persistés pour que des jobs courts passent entre deux tronçons.
 - [ ] ❌ **Direct hors file** (décision du 2026-10-30) : plafond de flux simultanés configuré à partir de la mesure

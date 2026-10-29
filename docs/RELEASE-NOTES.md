@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Redémarrage du serveur : les analyses laissées en cours sont réglées explicitement
+Étiquettes : technique
+PR : -
+
+**Ce qui change.** Au démarrage, le serveur règle chaque analyse « en cours » que plus aucun processus ne suit : sans numéro de processus, ou processus disparu, elle passe en échec avec un message clair (« interrompue par un redémarrage… Relance-la »), ou en terminée si son résultat avait déjà été écrit. Un processus encore vivant garde sa place seulement jusqu'au délai maximal de l'analyse ; au-delà il est abandonné (son numéro a pu être réutilisé par un autre programme) et la file repart.
+
+**Pourquoi / décision.** Troisième point du gate bloquant de `docs/SECURITE-PRE-DEPLOIEMENT.md` (section 1, « redémarrage pendant un job »). Avant, une analyse sans numéro restait « en cours » pour toujours et un numéro réutilisé pouvait bloquer la file indéfiniment. Preuve : `web/lib/jobs-orphans.test.ts` (5 cas).
+
 ## 2026-10-29 — Moteur chaud : les analyses ne rechargent plus les modèles
 Étiquettes : utilisateur, technique, décision
 PR : -
