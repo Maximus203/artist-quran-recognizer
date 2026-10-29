@@ -17,13 +17,13 @@ data = ["huggingface_hub>=0.24"]
 finetune = ["huggingface_hub>=0.24", "pyarrow>=14", "soundfile>=0.12", "soxr>=0.3", "numpy>=1.26"]
 # Service WebSocket du direct (`aqr live-serve`, ADR-0011 étape 3) : Python pur, Windows et Linux.
 # Le moteur réel y ajoute l'extra `muno`.
-live = ["websockets>=14,<16"]
+live = ["websockets>=14,<18"]
 segmenter = ["recitations-segmenter==1.0.0", "silero-vad==6.2.3"]  # installer avec --no-deps après [asr]
 # `numpy` : requis par les tests des adapters (le code testé l'importe paresseusement) et par
 # tests/support/real.py ; absent, 28 tests échouent sur une installation propre. `soundfile` et
 # `huggingface_hub` ne sont PAS ajoutés : aucun test ni module testé ne les importe (mypy les traite
 # via les overrides ci-dessous).
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "hypothesis>=6", "types-pyyaml>=6", "numpy>=1.26", "websockets>=14,<16"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "hypothesis>=6", "types-pyyaml>=6", "numpy>=1.26", "websockets>=14,<18"]
 
 [project.scripts]
 aqr = "aqr.cli:main"
