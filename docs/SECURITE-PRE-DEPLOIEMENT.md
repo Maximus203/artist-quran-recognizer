@@ -169,22 +169,22 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 ## 10. Journalisation et diagnostic en production
 
-- [ ] ❌ **Journal dans des fichiers**, rotation quotidienne ou par taille, rétention définie, droits de lecture
+- [x] ✅ (`log-files.ts` : 4 flux, rotation quotidienne et par taille, rétention par flux, 0640 hors Windows ; vu sur un serveur réel) **Journal dans des fichiers**, rotation quotidienne ou par taille, rétention définie, droits de lecture
   restreints (`0640`), un fichier par flux (applicatif, sécurité, accès, file d'attente). Aujourd'hui, `log.ts`
   n'écrit que sur la console.
-- [ ] ❌ Événements obligatoires : connexions (succès, échec, verrouillage), inscriptions, changements de mot de passe,
+- [ ] 🟡 (faits : connexions, inscriptions, mots de passe, jetons, 401/403/429, analyses, exports, erreurs, démarrage et arrêt ; **dégradations du direct : journal Python pas encore versé dans ces fichiers**) Événements obligatoires : connexions (succès, échec, verrouillage), inscriptions, changements de mot de passe,
   création et révocation de jetons, accès refusés (401, 403), honeypots, dépassements de débit (429), analyses
   (démarrage, fin, échec, durée, moteur, version), exports, erreurs serveur, démarrage et arrêt du service,
   dégradations du direct.
-- [ ] ❌ **Jamais** de mot de passe, de jeton, de cookie, d'audio, de texte coranique, de traduction ni de contenu
+- [x] ✅ (masquage de secours testé : jeton, cookie, Authorization, longues clés, texte arabe ; chemins sans requête ; IP pseudonymisée) **Jamais** de mot de passe, de jeton, de cookie, d'audio, de texte coranique, de traduction ni de contenu
   utilisateur dans les journaux (cf. le journal du direct, qui ne garde que des événements et des nombres).
-- [ ] ❌ Identifiant de corrélation par requête, présent dans tous les journaux liés.
-- [ ] ❌ Format structuré (une ligne JSON par événement) avec horodatage UTC, niveau, portée, événement, durée.
-- [ ] ❌ Journal d'audit distinct, en écriture seule (ajout uniquement).
-- [ ] ❌ Procédure de diagnostic écrite : où sont les journaux, quelles commandes, quels indicateurs regarder en premier.
-- [ ] ❌ Alerte sur erreurs récurrentes (règle « audit des logs » du CLAUDE.md global) : une erreur qui revient
+- [x] ✅ (`X-Request-Id` du proxy, `rid` dans toutes les lignes ; testé) Identifiant de corrélation par requête, présent dans tous les journaux liés.
+- [x] ✅ (JSON, horodatage UTC, niveau, portée, événement, durée `ms`) Format structuré (une ligne JSON par événement) avec horodatage UTC, niveau, portée, événement, durée.
+- [x] ✅ (flux `security` séparé, ajout seul, chaîne de hachage vérifiable ; falsification détectée ; non inviolable, voir la procédure) Journal d'audit distinct, en écriture seule (ajout uniquement).
+- [x] ✅ (`docs/DIAGNOSTIC-PRODUCTION.md`) Procédure de diagnostic écrite : où sont les journaux, quelles commandes, quels indicateurs regarder en premier.
+- [ ] 🟡 (`web/scripts/log-report.mjs` : sortie 1 ou 2 si une erreur revient depuis 3 jours ; **à brancher sur une tâche planifiée et une notification**, section 15) Alerte sur erreurs récurrentes (règle « audit des logs » du CLAUDE.md global) : une erreur qui revient
   depuis des jours doit être remontée, pas silencieuse.
-- [ ] ❌ Pas de fuite de données personnelles dans les journaux : adresses IP et identifiants de compte pseudonymisés
+- [x] ✅ (adresses pseudonymisées par HMAC, comptes par numéro) Pas de fuite de données personnelles dans les journaux : adresses IP et identifiants de compte pseudonymisés
   selon la politique publiée.
 
 ## 11. Envoi de fichiers (audio, vidéo, avatar)

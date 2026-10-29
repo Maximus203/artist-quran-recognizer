@@ -369,5 +369,12 @@
     "section": "Architecture",
     "file": "docs/SECURITE-DEPENDANCES.md",
     "summary": "État de Node.js (CVE-2026-111497), Next.js, zod et des paquets Python au 2026-10-29 : audits, exceptions datées, ce qui reste à faire."
+  },
+  {
+    "slug": "diagnostic-production",
+    "title": "Diagnostic en production",
+    "section": "Architecture",
+    "file": "docs/DIAGNOSTIC-PRODUCTION.md",
+    "summary": "Où sont les journaux, ce qu'ils contiennent, relier les lignes d'une requête, les premières commandes et le rapport des erreurs récurrentes."
   }
 ]

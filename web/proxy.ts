@@ -10,6 +10,8 @@ import {
   tooLarge,
   type Family,
 } from "./lib/http-security";
+import { pseudonymize } from "./lib/audit";
+import { log } from "./lib/log";
 import { HitLimiter } from "./lib/rate-limit";
 
 /**
@@ -87,12 +89,26 @@ export function proxy(request: NextRequest): NextResponse {
     return response;
   };
 
-  if (crossSiteMutation(request.method, request.headers))
+  if (crossSiteMutation(request.method, request.headers)) {
+    log.event(
+      "security",
+      "cross_site_refused",
+      { rid: requestId, path: pathname },
+      "warn",
+    );
     return decorate(refuse(403, "Requête inter-sites refusée.", "cross_site"));
-  if (tooLarge(request.method, family, request.headers.get("content-length")))
+  }
+  if (tooLarge(request.method, family, request.headers.get("content-length"))) {
+    log.event(
+      "security",
+      "payload_too_large",
+      { rid: requestId, family, path: pathname },
+      "warn",
+    );
     return decorate(
       refuse(413, "Le corps de la requête est trop gros.", "payload_too_large"),
     );
+  }
 
   // Débit : par adresse, et par compte quand la requête en porte un (cookie ou jeton, en empreinte).
   const caller = callerKey(request.headers, clientIp(request));
@@ -103,7 +119,18 @@ export function proxy(request: NextRequest): NextResponse {
   ];
   for (const key of keys) {
     const verdict = limiter.hit(`${family}:${key}`);
-    if (!verdict.allowed)
+    if (!verdict.allowed) {
+      log.event(
+        "ratelimit",
+        "rate_limited",
+        {
+          rid: requestId,
+          family,
+          ip: pseudonymize(caller.ip),
+          retry_after_s: verdict.retryAfterS,
+        },
+        "warn",
+      );
       return decorate(
         refuse(
           429,
@@ -112,6 +139,7 @@ export function proxy(request: NextRequest): NextResponse {
           { "Retry-After": String(verdict.retryAfterS) },
         ),
       );
+    }
   }
 
   const nonce = newNonce();
