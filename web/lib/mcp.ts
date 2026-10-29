@@ -816,6 +816,22 @@ export async function handleRpc(
         message.params.arguments
           ? (message.params.arguments as Json)
           : {};
+      // Un argument mal orthographié ne doit jamais passer en silence (l'outil ferait autre chose
+      // que ce qui est demandé, p. ex. exporter tout l'audio en 1080p) : refus, avec le nom en cause.
+      const known = Object.keys(
+        ((tool.inputSchema as { properties?: Json }).properties ?? {}) as Json,
+      );
+      const unknown = Object.keys(args).filter((key) => !known.includes(key));
+      if (unknown.length > 0)
+        return ok(id, {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `${unknown.map((k) => `argument inconnu « ${k} »`).join(", ")} pour ${tool.name}. Arguments acceptés : ${known.join(", ") || "aucun"}.`,
+            },
+          ],
+        });
       try {
         const out = await tool.run(args, ctx);
         return ok(id, {

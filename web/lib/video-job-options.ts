@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionIssuesFr } from "./video-option-errors";
 import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
 import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
 import {
@@ -354,9 +355,7 @@ export function suggestOptionsFromQuery(
   if (!parsed.success)
     return {
       ok: false,
-      error: parsed.error.issues
-        .map((i) => `${i.path.join(".")} (${i.message})`)
-        .join(" ; "),
+      error: optionIssuesFr(parsed.error.issues),
     };
   return { ok: true, options: suggestOptionsOf(parsed.data) };
 }

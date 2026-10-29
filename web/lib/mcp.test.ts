@@ -159,6 +159,21 @@ describe("outils d'export vidéo et de gestion", () => {
       ctx("write", call),
     )) as { result: { isError?: boolean; content: { text: string }[] } };
 
+  it("refuse un argument inconnu au lieu d'exporter avec les réglages par défaut", async () => {
+    const call = vi.fn() as unknown as ApiCall;
+    const out = await callTool(
+      "export_video",
+      { id: ID, per_verses: true, resolutoin: 2160 },
+      call,
+    );
+    expect(out.result.isError).toBe(true);
+    expect(out.result.content[0].text).toMatch(
+      /argument inconnu « per_verses »/,
+    );
+    expect(out.result.content[0].text).toMatch(/resolutoin/);
+    expect(call).not.toHaveBeenCalled();
+  });
+
   it("transmet cadence, résolution, plages et un verset par vidéo à l'API", async () => {
     const call = vi.fn(async () => ({
       status: 202,
