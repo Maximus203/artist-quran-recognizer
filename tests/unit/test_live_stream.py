@@ -17,6 +17,7 @@ from aqr.domain.models import Status, VerseRef
 from aqr.domain.ports import Translation
 from aqr.eval.recognition import VerseInterval, parse_recognition_text
 from aqr.live.clocks import ManualClock
+from aqr.live.confirmation import ConfirmationConfig, ConfirmationWorker, SegmentConfirmer
 from aqr.live.content import LiveContent
 from aqr.live.corpus_flow import load_prefix_index
 from aqr.live.final import FinalDocumentBuilder
@@ -69,6 +70,7 @@ def make(
     limits=None,
     clock=None,
     translation="french_hameedullah",
+    confirmer=None,
 ):  # type: ignore[no-untyped-def]
     corpus, index, skeleton = world
     clock = clock or ManualClock()
@@ -87,6 +89,7 @@ def make(
             content, renderer, engine, corpus_version=corpus.version, translation_id=translation
         ),
         limits or StreamLimits(),
+        confirmer=confirmer,
     )
 
 
@@ -304,3 +307,64 @@ def test_the_current_degradation_is_readable_for_a_resuming_client(world) -> Non
     clock.begin(100.0)
     stream.push(pcm(0.1), received_at_s=0.0)
     assert "overload" in stream.degradation()
+
+
+# ------------------------------------------------------------------ confirmation (ADR-0016)
+def fake_batch(ref: str):  # type: ignore[no-untyped-def]
+    """Un moteur du lot qui reconnaît toujours le même verset, 1 s après le début du passage."""
+    from aqr.domain.models import Detection, TimeSpan, WordSpan
+    from aqr.pipeline.result import RecognitionResult
+
+    def recognize(clip, name, *, relisten=True):  # type: ignore[no-untyped-def]
+        detection = Detection(
+            span=WordSpan(VerseRef.parse(ref), 1, 4),
+            time=TimeSpan(1.0, 3.0),
+            status=Status.RECOGNIZED,
+            confidence=0.9,
+        )
+        return RecognitionResult(
+            source_file=name,
+            duration_s=len(clip.samples) / RATE,
+            intervals=(detection,),
+            engine=EngineInfo(asr="faux", segmenter="faux", matcher="faux", decoder="faux"),
+            timing={},
+            decoder_config={},
+            windows=1,
+        )
+
+    return recognize
+
+
+def test_a_closed_passage_comes_back_as_a_confirmed_message_with_corpus_text(world) -> None:  # type: ignore[no-untyped-def]
+    worker = ConfirmationWorker(fake_batch("112:2"))
+    confirmer = SegmentConfirmer(worker, "sess-0123456789", ConfirmationConfig(min_segment_s=6.0))
+    stream = make(world, confirmer=confirmer)
+    messages = run(stream, 7.0)  # niveau constant : aucune pause, le passage reste ouvert
+    messages += stream.end(received_at_s=7.0)
+    worker.close()
+    confirmed = [m for m in messages if m["type"] == "CONFIRMED"]
+    assert len(confirmed) == 1
+    interval = confirmed[0]["intervals"][0]
+    assert interval["ref"] == "112:2" and interval["status"] == "recognized"
+    assert interval["t"][0] == pytest.approx(1.0)
+    assert interval["text"] and interval["translation"]["text"] == "Traduction de 112:2."
+    kinds = types(messages)
+    assert kinds.index("CONFIRMED") < kinds.index("FINAL")
+    assert [m["seq"] for m in messages] == list(range(1, len(messages) + 1))
+
+
+def test_without_a_confirmer_nothing_changes(world) -> None:  # type: ignore[no-untyped-def]
+    messages = run(make(world), 4.0)
+    assert "CONFIRMED" not in types(messages)
+
+
+def test_a_failing_batch_engine_never_breaks_the_stream(world) -> None:  # type: ignore[no-untyped-def]
+    def broken(clip, name, *, relisten=True):  # type: ignore[no-untyped-def]
+        raise RuntimeError("modèle indisponible")
+
+    worker = ConfirmationWorker(broken)
+    stream = make(world, confirmer=SegmentConfirmer(worker, "sess-0123456789"))
+    messages = run(stream, 7.0) + stream.end(received_at_s=7.0)
+    worker.close()
+    assert "CONFIRMED" not in types(messages)
+    assert types(messages)[-1] == "FINAL"

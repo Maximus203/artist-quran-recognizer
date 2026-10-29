@@ -19,6 +19,7 @@ import os
 import subprocess
 import sys
 import time
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -70,10 +71,10 @@ def score(named: list[str], surah: int) -> dict[str, Any]:
     inside = [v for v in named if v.split(":")[0] == str(surah)]
     numbers = [int(v.split(":")[1]) for v in inside]
     skipped = 0
-    for a, b in zip(numbers, numbers[1:], strict=False):
+    for a, b in pairwise(numbers):
         if b > a + 1:
             skipped += b - a - 1
-    backwards = sum(1 for a, b in zip(numbers, numbers[1:], strict=False) if b < a)
+    backwards = sum(1 for a, b in pairwise(numbers) if b < a)
     return {
         "outside_surah": len(named) - len(inside),
         "skipped_between": skipped,
@@ -112,7 +113,8 @@ def main() -> int:
             result.update(score(result["named"], surah))
             row[mode] = result
             print(
-                f"{Path(audio).name} sourate {surah} · {mode:7s} · {result['n_named']} versets nommés "
+                f"{Path(audio).name} sourate {surah} · {mode:7s} "
+                f"· {result['n_named']} versets nommés "
                 f"· hors sourate {result['outside_surah']} · sautés {result['skipped_between']} "
                 f"· retours {result['backwards']} · {result['compute_s']} s de calcul",
                 flush=True,

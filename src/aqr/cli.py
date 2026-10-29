@@ -223,6 +223,12 @@ def _add_live_command(commands: argparse._SubParsersAction[argparse.ArgumentPars
     live.add_argument("--settle-s", type=float, default=1.5)
     live.add_argument("--no-warm-up", dest="warm_up", action="store_false")
     live.add_argument(
+        "--no-confirm",
+        dest="confirm",
+        action="store_false",
+        help="ne pas confirmer les passages par le moteur du lot (ADR-0016) : démarrage plus léger",
+    )
+    live.add_argument(
         "--warm-translations",
         default="",
         help="identifiants QuranEnc à précharger en tâche de fond, séparés par des virgules",
@@ -252,6 +258,7 @@ def _live_serve(
         asr_threads=args.asr_threads,
         settle_s=args.settle_s,
         warm_up=args.warm_up,
+        confirm=args.confirm,
         warm_translations=tuple(x.strip() for x in args.warm_translations.split(",") if x.strip()),
     )
     if runner is None:

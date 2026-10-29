@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — En direct : le moteur du lot confirme chaque passage
+Étiquettes : utilisateur, technique, décision
+PR : #123
+
+**Ce qui change.** Pendant l'écoute, le direct répond comme avant, puis le moteur du lot réécoute chaque passage dès qu'il est clos (à la première pause de la récitation) et ajoute les versets que le direct avait manqués : la liste « Passages » les place dans l'ordre du temps avec l'étiquette **Confirmé**, et remplace un « passage non nommé » qu'ils éclairent. Sur tes deux enregistrements au micro, le direct seul retrouvait 4 versets sur 6 et 11 sur 22 ; avec la confirmation, 6 sur 6 et 21 sur 22, sans aucun verset en trop. La confirmation arrive une dizaine de secondes après la fin du passage, pas pendant.
+
+**Pourquoi / décision.** Le direct ne se trompe pas mais en rate beaucoup : son modèle léger ne lit qu'environ une seconde à la fois, alors que le lot voit le passage entier et vérifie l'audio. Piste choisie par le mainteneur le 2026-10-29 (ADR-0016). Nouveau message `CONFIRMED` (protocole `aqr.live/1`, additif), option `aqr live-serve --no-confirm` pour démarrer sans le moteur du lot. Le service charge plus de modèles : le redémarrer (`scripts/live-serve.ps1`) pour en profiter.
+
 ## 2026-10-29 — Export : nouvel écran, sélecteur de plage sur la forme d'onde
 Étiquettes : utilisateur, technique, décision
 PR : #122

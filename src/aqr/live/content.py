@@ -153,6 +153,10 @@ class LiveContent:
                 interval.pop(key, None)
         return interval
 
+    def confirmed(self, detection: Detection, translation_id: str | None) -> dict[str, Any]:
+        """Intervalle d'un verset confirmé par le lot : le même contrat que `aqr recognize`."""
+        return self._render(detection, translation_id)
+
     def _render(self, detection: Detection, translation_id: str | None) -> dict[str, Any]:
         try:
             return dict(verse_interval_json(detection, self._renderer, translation_id))

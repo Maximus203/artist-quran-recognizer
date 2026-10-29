@@ -355,5 +355,12 @@
     "section": "Décisions",
     "file": "docs/adr/0015-recitation-guidee.md",
     "summary": "Accepté le 2026-10-28 : option START.options.surah, index limité à la sourate annoncée, réglages de verrou plus souples ; sur Hud 11:61-71 (10 min) tous les versets sont nommés, aucun sauté, contre 5 sur 11 en écoute classique."
+  },
+  {
+    "slug": "adr-0016",
+    "title": "ADR-0016 — Confirmation du direct par le moteur du lot",
+    "section": "Décisions",
+    "file": "docs/adr/0016-confirmation-par-le-lot.md",
+    "summary": "Accepté le 2026-10-29 : le flux est coupé aux pauses et chaque passage clos est réécouté par le moteur du lot (message CONFIRMED) ; sur deux sessions micro, 4/6 devient 6/6 et 11/22 devient 21/22, sans verset en trop."
   }
 ]
