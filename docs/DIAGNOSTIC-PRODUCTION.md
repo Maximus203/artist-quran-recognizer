@@ -70,9 +70,25 @@ grep -h '"session":"<identifiant>"' "$AQR_LOG_DIR"/queue-*.log
 
 ## Direct
 
-Le service `aqr live-serve` (Python) écrit son propre journal (événements et nombres, jamais d'audio ni de
-texte) ; voir `src/aqr/live/journal.py`. Son envoi vers un fichier de ce même dossier est traité avec la
-section 12.
+Le service `aqr live-serve` (Python) écrit son journal sur la console **et** dans `live-AAAA-MM-JJ.log`
+du même dossier (une ligne JSON par événement : `session.open`, `session.stats`, `token.replayed`, dégradations…),
+conservé 30 jours. Jamais d'audio, de jeton, de texte coranique ni de traduction : ces champs sont remplacés par
+`<omis>`, et un compte n'y figure que sous un pseudonyme court. Le rapport `log-report.mjs` le lit avec les autres.
+
+**Clé de signature des jetons** (`AQR_LIVE_KEY`, sinon le fichier local `live-signing.key` du dossier de données, créé
+au premier démarrage avec les droits 0600). Elle n'est jamais dans Git (`*.key` est ignoré ; un test le vérifie).
+Rotation, à faire au moins une fois par an et à chaque soupçon de fuite :
+
+1. produire une nouvelle clé : `python -c "import secrets; print(secrets.token_urlsafe(32))"` ;
+2. la poser à l'identique côté atelier ET côté service du direct : variable `AQR_LIVE_KEY`, ou remplacer le contenu
+   de `live-signing.key` (les deux processus lisent le même fichier) ;
+3. redémarrer l'atelier puis le service du direct ;
+4. effet : les jetons émis avant (60 secondes de vie) ne valent plus, les flux déjà ouverts continuent ; un utilisateur
+   qui échoue à démarrer une écoute au moment du changement recommence simplement.
+
+**Plafonds** (`AQR_LIVE_*`) : 16 flux au plus, 2 par compte, 32 connexions non authentifiées, 3 600 s par flux, 120 s de
+silence, blocs de 32 000 octets. Ce sont des valeurs de départ ; la valeur finale se fixe d'après une mesure sur la
+machine cible (`scripts/measure_live_service.py`).
 
 ## Limites connues
 

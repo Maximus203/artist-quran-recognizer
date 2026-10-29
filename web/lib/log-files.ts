@@ -21,12 +21,14 @@ import path from "node:path";
  * ligne précédente) et `hash` (empreinte de celle-ci). Modifier, supprimer ou insérer une ligne casse
  * la chaîne, et `verifyChain` dit à quelle ligne.
  */
-export type Stream = "app" | "security" | "access" | "queue";
+/** `live` est écrit par le service du direct (Python, `src/aqr/live/journal.py`) dans le même dossier. */
+export type Stream = "app" | "security" | "access" | "queue" | "live";
 export const STREAMS: readonly Stream[] = [
   "app",
   "security",
   "access",
   "queue",
+  "live",
 ];
 
 export type LogRecord = {
@@ -51,10 +53,11 @@ export const DEFAULT_RETENTION: Record<Stream, number> = {
   access: 30,
   queue: 90,
   security: 365,
+  live: 30,
 };
 const GENESIS = "0".repeat(16);
 const FILE =
-  /^(app|security|access|queue)-(\d{4}-\d{2}-\d{2})(?:\.(\d+))?\.log$/;
+  /^(app|security|access|queue|live)-(\d{4}-\d{2}-\d{2})(?:\.(\d+))?\.log$/;
 
 const link = (prev: string, body: string): string =>
   createHash("sha256")

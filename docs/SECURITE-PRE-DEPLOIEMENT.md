@@ -172,7 +172,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 - [x] ✅ (`log-files.ts` : 4 flux, rotation quotidienne et par taille, rétention par flux, 0640 hors Windows ; vu sur un serveur réel) **Journal dans des fichiers**, rotation quotidienne ou par taille, rétention définie, droits de lecture
   restreints (`0640`), un fichier par flux (applicatif, sécurité, accès, file d'attente). Aujourd'hui, `log.ts`
   n'écrit que sur la console.
-- [ ] 🟡 (faits : connexions, inscriptions, mots de passe, jetons, 401/403/429, analyses, exports, erreurs, démarrage et arrêt ; **dégradations du direct : journal Python pas encore versé dans ces fichiers**) Événements obligatoires : connexions (succès, échec, verrouillage), inscriptions, changements de mot de passe,
+- [x] ✅ (connexions, inscriptions, mots de passe, jetons, 401/403/429, analyses, exports, erreurs, démarrage et arrêt ; dégradations du direct : journal Python versé dans `live-….log`) Événements obligatoires : connexions (succès, échec, verrouillage), inscriptions, changements de mot de passe,
   création et révocation de jetons, accès refusés (401, 403), honeypots, dépassements de débit (429), analyses
   (démarrage, fin, échec, durée, moteur, version), exports, erreurs serveur, démarrage et arrêt du service,
   dégradations du direct.
@@ -202,12 +202,12 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 ## 12. Direct (WebSocket)
 
-- [ ] 🟡 Jeton signé HMAC, à usage unique, durée 60 s, lié au compte (existant, `src/aqr/live/`). **Vérifier** :
+- [x] ✅ (usage unique, 60 s, lié au compte : `test_live_service.py` ; clé hors de Git, vérifié par `test_no_live_key_in_repo.py` ; rotation : `docs/DIAGNOSTIC-PRODUCTION.md`) Jeton signé HMAC, à usage unique, durée 60 s, lié au compte (existant, `src/aqr/live/`). **Vérifier** :
   la clé de signature est un secret de l'environnement, jamais dans Git ; rotation documentée.
-- [ ] ❌ Contrôle de l'en-tête `Origin` à la connexion WebSocket (refus de toute origine non listée).
-- [ ] ❌ Quotas : flux simultanés, par compte, connexions non authentifiées (valeurs à fixer après mesure, section 1).
-- [ ] ❌ Taille maximale des trames et durée maximale de flux, bornées.
-- [ ] ❌ Vie privée : aucun audio conservé par défaut ; le test vérifie qu'aucun fichier audio n'apparaît sur le disque
+- [x] ✅ (hôte et origine refusés avant l'ouverture ; un client sans `Origin` est accepté mais doit présenter un jeton valide ; testé) Contrôle de l'en-tête `Origin` à la connexion WebSocket (refus de toute origine non listée).
+- [ ] 🟡 (quotas en place et testés : 16 / 2 / 32 ; **valeurs à fixer après mesure sur la machine cible**) Quotas : flux simultanés, par compte, connexions non authentifiées (valeurs à fixer après mesure, section 1).
+- [x] ✅ (bloc 32 000 octets, trame, 3 600 s, silence 120 s, contre-pression ; testé) Taille maximale des trames et durée maximale de flux, bornées.
+- [x] ✅ (`tests/integration/test_live_privacy.py` : aucune écriture de fichier pendant un flux, aucun fichier après) Vie privée : aucun audio conservé par défaut ; le test vérifie qu'aucun fichier audio n'apparaît sur le disque
   après un flux.
 
 ## 13. Secrets et configuration

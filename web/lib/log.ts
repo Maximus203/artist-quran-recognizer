@@ -98,6 +98,7 @@ function retention(env: Record<string, string | undefined>) {
     access: general,
     queue: Math.max(general, DEFAULT_RETENTION.queue),
     security: days(env.AQR_AUDIT_RETENTION_DAYS, DEFAULT_RETENTION.security),
+    live: general,
   };
 }
 

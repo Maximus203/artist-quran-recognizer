@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Direct : journal en fichier, contrôles éprouvés, clé de signature et rotation
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Le service du direct écrit maintenant son journal aussi en fichier (`live-AAAA-MM-JJ.log`, une ligne JSON par événement, droits 0640, conservé 30 jours) dans le même dossier que celui de l'atelier ; le rapport quotidien (`node web/scripts/log-report.mjs`) le lit avec les autres et signale une erreur du direct qui revient depuis des jours. Rien d'autre ne change pour l'utilisateur.
+
+**Pourquoi / décision.** Section 12 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Déjà en place et testé avant ce lot (`tests/integration/test_live_service.py`, 52 cas avec un vrai serveur WebSocket) : jeton signé à usage unique et de durée courte, refus de toute origine ou hôte non autorisé avant l'ouverture du WebSocket, plafonds de flux (service, compte, non authentifiés), taille maximale d'un bloc et d'une trame, durée maximale d'un flux, silence maximal, contre-pression. Ajouté : un test prouve qu'**aucun fichier n'est ouvert en écriture pendant un flux complet et qu'aucun n'apparaît après** (avec un garde-fou qui vérifie que l'espion voit bien une écriture), un test vérifie qu'aucune clé de signature n'est assignée dans un fichier suivi par Git (la clé vit dans l'environnement ou dans un fichier local ignoré), et la procédure de rotation est écrite. **Non fait : fixer le plafond de flux simultanés d'après une mesure sur la machine cible** ; les valeurs de départ (16 flux, 2 par compte, 32 connexions non authentifiées) viennent de la mesure du poste de développement. Preuves : `tests/unit/test_live_journal.py` (6 cas ajoutés), `tests/integration/test_live_privacy.py`, `tests/unit/test_no_live_key_in_repo.py`, `web/lib/log-report.test.ts`.
+
 ## 2026-10-29 — Envois de fichiers : contenu réel vérifié, disque protégé, plafonds, noms sûrs
 Étiquettes : technique, décision
 PR : -

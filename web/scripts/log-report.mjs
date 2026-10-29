@@ -14,7 +14,7 @@ const link = (prev, body) =>
     .digest("hex")
     .slice(0, 16);
 const FILE =
-  /^(app|security|access|queue)-(\d{4}-\d{2}-\d{2})(?:\.(\d+))?\.log$/;
+  /^(app|security|access|queue|live)-(\d{4}-\d{2}-\d{2})(?:\.(\d+))?\.log$/;
 
 /** Même règle que `verifyChain` de lib/log-files.ts (un test vérifie qu'elles s'accordent). */
 export function verifyChain(text) {
