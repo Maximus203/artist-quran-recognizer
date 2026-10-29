@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { useFocusTrap } from "../hooks";
 import { bytesFr } from "@/lib/export-text";
 import type { FileRow } from "@/lib/export-video-progress";
 import { progressCounts } from "@/lib/export-video-progress";
@@ -446,19 +447,9 @@ export function ExportSheet({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      previous?.focus?.();
-    };
-  }, [open, onClose]);
+  // Même piège de focus que les tiroirs de l'atelier : Tab / Maj+Tab restent dans la feuille,
+  // Échap la ferme, le focus revient au bouton qui l'a ouverte.
+  useFocusTrap(ref, open, onClose);
   if (!open) return null;
   return (
     <>
