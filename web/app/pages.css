@@ -91,3 +91,38 @@ a.btn,
 a.menu-item {
   text-decoration: none;
 }
+
+/* Pastille de la file : position, attente estimée, « le système est occupé ». */
+.queue-notice {
+  position: fixed;
+  z-index: 54;
+  right: var(--sp-4);
+  bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 8px 14px;
+  border-radius: var(--r-md, 12px);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.queue-notice[data-visible="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.queue-notice__line {
+  display: block;
+}
+@media (prefers-reduced-motion: reduce) {
+  .queue-notice {
+    transition: none;
+  }
+}

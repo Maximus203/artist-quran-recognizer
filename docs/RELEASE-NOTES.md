@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — File d'attente visible : on sait qu'on attend et pourquoi, sans voir les autres
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Une pastille en bas à droite de chaque page connectée dit où en est ta file : « Votre analyse : 3e dans la file · environ 12 min » (ou « estimation indisponible » tant que l'historique ne permet pas d'estimer), « Votre export vidéo est en cours », et, quand d'autres comptes occupent la machine, « Le système est occupé : une génération est en cours et une autre est en attente ». Les exports vidéo comptent maintenant dans la file visible. Une génération publique reste visible de tous ; une génération privée d'un autre compte n'apparaît que dans les nombres, jamais par son titre, son nom, son identifiant ou sa durée.
+
+**Pourquoi / décision.** Section 2 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Nouvelle route `GET /api/queue` (connexion requise, `Cache-Control: no-store`), calculée par `web/lib/queue-status.ts` à partir de toute la machine mais filtrée selon qui regarde. Preuves : `web/lib/queue-status.test.ts` (9 cas), `web/app/api/queue/route.test.ts` (réponse JSON pour B : aucun titre, nom ni identifiant de A), et vérification dans un vrai navigateur avec deux comptes (bureau et mobile 375 px).
+
 ## 2026-10-29 — Test de charge de la file, annulation des exports vidéo, worker rechargé après mise à jour des modèles
 Étiquettes : technique, utilisateur
 PR : -
