@@ -133,6 +133,15 @@ est indisponible, `translation` vaut `null` et `translation_unavailable` vaut `t
 intervalle `uncertain` n'est **pas un nom** (c'est le premier candidat), il ne doit jamais être affiché comme tel ; l'écran
 lit `candidates` (au plus 20, le total est `candidate_count`).
 
+**`CONFIRMED`** — le moteur du lot a réécouté un passage clos du flux (ADR-0016) :
+`{"type":"CONFIRMED","seq":31,"t":24.4,"span":[8.1,16.0],"intervals":[{"kind":"verse","ref":"2:211","status":"recognized","t":[9.2,15.1],...}]}`.
+`span` est le passage réécouté (temps du flux) ; `intervals` sont des versets `recognized` ou `inferred` au même contrat
+que `CONTINUE.closed` (texte du corpus, traduction QuranEnc entière), datés dans le temps du flux. Un passage resté
+ambigu n'est jamais confirmé. Il arrive quelques secondes après la fin du passage, **après** le `CONTINUE` du direct s'il
+y en a eu un : le client rattache le verset à la ligne du direct de même `ref` qui se recoupe dans le temps, sinon il
+l'ajoute à sa place dans le temps. Absent si le service tourne sans moteur du lot (`--no-confirm`) : un client qui ne
+connaît pas ce type l'ignore sans perdre le reste. Tous les `CONFIRMED` précèdent `FINALIZING`/`FINAL`.
+
 **`REVISION`** — un verrou déjà émis est retiré (jamais caché) :
 `{"type":"REVISION","seq":20,"t":9.1,"ref":"112:1","status":"retracted","reason":"contradicted"}`.
 
@@ -215,12 +224,12 @@ un redémarrage du service** (la reprise reçoit `session_expired`) ; un `last_s
 `IDLE_TIMEOUT_S` (30), `RESUME_TTL_S` (30), `FINAL_KEEP_S` (120), `MAX_BLOCK_BYTES` (32 000), `MAX_STREAM_S` (3 600),
 `MAX_SILENCE_S` (120), `SILENCE_RMS` (0,002), `RING_MESSAGES` (500), `MAX_BACKLOG_S` (20), `STALL_TIMEOUT_S` (15). Clé :
 `AQR_LIVE_KEY` ou `AQR_LIVE_KEY_FILE`. Atelier : `AQR_LIVE_URL` (adresse donnée au navigateur), `AQR_LIVE_TOKEN_TTL_S`.
-Lancer : `pip install -e ".[live,muno]"` puis `aqr live-serve` (`--asr-threads`, `--warm-translations`).
+Lancer : `pip install -e ".[live,muno]"` puis `aqr live-serve` (`--asr-threads`, `--warm-translations`, `--no-confirm`).
 
 ## 8. Écarts avec l'ADR-0011 §6
 - `t` des messages est un nombre (heure du flux) ; les intervalles s'appellent `span` (`PARTIAL`, `CANDIDATES`, `PROGRESS`).
 - `START.token` (le jeton ne passe pas par l'adresse). `READY` : `seq` 0, `last_seq`, `replay_from`, `resume_ttl_s`, `limits`.
-- Messages ajoutés : `PROGRESS`, `FINALIZING`, `DEGRADED`, `BASMALA` ; `LOST` n'a pas d'intervalle ; `REVISION` porte
+- Messages ajoutés : `PROGRESS`, `FINALIZING`, `DEGRADED`, `BASMALA`, `CONFIRMED` ; `LOST` n'a pas d'intervalle ; `REVISION` porte
   `status:"retracted"` ; le passage clos sans nom est un `CONTINUE uncertain` (pas de message `UNCERTAIN`) ; `GAP` est dérivé
   par le client.
 - Codes d'erreur ajoutés : `bad_message`, `bad_audio_block`, `stream_too_long`, `silence_too_long`, `idle_timeout`,

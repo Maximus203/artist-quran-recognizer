@@ -98,6 +98,11 @@ const REVISION = z.looseObject({
   status: z.string(),
   reason: z.string().optional(),
 });
+const CONFIRMED = z.looseObject({
+  ...kind("CONFIRMED"),
+  span: z.tuple([num, num]),
+  intervals: z.array(interval),
+});
 const JUMP = z.looseObject({
   ...kind("JUMP"),
   from: z.string().optional(),
@@ -143,6 +148,7 @@ const SCHEMAS = {
   LOCKED,
   PROGRESS,
   CONTINUE,
+  CONFIRMED,
   REVISION,
   JUMP,
   LOST,

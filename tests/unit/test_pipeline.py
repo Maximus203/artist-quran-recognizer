@@ -801,3 +801,49 @@ def test_un_fichier_sans_coran_ne_gagne_aucun_verset(corpus, matcher, alignment_
     )
     assert _verses(result) == []
     assert not [c for c in result.acoustic_checks if c.kind == "gap"]  # aucune ancre, aucun trou
+
+
+class _Counting:
+    """Un moteur qui compte ses appels et ne reconnaît rien."""
+
+    riwaya = Riwaya.HAFS
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def transcribe(self, clip: AudioClip, span: TimeSpan) -> Transcript:
+        self.calls += 1
+        return Transcript(words=(), engine="fake")
+
+
+def test_run_clip_donne_le_meme_resultat_que_run_sur_le_meme_son(corpus, matcher):
+    texts = [_verse(corpus, 67, a) for a in (1, 2)]
+    extractor = _Extractor(30.0)
+    engine = EngineInfo("fake-asr", "fake-segmenter", "flow-matcher", "viterbi-v2")
+
+    def build() -> RecognitionPipeline:
+        return RecognitionPipeline(
+            extractor, _Segmenter([(2.0, 8.0), (9.0, 15.0)]), _ASR(texts), matcher, corpus, engine
+        )
+
+    by_file = build().run(Path("x.mp3"))
+    by_clip = build().run_clip(extractor.clip, "x.mp3")
+    assert by_clip.intervals == by_file.intervals
+    assert by_clip.source_file == "x.mp3"
+
+
+def test_warm_up_sollicite_chaque_moteur_une_fois(corpus, matcher):
+    primary, secondary = _Counting(), _Counting()
+    extractor = _Extractor(6.0)
+    engine = EngineInfo("fake-asr", "fake-segmenter", "flow-matcher", "viterbi-v2")
+    pipeline = RecognitionPipeline(
+        extractor,
+        _Segmenter([(0.0, 5.0)]),
+        primary,
+        matcher,
+        corpus,
+        engine,
+        secondary=[("second", secondary)],
+    )
+    assert pipeline.warm_up(extractor.clip) >= 0.0
+    assert primary.calls >= 1 and secondary.calls == 1

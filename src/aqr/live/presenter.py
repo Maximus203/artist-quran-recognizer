@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from aqr.live.confirmation import Confirmation
 from aqr.live.content import LiveContent
 from aqr.live.events import (
     BasmalaHeard,
@@ -114,6 +115,22 @@ class LivePresenter:
                 )
             ]
         return [self._degraded(event)]
+
+    def confirmation(self, confirmation: Confirmation, t: float) -> Presented:
+        """Les versets qu'un passage clos a livrés au moteur du lot (ADR-0016) : des intervalles
+        au contrat du lot, avec le texte du corpus (I1) et la traduction QuranEnc entière (I2)."""
+        intervals = [
+            self._content.confirmed(detection, self._translation)
+            for detection in confirmation.detections
+        ]
+        return Presented(
+            "CONFIRMED",
+            t,
+            {
+                "span": [_t(confirmation.start_s), _t(confirmation.end_s)],
+                "intervals": intervals,
+            },
+        )
 
     # ------------------------------------------------------------------ candidats
     def _candidates(self, event: Candidates) -> Presented:

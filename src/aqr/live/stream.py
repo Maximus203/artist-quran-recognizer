@@ -20,6 +20,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from aqr.live.confirmation import Confirmation, SegmentConfirmer
 from aqr.live.final import FinalDocumentBuilder
 from aqr.live.pipeline import Emission, LivePipeline
 from aqr.live.presenter import LivePresenter
@@ -67,8 +68,10 @@ class LiveStream:
         final: FinalDocumentBuilder,
         limits: StreamLimits | None = None,
         clock: Callable[[], float] = time.perf_counter,
+        confirmer: SegmentConfirmer | None = None,
     ) -> None:
         self.session_id = session_id
+        self._confirmer = confirmer
         self._clock = clock
         self.pipeline = pipeline
         self._presenter = presenter
@@ -132,7 +135,12 @@ class LiveStream:
         self._silent_s = silent_s
         self._samples += count
         self._digest.update(pcm)
-        return self._wrap(self.pipeline.feed(samples, received_at_s=received_at_s))
+        if self._confirmer is not None:
+            self._confirmer.feed(samples)
+        messages = self._wrap(self.pipeline.feed(samples, received_at_s=received_at_s))
+        if self._confirmer is not None:
+            messages += self._confirmed(self._confirmer.ready())
+        return messages
 
     def end(self, *, received_at_s: float | None = None) -> list[dict[str, Any]]:
         """Fin du flux : vide les tampons, clôt le passage ouvert, rend `FINAL`. Idempotent."""
@@ -141,6 +149,8 @@ class LiveStream:
         self._ended = True
         messages = [self._emit("FINALIZING", self.audio_received_s, {"pending_s": None})]
         messages += self._wrap(self.pipeline.finish(received_at_s=received_at_s))
+        if self._confirmer is not None:
+            messages += self._confirmed(self._confirmer.finish())
         stats = self.pipeline.stats
         document = self._final.build(
             session_id=self.session_id,
@@ -162,6 +172,13 @@ class LiveStream:
             self._final.observe(emission.event)
             for item in self._presenter.present(emission.event):
                 out.append(self._emit(item.type, item.t, item.fields))
+        return out
+
+    def _confirmed(self, confirmations: list[Confirmation]) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for confirmation in confirmations:
+            item = self._presenter.confirmation(confirmation, self.audio_received_s)
+            out.append(self._emit(item.type, item.t, item.fields))
         return out
 
     def _emit(self, kind: str, t: float, fields: dict[str, Any]) -> dict[str, Any]:

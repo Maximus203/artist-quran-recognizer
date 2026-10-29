@@ -27,6 +27,13 @@ from aqr.domain.ports import CorpusRepository, StreamingAsr, TranslationReposito
 from aqr.live.access import AccessPolicy
 from aqr.live.budget import BudgetConfig
 from aqr.live.config import LiveConfig
+from aqr.live.confirmation import (
+    ConfirmationConfig,
+    ConfirmationWorker,
+    Recognize,
+    SegmentConfirmer,
+    warm_clip,
+)
 from aqr.live.content import LiveContent
 from aqr.live.final import FinalDocumentBuilder
 from aqr.live.hub import LiveHub, StreamFactory
@@ -58,6 +65,9 @@ class LiveEngine:
     renderer: HomeRenderer
     live: LiveConfig = field(default_factory=LiveConfig)
     budget: BudgetConfig = field(default_factory=BudgetConfig)
+    confirm: Recognize | None = None
+    """Le moteur du lot, appelé sur chaque passage clos (ADR-0016) ; None = pas de confirmation."""
+    confirmation: ConfirmationConfig = field(default_factory=ConfirmationConfig)
 
 
 def make_stream_factory(engine: LiveEngine, config: LiveServiceConfig) -> StreamFactory:
@@ -70,6 +80,7 @@ def make_stream_factory(engine: LiveEngine, config: LiveServiceConfig) -> Stream
     )
     limits = config.stream_limits()
     guided_indexes: dict[int, PrefixIndex] = {}
+    worker = ConfirmationWorker(engine.confirm) if engine.confirm is not None else None
 
     def index_for(surah: int | None) -> PrefixIndex:
         """Écoute classique : l'index du Coran entier. Récitation guidée : celui de la sourate
@@ -112,6 +123,9 @@ def make_stream_factory(engine: LiveEngine, config: LiveServiceConfig) -> Stream
             ),
             limits,
             clock=clock,
+            confirmer=(
+                SegmentConfirmer(worker, session_id, engine.confirmation) if worker else None
+            ),
         )
 
     return factory
@@ -131,6 +145,8 @@ class ServiceOptions:
     settle_s: float = 1.5
     device: str = "cpu"
     warm_up: bool = True
+    confirm: bool = True
+    """Charger le moteur du lot pour confirmer les passages (ADR-0016) ; plus lent au démarrage."""
     warm_translations: tuple[str, ...] = ()
 
 
@@ -178,6 +194,7 @@ def load_engine(options: ServiceOptions, env: Mapping[str, str]) -> LiveEngine: 
         skeleton=skeleton,
         corpus=corpus,
         renderer=HomeRenderer(corpus, translations, segments),
+        confirm=load_batch_recognizer(options, env) if options.confirm else None,
     )
     if options.warm_up:
         warm_up(engine)
@@ -189,6 +206,34 @@ def load_engine(options: ServiceOptions, env: Mapping[str, str]) -> LiveEngine: 
             name="aqr-live-translations",
         ).start()
     return engine
+
+
+def load_batch_recognizer(
+    options: ServiceOptions, env: Mapping[str, str]
+) -> Recognize:  # pragma: no cover
+    """Le moteur du lot (cascade, vérification acoustique) pour confirmer les passages clos."""
+    from aqr.pipeline.factory import CASCADE, RecognizeOptions, build_recognizer
+
+    started = time.perf_counter()
+    recognizer = build_recognizer(
+        RecognizeOptions(
+            asr=CASCADE,
+            models_dir=options.models_dir,
+            lock_path=options.lock_path,
+            corpus_dir=options.corpus_dir,
+            translation_id=None,
+            device=options.device,
+        ),
+        env,
+    )
+    built = time.perf_counter()
+    warmed = recognizer.pipeline.warm_up(warm_clip())
+    journal.info(
+        "service.confirm_ready",
+        build_s=round(built - started, 1),
+        warm_up_s=round(warmed, 1),
+    )
+    return recognizer.pipeline.run_clip
 
 
 def warm_up(engine: LiveEngine) -> float:

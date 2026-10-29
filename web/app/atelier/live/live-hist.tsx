@@ -146,9 +146,15 @@ function Row({
         : "s-uncertain";
   const sub = row.revised
     ? "Nommé puis retiré · incertain après vérification"
-    : row.status === "inferred"
-      ? "Déduit de la position · texte entendu"
-      : "Reconnu";
+    : row.confirmed
+      ? `Confirmé après réécoute du passage${
+          row.partial && row.words
+            ? ` · mots ${row.words[0]}–${row.words[1]}`
+            : ""
+        }`
+      : row.status === "inferred"
+        ? "Déduit de la position · texte entendu"
+        : "Reconnu";
   return (
     <li
       className="hrow"
@@ -165,6 +171,7 @@ function Row({
               {row.revised ? (
                 <span className="lv-tag lv-tag--warn">Corrigé</span>
               ) : null}
+              {row.confirmed ? <span className="lv-tag">Confirmé</span> : null}
               {row.interrupted && !row.revised ? (
                 <span className="lv-tag">Interrompu</span>
               ) : null}

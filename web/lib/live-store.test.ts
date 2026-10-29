@@ -823,3 +823,127 @@ describe("annonces sobres", () => {
     );
   });
 });
+
+describe("confirmation par le moteur du lot (ADR-0016)", () => {
+  const confirmed = (
+    t: number,
+    span: [number, number],
+    items: { ref: string; t: [number, number]; status?: string }[],
+  ) =>
+    msg({
+      ...base("CONFIRMED", t),
+      span,
+      intervals: items.map((i) => ({
+        kind: "verse",
+        ref: i.ref,
+        words: [1, 4],
+        partial: false,
+        status: i.status ?? "recognized",
+        t: i.t,
+        text: "ٱلْحَمْدُ لِلَّهِ",
+        translation: TR,
+        identity_basis: "words",
+      })),
+    });
+
+  it("marque confirmée la ligne du direct de même verset, sans la dupliquer", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(10400, locked(3.5, "1:2", 3)),
+      server(11500, cont(5.0, "1:2", "1:3")),
+      server(20000, confirmed(14, [0, 12], [{ ref: "1:2", t: [1.0, 4.4] }])),
+    ];
+    const verses = historyRows(upTo(script, 20000)).filter(
+      (r) => r.kind === "verse",
+    );
+    expect(verses).toHaveLength(1);
+    expect(verses[0]).toMatchObject({ ref: "1:2", confirmed: true });
+  });
+
+  it("ajoute un verset que le direct n'avait pas nommé, à sa place dans le temps", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(11500, cont(5.0, "1:2", "1:3")),
+      server(18400, cont(10.4, "1:4", "1:5")),
+      server(
+        30000,
+        confirmed(
+          20,
+          [0, 12],
+          [
+            { ref: "1:2", t: [1.0, 4.5] },
+            { ref: "1:3", t: [5.0, 7.0] },
+            { ref: "1:4", t: [6.4, 9.9] },
+          ],
+        ),
+      ),
+    ];
+    const rows = historyRows(upTo(script, 30000)).filter(
+      (r) => r.kind === "verse",
+    );
+    expect(rows.map((r) => (r.kind === "verse" ? r.ref : ""))).toEqual([
+      "1:4",
+      "1:3",
+      "1:2",
+    ]);
+    expect(counts(upTo(script, 30000)).named).toBe(3);
+  });
+
+  it("remplace un passage non nommé que la confirmation nomme", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(16000, unresolved(8.0, 2, ["1:3", "55:1"])),
+      server(30000, confirmed(20, [0, 12], [{ ref: "1:3", t: [5.0, 7.0] }])),
+    ];
+    const s = upTo(script, 30000);
+    expect(counts(s)).toEqual({ named: 1, unnamed: 0 });
+  });
+
+  it("ne touche ni un passage hors du temps confirmé, ni un verset corrigé", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(16000, unresolved(30.0, 2, ["1:3", "55:1"])),
+      server(30000, confirmed(40, [0, 12], [{ ref: "1:3", t: [5.0, 7.0] }])),
+    ];
+    const s = upTo(script, 30000);
+    expect(counts(s)).toEqual({ named: 1, unnamed: 1 });
+  });
+
+  it("ne rejoue jamais deux fois le même message numéroté", () => {
+    resetSeq();
+    const message = confirmed(14, [0, 12], [{ ref: "1:2", t: [1.0, 4.4] }]);
+    const once = reduce(upTo([...open()], 0), server(20000, message));
+    const twice = reduce(once, server(20100, message));
+    expect(twice.hist).toHaveLength(once.hist.length);
+  });
+
+  it("retire aussi un passage non nommé quand le verset était déjà nommé par le direct", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(11500, cont(5.0, "1:2", "1:3")),
+      server(16000, unresolved(8.0, 2, ["1:3", "55:1"])),
+      server(30000, confirmed(20, [0, 12], [{ ref: "1:2", t: [1.0, 7.0] }])),
+    ];
+    const s = upTo(script, 30000);
+    expect(counts(s)).toEqual({ named: 1, unnamed: 0 });
+    expect(historyRows(s).filter((r) => r.kind === "verse")).toHaveLength(1);
+  });
+
+  it("n'ajoute pas ensuite une ligne du direct que le lot a déjà confirmée", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(10000, confirmed(9, [0, 8], [{ ref: "1:3", t: [1.0, 4.0] }])),
+      server(16000, unresolved(5.0, 2, ["1:3", "55:1"])),
+      server(17000, cont(5.5, "1:3", "1:4")),
+    ];
+    const s = upTo(script, 17000);
+    expect(counts(s)).toEqual({ named: 1, unnamed: 0 });
+    expect(historyRows(s).filter((r) => r.kind === "verse")).toHaveLength(1);
+  });
+});

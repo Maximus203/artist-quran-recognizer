@@ -23,6 +23,14 @@
 - **Preuve** : `.artist/acceptance-playbooks/export-refonte.md` ; tests `web/lib/export-timeline`, `export-video-plan`,
   `export-video-weight`, `export-video-request`, `export-video-progress`, `video-thumbnails`.
 
+## 2026-10-29 — En direct : confirmation de chaque passage par le moteur du lot (ADR-0016)
+- **Constat** (sessions micro réelles) : le direct retrouve 4/6 et 11/22 des versets que le lot retrouve sur le même
+  audio, avec zéro verset en trop. Le défaut est le rappel, imputable au modèle de flux léger, pas à la recherche.
+- **Décision du mainteneur** : piste 1 — garder le direct comme première lecture et faire réécouter chaque passage clos
+  (coupé aux pauses) par le moteur du lot, qui renvoie un message `CONFIRMED`. Écartés : changer/affiner le modèle de flux
+  (long, incertain), régler les seuils seuls (ne rend pas des mots non entendus).
+- **Mesuré** : 6/6 et 21/22, zéro en trop. Document `FINAL` inchangé (suite possible).
+
 ## 2026-10-28 (4) — Export vidéo : parties, 30/60 im/s, résolutions jusqu'au 4K, MCP complet
 - **Plages** : une plage = une vidéo (`ranges` ou `per_verse`) ; le mux garde l'extrait de l'audio (`-ss`/`-t` avant l'entrée
   son) et reçoit début, durée et cadence par en-têtes du dernier segment. Sans l'en-tête de cadence, le serveur suppose 25 im/s

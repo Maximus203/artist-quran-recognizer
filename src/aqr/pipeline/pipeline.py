@@ -132,12 +132,24 @@ class RecognitionPipeline:
         self._decoder = ViterbiSequenceDecoder(self._config.decoder, corpus=corpus)
 
     def run(self, path: Path) -> RecognitionResult:
-        timing: dict[str, float] = {}
         started = self._clock()
-
-        mark = self._clock()
         clip = self._extractor.extract(path)
-        timing["extract_s"] = self._clock() - mark
+        return self.run_clip(clip, Path(path).name, started=started)
+
+    def run_clip(
+        self,
+        clip: AudioClip,
+        source_file: str,
+        *,
+        started: float | None = None,
+        relisten: bool = True,
+    ) -> RecognitionResult:
+        """Le lot sur un son déjà en mémoire (le direct confirme ainsi chaque passage clos).
+        `relisten=False` saute la réécoute par les moteurs secondaires : bien plus rapide, un peu
+        moins de versets sauvés (le direct s'en sert quand la file prend du retard)."""
+        timing: dict[str, float] = {}
+        started = self._clock() if started is None else started
+        timing["extract_s"] = self._clock() - started
         rate = clip.sample_rate
         duration = len(clip.samples) / rate
 
@@ -163,7 +175,7 @@ class RecognitionPipeline:
         proven, checks = self._resolve(clip, matched, heard, side, timing)
 
         cascade: dict[str, object] | None = None
-        if self._secondary and self._acoustic is not None:
+        if relisten and self._secondary and self._acoustic is not None:
             mark = self._clock()
             doubtful = self._doubtful(proven, side)
             relistens: list[ChainCheck] = []
@@ -203,7 +215,7 @@ class RecognitionPipeline:
 
         intervals = self._assemble(detections, side)
         return RecognitionResult(
-            source_file=Path(path).name,
+            source_file=source_file,
             duration_s=duration,
             intervals=tuple(intervals),
             engine=self._engine_info(),
@@ -215,6 +227,16 @@ class RecognitionPipeline:
             riwaya=self._corpus.riwaya,
             cascade=cascade,
         )
+
+    def warm_up(self, clip: AudioClip) -> float:
+        """Charge chaque modèle (segmenteur, ASR, moteurs de réécoute) sur un son quelconque,
+        avant le premier vrai passage : un premier appel à froid coûte des dizaines de secondes."""
+        started = self._clock()
+        self.run_clip(clip, "warm-up")
+        window = TimeSpan(0.0, len(clip.samples) / clip.sample_rate)
+        for asr in (self._asr, *(engine for _name, engine in self._secondary)):
+            _transcribe_with(asr, clip, [window], 1)
+        return self._clock() - started
 
     # -- Décision : preuve par la suite, vérifiée sur l'audio quand le modèle CTC est là ---------
     def _resolve(

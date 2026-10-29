@@ -110,4 +110,32 @@ describe("parseServerMessage", () => {
       "no_candidate",
     );
   });
+
+  it("accepte un CONFIRMED : un passage réécouté par le moteur du lot (ADR-0016)", () => {
+    const parsed = parseServerMessage({
+      ...base,
+      type: "CONFIRMED",
+      span: [8.1, 16],
+      intervals: [
+        {
+          kind: "verse",
+          ref: "2:211",
+          status: "recognized",
+          t: [9.2, 15.1],
+          text: "…",
+        },
+      ],
+    });
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok && parsed.message.type === "CONFIRMED")
+      expect(parsed.message.intervals[0].ref).toBe("2:211");
+    expect(
+      parseServerMessage({
+        ...base,
+        type: "CONFIRMED",
+        span: [1],
+        intervals: [],
+      }).ok,
+    ).toBe(false);
+  });
 });

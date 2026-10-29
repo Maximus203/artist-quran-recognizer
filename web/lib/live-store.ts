@@ -78,6 +78,10 @@ export type HistItem =
       partial: boolean;
       revised: boolean;
       interrupted: boolean;
+      /** Confirmé par le moteur du lot après coup (ADR-0016). */
+      confirmed?: boolean;
+      /** Plage de mots du corpus quand le verset n'est entendu qu'en partie. */
+      words?: [number, number] | null;
     }
   | {
       kind: "unres";
@@ -422,6 +426,8 @@ function describe(message: ServerMessage): string {
       return `ref=${message.ref} mots=${message.words_heard}`;
     case "CONTINUE":
       return `ref=${message.closed.ref} statut=${message.closed.status} suite=${message.expected?.ref ?? "—"}`;
+    case "CONFIRMED":
+      return `passage=${message.span[0]}-${message.span[1]}s versets=${message.intervals.map((i) => i.ref).join(",")}`;
     case "REVISION":
       return `ref=${message.ref} statut=${message.status} motif=${message.reason ?? "—"}`;
     case "JUMP":
@@ -465,6 +471,7 @@ function verseItem(
         : (source.translation ?? null),
     translationUnavailable: source.translation_unavailable ?? false,
     partial: source.partial ?? false,
+    words: source.words ?? null,
     revised: false,
     interrupted: extra.interrupted ?? false,
   };
@@ -600,6 +607,8 @@ function onServer(state: LiveState, message: ServerMessage): LiveState {
     }
     case "CONTINUE":
       return onContinue(next, message);
+    case "CONFIRMED":
+      return onConfirmed(next, message);
     case "REVISION":
       return onRevision(next, message);
     case "JUMP": {
@@ -728,8 +737,19 @@ function onContinue(
     jump: null,
     unres: null,
   });
+  const window: [number, number | null] = [closed.t[0], closed.t[1]];
+  const confirmedOver = (ref?: string) =>
+    state.hist.some(
+      (item) =>
+        item.kind === "verse" &&
+        item.confirmed === true &&
+        (ref === undefined || item.ref === ref) &&
+        overlaps(item.t, window),
+    );
   if (closed.status === "uncertain") {
     const afterLock = closeLock(cleared, message.t);
+    // Le lot a déjà nommé ce passage : sa ligne « non nommé » n'a plus lieu d'être.
+    if (confirmedOver()) return { ...afterLock, between: null };
     const [id, counter] = nextId(afterLock, "u");
     const heardText = state.cand?.heardText ?? null;
     const t0 = closed.t[0];
@@ -778,8 +798,61 @@ function onContinue(
       expected: message.expected?.ref ?? null,
       revised: false,
     },
-    hist: [item, ...rest.hist],
+    // Le lot a déjà confirmé ce verset : une seule ligne.
+    hist: confirmedOver(closed.ref) ? rest.hist : [item, ...rest.hist],
   };
+}
+
+const startOf = (item: HistItem): number =>
+  item.kind === "verse" || item.kind === "unres" ? item.t[0] : item.t;
+
+const overlaps = (a: [number, number | null], b: [number, number | null]) =>
+  a[0] < (b[1] ?? Infinity) && b[0] < (a[1] ?? Infinity);
+
+/**
+ * Le moteur du lot a réécouté un passage clos (ADR-0016). Chaque verset qu'il livre remplace la ligne du
+ * direct de même verset qui se recoupe dans le temps (elle devient « confirmée »), ou s'insère à sa place
+ * dans le temps ; un passage « non nommé » qu'il éclaire disparaît, c'est son remplaçant. Rien d'autre
+ * n'est touché : le lot ne prouve jamais qu'une ligne du direct est fausse.
+ */
+function onConfirmed(
+  state: LiveState,
+  message: Extract<ServerMessage, { type: "CONFIRMED" }>,
+): LiveState {
+  let hist = state.hist;
+  let counter = state.counter;
+  for (const interval of message.intervals) {
+    if (interval.status === "uncertain") continue;
+    const at: [number, number | null] = [interval.t[0], interval.t[1]];
+    // Un passage « non nommé » que ce verset éclaire n'a plus lieu d'être, que le verset soit
+    // nouveau ou déjà nommé par le direct.
+    hist = hist.filter(
+      (item) => !(item.kind === "unres" && overlaps(item.t, at)),
+    );
+    const same = hist.findIndex(
+      (item) =>
+        item.kind === "verse" &&
+        !item.revised &&
+        item.ref === interval.ref &&
+        overlaps(item.t, at),
+    );
+    counter += 1;
+    const confirmed = {
+      ...verseItem(same >= 0 ? hist[same].id : `c${counter}`, interval),
+      confirmed: true,
+    } as HistItem;
+    if (same >= 0) {
+      hist = hist.map((item, i) => (i === same ? confirmed : item));
+      continue;
+    }
+    const at0 = interval.t[0];
+    const place = hist.findIndex((item) => startOf(item) <= at0);
+    hist =
+      place < 0
+        ? [...hist, confirmed]
+        : [...hist.slice(0, place), confirmed, ...hist.slice(place)];
+  }
+  return { ...state, hist, counter };
 }
 
 function onRevision(
