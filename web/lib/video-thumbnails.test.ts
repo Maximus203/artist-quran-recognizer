@@ -1,4 +1,11 @@
-import { mkdtemp, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  readdir,
+  rm,
+  stat,
+  utimes,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -110,7 +117,12 @@ describe("cache sur disque", () => {
       await writeFile(args.at(-1) as string, "jpg");
     };
     for (const count of [2, 3, 4, 5, 6])
-      await ensureThumbnails(dir, source, { count, width: 64, duration: 10 }, run);
+      await ensureThumbnails(
+        dir,
+        source,
+        { count, width: 64, duration: 10 },
+        run,
+      );
     const left = (await readdir(path.join(dir, "listening"))).filter((f) =>
       f.startsWith("thumbs-"),
     );
