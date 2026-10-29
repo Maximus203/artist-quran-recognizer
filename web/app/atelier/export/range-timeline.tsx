@@ -47,6 +47,8 @@ const RULER = 18;
 const LANE = 22;
 const THUMB = 48;
 const MINI_H = 34;
+/** Cible tactile d'une poignée (= --hit). */
+const HIT_PX = 44;
 
 export type Thumbs = { image: HTMLImageElement; count: number; every: number };
 type Clock = Store<PlayerState>;
@@ -521,6 +523,28 @@ export function RangeTimeline({
     event.stopPropagation();
     event.preventDefault();
     setPop(null);
+    pointers.current.set(event.pointerId, event.clientX);
+    // Deuxième doigt pendant un geste sur une plage : c'est un pincement, la plage revient où elle était.
+    const current = drag.current;
+    if (current && pointers.current.size === 2) {
+      window.clearTimeout(current.timer);
+      onChange(current.id, { start: current.start0, end: current.end0 });
+      drag.current = null;
+      setPrecision(false);
+      setDragging(null);
+      const xs = [...pointers.current.values()];
+      pan.current = {
+        x0: xs[0],
+        view0: view,
+        moved: true,
+        pinch: {
+          distance: Math.abs(xs[0] - xs[1]),
+          view,
+          mid: T(localX((xs[0] + xs[1]) / 2)),
+        },
+      };
+      return;
+    }
     if (range.id !== selectedId) {
       onSelect(range.id);
       if (kind === "move") return;
@@ -642,6 +666,7 @@ export function RangeTimeline({
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (d && event.pointerId === d.pointer) {
+      pointers.current.delete(event.pointerId);
       window.clearTimeout(d.timer);
       drag.current = null;
       setPrecision(false);
@@ -851,10 +876,13 @@ export function RangeTimeline({
                 <span className="tag">{index + 1}</span>
                 {(["start", "end"] as const).map((kind) => {
                   const value = kind === "start" ? range.start : range.end;
+                  // Tournée vers l'extérieur, sauf au bord de la loupe où elle serait coupée.
+                  const inward =
+                    kind === "start" ? x0 < HIT_PX : x1 > width - HIT_PX;
                   return (
                     <div
                       key={kind}
-                      className={`xr-grip xr-grip--${kind}`}
+                      className={`xr-grip xr-grip--${kind}${inward ? " xr-grip--in" : ""}`}
                       style={{ left: kind === "start" ? 0 : "100%" }}
                       role="slider"
                       tabIndex={isSel ? 0 : -1}

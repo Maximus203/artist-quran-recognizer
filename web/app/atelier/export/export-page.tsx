@@ -928,7 +928,7 @@ function OrphansNotice({
   );
 }
 
-/** La page « Exporter les sous-titres » : vérifier à gauche, régler à droite, une action en bas. */
+/** La page « Exporter » : une porte (Vérifier) puis deux livrables (Sous-titres, Vidéo). */
 export function ExportPage({ sessionId }: { sessionId: string }) {
   const [initial, setInitial] = useState<ExportOptions | null>(null);
   useEffect(() => setInitial(loadExportOptions()), []);

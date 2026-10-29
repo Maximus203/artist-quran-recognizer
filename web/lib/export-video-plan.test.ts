@@ -78,6 +78,11 @@ describe("raccourcis", () => {
   it("« Ajouter une plage » prend le passage le plus proche du centre de la loupe", () => {
     expect(suggestionNear(ctx(), 26)?.refs).toEqual(["R:4"]);
     expect(suggestionNear(ctx(), 7)?.refs).toEqual(["R:1"]);
+    // Déjà dans la liste : on propose le suivant, jamais un doublon.
+    const taken = addVerse([], ctx(), 7, 1);
+    expect(suggestionNear(ctx(), 7, taken)?.refs).toEqual(["R:2"]);
+    const all = fromSuggestions(ctx(), 1);
+    expect(suggestionNear(ctx(), 7, all)).toBeNull();
   });
 });
 

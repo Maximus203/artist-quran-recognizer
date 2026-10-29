@@ -110,8 +110,14 @@ function suggestionAt(
 export function suggestionNear(
   ctx: PlanContext,
   t: number,
+  taken: readonly PlanRange[] = [],
 ): SuggestedRange | null {
-  const all = suggestions(ctx);
+  // Un passage déjà dans la liste n'est pas reproposé.
+  const used = (s: SuggestedRange) =>
+    taken.some(
+      (r) => r.anchor !== null && Math.abs(r.anchor - s.core_start) < 1e-3,
+    );
+  const all = suggestions(ctx).filter((s) => !used(s));
   return all.find((s) => s.core_end > t) ?? all[all.length - 1] ?? null;
 }
 

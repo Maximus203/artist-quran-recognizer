@@ -47,6 +47,10 @@ describe("nom du fichier d'une plage", () => {
     expect(
       videoRangeFileName("rec.mp3", undefined, range, 2, "2:255-257"),
     ).toBe("rec — 2.255-257.mp4");
+    // « 91.4 » n'est pas une extension : le numéro du verset reste.
+    expect(videoRangeFileName("rec.mp3", undefined, range, 2, "91:4")).toBe(
+      "rec — 91.4.mp4",
+    );
     expect(
       videoRangeFileName("rec.mp3", "Ma vidéo", range, 2, "../x/Début"),
     ).not.toMatch(/[\\/:]|\.\./);

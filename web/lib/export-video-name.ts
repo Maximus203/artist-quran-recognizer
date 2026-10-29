@@ -47,6 +47,7 @@ export function videoRangeFileName(
   const stem = base.replace(/\.mp4$/i, "");
   // Le nom d'une plage est souvent une référence « 2:255 » : le deux-points devient un point.
   const label = clean((name ?? "").replace(/:/g, "."));
-  if (label) return videoFileName(`${stem} — ${label}`);
+  // Passé comme nom saisi : « 91.4 » ne doit pas être pris pour une extension et retiré.
+  if (label) return videoFileName("", `${stem} — ${label}`);
   return videoFileName(`${stem} ${rangeLabel(range)}`);
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
 import { renderSessionVideo } from "@/lib/export-video-render";
 
@@ -38,7 +38,12 @@ type State = {
 
 export function RenderClient() {
   const [text, setText] = useState("Rendu en préparation…");
+  // Un seul rendu par page, même si React relance l'effet (mode strict de développement) :
+  // sinon chaque vidéo serait produite et téléchargée deux fois.
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     const w = window as unknown as {
       __AQR_RENDER?: Payload;
       __AQR_STATE?: State;

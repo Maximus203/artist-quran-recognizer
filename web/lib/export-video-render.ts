@@ -7,6 +7,7 @@ import { api } from "./api-client";
 import { even, type VideoOrientation } from "./export-video-args";
 import { videoDimensions } from "./export-video-format";
 import { videoRangeFileName, videoFileName } from "./export-video-name";
+import { nameFromRefs } from "./export-video-plan";
 import { normalizeRanges, type NamedRange } from "./export-video-ranges";
 import { fileProgressText, type FileProgress } from "./export-video-progress";
 import {
@@ -163,7 +164,11 @@ export async function renderSessionVideo(
     ? suggestRanges(result.intervals, duration, peaks, {
         ...margins,
         group: mode,
-      }).map((r) => ({ start: r.start, end: r.end }))
+      }).map((r) => ({
+        start: r.start,
+        end: r.end,
+        name: nameFromRefs(r.refs),
+      }))
     : inputs.padRanges && inputs.ranges && inputs.ranges.length > 0
       ? padRanges(inputs.ranges, result.intervals, duration, peaks, margins)
       : inputs.ranges;

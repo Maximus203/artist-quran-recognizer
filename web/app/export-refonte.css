@@ -46,6 +46,7 @@
 }
 .ex-xp[data-tab="video"] > .ex-xcol--video {
   display: block;
+  max-width: none;
 }
 .ex-xp > .ex-xcol--check {
   max-width: 920px;
@@ -522,6 +523,10 @@
   bottom: 0;
   pointer-events: none;
 }
+/* La plage choisie passe devant ses voisines : ses poignées (tournées vers l'extérieur) restent saisissables. */
+.xr-plage[data-selected="true"] {
+  z-index: 2;
+}
 .xr-plage .body {
   position: absolute;
   inset: 0;
@@ -613,6 +618,23 @@
 }
 .xr-grip--end::after {
   left: 0;
+}
+/* Au bord de la loupe, la cible se replie vers l'intérieur (sinon elle serait coupée). */
+.xr-grip--start.xr-grip--in {
+  transform: none;
+}
+.xr-grip--start.xr-grip--in::before,
+.xr-grip--start.xr-grip--in::after {
+  right: auto;
+  left: 0;
+}
+.xr-grip--end.xr-grip--in {
+  transform: translateX(-100%);
+}
+.xr-grip--end.xr-grip--in::before,
+.xr-grip--end.xr-grip--in::after {
+  left: auto;
+  right: 0;
 }
 .xr-plage[data-selected="false"] .xr-grip {
   display: none;
