@@ -34,7 +34,7 @@ async function handlePOST(
   try {
     const asr = await requestedAsr(request);
     await ensureQueueRecovered().catch(() => []);
-    return json(await launch(access.id, asr));
+    return json(await launch(access.id, asr, access.user.id));
   } catch (e) {
     const { status, message } = httpError(e, "Démarrage impossible");
     return apiError(status, message);

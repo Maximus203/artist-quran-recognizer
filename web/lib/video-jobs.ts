@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { jobQueue } from "./jobs";
 import { sessionDir } from "./store";
 import {
   suggestOptionsOf,
@@ -56,10 +57,10 @@ const MAX_ACTIVE_PER_USER = 2;
 const RENDER_TIMEOUT_MS = 30 * 60 * 1000;
 
 const HOLDER = Symbol.for("aqr.video-jobs");
-type Registry = { jobs: Map<string, VideoJob>; chain: Promise<void> };
+type Registry = { jobs: Map<string, VideoJob> };
 function registry(): Registry {
   const holder = globalThis as { [HOLDER]?: Registry };
-  return (holder[HOLDER] ??= { jobs: new Map(), chain: Promise.resolve() });
+  return (holder[HOLDER] ??= { jobs: new Map() });
 }
 
 export class VideoJobLimitError extends Error {
@@ -144,7 +145,7 @@ export async function startVideoJob(input: {
   bearer: string;
   origin: string;
   /** Remplace le rendu (tests). */
-  runner?: (job: VideoJob) => Promise<void>;
+  runner?: (job: VideoJob, aborted: AbortSignal) => Promise<void>;
 }): Promise<VideoJob> {
   await purgeOld();
   const active = [...registry().jobs.values()].filter(
@@ -188,27 +189,47 @@ export async function startVideoJob(input: {
   };
   registry().jobs.set(id, job);
   const run = input.runner ?? renderInBrowser;
-  const reg = registry();
-  reg.chain = reg.chain.then(async () => {
-    job.state = "running";
-    job.progress = "Démarrage";
-    try {
-      await run(job);
-      if (!job.file) throw new Error("Aucune vidéo produite.");
-      if (job.files.length === 0)
-        job.files = [{ name: path.basename(job.file), path: job.file }];
-      job.state = "done";
-      job.progress = "Terminé";
-      job.files_done = job.files.length;
-      job.files_total = job.files.length;
-    } catch (error) {
-      job.state = "failed";
-      job.error = error instanceof Error ? error.message : "Rendu impossible.";
-      job.progress = "Échec";
-    } finally {
-      job.bearer = null;
-      job.finishedAt = new Date().toISOString();
-    }
+  // Même file que les analyses : une seule charge lourde à la fois, équité entre comptes, watchdog.
+  jobQueue().enqueue(`video:${id}`, {
+    owner: String(input.userId),
+    timeoutMs: RENDER_TIMEOUT_MS + 60_000,
+    run: async (_queueId, signal) => {
+      signal.started();
+      job.state = "running";
+      job.progress = "Démarrage";
+      try {
+        await Promise.race([
+          run(job, signal.aborted),
+          new Promise<never>((_, reject) =>
+            signal.aborted.addEventListener(
+              "abort",
+              () =>
+                reject(
+                  new Error(
+                    "Le rendu a dépassé le délai maximal et a été arrêté.",
+                  ),
+                ),
+              { once: true },
+            ),
+          ),
+        ]);
+        if (!job.file) throw new Error("Aucune vidéo produite.");
+        if (job.files.length === 0)
+          job.files = [{ name: path.basename(job.file), path: job.file }];
+        job.state = "done";
+        job.progress = "Terminé";
+        job.files_done = job.files.length;
+        job.files_total = job.files.length;
+      } catch (error) {
+        job.state = "failed";
+        job.error =
+          error instanceof Error ? error.message : "Rendu impossible.";
+        job.progress = "Échec";
+      } finally {
+        job.bearer = null;
+        job.finishedAt = new Date().toISOString();
+      }
+    },
   });
   return job;
 }
@@ -229,7 +250,10 @@ export function applyRenderState(job: VideoJob, state: RenderPageState): void {
 }
 
 /** Rendu réel : page technique `/render/video` dans Chrome/Edge sans interface. */
-async function renderInBrowser(job: VideoJob): Promise<void> {
+async function renderInBrowser(
+  job: VideoJob,
+  aborted: AbortSignal,
+): Promise<void> {
   const executablePath = browserExecutable();
   if (!executablePath) throw new BrowserUnavailableError();
   const playwright = await import("playwright-core");
@@ -238,6 +262,14 @@ async function renderInBrowser(job: VideoJob): Promise<void> {
     headless: true,
     args: ["--autoplay-policy=no-user-gesture-required"],
   });
+  // Annulation ou délai dépassé : le navigateur est fermé tout de suite, la place est rendue.
+  aborted.addEventListener(
+    "abort",
+    () => void browser.close().catch(() => undefined),
+    {
+      once: true,
+    },
+  );
   try {
     const context = await browser.newContext({
       acceptDownloads: true,

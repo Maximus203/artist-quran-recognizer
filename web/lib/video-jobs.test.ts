@@ -279,6 +279,33 @@ describe("jobs d'export vidéo", () => {
   });
 });
 
+describe("pile unique avec les analyses", () => {
+  it("un export vidéo attend la fin d'une analyse (une seule charge à la fois)", async () => {
+    const { jobQueue } = await import("./jobs");
+    let release: () => void = () => undefined;
+    const analysis = new Promise<void>((r) => (release = r));
+    const queue = jobQueue();
+    queue.enqueue("analyse-test", {
+      run: async (_id, signal) => {
+        signal.started();
+        await analysis;
+      },
+    });
+    const job = await startVideoJob({
+      ...base,
+      userId: 91,
+      runner: async (j) => {
+        j.file = path.join(j.dir, "v.mp4");
+        await writeFile(j.file, "x");
+      },
+    });
+    await new Promise((r) => setTimeout(r, 30));
+    expect(getVideoJob(job.id)?.state).toBe("queued");
+    release();
+    expect((await settle(job.id)).state).toBe("done");
+  });
+});
+
 describe("avancement d'un job, fichier par fichier", () => {
   it("publie progress, files_done et files_total ; tout est fait à la fin", async () => {
     const job = await startVideoJob({
