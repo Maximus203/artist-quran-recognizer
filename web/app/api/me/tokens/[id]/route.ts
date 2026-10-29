@@ -1,4 +1,5 @@
 import { revokeApiToken } from "@/lib/api-tokens";
+import { audit } from "@/lib/audit";
 import { apiError, safe } from "@/lib/http";
 import { requireUser } from "@/lib/route-guard";
 export const runtime = "nodejs";
@@ -15,6 +16,7 @@ async function handleDELETE(
     return apiError(404, "Jeton introuvable.");
   if (!revokeApiToken(auth.db, auth.user.id, id))
     return apiError(404, "Jeton introuvable.");
+  audit("token.revoked", { userId: auth.user.id });
   return new Response(null, { status: 204 });
 }
 

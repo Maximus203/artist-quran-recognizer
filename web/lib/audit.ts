@@ -17,7 +17,9 @@ export type AuditEvent =
   | "logout"
   | "logins.revoked_others"
   | "account.unlock"
-  | "visibility.change";
+  | "visibility.change"
+  | "token.created"
+  | "token.revoked";
 
 export type AuditFields = {
   userId?: number | null;

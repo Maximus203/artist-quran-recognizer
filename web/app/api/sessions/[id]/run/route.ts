@@ -2,25 +2,12 @@ import { launch, cancel, ensureQueueRecovered } from "@/lib/jobs";
 import { httpError } from "@/lib/errors";
 import { apiError, json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
+import { z } from "zod";
 import { parseAsrChoice } from "@/lib/asr-choice";
+import { parseBody } from "@/lib/body";
 export const runtime = "nodejs";
 
-/** Corps facultatif `{ "asr": "…" }` ; vide = moteur de l'atelier. Un corps illisible est refusé. */
-async function requestedAsr(request: Request) {
-  const text = await request.text();
-  if (text.trim() === "") return undefined;
-  let body: unknown;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error("Corps de requête illisible : du JSON est attendu.");
-  }
-  if (!body || typeof body !== "object" || Array.isArray(body))
-    throw new Error('Corps de requête invalide : { "asr": "…" } est attendu.');
-  // Sans moteur demandé, `launch` applique celui de l'atelier (`AQR_ASR`, cascade par défaut) :
-  // le même que l'import avec `autorun`.
-  return "asr" in body ? parseAsrChoice(body.asr) : undefined;
-}
+const runBody = z.object({ asr: z.string().max(40).optional() }).strict();
 
 /** Met l'analyse en file : `{ state: "running" | "queued", queue_position }`. Propriétaire ou administrateur. */
 async function handlePOST(
@@ -32,7 +19,12 @@ async function handlePOST(
   });
   if (!access.ok) return access.response;
   try {
-    const asr = await requestedAsr(request);
+    const body = await parseBody(request, runBody, "{ asr? }");
+    if (!body.ok) return body.response;
+    // Sans moteur demandé, `launch` applique celui de l'atelier (`AQR_ASR`, cascade par défaut) :
+    // le même que l'import avec `autorun`.
+    const asr =
+      body.data.asr === undefined ? undefined : parseAsrChoice(body.data.asr);
     await ensureQueueRecovered().catch(() => []);
     return json(await launch(access.id, asr, access.user.id));
   } catch (e) {
