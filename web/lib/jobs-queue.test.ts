@@ -459,7 +459,7 @@ describe("reprise après redémarrage", () => {
     await seed(D, "hold", {
       state: "running",
       pid: orphan.pid as number,
-      started_at: "2026-10-22T09:00:00.000Z",
+      started_at: new Date().toISOString(), // récent : au-delà du délai maximal, il serait abandonné
     });
     await seed(A, "ok", {
       state: "queued",

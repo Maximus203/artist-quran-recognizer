@@ -86,6 +86,8 @@ type Shared = {
    * file les possède. Ils comptent comme des places occupées jusqu'à leur fin.
    */
   orphanPids: Set<number>;
+  /** Heure (ms) au-delà de laquelle un orphelin encore vivant est abandonné (pid recyclé possible). */
+  orphanDeadlines: Map<number, number>;
   orphanTimer?: ReturnType<typeof setInterval>;
   launchTail: Promise<unknown>;
   lastQueuedAt: number;
@@ -99,6 +101,7 @@ function shared(): Shared {
     launching: new Set(),
     cancelRequests: new Set(),
     orphanPids: new Set(),
+    orphanDeadlines: new Map(),
     launchTail: Promise.resolve(),
     lastQueuedAt: 0,
   });
@@ -135,13 +138,22 @@ function isAlive(pid: number): boolean {
   }
 }
 function liveOrphans(): number {
-  const { orphanPids } = shared();
-  for (const pid of orphanPids) if (!isAlive(pid)) orphanPids.delete(pid);
+  const { orphanPids, orphanDeadlines } = shared();
+  const now = Date.now();
+  for (const pid of orphanPids) {
+    if (!isAlive(pid) || now > (orphanDeadlines.get(pid) ?? Infinity)) {
+      orphanPids.delete(pid);
+      orphanDeadlines.delete(pid);
+    }
+  }
   return orphanPids.size;
 }
-function watchOrphans(pids: number[]): void {
+function watchOrphans(orphans: { pid: number; deadline: number }[]): void {
   const state = shared();
-  for (const pid of pids) state.orphanPids.add(pid);
+  for (const { pid, deadline } of orphans) {
+    state.orphanPids.add(pid);
+    state.orphanDeadlines.set(pid, deadline);
+  }
   if (state.orphanTimer || state.orphanPids.size === 0) return;
   state.orphanTimer = setInterval(() => {
     if (liveOrphans() === 0) {
@@ -204,6 +216,21 @@ function startEngine(run: EngineCommand): JobProcess {
     windowsHide: true,
     env: run.env,
   });
+}
+
+/** Marque en échec une analyse `running` que plus aucun processus de ce serveur ne suit. */
+async function abandon(id: string, message: string): Promise<void> {
+  try {
+    const session = await readSession(id);
+    if (session.state !== "running" || jobs.has(id)) return;
+    session.state = "failed";
+    session.error = message;
+    session.pid = null;
+    recordOutcome(session, null, new Date().toISOString());
+    await saveSession(session, UPDATE);
+  } catch {
+    /* session supprimée entre-temps : rien à consigner */
+  }
 }
 
 /** La file du processus (créée à la demande, une seule même si le module est chargé deux fois). */
@@ -512,15 +539,31 @@ export function removeSession(
  * place). Idempotent : une analyse déjà en file n'est jamais doublée.
  */
 export async function recoverQueue(): Promise<string[]> {
-  const sessions = await listSessions();
-  watchOrphans(
-    sessions
-      .filter(
-        (s) =>
-          s.state === "running" && s.pid && !jobs.has(s.id) && isAlive(s.pid),
-      )
-      .map((s) => s.pid as number),
-  );
+  const all = await listSessions();
+  const abandoned = new Set<string>();
+  const orphans: { pid: number; deadline: number }[] = [];
+  for (const s of all) {
+    if (s.state !== "running" || jobs.has(s.id)) continue;
+    const startedAt = Date.parse(s.started_at ?? s.created_at);
+    const deadline = startedAt + analysisTimeoutMs(s.audio_duration_s);
+    if (!s.pid) {
+      await abandon(
+        s.id,
+        "L’analyse a été interrompue par un redémarrage du serveur avant de produire un résultat. Relance-la.",
+      );
+      abandoned.add(s.id);
+    } else if (isAlive(s.pid) && Date.now() > deadline) {
+      await abandon(
+        s.id,
+        "L’analyse n’a pas fini dans le délai maximal avant le redémarrage du serveur. Relance-la.",
+      );
+      abandoned.add(s.id);
+    } else if (isAlive(s.pid)) {
+      orphans.push({ pid: s.pid, deadline });
+    }
+  }
+  watchOrphans(orphans);
+  const sessions = all.filter((s) => !abandoned.has(s.id));
   const queue = jobQueue();
   const waiting = sessions
     .filter(
@@ -551,6 +594,14 @@ export function ensureQueueRecovered(): Promise<string[]> {
     throw error;
   });
   return holder[RECOVERED];
+}
+/** Pour les tests : oublie les orphelins suivis (état partagé du processus). */
+export function resetOrphans(): void {
+  const state = shared();
+  clearInterval(state.orphanTimer);
+  state.orphanTimer = undefined;
+  state.orphanPids.clear();
+  state.orphanDeadlines.clear();
 }
 /** Pour les tests : autorise une nouvelle reprise. */
 export function resetQueueRecovery(): void {
