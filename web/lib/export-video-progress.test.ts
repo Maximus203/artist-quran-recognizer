@@ -5,6 +5,7 @@ import {
   fileProgressText,
   initialFiles,
   progressCounts,
+  renderErrorText,
 } from "./export-video-progress";
 
 describe("progression par fichier", () => {
@@ -60,5 +61,19 @@ describe("progression par fichier", () => {
     expect(
       applyFileProgress(rows, { index: 4, total: 1, phase: "done", ratio: 1 }),
     ).toBe(rows);
+  });
+});
+
+describe("erreur de rendu dite en clair", () => {
+  it("réseau coupé : jamais « Failed to fetch »", () => {
+    const text = renderErrorText(new TypeError("Failed to fetch"));
+    expect(text).not.toMatch(/Failed to fetch/);
+    expect(text).toMatch(/connexion au serveur/);
+  });
+  it("un message déjà en français passe tel quel ; sinon une phrase générique", () => {
+    expect(renderErrorText(new Error("Image de fond introuvable."))).toBe(
+      "Image de fond introuvable.",
+    );
+    expect(renderErrorText("x")).toMatch(/n’a pas pu être fabriquée/);
   });
 });

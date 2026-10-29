@@ -64,3 +64,20 @@ export const progressCounts = (
   done: rows.filter((r) => r.state === "done").length,
   total: rows.length,
 });
+
+/** Ce que l'écran dit d'un échec de rendu : jamais le texte technique du navigateur. */
+export function renderErrorText(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (
+    /failed to fetch|networkerror|network request failed|load failed/i.test(
+      message,
+    )
+  )
+    return "La connexion au serveur a été coupée pendant l’envoi de la vidéo (serveur arrêté ou réseau perdu). Vérifie que l’atelier tourne, puis reprends : les vidéos déjà téléchargées sont gardées.";
+  if (
+    message &&
+    /[àâçéèêëîïôûùüÿœ]|\b(le|la|les|une?|des|de|du|est|pas|ce)\b/i.test(message)
+  )
+    return message;
+  return "La vidéo n’a pas pu être fabriquée dans ce navigateur. Reprends l’export ; si cela recommence, baisse la qualité.";
+}

@@ -37,6 +37,7 @@ import {
   applyFileProgress,
   failFile,
   initialFiles,
+  renderErrorText,
   type FileRow,
 } from "@/lib/export-video-progress";
 import {
@@ -494,8 +495,7 @@ export function VideoPanel({
           error instanceof VideoFileError ? error.index + offset : offset;
         if (error instanceof VideoFileError)
           error.done.forEach((f, i) => (blobs.current[offset + i] = f));
-        const message =
-          error instanceof Error ? error.message : "Export vidéo impossible.";
+        const message = renderErrorText(error);
         setFiles((rows) => failFile(rows, index));
         setFailure({
           message,
