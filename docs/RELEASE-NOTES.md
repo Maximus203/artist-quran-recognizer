@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Envois de fichiers : contenu réel vérifié, disque protégé, plafonds, noms sûrs
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Un envoi n'est plus jugé sur son extension : l'atelier lit les premiers octets du fichier et refuse (415, message clair) tout ce qui n'est pas un conteneur audio ou vidéo reconnu (page HTML, exécutable, archive, image, script nommés « .mp3 »), avant que ffprobe ou ffmpeg y touchent. Avant d'accepter un envoi, il vérifie qu'il restera au moins 1 Gio de libre sur le disque (`AQR_MIN_FREE_BYTES`) ; un disque plein pendant l'écriture donne aussi un message clair (507) et ne laisse aucun fichier partiel. Un envoi par formulaire est plafonné à 64 Mio (`AQR_MAX_FORM_BYTES`, il est lu en mémoire) et un résultat joint à 25 Mio ; l'envoi en flux, utilisé par l'atelier pour les fichiers, garde sa limite (500 Mo l'audio, 2 Gio la vidéo). Les noms de fichier perdent les caractères qui retournent le sens d'écriture ou de largeur nulle et les points et espaces finaux. Le pack de revue (ZIP) ne montre plus à l'appelant le message d'erreur du script.
+
+**Pourquoi / décision.** Section 11 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Le fichier est de toute façon écrit sous un nom généré dans un dossier au nom d'UUID : le nom reçu n'est qu'une étiquette. Les avatars restent réencodés côté serveur (déjà en place). **Archives piégées : sans objet aujourd'hui, l'atelier n'importe aucune archive** (le ZIP n'existe qu'en export, fabriqué par `scripts/export_review_bundle.py` à partir des fichiers de la session) ; si un import d'archive est un jour ajouté, il faudra borner le nombre d'entrées et la taille décompressée. Preuves : `media-sniff.test.ts` (26 cas), `disk-space.test.ts`, `import-session.test.ts`, et un serveur réel : un vrai MP3 accepté, un HTML et un exécutable nommés .mp3 et .mp4 refusés en 415, un nom `../../../etc/passwd.mp3` devenu `passwd` écrit sous `source.mp3`, aucun dossier laissé par les refus.
+
 ## 2026-10-29 — Pièges à robots : champs leurres, routes pièges, adresses bloquées
 Étiquettes : technique, décision
 PR : -

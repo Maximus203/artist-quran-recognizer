@@ -189,16 +189,16 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 ## 11. Envoi de fichiers (audio, vidéo, avatar)
 
-- [ ] 🟡 Quota par compte (5 Gio) et refus avant envoi si l'espace manque : existant. **Vérifier** le quota
+- [x] ✅ (quota par compte existant ; réserve de disque globale 1 Gio avant tout envoi ; purge des sessions expirées : `AQR_SESSION_TTL_S`, déclenchée à chaque envoi) Quota par compte (5 Gio) et refus avant envoi si l'espace manque : existant. **Vérifier** le quota
   global du disque et la purge des fichiers expirés.
-- [ ] ❌ Vérification du type réel (contenu, pas seulement l'extension ou le type MIME déclaré) : audio, vidéo,
+- [x] ✅ (`media-sniff.ts` avant ffprobe ; avatars réencodés par le serveur) Vérification du type réel (contenu, pas seulement l'extension ou le type MIME déclaré) : audio, vidéo,
   image. Réencodage des avatars côté serveur (déjà en place : vérifier).
-- [ ] ❌ Taille maximale par type, lecture en flux, écriture disque au fil de l'eau (pas de tampon en mémoire).
-- [ ] ❌ Nom de fichier jamais utilisé tel quel : identifiant généré, aucune traversée de chemin.
-- [ ] ❌ Protection contre les archives piégées (bombe de décompression, nombre d'entrées, taille décompressée
+- [x] ✅ (audio 500 Mo, vidéo 2 Gio en flux écrit au fil de l'eau ; formulaire 64 Mio ; résultat joint 25 Mio) Taille maximale par type, lecture en flux, écriture disque au fil de l'eau (pas de tampon en mémoire).
+- [x] ✅ (dossier UUID, `source.<ext>` ; nom nettoyé : chemin, nul, bidi, largeur nulle, points finaux ; testé) Nom de fichier jamais utilisé tel quel : identifiant généré, aucune traversée de chemin.
+- [x] ✅ (sans objet : aucune archive n'est importée, le ZIP n'est qu'un export) Protection contre les archives piégées (bombe de décompression, nombre d'entrées, taille décompressée
   bornée), pour les paquets ZIP d'export et d'import.
-- [ ] ❌ Fichiers servis avec le bon `Content-Type`, `Content-Disposition` et `X-Content-Type-Options: nosniff`.
-- [ ] ❌ Droits d'accès aux fichiers vérifiés par la route (cf. section 6), jamais par un dossier public.
+- [x] ✅ (`Content-Type` fixé par la route, `Content-Disposition: attachment` pour les téléchargements, `nosniff` et CORP same-origin par le proxy sur toute réponse ; testé) Fichiers servis avec le bon `Content-Type`, `Content-Disposition` et `X-Content-Type-Options: nosniff`.
+- [x] ✅ (aucun fichier d'utilisateur dans `public/` ; contrôle d'accès testé par `idor.test.ts`) Droits d'accès aux fichiers vérifiés par la route (cf. section 6), jamais par un dossier public.
 
 ## 12. Direct (WebSocket)
 
@@ -230,7 +230,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 - [ ] 🟡 (`proxy.test.ts` : familles auth et génération ; pas encore chaque famille) Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
 - [x] ✅ (`honeypot.test.ts`, `proxy-honeypot.test.ts`, `app/api/honeypot.test.ts`) Honeypots : formulaire leurre rempli, route piège appelée.
 - [x] ✅ (`proxy.test.ts`, `http-security.test.ts`, `hardening.test.ts`) En-têtes et cookies (test automatisé sur les réponses).
-- [ ] ❌ Téléversement hostile : fichier mal typé, archive piégée, nom de fichier hostile, taille dépassée.
+- [x] ✅ (type, nom, taille, disque : `import-session.test.ts` et serveur réel ; pas d'archive) Téléversement hostile : fichier mal typé, archive piégée, nom de fichier hostile, taille dépassée.
 
 **Scans à exécuter avant la mise en production** (rapport consigné) :
 - [ ] ❌ OWASP ZAP (scan de base, puis actif sur l'environnement de test).
@@ -249,7 +249,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 7. Fermeture du navigateur pendant l'attente : le résultat reste disponible.
 8. Export vidéo pendant une analyse : une seule charge à la fois.
 9. Job figé : le watchdog arrête le processus et débloque la pile.
-10. Disque plein à l'envoi : refus propre, rien de partiel.
+10. Disque plein à l'envoi : refus propre, rien de partiel. ✅ (507 clair ; `import-session.test.ts`)
 11. Deux onglets sur le même compte : pas de doublon.
 12. Direct actif pendant un lot : retard et contention mesurés.
 13. Mise à jour d'un modèle pendant qu'une file attend.

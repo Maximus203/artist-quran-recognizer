@@ -33,6 +33,8 @@ const claimed: NewMeta[] = [];
 const released: string[] = [];
 const deps = (over: Partial<ImportDeps> = {}): ImportDeps => ({
   probe: async () => ({ duration_s: 321.5, probed: true }),
+  sniff: async () => ({ ok: true, family: "mp3" }),
+  freeBytes: async () => null,
   prepareListening: (dir) => void prepared.push(dir),
   claim: (meta) => void claimed.push(meta),
   release: (id) => void released.push(id),
@@ -408,5 +410,182 @@ describe("importFromBytes — formulaire multipart (audio, avec résultat facult
       ),
     ).rejects.toMatchObject({ status: 422 });
     expect(await sessionIds()).toEqual([]);
+  });
+});
+
+describe("section 11 : contenu réel, disque, noms, plafonds", () => {
+  const refusal = {
+    ok: false as const,
+    message:
+      "Ce fichier n'est pas un audio ou une vidéo reconnu : son contenu ne correspond pas à son extension.",
+  };
+
+  it("un faux .mp3 (contenu qui n'est pas un média) est refusé en 415 et rien n'est conservé, flux ou formulaire", async () => {
+    const hostile = deps({ sniff: async () => refusal });
+    await expect(
+      importFromStream(
+        {
+          stream: streamOf(Buffer.from("<html><script>x</script></html>")),
+          filename: "piege.mp3",
+          sourceKind: null,
+          contentLength: null,
+        },
+        hostile,
+      ),
+    ).rejects.toMatchObject({
+      status: 415,
+      message: expect.stringMatching(/pas un audio ou une vidéo/),
+    });
+    await expect(
+      importFromBytes(
+        {
+          name: "piege.wav",
+          bytes: Buffer.from("MZ"),
+          sourceKind: null,
+          prediction: null,
+        },
+        hostile,
+      ),
+    ).rejects.toMatchObject({ status: 415 });
+    expect(await sessionIds()).toEqual([]);
+  });
+
+  it("le contrôle du contenu passe AVANT ffprobe : un fichier hostile n'atteint jamais l'analyseur", async () => {
+    const probe = vi.fn(async () => ({ duration_s: 1, probed: true }));
+    await expect(
+      importFromStream(
+        {
+          stream: streamOf(Buffer.from("MZ")),
+          filename: "a.mp3",
+          sourceKind: null,
+          contentLength: null,
+        },
+        deps({ sniff: async () => refusal, probe }),
+      ),
+    ).rejects.toBeInstanceOf(ImportError);
+    expect(probe).not.toHaveBeenCalled();
+  });
+
+  it("disque presque plein : refus propre (507) avant d'écrire quoi que ce soit", async () => {
+    const GiB = 1024 ** 3;
+    await expect(
+      importFromStream(
+        {
+          stream: streamOf(Buffer.from("video")),
+          filename: "a.mp4",
+          sourceKind: null,
+          contentLength: String(1.8 * GiB),
+        },
+        // 2,5 Gio libres, 1,8 Gio annoncé : il resterait 0,7 Gio, sous la réserve de 1 Gio
+        deps({ freeBytes: async () => 2.5 * GiB }),
+      ),
+    ).rejects.toMatchObject({
+      status: 507,
+      message: expect.stringMatching(/espace disque/i),
+    });
+    expect(await sessionIds()).toEqual([]);
+  });
+
+  it("assez de place : l'envoi passe", async () => {
+    const session = await importFromStream(
+      {
+        stream: streamOf(Buffer.from("audio")),
+        filename: "a.mp3",
+        sourceKind: null,
+        contentLength: null,
+      },
+      deps({ freeBytes: async () => 50 * 1024 ** 3 }),
+    );
+    expect(session.state).toBe("ready");
+  });
+
+  it("disque plein PENDANT l'écriture (ENOSPC) : message clair, aucun fichier partiel", async () => {
+    const failing = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(new Uint8Array(1024));
+        controller.error(
+          Object.assign(new Error("write ENOSPC"), { code: "ENOSPC" }),
+        );
+      },
+    });
+    await expect(
+      importFromStream(
+        {
+          stream: failing,
+          filename: "a.mp3",
+          sourceKind: null,
+          contentLength: null,
+        },
+        deps(),
+      ),
+    ).rejects.toMatchObject({ status: 507 });
+    expect(await sessionIds()).toEqual([]);
+  });
+
+  it("noms hostiles : chemin, octet nul, retournement du sens d'écriture, caractères de largeur nulle", () => {
+    const u = (code: number) => String.fromCharCode(code);
+    expect(sanitizeName("../../etc/passwd.mp3").name).toBe("passwd.mp3");
+    const back = String.fromCharCode(92); // « \ » : séparateur de chemin Windows
+    expect(
+      sanitizeName(`..${back}..${back}windows${back}system32${back}x.mp3`).name,
+    ).toBe("x.mp3");
+    expect(sanitizeName(`a${u(0)}b.mp3`).name).toBe("ab.mp3");
+    // U+202E (inversion du sens) : « recitation<202E>fdp.mp3 » s'afficherait « recitation3pm.pdf »
+    expect(sanitizeName(`recitation${u(0x202e)}fdp.mp3`).name).toBe(
+      "recitationfdp.mp3",
+    );
+    expect(sanitizeName(`a${u(0x200b)}${u(0x200f)}b.wav`).name).toBe("ab.wav");
+    expect(sanitizeName("fichier.mp3   ").name).toBe("fichier.mp3");
+  });
+
+  it("le fichier est toujours écrit sous un nom généré : jamais le nom reçu", async () => {
+    const session = await importFromStream(
+      {
+        stream: streamOf(Buffer.from("audio")),
+        filename: encodeURIComponent("../../evil.mp3"),
+        sourceKind: null,
+        contentLength: null,
+      },
+      deps(),
+    );
+    const files = await readdir(sessionDir(session.id));
+    expect(files).toContain("source.mp3");
+    expect(files.some((f) => f.includes("evil"))).toBe(false);
+    expect(session.id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("un résultat joint (JSON) de plus de 25 Mio est refusé : il est lu en mémoire", async () => {
+    await expect(
+      importFromBytes(
+        {
+          name: "a.mp3",
+          bytes: Buffer.from("audio"),
+          sourceKind: null,
+          prediction: Buffer.alloc(26 * 1024 * 1024, 32),
+        },
+        deps(),
+      ),
+    ).rejects.toMatchObject({ status: 413 });
+  });
+
+  it("formulaire multipart : plafond de 64 Mio par défaut (le flux, lui, va jusqu'à la limite du type)", async () => {
+    const { formUploadLimitBytes } = await import("./store");
+    expect(formUploadLimitBytes(undefined)).toBe(64 * 1024 ** 2);
+    expect(formUploadLimitBytes("1048576")).toBe(1048576);
+    expect(formUploadLimitBytes("abc")).toBe(64 * 1024 ** 2);
+    await expect(
+      importFromBytes(
+        {
+          name: "a.mp3",
+          bytes: Buffer.alloc(65 * 1024 ** 2, 1),
+          sourceKind: null,
+          prediction: null,
+        },
+        deps(),
+      ),
+    ).rejects.toMatchObject({
+      status: 413,
+      message: expect.stringMatching(/en flux/),
+    });
   });
 });

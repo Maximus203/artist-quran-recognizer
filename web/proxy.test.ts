@@ -29,6 +29,18 @@ describe("proxy : en-têtes et identifiant", () => {
   });
 });
 
+describe("fichiers servis par l'API", () => {
+  it.each(["/api/sessions/x/audio", "/api/sessions/x/video", "/api/sessions/x/bundle", "/api/users/1/avatar"])(
+    "%s est servi avec nosniff et hors de tout cadre",
+    (path) => {
+      const response = proxy(req(path));
+      expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(response.headers.get("x-frame-options")).toBe("DENY");
+      expect(response.headers.get("cross-origin-resource-policy")).toBe("same-origin");
+    },
+  );
+});
+
 describe("proxy : refus avant toute route", () => {
   it("modification inter-sites avec cookie de connexion : 403", async () => {
     const response = proxy(

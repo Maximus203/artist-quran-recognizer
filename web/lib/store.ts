@@ -46,6 +46,20 @@ export function uploadLimitBytes(
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : DEFAULT_UPLOAD_BYTES;
 }
+const DEFAULT_FORM_UPLOAD_BYTES = 64 * 1024 ** 2;
+/**
+ * Plafond d'un envoi par FORMULAIRE multipart (`AQR_MAX_FORM_BYTES`, 64 Mio par défaut) : le formulaire
+ * est lu entièrement en mémoire, donc plusieurs envois simultanés de 500 Mo suffiraient à saturer le
+ * serveur. Au-delà, l'envoi en flux (écrit sur le disque au fil de l'eau) est la seule voie.
+ */
+export function formUploadLimitBytes(
+  raw: string | undefined = process.env.AQR_MAX_FORM_BYTES,
+): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0
+    ? value
+    : DEFAULT_FORM_UPLOAD_BYTES;
+}
 const DEFAULT_VIDEO_UPLOAD_BYTES = 2 * 1024 ** 3;
 /**
  * Plafond d'une vidéo envoyée en flux (`AQR_MAX_VIDEO_UPLOAD_BYTES`, 2 Gio par défaut). Plus haut

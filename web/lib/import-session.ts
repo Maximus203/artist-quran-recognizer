@@ -12,7 +12,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, open, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Transform, Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -21,12 +21,16 @@ import { acceptedMediaExtensions, isVideoName } from "./audio-upload";
 import { getDb } from "./db";
 import { formatBytesFr } from "./format";
 import { ensureListening } from "./listening";
+import { DISK_FULL_MESSAGE, freeBytes, wouldFillDisk } from "./disk-space";
 import { inspectUpload, MediaRejected } from "./media-probe";
+import { SNIFF_BYTES, sniffMedia, type Sniff } from "./media-sniff";
 import { parseRecognition, type Recognition } from "./recognition";
 import { createMeta, deleteMeta, type NewMeta } from "./session-index";
 import { engineFromLabel } from "./session-meta";
 import { cleanUserName, defaultSessionName } from "./session-name";
 import {
+  formUploadLimitBytes,
+  reviewRoot,
   saveSession,
   sessionDir,
   sha,
@@ -65,12 +69,33 @@ export type ImportDeps = {
   ) => Promise<{ duration_s: number | null; probed: boolean }>;
   /** Prépare la copie d'écoute en tâche de fond (un échec est retenté à la première écoute). */
   prepareListening: (dir: string, extension: string) => void;
+  /** Type réel du fichier posé sur le disque (signature des premiers octets). */
+  sniff: (file: string) => Promise<Sniff>;
+  /** Octets libres sur le volume des sessions (`null` : inconnu). */
+  freeBytes: (dir: string) => Promise<number | null>;
 };
+
+/** Premiers octets d'un fichier, pour en reconnaître le type. */
+async function sniffFile(file: string): Promise<Sniff> {
+  const handle = await open(file, "r");
+  try {
+    const head = Buffer.alloc(SNIFF_BYTES);
+    const { bytesRead } = await handle.read(head, 0, SNIFF_BYTES, 0);
+    return sniffMedia(head.subarray(0, bytesRead));
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Résultat joint (JSON `aqr.recognition/1`) : lu en mémoire, donc borné (les vrais pèsent quelques Mio). */
+const MAX_PREDICTION_BYTES = 25 * 1024 * 1024;
 
 export const defaultImportDeps: ImportDeps = {
   claim: (meta) => createMeta(getDb(), meta),
   release: (id) => deleteMeta(getDb(), id),
   probe: (file, extension) => inspectUpload(file, extension),
+  sniff: sniffFile,
+  freeBytes,
   prepareListening: (dir, extension) => {
     void ensureListening(dir, path.join(dir, `source${extension}`)).catch(
       () => {},
@@ -100,7 +125,12 @@ const tooLarge = (extension: string) =>
 export function sanitizeName(raw: string): { name: string; extension: string } {
   const base = path
     .basename(raw.replaceAll("\\", "/"))
-    .replace(/[\u0000-\u001f]/g, "")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    // Retournement du sens d'écriture, caractères de largeur nulle : « recitation<U+202E>fdp.mp3 »
+    // s'afficherait « recitation3pm.pdf ».
+    .replace(/[​-‏‪-‮⁠-⁩﻿]/g, "")
+    // Points et espaces finaux : Windows les retire, le nom ne serait plus celui qu'on a validé.
+    .replace(/[. ]+$/, "")
     .trim();
   const dot = base.lastIndexOf(".");
   const extension = dot >= 0 ? base.slice(dot).toLowerCase() : "";
@@ -171,6 +201,11 @@ type Landed = {
 /** Sonde le fichier posé sur le disque, puis écrit la session ; supprime tout en cas de refus. */
 async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
   try {
+    // Le contenu d'abord : un fichier qui n'est pas un média n'atteint jamais ffprobe ni ffmpeg.
+    const kind = await deps.sniff(
+      path.join(landed.dir, `source${landed.extension}`),
+    );
+    if (!kind.ok) throw new ImportError(415, kind.message);
     let parsed: Recognition | null = null;
     if (landed.prediction) {
       try {
@@ -291,6 +326,16 @@ export async function importFromStream(
     void input.stream.cancel().catch(() => undefined);
     throw quotaRefusal(input.owner.quota);
   }
+  // Place disque : refus propre AVANT d'écrire quoi que ce soit (réserve de 1 Gio, `AQR_MIN_FREE_BYTES`).
+  if (
+    wouldFillDisk(
+      await deps.freeBytes(reviewRoot()),
+      input.contentLength !== null && Number.isFinite(declared) ? declared : 0,
+    )
+  ) {
+    void input.stream.cancel().catch(() => undefined);
+    throw new ImportError(507, DISK_FULL_MESSAGE);
+  }
   const id = randomUUID();
   const dir = sessionDir(id);
   await mkdir(dir, { recursive: true });
@@ -318,6 +363,9 @@ export async function importFromStream(
     if (error instanceof TooLarge) throw tooLarge(extension);
     if (error instanceof QuotaExceeded && input.owner?.quota)
       throw quotaRefusal(input.owner.quota);
+    // Disque plein en cours d'écriture : le dossier partiel est déjà retiré ci-dessus.
+    if ((error as NodeJS.ErrnoException)?.code === "ENOSPC")
+      throw new ImportError(507, DISK_FULL_MESSAGE);
     throw new ImportError(
       400,
       "Envoi interrompu : le fichier n'a pas été reçu en entier.",
@@ -359,12 +407,19 @@ export async function importFromBytes(
   const sourceKind = parseSourceKind(input.sourceKind);
   if (input.bytes.length === 0)
     throw new ImportError(400, "Le fichier est vide.");
-  // Le formulaire est lu en mémoire : un seul plafond, celui de l'audio, pour tous les types.
-  if (input.bytes.length > uploadLimitBytes())
+  // Le formulaire est lu en mémoire : plafond propre (64 Mio), bien sous celui du flux.
+  if (input.bytes.length > formUploadLimitBytes())
     throw new ImportError(
       413,
-      `Fichier trop volumineux pour un envoi par formulaire (maximum ${mb(uploadLimitBytes())}) : les fichiers volumineux, vidéos comprises, s'envoient en flux (en-tête x-aqr-filename).`,
+      `Fichier trop volumineux pour un envoi par formulaire (maximum ${mb(formUploadLimitBytes())}) : les fichiers volumineux, vidéos comprises, s'envoient en flux (en-tête x-aqr-filename).`,
     );
+  if (input.prediction && input.prediction.length > MAX_PREDICTION_BYTES)
+    throw new ImportError(
+      413,
+      `Le résultat joint est trop volumineux (maximum ${mb(MAX_PREDICTION_BYTES)}).`,
+    );
+  if (wouldFillDisk(await deps.freeBytes(reviewRoot()), input.bytes.length))
+    throw new ImportError(507, DISK_FULL_MESSAGE);
   if (input.owner?.quota && input.bytes.length > remainingBytes(input.owner))
     throw quotaRefusal(input.owner.quota);
   const id = randomUUID();
@@ -374,6 +429,8 @@ export async function importFromBytes(
     await writeFile(path.join(dir, `source${extension}`), input.bytes);
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
+    if ((error as NodeJS.ErrnoException)?.code === "ENOSPC")
+      throw new ImportError(507, DISK_FULL_MESSAGE);
     throw error;
   }
   return register(

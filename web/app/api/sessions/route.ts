@@ -17,7 +17,7 @@ import {
   cleanupSessions,
   exceedsUploadLimit,
   sessionTtlSeconds,
-  uploadLimitBytes,
+  formUploadLimitBytes,
 } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -97,7 +97,7 @@ async function handlePOST(request: NextRequest) {
       multipart &&
       exceedsUploadLimit(
         request.headers.get("content-length"),
-        uploadLimitBytes(),
+        formUploadLimitBytes(),
       )
     )
       return apiError(413, "Envoi trop volumineux.");

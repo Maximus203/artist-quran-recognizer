@@ -28,6 +28,8 @@ afterEach(async () => {
 const deps = (): ImportDeps => ({
   probe: async () => ({ duration_s: 12, probed: true }),
   prepareListening: () => undefined,
+  sniff: async () => ({ ok: true, family: "mp3" }),
+  freeBytes: async () => null,
   claim: (meta) => void claimed.push(meta),
   release: (id) => void released.push(id),
 });
