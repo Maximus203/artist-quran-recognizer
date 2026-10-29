@@ -4,7 +4,8 @@
 set -u
 LOGS="${1:?dossier des journaux requis}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPORT="$(node "$HERE/../../web/scripts/log-report.mjs" "$LOGS" 2>&1)"
+# AQR_REPORT_CMD : commande du rapport (dans un conteneur : « docker exec atelier node scripts/log-report.mjs /data/logs »).
+if [ -n "${AQR_REPORT_CMD:-}" ]; then REPORT="$($AQR_REPORT_CMD 2>&1)"; else REPORT="$(node "$HERE/../../web/scripts/log-report.mjs" "$LOGS" 2>&1)"; fi
 CODE=$?
 echo "$REPORT"
 case "$CODE" in

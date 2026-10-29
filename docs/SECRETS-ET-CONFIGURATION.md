@@ -45,7 +45,7 @@ copiée sur un poste de développement ni dans un test.
 |---|---|---|
 | Développement | `.env` local (ignoré par Git) ou environnement du shell | valeurs jetables ; `AQR_LOCAL_ONLY=1` ou jeton de test |
 | Test | valeurs écrites dans les tests (`"t" * 32`, `"x" * 40`…) | jamais une valeur qui marche ailleurs |
-| Production | gestionnaire de secrets de l'hôte ou fichier d'environnement 0600 hors dépôt, lu par le service | générée sur place, jamais passée par un chat, un mail ou un ticket |
+| Production | gestionnaire de secrets de l'hôte ou fichier d'environnement 0600 hors dépôt, lu par le service (sur Alpha : `/opt/atelier/atelier.env`, propriétaire root) | générée sur place, jamais passée par un chat, un mail ou un ticket |
 
 Ce que Git ne contient pas, et comment on le vérifie :
 

@@ -12,104 +12,79 @@ d'accès. Ce n'est pas une infrastructure de production : le poste dort, redéma
 le tunnel gratuit n'offre aucune garantie. Depuis la section 13, ce script fournit aussi les valeurs de
 sécurité que le serveur exige (sel d'audit et clé des formulaires créés une fois dans le dossier d'état).
 
-## Serveur cible : à décider (bloquant)
+## Serveur cible : Alpha, pour l'atelier seul (décision du 2026-10-29)
 
-Le « serveur alpha » n'apparaît dans aucun fichier du dépôt. Aucune machine n'est donc ciblée. Trois
-contraintes orientent le choix :
+**Alpha** est le serveur Hetzner `alpha-app-server` (Ubuntu 26.04, 8 vCPU, 15 Gio de mémoire dont moins de
+1 Gio libre hors cache, 208 Go de disque libre, **aucun GPU**). Relevé en lecture seule le 2026-10-29 :
+SSH par clé seulement, pare-feu actif (80 et 443 ouverts, administration par VPN WireGuard), mises à jour
+automatiques actives, **Traefik v3.7 dans Docker** (réseau `web`, entrypoint `websecure`, résolveur
+`letsencrypt`). Il héberge déjà en production d'autres projets (Murabbi, SAP, CRM) : **l'atelier y est un
+voisin, pas le locataire principal.** Le Node de l'hôte (22.22.1) est touché par CVE-2026-111497 : l'atelier
+y tourne donc **dans une image** qui apporte un Node corrigé.
 
-1. **Le moteur d'analyse demande un GPU** et des modèles de plusieurs Gio (`AQR_MODELS_DIR`) ; le service
-   du direct aussi (`aqr live-serve`).
-2. **L'atelier lui-même est léger** (Node, SQLite, ffmpeg) et peut tourner sans GPU si le moteur est joint
-   ailleurs. Aujourd'hui le moteur est lancé par l'atelier sur la même machine (`aqr worker`) ; les séparer
-   serait un chantier de code, pas d'infrastructure.
-3. **L'hôte doit tenir la charge mesurée** : les plafonds de flux du direct (section 12) ne se fixent que par
-   une mesure sur la machine cible (`scripts/measure_live_service.py`).
+Décision de Cherif Diouf : **Alpha héberge l'atelier seul ; le moteur d'analyse et le direct restent sur une
+machine à GPU** (son poste). Conséquences :
 
-**Recommandation** : une machine Linux unique avec GPU, atelier et moteur ensemble, installés sur l'hôte
-(unités systemd de `deploy/systemd/`), pas dans des conteneurs. Raison : l'accès GPU, les modèles et le
-worker chaud rendent une image lourde et fragile pour un seul hôte, alors que systemd donne déjà
-l'utilisateur dédié, le durcissement, le redémarrage et les journaux. Trivy s'applique alors au système de
-fichiers de la version (`trivy fs`) plutôt qu'à une image. À reconsidérer si l'atelier passe sur une
-machine sans GPU et le moteur ailleurs.
+- Alpha démarre en **mode `restricted`** (`AQR_SERVICE_MODE`) : pas d'envois, d'analyses, d'exports vidéo ni de
+  direct ; comptes, connexion et lecture fonctionnent. L'image ne contient ni Python ni Chromium.
+- **Chantier de code non fait** : l'atelier lance aujourd'hui le moteur lui-même (`aqr worker`, processus
+  local). Pour lever la restriction, il faut un moteur **joignable à distance** (file d'analyses, transfert de
+  l'audio et des résultats entre Alpha et le poste GPU, authentification entre les deux). Tant que ce chantier
+  n'existe pas, un atelier sur Alpha ne sert qu'à consulter des résultats déjà présents dans son volume.
+- Les bornes de l'atelier protègent les voisins : 2 Gio de mémoire, 2 processeurs, 512 processus, système de
+  fichiers en lecture seule, aucune capacité Linux, disque protégé par la réserve de 1 Gio (`AQR_MIN_FREE_BYTES`).
 
 ## Schéma
 
 ```
-Internet ─ 80/443 ─▶ Caddy (TLS, corps max, en-têtes) ─▶ 127.0.0.1:3000  atelier (Next.js)
-                                                      └▶ 127.0.0.1:8765  direct (WebSocket, /live)
-                                   atelier ──▶ aqr worker (Python, GPU) ; ffmpeg
-                                   données : /var/lib/aqr   sauvegardes : /var/backups/aqr
+Internet ─ 443 ─▶ Traefik (TLS, existant) ─▶ conteneur « atelier » (réseau web, port 3000, jamais publié)
+                                                 └▶ volume atelier-data (/data) : base, sessions, avatars, journaux, control/
+poste GPU ──(chantier à faire)── moteur d'analyse et direct
 ```
-
-L'atelier et le direct n'écoutent **que** sur 127.0.0.1 : ils ne sont joignables que par le proxy.
 
 ## Modèles fournis (`deploy/`)
 
 | Fichier | Rôle | Validé |
 |---|---|---|
-| `caddy/Caddyfile.example` | TLS automatique, corps maximal 2100 Mo, retrait de `Server`, chemin `/live`, sonde `/api/health` | non (à valider sur l'hôte : `caddy validate`) |
-| `systemd/aqr-atelier.service` | utilisateur `aqr`, écriture limitée à `/var/lib/aqr`, durcissement, 3 essais puis échec visible | non (à valider : `systemd-analyze verify`) |
-| `systemd/aqr-live.service` | service du direct | non |
-| `systemd/aqr-backup.{service,timer}` | sauvegarde quotidienne 03 h 30 puis copie restic | script de sauvegarde **oui**, unité non |
+| `docker/Dockerfile` | image de l'atelier seul, Node épinglé corrigé, utilisateur `node`, sonde de santé | **non construit** (télécharge l'image Node ; à autoriser) |
+| `docker/compose.alpha.yaml` | service derrière Traefik (étiquettes relevées sur les conteneurs en place), bornes, secrets dans `/opt/atelier/atelier.env` | syntaxe **oui** (`docker compose config`), non appliqué |
+| `scripts/service-mode.sh` | arrêt d'urgence, dans le conteneur | **oui** (local) et sur un vrai serveur (voir plus bas) |
+| `scripts/release.sh`, `rollback.sh` | bascule et retour arrière par tag d'image | syntaxe seulement ; **jamais joués** |
+| `systemd/aqr-backup.{service,timer}` | sauvegarde quotidienne 03 h 30 dans le conteneur puis copie restic | outil **oui**, unité non |
 | `systemd/aqr-logreport.{service,timer}` | rapport quotidien 07 h, poussé vers Uptime Kuma | script **oui** (sans poussée réelle), unité non |
-| `scripts/firewall.sh` | règles ufw ; n'applique rien sans `--apply` | syntaxe et affichage oui |
-| `scripts/service-mode.sh` | arrêt d'urgence (voir plus bas) | **oui**, sur un vrai serveur |
-| `scripts/release.sh`, `rollback.sh` | bascule et retour arrière | syntaxe seulement ; **jamais joués** |
 
-## Réseau et pare-feu
+Le pare-feu, le proxy et les mises à jour automatiques d'Alpha **existent déjà** : rien à ajouter, rien à
+modifier. L'atelier n'ouvre aucun port sur l'hôte.
 
-- Ouverts sur Internet : **80 et 443 seulement**. Tout le reste fermé (3000 et 8765 ne le sont jamais).
-- SSH : jamais ouvert à tout Internet. `scripts/firewall.sh --ssh-from <réseau>` l'ouvre vers un réseau privé
-  seulement (VPN, Tailscale). Configuration `sshd` : `PasswordAuthentication no`, `PermitRootLogin no`,
-  `AllowUsers <compte d'administration>`, clé uniquement.
-- Garder une console (hors SSH) avant d'activer `ufw` : une règle fautive coupe la session.
+## Réseau, accès, utilisateur
 
-## Mises à jour du système
-
-```bash
-sudo apt install unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades   # correctifs de sécurité seulement
-```
-
-Redémarrage automatique du noyau exclu pendant les heures d'usage ; Node reste épinglé à une ligne corrigée
-(`docs/SECURITE-DEPENDANCES.md`), et le serveur refuse de démarrer sur une version touchée.
-
-## Utilisateur dédié
-
-```bash
-sudo useradd --system --home /var/lib/aqr --shell /usr/sbin/nologin aqr
-sudo install -d -o aqr -g aqr -m 0750 /var/lib/aqr /var/backups/aqr
-sudo install -d -o root -g aqr -m 0750 /etc/aqr   # atelier.env, live.env, restic.env : root:aqr, mode 0640 ou 0600
-```
-
-Le service n'a aucun droit d'administration, ne peut écrire que dans `/var/lib/aqr`, et ne voit ni `/home` ni
-le reste du système (`ProtectSystem=strict`, `ProtectHome=true`).
+- Seul Traefik atteint l'atelier (réseau Docker `web`). Aucun port n'est publié.
+- `AQR_TRUST_PROXY=1` : Traefik ajoute l'adresse du client à la fin de `X-Forwarded-For`, que l'atelier lit.
+  Si un autre proxy (Cloudflare) se place devant Traefik, déclarer ses adresses côté Traefik.
+- Le processus tourne en utilisateur `node` (non administrateur) dans un conteneur sans capacité Linux.
+- L'accès `root` par SSH d'Alpha est celui des autres projets : je ne l'utilise qu'en lecture, sur accord.
 
 ## Sauvegardes
 
 Quoi : la base, les sessions (audios, prédictions, décisions) et les avatars. Pas les journaux (leur
 rétention propre : `docs/DIAGNOSTIC-PRODUCTION.md`).
 
-- **Outil** : `node web/scripts/backup.mjs backup|verify|restore`. La base est copiée par `VACUUM INTO`
-  (instantané cohérent même pendant les écritures), chaque fichier a une empreinte SHA-256, chaque table
-  un nombre de lignes. Une sauvegarde altérée, incomplète ou avec un fichier en trop est refusée. La
-  restauration n'écrase jamais un dossier non vide.
-- **Règle 3-2-1** : 3 copies, 2 supports, 1 hors site. Copie 1 : `/var/backups/aqr` (14 dernières).
-  Copie 2 : restic vers un second disque. Copie 3 : restic vers un stockage distant (par exemple le dépôt
-  B2 de la flotte). Les dépôts restic sont chiffrés ; leur mot de passe est dans `/etc/aqr/restic.env`, et
-  **une copie du mot de passe est conservée hors de la machine** : sans lui, les sauvegardes sont perdues.
+- **Outil** : `node scripts/backup.mjs backup|verify|restore` (dans le conteneur). La base est copiée par
+  `VACUUM INTO` (instantané cohérent même pendant les écritures), chaque fichier a une empreinte SHA-256,
+  chaque table un nombre de lignes. Une sauvegarde altérée, incomplète ou avec un fichier en trop est
+  refusée. La restauration n'écrase jamais un dossier non vide.
+- **Règle 3-2-1** : 3 copies, 2 supports, 1 hors site. Copie 1 : `/data/backups` (14 dernières, même disque).
+  Copie 2 : restic vers un second emplacement. Copie 3 : restic vers un stockage distant. Les dépôts restic
+  sont chiffrés ; leur mot de passe est dans `/etc/aqr/restic.env`, et **une copie est conservée hors de la
+  machine** : sans lui, les sauvegardes sont perdues. Alpha a déjà restic installé ; ses dépôts n'ont pas été lus.
 - **Test de restauration** (à rejouer à chaque changement de procédure, et trimestriellement) :
-  ```bash
-  node web/scripts/backup.mjs verify /var/backups/aqr/aqr-<horodatage>
-  node web/scripts/backup.mjs restore /var/backups/aqr/aqr-<horodatage> --target /tmp/essai-restauration
-  ```
-  puis ouvrir l'atelier sur `/tmp/essai-restauration` (`AQR_REVIEW_DIR`) et lire une session.
+  `docker exec atelier node scripts/backup.mjs verify /data/backups/aqr-<horodatage>` puis restauration dans un
+  volume neuf (`rollback.sh --restore-db`), ouverture d'une session.
 
 **Preuve au 2026-10-29** : `web/lib/backup.test.ts` (6 cas) restaure une vraie base SQLite en mode WAL avec des
 écritures en cours, retrouve les mêmes lignes et les mêmes octets, et détecte une altération, un fichier
-manquant, un fichier en trop et une base corrompue. Lancé en ligne de commande sur des données de test :
-sauvegarde, vérification, restauration (code 0), refus d'une cible non vide (code 1), refus d'une sauvegarde
-altérée (code 1). **Pas encore fait** : une restauration depuis restic sur la machine cible.
+manquant, un fichier en trop et une base corrompue. Ligne de commande jouée sur des données de test.
+**Pas encore fait** : une restauration depuis restic sur Alpha.
 
 ## Supervision
 
@@ -120,7 +95,7 @@ altérée (code 1). **Pas encore fait** : une restauration depuis restic sur la 
 | Mémoire et processeur | monitor de l'hôte (Uptime Kuma ou node exporter) ; alerte à 90 % durable. |
 | Profondeur de file | `/api/queue` (compte connecté) et journal `queue` ; alerte sur une attente qui dépasse le délai de garde. |
 | Erreurs récurrentes | `aqr-logreport.timer` chaque matin, poussé vers un monitor Uptime Kuma « push » (`AQR_PUSH_URL`). Une erreur qui revient depuis des jours le fait passer au rouge. |
-| Journaux en direct | Dozzle pour les conteneurs de la flotte ; pour l'hôte, `journalctl -u aqr-atelier` et le dossier `logs/`. |
+| Journaux en direct | `docker logs atelier` et le dossier `/data/logs/` du volume ; Dozzle si présent sur Alpha. |
 
 **Pas encore fait** : créer les monitors Uptime Kuma (aucun accès n'a été utilisé) et vérifier une alerte reçue.
 
@@ -141,24 +116,26 @@ maintenance → page en 503, sonde en 503 (« maintenance »), levé → 200.
 
 ## Retour arrière (moins de 15 minutes)
 
-Principe : chaque version vit dans `/opt/aqr/releases/<sha>/`, `current` pointe sur la version en service.
+Principe : chaque version est une image `atelier:<sha>` ; le tag en service est noté dans `/opt/atelier/current`.
 
-1. `deploy/scripts/release.sh <sha>` : sauvegarde, construction à côté, bascule, contrôle de la sonde ; si elle
-   ne passe pas en 60 s, retour automatique.
-2. Retour manuel : `deploy/scripts/rollback.sh` (repointe `current`, redémarre, contrôle la sonde : 2 à 3 min).
+1. `deploy/scripts/release.sh <tag>` : sauvegarde, démarrage de l'image, attente de la santé du conteneur ; sans
+   santé en 90 s, retour automatique.
+2. Retour manuel : `deploy/scripts/rollback.sh` (relance l'image précédente et attend sa santé : 1 à 2 min).
 3. **Si la version retirée avait appliqué une migration de base** (les migrations ne sont pas réversibles),
-   restaurer d'abord la sauvegarde prise juste avant la bascule :
-   `rollback.sh --restore-db /var/backups/aqr/aqr-<horodatage>`. Les données saisies depuis la bascule sont
-   alors perdues : l'arbitrage appartient à Cherif Diouf, la sauvegarde `avant-retour` est conservée.
+   restaurer d'abord la sauvegarde prise juste avant la bascule : `rollback.sh --restore-db aqr-<horodatage>`
+   (restauration dans un volume neuf, l'ancien est conservé). Les données saisies depuis la bascule sont alors
+   perdues : l'arbitrage appartient à Cherif Diouf.
 
-**La procédure n'a jamais été jouée** (aucune machine cible). Elle doit l'être une fois sur l'environnement de
-test, chronomètre en main, avant la mise en production (critère n° 5 de la section 17).
+**La procédure n'a jamais été jouée.** Elle doit l'être une fois sur Alpha (sous un nom d'hôte de test),
+chronomètre en main, avant la mise en production (critère n° 5 de la section 17).
 
 ## Décisions qui appartiennent à Cherif Diouf
 
-1. Quelle machine sert de serveur cible (et où tourne le moteur GPU).
-2. Inscriptions publiques : `open`, `code` ou `closed` (le script des testeurs garde `open` comme avant).
-3. Liste complète des mots de passe divulgués (réseau sortant ou gros fichier local).
-4. Mettre Node à jour sur le poste (24.22.2 recommandé) : tant que ce n'est pas fait, le serveur de production
-   refuse de démarrer sur ce poste.
-5. Autoriser le téléchargement des images Docker des scans (ZAP, testssl, Trivy, gitleaks).
+1. ~~Quelle machine~~ : **Alpha, atelier seul** (2026-10-29). Reste : où et comment tourne le moteur GPU, et le
+   chantier de séparation (voir plus haut) ; sans lui, Alpha ne peut pas analyser.
+2. Un nom d'hôte pour l'atelier sur Alpha (et son enregistrement DNS).
+3. Inscriptions publiques : `open`, `code` ou `closed` (le script des testeurs garde `open` comme avant).
+4. Liste complète des mots de passe divulgués (réseau sortant ou gros fichier local).
+5. Mettre Node à jour sur le poste (24.22.2 recommandé) ; l'image d'Alpha en apporte un corrigé.
+6. Autoriser le téléchargement des images Docker (Node pour construire l'atelier ; ZAP, testssl, Trivy, gitleaks pour les scans).
+7. Alpha héberge Murabbi et SAP en production : accepter ce voisinage, ou prendre une machine dédiée.

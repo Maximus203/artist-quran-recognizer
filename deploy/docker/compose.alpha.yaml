@@ -1,0 +1,49 @@
+# Atelier seul sur Alpha, derrière le Traefik existant (réseau « web », entrypoint « websecure »,
+# résolveur « letsencrypt » : conventions relevées sur les conteneurs en place). NON APPLIQUÉ.
+#
+# Les secrets vivent dans /opt/atelier/atelier.env (root:root, 0600), jamais ici ni dans Git :
+# liste exigée au démarrage dans docs/SECRETS-ET-CONFIGURATION.md.
+# Pas de moteur sur Alpha (aucun GPU) : le service démarre en mode « restricted » (plus d'envois, d'analyses
+# ni de direct ; lecture et connexion restent). Le lever suppose un moteur joignable : voir INFRASTRUCTURE.md.
+services:
+  atelier:
+    image: atelier:${ATELIER_TAG:?tag de l'image (sha du commit)}
+    container_name: atelier
+    restart: unless-stopped
+    env_file: /opt/atelier/atelier.env
+    environment:
+      AQR_SERVICE_MODE: restricted
+      AQR_TRUST_PROXY: "1"
+    volumes:
+      - atelier-data:/data
+    networks: [web]
+    # Alpha héberge d'autres projets en production : l'atelier est borné pour ne pas les affamer.
+    mem_limit: 2g
+    memswap_limit: 2g
+    cpus: 2
+    pids_limit: 512
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m
+      - /app/web/.next/cache:size=256m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: web
+      traefik.http.routers.atelier.entrypoints: websecure
+      traefik.http.routers.atelier.rule: Host(`${ATELIER_HOST:?nom d'hôte public}`)
+      traefik.http.routers.atelier.tls: "true"
+      traefik.http.routers.atelier.tls.certresolver: letsencrypt
+      traefik.http.services.atelier.loadbalancer.server.port: "3000"
+      traefik.http.services.atelier.loadbalancer.healthcheck.path: /api/health
+      # Corps maximal au bord (la vidéo de 2 Gio de l'atelier ne passe pas ici tant que les envois sont suspendus).
+      traefik.http.middlewares.atelier-body.buffering.maxRequestBodyBytes: "2202009600"
+      traefik.http.routers.atelier.middlewares: atelier-body
+
+networks:
+  web:
+    external: true
+
+volumes:
+  atelier-data:

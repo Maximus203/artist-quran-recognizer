@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
-# Mise en service d'une version : sauvegarde, construction à côté, bascule du lien « current », contrôle, retour
-# automatique si la sonde ne passe pas. Les versions sont dans /opt/aqr/releases/<sha>/ ; « current » pointe sur l'une d'elles.
-# Usage : release.sh <sha>          (le dépôt est déjà cloné dans /opt/aqr/releases/<sha>)
+# Mise en service d'une version de l'atelier sur Alpha : sauvegarde, démarrage de l'image <tag>, attente de la
+# santé du conteneur, retour automatique si elle ne vient pas. L'image est déjà construite (docker build, voir
+# deploy/docker/Dockerfile). Le tag en service est noté dans /opt/atelier/current, le précédent dans /opt/atelier/previous.
+# Usage : release.sh <tag>        (variables ATELIER_HOST exportée ou dans /opt/atelier/.env)
 set -eu
-SHA="${1:?sha requis}"
-BASE=/opt/aqr
-NEW="$BASE/releases/$SHA"
-[ -d "$NEW" ] || { echo "Version absente : $NEW" >&2; exit 2; }
-PREVIOUS="$(readlink -f "$BASE/current" 2>/dev/null || true)"
-echo "1/5 sauvegarde avant bascule"
-node "$NEW/web/scripts/backup.mjs" backup --root /var/lib/aqr --out /var/backups/aqr --keep 14
-echo "2/5 construction (à côté de la version en service)"
-( cd "$NEW/web" && npm ci --omit=dev --no-audit --no-fund && npm run build )
-echo "3/5 bascule"
-ln -sfn "$NEW" "$BASE/current.new" && mv -T "$BASE/current.new" "$BASE/current"
-echo "$PREVIOUS" > "$BASE/previous"
-systemctl restart aqr-atelier
-echo "4/5 contrôle de la sonde (60 s au plus)"
-for _ in $(seq 1 30); do
-  if curl -fsS --max-time 3 http://127.0.0.1:3000/api/health >/dev/null; then echo "5/5 en service : $SHA"; exit 0; fi
+TAG="${1:?tag requis}"
+DIR=/opt/atelier
+COMPOSE="docker compose -f $DIR/compose.yaml --env-file $DIR/.env"
+docker image inspect "atelier:$TAG" >/dev/null || { echo "Image absente : atelier:$TAG" >&2; exit 2; }
+CURRENT="$(cat "$DIR/current" 2>/dev/null || true)"
+if docker ps --format '{{.Names}}' | grep -qx atelier; then
+  echo "1/4 sauvegarde avant bascule"
+  docker exec atelier node scripts/backup.mjs backup --root /data --out /data/backups --keep 14
+fi
+echo "2/4 démarrage de $TAG"
+echo "$CURRENT" > "$DIR/previous"
+echo "$TAG" > "$DIR/current"
+ATELIER_TAG="$TAG" $COMPOSE up -d atelier
+echo "3/4 attente de la santé (90 s au plus)"
+for _ in $(seq 1 45); do
+  [ "$(docker inspect -f '{{.State.Health.Status}}' atelier 2>/dev/null)" = healthy ] && { echo "4/4 en service : $TAG"; exit 0; }
   sleep 2
 done
-echo "La sonde ne passe pas : retour à la version précédente" >&2
-"$(dirname "$0")/rollback.sh" --no-backup-restore
+echo "Le conteneur n'est pas sain : retour à la version précédente" >&2
+[ -n "$CURRENT" ] && "$(dirname "$0")/rollback.sh" || echo "Pas de version précédente." >&2
 exit 1
