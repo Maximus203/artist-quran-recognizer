@@ -119,7 +119,13 @@ describe("journal en fichiers", () => {
     const logs = new LogFiles({
       dir,
       now: at("2026-10-30T10:00:00.000Z"),
-      retentionDays: { app: 30, access: 30, queue: 90, security: 365 },
+      retentionDays: {
+        app: 30,
+        access: 30,
+        queue: 90,
+        security: 365,
+        live: 30,
+      },
     });
     const old = (name: string, daysAgo: number) =>
       writeFile(path.join(dir, name), "{}\n").then(() => {
@@ -133,8 +139,9 @@ describe("journal en fichiers", () => {
     await old("security-2026-09-01.log", 60);
     await old("security-2025-01-01.log", 400);
     await old("app-2026-10-29.log", 1);
+    await old("live-2026-09-01.log", 60); // écrit par le service du direct (Python)
     const removed = logs.prune();
-    expect(removed).toBe(2);
+    expect(removed).toBe(3);
     expect((await readdir(dir)).sort()).toEqual([
       "app-2026-10-29.log",
       "queue-2026-09-01.log",

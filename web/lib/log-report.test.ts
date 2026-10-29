@@ -73,6 +73,27 @@ describe("rapport des journaux", () => {
     expect(exitCode(summarize(dir))).toBe(1);
   });
 
+  it("lit aussi le journal du service du direct (Python) : une erreur récurrente y est signalée", async () => {
+    for (const day of ["2026-10-24", "2026-10-27", "2026-10-29"]) {
+      const row = JSON.stringify({
+        ts: `${day}T10:00:00.000Z`,
+        level: "error",
+        scope: "live",
+        msg: "engine.failed",
+      });
+      await writeFile(
+        path.join(dir, `live-${day}.log`),
+        `${row}
+${row}
+`,
+      );
+    }
+    const result = summarize(dir);
+    expect(result.recurring).toHaveLength(1);
+    expect(result.recurring[0].signature).toBe("live · engine.failed");
+    expect(exitCode(result)).toBe(2);
+  });
+
   it("dossier absent : le dit, sans planter", () => {
     expect(render(summarize(path.join(dir, "absent")))).toMatch(
       /Aucun dossier/,

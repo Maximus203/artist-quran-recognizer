@@ -37,7 +37,7 @@ from aqr.live.confirmation import (
 from aqr.live.content import LiveContent
 from aqr.live.final import FinalDocumentBuilder
 from aqr.live.hub import LiveHub, StreamFactory
-from aqr.live.journal import journal
+from aqr.live.journal import FileSink, journal, log_dir_from_env
 from aqr.live.pipeline import LivePipeline
 from aqr.live.prefix_index import PrefixIndex
 from aqr.live.presenter import LivePresenter
@@ -284,6 +284,11 @@ async def serve(
     engine: LiveEngine, config: LiveServiceConfig, env: Mapping[str, str], out: TextIO
 ) -> None:
     _hub, server = build_service(engine, config, env)
+    log_dir = log_dir_from_env(env)
+    if log_dir is not None:  # journal en fichier, dans le même dossier que celui de l'atelier
+        sink = FileSink(log_dir)
+        sink.prune()
+        journal.attach_file(sink)
     await server.start()
     print(
         f"Service du direct à l'écoute sur ws://{config.host}:{server.port}{config.path} "
