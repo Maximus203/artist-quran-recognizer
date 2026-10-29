@@ -47,6 +47,8 @@ export type BordereauProps = {
   onExport: () => void;
   onStop: () => void;
   onResume: (lighter: boolean) => void;
+  /** Après un arrêt demandé : fabriquer les vidéos qui manquent. */
+  onFinish: () => void;
   onNew: () => void;
   onRedownload: (index: number | null) => void;
   onLighten: () => void;
@@ -208,8 +210,20 @@ export function Bordereau(props: BordereauProps) {
             : ""}
         </p>
         <div className="xr-row">
+          {counts.done < files.length ? (
+            <button
+              className="btn btn--primary"
+              type="button"
+              data-testid="video-finish"
+              onClick={props.onFinish}
+            >
+              Finir les {files.length - counts.done} vidéo
+              {files.length - counts.done > 1 ? "s" : ""} restante
+              {files.length - counts.done > 1 ? "s" : ""}
+            </button>
+          ) : null}
           <button
-            className="btn btn--primary"
+            className={`btn ${counts.done < files.length ? "btn--secondary" : "btn--primary"}`}
             type="button"
             data-testid="video-redownload"
             onClick={() => props.onRedownload(null)}
@@ -372,8 +386,14 @@ export function ExportDock({
             }
           : phase === "done"
             ? {
-                title: `${plural(counts.done, "vidéo prête", "vidéos prêtes")}`,
-                hint: "Téléchargées",
+                title:
+                  counts.done < files.length
+                    ? `${counts.done} sur ${files.length} vidéos prêtes`
+                    : `${plural(counts.done, "vidéo prête", "vidéos prêtes")}`,
+                hint:
+                  counts.done < files.length
+                    ? "Arrêt demandé : finis les autres dans le récapitulatif"
+                    : "Téléchargées",
               }
             : phase === "error" && failure
               ? {

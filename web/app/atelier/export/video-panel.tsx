@@ -529,6 +529,17 @@ export function VideoPanel({
     }
   };
 
+  // Quitter la page pendant un rendu le perdrait : le navigateur demande confirmation.
+  useEffect(() => {
+    if (phase !== "render") return;
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [phase]);
+
   // --- aperçu réduit sur téléphone --------------------------------------------------------------
   useEffect(() => {
     const node = stageWrap.current;
@@ -575,6 +586,11 @@ export function VideoPanel({
       announce("L’export s’arrêtera après la vidéo en cours.");
     },
     onResume: resume,
+    onFinish: () => {
+      const done = files.filter((f) => f.state === "done").length;
+      setSheet(false);
+      void run(ranges.slice(done), done, whole);
+    },
     onNew: () => {
       setPhase("idle");
       setFiles([]);
