@@ -116,6 +116,7 @@
   max-width: 100%;
 }
 .xr-pip {
+  flex: none;
   display: inline-grid;
   place-items: center;
   min-width: 20px;
@@ -128,6 +129,18 @@
   background: color-mix(in srgb, var(--warn-edge) 22%, transparent);
   color: var(--warn);
   box-shadow: inset 0 0 0 1px var(--warn-edge);
+}
+.xr-pip svg.i {
+  display: none;
+}
+@media (max-width: 379px) {
+  /* Écran étroit : « Prêt » devient une coche (la ligne dessous dit « Tout est vérifié »). */
+  .xr-pip--ok .pip-t {
+    display: none;
+  }
+  .xr-pip--ok svg.i {
+    display: block;
+  }
 }
 .xr-pip--ok {
   background: color-mix(in srgb, var(--ok) 18%, transparent);
@@ -1299,8 +1312,19 @@ details.xr-fine > div {
   padding: 0;
   background: transparent;
 }
+.xr-stage-wrap .ex-video-preview {
+  /* Une piste qui ne dépasse jamais la colonne (sinon le bouton d'aperçu l'élargit à 320 px). */
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
 .xr-stage-wrap .ex-video-canvas {
   max-block-size: var(--x-stage-max-h);
+  max-inline-size: 100%;
+}
+.xr-stage-wrap .ex-video-preview-bar,
+.xr-stage-wrap .ex-video-preview-bar .btn {
+  max-width: 100%;
+  white-space: normal;
 }
 .xr-ministage {
   position: fixed;

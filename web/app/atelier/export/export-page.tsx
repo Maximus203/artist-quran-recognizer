@@ -493,7 +493,8 @@ function ExportView({
                       className="xr-pip xr-pip--ok"
                       data-testid="gate-badge"
                     >
-                      Prêt
+                      <XIcon name="check" size={12} />
+                      <span className="pip-t">Prêt</span>
                     </span>
                   )
                 ) : null}
