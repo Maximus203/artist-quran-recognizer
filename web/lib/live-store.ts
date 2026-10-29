@@ -80,6 +80,8 @@ export type HistItem =
       interrupted: boolean;
       /** Confirmé par le moteur du lot après coup (ADR-0016). */
       confirmed?: boolean;
+      /** Plage de mots du corpus quand le verset n'est entendu qu'en partie. */
+      words?: [number, number] | null;
     }
   | {
       kind: "unres";
@@ -469,6 +471,7 @@ function verseItem(
         : (source.translation ?? null),
     translationUnavailable: source.translation_unavailable ?? false,
     partial: source.partial ?? false,
+    words: source.words ?? null,
     revised: false,
     interrupted: extra.interrupted ?? false,
   };
@@ -734,8 +737,19 @@ function onContinue(
     jump: null,
     unres: null,
   });
+  const window: [number, number | null] = [closed.t[0], closed.t[1]];
+  const confirmedOver = (ref?: string) =>
+    state.hist.some(
+      (item) =>
+        item.kind === "verse" &&
+        item.confirmed === true &&
+        (ref === undefined || item.ref === ref) &&
+        overlaps(item.t, window),
+    );
   if (closed.status === "uncertain") {
     const afterLock = closeLock(cleared, message.t);
+    // Le lot a déjà nommé ce passage : sa ligne « non nommé » n'a plus lieu d'être.
+    if (confirmedOver()) return { ...afterLock, between: null };
     const [id, counter] = nextId(afterLock, "u");
     const heardText = state.cand?.heardText ?? null;
     const t0 = closed.t[0];
@@ -784,7 +798,8 @@ function onContinue(
       expected: message.expected?.ref ?? null,
       revised: false,
     },
-    hist: [item, ...rest.hist],
+    // Le lot a déjà confirmé ce verset : une seule ligne.
+    hist: confirmedOver(closed.ref) ? rest.hist : [item, ...rest.hist],
   };
 }
 

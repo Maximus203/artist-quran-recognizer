@@ -933,4 +933,17 @@ describe("confirmation par le moteur du lot (ADR-0016)", () => {
     expect(counts(s)).toEqual({ named: 1, unnamed: 0 });
     expect(historyRows(s).filter((r) => r.kind === "verse")).toHaveLength(1);
   });
+
+  it("n'ajoute pas ensuite une ligne du direct que le lot a déjà confirmée", () => {
+    resetSeq();
+    const script: LiveAction[] = [
+      ...open(),
+      server(10000, confirmed(9, [0, 8], [{ ref: "1:3", t: [1.0, 4.0] }])),
+      server(16000, unresolved(5.0, 2, ["1:3", "55:1"])),
+      server(17000, cont(5.5, "1:3", "1:4")),
+    ];
+    const s = upTo(script, 17000);
+    expect(counts(s)).toEqual({ named: 1, unnamed: 0 });
+    expect(historyRows(s).filter((r) => r.kind === "verse")).toHaveLength(1);
+  });
 });

@@ -147,7 +147,11 @@ function Row({
   const sub = row.revised
     ? "Nommé puis retiré · incertain après vérification"
     : row.confirmed
-      ? "Confirmé après réécoute du passage"
+      ? `Confirmé après réécoute du passage${
+          row.partial && row.words
+            ? ` · mots ${row.words[0]}–${row.words[1]}`
+            : ""
+        }`
       : row.status === "inferred"
         ? "Déduit de la position · texte entendu"
         : "Reconnu";
