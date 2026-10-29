@@ -1,6 +1,8 @@
 import { loginAccount } from "@/lib/auth";
 import { authResponse } from "@/lib/auth-response";
-import { apiError, readJson, safe } from "@/lib/http";
+import { z } from "zod";
+import { parseBody } from "@/lib/body";
+import { safe } from "@/lib/http";
 import { authDeps, authenticate, clientIp } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
@@ -9,19 +11,22 @@ export const runtime = "nodejs";
  * `401` générique (jamais « ce pseudonyme n'existe pas »), `429` avec `Retry-After` après
  * plusieurs échecs (verrouillage progressif par IP + pseudonyme).
  */
+const loginBody = z
+  .object({ username: z.string().max(100), password: z.string().max(128) })
+  .strict();
+
 async function handlePOST(request: Request) {
   const guard = await authenticate(request, {
     mutation: true,
     anonymous: true,
   });
   if (!guard.ok) return guard.response;
-  const body = await readJson(request);
-  if (!body || typeof body !== "object" || Array.isArray(body))
-    return apiError(400, "Corps JSON attendu : { username, password }.");
+  const body = await parseBody(request, loginBody, "{ username, password }");
+  if (!body.ok) return body.response;
   const deps = await authDeps();
   const result = await loginAccount(
     deps,
-    body as { username: unknown; password: unknown },
+    body.data,
     clientIp(request, deps.cfg),
   );
   return authResponse(request, deps.cfg, result, 200);

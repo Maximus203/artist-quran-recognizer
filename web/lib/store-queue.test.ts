@@ -307,8 +307,15 @@ describe("saveSession — mise à jour d'une session qui existe", () => {
   it("markViewed, interrompu par une suppression, ne ressuscite pas la session", async () => {
     await saveSession(session({ state: "done", viewed_at: null }));
     const marking = markViewed(ID);
-    await rm(sessionDir(ID), { recursive: true, force: true });
+    // La suppression et l'écriture se croisent : `rm` peut buter sur le fichier temporaire que
+    // l'écriture vient de poser (ENOTEMPTY). C'est le test qui est concerné, pas la production :
+    // on retente le nettoyage une fois l'écriture finie, puis on vérifie que RIEN n'est revenu.
+    await rm(sessionDir(ID), { recursive: true, force: true }).catch(
+      () => undefined,
+    );
     await marking.catch(() => undefined);
+    await rm(sessionDir(ID), { recursive: true, force: true });
+    expect(existsSync(path.join(sessionDir(ID), "session.json"))).toBe(false);
     expect(existsSync(sessionDir(ID))).toBe(false);
   });
 });

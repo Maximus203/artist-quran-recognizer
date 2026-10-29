@@ -106,12 +106,12 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 ## 5. Sessions et cookies
 
-- [ ] 🟡 Cookie `HttpOnly` (documenté). **Vérifier et tester** : `Secure`, `SameSite=Lax` au minimum, durée
+- [x] ✅ (`hardening.test.ts` : HttpOnly, SameSite=Lax, Secure en HTTPS, Path, Max-Age ; identifiant aléatoire de 256 bits, nouveau à chaque connexion, jamais stocké en clair ; durée : 30 j glissants, 180 j au plus, réglables) Cookie `HttpOnly` (documenté). **Vérifier et tester** : `Secure`, `SameSite=Lax` au minimum, durée
   de vie courte avec renouvellement, identifiant de session aléatoire d'au moins 128 bits, nouvel identifiant à
   chaque connexion (anti-fixation).
 - [x] ✅ (proxy : `Sec-Fetch-Site` inter-sites + cookie refusé ; en plus du contrôle d'`Origin` existant dans `local-request.ts`) Protection CSRF sur toutes les routes qui modifient l'état (jeton synchronisé ou vérification stricte de
   l'en-tête `Origin`).
-- [ ] ❌ Expiration absolue et inactivité, côté serveur.
+- [x] ✅ (`auth.test.ts` : expiration glissante sans usage, plafond absolu ; contrôlées côté serveur à chaque requête) Expiration absolue et inactivité, côté serveur.
 
 ## 6. Autorisation (qui voit quoi)
 
@@ -130,13 +130,13 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
   (lecture, écriture, envoi de fichiers, génération, MCP, direct). Réponse `429` avec `Retry-After`.
 - [ ] ❌ Limite globale de débit au proxy (reverse proxy) en plus de l'application, pour que la protection tienne
   même si le processus est saturé.
-- [ ] ❌ **Validation stricte des entrées** : schéma (zod, déjà utilisé) sur chaque corps, paramètre de requête et
+- [ ] 🟡 (schéma strict commun `lib/body.ts` : connexion, inscription, mot de passe, jetons, lancement ; les autres corps JSON ont leurs validateurs propres, à migrer route par route) **Validation stricte des entrées** : schéma (zod, déjà utilisé) sur chaque corps, paramètre de requête et
   en-tête. Rejet des champs inconnus. Bornes sur les tailles, les listes et les profondeurs.
 - [ ] 🟡 (JSON : 1 Mio au proxy et à la lecture ; envois de fichiers : bornés par leur route, lecture en flux à vérifier en section 11) Taille maximale du corps par route, lecture bornée (pas de lecture entière en mémoire).
-- [ ] ❌ Jetons API : stockés hachés, portée limitée, date d'expiration, révocation, journalisation d'usage. Jamais
+- [x] ✅ (SHA-256, portée read/write, fin à 180 j par défaut et 365 au plus, révocation, `last_used_at`, création et révocation journalisées, valeur montrée une seule fois ; testé) Jetons API : stockés hachés, portée limitée, date d'expiration, révocation, journalisation d'usage. Jamais
   affichés une seconde fois.
-- [ ] ❌ Réponses d'erreur sans pile ni chemin de fichier ni détail interne.
-- [ ] ❌ Versionnement de l'API (`/api/v1/…`) et contrat documenté.
+- [x] ✅ (`hardening.test.ts`) Réponses d'erreur sans pile ni chemin de fichier ni détail interne.
+- [ ] 🟡 (`/api/v1/recordings`, `me`, `export/options` et `/mcp` sont versionnés et documentés dans `docs/API-MCP.md` ; les routes internes de l'atelier ne le sont pas) Versionnement de l'API (`/api/v1/…`) et contrat documenté.
 
 ## 8. Middleware et en-têtes HTTP
 
@@ -148,7 +148,7 @@ Aujourd'hui absent (`web/next.config.ts` ne définit aucun en-tête, aucun `midd
 - [x] ✅ (HSTS seulement en HTTPS) `Strict-Transport-Security` (HSTS), `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
   `Permissions-Policy` (micro autorisé uniquement là où il est nécessaire : le direct), `X-Frame-Options` ou
   `frame-ancestors`.
-- [ ] ❌ Cookies : attributs vérifiés par test automatisé.
+- [x] ✅ (`hardening.test.ts`) Cookies : attributs vérifiés par test automatisé.
 - [x] ✅ Désactiver l'en-tête `X-Powered-By` et les pages de débogage en production.
 - [ ] ❌ Vérification par un outil externe (securityheaders.com ou équivalent) avec capture consignée.
 
@@ -225,11 +225,11 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 **Tests de sécurité automatisés** (à ajouter au pipeline) :
 - [x] ✅ (`idor.test.ts`) IDOR : compte B ne peut rien faire sur les ressources de A (lecture, écriture, suppression, téléchargement).
-- [ ] ❌ Injection : entrées malveillantes sur chaque champ (SQL, chemin, commande, HTML). Aucune exécution.
-- [ ] ❌ Authentification : brute force contre un compte de test (verrouillage, ralentissement, journal).
-- [ ] ❌ Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
+- [ ] 🟡 (champs inconnus et types refusés sur les routes migrées ; pas encore de jeu d'entrées hostiles sur chaque champ) Injection : entrées malveillantes sur chaque champ (SQL, chemin, commande, HTML). Aucune exécution.
+- [x] ✅ (`auth.test.ts` : verrouillage progressif, par compte, persistant ; journal) Authentification : brute force contre un compte de test (verrouillage, ralentissement, journal).
+- [ ] 🟡 (`proxy.test.ts` : familles auth et génération ; pas encore chaque famille) Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
 - [ ] ❌ Honeypots : formulaire leurre rempli, route piège appelée.
-- [ ] ❌ En-têtes et cookies (test automatisé sur les réponses).
+- [x] ✅ (`proxy.test.ts`, `http-security.test.ts`, `hardening.test.ts`) En-têtes et cookies (test automatisé sur les réponses).
 - [ ] ❌ Téléversement hostile : fichier mal typé, archive piégée, nom de fichier hostile, taille dépassée.
 
 **Scans à exécuter avant la mise en production** (rapport consigné) :

@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Corps d'API validés strictement, jetons d'API toujours datés et journalisés, cookies et erreurs éprouvés
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Les routes de connexion, d'inscription, de changement de mot de passe, de création de jeton et de lancement d'analyse valident leur corps par un schéma strict : un champ inconnu, un mauvais type ou un dépassement de borne donne une erreur 400 claire qui ne renvoie jamais la valeur reçue (un mot de passe mal formé ne revient pas dans la réponse). Un jeton d'API n'est plus jamais sans date de fin : 180 jours par défaut, 365 au plus (avant : sans fin possible). Sa création et sa révocation sont consignées dans le journal, sans la valeur du jeton.
+
+**Pourquoi / décision.** Sections 5 et 7 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Les autres routes à corps JSON (`decisions`, `review`, `validation`, sous-titres, export vidéo, préférences, direct) ont déjà leurs propres validateurs métier ; elles ne sont pas encore passées au schéma strict commun : reste à faire, route par route. Le test instable `store-queue` (« markViewed, interrompu par une suppression ») est corrigé : sa suppression butait parfois sur le fichier temporaire d'une écriture en vol (ENOTEMPTY), un défaut du test et non de la production ; il passe 10 fois sur 10. Preuves : `web/lib/body.test.ts`, `web/app/api/hardening.test.ts` (cookie : HttpOnly, SameSite=Lax, Secure en HTTPS, nouvel identifiant de 256 bits à chaque connexion, jamais stocké en clair ; corps ; jetons ; une exception inattendue ne fuit ni pile ni chemin).
+
 ## 2026-10-29 — Autorisation : balayage automatique des routes contre l'accès à la session privée d'un autre compte
 Étiquettes : technique
 PR : -

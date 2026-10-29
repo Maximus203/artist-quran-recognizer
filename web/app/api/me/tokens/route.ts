@@ -3,11 +3,22 @@ import {
   createApiToken,
   listApiTokens,
   TokenLimitError,
-  type TokenScope,
 } from "@/lib/api-tokens";
-import { apiError, json, readJson, safe } from "@/lib/http";
+import { z } from "zod";
+import { audit } from "@/lib/audit";
+import { parseBody } from "@/lib/body";
+import { apiError, json, safe } from "@/lib/http";
 import { requireUser } from "@/lib/route-guard";
 export const runtime = "nodejs";
+
+const DEFAULT_TOKEN_DAYS = 180;
+const createBody = z
+  .object({
+    name: z.string(),
+    scope: z.enum(["read", "write"]),
+    expires_in_days: z.number().min(1).max(365).nullish(),
+  })
+  .strict();
 
 /** Jetons d'API du compte connecté (jamais leur valeur : seulement nom, préfixe, droits, usage). */
 async function handleGET(request: Request) {
@@ -24,37 +35,30 @@ async function handleGET(request: Request) {
 async function handlePOST(request: Request) {
   const auth = await requireUser(request, { mutation: true });
   if (!auth.ok) return auth.response;
-  const body = (await readJson(request)) as
-    | { name?: unknown; scope?: unknown; expires_in_days?: unknown }
-    | undefined;
-  if (!body || typeof body !== "object")
-    return apiError(400, "Corps JSON attendu : { name, scope }.");
-  const name = cleanTokenName(body.name);
+  const body = await parseBody(
+    request,
+    createBody,
+    "{ name, scope, expires_in_days? }",
+  );
+  if (!body.ok) return body.response;
+  const name = cleanTokenName(body.data.name);
   if (name === null)
     return apiError(400, "Le nom fait 1 à 60 caractères.", {
       code: "invalid",
       field: "name",
     });
-  if (body.scope !== "read" && body.scope !== "write")
-    return apiError(400, "scope : « read » ou « write ».", {
-      code: "invalid",
-      field: "scope",
-    });
-  const days =
-    body.expires_in_days === undefined || body.expires_in_days === null
-      ? null
-      : Number(body.expires_in_days);
-  if (days !== null && !(Number.isFinite(days) && days >= 1))
-    return apiError(400, "expires_in_days : un nombre de jours, 1 au moins.", {
-      code: "invalid",
-      field: "expires_in_days",
-    });
+  // Jamais de jeton sans fin : à défaut de durée, 180 jours (365 au plus, borné par la couche données).
+  const days = body.data.expires_in_days ?? DEFAULT_TOKEN_DAYS;
   try {
     const created = createApiToken(auth.db, {
       userId: auth.user.id,
       name,
-      scope: body.scope as TokenScope,
+      scope: body.data.scope,
       expiresInDays: days,
+    });
+    audit("token.created", {
+      userId: auth.user.id,
+      reason: `${created.row.scope}, ${days} j`,
     });
     return json({ token: created.token, item: created.row }, 201);
   } catch (error) {
