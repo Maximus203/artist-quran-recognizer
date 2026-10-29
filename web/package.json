@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
-    "start": "next start --hostname 127.0.0.1",
+    "start": "node scripts/start-local.mjs",
     "start:local": "node scripts/start-local.mjs",
     "typecheck": "tsc --noEmit",
     "smoke:browser": "node e2e/browser-smoke.mjs",
