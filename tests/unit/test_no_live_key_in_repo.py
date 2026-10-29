@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-# `AQR_LIVE_KEY=<clé de 16 caractères au moins>`, en variable ou en clé JSON ; valeurs vides exclues.
+# `AQR_LIVE_KEY=<clé de 16 caractères au moins>`, en variable ou en clé JSON.
 _ASSIGNED = re.compile(r"AQR_LIVE_KEY[\"']?\s*[:=]\s*[\"']?([A-Za-z0-9_\-+/=]{16,})")
 _ALLOWED = {"x" * 16, "t" * 40, "t" * 16}
 
