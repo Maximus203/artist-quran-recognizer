@@ -92,7 +92,10 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 
 | Variable | Rôle | Défaut |
 | --- | --- | --- |
-| `AQR_MAX_CONCURRENT` | analyses exécutées en même temps (entier ≥ 1 ; invalide = 1). Lue à chaque démarrage d'analyse | `1` |
+| `AQR_MAX_CONCURRENT` | charges lourdes exécutées en même temps, analyses et exports vidéo ensemble (entier ≥ 1 ; invalide = 1). Lue à chaque démarrage | `1` |
+| `AQR_MAX_WAITING_PER_USER` | jobs en attente autorisés par compte (au-delà : réponse 429) | `5` |
+| `AQR_JOB_TIMEOUT_S` | délai maximal d'une analyse en secondes, avant arrêt par le watchdog (sans valeur : 8 fois la durée audio, au moins 30 min) | — |
+| `AQR_WARM_WORKER` | `0` : un processus Python par analyse (diagnostic) ; sinon un worker chaud garde le moteur chargé | actif |
 | `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafond d'une **vidéo** envoyée en flux (`413` au-delà). Une vidéo garde son image sur le disque alors que seul le son sert : 2 Gio couvrent 1 h 30 de 1080p courant | 2 Gio |
 | `AQR_MAX_UPLOAD_BYTES` | plafond d'un **audio** en flux, et de tout envoi par formulaire multipart (lu en mémoire) | 500 Mo |
 | `AQR_FFPROBE` | exécutable ffprobe (défaut : voisin de `AQR_FFMPEG`, sinon `ffprobe` du PATH, comme le moteur) | — |

@@ -399,7 +399,10 @@ et surligne en lecture le mot arabe récité et le segment de traduction qui le 
 | `AQR_REVIEW_DIR` | dossier des sessions | voir §8 |
 | `AQR_FONTS_DIR` | dossier de la police Hafs | `%LOCALAPPDATA%\aqr-fonts` / `~/.local/share/aqr-fonts` |
 | `AQR_ASR` | force un moteur seul (mesure) | cascade |
-| `AQR_MAX_CONCURRENT` | analyses simultanées | 1 |
+| `AQR_MAX_CONCURRENT` | charges lourdes simultanées (analyses + exports vidéo) | 1 |
+| `AQR_MAX_WAITING_PER_USER` | jobs en attente par compte | 5 |
+| `AQR_JOB_TIMEOUT_S` | délai maximal d'une analyse (watchdog) | 8 × durée audio, ≥ 30 min |
+| `AQR_WARM_WORKER` | `0` : processus par analyse ; sinon worker chaud (`aqr worker`) | actif |
 | `AQR_FFMPEG`, `AQR_FFPROBE` | exécutables ffmpeg / ffprobe | du `PATH` |
 | `AQR_MAX_UPLOAD_BYTES`, `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafonds d'envoi | 500 Mo, 2 Gio |
 | `AQR_USER_QUOTA_BYTES` | quota de stockage par compte (`0` = illimité) | 5 Gio |

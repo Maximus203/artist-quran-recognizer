@@ -1,4 +1,4 @@
-import type { ChildProcess } from "node:child_process";
+import type { JobProcess } from "./warm-worker";
 import { createHash, randomUUID } from "node:crypto";
 import {
   lstat,
@@ -79,7 +79,7 @@ export function sessionTtlSeconds(
 }
 export const REPO = path.resolve(process.cwd(), "..");
 /** Traitement lancé par ce serveur ; `settled` se résout quand `close` a consigné l'issue. */
-export type Job = { child: ChildProcess; settled: Promise<void> };
+export type Job = { child: JobProcess; settled: Promise<void> };
 /**
  * Traitements en cours dans ce serveur. Tant qu'un id y figure, seul le gestionnaire
  * `close` de `jobs.ts` consigne l'issue : `readSession` ne sonde pas le processus.

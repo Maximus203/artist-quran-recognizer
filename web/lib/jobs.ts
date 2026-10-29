@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseAsrChoice, type AsrChoice } from "./asr-choice";
 import { describeFailure, isMissingSession } from "./errors";
-import { recognizeCommand } from "./python";
+import { pythonCommand, recognizeCommand, type EngineCommand } from "./python";
 import {
   JobQueue,
   peekQueue,
@@ -12,6 +12,7 @@ import {
   type QueueEntry,
 } from "./queue";
 import { parseRecognition, type Recognition } from "./recognition";
+import { WarmWorkerPool, type JobProcess } from "./warm-worker";
 import {
   REPO,
   audioPath,
@@ -167,6 +168,44 @@ async function markFailed(id: string, error: unknown): Promise<void> {
   }
 }
 
+const WARM = Symbol.for("aqr.warm-pool");
+/**
+ * Workers Python chauds du processus serveur : le moteur reste chargé d'une analyse à l'autre.
+ * `AQR_WARM_WORKER=0` revient à un processus par analyse (diagnostic). Un moteur lancé par une
+ * commande autre que l'interpréteur Python habituel (tests) est exécuté tel quel.
+ */
+export function warmPool(): WarmWorkerPool {
+  const holder = globalThis as { [WARM]?: WarmWorkerPool };
+  return (holder[WARM] ??= new WarmWorkerPool({
+    spawnWorker: () => {
+      const { python, env } = pythonCommand();
+      return spawn(
+        /* turbopackIgnore: true */ python,
+        ["-m", "aqr.cli", "worker"],
+        { cwd: REPO, shell: false, windowsHide: true, env },
+      );
+    },
+    maxIdle: () => maxConcurrent(),
+  }));
+}
+export function warmEnabled(run: EngineCommand): boolean {
+  return (
+    process.env.AQR_WARM_WORKER !== "0" &&
+    run.command === pythonCommand().python &&
+    run.args[0] === "-m" &&
+    run.args[1] === "aqr.cli"
+  );
+}
+function startEngine(run: EngineCommand): JobProcess {
+  if (warmEnabled(run)) return warmPool().start(run.args.slice(2));
+  return spawn(/* turbopackIgnore: true */ run.command, run.args, {
+    cwd: REPO,
+    shell: false,
+    windowsHide: true,
+    env: run.env,
+  });
+}
+
 /** La file du processus (créée à la demande, une seule même si le module est chargé deux fois). */
 export function jobQueue(): JobQueue {
   return sharedQueue(
@@ -291,17 +330,12 @@ async function run(id: string, signal: JobSignal): Promise<void> {
     await saveSession(session, UPDATE);
     return;
   }
-  const { command, args, env } = recognizeCommand(source, output, asr, models);
+  const engine = recognizeCommand(source, output, asr, models);
   if (jobs.has(id))
     throw new Error(
       "Traitement déjà en cours ou en cours d'arrêt : réessaie dans un instant.",
     );
-  const child = spawn(/* turbopackIgnore: true */ command, args, {
-    cwd: REPO,
-    shell: false,
-    windowsHide: true,
-    env,
-  });
+  const child = startEngine(engine);
   let settle!: () => void;
   const settled = new Promise<void>((resolve) => (settle = resolve));
   jobs.set(id, { child, settled });
