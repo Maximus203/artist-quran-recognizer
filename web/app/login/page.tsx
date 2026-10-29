@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { issueFormToken } from "@/lib/honeypot";
 import { redirectIfSignedIn, safeNext } from "@/lib/page-auth";
 import { AuthShell } from "../atelier/auth-shell";
 import { LoginForm } from "./login-form";
@@ -15,7 +16,7 @@ export default async function LoginPage({
   await redirectIfSignedIn(next);
   return (
     <AuthShell>
-      <LoginForm next={next} />
+      <LoginForm next={next} formToken={issueFormToken()} />
     </AuthShell>
   );
 }

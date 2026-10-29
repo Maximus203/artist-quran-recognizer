@@ -60,6 +60,14 @@ grep -h '"session":"<identifiant>"' "$AQR_LOG_DIR"/queue-*.log
 5. Dans `security-…` : une rafale de `login.failure` ou de `rate_limited` sur la même empreinte d'adresse
    (balayage), `login.locked`, `visibility.change` inattendu.
 
+## Blocages (pièges à robots)
+
+- Voir qui est bloqué : `GET /api/admin/blocks` (administrateur) : empreinte, raison, passages, fin. Jamais l'adresse.
+- Lever un blocage : `DELETE /api/admin/blocks/<empreinte>`.
+- Un blocage n'existe que si l'adresse réelle est connue (`AQR_TRUST_PROXY=1` derrière un proxy de confiance) ;
+  sans cela, les pièges répondent et journalisent (`honeypot.hit`, `honeypot.form`) sans bloquer.
+- Dans `security-…` : `honeypot.hit` (route piège), `honeypot.form` (champ leurre), `blocked_request` (adresse déjà bloquée).
+
 ## Direct
 
 Le service `aqr live-serve` (Python) écrit son propre journal (événements et nombres, jamais d'audio ni de
