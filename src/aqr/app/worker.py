@@ -17,7 +17,9 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 from collections.abc import Callable, Iterable, Mapping
+from pathlib import Path
 from typing import Any, TextIO
 
 from aqr.pipeline.factory import RecognizeOptions
@@ -26,22 +28,45 @@ RunRequest = Callable[[list[str], TextIO, TextIO], int]
 _TAIL = 100_000
 
 
+def _stat(path: Path | None) -> tuple[int, int] | None:
+    try:
+        info = os.stat(path) if path is not None else None
+    except OSError:
+        return None
+    return None if info is None else (info.st_mtime_ns, info.st_size)
+
+
+def _stamp(options: RecognizeOptions) -> tuple[object, ...]:
+    """Empreinte légère de ce qui rend un moteur périmé : le verrou des modèles (la référence) et
+    les entrées directes du dossier des poids (ajout, retrait ou remplacement d'un modèle)."""
+    children: list[tuple[str, tuple[int, int] | None]] = []
+    if options.models_dir is not None:
+        try:
+            with os.scandir(options.models_dir) as entries:
+                children = sorted((e.name, _stat(Path(e.path))) for e in entries)
+        except OSError:
+            children = []
+    return (_stat(options.lock_path), tuple(children))
+
+
 class CachedFactory:
     """Fabrique de moteur qui garde le dernier : le même jeu d'options ne recharge rien.
 
-    Un seul moteur est conservé (mémoire de la carte graphique) : changer d'options reconstruit.
+    Un seul moteur est conservé (mémoire de la carte graphique) : changer d'options, ou mettre à
+    jour les modèles (verrou ou dossier modifiés), reconstruit.
     """
 
     def __init__(self, build: Callable[[RecognizeOptions, Mapping[str, str]], Any]) -> None:
         self._build = build
-        self._key: RecognizeOptions | None = None
+        self._key: tuple[RecognizeOptions, tuple[object, ...]] | None = None
         self._value: Any = None
 
     def __call__(self, options: RecognizeOptions, env: Mapping[str, str]) -> Any:
-        if self._key != options:
+        key = (options, _stamp(options))
+        if self._key != key:
             self._value = None  # libère l'ancien avant de charger le nouveau
             self._value = self._build(options, env)
-            self._key = options
+            self._key = key
         return self._value
 
 

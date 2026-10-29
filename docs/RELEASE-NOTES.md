@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Test de charge de la file, annulation des exports vidéo, worker rechargé après mise à jour des modèles
+Étiquettes : technique, utilisateur
+PR : -
+
+**Ce qui change.** Un export vidéo en attente ou en cours peut maintenant être annulé par l'API (`DELETE …/export/video/jobs/{job}`) : la place est rendue, l'état devient « échec » avec le message « Export annulé. ». Le worker Python chaud se recharge si le verrou des modèles (`LOCK.json`) ou le dossier des poids change entre deux analyses : une mise à jour de modèle n'est plus ignorée par un moteur resté en mémoire.
+
+**Pourquoi / décision.** Fin de la section 1 de `docs/SECURITE-PRE-DEPLOIEMENT.md` côté file. `web/lib/queue-load.test.ts` rejoue avec des jobs factices les scénarios 1, 2, 4, 6, 9 et 11 de la section 14 (dont 200 jobs de 10 comptes sur 2 places : jamais plus de 2 simultanés, chaque compte passe une fois par tranche de 10 démarrages). Les scénarios 3 (fichier de 6 h), 10 (disque plein) et 12 (direct pendant un lot) restent à faire : ils dépendent du découpage en tronçons, de la route d'envoi et de la mesure sur la machine cible.
+
 ## 2026-10-29 — Redémarrage du serveur : les analyses laissées en cours sont réglées explicitement
 Étiquettes : technique
 PR : -

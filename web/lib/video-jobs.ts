@@ -41,11 +41,20 @@ export type VideoJob = {
   /** Jeton de l'appelant, gardé en mémoire le temps du rendu seulement. */
   bearer: string | null;
   origin: string;
+  /** Annulation demandée par l'appelant (distingue « annulé » de « délai dépassé »). */
+  cancelRequested?: boolean;
 };
 
 export type PublicVideoJob = Omit<
   VideoJob,
-  "dir" | "file" | "files" | "background" | "bearer" | "origin" | "userId"
+  | "dir"
+  | "file"
+  | "files"
+  | "background"
+  | "bearer"
+  | "origin"
+  | "userId"
+  | "cancelRequested"
 > & {
   download: string | null;
   /** Un fichier par plage (même ordre que les plages) ; `url` est relative au job. */
@@ -100,7 +109,18 @@ export function browserExecutable(
 }
 
 export function publicJob(job: VideoJob): PublicVideoJob {
-  const { dir, file, files, background, bearer, origin, userId, ...rest } = job;
+  const {
+    dir,
+    file,
+    files,
+    background,
+    bearer,
+    origin,
+    userId,
+    cancelRequested,
+    ...rest
+  } = job;
+  void cancelRequested;
   void dir;
   void background;
   void bearer;
@@ -118,6 +138,26 @@ export function publicJob(job: VideoJob): PublicVideoJob {
           }))
         : [],
   };
+}
+
+/**
+ * Annule un export : en attente, il quitte la file sans démarrer ; en cours, le rendu reçoit le
+ * signal d'arrêt (navigateur fermé) et la place est rendue. Faux si le job est inconnu ou fini.
+ */
+export function cancelVideoJob(id: string): boolean {
+  const job = registry().jobs.get(id);
+  if (!job || (job.state !== "queued" && job.state !== "running")) return false;
+  job.cancelRequested = true;
+  const queue = jobQueue();
+  if (queue.remove(`video:${id}`)) {
+    job.state = "failed";
+    job.error = "Export annulé.";
+    job.progress = "Annulé";
+    job.bearer = null;
+    job.finishedAt = new Date().toISOString();
+    return true;
+  }
+  return queue.abort(`video:${id}`);
 }
 
 export function getVideoJob(id: string): VideoJob | null {
@@ -206,7 +246,9 @@ export async function startVideoJob(input: {
               () =>
                 reject(
                   new Error(
-                    "Le rendu a dépassé le délai maximal et a été arrêté.",
+                    job.cancelRequested
+                      ? "Export annulé."
+                      : "Le rendu a dépassé le délai maximal et a été arrêté.",
                   ),
                 ),
               { once: true },
