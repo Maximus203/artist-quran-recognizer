@@ -55,7 +55,10 @@ describe("vue : bornes, zoom, déplacement, pincement", () => {
     expect((125 - next.a) / (next.b - next.a)).toBeCloseTo(0.25, 9);
   });
   it("le zoom arrière s'arrête à tout l'audio", () => {
-    expect(zoomView({ a: 0, b: 2000 }, 4, 1000, D, MIN)).toEqual({ a: 0, b: D });
+    expect(zoomView({ a: 0, b: 2000 }, 4, 1000, D, MIN)).toEqual({
+      a: 0,
+      b: D,
+    });
   });
   it("déplace sans sortir de l'audio", () => {
     expect(panView({ a: 100, b: 200 }, 50, D)).toEqual({ a: 150, b: 250 });
@@ -71,8 +74,14 @@ describe("vue : bornes, zoom, déplacement, pincement", () => {
     expect(closer.b - closer.a).toBeCloseTo(200, 9);
   });
   it("cadre une plage avec de l'air autour (25 %, 4 s au moins)", () => {
-    expect(fitView({ start: 100, end: 120 }, D, MIN)).toEqual({ a: 95, b: 125 });
-    expect(fitView({ start: 100, end: 102 }, D, MIN)).toEqual({ a: 96, b: 106 });
+    expect(fitView({ start: 100, end: 120 }, D, MIN)).toEqual({
+      a: 95,
+      b: 125,
+    });
+    expect(fitView({ start: 100, end: 102 }, D, MIN)).toEqual({
+      a: 96,
+      b: 106,
+    });
     expect(fitView({ start: 0, end: D }, D, MIN)).toEqual({ a: 0, b: D });
   });
 });

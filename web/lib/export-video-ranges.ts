@@ -49,7 +49,9 @@ export function normalizeRanges(
         error: `${label} : trop courte (${seconds(MIN_RANGE_SECONDS)} au moins).`,
       };
     const name = range.name?.trim();
-    out.push(name ? { start: range.start, end, name } : { start: range.start, end });
+    out.push(
+      name ? { start: range.start, end, name } : { start: range.start, end },
+    );
   }
   return { ok: true, ranges: out };
 }
@@ -89,47 +91,4 @@ export function rangeLabel(range: ExportRange): string {
   const part = (value: number): string =>
     `${Math.floor(value / 60)}m${String(Math.floor(value % 60)).padStart(2, "0")}s`;
   return `${part(range.start)}-${part(range.end)}`;
-}
-
-/** Une plage par passage coranique (carte du rendu) : une vidéo par verset. */
-export function rangesFromCards(
-  cards: readonly { start: number; end: number }[],
-  duration: number,
-): ExportRange[] {
-  return cards
-    .map((c) => ({ start: c.start, end: Math.min(c.end, duration) }))
-    .filter((r) => r.end - r.start >= MIN_RANGE_SECONDS)
-    .slice(0, MAX_RANGES);
-}
-
-/** Une ligne du formulaire : les deux temps tels que saisis. */
-export type RangeRow = { id: number; start: string; end: string };
-
-/** Lit les lignes saisies : plages valides pour l'audio, ou la première erreur à montrer. */
-export function parseRangeRows(
-  rows: readonly RangeRow[],
-  duration: number,
-): RangesResult {
-  if (rows.length === 0)
-    return { ok: false, error: "Ajoute au moins une partie à exporter." };
-  const parsed: ExportRange[] = [];
-  for (const [i, row] of rows.entries()) {
-    const start = parseTimeInput(row.start);
-    const end = parseTimeInput(row.end);
-    if (start === null || end === null)
-      return {
-        ok: false,
-        error: `Partie ${i + 1} : saisis le début et la fin comme 1:23 (minutes:secondes).`,
-      };
-    if (end <= start)
-      return {
-        ok: false,
-        error: `Partie ${i + 1} : la fin doit venir après le début.`,
-      };
-    parsed.push({ start, end });
-  }
-  const result = normalizeRanges(parsed, duration);
-  return result.ok
-    ? result
-    : { ok: false, error: result.error.replace(/^Plage /, "Partie ") };
 }

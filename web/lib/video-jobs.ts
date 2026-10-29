@@ -223,7 +223,8 @@ export type RenderPageState = {
 /** Reporte l'avancement lu dans la page de rendu sur le job (champs absents : inchangés). */
 export function applyRenderState(job: VideoJob, state: RenderPageState): void {
   if (state.progress) job.progress = state.progress;
-  if (typeof state.files_total === "number") job.files_total = state.files_total;
+  if (typeof state.files_total === "number")
+    job.files_total = state.files_total;
   if (typeof state.files_done === "number") job.files_done = state.files_done;
 }
 

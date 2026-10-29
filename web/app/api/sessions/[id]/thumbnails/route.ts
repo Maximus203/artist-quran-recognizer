@@ -29,7 +29,9 @@ async function handleGET(
     const dir = sessionDir(access.id);
     const source = await audioPath(access.id);
     const listening = await ensureListening(dir, source);
-    const { duration } = JSON.parse(await readFile(listening.peaks, "utf8")) as {
+    const { duration } = JSON.parse(
+      await readFile(listening.peaks, "utf8"),
+    ) as {
       duration: number;
     };
     const file = await ensureThumbnails(dir, source, {

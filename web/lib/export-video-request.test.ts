@@ -65,6 +65,23 @@ describe("« Même export par l'API » : le JSON export_video exact", () => {
     expect(body.accent).toEqual({ h: 10, s: 50, l: 50, a: 1 });
     expect(videoJobOptionsSchema.safeParse(body).success).toBe(true);
   });
+  it("souffle réglé : repris pour l'agent, et toujours le même aller-retour", () => {
+    const tuned = {
+      ...prefs,
+      paddingBefore: 1.2,
+      paddingAfter: 0,
+      snapToSilence: false,
+    };
+    const body = exportVideoRequest(tuned, ranges, 40);
+    expect(body).toMatchObject({
+      lead_in: 1.2,
+      tail_out: 0,
+      snap_to_silence: false,
+    });
+    expect(
+      videoPrefsFromOptions(videoJobOptionsSchema.parse(body), false),
+    ).toEqual(tuned);
+  });
   it("nom de fichier saisi : repris", () => {
     expect(exportVideoRequest(prefs, ranges, 40, "ma vidéo").file_name).toBe(
       "ma vidéo",

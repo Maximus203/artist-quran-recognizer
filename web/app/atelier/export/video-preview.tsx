@@ -65,6 +65,10 @@ type PreviewInputs = {
   upload: File | null;
   isVideo: boolean;
   sourceSize: { width: number; height: number } | null;
+  /** Instant montré (image fixe) : la position de la poignée ; absent = le verset le plus long. */
+  at?: number | null;
+  /** Légende sous l'image (sinon une phrase par défaut). */
+  caption?: string;
 };
 
 function previewSize(
@@ -126,7 +130,7 @@ export function VideoPreview(inputs: PreviewInputs) {
       );
       close = background.close;
       if (cancelled) return;
-      const t = pick?.t ?? 0;
+      const t = inputs.at ?? pick?.t ?? 0;
       if (background.video) await videoSeeker(background.video, VIDEO_FPS)(t);
       if (cancelled) return;
       drawFrame(ctx, {
@@ -169,6 +173,7 @@ export function VideoPreview(inputs: PreviewInputs) {
     sourceSize,
     sessionId,
     playing,
+    inputs.at,
   ]);
 
   const stop = useCallback(() => stopRef.current?.(), []);
@@ -275,6 +280,7 @@ export function VideoPreview(inputs: PreviewInputs) {
       </div>
       <figcaption className="ex-micro">
         {failed ??
+          inputs.caption ??
           (intervals && peaks
             ? playing
               ? "Lecture : exactement le rendu de la vidéo finale."

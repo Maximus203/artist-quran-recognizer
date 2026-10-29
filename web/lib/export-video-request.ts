@@ -6,6 +6,7 @@
 import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
 import { isWhole, type PlanRange } from "./export-video-plan";
 import type { VideoPrefs } from "./export-video-prefs";
+import { DEFAULT_LEAD_IN, DEFAULT_TAIL_OUT } from "./export-video-suggest";
 import type { VideoJobOptions } from "./video-job-options";
 
 const KNOWN_BACKGROUNDS = new Set<string>([
@@ -32,6 +33,13 @@ export function exportVideoRequest(
     fill: prefs.fill,
   };
   if (prefs.accent) body.accent = prefs.accent;
+  // Le souffle est déjà appliqué aux plages ; il n'est repris que s'il diffère des défauts,
+  // pour qu'un agent qui relance une découpe (`suggest`) retrouve les mêmes marges.
+  if (prefs.paddingBefore !== DEFAULT_LEAD_IN)
+    body.lead_in = prefs.paddingBefore;
+  if (prefs.paddingAfter !== DEFAULT_TAIL_OUT)
+    body.tail_out = prefs.paddingAfter;
+  if (!prefs.snapToSilence) body.snap_to_silence = false;
   if (prefs.background && KNOWN_BACKGROUNDS.has(prefs.background))
     body.background = prefs.background as VideoJobOptions["background"];
   if (prefs.background === "color") body.color = prefs.bg;

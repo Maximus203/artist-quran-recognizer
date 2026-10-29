@@ -84,7 +84,10 @@ export const isWhole = (range: ExportRange, duration: number): boolean =>
   range.start <= 0.001 && range.end >= duration - 0.001;
 
 /** « Un verset = une vidéo » : identifiants consécutifs à partir de `firstId`. */
-export function fromSuggestions(ctx: PlanContext, firstId: number): PlanRange[] {
+export function fromSuggestions(
+  ctx: PlanContext,
+  firstId: number,
+): PlanRange[] {
   return suggestions(ctx)
     .slice(0, MAX_RANGES)
     .map((s, i) => fromSuggestion(s, firstId + i));
@@ -129,7 +132,9 @@ export function reflow(ranges: PlanRange[], ctx: PlanContext): PlanRange[] {
   const all = suggestions(ctx);
   return ranges.map((range) => {
     if (!range.auto || range.anchor === null) return range;
-    const match = all.find((s) => Math.abs(s.core_start - range.anchor!) < 1e-3);
+    const match = all.find(
+      (s) => Math.abs(s.core_start - range.anchor!) < 1e-3,
+    );
     return match
       ? { ...range, start: round3(match.start), end: round3(match.end) }
       : range;

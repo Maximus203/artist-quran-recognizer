@@ -38,13 +38,15 @@ import { ExportResult } from "./export-result";
 import { ExportSettings } from "./export-settings";
 import { ForceDialog } from "./force-dialog";
 import { VideoPanel } from "./video-panel";
+import { VerifyOverview } from "./verify-overview";
 import { NonQuranLine, VerdictCard } from "./readiness-card";
 import { Filters, ReadinessList, type RowActions } from "./readiness-list";
 import { usePreview, useReadiness } from "./use-export-data";
 
 const PAGE_SIZE = 10;
 
-type Tab = "verifier" | "reglages" | "video";
+type Tab = "verifier" | "soustitres" | "video";
+const TABS: Tab[] = ["verifier", "soustitres", "video"];
 
 export const correctionHref = (sessionId: string, key: string): string =>
   `/s/${sessionId}/exporter/corriger?item=${encodeURIComponent(key)}`;
@@ -114,6 +116,7 @@ function ExportView({
   }, []);
   const [type, setType] = useState<ItemType | null>(null);
   const [page, setPage] = useState(0);
+  // La vérification est une porte : on ouvre dessus (badge « n à valider » ou « Prêt »).
   const [tab, setTab] = useState<Tab>("verifier");
   const [fileName, setFileName] = useState("");
   const [live, setLive] = useState("");
@@ -389,9 +392,13 @@ function ExportView({
               <>
                 Exporter la <em>vidéo</em>
               </>
-            ) : (
+            ) : tab === "soustitres" ? (
               <>
                 Exporter les <em>sous-titres</em>
+              </>
+            ) : (
+              <>
+                Vérifier <em>avant</em> d’exporter
               </>
             )}
           </h1>
@@ -434,51 +441,107 @@ function ExportView({
             </p>
           ) : null}
           <div
-            className="ex-seg-tabs"
+            className="xr-rail"
             role="tablist"
             aria-label="Étapes de l’export"
             hidden={failed}
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+                return;
+              event.preventDefault();
+              const next =
+                TABS[
+                  (TABS.indexOf(tab) + (event.key === "ArrowRight" ? 1 : 2)) %
+                    TABS.length
+                ];
+              setTab(next);
+              document.getElementById(`ex-tab-${next}`)?.focus();
+            }}
           >
             <button
               type="button"
               role="tab"
               id="ex-tab-verifier"
               aria-selected={tab === "verifier"}
+              aria-controls="ex-panel-verifier"
+              tabIndex={tab === "verifier" ? 0 : -1}
               data-testid="tab-verifier"
               onClick={() => setTab("verifier")}
             >
-              1 · Vérifier{" "}
-              {verdict && verdict.unresolved > 0 ? (
-                <span className="n">{verdict.unresolved}</span>
-              ) : null}
+              <b>
+                <XIcon name="door" size={16} />
+                Vérifier
+                {verdict ? (
+                  verdict.unresolved > 0 ? (
+                    <span
+                      className="xr-pip xr-pip--warn"
+                      data-testid="gate-badge"
+                    >
+                      {verdict.unresolved}
+                    </span>
+                  ) : (
+                    <span
+                      className="xr-pip xr-pip--ok"
+                      data-testid="gate-badge"
+                    >
+                      Prêt
+                    </span>
+                  )
+                ) : null}
+              </b>
+              <small>
+                {!verdict
+                  ? "Contrôle en cours…"
+                  : verdict.unresolved > 0
+                    ? `${plural(verdict.unresolved, "passage à valider", "passages à valider")}`
+                    : "Tout est vérifié"}
+              </small>
             </button>
             <button
               type="button"
               role="tab"
-              id="ex-tab-reglages"
-              aria-selected={tab === "reglages"}
-              data-testid="tab-reglages"
-              onClick={() => setTab("reglages")}
+              id="ex-tab-soustitres"
+              aria-selected={tab === "soustitres"}
+              aria-controls="ex-panel-soustitres"
+              tabIndex={tab === "soustitres" ? 0 : -1}
+              data-testid="tab-soustitres"
+              onClick={() => setTab("soustitres")}
             >
-              2 · Réglages
+              <b>
+                <XIcon name="subtitle" size={16} />
+                Sous-titres
+              </b>
+              <small>
+                {formatLabel}
+                {preview.data ? ` · ${preview.data.cues} sous-titres` : ""}
+              </small>
             </button>
             <button
               type="button"
               role="tab"
               id="ex-tab-video"
               aria-selected={tab === "video"}
+              aria-controls="ex-panel-video"
+              tabIndex={tab === "video" ? 0 : -1}
               data-testid="tab-video"
               onClick={() => setTab("video")}
             >
-              3 · Vidéo
+              <b>
+                <XIcon name="film" size={16} />
+                Vidéo
+              </b>
+              <small>MP4 · plages, aperçu</small>
             </button>
           </div>
         </div>
 
         <section
           className="ex-xcol ex-xcol--check"
-          aria-labelledby="ex-list-h"
+          id="ex-panel-verifier"
+          role="tabpanel"
+          aria-labelledby="ex-tab-verifier"
           aria-busy={ready.loading}
+          hidden={tab !== "verifier" && !failed}
         >
           {ready.error && !data ? (
             <ErrorPanel
@@ -505,6 +568,7 @@ function ExportView({
                   {ready.error.message}
                 </p>
               ) : null}
+              <VerifyOverview sessionId={sessionId} />
               <NonQuranLine nonQuran={data.non_quran} />
               {data.orphans.length > 0 ? (
                 <OrphansNotice
@@ -540,23 +604,61 @@ function ExportView({
                   passages ambigus seront alors traités selon la règle choisie.
                 </p>
               ) : null}
+              <div className="xr-next" data-testid="verify-next">
+                <p>
+                  {verdict.unresolved > 0
+                    ? "Tu peux aussi exporter tout de suite : les passages ambigus seront traités selon la règle choisie."
+                    : "Tout est vérifié : choisis ce que tu veux en faire."}
+                </p>
+                <div className="xr-row">
+                  <button
+                    type="button"
+                    className="btn btn--secondary"
+                    data-testid="go-soustitres"
+                    onClick={() => setTab("soustitres")}
+                  >
+                    <XIcon name="subtitle" />
+                    Exporter les sous-titres
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--secondary"
+                    data-testid="go-video"
+                    onClick={() => setTab("video")}
+                  >
+                    <XIcon name="film" />
+                    Exporter la vidéo
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </section>
 
-        <aside
-          className="ex-xcol ex-xcol--set"
-          aria-labelledby="ex-set-h"
-          hidden={failed}
+        <div
+          className="xr-grid xr-subs"
+          id="ex-panel-soustitres"
+          role="tabpanel"
+          aria-labelledby="ex-tab-soustitres"
+          hidden={failed || tab !== "soustitres"}
         >
-          <form className="ex-set" onSubmit={(event) => event.preventDefault()}>
-            <ExportSettings
-              options={options}
-              onChange={patch}
-              fileName={fileName}
-              onFileName={setFileName}
-              defaultFileName={defaultName}
-            />
+          <form
+            className="xr-main"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <section className="xr-chap" data-open="true">
+              <div className="body">
+                <ExportSettings
+                  options={options}
+                  onChange={patch}
+                  fileName={fileName}
+                  onFileName={setFileName}
+                  defaultFileName={defaultName}
+                />
+              </div>
+            </section>
+          </form>
+          <aside className="xr-side" aria-label="Aperçu et action">
             <ExportPreview
               summary={preview.data}
               loading={preview.loading}
@@ -567,7 +669,7 @@ function ExportView({
                 canEdit ? (key) => correctionHref(sessionId, key) : null
               }
             />
-            <div className="ex-set-foot">
+            <div className="ex-set-foot xr-bord">
               <div className="ex-btnrow">
                 {verdict?.ready ? (
                   <button
@@ -606,16 +708,24 @@ function ExportView({
                 )}
               </p>
             </div>
-          </form>
-        </aside>
+          </aside>
+        </div>
 
         <section
-          className="ex-xcol ex-xcol--video"
-          aria-labelledby="ex-video-h"
-          hidden={failed}
+          className="ex-xcol--video"
+          id="ex-panel-video"
+          role="tabpanel"
+          aria-labelledby="ex-tab-video"
+          hidden={failed || tab !== "video"}
         >
           {tab === "video" && !failed ? (
-            <VideoPanel sessionId={sessionId} onError={toast.show} />
+            <VideoPanel
+              sessionId={sessionId}
+              player={player}
+              onError={toast.show}
+              onGoVerify={() => setTab("verifier")}
+              announce={announce}
+            />
           ) : null}
         </section>
       </div>

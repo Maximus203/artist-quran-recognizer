@@ -33,9 +33,7 @@ export const EXPORT_VIDEO_CONFIG = {
     minSpanSeconds: 8,
     /** Écart visé entre deux repères de la règle. */
     rulerTargetPx: 90,
-    rulerSteps: [
-      0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600,
-    ],
+    rulerSteps: [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600],
     /** Un bord se colle à un repère du souffle à moins de ce nombre de pixels. */
     snapPx: 10,
     /** Appui long sur une poignée → mode précision. */

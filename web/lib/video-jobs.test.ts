@@ -101,13 +101,17 @@ describe("options de l'export vidéo par l'API", () => {
   it("accepte un nom par plage (suffixe du fichier) ; refuse un nom vide ou trop long", () => {
     expect(
       videoJobOptionsSchema.safeParse({
-        ranges: [{ start: 0, end: 5, name: "2:255" }, { start: 6, end: 9 }],
+        ranges: [
+          { start: 0, end: 5, name: "2:255" },
+          { start: 6, end: 9 },
+        ],
       }).success,
     ).toBe(true);
     for (const name of ["", "   ", "x".repeat(81)])
       expect(
-        videoJobOptionsSchema.safeParse({ ranges: [{ start: 0, end: 5, name }] })
-          .success,
+        videoJobOptionsSchema.safeParse({
+          ranges: [{ start: 0, end: 5, name }],
+        }).success,
       ).toBe(false);
   });
 

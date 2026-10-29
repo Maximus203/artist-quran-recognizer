@@ -12,7 +12,8 @@ export type Edge = "start" | "end";
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
-export const round3 = (value: number): number => Math.round(value * 1000) / 1000;
+export const round3 = (value: number): number =>
+  Math.round(value * 1000) / 1000;
 
 export function timeToX(t: number, view: View, width: number): number {
   return ((t - view.a) / (view.b - view.a)) * width;
@@ -197,7 +198,11 @@ export function keyAction(
   mods: { shift: boolean; alt: boolean },
   keys = EXPORT_VIDEO_CONFIG.keyboard,
 ): KeyAction | null {
-  const step = mods.shift ? keys.shiftStep : mods.alt ? keys.altStep : keys.step;
+  const step = mods.shift
+    ? keys.shiftStep
+    : mods.alt
+      ? keys.altStep
+      : keys.step;
   switch (key) {
     case "ArrowLeft":
     case "ArrowDown":

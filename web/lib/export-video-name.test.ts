@@ -44,9 +44,9 @@ describe("nom du fichier d'une plage", () => {
     expect(videoRangeFileName("rec.mp3", undefined, null, 1)).toBe("rec.mp4");
   });
   it("le nom de la plage remplace l'intervalle, nettoyé (deux-points compris)", () => {
-    expect(videoRangeFileName("rec.mp3", undefined, range, 2, "2:255-257")).toBe(
-      "rec — 2.255-257.mp4",
-    );
+    expect(
+      videoRangeFileName("rec.mp3", undefined, range, 2, "2:255-257"),
+    ).toBe("rec — 2.255-257.mp4");
     expect(
       videoRangeFileName("rec.mp3", "Ma vidéo", range, 2, "../x/Début"),
     ).not.toMatch(/[\\/:]|\.\./);

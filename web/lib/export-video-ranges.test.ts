@@ -3,10 +3,8 @@ import {
   formatTimeInput,
   MAX_RANGES,
   normalizeRanges,
-  parseRangeRows,
   parseTimeInput,
   rangeLabel,
-  rangesFromCards,
 } from "./export-video-ranges";
 
 describe("normalizeRanges", () => {
@@ -78,50 +76,5 @@ describe("saisie des temps", () => {
   });
   it("nomme une plage pour un nom de fichier", () => {
     expect(rangeLabel({ start: 12, end: 100 })).toBe("0m12s-1m40s");
-  });
-});
-
-describe("rangesFromCards", () => {
-  it("fait une plage par passage, bornée à la durée", () => {
-    expect(
-      rangesFromCards(
-        [
-          { start: 0.4, end: 5 },
-          { start: 5, end: 5.1 },
-          { start: 6, end: 80 },
-        ],
-        41.5,
-      ),
-    ).toEqual([
-      { start: 0.4, end: 5 },
-      { start: 6, end: 41.5 },
-    ]);
-  });
-});
-
-describe("parseRangeRows", () => {
-  const row = (id: number, start: string, end: string) => ({ id, start, end });
-  it("lit les temps saisis", () => {
-    expect(
-      parseRangeRows([row(1, "0:05", "0:20"), row(2, "1:00", "1:10")], 80),
-    ).toEqual({
-      ok: true,
-      ranges: [
-        { start: 5, end: 20 },
-        { start: 60, end: 70 },
-      ],
-    });
-  });
-  it("dit quelle partie est en cause", () => {
-    const error = (rows: ReturnType<typeof row>[]) => {
-      const r = parseRangeRows(rows, 40);
-      return r.ok ? "" : r.error;
-    };
-    expect(error([])).toMatch(/au moins une partie/);
-    expect(error([row(1, "a", "5")])).toMatch(/Partie 1.*1:23/);
-    expect(error([row(1, "0:05", "0:10"), row(2, "0:30", "0:20")])).toMatch(
-      /Partie 2.*fin doit venir après/,
-    );
-    expect(error([row(1, "2:00", "2:30")])).toMatch(/Partie 1.*après la fin/);
   });
 });

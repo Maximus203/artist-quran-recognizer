@@ -54,7 +54,7 @@ type SessionInfo = {
 export type RenderProgress = (message: string) => void;
 
 /** Une vidéo produite (téléchargée dès qu'elle est prête). */
-export type RenderedFile = { name: string; bytes: number };
+export type RenderedFile = { name: string; bytes: number; blob?: Blob };
 
 /**
  * Échec pendant la vidéo `index` : les vidéos précédentes sont déjà téléchargées (`done`), rien
@@ -109,6 +109,8 @@ export type RenderVideoInputs = {
   onFile?: (progress: FileProgress) => void;
   /** Lu entre deux vidéos : vrai = s'arrêter après la vidéo en cours (« Arrêter après cette vidéo »). */
   shouldStop?: () => boolean;
+  /** Garde chaque MP4 en mémoire (bouton « Retélécharger ») ; le rendu par l'API n'en a pas besoin. */
+  keepFiles?: boolean;
   onProgress: RenderProgress;
 };
 
@@ -292,7 +294,7 @@ export async function renderSessionVideo(
         });
 
         const name = names[position];
-        const bytes = await sendSegments(
+        const blob = await sendSegments(
           sessionId,
           job,
           encoded.segments,
@@ -300,8 +302,18 @@ export async function renderSessionVideo(
           name,
           whole ? { fps } : { fps, start: range.start, duration: length },
         );
-        files.push({ name, bytes });
-        report({ index: position, total, phase: "done", ratio: 1, bytes });
+        files.push({
+          name,
+          bytes: blob.size,
+          ...(inputs.keepFiles ? { blob } : {}),
+        });
+        report({
+          index: position,
+          total,
+          phase: "done",
+          ratio: 1,
+          bytes: blob.size,
+        });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Rendu impossible.";
@@ -331,7 +343,7 @@ async function sendSegments(
   onSend: (ratio: number) => void,
   fileName: string,
   mux: { fps: number; start?: number; duration?: number },
-): Promise<number> {
+): Promise<Blob> {
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
     onSend(i / segments.length);
@@ -370,14 +382,19 @@ async function sendSegments(
     }
     if (!segment.last) continue;
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    // Le navigateur lit l'URL au clic ; la libérer tout de suite peut annuler le téléchargement.
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return blob.size;
+    downloadBlob(blob, fileName);
+    return blob;
   }
   throw new Error("La vidéo n'a pas été assemblée : segment final manquant.");
+}
+
+/** Déclenche le téléchargement d'un MP4 déjà produit (aussi pour « Retélécharger »). */
+export function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  // Le navigateur lit l'URL au clic ; la libérer tout de suite peut annuler le téléchargement.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

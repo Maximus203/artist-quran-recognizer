@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
+import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
 import {
   DEFAULT_VIDEO_FPS,
   DEFAULT_VIDEO_RESOLUTION,
@@ -193,6 +194,15 @@ export function videoPrefsFromOptions(
     bg: options.color ?? DEFAULT_VIDEO_PREFS.bg,
     // Une image envoyée l'emporte : le rendu ne lit alors pas ce choix.
     background: hasUpload ? null : (options.background ?? null),
+    paddingBefore: Math.min(
+      EXPORT_VIDEO_CONFIG.padding.max,
+      options.lead_in ?? DEFAULT_LEAD_IN,
+    ),
+    paddingAfter: Math.min(
+      EXPORT_VIDEO_CONFIG.padding.max,
+      options.tail_out ?? DEFAULT_TAIL_OUT,
+    ),
+    snapToSilence: options.snap_to_silence ?? true,
   };
 }
 

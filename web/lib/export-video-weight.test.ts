@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
 import { h264Bitrate } from "./export-video-codecs";
-import { estimateVideoMegabytes, tierOf, VIDEO_QUALITY_TIERS } from "./export-video-format";
+import {
+  estimateVideoMegabytes,
+  tierOf,
+  VIDEO_QUALITY_TIERS,
+} from "./export-video-format";
 import {
   megabytesFr,
   rangesWeight,
@@ -61,7 +65,10 @@ describe("niveau de poids : seuils lus dans la configuration", () => {
       "danger",
     );
     expect(
-      weightLevel({ totalMb: L.fileDangerMb + 1, maxFileMb: L.fileDangerMb + 1 }, q),
+      weightLevel(
+        { totalMb: L.fileDangerMb + 1, maxFileMb: L.fileDangerMb + 1 },
+        q,
+      ),
     ).toBe("danger");
   });
   it("accepte des seuils injectés (calibrage futur)", () => {

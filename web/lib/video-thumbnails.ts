@@ -112,11 +112,7 @@ export async function ensureThumbnails(
   options: ThumbnailOptions,
   run: FfmpegRun = ffmpegRun,
 ): Promise<string> {
-  const target = thumbnailFile(
-    sessionDirectory,
-    options.count,
-    options.width,
-  );
+  const target = thumbnailFile(sessionDirectory, options.count, options.width);
   try {
     const [made, origin] = await Promise.all([stat(target), stat(source)]);
     if (made.mtimeMs >= origin.mtimeMs && made.size > 0) return target;
