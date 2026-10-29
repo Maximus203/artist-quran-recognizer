@@ -405,8 +405,12 @@ function ExportView({
           {session && verdict && data ? (
             <p className="ex-xp-facts">
               <span className="ex-f">
-                <Icon name="audio" size={16} />
-                Audio
+                {session.media === "video" ? (
+                  <XIcon name="film" size={16} />
+                ) : (
+                  <Icon name="audio" size={16} />
+                )}
+                {session.media === "video" ? "Vidéo" : "Audio"}
                 {session.audio_duration_s ? (
                   <>
                     {" · "}

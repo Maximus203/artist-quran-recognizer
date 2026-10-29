@@ -115,6 +115,8 @@ export type ReadinessPayload = {
     mine: boolean;
     visibility: "global" | "private";
     audio_duration_s: number | null;
+    /** Source importée : vidéo ou audio seul. */
+    media?: "video" | "audio";
     duration_s: number | null;
     owner: { id: number; username: string } | null;
   };
