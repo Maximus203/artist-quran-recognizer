@@ -49,16 +49,16 @@ Tant que ces points ne sont pas prouvés, on ne déploie rien.
 
 Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détails d'un autre compte.
 
-- [ ] ❌ Affichage « Le système est occupé : une génération est en cours et une autre est en attente » quand la
+- [x] ✅ (PR de ce lot : `queue-status.ts`, pastille `queue-notice.tsx`) Affichage « Le système est occupé : une génération est en cours et une autre est en attente » quand la
   place est prise par un autre compte, **sans** titre, durée, nom, identifiant ni contenu du job d'autrui.
-- [ ] ❌ Pour son propre job : position dans la file (« 3e »), attente estimée (« environ 12 min »), et état
+- [x] ✅ (position « 3e », attente estimée seulement si l'historique le permet, jamais derrière un export vidéo) Pour son propre job : position dans la file (« 3e »), attente estimée (« environ 12 min »), et état
   (en attente / en cours / terminé / échoué). L'estimation ne s'affiche que si l'historique est suffisant,
   sinon « estimation indisponible ».
-- [ ] ❌ Une génération publique est visible de tous (comportement attendu). Une génération privée n'expose
+- [x] ✅ (`others.shared`, testé) Une génération publique est visible de tous (comportement attendu). Une génération privée n'expose
   jamais son titre dans la file partagée.
-- [ ] ❌ Test : deux comptes A et B. A lance une génération privée. B voit « occupé », jamais le nom ni le
+- [x] ✅ (`web/app/api/queue/route.test.ts` ; capture : pastille vue par le compte B dans un vrai navigateur) Test : deux comptes A et B. A lance une génération privée. B voit « occupé », jamais le nom ni le
   titre de A. Preuve : capture et réponse JSON de l'API pour B.
-- [ ] ❌ Message d'erreur clair pour un humain (ce qui ne marche pas, depuis quand, quoi faire), jamais un code brut.
+- [ ] 🟡 Message d'erreur clair pour un humain (ce qui ne marche pas, depuis quand, quoi faire), jamais un code brut.
 
 ## 3. Dépendances, runtime et CVE
 

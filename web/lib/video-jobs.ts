@@ -160,6 +160,23 @@ export function cancelVideoJob(id: string): boolean {
   return queue.abort(`video:${id}`);
 }
 
+/** Exports en attente ou en cours, pour la vue de la file (clé, session, compte : rien d'autre). */
+export function listVideoJobs(): Array<{
+  key: string;
+  sessionId: string;
+  userId: number;
+  state: "queued" | "running";
+}> {
+  return [...registry().jobs.values()]
+    .filter((job) => job.state === "queued" || job.state === "running")
+    .map((job) => ({
+      key: `video:${job.id}`,
+      sessionId: job.sessionId,
+      userId: job.userId,
+      state: job.state as "queued" | "running",
+    }));
+}
+
 export function getVideoJob(id: string): VideoJob | null {
   return registry().jobs.get(id) ?? null;
 }
