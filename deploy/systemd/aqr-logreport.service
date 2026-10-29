@@ -6,10 +6,9 @@ Description=Rapport des erreurs récurrentes de l'atelier
 
 [Service]
 Type=oneshot
-User=aqr
-Group=aqr
-EnvironmentFile=/etc/aqr/atelier.env
-ExecStart=/opt/aqr/current/deploy/scripts/log-report-push.sh /var/lib/aqr/logs
+EnvironmentFile=/etc/aqr/push.env
+Environment="AQR_REPORT_CMD=/usr/bin/docker exec atelier node scripts/log-report.mjs /data/logs"
+ExecStart=/opt/atelier/deploy/scripts/log-report-push.sh /data/logs
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict

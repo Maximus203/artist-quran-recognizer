@@ -25,6 +25,14 @@ PR : -
 
 **Pourquoi / décision.** Le contrôle de démarrage de la section 13 bloquait `npm run start` sur le poste (Node 24.19.0, sans mode d'accès déclaré). La faille se joue par un contenu compressé venu d'ailleurs ; sur la boucle locale, le risque est faible. Mettre Node à 24.22.2 reste recommandé. Vérifié sur Node 24.19.0 : connexion 200, sonde `/api/health` ok.
 
+## 2026-10-29 — Déploiement préparé pour Alpha : atelier seul, en conteneur derrière Traefik
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Rien ne change pour l'utilisateur. Le serveur cible est Alpha (Hetzner, sans GPU, qui héberge déjà d'autres projets en production) pour l'**atelier seul** ; le moteur d'analyse et le direct restent sur une machine à GPU. Les modèles de déploiement passent de l'installation sur l'hôte à un conteneur : `deploy/docker/Dockerfile` (Node corrigé, utilisateur non administrateur) et `compose.alpha.yaml` (Traefik existant, 2 Gio et 2 processeurs au plus, système de fichiers en lecture seule, démarrage en mode restreint). Bascule, retour arrière, arrêt d'urgence, sauvegarde et rapport quotidien sont adaptés au conteneur.
+
+**Pourquoi / décision.** Section 15. Alpha a été inspecté en lecture seule : rien n'y a été modifié. Choix de Cherif Diouf : atelier seul. **Conséquence assumée** : sans moteur joignable à distance (chantier de code non fait), Alpha ne peut ni analyser ni servir le direct ; il démarre en mode restreint. Non construit, non appliqué, jamais joué : l'image, la bascule, le retour arrière, la restauration depuis restic.
+
 ## 2026-10-29 — Infrastructure préparée : arrêt d'urgence, sonde de santé, sauvegardes éprouvées, modèles de déploiement
 Étiquettes : utilisateur, technique, décision
 PR : -

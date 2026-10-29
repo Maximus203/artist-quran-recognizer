@@ -1,34 +1,38 @@
 #!/usr/bin/env bash
-# Retour à la version précédente en moins de 15 minutes (docs/INFRASTRUCTURE.md, § Retour arrière).
-# Repointe « current » sur la version notée par release.sh, redémarre, vérifie la sonde.
+# Retour à la version précédente de l'atelier en moins de 15 minutes (docs/INFRASTRUCTURE.md, § Retour arrière).
+# Redémarre l'image notée dans /opt/atelier/previous et attend sa santé.
 # Les migrations de base ne sont PAS réversibles : si la version retirée en avait appliqué, restaurer d'abord la
-# sauvegarde prise juste avant la bascule (--restore-db <dossier de sauvegarde>), sinon la base resterait en avance.
-# Usage : rollback.sh [--no-backup-restore] [--restore-db /var/backups/aqr/aqr-AAAAMMJJTHHMMSSZ]
+# sauvegarde prise avant la bascule (--restore-db <nom de sauvegarde>), sinon la base resterait en avance.
+# Usage : rollback.sh [--restore-db aqr-AAAAMMJJTHHMMSSZ]
 set -eu
-BASE=/opt/aqr
+DIR=/opt/atelier
+COMPOSE="docker compose -f $DIR/compose.yaml --env-file $DIR/.env"
 RESTORE=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --no-backup-restore) ;;
-    --restore-db) RESTORE="${2:?dossier de sauvegarde requis}"; shift ;;
+    --restore-db) RESTORE="${2:?nom de sauvegarde requis}"; shift ;;
     *) echo "Option inconnue : $1" >&2; exit 2 ;;
   esac; shift
 done
-PREVIOUS="$(cat "$BASE/previous" 2>/dev/null || true)"
-[ -n "$PREVIOUS" ] && [ -d "$PREVIOUS" ] || { echo "Aucune version précédente connue." >&2; exit 2; }
-systemctl stop aqr-atelier
+PREVIOUS="$(cat "$DIR/previous" 2>/dev/null || true)"
+[ -n "$PREVIOUS" ] && docker image inspect "atelier:$PREVIOUS" >/dev/null 2>&1 \
+  || { echo "Aucune version précédente utilisable." >&2; exit 2; }
 if [ -n "$RESTORE" ]; then
-  TARGET=/var/lib/aqr.restored-$$
-  node "$PREVIOUS/web/scripts/backup.mjs" restore "$RESTORE" --target "$TARGET"
-  mv /var/lib/aqr "/var/lib/aqr.avant-retour-$(date -u +%Y%m%dT%H%M%SZ)"
-  mv "$TARGET" /var/lib/aqr
-  chown -R aqr:aqr /var/lib/aqr
+  # Restauration dans un volume NEUF, puis bascule : l'ancien volume est conservé (jamais écrasé).
+  NEWVOL="atelier-data-restauré-$(date -u +%Y%m%dT%H%M%SZ)"
+  docker volume create "$NEWVOL" >/dev/null
+  ATELIER_TAG="$PREVIOUS" $COMPOSE stop atelier
+  docker run --rm -v atelier-data:/old:ro -v "$NEWVOL":/new "atelier:$PREVIOUS" \
+    node scripts/backup.mjs restore "/old/backups/$RESTORE" --target /new/restored
+  docker run --rm -v "$NEWVOL":/new --entrypoint sh "atelier:$PREVIOUS" -c 'cp -a /new/restored/. /new/ && rm -rf /new/restored'
+  echo "Volume restauré : $NEWVOL. Pointer « atelier-data » dessus dans compose.yaml, puis relancer ; l'ancien volume est conservé."
+  exit 0
 fi
-ln -sfn "$PREVIOUS" "$BASE/current.new" && mv -T "$BASE/current.new" "$BASE/current"
-systemctl start aqr-atelier
-for _ in $(seq 1 30); do
-  if curl -fsS --max-time 3 http://127.0.0.1:3000/api/health >/dev/null; then echo "Retour effectué : $PREVIOUS"; exit 0; fi
+echo "$PREVIOUS" > "$DIR/current"
+ATELIER_TAG="$PREVIOUS" $COMPOSE up -d atelier
+for _ in $(seq 1 45); do
+  [ "$(docker inspect -f '{{.State.Health.Status}}' atelier 2>/dev/null)" = healthy ] && { echo "Retour effectué : $PREVIOUS"; exit 0; }
   sleep 2
 done
-echo "La sonde ne passe pas après le retour : intervention manuelle." >&2
+echo "Le conteneur n'est pas sain après le retour : intervention manuelle." >&2
 exit 1
