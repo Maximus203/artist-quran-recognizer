@@ -242,7 +242,7 @@ export async function renderSessionVideo(
     const measureContext = document.createElement("canvas").getContext("2d");
     if (!measureContext) throw new Error("Canvas 2D indisponible.");
 
-    const colors = videoColors(prefs.accent, background);
+    const colors = await videoColors(prefs.accent, background);
     const seek = background.video ? videoSeeker(background.video, fps) : null;
 
     for (const [position, range] of ranges.entries()) {

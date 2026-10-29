@@ -131,6 +131,9 @@ export function VideoPreview(inputs: PreviewInputs) {
       close = background.close;
       if (cancelled) return;
       const t = inputs.at ?? pick?.t ?? 0;
+      // L'accent se lit AVANT de se placer à t : la vidéo est lue à l'instant commun (ACCENT_SAMPLE_S).
+      const colors = await videoColors(prefs.accent, background);
+      if (cancelled) return;
       if (background.video) await videoSeeker(background.video, VIDEO_FPS)(t);
       if (cancelled) return;
       drawFrame(ctx, {
@@ -140,7 +143,7 @@ export function VideoPreview(inputs: PreviewInputs) {
         duration: peaks.duration,
         cards,
         peaks,
-        colors: videoColors(prefs.accent, background),
+        colors,
         prefs,
         background: {
           color: prefs.bg,
@@ -210,7 +213,7 @@ export function VideoPreview(inputs: PreviewInputs) {
         pick?.card.card.arabic ?? "بسم الله",
       );
       background = loaded.background;
-      const colors = videoColors(prefs.accent, background);
+      const colors = await videoColors(prefs.accent, background);
       const start = Math.max(0, (pick?.card.card.start ?? 0) - 0.4);
       const end = Math.min(peaks.duration, start + PREVIEW_SECONDS);
       audio = new Audio(`/api/sessions/${sessionId}/audio`);
