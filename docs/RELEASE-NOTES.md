@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — `npm run start` redevient la commande de lancement sur son poste
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** `npm run start -- -p 3100` fonctionne de nouveau sans variable supplémentaire : sans `AQR_ACCESS_TOKEN`, il déclare lui-même le mode poste local. Avec un jeton, c'est un accès public et toutes les variables de `docs/SECRETS-ET-CONFIGURATION.md` sont exigées. Les unités de déploiement lancent `next start` directement, elles ne sont pas touchées.
+
+**Pourquoi / décision.** Le correctif précédent (`start:local`) n'aidait pas : l'habitude et les commandes de lancement du poste passent par `npm run start`. Vérifié sur Node 24.19.0 : connexion 200.
+
 ## 2026-10-29 — Lancer l'atelier en production sur son poste : `npm run start:local`
 Étiquettes : utilisateur, technique
 PR : -
