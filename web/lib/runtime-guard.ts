@@ -91,7 +91,10 @@ export function guardStartup(
 ): void {
   const { nodeEnv = process.env.NODE_ENV, version, exit } = options;
   try {
-    enforceRuntime(nodeEnv, version, report.warn);
+    // Poste local (AQR_LOCAL_ONLY=1, seule la boucle locale est servie) : la faille de Node est signalée
+    // mais ne bloque pas ; la faille se joue par un contenu compressé venu d'ailleurs.
+    const localOnly = (options.env ?? process.env).AQR_LOCAL_ONLY === "1";
+    enforceRuntime(localOnly ? "local" : nodeEnv, version, report.warn);
     const scrypt = scryptConfigStatus(options.env);
     if (!scrypt.ok) {
       if (nodeEnv === "production")

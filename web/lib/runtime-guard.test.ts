@@ -135,3 +135,25 @@ describe("coût des mots de passe en production", () => {
     expect(scryptConfigStatus({ AQR_SCRYPT_LOG_N: "beaucoup" }).ok).toBe(false);
   });
 });
+
+describe("poste local avec un Node touché", () => {
+  it("AQR_LOCAL_ONLY=1 : avertit sans refuser ; sans lui : refuse", () => {
+    const run = (env: Record<string, string>) => {
+      const out = { exits: [] as number[], warn: [] as string[] };
+      guardStartup(
+        { warn: (m) => out.warn.push(m), error: () => undefined },
+        {
+          nodeEnv: "production",
+          version: "24.19.0",
+          env,
+          exit: (c) => out.exits.push(c),
+        },
+      );
+      return out;
+    };
+    const local = run({ AQR_LOCAL_ONLY: "1" });
+    expect(local.exits).toEqual([]);
+    expect(local.warn.join(" ")).toMatch(/CVE-2026-111497/);
+    expect(run({}).exits).toEqual([1]);
+  });
+});

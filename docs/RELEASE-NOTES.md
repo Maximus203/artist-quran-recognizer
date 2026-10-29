@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Lancer l'atelier en production sur son poste : `npm run start:local`
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** `npm run start:local -- -p 3100` (dans `web/`) lance l'atelier construit pour soi seul, sans jeton ni variable à régler. En mode poste local, une version de Node touchée par CVE-2026-111497 est signalée par un avertissement au lieu d'empêcher le démarrage. Un accès public, lui, refuse toujours de démarrer sur une version touchée.
+
+**Pourquoi / décision.** Le contrôle de démarrage de la section 13 bloquait `npm run start` sur le poste (Node 24.19.0, sans mode d'accès déclaré). La faille se joue par un contenu compressé venu d'ailleurs ; sur la boucle locale, le risque est faible. Mettre Node à 24.22.2 reste recommandé. Vérifié sur Node 24.19.0 : connexion 200, sonde `/api/health` ok.
+
 ## 2026-10-29 — Infrastructure préparée : arrêt d'urgence, sonde de santé, sauvegardes éprouvées, modèles de déploiement
 Étiquettes : utilisateur, technique, décision
 PR : -
