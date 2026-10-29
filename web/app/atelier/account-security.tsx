@@ -1,7 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
-import { missingCharacters, passwordStrength } from "@/lib/password-strength";
+import {
+  PASSWORD_MIN_LENGTH,
+  missingCharacters,
+  passwordStrength,
+} from "@/lib/password-strength";
 import { FormAlert, PasswordField } from "./auth-parts";
 import { Icon } from "./icons";
 import { useShell } from "./shell";
@@ -15,9 +19,26 @@ export function SecurityPane() {
   const [errors, setErrors] = useState<{ current?: string; next?: string }>({});
   const [problem, setProblem] = useState("");
   const [done, setDone] = useState(false);
+  const [others, setOthers] = useState<"idle" | "pending" | "done" | "error">(
+    "idle",
+  );
+  const [closed, setClosed] = useState(0);
   const currentInput = useRef<HTMLInputElement>(null);
   const nextInput = useRef<HTMLInputElement>(null);
   const strength = passwordStrength(next, user.username);
+
+  const closeOthers = async () => {
+    setOthers("pending");
+    try {
+      const result = await api<{ revoked: number }>("/api/me/logins", {
+        method: "DELETE",
+      });
+      setClosed(result.revoked);
+      setOthers("done");
+    } catch {
+      setOthers("error");
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -28,7 +49,7 @@ export function SecurityPane() {
     if (!current) found.current = "Indique ton mot de passe actuel.";
     if (!next) found.next = "Choisis un nouveau mot de passe.";
     else if (missingCharacters(next) > 0)
-      found.next = `Il manque ${missingCharacters(next)} caractère${missingCharacters(next) > 1 ? "s" : ""} : 10 au minimum.`;
+      found.next = `Il manque ${missingCharacters(next)} caractère${missingCharacters(next) > 1 ? "s" : ""} : ${PASSWORD_MIN_LENGTH} au minimum.`;
     else if (next.toLowerCase() === user.username.toLowerCase())
       found.next = "Le mot de passe doit différer du pseudonyme.";
     setErrors(found);
@@ -73,8 +94,9 @@ export function SecurityPane() {
         <header>
           <h2 id="g-pw">Mot de passe</h2>
           <p>
-            10 caractères minimum. Sans e-mail, il n’y a pas de récupération
-            automatique : garde-le dans un gestionnaire de mots de passe.
+            {PASSWORD_MIN_LENGTH} caractères minimum. Sans e-mail, il n’y a pas
+            de récupération automatique : garde-le dans un gestionnaire de mots
+            de passe.
           </p>
         </header>
         <form
@@ -120,7 +142,7 @@ export function SecurityPane() {
             invalid={Boolean(errors.next)}
             error={errors.next}
             inputRef={nextInput}
-            help="10 caractères minimum."
+            help={`${PASSWORD_MIN_LENGTH} caractères minimum. Une phrase de passe est idéale.`}
           >
             <span
               className="strength"
@@ -158,6 +180,27 @@ export function SecurityPane() {
             de passe ferme toutes tes autres connexions.
           </p>
         </header>
+        <div>
+          <button
+            className="btn"
+            type="button"
+            onClick={closeOthers}
+            disabled={others === "pending"}
+            aria-busy={others === "pending"}
+            data-testid="close-others"
+          >
+            Fermer les autres connexions
+          </button>
+          <p role="status" aria-live="polite" data-testid="close-others-status">
+            {others === "done"
+              ? closed > 0
+                ? `${closed} autre${closed > 1 ? "s" : ""} connexion${closed > 1 ? "s" : ""} fermée${closed > 1 ? "s" : ""}.`
+                : "Aucune autre connexion n’était ouverte."
+              : others === "error"
+                ? "Impossible de fermer les autres connexions pour l’instant. Réessaie."
+                : ""}
+          </p>
+        </div>
       </div>
     </section>
   );

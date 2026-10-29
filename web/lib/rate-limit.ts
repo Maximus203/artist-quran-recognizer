@@ -17,13 +17,53 @@ export type FailureOptions = {
   maxLockMs: number;
   windowMs: number;
   maxKeys?: number;
+  /** Où vivent les échecs : la mémoire du processus (défaut) ou la base (`DbFailureStore`). */
+  store?: FailureStore;
 };
 
-type Entry = { fails: number; last: number; lockedUntil: number };
+export type FailureEntry = { fails: number; last: number; lockedUntil: number };
+
+/** Stockage des échecs d'un limiteur. Synchrone : la base de l'atelier (`node:sqlite`) l'est aussi. */
+export interface FailureStore {
+  get(key: string): FailureEntry | undefined;
+  set(key: string, entry: FailureEntry): void;
+  delete(key: string): void;
+  size(): number;
+  /** Borne le volume : oublie les clés expirées puis, au-delà de `max`, les plus anciennes. */
+  prune(now: number, windowMs: number, max: number): void;
+}
+
+export class MemoryFailureStore implements FailureStore {
+  private readonly entries = new Map<string, FailureEntry>();
+  get(key: string) {
+    return this.entries.get(key);
+  }
+  set(key: string, entry: FailureEntry) {
+    this.entries.set(key, entry);
+  }
+  delete(key: string) {
+    this.entries.delete(key);
+  }
+  size() {
+    return this.entries.size;
+  }
+  prune(now: number, windowMs: number, max: number) {
+    if (this.entries.size <= max) return;
+    for (const [key, entry] of this.entries)
+      if (entry.lockedUntil <= now && now - entry.last > windowMs)
+        this.entries.delete(key);
+    for (const key of this.entries.keys()) {
+      if (this.entries.size <= max) break;
+      this.entries.delete(key);
+    }
+  }
+}
 
 export class FailureLimiter {
-  private readonly entries = new Map<string, Entry>();
-  constructor(private readonly options: FailureOptions) {}
+  private readonly store: FailureStore;
+  constructor(private readonly options: FailureOptions) {
+    this.store = options.store ?? new MemoryFailureStore();
+  }
 
   check(key: string, now = Date.now()): Verdict {
     const entry = this.live(key, now);
@@ -48,39 +88,30 @@ export class FailureLimiter {
       const lock = baseLockMs * 2 ** (entry.fails - threshold);
       entry.lockedUntil = now + Math.min(maxLockMs, lock);
     }
-    this.entries.set(key, entry);
-    this.prune(now);
+    this.store.set(key, entry);
+    this.store.prune(
+      now,
+      this.options.windowMs,
+      this.options.maxKeys ?? 10_000,
+    );
   }
 
   succeed(key: string): void {
-    this.entries.delete(key);
+    this.store.delete(key);
   }
 
   get size(): number {
-    return this.entries.size;
+    return this.store.size();
   }
 
-  private live(key: string, now: number): Entry | undefined {
-    const entry = this.entries.get(key);
+  private live(key: string, now: number): FailureEntry | undefined {
+    const entry = this.store.get(key);
     if (!entry) return undefined;
     if (entry.lockedUntil <= now && now - entry.last > this.options.windowMs) {
-      this.entries.delete(key);
+      this.store.delete(key);
       return undefined;
     }
     return entry;
-  }
-
-  /** Borne la mémoire : au-delà de `maxKeys`, on oublie d'abord les clés expirées puis les plus anciennes. */
-  private prune(now: number): void {
-    const max = this.options.maxKeys ?? 10_000;
-    if (this.entries.size <= max) return;
-    for (const [key, entry] of this.entries)
-      if (entry.lockedUntil <= now && now - entry.last > this.options.windowMs)
-        this.entries.delete(key);
-    for (const key of this.entries.keys()) {
-      if (this.entries.size <= max) break;
-      this.entries.delete(key);
-    }
   }
 }
 

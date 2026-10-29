@@ -42,6 +42,25 @@ export function nodeVersionStatus(version: string): RuntimeStatus {
   return { ok: true, message: `Node ${label}.` };
 }
 
+/**
+ * Coût des empreintes de mots de passe : `AQR_SCRYPT_LOG_N` ne peut qu'ALOURDIR en production
+ * (minimum 2^17, recommandation OWASP). Sans la variable, la valeur par défaut s'applique.
+ */
+export function scryptConfigStatus(
+  env: Record<string, string | undefined> = process.env,
+): RuntimeStatus {
+  const raw = env.AQR_SCRYPT_LOG_N;
+  if (raw === undefined || raw.trim() === "")
+    return { ok: true, message: "Coût scrypt par défaut." };
+  const log = Number(raw);
+  if (Number.isInteger(log) && log >= 17 && log <= 20)
+    return { ok: true, message: `Coût scrypt 2^${log}.` };
+  return {
+    ok: false,
+    message: `AQR_SCRYPT_LOG_N=${raw} affaiblit les mots de passe : il faut un entier de 17 à 20 (ou retirer la variable).`,
+  };
+}
+
 /** Production : lève une erreur lisible ; autrement : un avertissement. */
 export function enforceRuntime(
   nodeEnv: string | undefined,
@@ -65,11 +84,18 @@ export function guardStartup(
     nodeEnv?: string | undefined;
     version?: string;
     exit?: (code: number) => void;
+    env?: Record<string, string | undefined>;
   } = {},
 ): void {
   const { nodeEnv = process.env.NODE_ENV, version, exit } = options;
   try {
     enforceRuntime(nodeEnv, version, report.warn);
+    const scrypt = scryptConfigStatus(options.env);
+    if (!scrypt.ok) {
+      if (nodeEnv === "production")
+        throw new Error(`${scrypt.message} Le serveur ne démarre pas.`);
+      report.warn(scrypt.message);
+    }
   } catch (error) {
     report.error("démarrage refusé", error);
     (exit ?? ((code) => process.exit(code)))(1);

@@ -83,24 +83,24 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 ## 4. Authentification et mots de passe
 
-- [ ] 🟡 Hachage scrypt existant : **vérifier les paramètres** (coût N, r, p, longueur du sel, `needsRehash`) et
+- [x] ✅ (N = 2^17, r = 8, p = 1 = OWASP ; ancien 2^15/p = 1 était en dessous ; rehash à la connexion testé ; production refuse < 2^17) Hachage scrypt existant : **vérifier les paramètres** (coût N, r, p, longueur du sel, `needsRehash`) et
   les comparer à une recommandation actuelle de l'OWASP ; le test doit prouver qu'un hash est rehaché quand les
   paramètres changent.
-- [ ] 🟡 Règle de mot de passe : aujourd'hui 10 caractères minimum et une estimation de force. **Monter le
+- [ ] 🟡 (12 minimum, pseudonyme, motifs, mots du service, phrase recommandée : faits ; **liste de fuites complète : décision à prendre**, voir la note de version) Règle de mot de passe : aujourd'hui 10 caractères minimum et une estimation de force. **Monter le
   minimum à 12 caractères**, refuser les mots de passe présents dans une liste de fuites connues (Have I Been
   Pwned, téléchargée et vérifiée hors ligne, ou API k-anonymity), refuser le pseudonyme, les motifs trivials
   (suites, répétitions) et les mots du service. Phrase de passe recommandée, sans obligation de symboles.
-- [ ] ❌ Vérifier la robustesse à la création **et** au changement de mot de passe (`/compte/securite`), et à la
+- [ ] 🟡 (création et changement : même politique, testés ; il n'existe pas de réinitialisation en libre-service, faute d'e-mail) Vérifier la robustesse à la création **et** au changement de mot de passe (`/compte/securite`), et à la
   réinitialisation (si elle existe, sinon la rendre explicite dans la checklist).
-- [ ] ❌ Messages d'erreur de connexion génériques (« identifiant ou mot de passe incorrect ») : aucune énumération
+- [ ] 🟡 (connexion générique, délai égalisé par `verifyAgainstDummy` ; inscription : « pseudonyme pris » assumé car le pseudonyme est public) Messages d'erreur de connexion génériques (« identifiant ou mot de passe incorrect ») : aucune énumération
   des comptes, ni à la connexion, ni à l'inscription (réponse et délai identiques, `verifyAgainstDummy` pour les
   comptes inconnus).
-- [ ] 🟡 Verrouillage progressif existant (`FailureLimiter`) : **vérifier** qu'il est indexé par compte **et** par
+- [x] ✅ (par compte et par adresse, en base donc persistant, verrou par compte plafonné à 2 min, levée par un administrateur ; pas de déverrouillage par courriel faute d'e-mail) Verrouillage progressif existant (`FailureLimiter`) : **vérifier** qu'il est indexé par compte **et** par
   adresse IP, qu'il survit au redémarrage (aujourd'hui en mémoire, un seul processus), et qu'il ne peut pas être
   utilisé pour verrouiller un compte légitime à distance (déni de service ciblé) : prévoir un déverrouillage
   par courriel ou par administrateur.
-- [ ] ❌ Journal des connexions : succès, échecs, verrouillages, changements de mot de passe (sans le mot de passe).
-- [ ] ❌ Déconnexion effective : jeton et cookie invalidés côté serveur. « Fermer les autres connexions » fonctionne.
+- [x] ✅ (`audit.ts` : événements dans le journal ; fichiers et rotation en section 10) Journal des connexions : succès, échecs, verrouillages, changements de mot de passe (sans le mot de passe).
+- [x] ✅ (déconnexion et « fermer les autres » testées côté serveur ; bouton éprouvé dans un vrai navigateur : « 2 autres connexions fermées », puis « Aucune autre connexion n'était ouverte », session courante gardée) Déconnexion effective : jeton et cookie invalidés côté serveur. « Fermer les autres connexions » fonctionne.
 - [ ] ❌ Pas de double facteur (décision : non pertinent à ce stade). À réévaluer si les comptes gagnent des droits
   d'administration ou d'accès à des données de tiers.
 

@@ -2,7 +2,11 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
-import { missingCharacters, passwordStrength } from "@/lib/password-strength";
+import {
+  PASSWORD_MIN_LENGTH,
+  missingCharacters,
+  passwordStrength,
+} from "@/lib/password-strength";
 import { TESTER_PATTERN, TESTER_RULE_MESSAGE } from "@/lib/tester";
 import { FormAlert, PasswordField } from "../atelier/auth-parts";
 import { Icon } from "../atelier/icons";
@@ -61,7 +65,7 @@ export function RegisterForm({
     else if (!TESTER_PATTERN.test(name)) found.username = TESTER_RULE_MESSAGE;
     if (!password) found.password = "Choisis un mot de passe.";
     else if (missingCharacters(password) > 0)
-      found.password = `Il manque ${missingCharacters(password)} caractère${missingCharacters(password) > 1 ? "s" : ""} : 10 au minimum.`;
+      found.password = `Il manque ${missingCharacters(password)} caractère${missingCharacters(password) > 1 ? "s" : ""} : ${PASSWORD_MIN_LENGTH} au minimum.`;
     else if (name.toLowerCase() === password.toLowerCase())
       found.password = "Le mot de passe doit différer du pseudonyme.";
     if (mode === "code" && !firstAccount && !code.trim())
@@ -192,8 +196,8 @@ export function RegisterForm({
             </span>
             <span className="lbl">
               <span>
-                10 caractères minimum. Une phrase longue vaut mieux qu’un mot
-                compliqué.
+                {PASSWORD_MIN_LENGTH} caractères minimum. Une phrase longue vaut
+                mieux qu’un mot compliqué.
               </span>
               <b data-testid="strength-label">{strength.label}</b>
             </span>

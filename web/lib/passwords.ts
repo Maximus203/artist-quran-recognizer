@@ -4,12 +4,22 @@ import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
  * Mots de passe : scrypt (node:crypto, aucune dépendance native). L'empreinte stockée porte ses
  * propres paramètres : `scrypt$N$r$p$<sel b64>$<empreinte b64>`. On peut donc durcir les valeurs
  * plus tard sans invalider les comptes existants (voir `needsRehash`).
- * Valeurs d'aujourd'hui : N = 2^15, r = 8, p = 1 (≈ 32 Mo, ≈ 60 ms) — le plancher recommandé par
- * l'OWASP pour scrypt va de N = 2^15 (p = 3) à N = 2^17 (p = 1) ; 2^15 / p = 1 reste raisonnable
- * pour un atelier de quelques testeurs, et le coût mémoire borne la parallélisation d'un attaquant.
+ * Valeurs d'aujourd'hui : N = 2^17, r = 8, p = 1 (≈ 128 Mo, ≈ 250 ms) : la première configuration
+ * minimale de la fiche « Password Storage » de l'OWASP (2^17 / r = 8 / p = 1 ; 2^16 exigerait p = 2 et
+ * 2^15 p = 3). Les anciennes empreintes (2^15, p = 1) sont plus faibles : `needsRehash` les fait
+ * refaire à la connexion suivante. `AQR_SCRYPT_LOG_N` (12 à 20) ne sert qu'aux tests et au
+ * diagnostic : la production refuse de démarrer sous 17 (`runtime-guard.ts`).
  */
 export type ScryptParams = { N: number; r: number; p: number };
-export const SCRYPT_PARAMS: ScryptParams = { N: 32768, r: 8, p: 1 };
+export const SCRYPT_MIN_LOG_N = 17;
+export function scryptParams(
+  env: Record<string, string | undefined> = process.env,
+): ScryptParams {
+  const log = Number(env.AQR_SCRYPT_LOG_N);
+  const logN =
+    Number.isInteger(log) && log >= 12 && log <= 20 ? log : SCRYPT_MIN_LOG_N;
+  return { N: 2 ** logN, r: 8, p: 1 };
+}
 const KEY_BYTES = 32;
 const SALT_BYTES = 16;
 /** Bornes acceptées en lecture : une empreinte forgée ne doit pas faire exploser la mémoire. */
@@ -35,7 +45,7 @@ const derive = (
 
 export async function hashPassword(
   password: string,
-  params: ScryptParams = SCRYPT_PARAMS,
+  params: ScryptParams = scryptParams(),
 ): Promise<string> {
   const salt = randomBytes(SALT_BYTES);
   const key = await derive(password, salt, params);
@@ -83,7 +93,7 @@ export async function verifyPassword(
 /** L'empreinte a été faite avec des paramètres plus faibles que ceux d'aujourd'hui. */
 export function needsRehash(
   stored: string,
-  params: ScryptParams = SCRYPT_PARAMS,
+  params: ScryptParams = scryptParams(),
 ): boolean {
   const parsed = parse(stored);
   return (

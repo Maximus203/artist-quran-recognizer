@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Mots de passe et connexions : coût scrypt OWASP, politique de 12 caractères, verrouillage persistant, journal d'audit
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Les mots de passe font maintenant 12 caractères au moins (une phrase de passe est recommandée, aucun symbole n'est exigé) et le serveur refuse le pseudonyme, les mots de passe courants ou liés au service, les suites et les répétitions ; la jauge de l'inscription le dit. Les empreintes sont plus coûteuses (scrypt 2^17, au lieu de 2^15) et les anciennes sont refaites à la connexion suivante. Le verrouillage des échecs de connexion survit à un redémarrage du serveur (en base, sans adresse ni pseudonyme en clair) et s'applique aussi par compte, toutes adresses confondues : au plus 2 minutes, et un administrateur peut le lever. Chaque connexion, échec, verrouillage, inscription et changement de mot de passe est consigné (adresse pseudonymisée, jamais de secret). Nouveau bouton « Fermer les autres connexions » dans Compte › Sécurité.
+
+**Pourquoi / décision.** Section 4 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. L'ancien coût (2^15, p = 1) était sous la recommandation OWASP (2^17, p = 1, ou 2^15 avec p = 3) ; la production refuse de démarrer si `AQR_SCRYPT_LOG_N` l'affaiblit sous 17. Le verrou par compte est volontairement court (un tiers ne peut retarder le propriétaire que brièvement) ; le pseudonyme est un identifiant public (affiché sur les sessions partagées), donc « pseudonyme déjà pris » à l'inscription n'est pas masqué, alors que la connexion reste générique. **Non fait, décision à prendre** : refuser les mots de passe d'une base de fuites complète (Have I Been Pwned) demande un appel réseau sortant (hors du périmètre de `AGENTS.md`) ou un fichier de plusieurs centaines de Mo ; en attendant, une liste locale courte et des règles de motifs. Preuves : `password-policy.test.ts`, `passwords.test.ts`, `failure-store.test.ts`, `auth.test.ts`, `audit.test.ts`, `app/api/admin/users/[id]/route.test.ts`, `app/api/me/logins/route.test.ts`.
+
 ## 2026-10-29 — Garde-fous HTTP : proxy, en-têtes de sécurité, CSP, limitation de débit, refus des requêtes inter-sites
 Étiquettes : technique, décision
 PR : -
