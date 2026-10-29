@@ -32,6 +32,8 @@ export function weightLevel(
   quality: Quality,
   limits: WeightLimits = EXPORT_VIDEO_CONFIG.weight,
 ): WeightLevel {
+  // Rien à fabriquer : rien de lourd.
+  if (weight.totalMb <= 0) return "ok";
   if (
     weight.totalMb > limits.dangerMb ||
     weight.maxFileMb > limits.fileDangerMb

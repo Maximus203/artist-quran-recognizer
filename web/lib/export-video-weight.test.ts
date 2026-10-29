@@ -96,3 +96,11 @@ describe("temps de rendu", () => {
     );
   });
 });
+
+describe("aucune vidéo", () => {
+  it("n'est jamais « lourde », même en 2160p à 60 im/s", () => {
+    expect(
+      weightLevel({ totalMb: 0, maxFileMb: 0 }, { resolution: 2160, fps: 60 }),
+    ).toBe("ok");
+  });
+});
