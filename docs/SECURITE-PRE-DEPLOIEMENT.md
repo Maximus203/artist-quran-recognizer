@@ -212,14 +212,14 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 ## 13. Secrets et configuration
 
-- [ ] ❌ Aucun secret dans Git : `.env` ignoré, `.env.example` vide, historique vérifié (`git log -p` avec un outil
+- [x] ✅ (fichiers et historique : `python scripts/scan_secrets.py --history` → « Aucun secret détecté » sur 718 commits, toutes branches ; aucun fichier `.env`, `.pem`, `.key`, base ou identifiant jamais commité ; `.gitignore` couvre `.env*`, `*.key`, `*.pem`, `*.sqlite` ; `tests/unit/test_scan_secrets.py` fait échouer la suite si un secret entre dans l'arbre. Gitleaks n'est pas installé : à lancer aussi quand il le sera) Aucun secret dans Git : `.env` ignoré, `.env.example` vide, historique vérifié (`git log -p` avec un outil
   de détection de secrets, par exemple gitleaks).
-- [ ] ❌ Secrets distincts entre développement, test et production. Les clés de production ne sont jamais
+- [x] 🟡 (règle écrite dans `docs/SECRETS-ET-CONFIGURATION.md`, § « Un jeu de secrets par environnement » ; le contrôle de démarrage refuse toute valeur courte ou prévisible. **Reste à faire sur la machine cible** : générer les valeurs de production sur place et les placer dans le gestionnaire de secrets de l'hôte) Secrets distincts entre développement, test et production. Les clés de production ne sont jamais
   copiées sur un poste de développement.
-- [ ] ❌ Rotation documentée (jetons, clé HMAC, identifiants de base de données).
-- [ ] ❌ Variables obligatoires vérifiées au démarrage : le service refuse de démarrer si une valeur de sécurité
+- [x] ✅ (`docs/SECRETS-ET-CONFIGURATION.md`, § « Rotation » : procédure et effet visible pour chaque secret ; pas d'identifiant de base de données, SQLite local) Rotation documentée (jetons, clé HMAC, identifiants de base de données).
+- [x] ✅ (`web/lib/config-guard.ts`, 24 cas dans `config-guard.test.ts` ; **preuve sur un vrai serveur de production** : sans configuration → code 1 et ligne « démarrage refusé » qui nomme `AQR_ACCESS_TOKEN` ; jeton court + origine http → code 1 avec 6 variables nommées, aucune valeur dans les journaux ; `AQR_LOCAL_ONLY=1` → servi (200) ; accès public complet → servi, 403 sans jeton) Variables obligatoires vérifiées au démarrage : le service refuse de démarrer si une valeur de sécurité
   manque (clé, mode d'accès, origines autorisées).
-- [ ] ❌ Mode de production explicite (`NODE_ENV=production`), aucune route de test ou de développement exposée.
+- [x] ✅ (`next start` fixe `NODE_ENV=production` ; le contrôle de démarrage ne s'active qu'en production et prévient seulement en développement ; test `config-guard.test.ts` : aucun dossier de route nommé test, debug, dev, sandbox, mock, seed… sous `web/app`) Mode de production explicite (`NODE_ENV=production`), aucune route de test ou de développement exposée.
 
 ## 14. Robustesse et tests
 

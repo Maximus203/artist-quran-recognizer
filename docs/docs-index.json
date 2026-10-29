@@ -376,5 +376,12 @@
     "section": "Architecture",
     "file": "docs/DIAGNOSTIC-PRODUCTION.md",
     "summary": "Où sont les journaux, ce qu'ils contiennent, relier les lignes d'une requête, les premières commandes et le rapport des erreurs récurrentes."
+  },
+  {
+    "slug": "secrets-et-configuration",
+    "title": "Secrets et configuration",
+    "section": "Architecture",
+    "file": "docs/SECRETS-ET-CONFIGURATION.md",
+    "summary": "Variables de sécurité exigées au démarrage en production, un jeu de secrets par environnement, rotation de chaque secret, vérification de l'historique Git."
   }
 ]

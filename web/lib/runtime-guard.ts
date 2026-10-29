@@ -5,6 +5,8 @@
  * (18, 20, 23, 25…) ne reçoivent aucun correctif. En production, un serveur lancé sur une version
  * touchée refuse de démarrer ; en développement, il prévient seulement.
  */
+import { describeProblems, securityConfigProblems } from "./config-guard";
+
 export type RuntimeStatus = { ok: boolean; message: string };
 
 /** Première version corrigée de chaque ligne maintenue. */
@@ -95,6 +97,14 @@ export function guardStartup(
       if (nodeEnv === "production")
         throw new Error(`${scrypt.message} Le serveur ne démarre pas.`);
       report.warn(scrypt.message);
+    }
+    const problems = securityConfigProblems(options.env);
+    if (problems.length > 0) {
+      if (nodeEnv === "production")
+        throw new Error(
+          `${describeProblems(problems)} Le serveur ne démarre pas.`,
+        );
+      report.warn(describeProblems(problems));
     }
   } catch (error) {
     report.error("démarrage refusé", error);

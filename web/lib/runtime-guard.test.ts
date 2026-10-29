@@ -96,13 +96,13 @@ describe("garde au démarrage", () => {
       nodeEnv: "production",
       version: "24.22.2",
       exit: s.exit,
-      env: {},
+      env: { AQR_LOCAL_ONLY: "1" },
     });
     guardStartup(s.report, {
       nodeEnv: "development",
       version: "24.19.0",
       exit: s.exit,
-      env: {},
+      env: { AQR_LOCAL_ONLY: "1" },
     });
     expect(s.out.exits).toEqual([]);
     expect(s.out.warn).toHaveLength(1);
