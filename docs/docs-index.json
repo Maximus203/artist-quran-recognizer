@@ -362,5 +362,12 @@
     "section": "Décisions",
     "file": "docs/adr/0016-confirmation-par-le-lot.md",
     "summary": "Accepté le 2026-10-29 : le flux est coupé aux pauses et chaque passage clos est réécouté par le moteur du lot (message CONFIRMED) ; sur deux sessions micro, 4/6 devient 6/6 et 11/22 devient 21/22, sans verset en trop."
+  },
+  {
+    "slug": "securite-dependances",
+    "title": "Dépendances, runtime et CVE",
+    "section": "Architecture",
+    "file": "docs/SECURITE-DEPENDANCES.md",
+    "summary": "État de Node.js (CVE-2026-111497), Next.js, zod et des paquets Python au 2026-10-29 : audits, exceptions datées, ce qui reste à faire."
   }
 ]

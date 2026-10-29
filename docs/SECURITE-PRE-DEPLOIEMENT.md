@@ -62,7 +62,7 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 ## 3. Dépendances, runtime et CVE
 
-- [ ] ❌ **Node.js : passer à une version corrigée de CVE-2026-111497 (« Node2Shell »).** Faille de type
+- [ ] 🟡 **Node.js : passer à une version corrigée (la production la refuse sinon, preuve `exit=1` ; le poste de Cherif reste en 24.19.0, à mettre à jour — `docs/SECURITE-DEPENDANCES.md`).** Texte d'origine : passer à une version corrigée de CVE-2026-111497 (« Node2Shell »).** Faille de type
   écriture hors limites dans le décodeur Brotli, publiée par Node.js le 21 octobre 2026. Versions corrigées :
   **22.23.4, 24.22.1, 26.12.1**. Les versions antérieures de ces lignes et les lignes 25.x à 12.x en fin de vie
   sont touchées ; Node.js 18 et 20 n'ont pas de correctif officiel pour cette faille. Le poste local (v24.19.0)
@@ -70,13 +70,13 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
   [Aikido, Node2Shell](https://www.aikido.dev/blog/node2shell-nodejs-brotli-rce-cve-2026-111497).
   La source officielle (nodejs.org, annonce de sécurité) fait foi pour les versions et la sévérité ; le score
   CVSS rapporté varie selon les sources et n'a pas été confirmé.
-- [ ] ❌ Figer la version de Node en production (`engines`, `.nvmrc`, image de base avec tag précis, pas `latest`).
-- [ ] ❌ Next.js `16.4.2` et React : vérifier les avis de sécurité Next.js publiés depuis la date de la version
+- [ ] 🟡 Figer la version de Node en production (`engines` et `.nvmrc` faits ; l'image de base avec tag précis attend la section 15).
+- [x] ✅ (Next 16.4.3, aucun avis de sécurité publié sur cette version ; React 19.3.0 propre) Next.js `16.4.2` et React : vérifier les avis de sécurité Next.js publiés depuis la date de la version
   et monter à la version corrigée la plus récente.
-- [ ] ❌ `npm audit --omit=dev` (et la sortie de `pip-audit` pour le Python) : zéro vulnérabilité **haute ou critique**
+- [ ] 🟡 (npm : 0 vulnérabilité après zod 4.6.7 ; Python : 72 entrées, exceptions datées au 2026-11-12, gravité à qualifier sur l'image) `npm audit --omit=dev` (et la sortie de `pip-audit` pour le Python) : zéro vulnérabilité **haute ou critique**
   non justifiée. Chaque exception est écrite avec sa raison et sa date de révision.
-- [ ] ❌ Activer les alertes de dépendances (Dependabot ou équivalent) et une revue hebdomadaire.
-- [ ] ❌ Version de Python et des paquets épinglée (`requirements` ou lockfile, `models/LOCK.json` pour les modèles).
+- [x] ✅ (`.github/dependabot.yml`, npm et pip, hebdomadaire ; l'activation côté GitHub reste à confirmer dans les réglages du dépôt) Activer les alertes de dépendances (Dependabot ou équivalent) et une revue hebdomadaire.
+- [ ] 🟡 (`.python-version` 3.11.9 ; verrou complet des paquets : avec l'image) Version de Python et des paquets épinglée (`requirements` ou lockfile, `models/LOCK.json` pour les modèles).
 - [ ] ❌ Image ou environnement de production reconstruit à partir d'un état propre (pas d'arbre de travail
   non commité, cf. règle G-6 du CLAUDE.md global).
 - [ ] ❌ Scan de l'image de conteneur (Trivy ou équivalent) avant chaque mise en production.

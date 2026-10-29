@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Node corrigé de CVE-2026-111497, Next.js 16.4.3, zod corrigé, registre des dépendances
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** En production, le serveur refuse maintenant de démarrer (et s'arrête avec un message clair) sur une version de Node touchée par la faille CVE-2026-111497 (décodeur Brotli) : il faut Node 22.23.4, 24.22.1 ou 26.12.1 au minimum, 24.22.2 recommandée (`.nvmrc`). En développement, il prévient seulement. Next.js passe en 16.4.3 et zod en 4.6.7 (faille de mémoire sur les grandes collections validées) : `npm audit` ne trouve plus rien. Dependabot suit npm et pip chaque semaine.
+
+**Pourquoi / décision.** Section 3 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Le poste de développement tourne encore sous Node 24.19.0, donc touché : à mettre à jour. L'audit Python (`pip-audit`, 72 entrées sur 9 paquets transitifs de la pile ML) et ses exceptions datées sont dans `docs/SECURITE-DEPENDANCES.md` ; le verrou complet des paquets Python et le scan Trivy attendent l'image de production (section 15).
+
 ## 2026-10-29 — File d'attente visible : on sait qu'on attend et pourquoi, sans voir les autres
 Étiquettes : utilisateur, technique, décision
 PR : -
