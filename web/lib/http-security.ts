@@ -98,6 +98,7 @@ export type Family =
   | "generate"
   | "mcp"
   | "live"
+  | "engine"
   | "auth";
 
 const UNSAFE = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -112,6 +113,7 @@ export function classify(method: string, pathname: string): Family {
   if (pathname.startsWith("/api/auth/") || pathname === "/api/access")
     return "auth";
   if (pathname.startsWith("/api/live/")) return "live";
+  if (pathname.startsWith("/api/engine/")) return "engine";
   if (!pathname.startsWith("/api/") && !pathname.startsWith("/mcp"))
     return "page";
   if (isUnsafe(m)) {
@@ -145,6 +147,8 @@ export const LIMITS: Record<Family, { max: number; windowMs: number }> = {
   generate: { max: 30, windowMs: 60_000 },
   mcp: { max: 120, windowMs: 60_000 },
   live: { max: 30, windowMs: 60_000 },
+  // Agents du moteur : réclamation (long polling ~25 s), signaux de vie, audio et résultat.
+  engine: { max: 240, windowMs: 60_000 },
   auth: { max: 30, windowMs: 60_000 },
 };
 
@@ -177,7 +181,8 @@ export const JSON_BODY_MAX = 1024 * 1024;
 
 /** Plafond de `Content-Length` pour la famille, ou `null` (corps de fichier, borné ailleurs). */
 export function bodyLimit(family: Family): number | null {
-  return family === "upload" ? null : JSON_BODY_MAX;
+  // Audio et résultat du moteur : bornés par leur route (MAX_RESULT_BYTES), comme les envois de fichiers.
+  return family === "upload" || family === "engine" ? null : JSON_BODY_MAX;
 }
 
 export function tooLarge(

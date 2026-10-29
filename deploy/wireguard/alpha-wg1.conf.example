@@ -1,0 +1,17 @@
+# Second WireGuard, côté ALPHA : interface wg1 (le wg0 d'administration existant n'est pas touché).
+# MODÈLE, NON APPLIQUÉ. Aucune clé n'est générée ni écrite ici : chaque côté génère la sienne sur sa machine
+#   umask 077; wg genpubkey < /etc/wireguard/wg1.key > /etc/wireguard/wg1.pub
+# et ne transmet que la clé PUBLIQUE à l'autre côté. Installer en /etc/wireguard/wg1.conf (root, mode 0600).
+#
+# Avant de l'appliquer (accord explicite requis : Alpha héberge d'autres projets en production) :
+#   - ouvrir 51821/udp : ufw allow 51821/udp comment 'WireGuard atelier-moteur (Atlas)'
+#   - ne rien changer d'autre au pare-feu ; Docker contourne ufw pour les ports publiés, ce port n'est pas Docker.
+[Interface]
+Address = 10.78.0.1/30
+ListenPort = 51821
+PrivateKey = <clé privée d'Alpha, lue depuis /etc/wireguard/wg1.key — jamais écrite dans ce dépôt>
+
+[Peer]
+# Atlas
+PublicKey = <clé publique d'Atlas>
+AllowedIPs = 10.78.0.2/32

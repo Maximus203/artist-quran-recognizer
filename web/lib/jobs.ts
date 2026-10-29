@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseAsrChoice, type AsrChoice } from "./asr-choice";
 import { describeFailure, isMissingSession } from "./errors";
+import { engineBroker, remoteEngineEnabled } from "./engine-broker";
 import { log } from "./log";
 import { pythonCommand, recognizeCommand, type EngineCommand } from "./python";
 import {
@@ -275,7 +276,7 @@ export async function launch(
       throw new Error("Traitement déjà en cours");
     if (session.state === "done")
       throw new Error("Un résultat existe déjà ; crée une nouvelle session.");
-    if (!process.env.AQR_MODELS_DIR)
+    if (!process.env.AQR_MODELS_DIR && !remoteEngineEnabled())
       throw new Error(
         "AQR_MODELS_DIR absent : les poids du moteur ne sont pas configurés sur cette machine.",
       );
@@ -344,8 +345,9 @@ async function run(id: string, signal: JobSignal): Promise<void> {
   const asr = parseAsrChoice(
     shared().requestedAsr.get(id) ?? session.asr ?? ASR_ENGINE,
   );
+  const remote = remoteEngineEnabled();
   const models = process.env.AQR_MODELS_DIR;
-  if (!models)
+  if (!models && !remote)
     throw new Error(
       "AQR_MODELS_DIR absent : les poids du moteur ne sont pas configurés sur cette machine.",
     );
@@ -358,12 +360,24 @@ async function run(id: string, signal: JobSignal): Promise<void> {
     await saveSession(session, UPDATE);
     return;
   }
-  const engine = recognizeCommand(source, output, asr, models);
+  // Moteur distant (ADR-0017) : l'analyse attend un agent, qui dépose `source.recognition.json` dans le dossier.
+  const engine = remote
+    ? null
+    : recognizeCommand(source, output, asr, models as string);
   if (jobs.has(id))
     throw new Error(
       "Traitement déjà en cours ou en cours d'arrêt : réessaie dans un instant.",
     );
-  const child = startEngine(engine);
+  const child = engine
+    ? startEngine(engine)
+    : engineBroker().offer({
+        id,
+        asr,
+        audioFile: source,
+        audioSha256: session.audio_sha256,
+        audioSize: (await stat(source)).size,
+        outDir: output,
+      });
   let settle!: () => void;
   const settled = new Promise<void>((resolve) => (settle = resolve));
   jobs.set(id, { child, settled });
@@ -415,7 +429,8 @@ async function run(id: string, signal: JobSignal): Promise<void> {
           Date.parse(session.started_at) - Date.parse(session.queued_at),
         )
       : null,
-    warm: warmEnabled(engine),
+    warm: engine ? warmEnabled(engine) : false,
+    remote,
   });
   // Écrit avant toute issue : `close` l'attend, sinon il pourrait être écrasé par « running ».
   const started = saveSession(session, UPDATE);

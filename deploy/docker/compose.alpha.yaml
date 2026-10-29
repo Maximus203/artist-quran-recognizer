@@ -1,10 +1,12 @@
 # Atelier seul sur Alpha, derrière le Traefik existant (réseau « web », entrypoint « websecure »,
 # résolveur « letsencrypt » : conventions relevées sur les conteneurs en place). NON APPLIQUÉ.
 #
-# Les secrets vivent dans /opt/atelier/atelier.env (root:root, 0600), jamais ici ni dans Git :
-# liste exigée au démarrage dans docs/SECRETS-ET-CONFIGURATION.md.
-# Pas de moteur sur Alpha (aucun GPU) : le service démarre en mode « restricted » (plus d'envois, d'analyses
-# ni de direct ; lecture et connexion restent). Le lever suppose un moteur joignable : voir INFRASTRUCTURE.md.
+# Nom public : quran-tr.artist-dev.com (frontend). Les secrets vivent dans /opt/atelier/atelier.env
+# (root:root, 0600), jamais ici ni dans Git : liste exigée au démarrage dans docs/SECRETS-ET-CONFIGURATION.md.
+# Fichier /opt/atelier/.env :  ATELIER_TAG=<sha de l'image>   ATELIER_HOST=quran-tr.artist-dev.com
+#
+# Moteur à distance (ADR-0017) : le moteur tourne sur Atlas et appelle l'atelier par le second WireGuard.
+# Les routes /api/engine/* sont EXCLUES du routeur public et servies par un second routeur réservé au VPN.
 services:
   atelier:
     image: atelier:${ATELIER_TAG:?tag de l'image (sha du commit)}
@@ -12,8 +14,11 @@ services:
     restart: unless-stopped
     env_file: /opt/atelier/atelier.env
     environment:
-      AQR_SERVICE_MODE: restricted
+      AQR_ENGINE: remote
       AQR_TRUST_PROXY: "1"
+      AQR_PUBLIC_ORIGIN: https://${ATELIER_HOST:?nom d'hôte public}
+      # Tant que l'agent n'est pas installé sur Atlas : décommenter pour geler envois, analyses et direct.
+      # AQR_SERVICE_MODE: restricted
     volumes:
       - atelier-data:/data
     networks: [web]
@@ -31,15 +36,27 @@ services:
     labels:
       traefik.enable: "true"
       traefik.docker.network: web
+
+      # Frontend public : tout SAUF les routes du moteur.
       traefik.http.routers.atelier.entrypoints: websecure
-      traefik.http.routers.atelier.rule: Host(`${ATELIER_HOST:?nom d'hôte public}`)
+      traefik.http.routers.atelier.rule: Host(`${ATELIER_HOST}`) && !PathPrefix(`/api/engine`)
       traefik.http.routers.atelier.tls: "true"
       traefik.http.routers.atelier.tls.certresolver: letsencrypt
+      traefik.http.routers.atelier.middlewares: atelier-body
       traefik.http.services.atelier.loadbalancer.server.port: "3000"
       traefik.http.services.atelier.loadbalancer.healthcheck.path: /api/health
       # Corps maximal au bord (la vidéo de 2 Gio de l'atelier ne passe pas ici tant que les envois sont suspendus).
       traefik.http.middlewares.atelier-body.buffering.maxRequestBodyBytes: "2202009600"
-      traefik.http.routers.atelier.middlewares: atelier-body
+
+      # Routes du moteur : uniquement depuis le second WireGuard (Atlas = 10.78.0.2), en plus du jeton d'agent.
+      traefik.http.routers.atelier-engine.entrypoints: websecure
+      traefik.http.routers.atelier-engine.rule: Host(`${ATELIER_HOST}`) && PathPrefix(`/api/engine`)
+      traefik.http.routers.atelier-engine.priority: "100"
+      traefik.http.routers.atelier-engine.tls: "true"
+      traefik.http.routers.atelier-engine.tls.certresolver: letsencrypt
+      traefik.http.routers.atelier-engine.service: atelier
+      traefik.http.routers.atelier-engine.middlewares: atelier-vpn
+      traefik.http.middlewares.atelier-vpn.ipallowlist.sourcerange: 10.78.0.0/30
 
 networks:
   web:
