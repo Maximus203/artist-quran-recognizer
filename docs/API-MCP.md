@@ -39,6 +39,7 @@ Tous les appels portent `Authorization: Bearer qtr_…`.
 | `GET /api/v1/export/options` | Catalogue des options de sous-titres et de vidéo |
 | `POST /api/v1/recordings/{id}/export/video/jobs` | Export vidéo (JSON ou multipart avec `background_image`) → `202` + job |
 | `GET …/export/video/jobs/{job}` et `…/file` | Suivi du job, puis le MP4 (conservé une heure) |
+| `DELETE …/export/video/jobs/{job}` | Annule un export en attente ou en cours (`409` s'il est déjà terminé) |
 | `GET /api/me/stats`, `/api/stats`, `/api/corpus/verse?ref=` | Statistiques et texte d'un verset |
 
 `/api/v1/recordings` est un alias stable de `/api/sessions` : mêmes routes, mêmes droits, mêmes

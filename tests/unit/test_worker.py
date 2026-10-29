@@ -111,3 +111,29 @@ def test_sous_commande_worker_via_main():
     assert code == 0
     assert _replies(out)[0] == {"event": "ready"}
     assert _replies(out)[1]["id"] == "1"
+
+
+def test_une_mise_a_jour_des_modeles_recharge_le_moteur(tmp_path):
+    """Scénario 13 : le worker garde des poids en mémoire ; si le verrou ou le dossier des modèles
+    change entre deux analyses, la suivante ne doit pas tourner sur l'ancienne version."""
+    lock = tmp_path / "LOCK.json"
+    lock.write_text("{}", encoding="utf-8")
+    models = tmp_path / "models"
+    models.mkdir()
+    built: list[int] = []
+
+    def build(options, env):
+        built.append(1)
+        return object()
+
+    cached = CachedFactory(build)
+    options = RecognizeOptions(asr="cascade", lock_path=lock, models_dir=models)
+    cached(options, {})
+    cached(options, {})
+    assert len(built) == 1
+    lock.write_text('{"fastconformer": "nouvelle-empreinte"}', encoding="utf-8")
+    cached(options, {})
+    assert len(built) == 2
+    (models / "poids.bin").write_bytes(b"x")
+    cached(options, {})
+    assert len(built) == 3

@@ -10,6 +10,7 @@ vi.mock("./store", () => ({
 
 import {
   applyRenderState,
+  cancelVideoJob,
   browserExecutable,
   getVideoJob,
   publicJob,
@@ -303,6 +304,77 @@ describe("pile unique avec les analyses", () => {
     expect(getVideoJob(job.id)?.state).toBe("queued");
     release();
     expect((await settle(job.id)).state).toBe("done");
+  });
+});
+
+describe("annulation d'un export", () => {
+  it("un export en attente est retiré de la file sans jamais démarrer", async () => {
+    const { jobQueue } = await import("./jobs");
+    let release: () => void = () => undefined;
+    const analysis = new Promise<void>((r) => (release = r));
+    jobQueue().enqueue("analyse-annul", {
+      run: async (_id, signal) => {
+        signal.started();
+        await analysis;
+      },
+    });
+    let ran = false;
+    const job = await startVideoJob({
+      ...base,
+      userId: 92,
+      runner: async () => {
+        ran = true;
+      },
+    });
+    expect(cancelVideoJob(job.id)).toBe(true);
+    const done = getVideoJob(job.id) as VideoJob;
+    expect(done.state).toBe("failed");
+    expect(done.error).toMatch(/annulé/i);
+    release();
+    await jobQueue().idle();
+    expect(ran).toBe(false);
+  });
+
+  it("un export en cours est arrêté : le rendu reçoit le signal, la place est rendue", async () => {
+    let sawAbort = false;
+    const job = await startVideoJob({
+      ...base,
+      userId: 93,
+      runner: (_j, aborted) =>
+        new Promise<void>(() => {
+          aborted.addEventListener("abort", () => (sawAbort = true));
+        }),
+    });
+    await new Promise((r) => setTimeout(r, 20));
+    expect((getVideoJob(job.id) as VideoJob).state).toBe("running");
+    expect(cancelVideoJob(job.id)).toBe(true);
+    const done = await settle(job.id);
+    expect(done.state).toBe("failed");
+    expect(done.error).toMatch(/annulé/i);
+    expect(sawAbort).toBe(true);
+    const next = await startVideoJob({
+      ...base,
+      userId: 93,
+      runner: async (j) => {
+        j.file = path.join(j.dir, "v.mp4");
+        await writeFile(j.file, "x");
+      },
+    });
+    expect((await settle(next.id)).state).toBe("done");
+  });
+
+  it("annuler un export déjà terminé ou inconnu ne fait rien", async () => {
+    const job = await startVideoJob({
+      ...base,
+      userId: 94,
+      runner: async (j) => {
+        j.file = path.join(j.dir, "v.mp4");
+        await writeFile(j.file, "x");
+      },
+    });
+    await settle(job.id);
+    expect(cancelVideoJob(job.id)).toBe(false);
+    expect(cancelVideoJob("inconnu")).toBe(false);
   });
 });
 
