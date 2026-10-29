@@ -105,6 +105,7 @@ publie `progress` (« Vidéo 2/5 : rendu 64 % ») et `files_done` / `files_total
 `GET /api/v1/recordings/{id}/thumbnails?count=40&width=96` renvoie une planche JPEG horizontale de `count`
 imagettes (1 à 120) larges de `width` px (32 à 320) ; l'imagette i montre l'instant (i + 0,5) × durée / count
 (en-têtes `X-Aqr-Thumb-Count`, `X-Aqr-Thumb-Every`). 409 `no_video` pour une session audio, 400 hors bornes.
+Un silence, pour l'aimantation (`snap_to_silence`, `snapped`, `silences=1`), est au moins 12 dB sous le niveau médian de la voix pendant la récitation ; une marge s'arrête toujours avant une abstention ou un passage non coranique (avertissement dans `warnings`). Les erreurs de validation sont en français (« lead_in : 5 au plus », « option inconnue « per_vers » ») ; un outil MCP appelé avec un argument qu'il ne connaît pas répond par une erreur qui le nomme, sans rien exécuter.
 L'écran d'export affiche, dans « Même export par l'API », le JSON `export_video` exact de ses réglages. Le job
 terminé liste ses fichiers dans `downloads` (`index`, `name`, `url`) : `…/file` pour la première vidéo,
 `…/file?index=N` pour les suivantes. Un export est plus long à 60 im/s et en 1440p ou 4K (mesuré : 3 s
