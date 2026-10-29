@@ -33,6 +33,8 @@ export function httpError(
 ): { status: number; message: string } {
   if (isMissingSession(error))
     return { status: 404, message: "Session introuvable" };
+  if (error instanceof Error && error.name === "QueueLimitError")
+    return { status: 429, message: error.message };
   const code = errnoCode(error);
   if (code) return { status: 500, message: `Erreur disque (${code}).` };
   return {

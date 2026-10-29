@@ -44,6 +44,28 @@ export function maxConcurrent(
   return Number.isInteger(value) && value >= 1 ? value : 1;
 }
 
+/** Jobs en attente autorisés par compte (`AQR_MAX_WAITING_PER_USER`, 5 par défaut). */
+export function maxWaitingPerUser(
+  raw: string | undefined = process.env.AQR_MAX_WAITING_PER_USER,
+): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1 ? value : 5;
+}
+
+/**
+ * Délai maximal d'une analyse avant arrêt par le watchdog : `AQR_JOB_TIMEOUT_S` si renseigné, sinon
+ * huit fois la durée de l'audio, au moins 30 minutes.
+ */
+export function analysisTimeoutMs(
+  audioDurationS: number | null | undefined,
+  raw: string | undefined = process.env.AQR_JOB_TIMEOUT_S,
+): number {
+  const forced = Number(raw);
+  if (Number.isFinite(forced) && forced > 0) return forced * 1000;
+  const audio = audioDurationS && audioDurationS > 0 ? audioDurationS : 0;
+  return Math.max(30 * 60, audio * 8) * 1000;
+}
+
 /**
  * État mutable des lancements, partagé par tout le processus serveur (sur `globalThis`, comme la
  * file et la table des traitements) : Next peut charger ce module dans plusieurs bundles (routes et
@@ -153,6 +175,7 @@ export function jobQueue(): JobQueue {
         runner: execute,
         concurrency: () => maxConcurrent(),
         externalBusy: liveOrphans,
+        maxWaitingPerOwner: () => maxWaitingPerUser(),
         onError: (id, error) => void markFailed(id, error),
       }),
   );
@@ -171,6 +194,8 @@ export type LaunchResult = {
 export async function launch(
   id: string,
   requestedEngine?: AsrChoice,
+  /** Compte demandeur (équité de la file) ; absent : la tâche compte pour elle seule. */
+  owner?: number | null,
 ): Promise<LaunchResult> {
   const asr = parseAsrChoice(requestedEngine ?? ASR_ENGINE);
   const queue = jobQueue();
@@ -213,7 +238,10 @@ export async function launch(
         session.queued_at = queuedAt;
         await saveSession(session, UPDATE);
       }
-      return queue.enqueue(id);
+      return queue.enqueue(id, {
+        owner: owner == null ? undefined : String(owner),
+        timeoutMs: analysisTimeoutMs(session.audio_duration_s),
+      });
     } catch (error) {
       shared().requestedAsr.delete(id);
       shared().requestedQueuedAt.delete(id);
@@ -277,8 +305,29 @@ async function run(id: string, signal: JobSignal): Promise<void> {
   let settle!: () => void;
   const settled = new Promise<void>((resolve) => (settle = resolve));
   jobs.set(id, { child, settled });
-  let outputText = "";
   let aborted = false;
+  // Watchdog : le délai dépassé tue le processus et consigne un échec lisible.
+  signal.aborted.addEventListener(
+    "abort",
+    () => {
+      if (aborted || shared().cancelRequests.has(id)) return;
+      void readSession(id)
+        .then(async (current) => {
+          if (current.state !== "running") return;
+          aborted = true;
+          child.kill();
+          current.state = "failed";
+          current.error =
+            "L’analyse a dépassé le délai maximal et a été arrêtée. Réessaie, ou découpe l’enregistrement.";
+          current.pid = null;
+          recordOutcome(current, null, new Date().toISOString());
+          await saveSession(current, UPDATE);
+        })
+        .catch(() => undefined);
+    },
+    { once: true },
+  );
+  let outputText = "";
   session.state = "running";
   session.asr = asr;
   session.engine = asr;
@@ -454,7 +503,8 @@ export async function recoverQueue(): Promise<string[]> {
         a.created_at.localeCompare(b.created_at) ||
         a.id.localeCompare(b.id),
     );
-  for (const s of waiting) queue.enqueue(s.id);
+  for (const s of waiting)
+    queue.enqueue(s.id, { timeoutMs: analysisTimeoutMs(s.audio_duration_s) });
   return waiting.map((s) => s.id);
 }
 

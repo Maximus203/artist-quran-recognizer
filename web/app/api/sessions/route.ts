@@ -145,7 +145,7 @@ async function handlePOST(request: NextRequest) {
     if (autorun && created.state === "ready") {
       try {
         await ensureQueueRecovered();
-        await launch(created.id);
+        await launch(created.id, undefined, auth.user.id);
       } catch (e) {
         autorunError =
           e instanceof Error ? e.message : "Mise en file impossible";

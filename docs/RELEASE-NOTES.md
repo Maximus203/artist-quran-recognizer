@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Pile de traitement unique : analyses et exports vidéo, équité et délai maximal
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Les analyses et les exports vidéo partagent désormais une seule file : deux charges lourdes ne tournent plus ensemble au-delà de `AQR_MAX_CONCURRENT`. À chaque place libre, on sert le compte servi le moins récemment (tour à tour), et un compte ne peut pas avoir plus de `AQR_MAX_WAITING_PER_USER` (5) jobs en attente (réponse 429 en clair). Un job qui dépasse son délai (`AQR_JOB_TIMEOUT_S`, sinon 8 fois la durée audio, au moins 30 min ; 31 min pour un rendu vidéo) est arrêté, marqué en échec lisible, et sa place est reprise.
+
+**Pourquoi / décision.** Premier point du gate bloquant de `docs/SECURITE-PRE-DEPLOIEMENT.md` (section 1) : sans cela, un compte ou un export vidéo pouvait saturer la machine. Preuves : `web/lib/queue-scheduler.test.ts` (équité, plafond, 50 dépôts simultanés, watchdog, annulation) et `web/lib/video-jobs.test.ts` (un export attend une analyse). Restent à traiter : worker Python chaud, reprise explicite des analyses orphelines, découpage des longs fichiers.
+
 ## 2026-10-29 — En direct : le moteur du lot confirme chaque passage
 Étiquettes : utilisateur, technique, décision
 PR : #123
