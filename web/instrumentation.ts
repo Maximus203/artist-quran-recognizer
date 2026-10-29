@@ -12,6 +12,8 @@ export async function register(): Promise<void> {
     warn: (message) => log.warn("runtime", message),
     error: (message, error) => log.error("runtime", message, error),
   });
+  const { announceService } = await import("./lib/service-lifecycle");
+  announceService();
   // Base d'abord : elle suit les écritures de session.json que la reprise de file va provoquer.
   const { ready } = await import("./lib/server-init");
   await ready().catch(() => undefined); // l'erreur est journalisée ; la requête suivante réessaie

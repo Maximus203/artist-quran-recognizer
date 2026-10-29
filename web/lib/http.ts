@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { log } from "./log";
+import { runWithRequest } from "./request-context";
 
 /** Réponses JSON d'API : un seul format d'erreur `{ error, code?, field? }` pour toutes les routes. */
 export type ApiErrorBody = { error: string; code?: string; field?: string };
@@ -47,21 +48,33 @@ export const localOnly = () =>
 export function safe<R extends Request, A extends unknown[]>(
   handler: (request: R, ...rest: A) => Promise<Response>,
 ): (request: R, ...rest: A) => Promise<Response> {
-  return async (request, ...rest) => {
-    try {
-      return await handler(request, ...rest);
-    } catch (error) {
-      log.error(
-        "api",
-        `${request.method} ${new URL(request.url).pathname} a échoué`,
-        error,
+  return (request, ...rest) => {
+    // Corrélation : l'identifiant posé par le proxy suit la requête dans TOUTES les lignes de journal.
+    const rid = request.headers.get("x-request-id") ?? crypto.randomUUID();
+    const started = Date.now();
+    const { pathname } = new URL(request.url);
+    return runWithRequest(rid, async () => {
+      let response: Response;
+      try {
+        response = await handler(request, ...rest);
+      } catch (error) {
+        log.error("api", `${request.method} ${pathname} a échoué`, error);
+        response = apiError(
+          500,
+          "Erreur interne du serveur : elle est consignée dans le journal.",
+          { code: "internal" },
+        );
+      }
+      // Accès : méthode, chemin SANS requête (elle peut contenir une recherche), statut, durée.
+      const status = response.status;
+      log.event(
+        "access",
+        `${request.method} ${pathname}`,
+        { status, ms: Date.now() - started },
+        status >= 500 ? "error" : status >= 400 ? "warn" : "info",
       );
-      return apiError(
-        500,
-        "Erreur interne du serveur : elle est consignée dans le journal.",
-        { code: "internal" },
-      );
-    }
+      return response;
+    });
   };
 }
 

@@ -3,6 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseAsrChoice, type AsrChoice } from "./asr-choice";
 import { describeFailure, isMissingSession } from "./errors";
+import { log } from "./log";
 import { pythonCommand, recognizeCommand, type EngineCommand } from "./python";
 import {
   JobQueue,
@@ -376,6 +377,12 @@ async function run(id: string, signal: JobSignal): Promise<void> {
         .then(async (current) => {
           if (current.state !== "running") return;
           aborted = true;
+          log.event(
+            "jobs",
+            "analysis.timeout",
+            { session: id, engine: asr },
+            "error",
+          );
           child.kill();
           current.state = "failed";
           current.error =
@@ -399,6 +406,17 @@ async function run(id: string, signal: JobSignal): Promise<void> {
   session.finished_at = null;
   session.duration_s = null;
   session.pid = child.pid || null;
+  log.event("jobs", "analysis.start", {
+    session: id,
+    engine: asr,
+    waited_ms: session.queued_at
+      ? Math.max(
+          0,
+          Date.parse(session.started_at) - Date.parse(session.queued_at),
+        )
+      : null,
+    warm: warmEnabled(engine),
+  });
   // Écrit avant toute issue : `close` l'attend, sinon il pourrait être écrasé par « running ».
   const started = saveSession(session, UPDATE);
   // Écouteurs posés avant tout `await` : un `error` de spawn (interpréteur introuvable)
@@ -442,6 +460,21 @@ async function run(id: string, signal: JobSignal): Promise<void> {
       }
       recordOutcome(current, parsed, finishedAt);
       await saveSession(current, UPDATE);
+      log.event(
+        "jobs",
+        current.state === "done" ? "analysis.done" : "analysis.failed",
+        {
+          session: id,
+          engine: current.engine ?? asr,
+          ms:
+            current.duration_s !== null && current.duration_s !== undefined
+              ? Math.round(current.duration_s * 1000)
+              : null,
+          audio_s: current.audio_duration_s ?? null,
+          code: code ?? null,
+        },
+        current.state === "done" ? "info" : "error",
+      );
     } catch (error) {
       try {
         const current = await readSession(id);

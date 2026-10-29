@@ -3,6 +3,7 @@ import { exportSubtitles, previewSubtitles } from "@/lib/export-engine";
 import { exportErrorResponse } from "@/lib/export-errors";
 import { resolveExportOptions } from "@/lib/export-options";
 import { json, readJson, safe } from "@/lib/http";
+import { log } from "@/lib/log";
 import { sessionAccess } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
@@ -41,6 +42,10 @@ async function handlePOST(
         summary: await previewSubtitles(access.id, options, input.cues ?? 3),
       });
     const file = await exportSubtitles(access.id, options, input.name);
+    log.event("export", "subtitles", {
+      session: access.id,
+      format: options.format,
+    });
     if (new URL(request.url).searchParams.get("raw") === "1")
       return new Response(file.content, {
         headers: {

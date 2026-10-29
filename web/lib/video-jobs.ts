@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { jobQueue } from "./jobs";
+import { log } from "./log";
 import { sessionDir } from "./store";
 import {
   suggestOptionsOf,
@@ -254,6 +255,11 @@ export async function startVideoJob(input: {
       signal.started();
       job.state = "running";
       job.progress = "Démarrage";
+      const startedAt = Date.now();
+      log.event("export", "video.start", {
+        session: job.sessionId,
+        job: job.id,
+      });
       try {
         await Promise.race([
           run(job, signal.aborted),
@@ -279,11 +285,23 @@ export async function startVideoJob(input: {
         job.progress = "Terminé";
         job.files_done = job.files.length;
         job.files_total = job.files.length;
+        log.event("export", "video.done", {
+          session: job.sessionId,
+          job: job.id,
+          ms: Date.now() - startedAt,
+          files: job.files.length,
+        });
       } catch (error) {
         job.state = "failed";
         job.error =
           error instanceof Error ? error.message : "Rendu impossible.";
         job.progress = "Échec";
+        log.event(
+          "export",
+          job.cancelRequested ? "video.cancelled" : "video.failed",
+          { session: job.sessionId, job: job.id, ms: Date.now() - startedAt },
+          job.cancelRequested ? "info" : "error",
+        );
       } finally {
         job.bearer = null;
         job.finishedAt = new Date().toISOString();

@@ -37,11 +37,11 @@ export function pseudonymize(
 }
 
 export function audit(event: AuditEvent, fields: AuditFields = {}): void {
-  const payload: Record<string, unknown> = { event };
+  const payload: Record<string, string | number> = {};
   if (fields.userId !== undefined && fields.userId !== null)
     payload.user = fields.userId;
   if (fields.ip) payload.ip = pseudonymize(fields.ip);
   if (fields.reason) payload.reason = fields.reason;
   if (fields.session) payload.session = fields.session;
-  log.info("audit", JSON.stringify(payload));
+  log.event("audit", event, payload);
 }

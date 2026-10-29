@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Journaux en fichiers : un flux par usage, corrélation, audit en chaîne, rapport des erreurs récurrentes
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Le serveur écrit maintenant ses journaux en fichiers (`<dossier de données>/logs` ou `AQR_LOG_DIR`), en plus de la console : un fichier par flux et par jour (application, accès, analyses et exports, sécurité), une ligne JSON par événement, rotation par taille, conservation de 30 jours (365 pour la sécurité), droits 0640. Chaque requête a un identifiant (`X-Request-Id`) présent dans toutes ses lignes. Le journal de sécurité est une chaîne d'audit : toute modification d'une ligne se détecte. Sont consignés : démarrage et arrêt du service, connexions et refus (401, 403, 429), analyses (début, fin, échec, délai dépassé, durée, moteur, attente), exports, erreurs serveur. Un rapport quotidien (`node web/scripts/log-report.mjs`) signale les erreurs qui reviennent depuis des jours.
+
+**Pourquoi / décision.** Section 10 de `docs/SECURITE-PRE-DEPLOIEMENT.md` : une erreur silencieuse depuis des semaines est la plus coûteuse. Jamais de mot de passe, jeton, cookie, audio, texte coranique ni traduction (une couche de masquage retire en plus ces motifs de tout message) ; l'adresse IP n'est écrite que pseudonymisée. Pendant les tests, rien n'est écrit sur le disque. Procédure : `docs/DIAGNOSTIC-PRODUCTION.md`. Limites : le journal d'audit se contrôle mais n'est pas inviolable (quelqu'un qui tient le disque peut tout réécrire) ; le journal du service du direct (Python) n'est pas encore versé dans ce dossier. Preuves : `web/lib/log-files.test.ts`, `log.test.ts`, `http-access.test.ts`, `log-report.test.ts`, et un serveur réel : trois fichiers créés, mêmes `rid` entre accès et audit, chaîne intacte au rapport.
+
 ## 2026-10-29 — Corps d'API validés strictement, jetons d'API toujours datés et journalisés, cookies et erreurs éprouvés
 Étiquettes : technique, décision
 PR : -
