@@ -23,7 +23,7 @@ import hashlib
 import json
 import os
 import sys
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import TextIO
@@ -42,6 +42,7 @@ from aqr.alignment.service import (
     read_plan,
 )
 from aqr.app.live_service import ServiceOptions
+from aqr.app.worker import CachedFactory, serve
 from aqr.corpus.checksums import CorpusChecksumError
 from aqr.data.alignment_import import import_alignment
 from aqr.data.config import DataConfig
@@ -160,6 +161,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_false",
         help="ne pas vérifier les suites sur le treillis du FastConformer (ADR-0008) : preuve "
         "textuelle seule, temps = bords des fenêtres",
+    )
+
+    commands.add_parser(
+        "worker",
+        help="service chaud : lit des requêtes JSON sur l'entrée standard, garde le moteur chargé",
     )
 
     ali = commands.add_parser(
@@ -702,6 +708,25 @@ def _plan_alignment(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
     return 0
 
 
+def _worker(
+    env: Mapping[str, str],
+    out: TextIO,
+    stdin: Iterable[str],
+    factory: RecognizerFactory,
+) -> int:
+    """Service chaud (`aqr.app.worker`) : le moteur reste chargé d'une requête à l'autre."""
+    cached = CachedFactory(factory)
+
+    def run(argv: list[str], stdout: TextIO, stderr: TextIO) -> int:
+        if argv[:1] == ["worker"]:
+            print("ERREUR un worker ne se relance pas lui-même", file=stderr)
+            return 2
+        return main(argv, env=env, out=stdout, err=stderr, recognizer_factory=cached)
+
+    serve(stdin, out, run)
+    return 0
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
@@ -712,11 +737,14 @@ def main(
     recognizer_factory: RecognizerFactory = build_recognizer,
     aligner_factory: AlignerFactory = build_alignment_service,
     live_runner: LiveRunner | None = None,
+    stdin: Iterable[str] | None = None,
 ) -> int:
     out, err = out or sys.stdout, err or sys.stderr
     env = os.environ if env is None else env
     parser = _build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
+    if args.command == "worker":
+        return _worker(env, out, sys.stdin if stdin is None else stdin, recognizer_factory)
     if args.command == "recognize":
         return _recognize(args, env, out, err, recognizer_factory)
     if args.command == "align":

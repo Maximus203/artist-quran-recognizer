@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Moteur chaud : les analyses ne rechargent plus les modèles
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Le serveur garde un processus Python « chaud » (`aqr worker`) dont le moteur reste chargé : la deuxième analyse et les suivantes ne repaient plus le chargement des modèles. Sur la machine de développement (cascade, enregistrements courts d'environ 5 s), la première requête prend 32,5 s, la suivante 0,5 s. Annuler ou dépasser le délai arrête le worker (modèles perdus) : l'analyse suivante en relance un neuf. `AQR_WARM_WORKER=0` revient à un processus par analyse.
+
+**Pourquoi / décision.** Deuxième point du gate bloquant de `docs/SECURITE-PRE-DEPLOIEMENT.md` (section 1) : un chargement de ~50 s par analyse écrase le débit dès que plusieurs comptes déposent des fichiers. Le worker réutilise le même `main` Python (aucune logique dupliquée) et garde un seul moteur en mémoire graphique. Preuves : `tests/unit/test_worker.py`, `web/lib/warm-worker.test.ts`, `web/lib/jobs-warm.test.ts`, et mesure réelle sur un vrai worker (voir la PR).
+
 ## 2026-10-29 — Pile de traitement unique : analyses et exports vidéo, équité et délai maximal
 Étiquettes : technique, décision
 PR : -
