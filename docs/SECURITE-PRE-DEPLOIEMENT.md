@@ -109,7 +109,7 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 - [ ] 🟡 Cookie `HttpOnly` (documenté). **Vérifier et tester** : `Secure`, `SameSite=Lax` au minimum, durée
   de vie courte avec renouvellement, identifiant de session aléatoire d'au moins 128 bits, nouvel identifiant à
   chaque connexion (anti-fixation).
-- [ ] ❌ Protection CSRF sur toutes les routes qui modifient l'état (jeton synchronisé ou vérification stricte de
+- [x] ✅ (proxy : `Sec-Fetch-Site` inter-sites + cookie refusé ; en plus du contrôle d'`Origin` existant dans `local-request.ts`) Protection CSRF sur toutes les routes qui modifient l'état (jeton synchronisé ou vérification stricte de
   l'en-tête `Origin`).
 - [ ] ❌ Expiration absolue et inactivité, côté serveur.
 
@@ -126,13 +126,13 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 ## 7. API : authentification, validation, limitation de débit
 
-- [ ] ❌ **Throttling sur toute l'API**, par jeton, par compte et par adresse IP, avec limites distinctes par famille
+- [x] ✅ (`proxy.ts`, 9 familles, adresse + compte en empreinte, 429 + `Retry-After` ; plafonds de départ) **Throttling sur toute l'API**, par jeton, par compte et par adresse IP, avec limites distinctes par famille
   (lecture, écriture, envoi de fichiers, génération, MCP, direct). Réponse `429` avec `Retry-After`.
 - [ ] ❌ Limite globale de débit au proxy (reverse proxy) en plus de l'application, pour que la protection tienne
   même si le processus est saturé.
 - [ ] ❌ **Validation stricte des entrées** : schéma (zod, déjà utilisé) sur chaque corps, paramètre de requête et
   en-tête. Rejet des champs inconnus. Bornes sur les tailles, les listes et les profondeurs.
-- [ ] ❌ Taille maximale du corps par route, lecture bornée (pas de lecture entière en mémoire).
+- [ ] 🟡 (JSON : 1 Mio au proxy et à la lecture ; envois de fichiers : bornés par leur route, lecture en flux à vérifier en section 11) Taille maximale du corps par route, lecture bornée (pas de lecture entière en mémoire).
 - [ ] ❌ Jetons API : stockés hachés, portée limitée, date d'expiration, révocation, journalisation d'usage. Jamais
   affichés une seconde fois.
 - [ ] ❌ Réponses d'erreur sans pile ni chemin de fichier ni détail interne.
@@ -142,14 +142,14 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 Aujourd'hui absent (`web/next.config.ts` ne définit aucun en-tête, aucun `middleware.ts`).
 
-- [ ] ❌ Créer un `middleware` (ou un équivalent sur le serveur) qui vérifie **avant** les routes : authentification,
+- [ ] 🟡 (`proxy.ts` : débit, taille, inter-sites, id de requête, en-têtes ; l'authentification, l'hôte autorisé et l'autorisation par ressource restent dans `route-guard`) Créer un `middleware` (ou un équivalent sur le serveur) qui vérifie **avant** les routes : authentification,
   autorisation de base, limitation de débit, taille maximale, en-tête `Host` et `Origin` autorisés.
-- [ ] ❌ **Content-Security-Policy** stricte (pas de `unsafe-inline` ni `unsafe-eval` si évitable ; sources explicites).
-- [ ] ❌ `Strict-Transport-Security` (HSTS), `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+- [x] ✅ (nonce, ni `unsafe-eval` ni `unsafe-inline` pour les scripts ; `style-src` garde `unsafe-inline`, voir la note de version) **Content-Security-Policy** stricte (pas de `unsafe-inline` ni `unsafe-eval` si évitable ; sources explicites).
+- [x] ✅ (HSTS seulement en HTTPS) `Strict-Transport-Security` (HSTS), `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
   `Permissions-Policy` (micro autorisé uniquement là où il est nécessaire : le direct), `X-Frame-Options` ou
   `frame-ancestors`.
 - [ ] ❌ Cookies : attributs vérifiés par test automatisé.
-- [ ] ❌ Désactiver l'en-tête `X-Powered-By` et les pages de débogage en production.
+- [x] ✅ Désactiver l'en-tête `X-Powered-By` et les pages de débogage en production.
 - [ ] ❌ Vérification par un outil externe (securityheaders.com ou équivalent) avec capture consignée.
 
 ## 9. Pièges (honeypots) et détection des bots

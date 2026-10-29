@@ -65,10 +65,35 @@ export function safe<R extends Request, A extends unknown[]>(
   };
 }
 
-/** Corps JSON d'une requête, ou `undefined` s'il est absent ou illisible. */
-export async function readJson(request: Request): Promise<unknown> {
+/** Plafond de lecture d'un corps JSON (aligné sur `JSON_BODY_MAX` du proxy). */
+const JSON_LIMIT = 1024 * 1024;
+
+/**
+ * Corps JSON d'une requête, ou `undefined` s'il est absent, illisible ou trop gros. La lecture est
+ * bornée : au-delà de `limit` octets on arrête, sans jamais garder un corps énorme en mémoire.
+ */
+export async function readJson(
+  request: Request,
+  limit = JSON_LIMIT,
+): Promise<unknown> {
   try {
-    const text = await request.text();
+    const declared = Number(request.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > limit) return undefined;
+    const reader = request.body?.getReader();
+    if (!reader) return {};
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel().catch(() => undefined);
+        return undefined;
+      }
+      chunks.push(value);
+    }
+    const text = Buffer.concat(chunks).toString("utf8");
     return text.trim() === "" ? {} : JSON.parse(text);
   } catch {
     return undefined;

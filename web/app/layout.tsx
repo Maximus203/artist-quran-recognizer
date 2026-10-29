@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import type { Metadata, Viewport } from "next";
 import { readPreferences } from "@/lib/preferences";
 import { appearanceOf } from "@/lib/prefs-sync";
@@ -37,6 +38,7 @@ export default async function Layout({
   // Connecté : les préférences DU COMPTE posent thème, police et taille dans le HTML lui-même
   // (aucun clignotement, quel que soit l'appareil). Anonyme (connexion, inscription) : seul le
   // thème mémorisé par le navigateur est repris, par un petit script avant le premier rendu.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const user = await pageUser();
   const appearance = user
     ? appearanceOf(readPreferences(await ready(), user.id).preferences)
@@ -55,7 +57,10 @@ export default async function Layout({
     >
       <head>
         {user ? null : (
-          <script dangerouslySetInnerHTML={{ __html: BOOTSTRAP_INLINE }} />
+          <script
+            nonce={nonce}
+            dangerouslySetInnerHTML={{ __html: BOOTSTRAP_INLINE }}
+          />
         )}
       </head>
       <body>{children}</body>

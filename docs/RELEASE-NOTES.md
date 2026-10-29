@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Garde-fous HTTP : proxy, en-têtes de sécurité, CSP, limitation de débit, refus des requêtes inter-sites
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Une nouvelle couche `web/proxy.ts` (Next 16, ex-middleware) traite chaque requête avant les routes : identifiant de requête (`X-Request-Id`), refus d'une modification inter-sites faite avec le cookie de connexion (403), plafond de 1 Mio pour les corps JSON (413), limitation de débit par famille de route, par adresse et par compte (429 avec `Retry-After`), et en-têtes de sécurité : CSP stricte à nonce (aucun script en ligne sans nonce, aucun `eval` en production, rien hors de l'origine sauf le service du direct), `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` (micro autorisé pour l'atelier seulement), HSTS en HTTPS. `X-Powered-By` est retiré. La lecture des corps JSON est bornée côté route.
+
+**Pourquoi / décision.** Sections 5, 7 et 8 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. `style-src` garde `unsafe-inline` (React pose des attributs `style`, que le CSP ne sait pas protéger) ; les scripts, eux, sont verrouillés. Pas de `strict-dynamic`, qui désactiverait `'self'` dont le chargement du module audio du direct a besoin. Les plafonds de débit (par minute : 30 pour l'authentification, la génération et les envois, 120 pour les écritures, 600 pour les lectures) sont des valeurs de départ à ajuster d'après les journaux. Derrière un reverse proxy il faut `AQR_TRUST_PROXY=1`, sinon toutes les adresses comptent comme une seule. Preuves : `web/lib/http-security.test.ts`, `web/proxy.test.ts`, `web/lib/http-body.test.ts`, et un serveur de production lancé sur ce poste avec un vrai navigateur (pages connexion, accueil, direct, sessions, performance : aucune violation de CSP).
+
 ## 2026-10-29 — Node corrigé de CVE-2026-111497, Next.js 16.4.3, zod corrigé, registre des dépendances
 Étiquettes : technique, décision
 PR : -
