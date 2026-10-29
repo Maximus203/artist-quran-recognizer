@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Tests de sécurité : entrées hostiles sur chaque route, plafonds de débit par famille, scans préparés
+Étiquettes : technique
+PR : -
+
+**Ce qui change.** Rien ne change pour l'utilisateur. Deux nouveaux tests de sécurité tournent à chaque suite : l'un attaque chaque route de l'API (découvertes sur le disque) avec 21 charges hostiles (SQL, chemin, commande, HTML, texte de 100 Ko, pollution de prototype) dans le chemin, la requête et 37 champs JSON, sans connexion, avec un compte et avec un administrateur ; l'autre vérifie, pour les 9 familles de routes, que le plafond est atteint puis refusé en 429 avec `Retry-After`. Un contrôleur d'en-têtes (`web/scripts/check-headers.mjs`) remplace securityheaders.com sans envoyer l'adresse à un tiers, et un lanceur (`scripts/run_security_scans.sh`) prépare ZAP, testssl, Trivy, gitleaks et les audits de dépendances.
+
+**Pourquoi / décision.** Section 14 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Les tests ont été éprouvés en plantant des failles à la main (injection de commande, SQL concaténé, erreur 500, limiteur contourné) : ils échouent à chaque fois. 4 221 appels sans 5xx, sans exécution, base intacte. `npm audit` : 0 faille. **Non lancés** : ZAP, testssl, Trivy et gitleaks, qui demandent des images Docker à télécharger et un environnement de test exposé (`docs/SCANS-SECURITE.md`).
+
 ## 2026-10-29 — Secrets et configuration : le serveur refuse de démarrer sans ses valeurs de sécurité
 Étiquettes : technique, décision
 PR : -

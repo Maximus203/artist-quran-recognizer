@@ -383,5 +383,12 @@
     "section": "Architecture",
     "file": "docs/SECRETS-ET-CONFIGURATION.md",
     "summary": "Variables de sécurité exigées au démarrage en production, un jeu de secrets par environnement, rotation de chaque secret, vérification de l'historique Git."
+  },
+  {
+    "slug": "scans-securite",
+    "title": "Scans de sécurité",
+    "section": "Architecture",
+    "file": "docs/SCANS-SECURITE.md",
+    "summary": "Scans à lancer avant la mise en production, commandes, critères de réussite, et ce qui a déjà été fait ou reste à faire."
   }
 ]

@@ -225,19 +225,19 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 **Tests de sécurité automatisés** (à ajouter au pipeline) :
 - [x] ✅ (`idor.test.ts`) IDOR : compte B ne peut rien faire sur les ressources de A (lecture, écriture, suppression, téléchargement).
-- [ ] 🟡 (champs inconnus et types refusés sur les routes migrées ; pas encore de jeu d'entrées hostiles sur chaque champ) Injection : entrées malveillantes sur chaque champ (SQL, chemin, commande, HTML). Aucune exécution.
+- [x] ✅ (`web/app/api/injection.test.ts` : routes découvertes sur le disque, 21 charges (SQL, chemin, commande, HTML, 100 Ko, prototype) dans le chemin, la requête et 37 champs JSON, sans connexion / compte / administrateur, 67 méthodes de route, 4 221 appels : aucun 5xx, aucune exception, fichier-témoin jamais créé, tables intactes, aucun fichier système lu. **Éprouvé** : injection de commande, SQL concaténé et erreur 500 plantées à la main dans une route → le test échoue à chaque fois) Injection : entrées malveillantes sur chaque champ (SQL, chemin, commande, HTML). Aucune exécution.
 - [x] ✅ (`auth.test.ts` : verrouillage progressif, par compte, persistant ; journal) Authentification : brute force contre un compte de test (verrouillage, ralentissement, journal).
-- [ ] 🟡 (`proxy.test.ts` : familles auth et génération ; pas encore chaque famille) Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
+- [x] ✅ (`web/proxy-families.test.ts` : les 9 familles, plafond atteint puis 429 avec `Retry-After`, familles indépendantes ; éprouvé : limiteur de la famille `mcp` contourné → le test échoue) Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
 - [x] ✅ (`honeypot.test.ts`, `proxy-honeypot.test.ts`, `app/api/honeypot.test.ts`) Honeypots : formulaire leurre rempli, route piège appelée.
 - [x] ✅ (`proxy.test.ts`, `http-security.test.ts`, `hardening.test.ts`) En-têtes et cookies (test automatisé sur les réponses).
 - [x] ✅ (type, nom, taille, disque : `import-session.test.ts` et serveur réel ; pas d'archive) Téléversement hostile : fichier mal typé, archive piégée, nom de fichier hostile, taille dépassée.
 
 **Scans à exécuter avant la mise en production** (rapport consigné) :
-- [ ] ❌ OWASP ZAP (scan de base, puis actif sur l'environnement de test).
-- [ ] ❌ `testssl.sh` ou équivalent : TLS 1.2 minimum, pas de suite faible, certificat valide.
-- [ ] ❌ securityheaders.com ou équivalent.
-- [ ] ❌ `npm audit`, `pip-audit`, Trivy sur l'image.
-- [ ] ❌ gitleaks sur l'historique.
+- [ ] ❌ (préparé : `scripts/run_security_scans.sh`, `ZAP_ACTIVE=1` pour le scan actif ; **non lancé** : télécharge une image Docker et vise un environnement de test qui n'existe pas encore) OWASP ZAP (scan de base, puis actif sur l'environnement de test).
+- [ ] ❌ (préparé dans `scripts/run_security_scans.sh` ; **non lancé** : aucun TLS tant que rien n'est exposé) `testssl.sh` ou équivalent : TLS 1.2 minimum, pas de suite faible, certificat valide.
+- [ ] 🟡 (équivalent local : `node web/scripts/check-headers.mjs <adresse>`, testé dans `check-headers.test.ts` ; lancé sur un vrai serveur de production en HTTP : 3 pages conformes, code 0. **Reste** : le lancer sur l'adresse HTTPS de test, HSTS compris) securityheaders.com ou équivalent.
+- [ ] 🟡 (`npm audit` 2026-10-29 : 0 faille, production comme développement. `pip-audit` : 9 paquets avec avis, tous qualifiés dans `docs/SECURITE-DEPENDANCES.md` ; mises à jour non faites sur le poste (pile CUDA partagée). **Trivy : non lancé, aucune image avant la section 15**) `npm audit`, `pip-audit`, Trivy sur l'image.
+- [ ] 🟡 (filet interne `scripts/scan_secrets.py --history` : 718 commits, aucun secret ; **gitleaks lui-même non lancé** : non installé, image à télécharger, prévu dans `scripts/run_security_scans.sh`) gitleaks sur l'historique.
 
 **Scénarios de la file d'attente** (rappel de la section 1, à tester ici aussi) :
 1. 50 soumissions dans la même seconde : ordre stable, aucune place doublée.
@@ -252,7 +252,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 10. Disque plein à l'envoi : refus propre, rien de partiel. ✅ (507 clair ; `import-session.test.ts`)
 11. Deux onglets sur le même compte : pas de doublon.
 12. Direct actif pendant un lot : retard et contention mesurés.
-13. Mise à jour d'un modèle pendant qu'une file attend.
+13. Mise à jour d'un modèle pendant qu'une file attend. ✅ (`tests/unit/test_worker.py::test_une_mise_a_jour_des_modeles_recharge_le_moteur` : le moteur chaud se reconstruit quand `LOCK.json` ou le dossier des modèles change, donc les jobs en attente passent sur le nouveau modèle)
 
 ## 15. Infrastructure et exposition
 
