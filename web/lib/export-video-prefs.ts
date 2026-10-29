@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { VideoOrientation } from "./export-video-args";
+import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
+import { DEFAULT_LEAD_IN, DEFAULT_TAIL_OUT } from "./export-video-suggest";
 import {
   DEFAULT_VIDEO_FPS,
   DEFAULT_VIDEO_RESOLUTION,
@@ -70,6 +72,20 @@ export const videoPrefsSchema = z
     bg: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     /** Fond choisi : id d'un fond proposé, « source », « color », ou null = automatique. */
     background: z.string().min(1).max(40).nullable().default(null),
+    /** Souffle gardé avant la voix (s) dans les plages proposées ; mêmes marges que l'API (`lead_in`). */
+    paddingBefore: z
+      .number()
+      .min(EXPORT_VIDEO_CONFIG.padding.min)
+      .max(EXPORT_VIDEO_CONFIG.padding.max)
+      .default(DEFAULT_LEAD_IN),
+    /** Souffle gardé après la voix (s) ; `tail_out` côté API. */
+    paddingAfter: z
+      .number()
+      .min(EXPORT_VIDEO_CONFIG.padding.min)
+      .max(EXPORT_VIDEO_CONFIG.padding.max)
+      .default(DEFAULT_TAIL_OUT),
+    /** Aimanter les bords au silence le plus proche ; `snap_to_silence` côté API. */
+    snapToSilence: z.boolean().default(true),
   })
   .strict();
 
@@ -102,6 +118,9 @@ export const DEFAULT_VIDEO_PREFS: VideoPrefs = {
   textPosition: 50,
   showWave: true,
   accent: null,
+  paddingBefore: DEFAULT_LEAD_IN,
+  paddingAfter: DEFAULT_TAIL_OUT,
+  snapToSilence: true,
 };
 
 type Reader = Pick<Storage, "getItem">;

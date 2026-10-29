@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cadre 375 px</title>
+<style>html,body{margin:0;background:#888}iframe{display:block;border:0;width:375px}</style>
+</head>
+<body>
+<!-- Outil de capture : Chrome sans interface refuse une fenêtre de moins de 500 px ; la maquette est donc
+     posée dans un cadre de 375 px exactement, puis l'image est rognée à 375 px. ?h=hauteur&q=paramètres -->
+<iframe id="f" title="Maquette à 375 px"></iframe>
+<script>
+  const p = new URLSearchParams(location.search);
+  const f = document.getElementById("f");
+  f.style.height = (p.get("h") || "812") + "px";
+  f.src = "index.html?" + decodeURIComponent(p.get("q") || "");
+</script>
+</body>
+</html>

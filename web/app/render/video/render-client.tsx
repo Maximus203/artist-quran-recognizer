@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
 import { renderSessionVideo } from "@/lib/export-video-render";
 
@@ -15,7 +15,7 @@ type Payload = {
   prefs: VideoPrefs;
   hasBackground: boolean;
   fileName?: string;
-  ranges?: { start: number; end: number }[];
+  ranges?: { start: number; end: number; name?: string }[];
   perVerse?: boolean;
   suggest?: "verse" | "passage";
   margins?: {
@@ -32,11 +32,18 @@ type State = {
   done?: boolean;
   /** Nombre de vidéos attendues (une par plage) : le serveur attend autant de téléchargements. */
   total?: number;
+  files_done?: number;
+  files_total?: number;
 };
 
 export function RenderClient() {
   const [text, setText] = useState("Rendu en préparation…");
+  // Un seul rendu par page, même si React relance l'effet (mode strict de développement) :
+  // sinon chaque vidéo serait produite et téléchargée deux fois.
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     const w = window as unknown as {
       __AQR_RENDER?: Payload;
       __AQR_STATE?: State;
@@ -69,6 +76,11 @@ export function RenderClient() {
         padRanges: payload.padRanges,
         onCount: (count) => {
           state.total = count;
+          state.files_total = count;
+          state.files_done = 0;
+        },
+        onFile: (progress) => {
+          if (progress.phase === "done") state.files_done = progress.index + 1;
         },
         onProgress: (message) => {
           state.progress = message;

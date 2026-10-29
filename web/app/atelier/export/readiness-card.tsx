@@ -125,7 +125,7 @@ export function VerdictCard({
             {empty
               ? "Il n’y a rien à écrire dans un fichier de sous-titres. Relance l’analyse, ou ouvre la session pour vérifier ce que le moteur a entendu."
               : verdict.ready
-                ? "Rien d’ambigu ne reste dans la partie coranique. Choisis le format à droite."
+                ? "Rien d’ambigu ne reste dans la partie coranique : exporte les sous-titres ou la vidéo."
                 : `${verdictSentence(verdict)} ${canEdit ? "Corrige-les à l’oreille, ou force l’export : les passages ambigus seront alors traités selon la règle que tu choisis." : "Seul le propriétaire corrige ; tu peux forcer l’export : les passages ambigus seront traités selon la règle que tu choisis."}`}
           </p>
         </div>

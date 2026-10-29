@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exporter — maquette</title>
+<link rel="stylesheet" href="../../../web/app/tokens.css">
+<link rel="stylesheet" href="maquette.css?v=13">
+</head>
+<body data-tab="video">
+
+<!-- Jeu d'icônes dessiné pour le projet : trait 1,6 px, bouts ronds, grille 24 (prolonge celui de l'atelier) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-zin" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5M10.5 8v5"/></symbol>
+  <symbol id="i-zout" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4M8 12h8"/></symbol>
+  <symbol id="i-magnet" viewBox="0 0 24 24"><path d="M6 4v8a6 6 0 0 0 12 0V4M6 8h3M15 8h3M9 4v8a3 3 0 0 0 6 0V4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4.5h4V7M7 7l1 12.5h8L17 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3zM12 10v4.5M12 17.5v.01"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="i-brackets" viewBox="0 0 24 24"><path d="M8 4H5v16h3M16 4h3v16h-3M12 8v8"/></symbol>
+  <symbol id="i-verses" viewBox="0 0 24 24"><path d="M3 12h3M8 9v6M11 12h4M17 8v8M19 12h2"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M5 19l1-4L16 5l3 3L9 18zM14 7l3 3"/></symbol>
+  <symbol id="i-braces" viewBox="0 0 24 24"><path d="M9 4c-2 0-3 1-3 3v2c0 1.5-1 3-2 3 1 0 2 1.5 2 3v2c0 2 1 3 3 3M15 4c2 0 3 1 3 3v2c0 1.5 1 3 2 3-1 0-2 1.5-2 3v2c0 2-1 3-3 3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 9h16M4 15h16M9 5v4M15 5v4M9 15v4M15 15v4"/></symbol>
+  <symbol id="i-sub" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h5M14 14h3M7 11h3M12 11h5"/></symbol>
+  <symbol id="i-gate" viewBox="0 0 24 24"><path d="M5 20V8l7-4 7 4v12M9 20v-6h6v6"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13"/><path d="M10 16h1.5M13 12v8M16 9v14M19 12v8M22 16h-1.5"/></symbol>
+</svg>
+
+<!-- ───────────── Barre de la maquette : ne fait pas partie de l'application ───────────── -->
+<div class="mk" role="region" aria-label="Commandes de la maquette">
+  <b>Maquette</b>
+  <label>Thème <select id="mk-theme"><option value="system">Système</option><option value="light">Clair</option><option value="dark">Sombre</option></select></label>
+  <label>Importé <select id="mk-source"><option value="audio">Audio (51:20)</option><option value="video">Vidéo (51:20)</option></select></label>
+  <label>État <select id="mk-state"><option value="idle">Réglage</option><option value="loading">Chargement</option><option value="render">Rendu en cours</option><option value="done">Terminé</option><option value="error">Erreur</option><option value="empty">Rien à exporter</option></select></label>
+  <span>Textes arabes et traductions : <b style="letter-spacing:0;text-transform:none">factices</b>, jamais un verset.</span>
+</div>
+
+<header class="top">
+  <a class="brand" href="#" aria-label="Quran TR, accueil"><svg class="ico" aria-hidden="true"><use href="#i-logo"/></svg>Quran <i>TR</i></a>
+  <nav aria-label="Navigation principale"><a href="#" aria-current="page">Revue</a><a href="#">Sessions</a><a href="#">Performance</a><a href="#">En direct</a><a href="#">Documentation</a></nav>
+</header>
+
+<div class="ministage" id="ministage" aria-hidden="true">
+  <div class="thumb"><img id="mini-img" alt=""></div>
+  <p id="mini-txt"><b>Aperçu</b></p>
+  <button class="btn btn--ghost btn--icon" type="button" id="mini-up" aria-label="Revenir à l’aperçu"><svg class="ico"><use href="#i-up"/></svg></button>
+</div>
+
+<main class="xp">
+  <nav class="crumb" aria-label="Fil d’Ariane"><a href="#"><svg class="ico ico--sm" aria-hidden="true"><use href="#i-back"/></svg>Session</a><span aria-hidden="true">/</span><span>recitation-tarawih-nuit-27.mp4</span></nav>
+
+  <div class="xp-head">
+    <h1 class="xp-title" id="title">Exporter la <em>vidéo</em></h1>
+    <p class="facts">
+      <span><svg class="ico ico--sm" aria-hidden="true"><use href="#i-wave"/></svg><span id="fact-src">Audio</span> · <span class="mono">51:20</span></span>
+      <span><span class="mono" id="fact-verses">38</span>&nbsp;passages coraniques</span>
+      <span><span class="mono">6</span>&nbsp;non coraniques ignorés</span>
+    </p>
+    <div class="rail" role="tablist" aria-label="Étapes de l’export">
+      <button role="tab" id="t-verifier" aria-controls="p-verifier" data-tab="verifier" aria-selected="false">
+        <b><svg class="ico ico--sm gate-warn" aria-hidden="true"><use href="#i-gate"/></svg>Vérifier <span class="pip pip--warn" aria-label="2 passages à valider">2</span></b>
+        <small>2 passages à valider</small>
+      </button>
+      <button role="tab" id="t-soustitres" aria-controls="p-soustitres" data-tab="soustitres" aria-selected="false">
+        <b><svg class="ico ico--sm" aria-hidden="true"><use href="#i-sub"/></svg>Sous-titres</b>
+        <small>SRT · arabe + français</small>
+      </button>
+      <button role="tab" id="t-video" aria-controls="p-video" data-tab="video" aria-selected="true">
+        <b><svg class="ico ico--sm" aria-hidden="true"><use href="#i-film"/></svg>Vidéo</b>
+        <small id="rail-video">3 vidéos · 1080p</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ 1 · VÉRIFIER ══════════════════════════ -->
+  <section class="pane pane--verifier" id="p-verifier" role="tabpanel" aria-labelledby="t-verifier">
+    <div class="grid">
+      <div class="main">
+        <div class="verdict" role="status">
+          <span class="mark"><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg></span>
+          <div>
+            <h2>Deux passages à valider</h2>
+            <p>Le moteur hésite sur deux passages. Écoute-les et tranche : l’export reste possible, mais il les omettra.</p>
+          </div>
+          <div class="prog"><span>36 sur 38 passages sûrs</span><div><i style="width:94.7%"></i></div></div>
+          <div class="acts"><a class="btn btn--primary" href="#">Corriger le premier</a><button class="btn btn--ghost" type="button">Exporter quand même…</button></div>
+        </div>
+
+        <section class="chap" data-open="true" aria-labelledby="h-ov">
+          <header><span class="n" aria-hidden="true">i</span><h2 id="h-ov">Où sont-ils dans l’audio ?</h2></header>
+          <div class="body overview">
+            <canvas id="ov" height="44" role="img" aria-label="Vue d’ensemble de l’audio : deux passages ambigus, à 12 min 40 et à 33 min 05."></canvas>
+            <div class="legend"><span><i class="lg-rec"></i>Reconnu</span><span><i class="lg-inf"></i>Déduit</span><span><i class="lg-unc"></i>Ambigu</span><span><i class="lg-nq"></i>Non coranique</span></div>
+          </div>
+        </section>
+
+        <ul class="items" aria-label="Passages à valider">
+          <li class="item">
+            <div class="item-top"><span class="stat stat--unc"><i style="background:var(--dots);color:var(--warn-edge)"></i>Ambigu</span><span class="mono">12:40,2 → 12:51,8</span><span class="muted">Passage 14 · deux lectures possibles</span></div>
+            <p class="ar fake" lang="ar" aria-label="Texte arabe factice">نص الآية من المصحف</p>
+            <p class="trn fake">[Traduction QuranEnc, restituée telle quelle]</p>
+            <div class="acts"><button class="btn" type="button"><svg class="ico ico--sm"><use href="#i-play"/></svg>Écouter</button><a class="btn btn--primary" href="#">Corriger</a><button class="btn btn--ghost" type="button">Ignorer</button></div>
+          </li>
+          <li class="item">
+            <div class="item-top"><span class="stat stat--inf"><i style="background:var(--hatch);color:var(--accent)"></i>Déduit, à confirmer</span><span class="mono">33:05,0 → 33:19,6</span><span class="muted">Passage 29</span></div>
+            <p class="ar fake" lang="ar" aria-label="Texte arabe factice">نص الآية من المصحف</p>
+            <p class="trn fake">[Traduction QuranEnc, restituée telle quelle]</p>
+            <div class="acts"><button class="btn" type="button"><svg class="ico ico--sm"><use href="#i-play"/></svg>Écouter</button><a class="btn btn--primary" href="#">Corriger</a><button class="btn btn--ghost" type="button">Ignorer</button></div>
+          </li>
+        </ul>
+      </div>
+      <aside class="side" aria-label="Suite">
+        <div class="bord">
+          <p class="cap">Ensuite</p>
+          <p class="lead">Une fois les passages tranchés, choisis ce que tu produis : des <b>sous-titres</b> (fichier texte) ou une <b>vidéo</b> MP4. Les deux partent du même résultat vérifié.</p>
+          <div class="row"><button class="btn" type="button" data-go="soustitres"><svg class="ico ico--sm"><use href="#i-sub"/></svg>Sous-titres</button><button class="btn" type="button" data-go="video"><svg class="ico ico--sm"><use href="#i-film"/></svg>Vidéo</button></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ 2 · SOUS-TITRES ══════════════════════════ -->
+  <section class="pane pane--soustitres" id="p-soustitres" role="tabpanel" aria-labelledby="t-soustitres">
+    <div class="grid">
+      <div class="main">
+        <section class="chap" data-open="true" aria-labelledby="h-sf">
+          <header><span class="n" aria-hidden="true">1</span><h2 id="h-sf">Format</h2><span class="sum">SRT</span></header>
+          <div class="body">
+            <div class="subfmts" role="radiogroup" aria-label="Format du fichier">
+              <button class="sf" role="radio" aria-checked="true"><b>SRT</b><small>Lu partout : YouTube, VLC, montage</small></button>
+              <button class="sf" role="radio" aria-checked="false"><b>VTT</b><small>Pour le web, porte l’attribution</small></button>
+              <button class="sf" role="radio" aria-checked="false"><b>ASS</b><small>Karaoké mot à mot, police arabe</small></button>
+              <button class="sf" role="radio" aria-checked="false"><b>JSON</b><small>Données, pour un programme</small></button>
+            </div>
+          </div>
+        </section>
+        <section class="chap" data-open="true" aria-labelledby="h-sc">
+          <header><span class="n" aria-hidden="true">2</span><h2 id="h-sc">Ce qui s’affiche</h2><span class="sum">Arabe + français · basmala</span></header>
+          <div class="body">
+            <div class="field"><span class="cap" id="l-content">Langues</span>
+              <div class="seg seg--full" role="radiogroup" aria-labelledby="l-content"><button role="radio" aria-checked="true">Arabe + français</button><button role="radio" aria-checked="false">Arabe</button><button role="radio" aria-checked="false">Français</button></div>
+            </div>
+            <div class="field"><span class="cap" id="l-form">Formules</span>
+              <div class="quick" role="group" aria-labelledby="l-form"><button class="chip" aria-pressed="true">Basmala</button><button class="chip" aria-pressed="false">Isti‘adha</button><button class="chip" aria-pressed="false">Takbir</button><button class="chip" aria-pressed="false">Amin</button></div>
+              <p class="muted" style="font-size:var(--fs-xs)">La basmala est le verset 1:1 du corpus. Les autres formules sont des libellés, jamais du texte du Coran.</p>
+            </div>
+            <div class="field"><span class="cap" id="l-rep">Répétitions</span>
+              <div class="seg seg--full" role="radiogroup" aria-labelledby="l-rep"><button role="radio" aria-checked="true">Garder chacune<small>son propre temps</small></button><button role="radio" aria-checked="false">Fusionner<small>un seul sous-titre</small></button></div>
+            </div>
+            <details class="fine"><summary><svg class="ico ico--sm"><use href="#i-chev"/></svg>Réglages fins : durées, décalage, encodage</summary>
+              <div>
+                <div class="two"><label class="tfield">Durée minimale d’un sous-titre<span class="stp"><button type="button" aria-label="Moins 0,1 s">−</button><input value="1,0 s"><button type="button" aria-label="Plus 0,1 s">+</button></span></label>
+                <label class="tfield">Décalage global (− pour avancer)<span class="stp"><button type="button" aria-label="Moins 100 ms">−</button><input value="0 ms"><button type="button" aria-label="Plus 100 ms">+</button></span></label></div>
+                <label class="sw"><input type="checkbox" checked><span>Balises de sens d’écriture<small>Garde l’arabe à droite dans les lecteurs qui l’inversent.</small></span></label>
+                <label class="sw"><input type="checkbox"><span>Afficher la référence (sourate:verset)</span></label>
+                <label class="sw"><input type="checkbox"><span>Retirer les renvois de note [1]<small>Modifie la traduction QuranEnc : écart assumé, signalé dans le fichier.</small></span></label>
+              </div>
+            </details>
+          </div>
+        </section>
+      </div>
+      <aside class="side" aria-label="Aperçu et export des sous-titres">
+        <div class="stage-wrap">
+          <div class="cue" role="img" aria-label="Aperçu d’un sous-titre, texte factice">
+            <p class="ar fake" lang="ar">نص الآية من المصحف</p>
+            <p class="tr fake">[Traduction QuranEnc, restituée telle quelle]</p>
+          </div>
+          <p class="cue-meta"><span>Sous-titre <span class="mono">12 / 42</span></span><span class="mono">03:14,2 → 03:19,8</span></p>
+        </div>
+        <div class="bord">
+          <div class="bord-big"><b class="mono">42</b><span>sous-titres · SRT</span></div>
+          <dl><dt>Poids</dt><dd class="mono">≈ 3 Ko</dd><dt>Passages omis</dt><dd>2 ambigus</dd><dt>Attribution</dt><dd>à joindre (SRT ne la porte pas)</dd></dl>
+          <button class="btn btn--primary btn--lg btn--block" type="button"><svg class="ico"><use href="#i-dl"/></svg>Exporter en SRT</button>
+          <p class="namepat">recitation-tarawih-nuit-27.ar-fr.srt</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ 3 · VIDÉO ══════════════════════════ -->
+  <section class="pane pane--video" id="p-video" role="tabpanel" aria-labelledby="t-video">
+    <div class="grid">
+      <div class="main" id="v-main">
+
+        <!-- Chapitre 1 : Parties (la frise) -->
+        <section class="chap" id="chap-parties" data-open="true" aria-labelledby="h-parties">
+          <header><span class="n" aria-hidden="true">1</span><h2 id="h-parties">Ce que tu exportes</h2><span class="sum" id="sum-parties"></span><button class="tog" type="button" aria-expanded="true" aria-controls="b-parties" aria-label="Replier"><svg class="ico"><use href="#i-down"/></svg></button></header>
+          <div class="body" id="b-parties">
+            <div id="parties-live">
+              <div class="quick" role="group" aria-label="Composer rapidement">
+                <button class="chip" type="button" id="q-all"><svg class="ico ico--sm"><use href="#i-wave"/></svg>Tout l’audio</button>
+                <button class="chip" type="button" id="q-verses"><svg class="ico ico--sm"><use href="#i-verses"/></svg>Un verset = une vidéo</button>
+                <button class="chip" type="button" id="q-add"><svg class="ico ico--sm"><use href="#i-plus"/></svg>Ajouter une plage</button>
+              </div>
+
+              <div class="frise" id="frise" style="margin-top:var(--sp-4)">
+                <div class="frise-mini" id="mini" aria-label="Vue d’ensemble de tout l’audio. Fais glisser la fenêtre pour te déplacer." role="group">
+                  <canvas id="mini-c"></canvas>
+                  <div class="frise-view" id="mini-view" role="slider" tabindex="0" aria-label="Partie visible de l’audio" aria-valuemin="0" aria-valuemax="3080"></div>
+                </div>
+                <div class="frise-stage" id="stage-f" data-source="audio">
+                  <canvas id="main-c"></canvas>
+                  <div class="frise-overlay" id="overlay"></div>
+                  <div class="playhead" id="playhead"></div>
+                  <span class="precision">Précision ×5</span>
+                </div>
+                <div class="frise-pop" id="pop" role="dialog" aria-label="Verset choisi"><span id="pop-txt"></span><button class="btn btn--primary" type="button" id="pop-add">Ajouter ce verset</button><button class="btn btn--ghost btn--icon" type="button" id="pop-x" aria-label="Fermer"><svg class="ico ico--sm"><use href="#i-x"/></svg></button></div>
+                <div class="ftools">
+                  <div class="grp">
+                    <button class="btn btn--primary" type="button" id="play"><svg class="ico ico--sm" id="play-i"><use href="#i-play"/></svg><span id="play-l">Écouter la plage</span></button>
+                    <span class="readout" id="readout" aria-live="polite"></span>
+                  </div>
+                  <div class="grp" role="group" aria-label="Zoom">
+                    <button class="btn btn--icon" type="button" id="z-out" aria-label="Dézoomer"><svg class="ico"><use href="#i-zout"/></svg></button>
+                    <button class="btn btn--icon" type="button" id="z-fit" aria-label="Cadrer la plage choisie"><svg class="ico"><use href="#i-fit"/></svg></button>
+                    <button class="btn btn--icon" type="button" id="z-in" aria-label="Zoomer"><svg class="ico"><use href="#i-zin"/></svg></button>
+                  </div>
+                </div>
+                <div class="legend"><span><i class="lg-rec"></i>Reconnu</span><span><i class="lg-inf"></i>Déduit</span><span><i class="lg-unc"></i>Ambigu</span><span><i class="lg-nq"></i>Non coranique</span><span><i class="lg-br"></i>Souffle gardé autour de la voix</span></div>
+              </div>
+
+              <ol class="plist" id="plist" aria-label="Plages à exporter, une vidéo chacune" style="margin-top:var(--sp-4)"></ol>
+
+              <div class="breathbox" style="margin-top:var(--sp-4)">
+                <p><b style="color:var(--text)">Ne jamais couper une voix.</b> Chaque plage commence un peu avant la récitation et finit un peu après ; la zone hachurée montre ce souffle gardé. L’aimant cale les bords sur le silence le plus proche.</p>
+                <div class="row">
+                  <label class="tfield" style="min-width:150px">Avant la voix<span class="stp"><button type="button" data-m="pre" data-d="-0.1" aria-label="Moins 0,1 s avant">−</button><input id="m-pre" readonly aria-live="polite"><button type="button" data-m="pre" data-d="0.1" aria-label="Plus 0,1 s avant">+</button></span></label>
+                  <label class="tfield" style="min-width:150px">Après la voix<span class="stp"><button type="button" data-m="post" data-d="-0.1" aria-label="Moins 0,1 s après">−</button><input id="m-post" readonly aria-live="polite"><button type="button" data-m="post" data-d="0.1" aria-label="Plus 0,1 s après">+</button></span></label>
+                  <label class="sw"><input type="checkbox" id="magnet" checked><span>Aimanter au silence<small>±0,8 s autour du bord</small></span></label>
+                </div>
+              </div>
+            </div>
+            <div id="parties-alt"></div>
+          </div>
+        </section>
+
+        <!-- Chapitre 2 : Apparence -->
+        <section class="chap" id="chap-look" data-open="true" aria-labelledby="h-look">
+          <header><span class="n" aria-hidden="true">2</span><h2 id="h-look">À quoi elle ressemble</h2><span class="sum" id="sum-look"></span><button class="tog" type="button" aria-expanded="true" aria-controls="b-look" aria-label="Replier"><svg class="ico"><use href="#i-down"/></svg></button></header>
+          <div class="body" id="b-look">
+            <div class="field"><span class="cap" id="l-fmt">Format</span>
+              <div class="formats" role="radiogroup" aria-labelledby="l-fmt" id="formats"></div>
+            </div>
+            <div class="field"><span class="cap" id="l-bg">Fond</span>
+              <div class="bgs" role="radiogroup" aria-labelledby="l-bg" id="bgs"></div>
+              <p class="muted" style="font-size:var(--fs-xs)">Photos libres de droits (Pexels, crédits dans le dépôt). Tu peux aussi ajouter ta propre image.</p>
+            </div>
+            <div class="two">
+              <div class="field"><span class="cap" id="l-ar">Taille de l’arabe</span><div class="seg seg--full" role="radiogroup" aria-labelledby="l-ar" id="seg-ar"></div></div>
+              <div class="field"><span class="cap" id="l-pos">Place du texte</span><div class="seg seg--full" role="radiogroup" aria-labelledby="l-pos" id="seg-pos"></div></div>
+            </div>
+            <div class="two">
+              <label class="sw"><input type="checkbox" id="sw-tr" checked><span>Afficher la traduction</span></label>
+              <label class="sw"><input type="checkbox" id="sw-wave" checked><span>Onde audio en bas</span></label>
+            </div>
+            <details class="fine"><summary><svg class="ico ico--sm"><use href="#i-chev"/></svg>Réglages fins : tailles exactes, remplissage, couleur d’accent</summary>
+              <div>
+                <label class="rng"><span>Arabe <b class="mono" id="v-ar">72</b></span><input type="range" min="40" max="240" step="2" id="r-ar"></label>
+                <div class="field"><span class="cap" id="l-tr">Taille de la traduction</span><div class="seg seg--full" role="radiogroup" aria-labelledby="l-tr" id="seg-tr"></div></div>
+                <label class="rng"><span>Hauteur du texte <b class="mono" id="v-pos">50 %</b></span><input type="range" min="0" max="100" id="r-pos"></label>
+                <label class="sw"><input type="checkbox" id="sw-fill"><span>Remplir l’espace<small>Les écritures grandissent jusqu’à occuper la zone libre.</small></span></label>
+                <button class="accent-btn" type="button"><i style="background:hsl(43 62% 64%)"></i>Couleur d’accent : automatique (prise au fond)</button>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Chapitre 3 : Qualité -->
+        <section class="chap" id="chap-q" data-open="true" aria-labelledby="h-q">
+          <header><span class="n" aria-hidden="true">3</span><h2 id="h-q">Qualité et poids</h2><span class="sum" id="sum-q"></span><button class="tog" type="button" aria-expanded="true" aria-controls="b-q" aria-label="Replier"><svg class="ico"><use href="#i-down"/></svg></button></header>
+          <div class="body" id="b-q">
+            <div class="tiers" role="radiogroup" aria-label="Qualité de la vidéo" id="tiers"></div>
+            <div class="gauge" id="gauge" data-level="ok">
+              <div class="gauge-bar" aria-hidden="true"><i id="gauge-i"></i></div>
+              <div class="gauge-ticks"><span style="left:0">0</span><span style="left:25%">250 Mo</span><span style="left:80%;transform:translateX(-50%)">800 Mo</span><span style="right:0" id="gauge-max">1 Go</span></div>
+            </div>
+            <div id="q-note"></div>
+            <details class="fine" id="custom-q"><summary><svg class="ico ico--sm"><use href="#i-chev"/></svg>Sur mesure : résolution et fluidité</summary>
+              <div>
+                <div class="field"><span class="cap" id="l-res">Résolution</span><div class="seg" role="radiogroup" aria-labelledby="l-res" id="seg-res"></div></div>
+                <div class="field"><span class="cap" id="l-fps">Fluidité</span><div class="seg" role="radiogroup" aria-labelledby="l-fps" id="seg-fps"></div></div>
+              </div>
+            </details>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side" aria-label="Aperçu et export de la vidéo">
+        <div class="stage-wrap" id="stage-wrap">
+          <div class="stage" id="stage" role="img" aria-label="Aperçu de la vidéo">
+            <img class="bgimg" id="st-img" alt="">
+            <div class="veil"></div>
+            <span class="badge" id="st-badge">Aperçu</span>
+            <div class="txt" id="st-txt">
+              <span class="ref fake" id="st-ref">Passage 5</span>
+              <p class="ar fake" lang="ar" id="st-ar">نص <mark>الآية</mark> من المصحف</p>
+              <p class="tr fake" id="st-tr">[Traduction QuranEnc, restituée telle quelle]</p>
+            </div>
+            <canvas class="swave" id="st-wave"></canvas>
+          </div>
+          <p class="stage-cap" id="st-cap"></p>
+        </div>
+        <div class="bord" id="bord"></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<div class="dock" id="dock"></div>
+<div class="sheet-scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Récapitulatif de l’export"><div class="grab"></div><div class="bord" id="bord-sheet"></div></div>
+
+<script src="maquette.js?v=13"></script>
+</body>
+</html>

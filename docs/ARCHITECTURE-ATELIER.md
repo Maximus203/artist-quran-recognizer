@@ -60,6 +60,7 @@ ne font que l'afficher.
 | `POST /api/sessions/<id>/viewed` | Marquer le résultat comme ouvert (efface le point « non lu »). |
 | `GET /api/sessions/<id>/audio` | Audio du lecteur : la copie d'écoute (§6). |
 | `GET /api/sessions/<id>/peaks` | Crêtes de la forme d'onde, `aqr.listening-peaks/1`, 50 par seconde. |
+| `GET /api/sessions/<id>/thumbnails` | Session vidéo : planche JPEG d'imagettes pour la frise d'export (`count`, `width`), en cache dans `listening/` ; 409 sans piste vidéo. |
 | `GET` / `PUT /api/sessions/<id>/review` | Lire la revue · enregistrer (fusion par identifiant, §7). |
 | `GET /api/sessions/<id>/export` · `…/bundle` | Bilan JSON seul · pack ZIP complet. |
 | `GET …/export/readiness` · `POST …/export/subtitles` | « Prêt à exporter ? » (passages ambigus, une page à la fois) · sous-titres SRT, WebVTT, ASS, JSON, aperçu (ADR-0014, §7 bis). |
@@ -262,6 +263,19 @@ même convention que les réglages de sous-titres). Encodage navigateur requis :
 H.264 (Chrome, Edge) ; sinon message explicite. Un export est un acte : rien n'est
 mémorisé, les segments et le MP4 temporaires sont supprimés dans tous les cas.
 
+**L'écran (refonte 2026-10-29, direction « Le rouleau et les signets », `docs/design/export-refonte/SPEC.md`).**
+La page s'ouvre sur l'onglet **Vérifier** (une porte, badge « n à valider » ou « Prêt », frise d'ensemble en lecture
+seule) ; **Sous-titres** et **Vidéo** sont deux livrables. L'onglet Vidéo (`video-panel.tsx`, orchestrateur mince)
+suit l'ordre de la décision : 1. ce qu'on exporte (`range-timeline.tsx` : vue d'ensemble + loupe sur canvas, plages en
+DOM avec poignées `role=slider` ; `range-list.tsx` : liste nommée et souffle), 2. l'apparence (`video-look.tsx`),
+3. la qualité et le poids (`video-quality.tsx`) ; l'aperçu (`video-preview.tsx`, image à la position de la poignée) et
+le bordereau (`video-bordereau.tsx` : récapitulatif, progression par fichier, dock et feuille sur téléphone) restent
+visibles. Toute la logique est pure et testée : géométrie et gestes (`lib/export-timeline.ts`), composition des plages
+(`lib/export-video-plan.ts`, marges toujours issues de `suggestRanges`), poids et durée de rendu
+(`lib/export-video-weight.ts`), JSON `export_video` équivalent (`lib/export-video-request.ts`), avancement par fichier
+(`lib/export-video-progress.ts`). Seuils et réglages des gestes : une seule configuration, `lib/export-video-config.ts`.
+Styles : `web/app/export-refonte.css` (jetons `--x-*`, composants `.xr-*`).
+
 ## 8. Stockage sur disque
 
 Tout vit dans `AQR_REVIEW_DIR` (défaut : `%LOCALAPPDATA%\aqr-review` sous Windows, `~/.local/share/aqr-review`
@@ -280,7 +294,7 @@ AQR_REVIEW_DIR/
         ├── revisions/              une révision à chaque changement réel de la revue
         ├── exports/                packs ZIP générés à la demande
         ├── validation.json, alignment/   vérité terrain (onglet réservé)
-        └── listening/              copie d'écoute et crêtes (dérivés, régénérables)
+        └── listening/              copie d'écoute, crêtes, imagettes vidéo thumbs-<n>x<l>.jpg (dérivés, régénérables)
 ```
 
 Écritures **atomiques** (fichier temporaire puis renommage, avec reprise des refus passagers de Windows

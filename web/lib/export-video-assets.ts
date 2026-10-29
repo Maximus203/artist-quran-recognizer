@@ -169,33 +169,75 @@ export async function loadFrameFonts(sample: string): Promise<FrameFonts> {
   return { fontFamily, translationFontFamily };
 }
 
-/** Couleur principale du fond chargé : teinte du dégradé, ou teinte dominante de l'image / de la vidéo. */
-export function automaticAccent(background: LoadedBackground): AccentColor {
+/** Pixels RGBA d'une source réduite à 48×48 (null si illisible). */
+export type PixelReader = (
+  source: CanvasImageSource,
+) => ArrayLike<number> | null;
+
+const canvasPixels: PixelReader = (source) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 48;
+  canvas.height = 48;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(source, 0, 0, 48, 48);
+  return ctx.getImageData(0, 0, 48, 48).data;
+};
+
+/** Instant de la vidéo d'origine où l'on lit sa couleur : le même pour l'aperçu, l'écran et l'API. */
+export const ACCENT_SAMPLE_S = 1;
+const SEEK_TIMEOUT_MS = 5000;
+
+/** Attend une image décodée à l'instant `t` (sinon la lecture donne des pixels vides). */
+async function frameAt(video: HTMLVideoElement, t: number): Promise<void> {
+  const target = Math.min(t, Math.max(0, (video.duration || t) - 0.05));
+  if (video.readyState >= 2 && Math.abs(video.currentTime - target) < 0.01)
+    return;
+  await new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      video.removeEventListener("seeked", done);
+      resolve();
+    };
+    const timer = setTimeout(done, SEEK_TIMEOUT_MS);
+    video.addEventListener("seeked", done);
+    video.currentTime = target;
+  });
+}
+
+/**
+ * Couleur principale du fond chargé : teinte du dégradé, ou teinte dominante de l'image / de la
+ * vidéo. SEULE fonction de l'accent automatique : l'aperçu, le rendu de l'écran et le rendu de l'API
+ * l'appellent tous. Une vidéo est toujours lue à `ACCENT_SAMPLE_S`, image décodée attendue : avant,
+ * l'écran lisait parfois une image pas encore décodée (accent par défaut, or) et le navigateur sans
+ * interface une image prête (rose) — deux rendus différents pour les mêmes réglages.
+ */
+export async function automaticAccent(
+  background: LoadedBackground,
+  read: PixelReader = canvasPixels,
+): Promise<AccentColor> {
   if (background.gradient) return background.gradient.accent;
   const source = background.image;
   if (!source) return DEFAULT_ACCENT;
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = 48;
-    canvas.height = 48;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return DEFAULT_ACCENT;
-    ctx.drawImage(source, 0, 0, 48, 48);
-    return accentFromPixels(ctx.getImageData(0, 0, 48, 48).data);
+    if (background.video) await frameAt(background.video, ACCENT_SAMPLE_S);
+    const pixels = read(source);
+    return pixels ? accentFromPixels(pixels) : DEFAULT_ACCENT;
   } catch {
     return DEFAULT_ACCENT;
   }
 }
 
 /** Couleurs de la vidéo : texte crème, accent choisi ou automatique, onde claire. */
-export function videoColors(
+export async function videoColors(
   chosen: AccentColor | null,
   background: LoadedBackground,
-): FrameColors {
-  const accent = resolveAccent(chosen, automaticAccent(background));
+  read?: PixelReader,
+): Promise<FrameColors> {
+  const accent = chosen ?? (await automaticAccent(background, read));
   return {
     text: "#f5f1e8",
-    accent: accentCss(accent),
+    accent: accentCss(resolveAccent(chosen, accent)),
     wave: "rgba(245, 241, 232, 0.32)",
     wavePlayed: "rgba(245, 241, 232, 0.92)",
   };

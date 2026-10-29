@@ -1,9 +1,11 @@
+import { isVideoContainer } from "@/lib/listening";
 import { readiness } from "@/lib/export-engine";
 import { exportErrorResponse } from "@/lib/export-errors";
 import { resolveExportOptions } from "@/lib/export-options";
 import { json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { viewForUser } from "@/lib/session-service";
+import { readSession } from "@/lib/store";
 export const runtime = "nodejs";
 
 const flag = (value: string | null): boolean | undefined =>
@@ -46,6 +48,10 @@ async function handleGET(
     })) as Record<string, unknown>;
     // Ce que la page affiche de la session (nom, droits, durées) : jamais son résultat.
     const view = await viewForUser(access.db, access.user, access.meta);
+    const extension = await readSession(access.id).then(
+      (s) => s.extension,
+      () => "",
+    );
     return json({
       ...payload,
       session: view && {
@@ -56,6 +62,8 @@ async function handleGET(
         mine: view.mine,
         visibility: view.visibility,
         audio_duration_s: view.audio_duration_s ?? null,
+        // Source importée : l'en-tête de l'export dit « Vidéo » ou « Audio ».
+        media: isVideoContainer(extension) ? "video" : "audio",
         duration_s: view.duration_s ?? null,
         owner: view.owner,
       },

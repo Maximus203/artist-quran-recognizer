@@ -380,10 +380,8 @@ try {
   const videoStatus = (
     await page.getByTestId("video-export").innerText()
   ).trim();
-  assert(
-    /Exporter la vidéo/.test(videoStatus),
-    `bouton vidéo : ${videoStatus}`,
-  );
+  // Sur téléphone, l'action vit dans le dock bas (« Exporter ») ; au bureau, dans le bordereau.
+  assert(/^Exporter/.test(videoStatus), `bouton vidéo : ${videoStatus}`);
   ok("export vidéo : onglet et panneau affichés, export proposé");
 
   assert(

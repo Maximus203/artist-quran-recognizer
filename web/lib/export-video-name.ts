@@ -39,9 +39,15 @@ export function videoRangeFileName(
   custom: string | undefined,
   range: ExportRange | null,
   total: number,
+  name?: string,
 ): string {
   const base = videoFileName(sessionName, custom);
   if (!range) return base;
   if (total === 1 && custom?.trim()) return base;
-  return videoFileName(`${base.replace(/\.mp4$/i, "")} ${rangeLabel(range)}`);
+  const stem = base.replace(/\.mp4$/i, "");
+  // Le nom d'une plage est souvent une référence « 2:255 » : le deux-points devient un point.
+  const label = clean((name ?? "").replace(/:/g, "."));
+  // Passé comme nom saisi : « 91.4 » ne doit pas être pris pour une extension et retiré.
+  if (label) return videoFileName("", `${stem} — ${label}`);
+  return videoFileName(`${stem} ${rangeLabel(range)}`);
 }

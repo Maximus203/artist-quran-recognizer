@@ -27,6 +27,37 @@ export const DEFAULT_VIDEO_RESOLUTION: VideoResolution = 1080;
 export const VIDEO_RESOLUTION_VALUES: readonly VideoResolution[] =
   VIDEO_RESOLUTIONS.map((r) => r.short);
 
+/**
+ * Paliers de qualité proposés en un geste : chacun affiche le poids des plages choisies. « Sur
+ * mesure » garde les six résolutions × 30/60 im/s.
+ */
+export const VIDEO_QUALITY_TIERS = [
+  { id: "light", label: "Léger", usage: "Messagerie, téléphone", resolution: 720, fps: 30 },
+  { id: "standard", label: "Standard", usage: "YouTube, partage", resolution: 1080, fps: 30 },
+  { id: "smooth", label: "Fluide", usage: "Mouvements plus doux", resolution: 1080, fps: 60 },
+  { id: "large", label: "Grand écran", usage: "Projection, TV", resolution: 1440, fps: 30 },
+  { id: "max", label: "Maximum", usage: "4K : très lourd", resolution: 2160, fps: 60 },
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  usage: string;
+  resolution: VideoResolution;
+  fps: VideoFps;
+}[]; // prettier-ignore
+export type VideoQualityTier = (typeof VIDEO_QUALITY_TIERS)[number];
+
+/** Palier correspondant à une qualité, null si elle est « sur mesure ». */
+export function tierOf(
+  resolution: number,
+  fps: number,
+): VideoQualityTier | null {
+  return (
+    VIDEO_QUALITY_TIERS.find(
+      (t) => t.resolution === resolution && t.fps === fps,
+    ) ?? null
+  );
+}
+
 /** Dimensions (paires) de la vidéo : format choisi ramené au côté court demandé. */
 export function videoDimensions(
   orientation: VideoOrientation,

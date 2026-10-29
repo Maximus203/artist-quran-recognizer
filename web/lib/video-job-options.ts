@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { optionIssuesFr } from "./video-option-errors";
 import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
+import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
 import {
   DEFAULT_VIDEO_FPS,
   DEFAULT_VIDEO_RESOLUTION,
@@ -9,7 +11,11 @@ import {
   type VideoFps,
   type VideoResolution,
 } from "./export-video-format";
-import { MAX_RANGES, MIN_RANGE_SECONDS } from "./export-video-ranges";
+import {
+  MAX_RANGE_NAME,
+  MAX_RANGES,
+  MIN_RANGE_SECONDS,
+} from "./export-video-ranges";
 import {
   DEFAULT_LEAD_IN,
   DEFAULT_MERGE_GAP,
@@ -83,7 +89,12 @@ export const videoJobOptionsSchema = z
     ranges: z
       .array(
         z
-          .object({ start: z.number().min(0), end: z.number().positive() })
+          .object({
+            start: z.number().min(0),
+            end: z.number().positive(),
+            /** Nom de la plage : suffixe du nom de son fichier (nettoyé, 80 caractères au plus). */
+            name: z.string().trim().min(1).max(MAX_RANGE_NAME).optional(),
+          })
           .strict()
           .refine((r) => r.end - r.start >= MIN_RANGE_SECONDS, {
             message: `${MIN_RANGE_SECONDS} s au moins`,
@@ -184,6 +195,15 @@ export function videoPrefsFromOptions(
     bg: options.color ?? DEFAULT_VIDEO_PREFS.bg,
     // Une image envoyée l'emporte : le rendu ne lit alors pas ce choix.
     background: hasUpload ? null : (options.background ?? null),
+    paddingBefore: Math.min(
+      EXPORT_VIDEO_CONFIG.padding.max,
+      options.lead_in ?? DEFAULT_LEAD_IN,
+    ),
+    paddingAfter: Math.min(
+      EXPORT_VIDEO_CONFIG.padding.max,
+      options.tail_out ?? DEFAULT_TAIL_OUT,
+    ),
+    snapToSilence: options.snap_to_silence ?? true,
   };
 }
 
@@ -225,11 +245,12 @@ export function videoOptionsCatalog() {
         "Côté court de l'image : 720 = 1280×720 en 16:9, 720×1280 en 9:16, 720×720 en 1:1. Au-delà de 1080, le rendu est plus long et le fichier plus lourd.",
     },
     ranges: {
-      shape: "[{ start: secondes, end: secondes }, …]",
+      shape: "[{ start: secondes, end: secondes, name?: texte }, …]",
       max: MAX_RANGES,
       min_seconds: MIN_RANGE_SECONDS,
+      name_max: MAX_RANGE_NAME,
       notes:
-        "Une plage = une vidéo, dans l'ordre donné ; sans plage, tout l'audio. Une fin au-delà de la durée est ramenée à la durée.",
+        "Une plage = une vidéo, dans l'ordre donné ; sans plage, tout l'audio. Une fin au-delà de la durée est ramenée à la durée. `name` (facultatif) remplace l'intervalle dans le nom du fichier (« session — 2.255.mp4 ») ; c'est le nom affiché dans la liste des plages de l'atelier.",
     },
     per_verse:
       "boolean : une vidéo par verset reconnu (= suggest « verse », exclusif avec `ranges`).",
@@ -334,9 +355,7 @@ export function suggestOptionsFromQuery(
   if (!parsed.success)
     return {
       ok: false,
-      error: parsed.error.issues
-        .map((i) => `${i.path.join(".")} (${i.message})`)
-        .join(" ; "),
+      error: optionIssuesFr(parsed.error.issues),
     };
   return { ok: true, options: suggestOptionsOf(parsed.data) };
 }

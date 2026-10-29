@@ -313,10 +313,17 @@ export const TOOLS: Tool[] = [
         ranges: {
           type: "array",
           description:
-            "Parties à exporter : une vidéo par plage { start, end } en secondes de l'audio (50 au plus). Absent = tout l'audio.",
+            "Parties à exporter : une vidéo par plage { start, end, name? } en secondes de l'audio (50 au plus). Absent = tout l'audio. `name` (80 caractères au plus) nomme le fichier de la plage, par exemple la référence « 2:255 ».",
           items: {
             type: "object",
-            properties: { start: { type: "number" }, end: { type: "number" } },
+            properties: {
+              start: { type: "number" },
+              end: { type: "number" },
+              name: {
+                type: "string",
+                description: "Nom de la plage, suffixe du fichier MP4.",
+              },
+            },
             required: ["start", "end"],
           },
         },
@@ -424,7 +431,7 @@ export const TOOLS: Tool[] = [
   {
     name: "get_video_export",
     description:
-      "État d'un export vidéo demandé par export_video. Quand l’état est « done », `download_paths` liste les MP4 (un par plage ; `download_path` = le premier), à télécharger en GET avec le même jeton (conservés une heure).",
+      "État d'un export vidéo demandé par export_video : `progress` dit où en est le rendu (« Vidéo 2/5 : rendu 64 % »), `files_done` / `files_total` comptent les vidéos produites. Quand l’état est « done », `download_paths` liste les MP4 (un par plage ; `download_path` = le premier), à télécharger en GET avec le même jeton (conservés une heure).",
     inputSchema: {
       type: "object",
       properties: {
@@ -809,6 +816,22 @@ export async function handleRpc(
         message.params.arguments
           ? (message.params.arguments as Json)
           : {};
+      // Un argument mal orthographié ne doit jamais passer en silence (l'outil ferait autre chose
+      // que ce qui est demandé, p. ex. exporter tout l'audio en 1080p) : refus, avec le nom en cause.
+      const known = Object.keys(
+        ((tool.inputSchema as { properties?: Json }).properties ?? {}) as Json,
+      );
+      const unknown = Object.keys(args).filter((key) => !known.includes(key));
+      if (unknown.length > 0)
+        return ok(id, {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `${unknown.map((k) => `argument inconnu « ${k} »`).join(", ")} pour ${tool.name}. Arguments acceptés : ${known.join(", ") || "aucun"}.`,
+            },
+          ],
+        });
       try {
         const out = await tool.run(args, ctx);
         return ok(id, {

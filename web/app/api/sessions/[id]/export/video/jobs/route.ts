@@ -1,3 +1,4 @@
+import { optionIssuesFr } from "@/lib/video-option-errors";
 import { apiError, json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { readSession } from "@/lib/store";
@@ -73,7 +74,7 @@ async function handlePOST(
   if (!parsed.success)
     return apiError(
       400,
-      `Options invalides : ${parsed.error.issues.map((i) => `${i.path.join(".") || "options"} (${i.message})`).join(" ; ")}`,
+      `Options invalides : ${optionIssuesFr(parsed.error.issues)}.`,
       { code: "invalid" },
     );
   const bearer = request.headers

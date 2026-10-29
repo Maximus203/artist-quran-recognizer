@@ -68,8 +68,36 @@ const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 const round3 = (value: number): number => Math.round(value * 1000) / 1000;
 
-/** Niveau d'un instant (moyenne glissante courte), ramené entre 0 et 1 par la dynamique de l'audio. */
-function levels(peaks: SuggestPeaks): {
+/**
+ * Un silence, c'est au moins 12 dB sous la voix (un quart de son niveau médian pendant la
+ * récitation). Une simple baisse entre deux mots (≈ −4 dB) n'en est pas un : y couper trancherait
+ * une voix. Sans récitation connue, la voix de référence est le 95e centile de l'onde.
+ */
+export const SILENCE_RATIO = 0.25;
+
+/** Niveau typique de la voix : médiane des crêtes pendant les versets (sinon 95e centile). */
+function voiceLevel(
+  values: readonly number[],
+  rate: number,
+  intervals: readonly SuggestTiming[],
+): number {
+  const inside: number[] = [];
+  for (const item of intervals) {
+    if (item.kind !== "verse" || !item.t) continue;
+    const a = Math.max(0, Math.floor(item.t[0] * rate));
+    const b = Math.min(values.length, Math.ceil(item.t[1] * rate));
+    for (let i = a; i < b; i++) inside.push(values[i]);
+  }
+  const pool = inside.length > 0 ? inside : [...values];
+  pool.sort((x, y) => x - y);
+  return pool[Math.floor(pool.length * (inside.length > 0 ? 0.5 : 0.95))] ?? 0;
+}
+
+/** Niveau d'un instant (moyenne glissante courte) et silences, relatifs au niveau de la voix. */
+function levels(
+  peaks: SuggestPeaks,
+  intervals: readonly SuggestTiming[] = [],
+): {
   at: (time: number) => number;
   quiet: (time: number) => boolean;
   silences: Silence[];
@@ -78,19 +106,14 @@ function levels(peaks: SuggestPeaks): {
   const rate = peaks.per_second;
   if (values.length === 0 || !(rate > 0))
     return { at: () => 0, quiet: () => false, silences: [] };
-  const sorted = [...values].sort((a, b) => a - b);
-  const low = sorted[Math.floor(sorted.length * 0.1)] ?? 0;
-  const high = sorted[Math.floor(sorted.length * 0.95)] ?? low;
-  const span = Math.max(1e-9, high - low);
-  const normalized = values.map((v) => clamp((v - low) / span, 0, 1.5));
   // Lissage sur 3 buckets (60 ms à 50/s) : un claquement isolé ne casse pas un silence.
-  const smooth = normalized.map((_, i) => {
-    const a = normalized[Math.max(0, i - 1)];
-    const b = normalized[i];
-    const c = normalized[Math.min(normalized.length - 1, i + 1)];
+  const smooth = values.map((_, i) => {
+    const a = values[Math.max(0, i - 1)];
+    const b = values[i];
+    const c = values[Math.min(values.length - 1, i + 1)];
     return (a + b + c) / 3;
   });
-  const threshold = 0.12;
+  const threshold = voiceLevel(values, rate, intervals) * SILENCE_RATIO;
   const indexOf = (time: number): number =>
     clamp(Math.floor(time * rate), 0, smooth.length - 1);
   const silences: Silence[] = [];
@@ -111,9 +134,19 @@ function levels(peaks: SuggestPeaks): {
   };
 }
 
-/** Silences (≥ 150 ms) de la copie d'écoute : où une coupe ne tranche aucune voix. */
-export function findSilences(peaks: SuggestPeaks): Silence[] {
-  return levels(peaks).silences;
+/** Silences (≥ 150 ms, 12 dB sous la voix) de la copie d'écoute : où une coupe ne tranche aucune voix. */
+export function findSilences(
+  peaks: SuggestPeaks,
+  intervals: readonly SuggestTiming[] = [],
+): Silence[] {
+  return levels(peaks, intervals).silences;
+}
+
+/** Paroles hors récitation (abstentions, non coranique) : un bord ne doit jamais y entrer (I4). */
+function otherSpeech(intervals: readonly SuggestTiming[]): [number, number][] {
+  return intervals
+    .filter((i) => i.kind !== "verse" && i.t && i.t[1] > i.t[0])
+    .map((i) => i.t as [number, number]);
 }
 
 type Passage = {
@@ -173,7 +206,8 @@ export function suggestRanges(
     mergeGap: options.mergeGap ?? DEFAULT_MERGE_GAP,
     includeInferred: options.includeInferred ?? true,
   });
-  const wave = peaks ? levels(peaks) : null;
+  const wave = peaks ? levels(peaks, intervals) : null;
+  const speech = otherSpeech(intervals);
   const snap = (options.snapToSilence ?? true) && wave !== null;
   const out: SuggestedRange[] = [];
 
@@ -211,15 +245,34 @@ export function suggestRanges(
     const next = passages[i + 1];
     const warnings: string[] = [];
 
-    // Bornes dures : ne jamais empiéter sur la récitation voisine (on coupe au milieu de l'écart).
-    const floor = previous ? (previous.end + passage.start) / 2 : 0;
-    const ceil = next ? (passage.end + next.start) / 2 : duration;
+    // Bornes dures : ne jamais empiéter sur la récitation voisine (on coupe au milieu de l'écart)
+    // ni sur une parole hors récitation (abstention, non coranique : I4).
+    let floor = previous ? (previous.end + passage.start) / 2 : 0;
+    let ceil = next ? (passage.end + next.start) / 2 : duration;
+    for (const [a, b] of speech) {
+      if (b <= passage.start + 0.01 && b > floor) floor = b;
+      if (a >= passage.end - 0.01 && a < ceil) ceil = a;
+    }
+    const speechBefore = speech.some(
+      ([, b]) => Math.abs(b - floor) < 1e-6 && passage.start - b < leadIn,
+    );
+    const speechAfter = speech.some(
+      ([a]) => Math.abs(a - ceil) < 1e-6 && a - passage.end < tailOut,
+    );
 
     let start = clamp(passage.start - leadIn, floor, passage.start);
     let end = clamp(passage.end + tailOut, passage.end, ceil);
     if (previous && passage.start - previous.end < leadIn + 0.05)
       warnings.push(
         `Le passage précédent finit ${round3(passage.start - previous.end)} s avant : la marge de début est réduite.`,
+      );
+    if (speechBefore)
+      warnings.push(
+        "Une parole non coranique précède de près ce passage : la marge de début s'arrête avant elle.",
+      );
+    if (speechAfter)
+      warnings.push(
+        "Une parole non coranique suit de près ce passage : la marge de fin s'arrête avant elle.",
       );
     if (next && next.start - passage.end < tailOut + 0.05)
       warnings.push(
