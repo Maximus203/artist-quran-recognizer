@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Secrets et configuration : le serveur refuse de démarrer sans ses valeurs de sécurité
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** En production, l'atelier vérifie sa configuration avant d'accepter la moindre requête et s'arrête avec une ligne claire du journal s'il manque une valeur de sécurité (sans jamais citer de valeur). Il faut déclarer un mode d'accès : poste local (`AQR_LOCAL_ONLY=1`) ou accès public (jeton d'au moins 32 caractères, origine https, proxy de confiance déclaré, mode d'inscription, sel d'audit, clé des formulaires, et clé du direct si le direct est branché). Rien ne change pour l'utilisateur d'un poste local, hors cette déclaration en production.
+
+**Pourquoi / décision.** Section 13 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Un serveur qui démarre sans clé ne protège rien sans que personne le voie. Ajouté : `web/lib/config-guard.ts` (24 cas), `docs/SECRETS-ET-CONFIGURATION.md` (variables, un jeu de secrets par environnement, rotation de chacun), `scripts/scan_secrets.py` (fichiers suivis et tout l'historique, sans réseau) avec un test qui fait échouer la suite si un secret entre dans le dépôt. Historique de 718 commits vérifié : aucun secret ni fichier sensible jamais commité. Ce filet n'est pas gitleaks, qui n'est pas installé.
+
 ## 2026-10-29 — Direct : journal en fichier, contrôles éprouvés, clé de signature et rotation
 Étiquettes : technique, décision
 PR : -

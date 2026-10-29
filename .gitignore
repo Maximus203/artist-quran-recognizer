@@ -40,6 +40,8 @@ tests/fixtures/audio/files/
 !.env.example
 *.pem
 *.key
+*.sqlite
+*.sqlite-*
 .claude/settings.local.json
 .claude/projects/
 .codex/
