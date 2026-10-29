@@ -66,8 +66,9 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
    `text_position` (0 haut à 100 bas, ou `top|middle|bottom`), `show_wave`, `accent` (`{h,s,l,a}`),
    `file_name`, `background` (un fond proposé, `source` ou
    `color`), `fps` (30 ou 60), `resolution` (360, 480, 720, 1080, 1440 ou 2160 : côté court de l'image),
-   `ranges` (`[{start, end}]` en secondes : UNE vidéo par plage) ou `per_verse: true` (une vidéo par
-   verset reconnu) — puis `get_video_export` toutes les 10 s jusqu'à `done` et téléchargement de chaque
+   `ranges` (`[{start, end, name?}]` en secondes : UNE vidéo par plage ; `name`, par exemple la référence,
+   nomme le fichier) ou `per_verse: true` (une vidéo par verset reconnu) — puis `get_video_export` toutes
+   les 10 s jusqu'à `done` (`progress` et `files_done`/`files_total` disent où en est le rendu) et téléchargement de chaque
    entrée de `download_paths` avec le jeton. Une image de fond personnelle s'envoie par l'API REST (multipart).
    Le rendu dure environ la moitié de la durée de l'audio.
 

@@ -291,7 +291,9 @@ export function VideoPanel({
     if (list.length === 0) return;
     setRanges(list);
     setSelectedId(list[0].id);
-    setPreviewAt(Math.min(list[0].end, list[0].start + prefs.paddingBefore + 0.5));
+    setPreviewAt(
+      Math.min(list[0].end, list[0].start + prefs.paddingBefore + 0.5),
+    );
     setView(fitView(list[0], ctx.duration, TL.minSpanSeconds));
     announce(
       `${list.length} plages : une vidéo par passage reconnu, souffle compris.`,

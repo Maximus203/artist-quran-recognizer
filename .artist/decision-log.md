@@ -1,5 +1,28 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-10-29 — Export : refonte de l'écran et sélecteur de plage visuel (PR #122)
+- **Direction** : « Le rouleau et les signets » (`docs/design/export-refonte/SPEC.md`), prolonge Encre & lapis sans police
+  ni couleur nouvelle. La sélection est un geste humain (encre), le lapis reste la voix du moteur, le statut est un motif.
+- **Architecture** : composants minces, logique pure testée. `export-timeline` (temps ↔ pixels, loupe bornée, zoom autour
+  du pointeur, pincement, aimant, bords, touches), `export-video-plan` (raccourcis, souffle, constats « coupe une voix » /
+  « chevauche »), `export-video-weight`, `export-video-request`, `export-video-progress`. Patterns : Strategy (paliers de
+  qualité, niveaux de poids), Adapter (ffmpeg derrière `FfmpegRun` pour les imagettes, injectable en test), Observer
+  (avancement par fichier `onFile`), State (phases du bordereau).
+- **Source unique du souffle** : plages proposées, « Ajouter ce verset », cibles de l'aimant et des touches `[` `]` viennent
+  toutes de `suggestRanges` ; aucune seconde logique de marge.
+- **Points ouverts de la SPEC tranchés par le mainteneur** : onglet par défaut = Vérifier ; boutons monter/descendre (pas de
+  glisser-déposer) ; pas d'aperçu plein écran sur téléphone ; seuils 250/800/500 Mo en configuration unique, à mesurer.
+- **Décisions prises seul** : le `padding` de la SPEC = `lead_in`/`tail_out`/`snap_to_silence` déjà présents (pas de doublon) ;
+  le JSON « Même export par l'API » porte des plages explicites déjà protégées (identiques au rendu) plutôt que `suggest`,
+  et ne répète le souffle que s'il diffère des défauts ; les imagettes sont une planche JPEG (`thumbnails?count=&width=`),
+  sans index JSON ; défaut à l'ouverture = « Tout l'audio » (comme avant) ; au bord de la loupe, une poignée se replie vers
+  l'intérieur pour rester saisissable ; un deuxième doigt pendant un geste sur une plage annule ce geste et pince.
+- **Bugs trouvés en vrai** : la poignée de fin d'une plage était masquée par la plage voisine (la plage choisie passe
+  devant) ; « 91:4 » donnait « … — 91.mp4 » (le « .4 » pris pour une extension, corrigé et testé) ; en développement (mode
+  strict de React), la page de rendu de l'API lançait deux rendus et chaque vidéo sortait deux fois (garde ajoutée).
+- **Preuve** : `.artist/acceptance-playbooks/export-refonte.md` ; tests `web/lib/export-timeline`, `export-video-plan`,
+  `export-video-weight`, `export-video-request`, `export-video-progress`, `video-thumbnails`.
+
 ## 2026-10-28 (4) — Export vidéo : parties, 30/60 im/s, résolutions jusqu'au 4K, MCP complet
 - **Plages** : une plage = une vidéo (`ranges` ou `per_verse`) ; le mux garde l'extrait de l'audio (`-ss`/`-t` avant l'entrée
   son) et reçoit début, durée et cadence par en-têtes du dernier segment. Sans l'en-tête de cadence, le serveur suppose 25 im/s

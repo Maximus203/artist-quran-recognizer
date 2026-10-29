@@ -96,7 +96,16 @@ fond (dix-sept choix proposés, vidéo d'origine, couleur unie, ou image envoyé
 plage** (50 au plus, 0,5 s au moins, une fin au-delà de la durée est ramenée à la durée) ; `per_verse: true` :
 une vidéo par verset reconnu (exclusif avec `ranges`). Sans plage, une seule vidéo de tout l'audio.
 
-**Découpe protégée (aucune voix coupée).** `suggest: "verse"` ou `"passage"` découpe automatiquement : chaque plage commence `lead_in` secondes avant la récitation (0,6 par défaut) et finit `tail_out` secondes après (0,4), aimantée au silence le plus proche (`snap_to_silence`), sans empiéter sur la récitation voisine ; les passages incertains ne sont jamais proposés. `pad_ranges: true` applique les mêmes marges à ses propres `ranges`. Pour voir les plages avant d'exporter : `GET /api/v1/recordings/{id}/export/suggestions?lead_in=&tail_out=&snap=&group=&merge_gap=&silences=1` → `ranges` (`start`, `end`, `core_start`, `core_end`, `lead_in`, `tail_out`, `refs`, `status`, `snapped`, `warnings`), `silence_count`, `notes`, `options`, `session` (type audio/vidéo, durée). Le job
+**Découpe protégée (aucune voix coupée).** `suggest: "verse"` ou `"passage"` découpe automatiquement : chaque plage commence `lead_in` secondes avant la récitation (0,6 par défaut) et finit `tail_out` secondes après (0,4), aimantée au silence le plus proche (`snap_to_silence`), sans empiéter sur la récitation voisine ; les passages incertains ne sont jamais proposés. `pad_ranges: true` applique les mêmes marges à ses propres `ranges`. Pour voir les plages avant d'exporter : `GET /api/v1/recordings/{id}/export/suggestions?lead_in=&tail_out=&snap=&group=&merge_gap=&silences=1` → `ranges` (`start`, `end`, `core_start`, `core_end`, `lead_in`, `tail_out`, `refs`, `status`, `snapped`, `warnings`), `silence_count`, `notes`, `options`, `session` (type audio/vidéo, durée). 
+
+**Plages nommées, avancement, imagettes.** Chaque plage peut porter un `name` (80 caractères au plus) :
+il remplace l'intervalle dans le nom de son fichier (« session — 2.255.mp4 », le deux-points devient un point) ;
+la découpe automatique (`suggest`) nomme d'elle-même chaque fichier par sa référence. Pendant le rendu, le job
+publie `progress` (« Vidéo 2/5 : rendu 64 % ») et `files_done` / `files_total`. Pour une session vidéo,
+`GET /api/v1/recordings/{id}/thumbnails?count=40&width=96` renvoie une planche JPEG horizontale de `count`
+imagettes (1 à 120) larges de `width` px (32 à 320) ; l'imagette i montre l'instant (i + 0,5) × durée / count
+(en-têtes `X-Aqr-Thumb-Count`, `X-Aqr-Thumb-Every`). 409 `no_video` pour une session audio, 400 hors bornes.
+L'écran d'export affiche, dans « Même export par l'API », le JSON `export_video` exact de ses réglages. Le job
 terminé liste ses fichiers dans `downloads` (`index`, `name`, `url`) : `…/file` pour la première vidéo,
 `…/file?index=N` pour les suivantes. Un export est plus long à 60 im/s et en 1440p ou 4K (mesuré : 3 s
 de 4K à 60 im/s en 14 s).
