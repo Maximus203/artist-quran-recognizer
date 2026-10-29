@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { decide, type Ability } from "@/lib/access";
+import { audit } from "@/lib/audit";
 import { transaction } from "@/lib/db";
 import { apiError, json, readJson, safe } from "@/lib/http";
 import { metaFor, requireUser } from "@/lib/route-guard";
@@ -65,9 +66,15 @@ async function handlePOST(request: Request) {
       }
       if (action === "favorite" || action === "unfavorite")
         setFavorite(auth.db, auth.user.id, id, action === "favorite", now);
-      else if (action === "set_visibility")
+      else if (action === "set_visibility") {
         updateMeta(auth.db, id, { visibility }, now);
-      else
+        if (meta && visibility !== meta.visibility)
+          audit("visibility.change", {
+            userId: auth.user.id,
+            session: id,
+            reason: `${meta.visibility} → ${visibility}`,
+          });
+      } else
         updateMeta(
           auth.db,
           id,

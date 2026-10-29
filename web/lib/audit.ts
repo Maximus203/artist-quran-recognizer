@@ -16,12 +16,15 @@ export type AuditEvent =
   | "password.change_failed"
   | "logout"
   | "logins.revoked_others"
-  | "account.unlock";
+  | "account.unlock"
+  | "visibility.change";
 
 export type AuditFields = {
   userId?: number | null;
   ip?: string;
   reason?: string;
+  /** Session concernée (identifiant opaque, jamais son titre). */
+  session?: string;
 };
 
 export function pseudonymize(
@@ -37,5 +40,6 @@ export function audit(event: AuditEvent, fields: AuditFields = {}): void {
     payload.user = fields.userId;
   if (fields.ip) payload.ip = pseudonymize(fields.ip);
   if (fields.reason) payload.reason = fields.reason;
+  if (fields.session) payload.session = fields.session;
   log.info("audit", JSON.stringify(payload));
 }

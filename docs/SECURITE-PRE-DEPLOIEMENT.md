@@ -115,14 +115,14 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 ## 6. Autorisation (qui voit quoi)
 
-- [ ] ❌ **Contrôle d'accès sur chaque route** `/api/sessions/[id]/…`, `/api/v1/recordings/…`, `/api/mcp`,
+- [x] ✅ (`web/app/api/idor.test.ts` : routes de session découvertes sur le disque, 401 sans connexion, 404 pour B et pour l'administrateur face au privé de A, lecture seule sur le partagé ; liste, statistiques, action groupée, jetons, administration ; le MCP passe par les mêmes routes) **Contrôle d'accès sur chaque route** `/api/sessions/[id]/…`, `/api/v1/recordings/…`, `/api/mcp`,
   `/api/users/…`, et les fichiers statiques (audio, vidéo, avatar, export). Un test automatisé vérifie qu'un compte B
   ne peut pas lire, modifier, supprimer ou télécharger une ressource de A (IDOR).
-- [ ] ❌ Identifiants de ressources non devinables ou vérifiés (les identifiants séquentiels ne suffisent pas
+- [x] ✅ (identifiants de session = UUID, vérifiés par `isSessionId`, et jamais la seule protection : le contrôle d'accès ci-dessus s'applique à chacun) Identifiants de ressources non devinables ou vérifiés (les identifiants séquentiels ne suffisent pas
   à protéger quoi que ce soit).
-- [ ] ❌ Rôles explicites : utilisateur, testeur, administrateur. La vérité terrain et la gestion des comptes sont
+- [ ] 🟡 (deux rôles aujourd'hui, `user` et `admin` : pas de rôle « testeur » séparé ; la vérité terrain et la gestion des comptes sont réservées aux administrateurs, testé) Rôles explicites : utilisateur, testeur, administrateur. La vérité terrain et la gestion des comptes sont
   réservées aux administrateurs (cf. `docs/ARCHITECTURE-ATELIER.md`).
-- [ ] ❌ Génération publique : le passage « privé → public » est une action explicite, journalisée, réversible.
+- [x] ✅ (action explicite du propriétaire, journalisée `visibility.change` sans titre, réversible ; testé) Génération publique : le passage « privé → public » est une action explicite, journalisée, réversible.
 
 ## 7. API : authentification, validation, limitation de débit
 
@@ -224,7 +224,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 ## 14. Robustesse et tests
 
 **Tests de sécurité automatisés** (à ajouter au pipeline) :
-- [ ] ❌ IDOR : compte B ne peut rien faire sur les ressources de A (lecture, écriture, suppression, téléchargement).
+- [x] ✅ (`idor.test.ts`) IDOR : compte B ne peut rien faire sur les ressources de A (lecture, écriture, suppression, téléchargement).
 - [ ] ❌ Injection : entrées malveillantes sur chaque champ (SQL, chemin, commande, HTML). Aucune exécution.
 - [ ] ❌ Authentification : brute force contre un compte de test (verrouillage, ralentissement, journal).
 - [ ] ❌ Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
