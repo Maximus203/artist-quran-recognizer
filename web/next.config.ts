@@ -7,6 +7,8 @@ import type { NextConfig } from "next";
  */
 const config: NextConfig = {
   reactStrictMode: true,
+  // Ne pas annoncer la technologie du serveur.
+  poweredByHeader: false,
   // Rendu des vidéos de l'API : navigateur sans interface piloté par le serveur.
   serverExternalPackages: ["playwright-core"],
   async rewrites() {
