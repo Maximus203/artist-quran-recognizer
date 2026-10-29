@@ -135,15 +135,18 @@ function Start-QuickTunnel([int]$TargetPort, [string]$Name) {
     return @{ pid = $cfPid; url = $url }
 }
 
-# Clé de signature du direct : lue, ou créée au premier démarrage (32 octets aléatoires, jamais dans Git).
-function Get-LiveKey {
-    if (-not (Test-Path $LiveKeyFile)) {
+# Secret créé au premier démarrage (32 octets aléatoires, dans le dossier d'état, jamais dans Git) puis relu.
+function Get-Secret([string]$File) {
+    if (-not (Test-Path $File)) {
         $bytes = New-Object byte[] 32
         [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-        Set-Content -Encoding ascii $LiveKeyFile ([Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_'))
+        Set-Content -Encoding ascii $File ([Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_'))
     }
-    return (Get-Content $LiveKeyFile -Raw).Trim()
+    return (Get-Content $File -Raw).Trim()
 }
+
+# Clé de signature du direct.
+function Get-LiveKey { return Get-Secret $LiveKeyFile }
 
 function Start-All {
     Stop-All
@@ -151,6 +154,7 @@ function Start-All {
     if (-not (Test-Path $Cloudflared)) { throw "cloudflared introuvable : $Cloudflared (winget install Cloudflare.cloudflared)" }
     New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
     $token = (Get-Content $TokenFile -Raw).Trim()
+    if ($token.Length -lt 32) { throw "jeton trop court dans $TokenFile : 32 caractères aléatoires au moins (le serveur refuserait de démarrer)" }
 
     if ($Build -or -not (Test-Path (Join-Path $Web '.next\BUILD_ID'))) {
         Log 'construction de l''interface (npm run build)'
@@ -170,6 +174,14 @@ function Start-All {
     $env:AQR_ACCESS_TOKEN = $token
     $env:AQR_ALLOWED_HOSTS = $hostName
     $env:AQR_PUBLIC_ORIGIN = $url
+    # Valeurs de sécurité exigées au démarrage en production (docs/SECRETS-ET-CONFIGURATION.md).
+    # Le tunnel est le proxy de confiance (il fournit l'adresse réelle du visiteur) ; les inscriptions restent
+    # ouvertes comme avant, sauf si AQR_SIGNUP est déjà défini ; sel d'audit et clé des formulaires sont créés
+    # une fois et conservés dans le dossier d'état.
+    $env:AQR_TRUST_PROXY = '1'
+    if (-not $env:AQR_SIGNUP) { $env:AQR_SIGNUP = 'open' }
+    $env:AQR_AUDIT_SALT = Get-Secret (Join-Path $State 'audit-salt.txt')
+    $env:AQR_FORM_KEY = Get-Secret (Join-Path $State 'form-key.txt')
     $env:AQR_CORPUS_DIR = Join-Path $Root 'data\corpus'
     $env:AQR_MODELS_DIR = $ModelsDir
     $env:AQR_REVIEW_DIR = $ReviewDir

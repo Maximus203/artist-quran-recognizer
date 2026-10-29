@@ -256,19 +256,21 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 ## 15. Infrastructure et exposition
 
-- [ ] ❌ **Serveur cible identifié.** Le « serveur alpha » mentionné n'apparaît dans aucun document du dépôt : à
+Tout est **préparé, rien n'est appliqué** (`docs/INFRASTRUCTURE.md`, modèles dans `deploy/`).
+
+- [ ] ❌ (aucune machine ciblée ; recommandation écrite : Linux avec GPU, installation sur l'hôte, `docs/INFRASTRUCTURE.md` § Serveur cible) **Serveur cible identifié.** Le « serveur alpha » mentionné n'apparaît dans aucun document du dépôt : à
   confirmer (nom réel, système, accès, emplacement). Pas de déploiement sur une machine non identifiée.
-- [ ] ❌ Reverse proxy devant l'application (TLS terminé, limitation de débit, taille maximale du corps, en-têtes),
+- [ ] 🟡 (`deploy/caddy/Caddyfile.example` : TLS automatique, corps max 2100 Mo, en-têtes, adresse réelle ; limitation de débit déjà dans l'atelier (`proxy-families.test.ts`). **Non validé** sur un Caddy réel, non appliqué) Reverse proxy devant l'application (TLS terminé, limitation de débit, taille maximale du corps, en-têtes),
   l'application n'écoute pas directement sur Internet.
-- [ ] ❌ Pare-feu : seuls les ports 80 et 443 ouverts sur Internet. SSH limité (clé uniquement, pas de mot de passe,
+- [ ] 🟡 (`deploy/scripts/firewall.sh` : 80 et 443 seulement, SSH vers un réseau privé, refus sans `--ssh-from`, rien sans `--apply` ; configuration `sshd` écrite. **Non appliqué**) Pare-feu : seuls les ports 80 et 443 ouverts sur Internet. SSH limité (clé uniquement, pas de mot de passe,
   accès restreint ou VPN, pas d'accès root direct).
-- [ ] ❌ Mises à jour du système d'exploitation automatiques pour les correctifs de sécurité.
-- [ ] ❌ Utilisateur système dédié, sans droits d'administration, pour le service.
-- [ ] ❌ Sauvegardes : base de données, comptes, sessions, fichiers. Test de restauration réel consigné. Règle 3-2-1.
-- [ ] ❌ Supervision : disponibilité, espace disque, mémoire, profondeur de file, erreurs (ex. Uptime Kuma et Dozzle,
+- [ ] 🟡 (procédure `unattended-upgrades` écrite. **Non appliquée**) Mises à jour du système d'exploitation automatiques pour les correctifs de sécurité.
+- [ ] 🟡 (utilisateur `aqr` sans shell ni droits, écriture limitée à `/var/lib/aqr`, durcissement systemd dans `deploy/systemd/aqr-atelier.service`. **Non installé, unité non validée**) Utilisateur système dédié, sans droits d'administration, pour le service.
+- [ ] 🟡 (outil `web/scripts/backup.mjs` **éprouvé** : `web/lib/backup.test.ts`, 6 cas dont restauration réelle d'une base WAL avec écritures en cours, altération, fichier manquant ou en trop, base corrompue ; ligne de commande jouée sur données de test. 3-2-1 décrit avec restic. **Reste** : restauration depuis restic sur la machine cible, consignée) Sauvegardes : base de données, comptes, sessions, fichiers. Test de restauration réel consigné. Règle 3-2-1.
+- [ ] 🟡 (sonde publique `/api/health` : 200 / 503 selon base, disque, maintenance, vérifiée sur un vrai serveur ; rapport quotidien poussable vers Uptime Kuma (`log-report-push.sh`). **Reste** : créer les monitors et recevoir une alerte réelle) Supervision : disponibilité, espace disque, mémoire, profondeur de file, erreurs (ex. Uptime Kuma et Dozzle,
   déjà dans la flotte).
-- [ ] ❌ Plan de reprise : procédure écrite pour revenir à la version précédente en moins de 15 minutes.
-- [ ] ❌ Page de maintenance et mode arrêt d'urgence (désactiver les inscriptions et les envois sans tout couper).
+- [ ] 🟡 (`deploy/scripts/release.sh` et `rollback.sh` écrits, syntaxe vérifiée. **Jamais joués** : la section 17 exige une répétition chronométrée sur l'environnement de test) Plan de reprise : procédure écrite pour revenir à la version précédente en moins de 15 minutes.
+- [x] ✅ (`web/lib/service-mode.ts`, 17 cas dans `service-mode.test.ts` ; vrai serveur de production : normal 200 → restreint (inscription et envoi 503, lecture et connexion 200) → maintenance (page 503, sonde 503) → levé 200 ; `deploy/scripts/service-mode.sh`) Page de maintenance et mode arrêt d'urgence (désactiver les inscriptions et les envois sans tout couper).
 
 ## 16. Données personnelles et conformité
 

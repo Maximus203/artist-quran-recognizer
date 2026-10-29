@@ -390,5 +390,12 @@
     "section": "Architecture",
     "file": "docs/SCANS-SECURITE.md",
     "summary": "Scans à lancer avant la mise en production, commandes, critères de réussite, et ce qui a déjà été fait ou reste à faire."
+  },
+  {
+    "slug": "infrastructure",
+    "title": "Infrastructure et exposition",
+    "section": "Architecture",
+    "file": "docs/INFRASTRUCTURE.md",
+    "summary": "Serveur cible, proxy, pare-feu, utilisateur dédié, sauvegardes 3-2-1 avec restauration éprouvée, supervision, arrêt d'urgence, retour arrière."
   }
 ]

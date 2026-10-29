@@ -1,0 +1,10 @@
+[Unit]
+Description=Sauvegarde quotidienne de l'atelier
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

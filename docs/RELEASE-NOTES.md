@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Infrastructure préparée : arrêt d'urgence, sonde de santé, sauvegardes éprouvées, modèles de déploiement
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Un administrateur peut suspendre le service sans le couper : `service-mode.sh restricted` supprime les inscriptions, les envois, les analyses et le direct (la lecture et la connexion continuent) ; `maintenance` affiche une page claire en 503 ; effet en moins de 2 secondes, sans redémarrage. Une sonde publique `/api/health` (200 ou 503, sans chiffre ni chemin) permet la supervision. Un outil de sauvegarde (`web/scripts/backup.mjs`) copie la base de façon cohérente avec une empreinte par fichier, vérifie et restaure sans jamais écraser. Le script d'essai des testeurs fournit désormais les valeurs de sécurité exigées au démarrage (sans quoi l'atelier aurait refusé de démarrer).
+
+**Pourquoi / décision.** Section 15 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Les modèles de déploiement (`deploy/` : Caddy, systemd, pare-feu, bascule, retour arrière) et `docs/INFRASTRUCTURE.md` sont **préparés, non appliqués** : aucun serveur n'est identifié, aucun port ouvert. Recommandation : Linux avec GPU, installation sur l'hôte plutôt que conteneurs. Éprouvé : modes de service (17 cas + serveur de production réel), restauration d'une vraie base SQLite en mode WAL (6 cas). **Jamais joués** : la bascule, le retour arrière chronométré, la restauration depuis restic, les monitors Uptime Kuma. Voir la liste des décisions de Cherif Diouf dans `docs/INFRASTRUCTURE.md`.
+
 ## 2026-10-29 — Tests de sécurité : entrées hostiles sur chaque route, plafonds de débit par famille, scans préparés
 Étiquettes : technique
 PR : -

@@ -16,6 +16,7 @@ import { getDb } from "./lib/db";
 import { isTrapPath } from "./lib/honeypot";
 import { log } from "./lib/log";
 import { HitLimiter } from "./lib/rate-limit";
+import { MAINTENANCE_PAGE, currentMode, modeRefusal } from "./lib/service-mode";
 
 /**
  * Premier maillon de chaque requête (Next 16 : `proxy.ts`, ex-`middleware.ts`) :
@@ -170,6 +171,30 @@ export function proxy(request: NextRequest): NextResponse {
       "warn",
     );
     return decorate(refuse(404, "Introuvable.", "not_found"));
+  }
+
+  const refusal = modeRefusal(
+    currentMode(now),
+    request.method,
+    pathname,
+    family,
+  );
+  if (refusal) {
+    const page = refusal.code === "maintenance" && family === "page";
+    return decorate(
+      page
+        ? new NextResponse(MAINTENANCE_PAGE, {
+            status: refusal.status,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "no-store",
+              "Retry-After": String(refusal.retryAfterS),
+            },
+          })
+        : refuse(refusal.status, refusal.error, refusal.code, {
+            "Retry-After": String(refusal.retryAfterS),
+          }),
+    );
   }
 
   if (crossSiteMutation(request.method, request.headers)) {
