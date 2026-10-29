@@ -712,7 +712,20 @@ export function RangeTimeline({
     if (!action) return;
     event.preventDefault();
     if (action.kind === "play") return onTogglePlay();
-    if (action.kind === "remove") return onRemove(range.id);
+    if (action.kind === "remove") {
+      onRemove(range.id);
+      // Le focus ne se perd pas : il passe à la même poignée de la plage voisine (désormais choisie),
+      // sinon au curseur de la vue d'ensemble.
+      window.setTimeout(() => {
+        const root = stageRef.current?.parentElement;
+        const next =
+          root?.querySelector<HTMLElement>(
+            `.xr-plage[data-selected="true"] .xr-grip--${kind}`,
+          ) ?? root?.querySelector<HTMLElement>(".xr-view");
+        next?.focus();
+      }, 60);
+      return;
+    }
     const current = kind === "start" ? range.start : range.end;
     const value =
       action.kind === "delta"
