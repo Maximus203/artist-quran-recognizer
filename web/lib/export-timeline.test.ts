@@ -6,6 +6,7 @@ import {
   keyAction,
   moveRange,
   neighbourTarget,
+  parseEdgeInput,
   panView,
   pinchView,
   rulerStep,
@@ -167,5 +168,37 @@ describe("clavier sur une poignée", () => {
     expect(neighbourTarget(t, 20, -1)).toBe(10);
     expect(neighbourTarget(t, 20.02, -1)).toBe(10);
     expect(neighbourTarget(t, 31, 1)).toBeNull();
+  });
+});
+
+describe("saisie précise d'un bord (secours clavier)", () => {
+  const r = { start: 10, end: 20 };
+  const D2 = 41.459;
+  it("accepte la durée affichée (0:41,5 pour 41,459 s) : tolérance d'arrondi, ramenée à la durée", () => {
+    expect(parseEdgeInput("0:41,5", "end", r, D2)).toEqual({
+      ok: true,
+      value: D2,
+    });
+  });
+  it("refuse au-delà de l'arrondi, les saisies illisibles et une plage trop courte", () => {
+    expect(parseEdgeInput("0:41,6", "end", r, D2)).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/s’arrête à 0:41,5/),
+    });
+    expect(parseEdgeInput("abc", "start", r, D2)).toMatchObject({ ok: false });
+    expect(parseEdgeInput("0:19,8", "start", r, D2)).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/0,5 s après/),
+    });
+  });
+  it("accepte « 12 s » et « 0:12 »", () => {
+    expect(parseEdgeInput("12 s", "start", r, D2)).toEqual({
+      ok: true,
+      value: 12,
+    });
+    expect(parseEdgeInput("0:12", "start", r, D2)).toEqual({
+      ok: true,
+      value: 12,
+    });
   });
 });

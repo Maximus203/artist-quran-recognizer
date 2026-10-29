@@ -1,13 +1,9 @@
 "use client";
 import { useState } from "react";
 import { EXPORT_VIDEO_CONFIG } from "@/lib/export-video-config";
-import { formatClock, setEdge, spokenTime } from "@/lib/export-timeline";
+import { formatClock, parseEdgeInput, setEdge } from "@/lib/export-timeline";
 import { rangeFacts, type PlanRange } from "@/lib/export-video-plan";
-import {
-  MAX_RANGE_NAME,
-  MIN_RANGE_SECONDS,
-  parseTimeInput,
-} from "@/lib/export-video-ranges";
+import { MAX_RANGE_NAME } from "@/lib/export-video-ranges";
 import type { SuggestTiming } from "@/lib/export-video-suggest";
 import { formatDurationFr } from "@/lib/format";
 import { XIcon } from "./export-icons";
@@ -38,28 +34,11 @@ function FineTimes({
     text: string;
   } | null>(null);
   const commit = (edge: "start" | "end", text: string) => {
-    const value = parseTimeInput(text.replace(/\s*s$/, ""));
-    if (value === null)
-      return setError({
-        edge,
-        text: "Écris le temps comme 3:12,4 (minutes:secondes,dixièmes).",
-      });
-    if (value > duration)
-      return setError({
-        edge,
-        text: `L’audio s’arrête à ${formatClock(duration)}.`,
-      });
-    if (
-      (edge === "start" && value > range.end - MIN_RANGE_SECONDS) ||
-      (edge === "end" && value < range.start + MIN_RANGE_SECONDS)
-    )
-      return setError({
-        edge,
-        text: `La fin doit venir au moins ${comma(MIN_RANGE_SECONDS)} s après le début.`,
-      });
+    const parsed = parseEdgeInput(text, edge, range, duration);
+    if (!parsed.ok) return setError({ edge, text: parsed.error });
     setError(null);
-    if (Math.abs(value - range[edge]) > 1e-6)
-      onChange(setEdge(range, edge, value, duration));
+    if (Math.abs(parsed.value - range[edge]) > 1e-6)
+      onChange(setEdge(range, edge, parsed.value, duration));
   };
   return (
     <div className="pfine">
@@ -323,5 +302,3 @@ export function BreathSettings({
     </div>
   );
 }
-
-export { spokenTime };

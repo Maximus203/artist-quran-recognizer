@@ -5,7 +5,11 @@
  * appelle ces fonctions, testées ici une fois pour toutes.
  */
 import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
-import { MIN_RANGE_SECONDS, type ExportRange } from "./export-video-ranges";
+import {
+  MIN_RANGE_SECONDS,
+  parseTimeInput,
+  type ExportRange,
+} from "./export-video-ranges";
 
 export type View = { a: number; b: number };
 export type Edge = "start" | "end";
@@ -226,4 +230,43 @@ export function keyAction(
     default:
       return null;
   }
+}
+
+export type EdgeInput =
+  | { ok: true; value: number }
+  | { ok: false; error: string };
+
+/**
+ * Saisie précise d'un bord (« 3:12,4 », « 12 s ») : messages en clair. Le temps affiché est arrondi
+ * au dixième ; écrire la durée telle qu'elle s'affiche (« 0:41,5 » pour 41,459 s) est accepté et
+ * ramené à la durée exacte.
+ */
+export function parseEdgeInput(
+  text: string,
+  edge: Edge,
+  range: ExportRange,
+  duration: number,
+  minLength: number = MIN_RANGE_SECONDS,
+): EdgeInput {
+  const value = parseTimeInput(text.replace(/\s*s$/, ""));
+  if (value === null)
+    return {
+      ok: false,
+      error: "Écris le temps comme 3:12,4 (minutes:secondes,dixièmes).",
+    };
+  if (value > duration + 0.05)
+    return {
+      ok: false,
+      error: `L’audio s’arrête à ${formatClock(duration)}.`,
+    };
+  const exact = Math.min(value, duration);
+  if (
+    (edge === "start" && exact > range.end - minLength) ||
+    (edge === "end" && exact < range.start + minLength)
+  )
+    return {
+      ok: false,
+      error: `La fin doit venir au moins ${String(minLength).replace(".", ",")} s après le début.`,
+    };
+  return { ok: true, value: exact };
 }
