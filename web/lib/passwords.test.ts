@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  SCRYPT_MIN_LOG_N,
+  scryptParams,
   hashPassword,
   needsRehash,
   verifyAgainstDummy,
@@ -8,6 +10,28 @@ import {
 
 // Coût réduit : le test vérifie la logique, pas la robustesse du réglage de production.
 const FAST = { N: 1024, r: 8, p: 1 };
+
+describe("coût scrypt", () => {
+  it("par défaut : N = 2^17, r = 8, p = 1 (OWASP)", () => {
+    expect(scryptParams({})).toEqual({ N: 131072, r: 8, p: 1 });
+    expect(SCRYPT_MIN_LOG_N).toBe(17);
+  });
+  it("AQR_SCRYPT_LOG_N hors de 12 à 20, ou illisible : ignoré", () => {
+    expect(scryptParams({ AQR_SCRYPT_LOG_N: "10" }).N).toBe(2 ** 17);
+    expect(scryptParams({ AQR_SCRYPT_LOG_N: "25" }).N).toBe(2 ** 17);
+    expect(scryptParams({ AQR_SCRYPT_LOG_N: "abc" }).N).toBe(2 ** 17);
+    expect(scryptParams({ AQR_SCRYPT_LOG_N: "12" }).N).toBe(2 ** 12);
+  });
+  it("une empreinte de l'ancien réglage (2^15, p = 1) est à refaire", async () => {
+    const old = await hashPassword("ancienne-phrase-de-passe", {
+      N: 2 ** 15,
+      r: 8,
+      p: 1,
+    });
+    expect(needsRehash(old, scryptParams({}))).toBe(true);
+    expect(needsRehash(old, { N: 2 ** 15, r: 8, p: 1 })).toBe(false);
+  });
+});
 
 describe("mots de passe (scrypt)", () => {
   it("vérifie le bon mot de passe et refuse les autres", async () => {

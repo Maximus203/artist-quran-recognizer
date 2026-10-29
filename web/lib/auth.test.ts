@@ -354,3 +354,155 @@ describe("cookie", () => {
     expect(readCookie("x=1; y=2", "y")).toBe("2");
   });
 });
+
+describe("politique de mot de passe à l'inscription et au changement", () => {
+  it("refuse un mot de passe courant ou trop court", async () => {
+    const weak = await registerAccount(
+      deps(),
+      { username: "fatou", password: "password1234" },
+      "ip1",
+    );
+    expect(weak.ok).toBe(false);
+    if (!weak.ok) {
+      expect(weak.status).toBe(400);
+      expect(weak.field).toBe("password");
+      expect(weak.message).toMatch(/courant|prévisible/);
+    }
+    const short = await registerAccount(
+      deps(),
+      { username: "fatou", password: "Court-123" },
+      "ip1",
+    );
+    expect(short.ok).toBe(false);
+  });
+  it("refuse, au changement, un mot de passe contenant le pseudonyme", async () => {
+    const created = await register("moussa_diallo");
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const result = await changePassword(
+      deps(),
+      created.user,
+      created.token,
+      { current: PASSWORD, next: "moussa_diallo-2026-ok" },
+      "ip1",
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toMatch(/pseudonyme/);
+  });
+});
+
+describe("empreinte refaite à la connexion", () => {
+  it("une empreinte plus faible que le réglage courant est remplacée", async () => {
+    const { hashPassword } = await import("./passwords");
+    const { setPasswordHash, findUserRow } = await import("./users");
+    const created = await register("awa");
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const weak = await hashPassword(PASSWORD, { N: 1024, r: 8, p: 1 });
+    setPasswordHash(db, created.user.id, weak);
+    expect((await login("awa")).ok).toBe(true);
+    const after = findUserRow(db, "awa")?.password_hash ?? "";
+    expect(after).not.toBe(weak);
+    expect(after.split("$")[1]).toBe(String(2 ** 12)); // réglage de la suite de tests
+  });
+});
+
+describe("limitation par compte, toutes adresses confondues", () => {
+  it("une attaque répartie sur 12 adresses verrouille le compte, pas les autres", async () => {
+    await register("awa");
+    await register("bakary");
+    for (let i = 0; i < 12; i++)
+      await login("awa", "mauvais mot de passe", `203.0.113.${i}`);
+    const locked = await login("awa", PASSWORD, "198.51.100.1");
+    expect(locked.ok).toBe(false);
+    if (!locked.ok) {
+      expect(locked.status).toBe(429);
+      expect(locked.retryAfterS ?? 0).toBeLessThanOrEqual(120);
+    }
+    // un autre compte, depuis une autre adresse, n'est pas touché
+    expect((await login("bakary", PASSWORD, "198.51.100.2")).ok).toBe(true);
+  });
+  it("le verrou du compte est plafonné à 2 minutes puis tombe tout seul", async () => {
+    await register("awa");
+    for (let i = 0; i < 40; i++)
+      await login("awa", "mauvais mot de passe", `203.0.113.${i % 20}`);
+    clock += 2 * 60 * 1000 + 1000;
+    expect((await login("awa", PASSWORD, "198.51.100.9")).ok).toBe(true);
+  });
+  it("un administrateur lève le verrou d'un compte", async () => {
+    const { unlockAccount } = await import("./auth");
+    await register("awa");
+    for (let i = 0; i < 12; i++)
+      await login("awa", "mauvais mot de passe", `203.0.113.${i}`);
+    expect((await login("awa", PASSWORD, "198.51.100.1")).ok).toBe(false);
+    unlockAccount(deps(), "awa");
+    expect((await login("awa", PASSWORD, "198.51.100.1")).ok).toBe(true);
+  });
+});
+
+describe("verrouillage persistant", () => {
+  it("survit à un redémarrage : de nouveaux limiteurs sur la même base refusent encore", async () => {
+    limiters = createLimiters(cfg, db);
+    await register("awa");
+    for (let i = 0; i < 6; i++) await login("awa", "mauvais mot de passe");
+    const restarted = createLimiters(cfg, db); // « redémarrage » du serveur
+    limiters = restarted;
+    const result = await login("awa", PASSWORD);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(429);
+  });
+});
+
+describe("journal des connexions", () => {
+  it("consigne succès, échec et verrouillage, sans mot de passe", async () => {
+    const { vi } = await import("vitest");
+    const spy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    await register("awa");
+    await login("awa", "mauvais mot de passe");
+    await login("awa");
+    for (let i = 0; i < 6; i++) await login("awa", "mauvais mot de passe");
+    await login("awa");
+    const lines = spy.mock.calls.map((call) => String(call[0]));
+    spy.mockRestore();
+    const events = lines
+      .filter((line) => line.includes(" audit: "))
+      .map((line) => JSON.parse(line.slice(line.indexOf("{"))).event);
+    expect(events).toEqual(
+      expect.arrayContaining([
+        "register",
+        "login.failure",
+        "login.success",
+        "login.locked",
+      ]),
+    );
+    const everything = lines.join("\n");
+    expect(everything).not.toContain("mauvais mot de passe");
+    expect(everything).not.toContain(PASSWORD);
+  });
+  it("consigne un changement de mot de passe réussi et un échec", async () => {
+    const { vi } = await import("vitest");
+    const created = await register("awa");
+    if (!created.ok) throw new Error("inscription");
+    const spy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    await changePassword(
+      deps(),
+      created.user,
+      created.token,
+      { current: "faux faux faux", next: "autre phrase de passe 2027" },
+      "ip1",
+    );
+    await changePassword(
+      deps(),
+      created.user,
+      created.token,
+      { current: PASSWORD, next: "autre phrase de passe 2027" },
+      "ip1",
+    );
+    const events = spy.mock.calls
+      .map((call) => String(call[0]))
+      .filter((line) => line.includes(" audit: "))
+      .map((line) => JSON.parse(line.slice(line.indexOf("{"))).event);
+    spy.mockRestore();
+    expect(events).toEqual(["password.change_failed", "password.change"]);
+  });
+});

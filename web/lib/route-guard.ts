@@ -45,14 +45,15 @@ export type Denied = { ok: false; response: Response };
 
 const LIMITERS = Symbol.for("aqr.auth-limiters");
 /** Limiteurs d'authentification : un jeu par processus (le serveur est unique). */
-export function limiters(cfg = authConfig()): Limiters {
+export function limiters(cfg = authConfig(), db?: Db): Limiters {
   const holder = globalThis as { [LIMITERS]?: Limiters };
-  return (holder[LIMITERS] ??= createLimiters(cfg));
+  return (holder[LIMITERS] ??= createLimiters(cfg, db));
 }
 
 export async function authDeps(): Promise<AuthDeps> {
   const cfg = authConfig();
-  return { db: await ready(), cfg, limiters: limiters(cfg) };
+  const db = await ready();
+  return { db, cfg, limiters: limiters(cfg, db) };
 }
 
 /** IP du client : seulement `X-Forwarded-For` (dernier saut) derrière un proxy de confiance. */

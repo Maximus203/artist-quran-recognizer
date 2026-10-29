@@ -3,6 +3,7 @@ import {
   enforceRuntime,
   guardStartup,
   nodeVersionStatus,
+  scryptConfigStatus,
 } from "./runtime-guard";
 
 describe("version de Node (CVE-2026-111497, décodeur Brotli)", () => {
@@ -95,13 +96,42 @@ describe("garde au démarrage", () => {
       nodeEnv: "production",
       version: "24.22.2",
       exit: s.exit,
+      env: {},
     });
     guardStartup(s.report, {
       nodeEnv: "development",
       version: "24.19.0",
       exit: s.exit,
+      env: {},
     });
     expect(s.out.exits).toEqual([]);
     expect(s.out.warn).toHaveLength(1);
+  });
+});
+
+describe("coût des mots de passe en production", () => {
+  it("le démarrage en production refuse un coût affaibli", () => {
+    const exits: number[] = [];
+    guardStartup(
+      { warn: () => undefined, error: () => undefined },
+      {
+        nodeEnv: "production",
+        version: "24.22.2",
+        env: { AQR_SCRYPT_LOG_N: "12" },
+        exit: (code) => exits.push(code),
+      },
+    );
+    expect(exits).toEqual([1]);
+  });
+  it("sans variable ou entre 17 et 20 : accepté", () => {
+    expect(scryptConfigStatus({}).ok).toBe(true);
+    expect(scryptConfigStatus({ AQR_SCRYPT_LOG_N: "17" }).ok).toBe(true);
+    expect(scryptConfigStatus({ AQR_SCRYPT_LOG_N: "20" }).ok).toBe(true);
+  });
+  it("sous 17, ou illisible : refusé, avec la valeur fautive dans le message", () => {
+    const low = scryptConfigStatus({ AQR_SCRYPT_LOG_N: "12" });
+    expect(low.ok).toBe(false);
+    expect(low.message).toMatch(/AQR_SCRYPT_LOG_N=12/);
+    expect(scryptConfigStatus({ AQR_SCRYPT_LOG_N: "beaucoup" }).ok).toBe(false);
   });
 });

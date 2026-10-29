@@ -1,7 +1,8 @@
 import { safe } from "@/lib/http";
 import { revokeLogin } from "@/lib/auth";
 import { clearCookieHeader } from "@/lib/auth-response";
-import { authenticate } from "@/lib/route-guard";
+import { audit } from "@/lib/audit";
+import { authenticate, clientIp } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
 /** Déconnexion : révoque le jeton côté serveur et efface le cookie. Idempotente (`204` même sans connexion). */
@@ -11,7 +12,13 @@ async function handlePOST(request: Request) {
     anonymous: true,
   });
   if (!guard.ok) return guard.response;
-  if (guard.token) revokeLogin(guard.db, guard.token);
+  if (guard.token) {
+    revokeLogin(guard.db, guard.token);
+    audit("logout", {
+      userId: guard.user?.id,
+      ip: clientIp(request, guard.cfg),
+    });
+  }
   return new Response(null, {
     status: 204,
     headers: {

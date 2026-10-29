@@ -4,9 +4,11 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
-import { z } from "zod";
 import type { Db } from "./db";
 import { transaction } from "./db";
+import { audit } from "./audit";
+import { DbFailureStore } from "./failure-store";
+import { PASSWORD_MAX, checkPassword } from "./password-policy";
 import { FailureLimiter, HitLimiter, type Verdict } from "./rate-limit";
 import {
   hashPassword,
@@ -33,8 +35,7 @@ import {
  * limiteurs (`AuthDeps`) ; `lib/route-guard.ts` fait le lien avec les requêtes.
  */
 export const SESSION_COOKIE = "aqr_session";
-export const PASSWORD_MIN = 10;
-export const PASSWORD_MAX = 128;
+export { PASSWORD_MAX, PASSWORD_MIN } from "./password-policy";
 
 export type SignupMode = "open" | "closed" | "code";
 
@@ -197,23 +198,41 @@ export type Limiters = {
   loginUser: FailureLimiter;
   /** Échecs de connexion par IP, tous pseudonymes confondus (balayage de pseudonymes). */
   loginIp: FailureLimiter;
+  /**
+   * Échecs par COMPTE, toutes adresses confondues (attaque répartie). Seuil large et verrou court
+   * (2 min au plus) : un tiers qui s'acharne ne peut retarder le propriétaire que brièvement, jamais
+   * l'exclure ; un administrateur lève le verrou (`unlockAccount`).
+   */
+  loginAccount: FailureLimiter;
   register: HitLimiter;
 };
 
-export function createLimiters(cfg: AuthConfig): Limiters {
+/** Avec `db`, les échecs survivent à un redémarrage du serveur (table `auth_failures`). */
+export function createLimiters(cfg: AuthConfig, db?: Db): Limiters {
   const window = 30 * 60 * 1000;
+  const store = (scope: string) =>
+    db ? new DbFailureStore(db, scope) : undefined;
   return {
     loginUser: new FailureLimiter({
       threshold: 5,
       baseLockMs: 15_000,
       maxLockMs: 15 * 60 * 1000,
       windowMs: window,
+      store: store("login-user"),
     }),
     loginIp: new FailureLimiter({
       threshold: 25,
       baseLockMs: 15_000,
       maxLockMs: 15 * 60 * 1000,
       windowMs: window,
+      store: store("login-ip"),
+    }),
+    loginAccount: new FailureLimiter({
+      threshold: 10,
+      baseLockMs: 10_000,
+      maxLockMs: 2 * 60 * 1000,
+      windowMs: window,
+      store: store("login-account"),
     }),
     register: new HitLimiter(cfg.registerPerHour, 60 * 60 * 1000),
   };
@@ -245,16 +264,16 @@ const tooMany = (
   retryAfterS: verdict.retryAfterS,
 });
 
-const passwordSchema = z
-  .string()
-  .min(
-    PASSWORD_MIN,
-    `Le mot de passe fait au moins ${PASSWORD_MIN} caractères.`,
-  )
-  .max(
-    PASSWORD_MAX,
-    `Le mot de passe fait au plus ${PASSWORD_MAX} caractères.`,
-  );
+/** Mot de passe saisi : doit être du texte, puis passe la politique (`password-policy.ts`). */
+function checkPasswordInput(
+  value: unknown,
+  username: string,
+): { ok: true; value: string } | { ok: false; message: string } {
+  if (typeof value !== "string")
+    return { ok: false, message: "Le mot de passe est requis." };
+  const verdict = checkPassword(value, username);
+  return verdict.ok ? { ok: true, value } : verdict;
+}
 
 /** Comparaison à temps constant (HMAC des deux côtés : longueurs égalisées). */
 function sameSecret(candidate: string, expected: string): boolean {
@@ -313,23 +332,16 @@ export async function registerAccount(
   const name = checkUsername(input.username);
   if (!name.ok)
     return { ok: false, status: 400, message: name.message, field: "username" };
-  const password = passwordSchema.safeParse(input.password);
-  if (!password.success)
+  const password = checkPasswordInput(input.password, name.value);
+  if (!password.ok)
     return {
       ok: false,
       status: 400,
-      message: password.error.issues[0].message,
-      field: "password",
-    };
-  if (usernameKey(password.data) === usernameKey(name.value))
-    return {
-      ok: false,
-      status: 400,
-      message: "Le mot de passe ne peut pas être le pseudonyme.",
+      message: password.message,
       field: "password",
     };
 
-  const passwordHash = await hashPassword(password.data);
+  const passwordHash = await hashPassword(password.value);
   try {
     const user = transaction(deps.db, () => {
       const created = createUser(
@@ -340,6 +352,7 @@ export async function registerAccount(
       touchLogin(deps.db, created.id, iso(now));
       return created;
     });
+    audit("register", { userId: user.id, ip });
     return {
       ok: true,
       user: getUser(deps.db, user.id) as User,
@@ -379,12 +392,17 @@ export async function loginAccount(
     return bad;
   const userKey = `login:${ip}:${usernameKey(input.username)}`;
   const ipKey = `login-ip:${ip}`;
+  const accountKey = `login-account:${usernameKey(input.username)}`;
   for (const [limiter, key] of [
     [deps.limiters.loginUser, userKey],
     [deps.limiters.loginIp, ipKey],
+    [deps.limiters.loginAccount, accountKey],
   ] as const) {
     const verdict = limiter.check(key, now);
-    if (!verdict.allowed) return tooMany(verdict);
+    if (!verdict.allowed) {
+      audit("login.locked", { ip, reason: `${verdict.retryAfterS} s` });
+      return tooMany(verdict);
+    }
   }
 
   const row = findUserRow(deps.db, input.username);
@@ -395,17 +413,30 @@ export async function loginAccount(
   if (!row || !valid) {
     deps.limiters.loginUser.fail(userKey, now);
     deps.limiters.loginIp.fail(ipKey, now);
+    deps.limiters.loginAccount.fail(accountKey, now);
+    audit("login.failure", { userId: row?.id ?? null, ip });
     return bad;
   }
   deps.limiters.loginUser.succeed(userKey);
+  deps.limiters.loginAccount.succeed(accountKey);
   if (needsRehash(row.password_hash))
     setPasswordHash(deps.db, row.id, await hashPassword(input.password));
   touchLogin(deps.db, row.id, iso(now));
+  audit("login.success", { userId: row.id, ip });
   return {
     ok: true,
     user: getUser(deps.db, row.id) as User,
     token: createLogin(deps.db, row.id, deps.cfg, now),
   };
+}
+
+/** Lève le verrou « par compte » (toutes adresses) : geste d'un administrateur. */
+export function unlockAccount(
+  deps: Pick<AuthDeps, "limiters">,
+  username: string,
+): void {
+  deps.limiters.loginAccount.succeed(`login-account:${usernameKey(username)}`);
+  audit("account.unlock", {});
 }
 
 /** Changement de mot de passe : exige l'ancien ; les autres connexions du compte sont révoquées. */
@@ -427,6 +458,7 @@ export async function changePassword(
     (await verifyPassword(input.current, row.password_hash));
   if (!matches) {
     deps.limiters.loginUser.fail(key, now);
+    audit("password.change_failed", { userId: user.id, ip });
     return {
       ok: false,
       status: 401,
@@ -435,15 +467,16 @@ export async function changePassword(
     };
   }
   deps.limiters.loginUser.succeed(key);
-  const next = passwordSchema.safeParse(input.next);
-  if (!next.success)
+  const next = checkPasswordInput(input.next, user.username);
+  if (!next.ok)
     return {
       ok: false,
       status: 400,
-      message: next.error.issues[0].message,
+      message: next.message,
       field: "password",
     };
-  setPasswordHash(deps.db, user.id, await hashPassword(next.data));
+  setPasswordHash(deps.db, user.id, await hashPassword(next.value));
   revokeAllLogins(deps.db, user.id, currentToken ?? undefined);
+  audit("password.change", { userId: user.id, ip });
   return { ok: true };
 }
