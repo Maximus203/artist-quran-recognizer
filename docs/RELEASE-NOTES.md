@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Autorisation : balayage automatique des routes contre l'accès à la session privée d'un autre compte
+Étiquettes : technique
+PR : -
+
+**Ce qui change.** Aucun changement visible, sauf un journal : le passage d'une session de privée à partagée (et l'inverse), par l'écran ou l'action groupée, est maintenant consigné (identifiant de la session, jamais son titre). Un nouveau test découvre sur le disque toutes les routes de session et vérifie que, sans connexion, elles répondent 401, que ni un autre compte ni un administrateur ne peuvent lire, modifier, supprimer ou télécharger la session privée d'un autre compte (404 partout, jamais 200, 403 ni 500), et qu'une session partagée se lit mais ne se modifie pas.
+
+**Pourquoi / décision.** Section 6 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. Le balayage est sans liste écrite à la main : une route ajoutée plus tard sans garde fait échouer le test. J'ai vérifié qu'il peut échouer : en affaiblissant volontairement la règle de visibilité, il signale les routes touchées ; la règle a été remise telle quelle. Les sessions du test existent aussi sur le disque, sinon la lecture les retirait de l'index et le test aurait réussi pour de mauvaises raisons. Preuve : `web/app/api/idor.test.ts` (15 cas). Le MCP appelle ces mêmes routes (`lib/mcp.ts`), il est donc couvert par le même contrôle.
+
 ## 2026-10-29 — Mots de passe et connexions : coût scrypt OWASP, politique de 12 caractères, verrouillage persistant, journal d'audit
 Étiquettes : utilisateur, technique, décision
 PR : -

@@ -3,6 +3,7 @@ import { httpError } from "@/lib/errors";
 import { apiError, json, notFound, readJson, safe } from "@/lib/http";
 import { ensureQueueRecovered, removeSession } from "@/lib/jobs";
 import { sessionAccess } from "@/lib/route-guard";
+import { audit } from "@/lib/audit";
 import { deleteMeta, updateMeta } from "@/lib/session-index";
 import { cleanUserName, defaultSessionName } from "@/lib/session-name";
 import { viewForUser } from "@/lib/session-service";
@@ -86,6 +87,12 @@ async function handlePATCH(
   if (archived !== undefined) patch.archivedAt = archived ? now : null;
   const updated = updateMeta(access.db, access.id, patch, now);
   if (!updated) return notFound();
+  if (visibility !== undefined && visibility !== access.meta.visibility)
+    audit("visibility.change", {
+      userId: access.user.id,
+      session: access.id,
+      reason: `${access.meta.visibility} → ${visibility}`,
+    });
   const session = await viewForUser(access.db, access.user, updated);
   return session ? json({ session }) : notFound();
 }
