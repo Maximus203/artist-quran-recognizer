@@ -1,4 +1,4 @@
-import { mkdtemp, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -102,6 +102,21 @@ describe("cache sur disque", () => {
     await utimes(source, later, later);
     await ensureThumbnails(dir, source, opts, run);
     expect(calls).toBe(2);
+  });
+  it("garde au plus quelques planches par session : les plus anciennes partent", async () => {
+    const dir = path.join(root, "cap");
+    const source = path.join(root, "source.mp4");
+    const run = async (args: string[]) => {
+      await writeFile(args.at(-1) as string, "jpg");
+    };
+    for (const count of [2, 3, 4, 5, 6])
+      await ensureThumbnails(dir, source, { count, width: 64, duration: 10 }, run);
+    const left = (await readdir(path.join(dir, "listening"))).filter((f) =>
+      f.startsWith("thumbs-"),
+    );
+    expect(left.length).toBe(T.keepPerSession);
+    expect(left).toContain("thumbs-6x64.jpg");
+    expect(left).not.toContain("thumbs-2x64.jpg");
   });
   it("un échec de ffmpeg ne laisse aucune planche à moitié écrite", async () => {
     const dir = path.join(root, "fail");

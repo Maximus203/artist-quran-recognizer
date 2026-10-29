@@ -6,7 +6,7 @@
  */
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, rename, rm, stat } from "node:fs/promises";
+import { mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
@@ -128,5 +128,29 @@ export async function ensureThumbnails(
   } finally {
     await rm(temp, { force: true });
   }
+  await purgeOldThumbnails(path.dirname(target), T.keepPerSession);
   return target;
+}
+
+/** Ne garde que les `keep` planches les plus récentes d'une session (le cache ne grossit pas sans fin). */
+async function purgeOldThumbnails(dir: string, keep: number): Promise<void> {
+  const names = (await readdir(dir).catch(() => [] as string[])).filter((n) =>
+    /^thumbs-\d+x\d+\.jpg$/.test(n),
+  );
+  if (names.length <= keep) return;
+  const dated = await Promise.all(
+    names.map(async (name) => ({
+      name,
+      at: await stat(path.join(dir, name)).then(
+        (s) => s.mtimeMs,
+        () => 0,
+      ),
+    })),
+  );
+  dated.sort((a, b) => b.at - a.at || b.name.localeCompare(a.name));
+  await Promise.all(
+    dated
+      .slice(keep)
+      .map(({ name }) => rm(path.join(dir, name), { force: true })),
+  );
 }

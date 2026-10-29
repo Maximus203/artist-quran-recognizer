@@ -73,6 +73,8 @@ export const EXPORT_VIDEO_CONFIG = {
     maxWidth: 320,
     defaultWidth: 96,
     timeoutMs: 120_000,
+    /** Planches gardées par session (chaque taille de frise en produit une) ; les plus anciennes partent. */
+    keepPerSession: 3,
   },
 } as const;
 
