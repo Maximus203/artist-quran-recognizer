@@ -29,7 +29,7 @@ type Reply = {
   stderr?: unknown;
 };
 
-class WarmRun extends EventEmitter implements JobProcess {
+export class WarmRun extends EventEmitter implements JobProcess {
   readonly stdout = new PassThrough();
   readonly stderr = new PassThrough();
   pid?: number;

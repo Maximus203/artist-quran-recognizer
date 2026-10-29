@@ -397,5 +397,12 @@
     "section": "Architecture",
     "file": "docs/INFRASTRUCTURE.md",
     "summary": "Serveur cible, proxy, pare-feu, utilisateur dédié, sauvegardes 3-2-1 avec restauration éprouvée, supervision, arrêt d'urgence, retour arrière."
+  },
+  {
+    "slug": "adr-0017-moteur-distant",
+    "title": "ADR-0017 — Moteur d'analyse à distance",
+    "section": "Décisions",
+    "file": "docs/adr/0017-moteur-d-analyse-a-distance.md",
+    "summary": "L'agent du moteur appelle l'atelier (baux, jetons d'agent, résultat unique vérifié) ; il tourne sur Atlas, relié à Alpha par un second WireGuard."
   }
 ]

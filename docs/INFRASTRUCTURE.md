@@ -22,15 +22,15 @@ automatiques actives, **Traefik v3.7 dans Docker** (réseau `web`, entrypoint `w
 voisin, pas le locataire principal.** Le Node de l'hôte (22.22.1) est touché par CVE-2026-111497 : l'atelier
 y tourne donc **dans une image** qui apporte un Node corrigé.
 
-Décision de Cherif Diouf : **Alpha héberge l'atelier seul ; le moteur d'analyse et le direct restent sur une
-machine à GPU** (son poste). Conséquences :
+Décision de Cherif Diouf : **Alpha héberge l'atelier seul ; le moteur d'analyse tourne sur Atlas** (toujours
+allumé), relié à Alpha par un **second WireGuard** (précision du 2026-10-29, `docs/adr/0017`). Atlas n'a **pas de
+GPU** : le moteur y tourne sur processeur, à mesurer. Le direct reste à décider. Nom public de l'atelier :
+**`quran-tr.artist-dev.com`** (frontend servi par Traefik sur Alpha). Conséquences :
 
-- Alpha démarre en **mode `restricted`** (`AQR_SERVICE_MODE`) : pas d'envois, d'analyses, d'exports vidéo ni de
-  direct ; comptes, connexion et lecture fonctionnent. L'image ne contient ni Python ni Chromium.
-- **Chantier de code non fait** : l'atelier lance aujourd'hui le moteur lui-même (`aqr worker`, processus
-  local). Pour lever la restriction, il faut un moteur **joignable à distance** (file d'analyses, transfert de
-  l'audio et des résultats entre Alpha et le poste GPU, authentification entre les deux). Tant que ce chantier
-  n'existe pas, un atelier sur Alpha ne sert qu'à consulter des résultats déjà présents dans son volume.
+- Alpha tourne en **`AQR_ENGINE=remote`** : les analyses attendent un agent du moteur (ADR-0017). La couture
+  (courtier, bail, routes `/api/engine/*`, jetons d'agent) est **écrite et testée** ; **l'agent Python sur Atlas ne
+  l'est pas encore** : tant qu'il n'existe pas, les envois sont acceptés mais aucune analyse ne démarre. Pour
+  geler les envois d'ici là : `AQR_SERVICE_MODE=restricted`. L'image ne contient ni Python ni Chromium.
 - Les bornes de l'atelier protègent les voisins : 2 Gio de mémoire, 2 processeurs, 512 processus, système de
   fichiers en lecture seule, aucune capacité Linux, disque protégé par la réserve de 1 Gio (`AQR_MIN_FREE_BYTES`).
 
@@ -39,8 +39,11 @@ machine à GPU** (son poste). Conséquences :
 ```
 Internet ─ 443 ─▶ Traefik (TLS, existant) ─▶ conteneur « atelier » (réseau web, port 3000, jamais publié)
                                                  └▶ volume atelier-data (/data) : base, sessions, avatars, journaux, control/
-poste GPU ──(chantier à faire)── moteur d'analyse et direct
+Atlas ─ WireGuard wg1 (10.78.0.2 ↔ 10.78.0.1) ─▶ /api/engine/* (réservé au VPN) ◀── agent du moteur (appelle Alpha)
 ```
+
+L'agent est le client : Atlas n'ouvre aucun port. Atlas résout `quran-tr.artist-dev.com` vers l'adresse VPN d'Alpha
+(`/etc/hosts`), si bien que le trafic du moteur ne passe jamais par Internet.
 
 ## Modèles fournis (`deploy/`)
 
@@ -48,6 +51,7 @@ poste GPU ──(chantier à faire)── moteur d'analyse et direct
 |---|---|---|
 | `docker/Dockerfile` | image de l'atelier seul, Node épinglé corrigé, utilisateur `node`, sonde de santé | **non construit** (télécharge l'image Node ; à autoriser) |
 | `docker/compose.alpha.yaml` | service derrière Traefik (étiquettes relevées sur les conteneurs en place), bornes, secrets dans `/opt/atelier/atelier.env` | syntaxe **oui** (`docker compose config`), non appliqué |
+| `wireguard/*.example` | second WireGuard Alpha ↔ Atlas (sous-réseau 10.78.0.0/30, port 51821/udp), sans clé | **non** (modèles, rien de généré ni appliqué) |
 | `scripts/service-mode.sh` | arrêt d'urgence, dans le conteneur | **oui** (local) et sur un vrai serveur (voir plus bas) |
 | `scripts/release.sh`, `rollback.sh` | bascule et retour arrière par tag d'image | syntaxe seulement ; **jamais joués** |
 | `systemd/aqr-backup.{service,timer}` | sauvegarde quotidienne 03 h 30 dans le conteneur puis copie restic | outil **oui**, unité non |
@@ -57,6 +61,9 @@ Le pare-feu, le proxy et les mises à jour automatiques d'Alpha **existent déj�
 modifier. L'atelier n'ouvre aucun port sur l'hôte.
 
 ## Réseau, accès, utilisateur
+
+- **Second WireGuard** (`deploy/wireguard/`) : interface `wg1` distincte de `wg0` (VPN d'administration existant, qu'on ne touche pas). Atlas, derrière sa box, **initie** la connexion vers Alpha (`PersistentKeepalive`) : seul Alpha ouvre un port (51821/udp). **Ouvrir ce port sur Alpha, créer l'interface et ajouter les règles Traefik touchent un serveur de production partagé : rien de cela n'est fait sans ton accord explicite.**
+- **Traefik** (`compose.alpha.yaml`) : `quran-tr.artist-dev.com` est le frontend. Les routes `/api/engine/*` sont **exclues du routeur public** et servies par un second routeur limité aux adresses du VPN (`10.78.0.0/30`). L'enregistrement DNS `quran-tr.artist-dev.com` doit pointer vers Alpha : non vérifié.
 
 - Seul Traefik atteint l'atelier (réseau Docker `web`). Aucun port n'est publié.
 - `AQR_TRUST_PROXY=1` : Traefik ajoute l'adresse du client à la fin de `X-Forwarded-For`, que l'atelier lit.
@@ -131,9 +138,9 @@ chronomètre en main, avant la mise en production (critère n° 5 de la section 
 
 ## Décisions qui appartiennent à Cherif Diouf
 
-1. ~~Quelle machine~~ : **Alpha, atelier seul** (2026-10-29). Reste : où et comment tourne le moteur GPU, et le
-   chantier de séparation (voir plus haut) ; sans lui, Alpha ne peut pas analyser.
-2. Un nom d'hôte pour l'atelier sur Alpha (et son enregistrement DNS).
+1. ~~Quelle machine~~ : **Alpha pour l'atelier, Atlas pour le moteur** (2026-10-29). Reste : écrire et installer l'agent sur
+   Atlas (processeur seul, vitesse à mesurer) ; accord pour appliquer le second WireGuard et les règles Traefik sur Alpha.
+2. ~~Nom d'hôte~~ : `quran-tr.artist-dev.com`. Reste : vérifier que le DNS pointe vers Alpha.
 3. Inscriptions publiques : `open`, `code` ou `closed` (le script des testeurs garde `open` comme avant).
 4. Liste complète des mots de passe divulgués (réseau sortant ou gros fichier local).
 5. Mettre Node à jour sur le poste (24.22.2 recommandé) ; l'image d'Alpha en apporte un corrigé.

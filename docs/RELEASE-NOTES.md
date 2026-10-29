@@ -25,6 +25,14 @@ PR : -
 
 **Pourquoi / décision.** Le contrôle de démarrage de la section 13 bloquait `npm run start` sur le poste (Node 24.19.0, sans mode d'accès déclaré). La faille se joue par un contenu compressé venu d'ailleurs ; sur la boucle locale, le risque est faible. Mettre Node à 24.22.2 reste recommandé. Vérifié sur Node 24.19.0 : connexion 200, sonde `/api/health` ok.
 
+## 2026-10-29 — Moteur d'analyse à distance : la couture côté atelier (courtier, baux, routes, jetons d'agent)
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Rien ne change pour l'utilisateur tant que `AQR_ENGINE=remote` n'est pas posé. Avec lui, l'atelier ne lance plus le moteur lui-même : une analyse attend qu'un agent la réclame (`POST /api/engine/claim`), télécharge l'audio, signale sa vie, puis dépose le résultat ; sans signe de vie le bail expire et l'analyse échoue avec un message clair, et l'annulation d'un utilisateur est transmise à l'agent. Un administrateur crée et révoque les agents (`/api/admin/engine-agents`) ; le jeton `qea_…` n'est montré qu'une fois.
+
+**Pourquoi / décision.** ADR-0017 : Alpha n'a pas de GPU et le moteur doit tourner ailleurs, sans connexion entrante vers lui. Précision du jour : l'agent tourne sur **Atlas**, relié à Alpha par un second WireGuard, et l'atelier sera servi sur `quran-tr.artist-dev.com`. Atlas n'a pas non plus de GPU : le moteur y tournera sur processeur, vitesse à mesurer. Éprouvé : 29 tests dédiés (dont 17 de bout en bout), balayage d'injection, deux failles plantées détectées, serveur de production réel. **Pas encore fait** : l'agent Python, le second WireGuard et les règles Traefik sur Alpha (préparés dans `deploy/`, non appliqués).
+
 ## 2026-10-29 — Déploiement préparé pour Alpha : atelier seul, en conteneur derrière Traefik
 Étiquettes : technique, décision
 PR : -

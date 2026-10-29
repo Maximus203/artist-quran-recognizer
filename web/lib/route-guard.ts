@@ -23,6 +23,11 @@ import { isSessionId } from "./session-id";
 import { readSession } from "./store";
 import { ready } from "./server-init";
 import type { User } from "./users";
+import {
+  authenticateAgent,
+  bearerAgentToken,
+  type AgentRow,
+} from "./engine-agents";
 
 /**
  * Garde commune des routes d'API. Deux couches, dans cet ordre :
@@ -160,6 +165,21 @@ function safeHostname(raw: string | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+export type AgentAuth = { ok: true; db: Db; agent: AgentRow } | Denied;
+
+/**
+ * Entrée des routes `/api/engine/*` : un jeton d'AGENT (`qea_…`) en `Authorization: Bearer`, rien d'autre.
+ * Ni cookie de connexion ni jeton d'utilisateur ne passent ici, et un jeton d'agent n'ouvre aucune autre
+ * route (`authenticate` ne reconnaît que `qtr_…`). L'hôte doit rester un hôte autorisé.
+ */
+export async function requireAgent(request: Request): Promise<AgentAuth> {
+  if (!apiHostAllowed(request)) return { ok: false, response: localOnly() };
+  const db = await ready();
+  const agent = authenticateAgent(db, bearerAgentToken(request));
+  if (!agent) return { ok: false, response: unauthenticated() };
+  return { ok: true, db, agent };
 }
 
 export type SignedIn = Authenticated & { user: User; token: string };

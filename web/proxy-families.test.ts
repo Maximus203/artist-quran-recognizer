@@ -20,6 +20,7 @@ const SAMPLES: Record<Family, { method: string; path: string }> = {
   generate: { method: "POST", path: "/api/sessions/x/run" },
   mcp: { method: "POST", path: "/api/mcp" },
   live: { method: "POST", path: "/api/live/token" },
+  engine: { method: "POST", path: "/api/engine/claim" },
   auth: { method: "POST", path: "/api/auth/login" },
 };
 
