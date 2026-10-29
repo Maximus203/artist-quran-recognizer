@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import { FormAlert, PasswordField } from "../atelier/auth-parts";
+import { useHoneypot } from "../atelier/honeypot";
 import { Icon } from "../atelier/icons";
 
 type Problem = { title: string; detail?: string };
@@ -34,7 +35,15 @@ function problemOf(error: unknown): Problem {
   };
 }
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({
+  next,
+  formToken,
+}: {
+  next: string;
+  /** Jeton d'horodatage signé par le serveur (champ leurre, `honeypot.ts`). */
+  formToken: string;
+}) {
+  const honeypot = useHoneypot(formToken);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -61,7 +70,7 @@ export function LoginForm({ next }: { next: string }) {
     try {
       await api("/api/auth/login", {
         method: "POST",
-        json: { username: username.trim(), password },
+        json: { username: username.trim(), password, ...honeypot.fields() },
       });
       // Rechargement complet : le serveur relit les préférences DU COMPTE avant le premier rendu.
       location.assign(next);
@@ -87,6 +96,7 @@ export function LoginForm({ next }: { next: string }) {
         onSubmit={(event) => void submit(event)}
         data-testid="login-form"
       >
+        {honeypot.node}
         <div className="field" data-invalid={missing.user ? "true" : undefined}>
           <label htmlFor="login-user">Pseudonyme</label>
           <input

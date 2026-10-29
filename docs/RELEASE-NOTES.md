@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-29 — Pièges à robots : champs leurres, routes pièges, adresses bloquées
+Étiquettes : technique, décision
+PR : -
+
+**Ce qui change.** Les formulaires de connexion et d'inscription portent un champ caché aux humains (hors écran, sans clavier) et un jeton d'horodatage signé par le serveur. Un robot qui remplit le champ est refusé en silence, avec la même réponse et le même temps de calcul qu'un mauvais mot de passe, et son adresse est bloquée pour une durée croissante (1 h, 6 h, 24 h, 3 j, 7 j). Les adresses qu'aucun humain n'ouvre (`/wp-admin`, `/.env`, `/.git`, `/api/debug`, `/phpmyadmin`…) répondent « Introuvable » et bloquent aussi l'adresse qui les visite. Un formulaire envoyé en moins de 2 secondes est refusé mais ne bloque personne (un gestionnaire de mots de passe va vite). Un administrateur voit les blocages (`GET /api/admin/blocks`) et les lève (`DELETE /api/admin/blocks/{empreinte}`). Aucun CAPTCHA.
+
+**Pourquoi / décision.** Section 9 de `docs/SECURITE-PRE-DEPLOIEMENT.md`. La liste est en base, avec expiration, et ne garde que l'empreinte de l'adresse, jamais l'adresse. **Une adresse n'est bloquée que si l'atelier connaît l'adresse réelle** (`AQR_TRUST_PROXY=1` derrière un proxy de confiance) : sinon toutes les requêtes partagent la même et bloquer l'une bloquerait tout le monde ; dans ce cas le piège répond et journalise sans bloquer. Un client d'API ou un agent, qui n'envoie ni champ leurre ni jeton, n'est jamais pris pour un robot. Preuves : `honeypot.test.ts`, `blocklist.test.ts`, `proxy-honeypot.test.ts`, `app/api/honeypot.test.ts` (dont : un humain qui se trompe une fois peut se reconnecter aussitôt, un script est verrouillé même avec le bon mot de passe), `app/api/admin/blocks/route.test.ts`, et un serveur réel dans un navigateur (champ hors écran, robot refusé, humain connecté, pièges en 404, événements dans le journal de sécurité).
+
 ## 2026-10-29 — Journaux en fichiers : un flux par usage, corrélation, audit en chaîne, rapport des erreurs récurrentes
 Étiquettes : technique, décision
 PR : -

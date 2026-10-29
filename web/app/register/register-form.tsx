@@ -9,6 +9,7 @@ import {
 } from "@/lib/password-strength";
 import { TESTER_PATTERN, TESTER_RULE_MESSAGE } from "@/lib/tester";
 import { FormAlert, PasswordField } from "../atelier/auth-parts";
+import { useHoneypot } from "../atelier/honeypot";
 import { Icon } from "../atelier/icons";
 
 type Mode = "open" | "closed" | "code";
@@ -18,11 +19,15 @@ type FieldErrors = Partial<Record<"username" | "password" | "code", string>>;
 export function RegisterForm({
   mode,
   firstAccount,
+  formToken,
 }: {
   mode: Mode;
+  /** Jeton d'horodatage signé par le serveur (champ leurre, `honeypot.ts`). */
+  formToken: string;
   /** Aucun compte n'existe encore : le premier inscrit sera administrateur. */
   firstAccount: boolean;
 }) {
+  const honeypot = useHoneypot(formToken);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -83,6 +88,7 @@ export function RegisterForm({
         json: {
           username: name,
           password,
+          ...honeypot.fields(),
           ...(mode === "code" && !firstAccount ? { code: code.trim() } : {}),
         },
       });
@@ -143,6 +149,7 @@ export function RegisterForm({
         onSubmit={(event) => void submit(event)}
         data-testid="register-form"
       >
+        {honeypot.node}
         <div
           className="field"
           data-invalid={errors.username ? "true" : undefined}

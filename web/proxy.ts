@@ -11,6 +11,9 @@ import {
   type Family,
 } from "./lib/http-security";
 import { pseudonymize } from "./lib/audit";
+import { BlockList } from "./lib/blocklist";
+import { getDb } from "./lib/db";
+import { isTrapPath } from "./lib/honeypot";
 import { log } from "./lib/log";
 import { HitLimiter } from "./lib/rate-limit";
 
@@ -38,6 +41,40 @@ function limiters(): Limiters {
     holder[GLOBAL] = map;
   }
   return holder[GLOBAL];
+}
+
+// ── Adresses bloquées (pièges) ────────────────────────────────────────────────────────────────
+const BLOCKS = Symbol.for("aqr.proxy-blocks");
+type BlockState = {
+  list?: BlockList;
+  /** Décisions récentes (adresse → fin du blocage, 0 = libre) : évite une lecture de base par requête. */
+  cache: Map<string, { until: number; checkedAt: number }>;
+  announced: Map<string, number>;
+};
+const CACHE_MS = 5_000;
+function blockState(): BlockState {
+  const holder = globalThis as { [BLOCKS]?: BlockState };
+  return (holder[BLOCKS] ??= { cache: new Map(), announced: new Map() });
+}
+function blocklist(): BlockList {
+  const state = blockState();
+  return (state.list ??= new BlockList(getDb()));
+}
+function isBlocked(ip: string, now: number): boolean {
+  // Adresse « locale » ou inconnue : jamais bloquée, donc inutile d'ouvrir la base.
+  if (ip === "local" || ip === "unknown") return false;
+  const state = blockState();
+  const cached = state.cache.get(ip);
+  if (cached && now - cached.checkedAt < CACHE_MS) return cached.until > now;
+  let blocked = false;
+  try {
+    blocked = blocklist().isBlocked(ip, now);
+  } catch {
+    // Base indisponible : on laisse passer (la disponibilité prime sur un piège) ; l'erreur est journalisée ailleurs.
+  }
+  state.cache.set(ip, { until: blocked ? now + CACHE_MS : 0, checkedAt: now });
+  if (state.cache.size > 5_000) state.cache.clear();
+  return blocked;
 }
 
 function clientIp(request: NextRequest): string {
@@ -89,6 +126,52 @@ export function proxy(request: NextRequest): NextResponse {
     return response;
   };
 
+  const ip = clientIp(request);
+  const now = Date.now();
+  if (isBlocked(ip, now)) {
+    // Une ligne par adresse et par minute : un robot qui insiste ne remplit pas le journal.
+    const announced = blockState().announced;
+    if (now - (announced.get(ip) ?? 0) > 60_000) {
+      announced.set(ip, now);
+      log.event(
+        "blocklist",
+        "blocked_request",
+        { rid: requestId, ip: pseudonymize(ip), path: pathname },
+        "warn",
+      );
+    }
+    return decorate(refuse(403, "Accès refusé.", "blocked"));
+  }
+  if (isTrapPath(pathname)) {
+    let strikes = 0;
+    let blockedUntil = 0;
+    try {
+      const strike = blocklist().strike(ip, "route piège", now);
+      strikes = strike.strikes;
+      blockedUntil = strike.blockedUntil;
+      if (blockedUntil > 0)
+        blockState().cache.set(ip, { until: blockedUntil, checkedAt: now });
+    } catch {
+      // Sans base, on répond quand même 404 sans bloquer.
+    }
+    log.event(
+      "honeypot",
+      "honeypot.hit",
+      {
+        rid: requestId,
+        path: pathname,
+        ip: pseudonymize(ip),
+        severity: "hostile",
+        strikes,
+        blocked_until: blockedUntil
+          ? new Date(blockedUntil).toISOString()
+          : null,
+      },
+      "warn",
+    );
+    return decorate(refuse(404, "Introuvable.", "not_found"));
+  }
+
   if (crossSiteMutation(request.method, request.headers)) {
     log.event(
       "security",
@@ -111,7 +194,7 @@ export function proxy(request: NextRequest): NextResponse {
   }
 
   // Débit : par adresse, et par compte quand la requête en porte un (cookie ou jeton, en empreinte).
-  const caller = callerKey(request.headers, clientIp(request));
+  const caller = callerKey(request.headers, ip);
   const limiter = limiters().get(family) as HitLimiter;
   const keys = [
     `ip:${caller.ip}`,

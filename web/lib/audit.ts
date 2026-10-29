@@ -18,6 +18,8 @@ export type AuditEvent =
   | "logins.revoked_others"
   | "account.unlock"
   | "visibility.change"
+  | "honeypot.form"
+  | "block.lifted"
   | "token.created"
   | "token.revoked";
 

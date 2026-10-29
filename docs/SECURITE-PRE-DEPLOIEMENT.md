@@ -156,16 +156,16 @@ Aujourd'hui absent (`web/next.config.ts` ne définit aucun en-tête, aucun `midd
 
 Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
-- [ ] ❌ **Champs leurres** dans les formulaires d'inscription et de connexion (cachés aux humains, visibles aux
+- [x] ✅ (connexion et inscription ; vu dans un vrai navigateur ; envoi < 2 s : refus sans blocage) **Champs leurres** dans les formulaires d'inscription et de connexion (cachés aux humains, visibles aux
   robots). Une valeur renseignée, ou un formulaire soumis trop vite (< 2 s), déclenche un refus silencieux
   journalisé.
-- [ ] ❌ **Routes pièges** non publiées (`/admin`, `/wp-admin`, `/.env`, `/api/debug`…) : toute requête déclenche un
+- [x] ✅ (`proxy.ts`, 404 « Introuvable », blocage croissant 1 h à 7 j ; **seulement avec l'adresse réelle connue**, `AQR_TRUST_PROXY=1`) **Routes pièges** non publiées (`/admin`, `/wp-admin`, `/.env`, `/api/debug`…) : toute requête déclenche un
   verdict de sévérité « hostile » et une adresse IP bloquée pendant une durée croissante.
-- [ ] ❌ Verdict et blocage journalisés (adresse IP hachée ou tronquée selon la politique de confidentialité).
-- [ ] ❌ Liste d'adresses bloquées avec expiration, persistée, et une procédure pour lever un blocage.
-- [ ] ❌ Test : un script de brute force contre un compte de test doit être ralenti puis bloqué ; un humain
+- [x] ✅ (flux `security`, adresse pseudonymisée) Verdict et blocage journalisés (adresse IP hachée ou tronquée selon la politique de confidentialité).
+- [x] ✅ (table `blocked_addresses`, empreintes seulement ; lever : `DELETE /api/admin/blocks/{empreinte}`) Liste d'adresses bloquées avec expiration, persistée, et une procédure pour lever un blocage.
+- [x] ✅ (`app/api/honeypot.test.ts`) Test : un script de brute force contre un compte de test doit être ralenti puis bloqué ; un humain
   qui se trompe une fois ne doit pas l'être.
-- [ ] ❌ Option CAPTCHA seulement si les honeypots ne suffisent pas. Pas de CAPTCHA par défaut (friction).
+- [x] ✅ (aucun CAPTCHA) Option CAPTCHA seulement si les honeypots ne suffisent pas. Pas de CAPTCHA par défaut (friction).
 
 ## 10. Journalisation et diagnostic en production
 
@@ -228,7 +228,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 - [ ] 🟡 (champs inconnus et types refusés sur les routes migrées ; pas encore de jeu d'entrées hostiles sur chaque champ) Injection : entrées malveillantes sur chaque champ (SQL, chemin, commande, HTML). Aucune exécution.
 - [x] ✅ (`auth.test.ts` : verrouillage progressif, par compte, persistant ; journal) Authentification : brute force contre un compte de test (verrouillage, ralentissement, journal).
 - [ ] 🟡 (`proxy.test.ts` : familles auth et génération ; pas encore chaque famille) Débit : dépassement des limites sur chaque famille de routes (429 et `Retry-After`).
-- [ ] ❌ Honeypots : formulaire leurre rempli, route piège appelée.
+- [x] ✅ (`honeypot.test.ts`, `proxy-honeypot.test.ts`, `app/api/honeypot.test.ts`) Honeypots : formulaire leurre rempli, route piège appelée.
 - [x] ✅ (`proxy.test.ts`, `http-security.test.ts`, `hardening.test.ts`) En-têtes et cookies (test automatisé sur les réponses).
 - [ ] ❌ Téléversement hostile : fichier mal typé, archive piégée, nom de fichier hostile, taille dépassée.
 
