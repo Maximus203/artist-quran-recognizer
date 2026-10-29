@@ -237,7 +237,10 @@ export function VideoPanel({
   );
   const proposed = useMemo(() => (ctx ? suggestionsOf(ctx) : []), [ctx]);
   const targets = useMemo(() => (ctx ? snapTargets(ctx) : []), [ctx]);
-  const silences = useMemo(() => (peaks ? findSilences(peaks) : []), [peaks]);
+  const silences = useMemo(
+    () => (peaks ? findSilences(peaks, intervals ?? []) : []),
+    [peaks, intervals],
+  );
   const cardCount = useMemo(
     () => (intervals ? videoCardInputs(intervals).length : null),
     [intervals],

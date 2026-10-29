@@ -177,3 +177,44 @@ describe("padRanges", () => {
     expect(out[1]).toEqual({ start: 30, end: 35 });
   });
 });
+
+describe("aimant : seulement un VRAI silence (relatif au niveau de la voix)", () => {
+  /** Récitation continue : la voix (0,14 ≈ −17 dB) ne retombe qu'à 0,083 (≈ −21,6 dB) entre deux versets. */
+  function continuous(duration: number): SuggestPeaks {
+    const peaks: number[] = [];
+    for (let i = 0; i < duration * RATE; i++) {
+      const t = i / RATE;
+      const dip = (t > 9.8 && t < 10.4) || (t > 19.8 && t < 20.4);
+      peaks.push(dip ? 0.083 : 0.14 + ((i * 7) % 5) / 1000);
+    }
+    return { per_second: RATE, duration, peaks };
+  }
+  const recitation = [verse("R:1", 0.5, 10), verse("R:2", 10.2, 20)];
+
+  it("une simple baisse de voix n'est pas un silence : snapped faux, avertissement", () => {
+    const [first] = suggestRanges(recitation, 30, continuous(30));
+    expect(first.snapped.end).toBe(false);
+    expect(first.warnings.join(" ")).toMatch(/silence/);
+    expect(findSilences(continuous(30), recitation)).toEqual([]);
+  });
+  it("un vrai silence reste aimanté", () => {
+    const [first] = suggestRanges([verse("R:1", 2, 4)], 10, wave(10, [[2, 4]]));
+    expect(first.snapped).toEqual({ start: true, end: true });
+  });
+  it("n'étend jamais un bord dans une parole non coranique (I4), et le dit", () => {
+    const timings: SuggestTiming[] = [
+      verse("R:1", 5, 10),
+      { kind: "abstention", t: [10.14, 12] },
+      { kind: "non_quran", t: [3, 4.9] },
+    ];
+    const peaks = wave(15, [
+      [3, 4.9],
+      [5, 10],
+      [10.14, 12],
+    ]);
+    const [r] = suggestRanges(timings, 15, peaks);
+    expect(r.end).toBeLessThanOrEqual(10.14);
+    expect(r.start).toBeGreaterThanOrEqual(4.9);
+    expect(r.warnings.join(" ")).toMatch(/non coranique/);
+  });
+});

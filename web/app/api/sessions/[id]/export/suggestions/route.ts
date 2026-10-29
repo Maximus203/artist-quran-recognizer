@@ -54,7 +54,7 @@ async function handleGET(
     peaks,
     parsed.options,
   );
-  const silences = peaks ? findSilences(peaks) : [];
+  const silences = peaks ? findSilences(peaks, result.parsed.intervals) : [];
   return json({
     session: {
       id: access.id,
