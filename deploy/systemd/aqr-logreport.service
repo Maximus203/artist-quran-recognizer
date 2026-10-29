@@ -1,0 +1,15 @@
+# Rapport quotidien des erreurs récurrentes (docs/DIAGNOSTIC-PRODUCTION.md). Code retour 0 : rien à signaler ;
+# 1 : erreur récurrente ; 2 : journaux absents. Le résultat est poussé vers la supervision (Uptime Kuma, monitor
+# de type « push ») : un rapport qui ne tourne pas, ou qui trouve une erreur ancienne, se voit.
+[Unit]
+Description=Rapport des erreurs récurrentes de l'atelier
+
+[Service]
+Type=oneshot
+User=aqr
+Group=aqr
+EnvironmentFile=/etc/aqr/atelier.env
+ExecStart=/opt/aqr/current/deploy/scripts/log-report-push.sh /var/lib/aqr/logs
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict

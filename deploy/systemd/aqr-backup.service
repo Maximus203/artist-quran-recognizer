@@ -1,0 +1,18 @@
+# Sauvegarde locale cohérente (base + sessions + avatars) puis vérification. Le dossier produit est ensuite
+# copié, chiffré, vers deux autres emplacements par restic (règle 3-2-1, docs/INFRASTRUCTURE.md).
+[Unit]
+Description=Sauvegarde de l'atelier
+
+[Service]
+Type=oneshot
+User=aqr
+Group=aqr
+EnvironmentFile=/etc/aqr/atelier.env
+ExecStart=/usr/bin/node /opt/aqr/current/web/scripts/backup.mjs backup --root /var/lib/aqr --out /var/backups/aqr --keep 14
+# Copie hors machine : le fichier d'environnement de restic (/etc/aqr/restic.env) porte le dépôt et le mot de passe.
+ExecStartPost=/bin/sh -c '. /etc/aqr/restic.env && restic backup /var/backups/aqr --tag aqr && restic forget --keep-daily 14 --keep-weekly 8 --keep-monthly 6 --prune'
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/aqr /var/lib/aqr
+UMask=0027

@@ -1,0 +1,40 @@
+# Atelier (Next.js). À copier dans /etc/systemd/system/ (rien n'est installé par le dépôt).
+# Utilisateur dédié, sans droits d'administration ; écriture limitée au dossier de données.
+# Les secrets sont dans /etc/aqr/atelier.env (propriétaire root, mode 0600), jamais dans ce fichier :
+# voir docs/SECRETS-ET-CONFIGURATION.md pour la liste exigée au démarrage.
+[Unit]
+Description=Atelier Quran (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=aqr
+Group=aqr
+WorkingDirectory=/opt/aqr/current/web
+EnvironmentFile=/etc/aqr/atelier.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000
+# Un démarrage refusé (configuration de sécurité incomplète, Node non corrigé) ne boucle pas : 3 essais, puis échec visible.
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=120
+StartLimitBurst=3
+TimeoutStopSec=30
+
+# Durcissement
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/aqr
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
