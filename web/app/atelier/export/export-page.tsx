@@ -450,14 +450,19 @@ function ExportView({
             aria-label="Étapes de l’export"
             hidden={failed}
             onKeyDown={(event) => {
-              if (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
-                return;
+              const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+              if (!keys.includes(event.key)) return;
               event.preventDefault();
               const next =
-                TABS[
-                  (TABS.indexOf(tab) + (event.key === "ArrowRight" ? 1 : 2)) %
-                    TABS.length
-                ];
+                event.key === "Home"
+                  ? TABS[0]
+                  : event.key === "End"
+                    ? TABS[TABS.length - 1]
+                    : TABS[
+                        (TABS.indexOf(tab) +
+                          (event.key === "ArrowRight" ? 1 : 2)) %
+                          TABS.length
+                      ];
               setTab(next);
               document.getElementById(`ex-tab-${next}`)?.focus();
             }}
