@@ -22,7 +22,9 @@ import argparse
 import hashlib
 import json
 import os
+import signal
 import sys
+import threading
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
@@ -40,6 +42,13 @@ from aqr.alignment.service import (
     parse_verse_spec,
     passage_of,
     read_plan,
+)
+from aqr.app.engine_agent import (
+    AgentRevoked,
+    ConfigError,
+    EngineAgent,
+    build_runner,
+    config_from_env,
 )
 from aqr.app.live_service import ServiceOptions
 from aqr.app.worker import CachedFactory, serve
@@ -163,6 +172,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "textuelle seule, temps = bords des fenêtres",
     )
 
+    agent = commands.add_parser(
+        "engine-agent",
+        help="agent du moteur à distance : appelle l'atelier, analyse, dépose (ADR-0017)",
+    )
+    agent.add_argument(
+        "--once", action="store_true", help="traiter au plus une analyse puis sortir"
+    )
+
     commands.add_parser(
         "worker",
         help="service chaud : lit des requêtes JSON sur l'entrée standard, garde le moteur chargé",
@@ -239,6 +256,36 @@ def _add_live_command(commands: argparse._SubParsersAction[argparse.ArgumentPars
         default="",
         help="identifiants QuranEnc à précharger en tâche de fond, séparés par des virgules",
     )
+
+
+def _engine_agent(args: argparse.Namespace, env: Mapping[str, str], err: TextIO) -> int:
+    """Boucle de l'agent. Sortie 2 : configuration invalide ; 3 : jeton refusé."""
+    try:
+        config = config_from_env(env)
+    except ConfigError as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 2
+    agent = EngineAgent(config, build_runner(config))
+    stop = threading.Event()
+    for name in ("SIGINT", "SIGTERM"):
+        if hasattr(signal, name):
+            signal.signal(getattr(signal, name), lambda *_: stop.set())
+    try:
+        if args.once:
+            agent.run_once()
+        else:
+            agent.run_forever(stop)
+    except AgentRevoked:
+        print(
+            "ERREUR L'atelier a refusé le jeton de l'agent (révoqué ou invalide). "
+            "Un administrateur doit en créer un nouveau (Administration > Moteur).",
+            file=err,
+        )
+        return 3
+    except ConnectionError as exc:
+        print(f"ERREUR atelier injoignable : {exc}", file=err)
+        return 1
+    return 0
 
 
 def _live_serve(
@@ -745,6 +792,8 @@ def main(
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.command == "worker":
         return _worker(env, out, sys.stdin if stdin is None else stdin, recognizer_factory)
+    if args.command == "engine-agent":
+        return _engine_agent(args, env, err)
     if args.command == "recognize":
         return _recognize(args, env, out, err, recognizer_factory)
     if args.command == "align":

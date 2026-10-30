@@ -33,7 +33,7 @@ ni tunnel à adresse changeante), et le poste dort ou redémarre.
   - Les routes `/api/engine/*` forment une famille de débit à part ; elles n'acceptent ni cookie de connexion ni
     jeton d'utilisateur, et un jeton d'agent n'ouvre aucune autre route.
   - L'agent supprime l'audio local à la fin de chaque job (vie privée).
-- **Hors de ce lot** : l'agent Python (phase 2), l'affichage « moteur hors ligne » et la sonde (phase 4), les exports
+- **Hors de ce lot (au moment de l'ADR)** : l'agent Python (phase 2, livré le 2026-10-30, voir plus bas), l'affichage « moteur hors ligne » et la sonde (phase 4), les exports
   ZIP et vidéo à distance, le direct (service d'écoute par tunnel nommé, phase 5).
 
 ## Conséquences
@@ -64,3 +64,22 @@ Instruction du mainteneur : le moteur est lancé **sur Atlas** (serveur toujours
   promettre un délai. Le modèle d'agents permet d'ajouter plus tard un agent sur un poste à GPU, sans toucher à l'atelier.
 - Hors de ce lot : l'agent Python et son installation sur Atlas (phase 2), la mise en place du VPN et des règles Traefik
   sur Alpha (préparées dans `deploy/`, **non appliquées** : elles touchent un serveur qui héberge d'autres projets).
+
+## Phase 2 livrée le 2026-10-30 : `aqr engine-agent`
+
+Module `src/aqr/app/engine_agent.py`, commande `aqr engine-agent [--once]`, configuré par l'environnement
+(`AQR_ENGINE_URL`, `AQR_ENGINE_TOKEN` ou `AQR_ENGINE_TOKEN_FILE`, `AQR_ENGINE_WORK_DIR`, `AQR_MODELS_DIR`…). Sans dépendance
+nouvelle (bibliothèque standard).
+
+- **Même moteur, même ligne de commande** : l'agent lance `python -m aqr.cli recognize … --format json`, comme l'atelier
+  (`web/lib/python.ts`). Rien du moteur n'est dupliqué.
+- **Vérifié avant de lancer** : numéro de bail, moteur parmi `ASR_CHOICES` (jamais passé tel quel à la ligne de commande),
+  chemin de l'audio égal à `/api/engine/leases/<bail>/audio`, taille bornée, empreinte SHA-256 de l'audio reçu.
+- **Jamais de fuite du jeton** : redirections non suivies, jamais journalisé, refus d'un jeton d'utilisateur (`qtr_`) et d'un
+  `http` hors boucle locale. Un jeton refusé arrête l'agent (code de sortie 3, message demandant un nouveau jeton) ;
+  une panne de l'atelier ne l'arrête pas (attente exponentielle de 1 à 60 s avec aléa).
+- **Vie privée** : l'audio et le résultat sont supprimés du disque local à la fin de chaque analyse, succès ou non.
+- **Preuves** : 51 tests unitaires (faux atelier reproduisant le contrat, atelier malveillant ou défaillant : durée de bail
+  illisible, champ audio mal formé, exception du moteur) et un scénario de bout en bout contre le **vrai**
+  atelier (courtier TypeScript) : analyse nominale terminée par l'atelier, échec du moteur avec son message visible côté
+  atelier, annulation apprise au signal de vie, révocation du jeton. Non éprouvé : le vrai moteur (modèles) sur Atlas.

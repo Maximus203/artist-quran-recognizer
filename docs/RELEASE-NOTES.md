@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — L'agent du moteur à distance existe : aqr engine-agent
+Étiquettes : technique, décision
+PR : #157
+
+**Ce qui change.** La commande `aqr engine-agent` existe : c'est l'agent qui, sur Atlas ou sur un poste à GPU, réclame les analyses à l'atelier, les exécute avec le moteur habituel et dépose le résultat. L'atelier de production l'attend ; il n'est pas encore installé sur Atlas, donc les analyses restent suspendues (mode restreint).
+
+**Pourquoi / décision.** Phase 2 de l'ADR-0017 : l'agent appelle l'atelier (aucun port ouvert chez lui). Éprouvé contre le vrai atelier : analyse, échec lisible, annulation, révocation du jeton. Modèle d'unité `deploy/systemd/aqr-engine-agent.service`. Reste à installer l'environnement du moteur et les poids sur Atlas et à mesurer la vitesse sur processeur.
+
 ## 2026-10-30 — MCP : les outils fonctionnent aussi dans le conteneur
 Étiquettes : technique
 PR : #154, #155

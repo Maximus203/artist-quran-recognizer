@@ -1,0 +1,46 @@
+# Agent du moteur à distance (ADR-0017), à installer sur ATLAS (ou sur un poste GPU). MODÈLE, NON APPLIQUÉ.
+#
+# Il APPELLE l'atelier (aucun port ouvert). Prérequis sur la machine :
+#   - le dépôt et son environnement Python dans /opt/aqr (`pip install -e .` avec les dépendances du moteur) ;
+#   - ffmpeg ; les poids des modèles dans /opt/aqr-models (hors Git, cf. AGENTS.md) ; le corpus dans /opt/aqr/data/corpus ;
+#   - un utilisateur dédié sans droits :  useradd --system --home /var/lib/aqr-engine-agent aqr-agent ;
+#   - le jeton d'agent (créé par un administrateur dans l'atelier, montré une seule fois) dans
+#     /etc/aqr/engine-agent.token (root:root, 0600). Il n'est jamais mis dans ce fichier ni dans l'environnement.
+# Sur Atlas, le nom de l'atelier doit résoudre vers l'adresse VPN d'Alpha (voir wireguard/atlas-wg1.conf.example).
+[Unit]
+Description=Agent du moteur Quran (appelle l'atelier)
+After=network-online.target wg-quick@wg1.service
+Wants=network-online.target
+
+[Service]
+User=aqr-agent
+Group=aqr-agent
+WorkingDirectory=/opt/aqr
+Environment=AQR_ENGINE_URL=https://quran-tr.artist-dev.com
+Environment=AQR_ENGINE_TOKEN_FILE=%d/token
+Environment=AQR_ENGINE_WORK_DIR=/var/lib/aqr-engine-agent
+Environment=AQR_MODELS_DIR=/opt/aqr-models
+Environment=AQR_CORPUS_DIR=/opt/aqr/data/corpus
+LoadCredential=token:/etc/aqr/engine-agent.token
+ExecStart=/opt/aqr/.venv/bin/aqr engine-agent
+# Panne de l'atelier : l'agent se repose lui-même (attente croissante). Un jeton refusé l'arrête (code 3) : inutile
+# de redémarrer en boucle, un administrateur doit en créer un nouveau.
+Restart=on-failure
+RestartPreventExitStatus=2 3
+RestartSec=10
+StateDirectory=aqr-engine-agent
+# Durcissement : l'agent ne lit que le dépôt et les modèles, n'écrit que dans son dossier de travail.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/aqr-engine-agent
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Borne mémoire : Atlas héberge d'autres services (Hermes, n8n, Postgres…).
+MemoryMax=8G
+CPUQuota=1600%
+
+[Install]
+WantedBy=multi-user.target
