@@ -1,4 +1,8 @@
-import { isLocalRequest, parseAllowedHosts } from "./local-request";
+import {
+  boundHostname,
+  isLocalRequest,
+  parseAllowedHosts,
+} from "./local-request";
 import {
   bearerApiToken,
   resolveApiToken,
@@ -156,7 +160,8 @@ function apiHostAllowed(request: Request): boolean {
     const host = value.trim().toLowerCase().replace(/:\d+$/, "");
     if (!allowed.has(host)) return false;
   }
-  return allowed.has(new URL(request.url).hostname);
+  const bound = new URL(request.url).hostname;
+  return allowed.has(bound) || bound === boundHostname();
 }
 
 function safeHostname(raw: string | undefined): string | null {

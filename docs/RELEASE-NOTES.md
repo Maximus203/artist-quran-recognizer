@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Atelier en conteneur : l'API, le MCP et le moteur ne sont plus refusés
+Étiquettes : technique
+PR : #153
+
+**Ce qui change.** L'atelier déployé dans son conteneur refusait toutes les routes protégées (API, MCP, routes du moteur à distance) avec un 403, alors que Traefik laissait passer la requête. Elles répondent de nouveau normalement : sans jeton 401, avec un jeton valide le résultat attendu. Rien ne change pour l'usage sur un poste local.
+
+**Pourquoi / décision.** Dans un conteneur, Next écoute sur `0.0.0.0` pour que Traefik l'atteigne, et l'URL qu'il reconstruit porte cette adresse, que la frontière d'accès (`local-request.ts`, `route-guard.ts`) ne reconnaissait pas (elle supposait `127.0.0.1`). Nouvelle variable `AQR_SERVER_HOST`, posée par le Dockerfile : seules les adresses génériques `0.0.0.0` et `[::]` sont admises, et seulement pour l'hôte de l'URL ; l'hôte annoncé par le client (Host, X-Forwarded-Host) reste contrôlé comme avant, et `0.0.0.0` n'est jamais accepté comme hôte annoncé. Défaut trouvé en testant le déploiement réel sur Alpha ; couvert par 6 tests, dont un qui échoue si le correctif est retiré.
+
 ## 2026-10-29 — `npm run start` redevient la commande de lancement sur son poste
 Étiquettes : utilisateur, technique
 PR : -

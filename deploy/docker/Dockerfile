@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certi
     && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     AQR_REVIEW_DIR=/data \
+    AQR_SERVER_HOST=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app/web
 COPY --from=build --chown=node:node /app/web ./

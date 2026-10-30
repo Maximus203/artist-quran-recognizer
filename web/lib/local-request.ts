@@ -100,6 +100,19 @@ export function parsePublicOrigin(raw: string | undefined): URL | null {
   }
 }
 
+/**
+ * Adresse d'écoute déclarée (`AQR_SERVER_HOST`), pour un serveur lié à toutes les interfaces : dans un
+ * conteneur, Next écoute sur `0.0.0.0` afin que le reverse proxy l'atteigne, et l'URL qu'il reconstruit
+ * porte cette adresse. Seules les adresses génériques sont admises (jamais un nom ni une adresse précise).
+ * Elle ne vaut QUE pour l'hôte de l'URL ; l'hôte ANNONCÉ (Host, X-Forwarded-Host) reste contrôlé à part.
+ */
+export function boundHostname(
+  raw = process.env.AQR_SERVER_HOST,
+): string | null {
+  const value = (raw ?? "").trim().toLowerCase();
+  return value === "0.0.0.0" || value === "[::]" ? value : null;
+}
+
 function tokenAuthorized(request: Request, token: string, now: number) {
   const bearer = request.headers
     .get("authorization")
@@ -171,7 +184,7 @@ export function isLocalRequest(
   const allowed = (host: string) =>
     LOOPBACK.includes(host) || extra.includes(host);
   const url = new URL(request.url);
-  if (!allowed(url.hostname)) return false;
+  if (!allowed(url.hostname) && url.hostname !== boundHostname()) return false;
   if (!forwardedHostsAllowed(request, allowed)) return false;
   if (token && !tokenAuthorized(request, token, now)) return false;
   const origin = request.headers.get("origin");

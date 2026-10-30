@@ -25,6 +25,7 @@ Exigences de l'accès public (chacune est testée dans `web/lib/config-guard.tes
 |---|---|
 | `AQR_ACCESS_TOKEN` | au moins 32 caractères aléatoires, pas une valeur prévisible |
 | `AQR_PUBLIC_ORIGIN` | origine **https** (`https://hôte`), sans chemin ni identifiants |
+| `AQR_SERVER_HOST` | `0.0.0.0` (ou `[::]`) quand le serveur écoute sur toutes les interfaces, comme dans le conteneur (le Dockerfile le pose). Sans lui, toute route protégée est refusée derrière un reverse proxy. Ce n'est pas un secret. Seul l'hôte de l'URL est concerné, jamais l'hôte annoncé par le client. |
 | `AQR_TRUST_PROXY` | déclaré : `1` derrière un reverse proxy de confiance, `0` sinon. Sans `1`, l'adresse réelle des visiteurs est inconnue et aucun blocage d'adresse n'a lieu. |
 | `AQR_SIGNUP` | déclaré : `open`, `code` ou `closed` (+ `AQR_SIGNUP_CODE` si `code`) |
 | `AQR_AUDIT_SALT` | au moins 32 caractères aléatoires (sel des empreintes d'audit et d'adresses) |
