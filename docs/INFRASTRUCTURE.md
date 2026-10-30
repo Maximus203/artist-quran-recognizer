@@ -28,8 +28,10 @@ GPU** : le moteur y tourne sur processeur, à mesurer. Le direct reste à décid
 **`quran-tr.artist-dev.com`** (frontend servi par Traefik sur Alpha). Conséquences :
 
 - Alpha tourne en **`AQR_ENGINE=remote`** : les analyses attendent un agent du moteur (ADR-0017). La couture
-  (courtier, bail, routes `/api/engine/*`, jetons d'agent) est **écrite et testée** ; **l'agent Python sur Atlas ne
-  l'est pas encore** : tant qu'il n'existe pas, les envois sont acceptés mais aucune analyse ne démarre. Pour
+  (courtier, bail, routes `/api/engine/*`, jetons d'agent) est **écrite et testée**, et **l'agent Python (`aqr engine-agent`)
+  est écrit et éprouvé contre le vrai atelier** ; il n'est **pas encore installé sur Atlas** (modèle d'unité :
+  `deploy/systemd/aqr-engine-agent.service`) : tant qu'aucun agent n'est en ligne, les envois sont acceptés mais
+  aucune analyse ne démarre. Pour
   geler les envois d'ici là : `AQR_SERVICE_MODE=restricted`. L'image ne contient ni Python ni Chromium.
 - Les bornes de l'atelier protègent les voisins : 2 Gio de mémoire, 2 processeurs, 512 processus, système de
   fichiers en lecture seule, aucune capacité Linux, disque protégé par la réserve de 1 Gio (`AQR_MIN_FREE_BYTES`).
@@ -142,8 +144,9 @@ chronomètre en main, avant la mise en production (critère n° 5 de la section 
 
 ## Décisions qui appartiennent à Cherif Diouf
 
-1. ~~Quelle machine~~ : **Alpha pour l'atelier, Atlas pour le moteur** (2026-10-29). Reste : écrire et installer l'agent sur
-   Atlas (processeur seul, vitesse à mesurer) ; accord pour appliquer le second WireGuard et les règles Traefik sur Alpha.
+1. ~~Quelle machine~~ : **Alpha pour l'atelier, Atlas pour le moteur** (2026-10-29). L'agent est écrit ; reste à l'installer sur
+   Atlas (environnement Python du moteur, poids des modèles copiés hors Git, jeton d'agent créé par un administrateur,
+   vitesse sur processeur à mesurer). Le second WireGuard et les règles Traefik sont appliqués (2026-10-30).
 2. ~~Nom d'hôte~~ : `quran-tr.artist-dev.com`. Reste : vérifier que le DNS pointe vers Alpha.
 3. Inscriptions publiques : `open`, `code` ou `closed` (le script des testeurs garde `open` comme avant).
 4. Liste complète des mots de passe divulgués (réseau sortant ou gros fichier local).
