@@ -16,6 +16,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
+import queue
 import random
 import re
 import shutil
@@ -23,8 +25,10 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.request
+import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -45,6 +49,11 @@ MAX_MESSAGE = 300  # un message d'échec tient sur une ligne bornée
 AUDIO_NAME = "source.bin"
 RESULT_NAME = "source.recognition.json"
 REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_WARM_IDLE_S = 600  # modèles gardés 10 min après la dernière analyse, puis libérés
+MIN_WARM_IDLE_S = 30
+MAX_WARM_IDLE_S = 86_400
+WARM_READY_TIMEOUT_S = 600  # premier chargement des modèles (disque froid, GPU)
+_OFF_VALUES = ("0", "false", "off", "non", "no")
 
 
 class ConfigError(ValueError):
@@ -65,6 +74,8 @@ class AgentConfig:
     corpus_dir: Path | None = None
     lock_path: Path | None = None
     python: str = sys.executable
+    warm: bool = True
+    warm_idle_s: int = DEFAULT_WARM_IDLE_S
 
 
 def _is_loopback(host: str) -> bool:
@@ -108,6 +119,13 @@ def config_from_env(env: Mapping[str, str]) -> AgentConfig:
         value = env.get(name, "").strip()
         return Path(value) if value else None
 
+    try:
+        idle = int(env.get("AQR_ENGINE_WARM_IDLE_S", "").strip() or DEFAULT_WARM_IDLE_S)
+    except ValueError:
+        idle = DEFAULT_WARM_IDLE_S
+    if not MIN_WARM_IDLE_S <= idle <= MAX_WARM_IDLE_S:
+        idle = DEFAULT_WARM_IDLE_S
+
     return AgentConfig(
         url=f"{parsed.scheme}://{parsed.netloc}",
         token=token,
@@ -116,6 +134,8 @@ def config_from_env(env: Mapping[str, str]) -> AgentConfig:
         wait_s=max(0, min(MAX_WAIT_S, wait)),
         corpus_dir=path("AQR_CORPUS_DIR"),
         lock_path=path("AQR_LOCK_PATH"),
+        warm=env.get("AQR_ENGINE_WARM", "").strip().lower() not in _OFF_VALUES,
+        warm_idle_s=idle,
     )
 
 
@@ -163,6 +183,26 @@ class Runner(Protocol):
     def run(self, audio: Path, out_dir: Path, asr: str, cancel: threading.Event) -> RunOutcome: ...
 
 
+def recognize_argv(
+    audio: Path,
+    out_dir: Path,
+    asr: str,
+    *,
+    models_dir: Path | None,
+    corpus_dir: Path | None,
+    lock_path: Path | None,
+) -> list[str]:
+    """Arguments de `aqr recognize` : un seul endroit pour le processus à la demande et le chaud."""
+    argv = ["recognize", str(audio), "--out-dir", str(out_dir), "--asr", asr, "--format", "json"]
+    if models_dir is not None:
+        argv += ["--models-dir", str(models_dir)]
+    if corpus_dir is not None:
+        argv += ["--corpus-dir", str(corpus_dir)]
+    if lock_path is not None:
+        argv += ["--lock", str(lock_path)]
+    return argv
+
+
 @dataclass(frozen=True)
 class SubprocessRunner:
     """Lance `python -m aqr.cli recognize`, comme l'atelier (web/lib/python.ts)."""
@@ -174,15 +214,19 @@ class SubprocessRunner:
     cwd: Path = REPO_ROOT
 
     def argv(self, audio: Path, out_dir: Path, asr: str) -> list[str]:
-        argv = [self.python, "-m", "aqr.cli", "recognize", str(audio)]
-        argv += ["--out-dir", str(out_dir), "--asr", asr, "--format", "json"]
-        if self.models_dir is not None:
-            argv += ["--models-dir", str(self.models_dir)]
-        if self.corpus_dir is not None:
-            argv += ["--corpus-dir", str(self.corpus_dir)]
-        if self.lock_path is not None:
-            argv += ["--lock", str(self.lock_path)]
-        return argv
+        return [
+            self.python,
+            "-m",
+            "aqr.cli",
+            *recognize_argv(
+                audio,
+                out_dir,
+                asr,
+                models_dir=self.models_dir,
+                corpus_dir=self.corpus_dir,
+                lock_path=self.lock_path,
+            ),
+        ]
 
     def run(self, audio: Path, out_dir: Path, asr: str, cancel: threading.Event) -> RunOutcome:
         proc = subprocess.Popen(
@@ -216,6 +260,213 @@ class SubprocessRunner:
         proc.wait()
         reader.join(2)
         return RunOutcome(code=None if cancelled else proc.returncode, stderr_tail="".join(tail))
+
+
+class _Worker:
+    """Un service `aqr worker` en marche : processus, lignes de sortie, fin de stderr."""
+
+    def __init__(self, command: list[str], cwd: Path) -> None:
+        env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+        self.proc = subprocess.Popen(
+            command,
+            cwd=cwd,
+            env=env,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.lines: queue.Queue[str | None] = queue.Queue()
+        self.tail: list[str] = []
+        threading.Thread(target=self._read_stdout, daemon=True).start()
+        threading.Thread(target=self._read_stderr, daemon=True).start()
+
+    def _read_stdout(self) -> None:
+        assert self.proc.stdout is not None
+        for line in self.proc.stdout:
+            self.lines.put(line)
+        self.lines.put(None)  # fin du flux : le service est arrêté
+
+    def _read_stderr(self) -> None:
+        assert self.proc.stderr is not None
+        for line in self.proc.stderr:  # toujours vidé, sinon le tube se remplit et bloque le moteur
+            self.tail.append(line)
+            del self.tail[:-200]
+
+    @property
+    def alive(self) -> bool:
+        return self.proc.poll() is None
+
+    def stderr_text(self) -> str:
+        return "".join(self.tail)
+
+    def stop(self, grace_s: float = 3.0) -> None:
+        if self.proc.poll() is None:
+            try:
+                if self.proc.stdin is not None:
+                    self.proc.stdin.close()  # fin de flux : le service s'arrête de lui-même
+                self.proc.wait(grace_s)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        if self.proc.poll() is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(10)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
+
+
+class WarmRunner:
+    """Garde un `aqr worker` en vie : les modèles restent chargés d'une analyse à l'autre.
+
+    Le service est lancé à la première analyse et arrêté après `idle_s` secondes sans analyse
+    (mémoire et GPU rendus). Une annulation ou une panne l'arrête ; la suivante le relance.
+    """
+
+    def __init__(
+        self,
+        *,
+        python: str = sys.executable,
+        models_dir: Path | None = None,
+        corpus_dir: Path | None = None,
+        lock_path: Path | None = None,
+        worker_command: list[str] | None = None,
+        cwd: Path = REPO_ROOT,
+        ready_timeout_s: float = WARM_READY_TIMEOUT_S,
+        idle_s: float = DEFAULT_WARM_IDLE_S,
+    ) -> None:
+        self._models_dir = models_dir
+        self._corpus_dir = corpus_dir
+        self._lock_path = lock_path
+        self._command = worker_command or [python, "-m", "aqr.cli", "worker"]
+        self._cwd = cwd
+        self._ready_timeout_s = ready_timeout_s
+        self._idle_s = idle_s
+        self._lock = threading.Lock()  # une analyse à la fois ; tenu pendant toute l'analyse
+        self._worker: _Worker | None = None
+        self._last_used = time.monotonic()
+
+    @property
+    def running(self) -> bool:
+        worker = self._worker
+        return worker is not None and worker.alive
+
+    def close(self) -> None:
+        with self._lock:
+            self._drop()
+
+    def _drop(self) -> None:
+        worker, self._worker = self._worker, None
+        if worker is not None:
+            worker.stop()
+
+    def _watch_idle(self, worker: _Worker) -> None:
+        pause = max(0.1, min(5.0, self._idle_s / 4))
+        while worker.alive:
+            time.sleep(pause)
+            if not self._lock.acquire(blocking=False):
+                continue  # une analyse est en cours
+            try:
+                if self._worker is not worker:
+                    return
+                if time.monotonic() - self._last_used >= self._idle_s:
+                    _log(logging.INFO, "moteur_chaud_libere", inactif_s=int(self._idle_s))
+                    self._drop()
+                    return
+            finally:
+                self._lock.release()
+
+    def _start(self, cancel: threading.Event) -> RunOutcome | None:
+        """Lance le service et attend « ready » ; None si prêt, sinon l'issue à rendre."""
+        worker = _Worker(self._command, self._cwd)
+        self._worker = worker
+        deadline = time.monotonic() + self._ready_timeout_s
+        while True:
+            if cancel.is_set():
+                self._drop()
+                return RunOutcome(code=None, stderr_tail="")
+            try:
+                line = worker.lines.get(timeout=0.5)
+            except queue.Empty:
+                if time.monotonic() >= deadline:
+                    break
+                continue
+            if line is None:
+                break
+            if _is_event(line, "ready"):
+                threading.Thread(target=self._watch_idle, args=(worker,), daemon=True).start()
+                return None
+        detail = worker.stderr_text()
+        self._drop()
+        return RunOutcome(code=1, stderr_tail=f"{detail}\nmoteur chaud : il ne démarre pas")
+
+    def run(self, audio: Path, out_dir: Path, asr: str, cancel: threading.Event) -> RunOutcome:
+        with self._lock:
+            if self._worker is None or not self._worker.alive:
+                self._drop()
+                failed = self._start(cancel)
+                if failed is not None:
+                    return failed
+            worker = self._worker
+            assert worker is not None
+            request_id = uuid.uuid4().hex
+            argv = recognize_argv(
+                audio,
+                out_dir,
+                asr,
+                models_dir=self._models_dir,
+                corpus_dir=self._corpus_dir,
+                lock_path=self._lock_path,
+            )
+            try:
+                assert worker.proc.stdin is not None
+                worker.proc.stdin.write(json.dumps({"id": request_id, "argv": argv}) + "\n")
+                worker.proc.stdin.flush()
+            except OSError:
+                return self._crashed(worker)
+            while True:
+                if cancel.is_set():
+                    self._drop()
+                    return RunOutcome(code=None, stderr_tail="")
+                try:
+                    line = worker.lines.get(timeout=0.5)
+                except queue.Empty:
+                    continue
+                if line is None:
+                    return self._crashed(worker)
+                reply = _parse_reply(line, request_id)
+                if reply is None:
+                    continue
+                self._last_used = time.monotonic()
+                code = reply.get("code")
+                return RunOutcome(
+                    code=code if isinstance(code, int) else 1,
+                    stderr_tail=str(reply.get("stderr") or ""),
+                )
+
+    def _crashed(self, worker: _Worker) -> RunOutcome:
+        detail = worker.stderr_text()
+        self._drop()
+        return RunOutcome(code=1, stderr_tail=f"{detail}\nmoteur chaud arrêté en cours d'analyse")
+
+
+def _parse_reply(line: str, request_id: str) -> dict[str, Any] | None:
+    try:
+        data = json.loads(line)
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) and data.get("id") == request_id else None
+
+
+def _is_event(line: str, name: str) -> bool:
+    try:
+        data = json.loads(line)
+    except ValueError:
+        return False
+    return isinstance(data, dict) and data.get("event") == name
 
 
 class EngineAgent:
@@ -511,7 +762,15 @@ class EngineAgent:
                 pause(1.0)
 
 
-def build_runner(config: AgentConfig) -> SubprocessRunner:
+def build_runner(config: AgentConfig) -> Runner:
+    if config.warm:
+        return WarmRunner(
+            python=config.python,
+            models_dir=config.models_dir,
+            corpus_dir=config.corpus_dir,
+            lock_path=config.lock_path,
+            idle_s=config.warm_idle_s,
+        )
     return SubprocessRunner(
         python=config.python,
         models_dir=config.models_dir,

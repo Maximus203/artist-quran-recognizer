@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — L'agent garde les modèles en mémoire entre deux analyses
+Étiquettes : utilisateur, technique
+PR : #167
+
+**Ce qui change.** L'agent du moteur (REVERB et Atlas) ne recharge plus les modèles à chaque analyse : il lance un seul service `aqr worker` et le garde en mémoire. Sur un vrai enregistrement de 2,6 Mo, une analyse passe de 52 s (processus à la demande) à 29-33 s une fois le service chaud ; la toute première, qui charge les modèles depuis le disque, reste lente (93 s mesurées). Le service est arrêté après 10 minutes sans analyse pour rendre la mémoire et le GPU (`AQR_ENGINE_WARM_IDLE_S`, de 30 s à 24 h), et relancé tout seul à l'analyse suivante. `AQR_ENGINE_WARM=0` revient au processus par analyse.
+
+**Pourquoi / décision.** Le rechargement des modèles coûtait environ 30 s fixes par analyse, ce qui rendait le poste à GPU aussi lent qu'Atlas sur un extrait court (ADR-0017, mesures). Une annulation ou une panne arrête le service chaud sans rien déposer ; l'analyse suivante repart d'un service neuf. Une analyse à la fois par agent, comme avant.
+
 ## 2026-10-30 — Le poste à GPU peut devenir un agent du moteur (REVERB)
 Étiquettes : utilisateur, technique
 PR : #166

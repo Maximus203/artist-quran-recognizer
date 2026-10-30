@@ -273,7 +273,8 @@ def _engine_agent(args: argparse.Namespace, env: Mapping[str, str], err: TextIO)
     logging.getLogger("aqr.engine_agent").info(
         "agent_demarre %s", json.dumps({"atelier": config.url, "une_analyse": bool(args.once)})
     )
-    agent = EngineAgent(config, build_runner(config))
+    runner = build_runner(config)
+    agent = EngineAgent(config, runner)
     stop = threading.Event()
     for name in ("SIGINT", "SIGTERM"):
         if hasattr(signal, name):
@@ -293,6 +294,10 @@ def _engine_agent(args: argparse.Namespace, env: Mapping[str, str], err: TextIO)
     except ConnectionError as exc:
         print(f"ERREUR atelier injoignable : {exc}", file=err)
         return 1
+    finally:
+        close = getattr(runner, "close", None)
+        if callable(close):
+            close()
     return 0
 
 
