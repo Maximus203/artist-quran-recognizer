@@ -192,3 +192,54 @@ describe("courtier du moteur distant", () => {
     expect(leaseSeconds("abc")).toBe(90);
   });
 });
+
+describe("règle de priorité entre agents (premier choix / secours)", () => {
+  it("un agent que la règle écarte ne reçoit rien ; l'autre reçoit l'analyse", () => {
+    const strict = new EngineBroker({ mayClaim: (agentId) => agentId === 1 });
+    strict.offer(ticket("s1"));
+    expect(strict.claim(2)).toBeNull(); // le secours est écarté
+    expect(strict.status().waiting).toBe(1); // l'analyse reste en attente
+    expect(strict.claim(1)?.ticket.id).toBe("s1");
+    strict.reset();
+  });
+
+  it("la règle sait qui est occupé (a un bail en cours)", () => {
+    const seen: boolean[] = [];
+    const watching = new EngineBroker({
+      mayClaim: (agentId, ctx) => {
+        if (agentId === 2) seen.push(ctx.busy(1));
+        return true;
+      },
+    });
+    watching.offer(ticket("s1"));
+    watching.offer(ticket("s2"));
+    watching.claim(2); // l'agent 1 ne tient encore rien
+    expect(seen).toEqual([false]);
+    watching.reset();
+    watching.offer(ticket("s3"));
+    watching.claim(1); // l'agent 1 prend un bail
+    watching.offer(ticket("s4"));
+    watching.claim(2);
+    expect(seen.at(-1)).toBe(true);
+    expect(watching.isBusy(1)).toBe(true);
+    expect(watching.isBusy(3)).toBe(false);
+    watching.reset();
+  });
+
+  it("un agent écarté qui attend reçoit l'analyse dès que la règle l'autorise (réveil périodique)", async () => {
+    let allowed = false;
+    const waiting = new EngineBroker({ mayClaim: () => allowed });
+    waiting.offer(ticket("s1"));
+    const pending = waiting.claimWait(2, 60_000);
+    expect(waiting.status().waiting).toBe(1);
+    allowed = true; // l'agent préféré vient de disparaître
+    waiting.reap(); // le réveil périodique réévalue les agents en attente
+    expect((await pending)?.ticket.id).toBe("s1");
+    waiting.reset();
+  });
+
+  it("sans règle, comportement inchangé : le premier qui appelle prend l'analyse", () => {
+    broker.offer(ticket("s1"));
+    expect(broker.claim(2)?.ticket.id).toBe("s1");
+  });
+});

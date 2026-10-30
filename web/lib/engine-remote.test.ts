@@ -540,3 +540,75 @@ describe("agents : administration", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("premier choix / secours entre agents", () => {
+  // Les agents du banc de test sont créés dans l'ordre : `one` est le premier choix, `two` le secours.
+  const setSeen = async (agentId: number, msAgo: number) => {
+    const { getDb } = await import("./db");
+    getDb()
+      .prepare("UPDATE engine_agents SET last_seen_at = ? WHERE id = ?")
+      .run(new Date(Date.now() - msAgo).toISOString(), agentId);
+  };
+  const offer = async (id: string) => {
+    await seed(id);
+    await m.jobs.launch(id, undefined, 1);
+    await until(() => m.broker.engineBroker().status().waiting >= 1);
+  };
+
+  it("le premier choix est en ligne et libre : le secours attend, le premier choix prend l'analyse", async () => {
+    await setSeen(agentIds.one, 5_000);
+    await offer(A);
+    expect((await claim(tokens.two)).status).toBe(204); // le secours ne reçoit rien
+    expect(m.broker.engineBroker().status().waiting).toBe(1); // l'analyse attend toujours
+    const res = await claim(tokens.one);
+    expect(res.status).toBe(200);
+    expect((await res.json()).session).toBe(A);
+  });
+
+  it("le premier choix est occupé : le secours prend l'analyse suivante (deux en parallèle)", async () => {
+    // Par défaut la file sert UNE analyse à la fois ; deux agents permettent d'en servir deux.
+    vi.stubEnv("AQR_MAX_CONCURRENT", "2");
+    await setSeen(agentIds.one, 5_000);
+    await offer(A);
+    expect((await claim(tokens.one)).status).toBe(200); // `one` tient A
+    await offer(B);
+    const res = await claim(tokens.two);
+    expect(res.status).toBe(200);
+    expect((await res.json()).session).toBe(B);
+  });
+
+  it("le premier choix est silencieux (PC éteint) : le secours prend l'analyse", async () => {
+    await setSeen(agentIds.one, 10 * 60_000);
+    await offer(A);
+    expect((await claim(tokens.two)).status).toBe(200);
+  });
+
+  it("le premier choix est révoqué : le secours prend l'analyse", async () => {
+    await setSeen(agentIds.one, 1_000);
+    const { revokeAgent } = await import("./engine-agents");
+    const { getDb } = await import("./db");
+    revokeAgent(getDb(), agentIds.one);
+    await offer(A);
+    expect((await claim(tokens.two)).status).toBe(200);
+  });
+
+  it("un secours en attente (long polling) reçoit l'analyse quand le premier choix disparaît", async () => {
+    await setSeen(agentIds.one, 5_000);
+    await offer(A);
+    const waiting = claim(tokens.two, 20);
+    await setSeen(agentIds.one, 10 * 60_000); // le premier choix s'éteint
+    m.broker.engineBroker().reap(); // réveil périodique
+    const res = await waiting;
+    expect(res.status).toBe(200);
+  });
+
+  it("l'ordre est modifiable : en montant le secours, c'est lui qui prend d'abord", async () => {
+    const { moveAgent } = await import("./engine-agents");
+    const { getDb } = await import("./db");
+    expect(moveAgent(getDb(), agentIds.two, "up")).toBe(true);
+    await setSeen(agentIds.two, 5_000);
+    await offer(A);
+    expect((await claim(tokens.one)).status).toBe(204); // `one` est devenu le secours
+    expect((await claim(tokens.two)).status).toBe(200);
+  });
+});
