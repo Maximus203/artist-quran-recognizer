@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Le menu « … » d'une ligne n'est plus coupé en bas de la liste
+Étiquettes : utilisateur
+PR : #169
+
+**Ce qui change.** Dans la liste des sessions, le menu « … » des dernières lignes (Ouvrir, Favoris, Archiver, Supprimer…) s'affichait coupé ou invisible. Il s'ouvre maintenant en entier, quelle que soit la ligne.
+
+**Pourquoi / décision.** La liste est coupée à ses bords pour garder ses coins arrondis, et le menu s'ouvre vers le bas : la coupe est levée tant qu'un menu est ouvert. Vérifié dans un vrai navigateur (menu de la dernière ligne dépassant de 143 px avant, entier et cliquable après).
+
 ## 2026-10-30 — Chaque analyse dit quel agent l'a faite
 Étiquettes : utilisateur, technique
 PR : #168

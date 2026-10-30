@@ -1348,6 +1348,10 @@ body.auth-pg {
 .list-card {
   overflow: clip;
 }
+/* Le menu d'une ligne s'ouvre vers le bas : sur les dernières lignes, la coupe le tronquerait. */
+.list-card:has(.rowmenu) {
+  overflow: visible;
+}
 .shead {
   display: none;
 }
