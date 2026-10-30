@@ -160,6 +160,18 @@ export function AccountMenu({ active }: { active: NavId }) {
               <Icon name="chart" />
               Mes statistiques
             </Link>
+            {user.role === "admin" ? (
+              <Link
+                role="menuitem"
+                className="menu-item"
+                href="/gestion/moteur"
+                data-testid="menu-admin"
+                onClick={() => close(false)}
+              >
+                <Icon name="shield" />
+                Administration
+              </Link>
+            ) : null}
             <p className="eyebrow menu-label" id={`${menuId}-theme`}>
               Thème
             </p>

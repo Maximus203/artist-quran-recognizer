@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { authConfig, resolveLogin, sessionToken, SESSION_COOKIE } from "./auth";
 import { hasAccessCredential } from "./local-request";
 import { ready } from "./server-init";
@@ -41,6 +41,13 @@ export function safeNext(
   return typeof value === "string" && /^\/(?![/\\])[^\r\n]*$/.test(value)
     ? value
     : fallback;
+}
+
+/** Pages réservées aux administrateurs : un autre compte reçoit un 404 (la zone n'existe pas pour lui). */
+export async function requirePageAdmin(next = "/"): Promise<User> {
+  const user = await requirePageUser(next);
+  if (user.role !== "admin") notFound();
+  return user;
 }
 
 export async function requirePageUser(next = "/"): Promise<User> {
