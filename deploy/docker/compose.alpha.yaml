@@ -48,7 +48,8 @@ services:
       # Corps maximal au bord (la vidéo de 2 Gio de l'atelier ne passe pas ici tant que les envois sont suspendus).
       traefik.http.middlewares.atelier-body.buffering.maxRequestBodyBytes: "2202009600"
 
-      # Routes du moteur : uniquement depuis le second WireGuard (Atlas = 10.78.0.2), en plus du jeton d'agent.
+      # Routes du moteur : uniquement depuis les VPN (Atlas = 10.78.0.2 sur wg1 ; le poste à GPU de l'administrateur
+      # passe par le VPN d'administration wg0, 10.77.0.0/24), en plus du jeton d'agent.
       traefik.http.routers.atelier-engine.entrypoints: websecure
       traefik.http.routers.atelier-engine.rule: Host(`${ATELIER_HOST}`) && PathPrefix(`/api/engine`)
       traefik.http.routers.atelier-engine.priority: "100"
@@ -56,7 +57,7 @@ services:
       traefik.http.routers.atelier-engine.tls.certresolver: letsencrypt
       traefik.http.routers.atelier-engine.service: atelier
       traefik.http.routers.atelier-engine.middlewares: atelier-vpn
-      traefik.http.middlewares.atelier-vpn.ipallowlist.sourcerange: 10.78.0.0/30
+      traefik.http.middlewares.atelier-vpn.ipallowlist.sourcerange: 10.78.0.0/30,10.77.0.0/24
 
 networks:
   web:
