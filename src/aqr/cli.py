@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import os
 import signal
 import sys
@@ -265,6 +266,13 @@ def _engine_agent(args: argparse.Namespace, env: Mapping[str, str], err: TextIO)
     except ConfigError as exc:
         print(f"ERREUR {exc}", file=err)
         return 2
+    # Journal de l'agent sur stderr (journalctl) : sans lui, seul « Started » serait visible.
+    logging.basicConfig(
+        stream=err, level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", force=True
+    )
+    logging.getLogger("aqr.engine_agent").info(
+        "agent_demarre %s", json.dumps({"atelier": config.url, "une_analyse": bool(args.once)})
+    )
     agent = EngineAgent(config, build_runner(config))
     stop = threading.Event()
     for name in ("SIGINT", "SIGTERM"):
@@ -278,7 +286,7 @@ def _engine_agent(args: argparse.Namespace, env: Mapping[str, str], err: TextIO)
     except AgentRevoked:
         print(
             "ERREUR L'atelier a refusé le jeton de l'agent (révoqué ou invalide). "
-            "Un administrateur doit en créer un nouveau (Administration > Moteur).",
+            "Un administrateur doit en créer un nouveau (POST /api/admin/engine-agents).",
             file=err,
         )
         return 3

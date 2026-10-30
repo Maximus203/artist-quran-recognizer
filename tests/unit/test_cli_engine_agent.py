@@ -58,3 +58,19 @@ def test_jeton_revoque_sort_en_3_avec_un_message_qui_dit_quoi_faire(refusing_ate
     assert code == 3
     assert "refusé" in err and "administrateur" in err
     assert TOKEN not in err
+
+
+def test_l_agent_journalise_son_demarrage_sans_jamais_le_jeton(refusing_atelier: str) -> None:
+    # Sans journal, `journalctl` ne montre que « Started » : on ignore ce que fait l'agent.
+    env = {"AQR_ENGINE_URL": refusing_atelier, "AQR_ENGINE_TOKEN": TOKEN, "AQR_ENGINE_WAIT_S": "0"}
+    _, _, err = run(["engine-agent", "--once"], env)
+    assert "agent_demarre" in err
+    assert refusing_atelier in err  # l'adresse de l'atelier est dite, jamais le jeton
+    assert TOKEN not in err and TOKEN[4:] not in err
+
+
+def test_message_de_jeton_refuse_ne_cite_aucun_menu_inexistant(refusing_atelier: str) -> None:
+    env = {"AQR_ENGINE_URL": refusing_atelier, "AQR_ENGINE_TOKEN": TOKEN, "AQR_ENGINE_WAIT_S": "0"}
+    _, _, err = run(["engine-agent", "--once"], env)
+    assert "Administration > Moteur" not in err
+    assert "/api/admin/engine-agents" in err

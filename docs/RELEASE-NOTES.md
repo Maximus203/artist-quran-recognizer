@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — L'agent du moteur tourne sur Atlas : première analyse de bout en bout
+Étiquettes : utilisateur, technique
+PR : #161
+
+**Ce qui change.** Les analyses fonctionnent sur `quran-tr.artist-dev.com` : l'agent d'Atlas réclame les enregistrements, les analyse avec le moteur complet sur processeur et dépose le résultat. Premier essai réel, 11 minutes d'enregistrement analysées en 27 s, versets reconnus et passage non coranique écarté. `aqr engine-agent` écrit maintenant son journal (démarrage, analyses prises, résultats, pannes) : `journalctl -u aqr-engine-agent` devient lisible.
+
+**Pourquoi / décision.** Fin de la phase 2 de l'ADR-0017. Le jeton d'agent a été créé par l'opérateur directement dans la base de l'atelier (même schéma que `createAgent`, au nom de l'administrateur) puis déposé sur Atlas sans jamais s'afficher, car l'atelier n'a pas encore d'écran d'administration des agents (à venir). Le message d'erreur d'un jeton refusé cite désormais `POST /api/admin/engine-agents`, seule voie réelle.
+
 ## 2026-10-30 — Envoi d'audio par morceaux : un téléphone en 4G peut envoyer un long enregistrement
 Étiquettes : utilisateur, technique
 PR : #160
