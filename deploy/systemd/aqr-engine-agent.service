@@ -39,8 +39,10 @@ ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 # Borne mémoire : Atlas héberge d'autres services (Hermes, n8n, Postgres…).
-MemoryMax=8G
-CPUQuota=1600%
+# Mesuré (ADR-0017) : 5,6 Go de mémoire et tous les threads pour 12 min d'audio ; ces bornes laissent de la place aux voisins.
+MemoryMax=7G
+CPUQuota=1000%
+Nice=10
 
 [Install]
 WantedBy=multi-user.target

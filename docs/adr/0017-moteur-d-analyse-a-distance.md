@@ -60,7 +60,7 @@ Instruction du mainteneur : le moteur est lancé **sur Atlas** (serveur toujours
   public** : `/api/engine/*` n'est joignable que depuis le réseau du VPN (Traefik : règle de chemin + liste d'adresses
   autorisées), en plus du jeton d'agent.
 - **Réserve notée avant exécution** : Atlas n'a **pas de GPU** (ThinkCentre i7-14700T, 15 Gio, `artist-atlas`, socle). Le
-  moteur y tournera sur processeur : sa vitesse et sa mémoire sont **à mesurer** (`scripts/measure_speed.py`) avant de
+  moteur y tournera sur processeur : sa vitesse et sa mémoire sont **à mesurer** (lancer `aqr recognize` et lire `timing`, voir « Mesures sur Atlas ») avant de
   promettre un délai. Le modèle d'agents permet d'ajouter plus tard un agent sur un poste à GPU, sans toucher à l'atelier.
 - Hors de ce lot : l'agent Python et son installation sur Atlas (phase 2), la mise en place du VPN et des règles Traefik
   sur Alpha (préparées dans `deploy/`, **non appliquées** : elles touchent un serveur qui héberge d'autres projets).
@@ -83,3 +83,24 @@ nouvelle (bibliothèque standard).
   illisible, champ audio mal formé, exception du moteur) et un scénario de bout en bout contre le **vrai**
   atelier (courtier TypeScript) : analyse nominale terminée par l'atelier, échec du moteur avec son message visible côté
   atelier, annulation apprise au signal de vie, révocation du jeton. Non éprouvé : le vrai moteur (modèles) sur Atlas.
+
+## Mesures sur Atlas, processeur seul (2026-10-30)
+
+Environnement installé dans `/opt/aqr` (torch 2.11.0 en version processeur, NeMo 3.0.0, 2,2 Go) ; poids vérifiés par
+empreinte (`scripts/fetch_models.py`, 3,0 Go) et corpus Tanzil (6 236 versets). Le modèle Muno, à accès restreint sur
+Hugging Face, a été copié depuis le poste et vérifié par le même verrou. Moteur `cascade`, audio de récitations publiques
+(EveryAyah), machine au repos, priorité normale, 28 threads :
+
+| Audio | Durée de calcul | Mémoire max | Résultat |
+|---|---|---|---|
+| 1 verset (4,4 s) | 17 s (dont ~13 s de chargement des modèles) | 4,0 Go | 1 fenêtre |
+| Al-Fatiha (41,8 s) | 22 s | 4,0 Go | 7 versets sur 7 reconnus, 0 avertissement |
+| 73 versets (716 s) | 180 s, soit 4 fois plus vite que l'audio | 5,6 Go | 73 versets reconnus, 0 avertissement |
+
+- **Conséquences.** Le processeur d'Atlas suffit : l'analyse va plus vite que l'audio. Un coût fixe d'environ 13 s
+  (chargement des modèles) s'ajoute à chaque analyse, car l'agent lance un processus par analyse. Le segmenteur domine
+  (116 s sur 175 s pour 716 s d'audio).
+- **Impact sur le serveur.** Pendant l'analyse longue, la charge d'Atlas est montée vers 16 sur 28 threads et la mémoire
+  disponible est descendue vers 7,5 Go. L'unité d'exemple borne donc l'agent (`Nice`, `CPUQuota`, `MemoryMax`).
+- **Limites de la mesure.** Récitations propres d'un seul lecteur, pas de bruit ; extrapolation à plusieurs heures non
+  vérifiée ; le passage par l'atelier (téléchargement et dépôt par le VPN) n'est pas inclus.
