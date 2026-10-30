@@ -493,6 +493,34 @@ describe("agents : administration", () => {
     expect(during.queue).toEqual({ waiting: 1, leased: 0 });
   });
 
+  it("l'administrateur monte ou descend un agent : l'ordre de la liste suit, les bouts refusés", async () => {
+    const move = (id: number, direction: unknown, who = "admin") =>
+      m.adminOne.PATCH(
+        new Request(`${HOST}/api/admin/engine-agents/${id}`, {
+          method: "PATCH",
+          headers: {
+            ...(who === "admin" ? { cookie: `aqr_session=${cookie}` } : {}),
+            "content-type": "application/json",
+            origin: HOST,
+          },
+          body: JSON.stringify({ move: direction }),
+        }),
+        { params: Promise.resolve({ id: String(id) }) },
+      );
+    const order = async () =>
+      (await (await m.admin.GET(adminCall("GET"))).json()).items.map(
+        (a: { name: string }) => a.name,
+      );
+    expect(await order()).toEqual(["poste GPU", "second"]);
+    expect((await move(agentIds.two, "up")).status).toBe(200);
+    expect(await order()).toEqual(["second", "poste GPU"]);
+    expect((await move(agentIds.two, "up")).status).toBe(409); // déjà premier
+    expect((await move(agentIds.one, "down")).status).toBe(409); // déjà dernier
+    expect((await move(agentIds.two, "sideways")).status).toBe(400);
+    expect((await move(99999, "up")).status).toBe(404);
+    expect((await move(agentIds.one, "up", "anonyme")).status).toBe(401);
+  });
+
   it("moteur local : la liste le dit (remote: false), sans file d'attente à distance", async () => {
     vi.stubEnv("AQR_ENGINE", "");
     const out = await (await m.admin.GET(adminCall("GET"))).json();

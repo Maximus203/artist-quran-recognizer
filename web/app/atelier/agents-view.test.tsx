@@ -12,6 +12,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   created_at: ago(3600_000),
   last_seen_at: ago(10_000),
   revoked_at: null,
+  priority: 10,
   ...over,
 });
 const props = (over: Partial<AgentsViewProps> = {}): AgentsViewProps => ({
@@ -27,6 +28,7 @@ const props = (over: Partial<AgentsViewProps> = {}): AgentsViewProps => ({
   onName: vi.fn(),
   onCreate: vi.fn(),
   onRevoke: vi.fn(),
+  onMove: vi.fn(),
   onDismissFresh: vi.fn(),
   ...over,
 });
@@ -142,5 +144,57 @@ describe("création d'un agent et jeton montré une seule fois", () => {
       html(),
     )?.[0];
     expect(idle).not.toContain("disabled");
+  });
+});
+
+describe("ordre de préférence (premier choix / secours)", () => {
+  const two = () => [
+    row({ id: 2, name: "REVERB", priority: 10 }),
+    row({ id: 1, name: "atlas", priority: 20 }),
+  ];
+
+  it("le premier agent actif est le premier choix, les suivants le secours", () => {
+    const t = text(html({ agents: two() }));
+    expect(t.indexOf("REVERB")).toBeLessThan(t.indexOf("atlas"));
+    expect(t).toContain("Premier choix");
+    expect(t).toContain("Secours");
+    expect(t.split("Premier choix").length - 1).toBe(1);
+  });
+
+  it("un agent révoqué n'a pas de rang et ne compte pas dans l'ordre", () => {
+    const out = html({
+      agents: [
+        row({ id: 2, name: "REVERB", priority: 10 }),
+        row({ id: 3, name: "ancien", priority: 15, revoked_at: ago(1000) }),
+        row({ id: 1, name: "atlas", priority: 20 }),
+      ],
+    });
+    expect(out).not.toContain('data-testid="agent-up-3"');
+    expect(out).not.toContain('data-testid="agent-down-3"');
+    expect(out).not.toContain('data-testid="agent-rank-3"');
+    expect(out).toContain('data-testid="agent-rank-2"');
+    expect(out).toContain('data-testid="agent-rank-1"');
+  });
+
+  it("monter est désactivé pour le premier, descendre pour le dernier", () => {
+    const out = html({ agents: two() });
+    const button = (id: string) =>
+      new RegExp(`<button[^>]*data-testid="${id}"[^>]*>`).exec(out)?.[0];
+    expect(button("agent-up-2")).toContain("disabled");
+    expect(button("agent-down-2")).not.toContain("disabled");
+    expect(button("agent-up-1")).not.toContain("disabled");
+    expect(button("agent-down-1")).toContain("disabled");
+  });
+
+  it("un seul agent : pas de notion de secours, aucun bouton d'ordre", () => {
+    const out = html({ agents: [row({ id: 1 })] });
+    expect(out).not.toContain('data-testid="agent-up-1"');
+    expect(text(out)).not.toContain("Secours");
+  });
+
+  it("explique la règle de repli", () => {
+    expect(text(html({ agents: two() }))).toContain(
+      "Le secours ne travaille que si le premier choix est éteint ou occupé",
+    );
   });
 });

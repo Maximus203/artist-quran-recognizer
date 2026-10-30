@@ -16,6 +16,8 @@ export type AgentRowView = {
   created_at: string;
   last_seen_at: string | null;
   revoked_at: string | null;
+  /** Plus petit = plus préféré (la liste arrive déjà triée). */
+  priority: number;
 };
 
 export type AgentsViewProps = {
@@ -33,6 +35,7 @@ export type AgentsViewProps = {
   onName: (value: string) => void;
   onCreate: (event: React.FormEvent) => void;
   onRevoke: (agent: AgentRowView) => void;
+  onMove: (agent: AgentRowView, direction: "up" | "down") => void;
   onDismissFresh: () => void;
 };
 
@@ -103,8 +106,11 @@ export function AgentsView(props: AgentsViewProps) {
     onName,
     onCreate,
     onRevoke,
+    onMove,
     onDismissFresh,
   } = props;
+  // Ordre de préférence : les agents actifs, dans l'ordre reçu (déjà trié par le serveur).
+  const active = (agents ?? []).filter((agent) => !agent.revoked_at);
   return (
     <section
       style={{ display: "grid", gap: "var(--sp-5)" }}
@@ -124,6 +130,13 @@ export function AgentsView(props: AgentsViewProps) {
             distinct de tous les autres : tu peux en créer un par machine et le
             révoquer sans toucher aux autres.
           </p>
+          {active.length > 1 ? (
+            <p>
+              Le <b>premier choix</b> reçoit les analyses. Le secours ne
+              travaille que si le premier choix est éteint ou occupé : monte la
+              machine la plus rapide (le poste à GPU) en premier.
+            </p>
+          ) : null}
         </header>
 
         <div className="srow2" style={ROW}>
@@ -214,6 +227,7 @@ export function AgentsView(props: AgentsViewProps) {
             <ul className="api-tokens">
               {agents.map((agent) => {
                 const state = agentState(agent, now);
+                const rank = active.findIndex((a) => a.id === agent.id);
                 return (
                   <li key={agent.id} data-state={state}>
                     <div>
@@ -223,7 +237,15 @@ export function AgentsView(props: AgentsViewProps) {
                         data-testid={`agent-state-${agent.id}`}
                       >
                         {STATE_LABEL[state]}
-                      </span>
+                      </span>{" "}
+                      {rank >= 0 && active.length > 1 ? (
+                        <span
+                          className="badge badge--plain badge--outline"
+                          data-testid={`agent-rank-${agent.id}`}
+                        >
+                          {rank === 0 ? "Premier choix" : "Secours"}
+                        </span>
+                      ) : null}
                       <br />
                       <small className="mono">qea_{agent.prefix}…</small>
                       <small>
@@ -236,14 +258,45 @@ export function AgentsView(props: AgentsViewProps) {
                       </small>
                     </div>
                     {state !== "revoked" ? (
-                      <button
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        data-testid={`agent-revoke-${agent.id}`}
-                        onClick={() => onRevoke(agent)}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "var(--sp-2)",
+                          flexWrap: "wrap",
+                          justifyContent: "flex-end",
+                        }}
                       >
-                        Révoquer
-                      </button>
+                        {active.length > 1 ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--sm"
+                              disabled={rank === 0}
+                              data-testid={`agent-up-${agent.id}`}
+                              onClick={() => onMove(agent, "up")}
+                            >
+                              Monter
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--sm"
+                              disabled={rank === active.length - 1}
+                              data-testid={`agent-down-${agent.id}`}
+                              onClick={() => onMove(agent, "down")}
+                            >
+                              Descendre
+                            </button>
+                          </>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          data-testid={`agent-revoke-${agent.id}`}
+                          onClick={() => onRevoke(agent)}
+                        >
+                          Révoquer
+                        </button>
+                      </div>
                     ) : null}
                   </li>
                 );
