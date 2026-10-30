@@ -123,6 +123,8 @@ export type Session = {
   pid: number | null;
   /** Moteur de l'analyse (`cascade`, `fastconformer`…), identique à `asr` pour les nouvelles sessions. */
   engine?: AsrChoice | null;
+  /** Agent distant qui a fait l'analyse (REVERB, atlas…) ; absent pour le moteur local et les anciennes sessions. */
+  engine_agent?: string | null;
   /** Durée de l'audio en secondes : sonde à l'import, puis valeur du moteur à la fin. */
   audio_duration_s?: number | null;
   /** Durée réelle du traitement (fin − départ) ; sert à estimer les analyses suivantes. */
@@ -221,6 +223,9 @@ export async function readSession(id: string): Promise<Session> {
     await readFile(path.join(sessionDir(id), "session.json"), "utf8"),
   ) as Session;
   if (value.state !== "running") return value;
+  // Un traitement de ce serveur suit la session : son gestionnaire de fin écrit l'issue complète
+  // (agent distant, durée…). Une lecture ne la conclut pas à sa place, sinon elle l'écraserait.
+  if (jobs.has(id)) return value;
   try {
     const raw = await readFile(
       path.join(sessionDir(id), "source.recognition.json"),

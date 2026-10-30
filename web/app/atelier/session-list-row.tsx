@@ -5,7 +5,7 @@ import type { ApiSession } from "@/lib/api-types";
 import { formatBytesFr, formatClockLength } from "@/lib/format";
 import {
   buildRow,
-  engineLabel,
+  engineWithAgent,
   formatListDate,
   isVideoSession,
 } from "@/lib/session-list";
@@ -63,7 +63,7 @@ export function SessionListRow({
     ? formatClockLength(s.audio_duration_s)
     : "—";
   const size = formatBytesFr(s.size_bytes);
-  const engine = engineLabel(s.engine ?? s.asr) || "—";
+  const engine = engineWithAgent(s.engine ?? s.asr, s.engine_agent) || "—";
   const when = formatListDate(s.created_at, now);
   const fullDate = new Date(s.created_at).toLocaleString("fr-FR");
   const scope = <ScopeBadge visibility={s.visibility} />;

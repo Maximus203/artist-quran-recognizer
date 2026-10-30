@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attentionCount,
   buildRow,
+  engineWithAgent,
   filterViews,
   groupViews,
   pageTitle,
@@ -387,5 +388,22 @@ describe("pageTitle / attentionCount", () => {
         view({ state: "queued", queue_position: 1 }),
       ]),
     ).toBe(2);
+  });
+});
+
+describe("engineWithAgent : qui a fait l'analyse", () => {
+  it("ajoute le nom de l'agent après le moteur", () => {
+    expect(engineWithAgent("cascade", "REVERB")).toBe("Cascade · REVERB");
+  });
+  it("sans agent (moteur local ou ancienne session), seul le moteur reste", () => {
+    expect(engineWithAgent("cascade", null)).toBe("Cascade");
+    expect(engineWithAgent("cascade", undefined)).toBe("Cascade");
+  });
+  it("sans moteur connu mais avec un agent, nomme l'agent", () => {
+    expect(engineWithAgent(null, "atlas")).toBe("atlas");
+  });
+  it("la ligne de méta de la liste porte l'agent", () => {
+    const row = buildRow(view({ engine_agent: "REVERB" }), NOW);
+    expect(row.meta).toContain("REVERB");
   });
 });

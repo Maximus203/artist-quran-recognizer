@@ -197,6 +197,10 @@ describe("moteur distant : parcours normal", () => {
         await readFile(path.join(dir, "prediction.recognition.json"), "utf8"),
       ).source.sha256,
     ).toBe(sha);
+    // L'atelier retient quel agent a fait l'analyse, pour l'afficher dans la liste et l'en-tête.
+    await until(
+      async () => (await m.store.readSession(A)).engine_agent === "poste GPU",
+    );
   });
 
   it("sans agent en ligne l'analyse reste en attente ; un agent qui arrive plus tard la prend", async () => {
@@ -279,6 +283,9 @@ describe("moteur distant : cas d'échec, dits clairement", () => {
     expect(res.status).toBe(200);
     await until(async () => (await state(A)) === "failed");
     expect((await m.store.readSession(A)).error).toMatch(/mémoire GPU saturée/);
+    await until(
+      async () => (await m.store.readSession(A)).engine_agent === "poste GPU",
+    );
   });
 
   it("agent disparu : le bail expire et l'analyse échoue explicitement", async () => {
