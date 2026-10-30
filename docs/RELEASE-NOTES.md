@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Administration : invitations de testeurs par lien
+Étiquettes : utilisateur, technique, décision
+PR : #164
+
+**Ce qui change.** L'administrateur invite un testeur depuis Administration > Invitations : il donne le nom de la personne, une durée (7 à 90 jours) et le nombre de comptes que le lien peut créer, et obtient un lien et un message prêt à envoyer. Le testeur ouvre le lien, accepte l'invitation, crée son compte : il n'a besoin d'aucun secret du serveur, et l'administrateur n'a plus à lire le jeton d'accès ni le code d'inscription sur le serveur. La liste dit qui est invité, si le lien a servi et jusqu'à quand il marche ; une invitation se révoque à tout moment. Le jeton d'accès et le code d'inscription du serveur continuent de marcher (clé de secours).
+
+**Pourquoi / décision.** Deux droits distincts dans un même lien (`inv_` + 128 bits, empreinte seule en base, montré une seule fois) : l'ACCÈS à l'atelier, valable jusqu'à l'expiration ou la révocation même après l'inscription (un testeur qui revient rouvre le même lien pour se connecter), et l'INSCRIPTION, limitée à `max_uses` comptes, prise atomiquement avec la création du compte (un échec ne la consomme pas, une course sur la dernière place ne crée qu'un compte). L'accès délivre le même cookie signé que le jeton du serveur : la barrière n'est pas modifiée. Une invitation autorise l'inscription même en mode « code » ou « fermé ». Limite : révoquer ne coupe pas un cookie d'accès déjà délivré (durée `AQR_ACCESS_TTL_S`), ni un compte déjà créé (à désactiver dans Comptes). Le lien contient le jeton dans son adresse (journaux du proxy), d'où sa durée limitée et sa révocation. Migration `007_invitations.sql`.
+
 ## 2026-10-30 — Administration : comptes et mots de passe temporaires
 Étiquettes : utilisateur, technique
 PR : #163

@@ -2,11 +2,17 @@
 import Link from "next/link";
 import { Icon, type IconName } from "./icons";
 
-export type AdminTab = "moteur" | "comptes";
+export type AdminTab = "moteur" | "comptes" | "invitations";
 
 const TABS: { id: AdminTab; href: string; label: string; icon: IconName }[] = [
   { id: "moteur", href: "/gestion/moteur", label: "Moteur", icon: "live" },
   { id: "comptes", href: "/gestion/comptes", label: "Comptes", icon: "users" },
+  {
+    id: "invitations",
+    href: "/gestion/invitations",
+    label: "Invitations",
+    icon: "key",
+  },
 ];
 
 /** Cadre de la zone Administration (réservée aux administrateurs) : titre, sections et contenu. */

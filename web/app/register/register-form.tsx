@@ -21,8 +21,11 @@ export function RegisterForm({
   mode,
   firstAccount,
   formToken,
+  invitation = null,
 }: {
   mode: Mode;
+  /** Lien d'invitation reçu : il tient lieu de code et ouvre l'inscription même fermée. */
+  invitation?: string | null;
   /** Jeton d'horodatage signé par le serveur (champ leurre, `honeypot.ts`). */
   formToken: string;
   /** Aucun compte n'existe encore : le premier inscrit sera administrateur. */
@@ -38,9 +41,11 @@ export function RegisterForm({
   const userInput = useRef<HTMLInputElement>(null);
   const pwInput = useRef<HTMLInputElement>(null);
   const strength = passwordStrength(password, username);
+  // Avec une invitation, pas de champ « code » : le lien en tient lieu.
+  const askCode = !invitation && codeRequired(mode, firstAccount);
 
   // Inscriptions fermées (sauf amorçage) : on le dit au lieu d'afficher un formulaire voué au refus.
-  if (mode === "closed" && !firstAccount)
+  if (mode === "closed" && !firstAccount && !invitation)
     return (
       <>
         <div>
@@ -74,8 +79,7 @@ export function RegisterForm({
       found.password = `Il manque ${missingCharacters(password)} caractère${missingCharacters(password) > 1 ? "s" : ""} : ${PASSWORD_MIN_LENGTH} au minimum.`;
     else if (name.toLowerCase() === password.toLowerCase())
       found.password = "Le mot de passe doit différer du pseudonyme.";
-    if (codeRequired(mode, firstAccount) && !code.trim())
-      found.code = "Indique le code d’invitation.";
+    if (askCode && !code.trim()) found.code = "Indique le code d’invitation.";
     setErrors(found);
     setProblem(null);
     if (Object.keys(found).length > 0) {
@@ -90,7 +94,11 @@ export function RegisterForm({
           username: name,
           password,
           ...honeypot.fields(),
-          ...(codeRequired(mode, firstAccount) ? { code: code.trim() } : {}),
+          ...(invitation
+            ? { code: invitation }
+            : askCode
+              ? { code: code.trim() }
+              : {}),
         },
       });
       location.assign("/");
@@ -130,6 +138,15 @@ export function RegisterForm({
           Un pseudonyme et un mot de passe suffisent. Pas d’e-mail.
         </p>
       </div>
+      {invitation ? (
+        <p className="note" data-testid="invitation-note">
+          <Icon name="check" />
+          <span>
+            <b>Invitation reconnue.</b> Choisis ton pseudonyme et ton mot de
+            passe pour créer ton compte.
+          </span>
+        </p>
+      ) : null}
       {firstAccount ? (
         <p className="note note--admin" data-testid="first-account-note">
           <Icon name="shield" />
@@ -211,7 +228,7 @@ export function RegisterForm({
             </span>
           </span>
         </PasswordField>
-        {codeRequired(mode, firstAccount) ? (
+        {askCode ? (
           <div
             className="field"
             data-invalid={errors.code ? "true" : undefined}

@@ -8,6 +8,11 @@ import {
 import type { Db } from "./db";
 import { transaction } from "./db";
 import { audit } from "./audit";
+import {
+  canRegister,
+  consumeInvitation,
+  looksLikeInvitation,
+} from "./invitations";
 import { DbFailureStore } from "./failure-store";
 import { PASSWORD_MAX, checkPassword } from "./password-policy";
 import { FailureLimiter, HitLimiter, type Verdict } from "./rate-limit";
@@ -312,13 +317,19 @@ export async function registerAccount(
 
   const { signup, signupCode } = deps.cfg;
   const bootstrap = countUsers(deps.db) === 0;
-  if (signup === "closed" && !bootstrap)
+  // Une invitation valide, passée comme code, ouvre l'inscription même en mode « code » ou « fermé » ; sa place
+  // n'est prise qu'avec la création du compte (un échec ne la consomme pas). Mode « ouvert » : sans objet.
+  const invitation =
+    signup !== "open" && looksLikeInvitation(input.code) ? input.code : null;
+  const invited =
+    invitation !== null && canRegister(deps.db, invitation, new Date(now));
+  if (signup === "closed" && !bootstrap && !invited)
     return {
       ok: false,
       status: 403,
       message: "Les inscriptions sont fermées.",
     };
-  if (signup === "code") {
+  if (signup === "code" && !invited) {
     // Un code non configuré ferme l'inscription (fail-closed) : jamais « code vide accepté ».
     const given = typeof input.code === "string" ? input.code : "";
     if (!signupCode || !sameSecret(given, signupCode))
@@ -351,6 +362,9 @@ export async function registerAccount(
         iso(now),
       );
       touchLogin(deps.db, created.id, iso(now));
+      // La dernière place peut avoir été prise entre-temps : le compte n'est alors pas créé (annulation).
+      if (invited && !consumeInvitation(deps.db, invitation, new Date(now)))
+        throw new InvitationTaken();
       return created;
     });
     audit("register", { userId: user.id, ip });
@@ -367,9 +381,19 @@ export async function registerAccount(
         message: error.message,
         field: "username",
       };
+    if (error instanceof InvitationTaken)
+      return {
+        ok: false,
+        status: 403,
+        message: "Code d'invitation invalide.",
+        field: "code",
+      };
     throw error;
   }
 }
+
+/** Interne : la dernière place d'une invitation a été prise par une autre inscription simultanée. */
+class InvitationTaken extends Error {}
 
 const GENERIC_LOGIN_ERROR = "Pseudonyme ou mot de passe incorrect.";
 

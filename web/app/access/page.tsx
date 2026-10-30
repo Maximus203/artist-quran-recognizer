@@ -1,10 +1,17 @@
+import { looksLikeInvitation } from "@/lib/invitations";
+
 export const dynamic = "force-dynamic";
 export default async function AccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; invitation?: string }>;
 }) {
-  const failed = Boolean((await searchParams).error);
+  const params = await searchParams;
+  const failed = Boolean(params.error);
+  // Lien d'invitation : le visiteur n'a rien à saisir ; il confirme d'un clic (jamais d'envoi automatique).
+  const invitation = looksLikeInvitation(params.invitation)
+    ? params.invitation
+    : null;
   return (
     <main
       className="card card-pad"
@@ -18,29 +25,37 @@ export default async function AccessPage({
       <h1 style={{ font: "400 var(--fs-2xl)/1.1 var(--font-display)" }}>
         Accès à l’atelier
       </h1>
-      <p className="hint">Ce serveur est en mode test distant protégé.</p>
+      <p className="hint">
+        {invitation
+          ? "Tu as reçu une invitation pour tester l’atelier."
+          : "Ce serveur est en mode test distant protégé."}
+      </p>
       <form
         method="post"
         action="/api/access"
         style={{ display: "grid", gap: "var(--sp-3)" }}
       >
-        <label className="field">
-          Jeton d’accès
-          <input
-            className="input"
-            name="token"
-            type="password"
-            autoComplete="off"
-            required
-          />
-        </label>
+        {invitation ? (
+          <input type="hidden" name="invitation" value={invitation} />
+        ) : (
+          <label className="field">
+            Jeton d’accès
+            <input
+              className="input"
+              name="token"
+              type="password"
+              autoComplete="off"
+              required
+            />
+          </label>
+        )}
         {failed ? (
           <p className="notice notice--error" role="alert">
-            Jeton refusé.
+            {invitation ? "Invitation refusée ou expirée." : "Jeton refusé."}
           </p>
         ) : null}
         <button type="submit" className="btn btn--primary">
-          Entrer
+          {invitation ? "Accepter l’invitation" : "Entrer"}
         </button>
       </form>
     </main>
