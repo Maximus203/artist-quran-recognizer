@@ -29,7 +29,7 @@ GPU** : le moteur y tourne sur processeur, à mesurer. Le direct reste à décid
 
 - Alpha tourne en **`AQR_ENGINE=remote`** : les analyses attendent un agent du moteur (ADR-0017). La couture
   (courtier, bail, routes `/api/engine/*`, jetons d'agent) est **écrite et testée**, et **l'agent Python (`aqr engine-agent`)
-  est écrit et éprouvé contre le vrai atelier** ; il n'est **pas encore installé sur Atlas** (modèle d'unité :
+  est écrit et éprouvé contre le vrai atelier** ; l'environnement du moteur est **installé et mesuré sur Atlas** (ADR-0017, 12 min d'audio en 3 min), mais l'agent n'est **pas encore démarré** (modèle d'unité :
   `deploy/systemd/aqr-engine-agent.service`) : tant qu'aucun agent n'est en ligne, les envois sont acceptés mais
   aucune analyse ne démarre. Pour
   geler les envois d'ici là : `AQR_SERVICE_MODE=restricted`. L'image ne contient ni Python ni Chromium.

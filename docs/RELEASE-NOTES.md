@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Moteur sur Atlas : mesures réelles sur processeur
+Étiquettes : technique, décision
+PR : #158
+
+**Ce qui change.** Le moteur de reconnaissance est installé sur Atlas (processeur seul) et a été mesuré sur de vrais audios : 12 minutes de récitation analysées en 3 minutes, tous les versets reconnus. L'agent n'est pas encore démarré : les analyses restent suspendues tant qu'un administrateur n'a pas créé son jeton.
+
+**Pourquoi / décision.** La vitesse sur processeur était la réserve de l'ADR-0017 : elle est levée pour des enregistrements propres d'un seul lecteur. Mesures et limites dans l'ADR (« Mesures sur Atlas »). Bornes de l'unité ajustées : 7 Go, 10 cœurs, priorité basse.
+
 ## 2026-10-30 — L'agent du moteur à distance existe : aqr engine-agent
 Étiquettes : technique, décision
 PR : #157
