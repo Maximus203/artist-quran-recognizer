@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Chaque analyse dit quel agent l'a faite
+Étiquettes : utilisateur, technique
+PR : #168
+
+**Ce qui change.** Quand le moteur est distant, la liste des enregistrements et l'en-tête d'un enregistrement indiquent maintenant l'agent qui a fait l'analyse, par exemple « Cascade · REVERB » ou « Cascade · atlas », en réussite comme en échec. L'information est notée au moment où l'agent prend l'analyse et enregistrée avec la session ; les analyses d'avant et celles du moteur local n'affichent rien de plus.
+
+**Pourquoi / décision.** Avec deux agents (REVERB en premier choix, Atlas en secours), il fallait pouvoir vérifier sans journal lequel avait travaillé (ADR-0017). Correction au passage : lire une session « en cours » dont le résultat venait d'arriver la déclarait terminée à la place du gestionnaire de fin et pouvait effacer son enregistrement (agent, durée) ; la lecture ne conclut plus une session qu'un traitement de ce serveur suit encore.
+
 ## 2026-10-30 — L'agent garde les modèles en mémoire entre deux analyses
 Étiquettes : utilisateur, technique
 PR : #167

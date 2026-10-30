@@ -33,6 +33,8 @@ export class WarmRun extends EventEmitter implements JobProcess {
   readonly stdout = new PassThrough();
   readonly stderr = new PassThrough();
   pid?: number;
+  /** Agent distant qui a pris l'analyse (moteur à distance) ; null tant que personne ne l'a prise. */
+  agentName: string | null = null;
   #finished = false;
   readonly #stop: () => void;
 

@@ -8,7 +8,7 @@ import {
   formatRealtimeFactor,
 } from "@/lib/format";
 import type { Recognition } from "@/lib/recognition";
-import { buildRow, engineLabel, isVideoSession } from "@/lib/session-list";
+import { buildRow, engineWithAgent, isVideoSession } from "@/lib/session-list";
 import { ExportEntry } from "./export/export-entry";
 import { PersonChip, useOwnerPerson } from "./avatar";
 import { Icon } from "./icons";
@@ -164,7 +164,7 @@ export function SessionHead({
   const row = buildRow(view, Date.now());
   const owner = useOwnerPerson(view.owner);
   const video = isVideoSession(view);
-  const engine = engineLabel(view.engine ?? view.asr);
+  const engine = engineWithAgent(view.engine ?? view.asr, view.engine_agent);
   const spent =
     typeof view.duration_s === "number" && view.duration_s > 0
       ? view.duration_s

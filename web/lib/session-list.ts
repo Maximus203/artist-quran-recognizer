@@ -52,6 +52,12 @@ const ENGINE_LABELS: Record<string, string> = {
 export const engineLabel = (engine: string | null | undefined): string =>
   engine ? (ENGINE_LABELS[engine] ?? engine) : "";
 
+/** « Cascade · REVERB » : le moteur, puis l'agent qui l'a fait tourner quand c'est un moteur distant. */
+export const engineWithAgent = (
+  engine: string | null | undefined,
+  agent: string | null | undefined,
+): string => [engineLabel(engine), agent].filter(Boolean).join(" · ");
+
 export const isVideoSession = (view: Pick<SessionView, "extension">): boolean =>
   acceptedVideoExtensions.has((view.extension ?? "").toLowerCase());
 
@@ -104,7 +110,7 @@ export function buildRow(view: ListedSession, now: number): SessionRow {
     : "";
   const base = [mediaKind === "video" ? "Vidéo" : "Audio"];
   if (length) base.push(length);
-  const engine = engineLabel(view.engine ?? view.asr);
+  const engine = engineWithAgent(view.engine ?? view.asr, view.engine_agent);
   if (engine) base.push(engine);
 
   const row: SessionRow = {

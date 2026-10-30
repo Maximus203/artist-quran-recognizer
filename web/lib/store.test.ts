@@ -175,6 +175,21 @@ describe("persistance des sessions", () => {
     expect(out.prediction_sha256).toMatch(/^[a-f0-9]{64}$/);
     expect((await readResult(ID))?.parsed.source.sha256).toBe("a".repeat(64));
   });
+  it("une session suivie par un traitement de ce serveur n'est pas conclue par une simple lecture", async () => {
+    await saveSession(session({ state: "running", pid: null }));
+    await writeFile(
+      path.join(sessionDir(ID), "source.recognition.json"),
+      JSON.stringify(recognition("a".repeat(64))),
+    );
+    // Le gestionnaire de fin du traitement écrit l'issue complète (agent, durée…) : la lecture n'a pas à la deviner.
+    jobs.set(ID, { child: {} as ChildProcess, settled: Promise.resolve() });
+    try {
+      expect((await readSession(ID)).state).toBe("running");
+    } finally {
+      jobs.delete(ID);
+    }
+    expect((await readSession(ID)).state).toBe("done"); // plus de traitement : adoptée comme avant
+  });
   it("une sortie au hash différent n'est pas adoptée", async () => {
     await saveSession(session({ state: "running", pid: null }));
     await writeFile(

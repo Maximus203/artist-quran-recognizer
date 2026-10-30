@@ -243,3 +243,30 @@ describe("règle de priorité entre agents (premier choix / secours)", () => {
     expect(broker.claim(2)?.ticket.id).toBe("s1");
   });
 });
+
+describe("agent qui a pris l'analyse", () => {
+  it("note le nom de l'agent sur l'exécution dès la prise en charge", () => {
+    const named = new EngineBroker({
+      agentName: (id) => (id === 7 ? "REVERB" : null),
+    });
+    const run = named.offer(ticket("s1")) as { agentName?: string | null };
+    expect(run.agentName ?? null).toBeNull(); // personne ne l'a encore prise
+    named.claim(7);
+    expect(run.agentName).toBe("REVERB");
+    named.reset();
+  });
+
+  it("garde une trace même si le nom est inconnu (agent supprimé)", () => {
+    const named = new EngineBroker({ agentName: () => null });
+    const run = named.offer(ticket("s2")) as { agentName?: string | null };
+    named.claim(9);
+    expect(run.agentName).toBe("agent n°9");
+    named.reset();
+  });
+
+  it("sans fonction de nom, retombe sur le numéro", () => {
+    const run = broker.offer(ticket("s3")) as { agentName?: string | null };
+    broker.claim(3);
+    expect(run.agentName).toBe("agent n°3");
+  });
+});

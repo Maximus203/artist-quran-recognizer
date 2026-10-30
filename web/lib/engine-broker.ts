@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getDb } from "./db";
-import { preferredAgentAvailable } from "./engine-agents";
+import { listAgents, preferredAgentAvailable } from "./engine-agents";
 import { parseRecognition } from "./recognition";
 import { WarmRun, type JobProcess } from "./warm-worker";
 
@@ -67,9 +67,17 @@ export type ClaimPolicy = (
 export class EngineBroker {
   readonly #offers: Offer[] = [];
   readonly #mayClaim: ClaimPolicy | undefined;
+  readonly #agentName: ((agentId: number) => string | null) | undefined;
 
-  constructor(options: { mayClaim?: ClaimPolicy } = {}) {
+  constructor(
+    options: {
+      mayClaim?: ClaimPolicy;
+      /** Nom lisible d'un agent, pour dire sur la session qui l'a analysée. */
+      agentName?: (agentId: number) => string | null;
+    } = {},
+  ) {
     this.#mayClaim = options.mayClaim;
+    this.#agentName = options.agentName;
   }
 
   /** Cet agent tient-il un bail en cours ? */
@@ -114,6 +122,7 @@ export class EngineBroker {
       run: offer.run,
     };
     this.#leases.set(lease.id, lease);
+    offer.run.agentName = this.#agentName?.(agentId) ?? `agent n°${agentId}`;
     offer.run.stderr.write(`moteur distant : analyse prise en charge\n`);
     return lease;
   }
@@ -281,6 +290,8 @@ export function engineBroker(): EngineBroker {
   return (holder[GLOBAL] ??= new EngineBroker({
     mayClaim: (agentId, { busy, now }) =>
       !preferredAgentAvailable(getDb(), agentId, busy, now),
+    agentName: (agentId) =>
+      listAgents(getDb()).find((a) => a.id === agentId)?.name ?? null,
   }));
 }
 

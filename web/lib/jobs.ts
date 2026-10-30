@@ -452,6 +452,10 @@ async function run(id: string, signal: JobSignal): Promise<void> {
       const current = await readSession(id);
       if (current.state === "cancelled") return;
       current.pid = null;
+      // Moteur distant : on garde le nom de l'agent qui a fait (ou tenté) l'analyse ; local : rien.
+      current.engine_agent = remote
+        ? ((child as { agentName?: string | null }).agentName ?? null)
+        : null;
       const finishedAt = new Date().toISOString();
       let parsed: Recognition | null = null;
       if (code === 0) {
