@@ -95,6 +95,7 @@ export type Family =
   | "read"
   | "write"
   | "upload"
+  | "chunk"
   | "generate"
   | "mcp"
   | "live"
@@ -117,9 +118,13 @@ export function classify(method: string, pathname: string): Family {
   if (!pathname.startsWith("/api/") && !pathname.startsWith("/mcp"))
     return "page";
   if (isUnsafe(m)) {
+    // Envoi par morceaux : un morceau est une requête à part (plafond et corps propres).
+    if (m === "PUT" && /^\/api\/uploads\/[^/]+\/chunks\/[^/]+$/.test(pathname))
+      return "chunk";
     if (
       (m === "POST" &&
-        /^\/api\/(v1\/recordings|sessions)\/?$/.test(pathname)) ||
+        /^\/api\/(v1\/recordings|sessions|uploads)\/?$/.test(pathname)) ||
+      (m === "POST" && /^\/api\/uploads\/[^/]+\/complete$/.test(pathname)) ||
       /^\/api\/(v1\/recordings|sessions)\/[^/]+\/(audio|video)$/.test(
         pathname,
       ) ||
@@ -144,6 +149,8 @@ export const LIMITS: Record<Family, { max: number; windowMs: number }> = {
   read: { max: 600, windowMs: 60_000 },
   write: { max: 120, windowMs: 60_000 },
   upload: { max: 30, windowMs: 60_000 },
+  // Un fichier de 500 Mo = 125 morceaux de 4 Mio : le plafond laisse passer plusieurs envois à plein débit.
+  chunk: { max: 300, windowMs: 60_000 },
   generate: { max: 30, windowMs: 60_000 },
   mcp: { max: 120, windowMs: 60_000 },
   live: { max: 30, windowMs: 60_000 },
@@ -180,7 +187,11 @@ export function callerKey(
 export const JSON_BODY_MAX = 1024 * 1024;
 
 /** Plafond de `Content-Length` pour la famille, ou `null` (corps de fichier, borné ailleurs). */
+/** Un morceau d'envoi : 8 Mio au plus (les morceaux font 4 Mio par défaut). */
+export const CHUNK_BODY_MAX = 8 * 1024 * 1024;
+
 export function bodyLimit(family: Family): number | null {
+  if (family === "chunk") return CHUNK_BODY_MAX;
   // Audio et résultat du moteur : bornés par leur route (MAX_RESULT_BYTES), comme les envois de fichiers.
   return family === "upload" || family === "engine" ? null : JSON_BODY_MAX;
 }

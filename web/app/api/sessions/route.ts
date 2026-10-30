@@ -6,13 +6,14 @@ import {
   importFromStream,
   type ImportOwner,
 } from "@/lib/import-session";
-import { ensureQueueRecovered, launch } from "@/lib/jobs";
+import { respondCreated } from "@/lib/import-finish";
+import { ensureQueueRecovered } from "@/lib/jobs";
 import { userQuotaBytes } from "@/lib/quota";
 import { requireUser } from "@/lib/route-guard";
-import { getMeta, markViewedBy, usedBytes } from "@/lib/session-index";
+import { usedBytes } from "@/lib/session-index";
 import { cleanUserName } from "@/lib/session-name";
 import { parseListQuery } from "@/lib/session-query";
-import { listForUser, viewForUser } from "@/lib/session-service";
+import { listForUser } from "@/lib/session-service";
 import {
   cleanupSessions,
   exceedsUploadLimit,
@@ -140,26 +141,7 @@ async function handlePOST(request: NextRequest) {
         owner,
       });
     }
-    // Un échec de mise en file ne perd pas l'import : la session reste « prête » et le dit.
-    let autorunError: string | null = null;
-    if (autorun && created.state === "ready") {
-      try {
-        await ensureQueueRecovered();
-        await launch(created.id, undefined, auth.user.id);
-      } catch (e) {
-        autorunError =
-          e instanceof Error ? e.message : "Mise en file impossible";
-      }
-    }
-    // Un résultat joint à l'import est sous les yeux de l'utilisateur : pas de point « non lu ».
-    if (created.state === "done")
-      markViewedBy(auth.db, auth.user.id, created.id, new Date().toISOString());
-    const meta = getMeta(auth.db, created.id);
-    const view = meta ? await viewForUser(auth.db, auth.user, meta) : null;
-    return json(
-      { ...view, ...(autorunError ? { autorun_error: autorunError } : {}) },
-      201,
-    );
+    return respondCreated(auth, created, autorun);
   } catch (e) {
     if (e instanceof ImportError)
       return apiError(e.status, e.message, {

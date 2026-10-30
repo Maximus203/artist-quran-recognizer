@@ -4,29 +4,10 @@ import {
   engineBroker,
 } from "@/lib/engine-broker";
 import { apiError, json, notFound, safe } from "@/lib/http";
+import { readBoundedBody } from "@/lib/read-bounded";
 import { requireAgent } from "@/lib/route-guard";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-async function readBounded(request: Request): Promise<Buffer | null> {
-  const declared = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > MAX_RESULT_BYTES) return null;
-  const reader = request.body?.getReader();
-  if (!reader) return Buffer.alloc(0);
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_RESULT_BYTES) {
-      await reader.cancel().catch(() => undefined);
-      return null;
-    }
-    chunks.push(value);
-  }
-  return Buffer.concat(chunks);
-}
 
 /**
  * Dépôt du résultat (`source.recognition.json`) de l'analyse prêtée à cet agent. Contrat de sortie et empreinte de
@@ -42,7 +23,7 @@ async function handlePUT(
   const broker = engineBroker();
   if (!broker.lease(id, auth.agent.id))
     return notFound("Bail inconnu ou expiré");
-  const body = await readBounded(request);
+  const body = await readBoundedBody(request, MAX_RESULT_BYTES);
   if (body === null) {
     broker.fail(id, auth.agent.id, "Résultat trop gros, refusé.");
     return apiError(413, "Résultat trop gros.", { code: "payload_too_large" });

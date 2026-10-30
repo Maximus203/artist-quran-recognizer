@@ -33,6 +33,7 @@ Tous les appels portent `Authorization: Bearer qtr_…`.
 | `GET /api/v1/me` | Compte et droits du jeton |
 | `GET /api/v1/recordings` | Liste (`q`, `state`, `limit`, `cursor`, `scope`) |
 | `POST /api/v1/recordings` | Import : corps brut + `x-aqr-filename`, ou multipart (`audio`) ; `?autorun=1`, `?visibility=private\|global`, `?name=` |
+| `POST /api/uploads` puis `PUT /api/uploads/{id}/chunks/{n}` et `POST /api/uploads/{id}/complete` | Import par morceaux (connexion lente, gros fichiers) : session du navigateur (cookie), pas de jeton d'API pour l'instant ; voir `docs/RELEASE-NOTES.md` |
 | `GET /api/v1/recordings/{id}` | Essai et résultat complet |
 | `POST /api/v1/recordings/{id}/export/subtitles` | Sous-titres (`{"options":{"format":"srt"}}`) |
 | `DELETE /api/v1/recordings/{id}` | Suppression (écriture) |

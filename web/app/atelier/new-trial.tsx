@@ -221,7 +221,10 @@ export function NewTrial(props: Props) {
                   />
                   <span className="name">{item.name}</span>
                   <span className="muted">
-                    {item.error ?? stateLabel[item.state]}
+                    {item.error ??
+                      (item.state === "sending" && item.progress !== undefined
+                        ? `Envoi… ${Math.round(item.progress * 100)} %`
+                        : stateLabel[item.state])}
                   </span>
                 </li>
               ))}

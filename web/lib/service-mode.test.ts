@@ -57,6 +57,8 @@ describe("refus selon le mode", () => {
   it.each([
     ["inscription", "POST", "/api/auth/register", "auth"],
     ["envoi d'un fichier", "POST", "/api/sessions", "upload"],
+    ["début d'un envoi par morceaux", "POST", "/api/uploads", "upload"],
+    ["morceau d'un envoi", "PUT", "/api/uploads/x/chunks/0", "chunk"],
     ["analyse", "POST", "/api/sessions/x/run", "generate"],
     ["export vidéo", "POST", "/api/sessions/x/export/video", "generate"],
     ["jeton du direct", "POST", "/api/live/token", "live"],
