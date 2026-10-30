@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
+import { codeRequired } from "@/lib/signup-code";
 import {
   PASSWORD_MIN_LENGTH,
   missingCharacters,
@@ -73,7 +74,7 @@ export function RegisterForm({
       found.password = `Il manque ${missingCharacters(password)} caractère${missingCharacters(password) > 1 ? "s" : ""} : ${PASSWORD_MIN_LENGTH} au minimum.`;
     else if (name.toLowerCase() === password.toLowerCase())
       found.password = "Le mot de passe doit différer du pseudonyme.";
-    if (mode === "code" && !firstAccount && !code.trim())
+    if (codeRequired(mode, firstAccount) && !code.trim())
       found.code = "Indique le code d’invitation.";
     setErrors(found);
     setProblem(null);
@@ -89,7 +90,7 @@ export function RegisterForm({
           username: name,
           password,
           ...honeypot.fields(),
-          ...(mode === "code" && !firstAccount ? { code: code.trim() } : {}),
+          ...(codeRequired(mode, firstAccount) ? { code: code.trim() } : {}),
         },
       });
       location.assign("/");
@@ -210,7 +211,7 @@ export function RegisterForm({
             </span>
           </span>
         </PasswordField>
-        {mode === "code" && !firstAccount ? (
+        {codeRequired(mode, firstAccount) ? (
           <div
             className="field"
             data-invalid={errors.code ? "true" : undefined}

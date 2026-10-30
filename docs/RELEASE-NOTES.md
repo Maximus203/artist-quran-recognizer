@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Inscription par code : le premier compte peut enfin être créé
+Étiquettes : utilisateur, technique
+PR : #159
+
+**Ce qui change.** Quand l'inscription est en mode « code », le formulaire demande maintenant le code d'invitation à tout le monde, premier inscrit compris. Avant, il le cachait au premier compte : le serveur le refusait et l'administrateur ne pouvait jamais être créé depuis l'interface.
+
+**Pourquoi / décision.** Le serveur (`registerAccount`) exige le code pour tous en mode « code » ; le formulaire supposait l'inverse. On aligne le formulaire sur le serveur (plus strict : le code protège aussi le compte administrateur) plutôt que l'inverse. Règle commune dans `web/lib/signup-code.ts`, testée avec la règle du serveur. Défaut trouvé en déployant l'atelier sur Alpha.
+
 ## 2026-10-30 — Moteur sur Atlas : mesures réelles sur processeur
 Étiquettes : technique, décision
 PR : #158
