@@ -425,6 +425,20 @@ describe("serveur lié à toutes les interfaces (conteneur) : AQR_SERVER_HOST", 
     );
   });
 
+  it("l'auto-appel reste en http même quand le proxy annonce https (Traefik envoie X-Forwarded-Proto)", () => {
+    // Le serveur du conteneur parle en clair : Next peut reconstruire une URL en https, jamais le serveur.
+    vi.stubEnv("AQR_SERVER_HOST", "0.0.0.0");
+    expect(internalOrigin("https://0.0.0.0:3000/mcp")).toBe(
+      "http://127.0.0.1:3000",
+    );
+    // Port absent de l'URL reconstruite (https par défaut) : on retombe sur le port d'écoute.
+    vi.stubEnv("PORT", "3100");
+    expect(internalOrigin("https://0.0.0.0/mcp")).toBe("http://127.0.0.1:3100");
+    vi.unstubAllEnvs();
+    vi.stubEnv("AQR_SERVER_HOST", "0.0.0.0");
+    expect(internalOrigin("https://0.0.0.0/mcp")).toBe("http://127.0.0.1:3000");
+  });
+
   it("seules les adresses génériques sont acceptées comme valeur", () => {
     for (const value of ["evil.example", "10.0.0.5", "127.0.0.1.evil"]) {
       vi.unstubAllEnvs();

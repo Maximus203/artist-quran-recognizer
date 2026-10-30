@@ -11,9 +11,9 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-10-30 — MCP : les outils fonctionnent aussi dans le conteneur
 Étiquettes : technique
-PR : #154
+PR : #154, #155
 
-**Ce qui change.** Les outils du MCP (`/mcp`) rappellent l'API de l'atelier sur la boucle locale (`127.0.0.1`) et non plus sur `0.0.0.0`, adresse d'écoute du conteneur, que la garde refuse comme hôte annoncé. Sans cela, `tools/call` aurait échoué en production même avec un jeton valide.
+**Ce qui change.** Les outils du MCP (`/mcp`) rappellent l'API de l'atelier sur la boucle locale (`127.0.0.1`), en `http` et sur le port d'écoute, et non plus sur `0.0.0.0` (adresse d'écoute du conteneur, que la garde refuse comme hôte annoncé) ni en `https` (le proxy annonce `X-Forwarded-Proto: https`, et Next reconstruit alors une URL `https` vers un serveur qui parle en clair). Sans cela, `tools/call` échouait en production même avec un jeton valide.
 
 **Pourquoi / décision.** Suite du correctif `AQR_SERVER_HOST` (#153) : on ne rend pas `0.0.0.0` acceptable comme hôte annoncé (attaque « 0.0.0.0 day »), on corrige l'appelant. Nouvelle fonction `internalOrigin` (`web/lib/local-request.ts`), testée ; chemin complet éprouvé avec un vrai jeton dans un conteneur jetable de la même image.
 

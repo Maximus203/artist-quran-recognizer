@@ -121,7 +121,9 @@ export function internalOrigin(requestUrl: string): string {
   const url = new URL(requestUrl);
   const bound = boundHostname();
   if (!bound || url.hostname !== bound) return url.origin;
-  return `${url.protocol}//${bound === "[::]" ? "[::1]" : "127.0.0.1"}${url.port ? `:${url.port}` : ""}`;
+  // En clair et sur le port d'écoute : un `https` ici vient d'un X-Forwarded-Proto, pas du serveur.
+  const port = url.port || process.env.PORT || "3000";
+  return `http://${bound === "[::]" ? "[::1]" : "127.0.0.1"}:${port}`;
 }
 
 function tokenAuthorized(request: Request, token: string, now: number) {
