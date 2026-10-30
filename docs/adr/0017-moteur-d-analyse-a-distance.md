@@ -104,3 +104,10 @@ Hugging Face, a été copié depuis le poste et vérifié par le même verrou. M
   disponible est descendue vers 7,5 Go. L'unité d'exemple borne donc l'agent (`Nice`, `CPUQuota`, `MemoryMax`).
 - **Limites de la mesure.** Récitations propres d'un seul lecteur, pas de bruit ; extrapolation à plusieurs heures non
   vérifiée ; le passage par l'atelier (téléchargement et dépôt par le VPN) n'est pas inclus.
+
+## Modèles gardés en mémoire (2026-10-30)
+
+L'agent lance par défaut un seul `aqr worker` (protocole d'`aqr.app.worker` : une ligne JSON par requête) au lieu d'un
+`aqr recognize` par analyse. Mesure sur un enregistrement réel de 2,6 Mo, poste à GPU : 52 s à la demande, 29 à 33 s
+une fois chaud. Le service est arrêté après `AQR_ENGINE_WARM_IDLE_S` (600 s par défaut) sans analyse ; annulation ou
+panne : il est arrêté et relancé à la suivante. `AQR_ENGINE_WARM=0` rétablit le processus par analyse.
