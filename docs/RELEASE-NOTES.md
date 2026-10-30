@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Le poste à GPU peut devenir un agent du moteur (REVERB)
+Étiquettes : utilisateur, technique
+PR : #166
+
+**Ce qui change.** Le poste Windows à GPU (REVERB, RTX 5090) peut analyser pour l'atelier, Atlas restant en secours. Un script (`deploy/windows/aqr-engine-agent.ps1`) vérifie le poste (`-Check`), l'installe (`-Install`, en administrateur : entrée du fichier hosts vers le VPN et tâche planifiée à l'ouverture de session) et lance l'agent. Les routes du moteur sont maintenant aussi joignables depuis le VPN d'administration, toujours refusées depuis Internet.
+
+**Pourquoi / décision.** Décision du mainteneur : REVERB en premier choix, Atlas en secours (voir la note précédente). Le poste n'est pas sur le VPN d'Atlas (`wg1`) mais sur celui d'administration (`wg0`) : la liste d'adresses autorisées des routes du moteur passe de `10.78.0.0/30` à `10.78.0.0/30,10.77.0.0/24` (toujours derrière le jeton d'agent ; les appareils de `wg0` sont les siens). Le jeton de REVERB est lu dans un fichier du profil (`~\.aqr\engine-agent.token`), jamais dans l'environnement ni en argument ; le premier, vu à l'écran, a été révoqué et remplacé sans jamais être affiché.
+
 ## 2026-10-30 — Moteur : premier choix et secours entre agents
 Étiquettes : utilisateur, technique, décision
 PR : #165
