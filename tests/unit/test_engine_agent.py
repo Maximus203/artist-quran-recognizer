@@ -249,6 +249,72 @@ class TestRefusDeTravailDouteux:
         assert not any(c[1].endswith("/audio") for c in state.calls)
 
 
+class TestAtelierMalveillantOuDefaillant:
+    """Un atelier qui annonce n'importe quoi ne doit jamais faire planter l'agent."""
+
+    @pytest.mark.parametrize("lease_s", ["abc", -5, 0, None, [1], 10**9])
+    def test_duree_de_bail_illisible_ne_plante_pas_l_agent(
+        self, atelier: tuple[FakeAtelier, str], tmp_path: Path, lease_s: object
+    ) -> None:
+        state, url = atelier
+        state.job = job(lease_s=lease_s)
+        runner = StubRunner()
+        assert agent_for(url, runner, tmp_path).run_once() is True
+        assert state.result == RESULT  # le travail est fait avec une cadence de repli
+
+    @pytest.mark.parametrize("audio", [None, [], "texte", 7])
+    def test_champ_audio_mal_forme_est_refuse_proprement(
+        self, atelier: tuple[FakeAtelier, str], tmp_path: Path, audio: object
+    ) -> None:
+        state, url = atelier
+        state.job = job(audio=audio)
+        runner = StubRunner()
+        assert agent_for(url, runner, tmp_path).run_once() is True
+        assert runner.runs == [] and state.failure is not None
+
+    def test_une_exception_du_moteur_est_signalee_et_l_agent_continue(
+        self, atelier: tuple[FakeAtelier, str], tmp_path: Path
+    ) -> None:
+        state, url = atelier
+        state.job = job()
+
+        class Explodes:
+            def run(
+                self, audio: Path, out_dir: Path, asr: str, cancel: threading.Event
+            ) -> RunOutcome:
+                raise RuntimeError("boum interne")
+
+        agent = EngineAgent(
+            AgentConfig(url=url, token=TOKEN, work_dir=tmp_path / "w", wait_s=1, models_dir=None),
+            Explodes(),
+        )
+        assert agent.run_once() is True
+        assert state.failure is not None and "interne" in state.failure.lower()
+        assert "boum" not in state.failure  # le détail technique reste dans le journal local
+        assert list((tmp_path / "w").iterdir()) == []
+
+    def test_reponse_de_signal_de_vie_sans_corps_ne_tue_pas_le_signal(
+        self, atelier: tuple[FakeAtelier, str], tmp_path: Path
+    ) -> None:
+        state, url = atelier
+        state.job = job(lease_s=3)
+        state.heartbeat_replies = [(200, None), (200, {"cancel": True})]  # type: ignore[list-item]
+        runner = StubRunner(wait_cancel=True)
+        agent_for(url, runner, tmp_path).run_once()
+        assert runner.cancelled is True  # le 2e signal est bien arrivé malgré le 1er corps vide
+
+    def test_jeton_refuse_en_cours_d_analyse_abandonne_au_lieu_de_continuer_a_vide(
+        self, atelier: tuple[FakeAtelier, str], tmp_path: Path
+    ) -> None:
+        state, url = atelier
+        state.job = job(lease_s=3)
+        state.heartbeat_replies = [(401, {"error": "non"})]
+        runner = StubRunner(wait_cancel=True)
+        agent_for(url, runner, tmp_path).run_once()
+        assert runner.cancelled is True
+        assert state.result is None
+
+
 class TestEchecsDuMoteur:
     def test_code_de_sortie_non_nul_remonte_la_derniere_ligne(
         self, atelier: tuple[FakeAtelier, str], tmp_path: Path

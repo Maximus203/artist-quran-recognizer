@@ -79,6 +79,7 @@ nouvelle (bibliothèque standard).
   `http` hors boucle locale. Un jeton refusé arrête l'agent (code de sortie 3, message demandant un nouveau jeton) ;
   une panne de l'atelier ne l'arrête pas (attente exponentielle de 1 à 60 s avec aléa).
 - **Vie privée** : l'audio et le résultat sont supprimés du disque local à la fin de chaque analyse, succès ou non.
-- **Preuves** : 38 tests unitaires (faux atelier reproduisant le contrat) et un scénario de bout en bout contre le **vrai**
+- **Preuves** : 51 tests unitaires (faux atelier reproduisant le contrat, atelier malveillant ou défaillant : durée de bail
+  illisible, champ audio mal formé, exception du moteur) et un scénario de bout en bout contre le **vrai**
   atelier (courtier TypeScript) : analyse nominale terminée par l'atelier, échec du moteur avec son message visible côté
   atelier, annulation apprise au signal de vie, révocation du jeton. Non éprouvé : le vrai moteur (modèles) sur Atlas.

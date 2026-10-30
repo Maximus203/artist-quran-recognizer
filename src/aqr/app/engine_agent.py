@@ -126,6 +126,14 @@ def backoff_seconds(attempt: int, jitter: Callable[[], float] = random.random) -
     return base * (0.5 + 0.5 * jitter())
 
 
+def heartbeat_interval(lease_s: object) -> float:
+    """Cadence des signaux de vie : un tiers du bail annoncé ; valeur absurde : repli sûr."""
+    seconds = lease_s if isinstance(lease_s, int | float) and not isinstance(lease_s, bool) else 90
+    if not 3 <= seconds <= 3600:
+        seconds = 90
+    return float(seconds) / 3
+
+
 def _log(level: int, event: str, **fields: object) -> None:
     """Journal unique de l'agent : `événement {json}`. Jamais le jeton, jamais l'audio."""
     LOGGER.log(level, "%s %s", event, json.dumps(fields, ensure_ascii=False, sort_keys=True))
@@ -300,7 +308,9 @@ class EngineAgent:
         lease = str(job.get("lease", ""))
         if not _LEASE_RE.match(lease):
             raise ValueError("numéro de bail invalide")
-        audio = job.get("audio") or {}
+        audio = job.get("audio")
+        if not isinstance(audio, dict):
+            raise ValueError("description de l'audio absente")
         asr = job.get("asr")
         if asr not in ASR_CHOICES:
             raise ValueError("moteur de reconnaissance inconnu de l'agent")
@@ -354,14 +364,23 @@ class EngineAgent:
                 lost.set()
                 cancel.set()
                 return
-            if status == 404:
+            if status in (401, 403, 404):  # bail perdu ou jeton retiré : inutile de continuer
+                _log(logging.INFO, "signal_de_vie_refuse", lease=lease[:8], statut=status)
                 response.close()
                 lost.set()
                 cancel.set()
                 return
-            if status == 200 and self._json(response).get("cancel"):
-                cancel.set()
-                return
+            if status == 200:
+                try:
+                    reply = self._json(response)
+                except ValueError:
+                    continue  # corps illisible : le signal a porté, le suivant dira
+                cancelled = isinstance(reply, dict) and bool(reply.get("cancel"))
+                _log(logging.DEBUG, "signal_de_vie", lease=lease[:8], annule=cancelled)
+                if cancelled:
+                    cancel.set()
+                    return
+                continue
             if status != 200:
                 response.close()
 
@@ -378,11 +397,11 @@ class EngineAgent:
         done, cancel, lost = threading.Event(), threading.Event(), threading.Event()
         beat = threading.Thread(
             target=self._heartbeat_loop,
-            args=(lease, max(0.2, float(job.get("lease_s") or 90) / 3), done, cancel, lost),
+            args=(lease, heartbeat_interval(job.get("lease_s")), done, cancel, lost),
             daemon=True,
         )
         try:
-            work.mkdir(parents=True, exist_ok=True)
+            work.mkdir(parents=True, exist_ok=True, mode=0o700)
             audio = work / AUDIO_NAME
             beat.start()
             _log(logging.INFO, "analyse_prise", lease=lease[:8], moteur=asr, octets=size)
@@ -430,6 +449,15 @@ class EngineAgent:
                 detail=exc.strerror or type(exc).__name__,
             )
             self._fail(lease, f"Erreur locale de l'agent : {exc.strerror or type(exc).__name__}")
+        except Exception as exc:
+            _log(
+                logging.ERROR,
+                "erreur_interne",
+                lease=lease[:8],
+                type=type(exc).__name__,
+                detail=str(exc)[:200],
+            )
+            self._fail(lease, "Erreur interne de l'agent pendant l'analyse.")
         finally:
             done.set()
             if beat.is_alive():
