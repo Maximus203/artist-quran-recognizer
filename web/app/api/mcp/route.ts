@@ -1,5 +1,6 @@
 import { handleRpc, type ApiCall } from "@/lib/mcp";
 import { apiError, safe } from "@/lib/http";
+import { internalOrigin } from "@/lib/local-request";
 import { requireUser } from "@/lib/route-guard";
 export const runtime = "nodejs";
 
@@ -42,7 +43,7 @@ async function handlePOST(request: Request) {
     );
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = internalOrigin(request.url);
   const bearer = request.headers.get("authorization") as string;
   const call: ApiCall = async (method, path, options) => {
     const headers: Record<string, string> = { authorization: bearer };

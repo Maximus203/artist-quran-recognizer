@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — MCP : les outils fonctionnent aussi dans le conteneur
+Étiquettes : technique
+PR : #154
+
+**Ce qui change.** Les outils du MCP (`/mcp`) rappellent l'API de l'atelier sur la boucle locale (`127.0.0.1`) et non plus sur `0.0.0.0`, adresse d'écoute du conteneur, que la garde refuse comme hôte annoncé. Sans cela, `tools/call` aurait échoué en production même avec un jeton valide.
+
+**Pourquoi / décision.** Suite du correctif `AQR_SERVER_HOST` (#153) : on ne rend pas `0.0.0.0` acceptable comme hôte annoncé (attaque « 0.0.0.0 day »), on corrige l'appelant. Nouvelle fonction `internalOrigin` (`web/lib/local-request.ts`), testée ; chemin complet éprouvé avec un vrai jeton dans un conteneur jetable de la même image.
+
 ## 2026-10-30 — Atelier en conteneur : l'API, le MCP et le moteur ne sont plus refusés
 Étiquettes : technique
 PR : #153

@@ -3,6 +3,7 @@ import {
   ACCESS_COOKIE,
   accessTtlSeconds,
   hasAccessCredential,
+  internalOrigin,
   isLocalRequest,
   issueAccessCookie,
   parseAllowedHosts,
@@ -404,6 +405,24 @@ describe("serveur lié à toutes les interfaces (conteneur) : AQR_SERVER_HOST", 
   it("0.0.0.0 n'est jamais accepté comme nom d'hôte ANNONCÉ (attaque « 0.0.0.0 day »)", () => {
     configure("0.0.0.0");
     expect(isLocalRequest(behindProxy({ host: "0.0.0.0:3000" }))).toBe(false);
+  });
+
+  it("l'auto-appel interne repart sur la boucle locale, jamais sur 0.0.0.0", () => {
+    // Les outils du MCP rappellent l'API de l'atelier : un Host « 0.0.0.0 » serait refusé (à raison).
+    vi.stubEnv("AQR_SERVER_HOST", "0.0.0.0");
+    expect(internalOrigin("http://0.0.0.0:3000/mcp")).toBe(
+      "http://127.0.0.1:3000",
+    );
+    vi.stubEnv("AQR_SERVER_HOST", "[::]");
+    expect(internalOrigin("http://[::]:3100/mcp")).toBe("http://[::1]:3100");
+    // Serveur local classique ou adresse non déclarée : origine inchangée.
+    expect(internalOrigin("http://127.0.0.1:3097/mcp")).toBe(
+      "http://127.0.0.1:3097",
+    );
+    vi.unstubAllEnvs();
+    expect(internalOrigin("http://0.0.0.0:3000/mcp")).toBe(
+      "http://0.0.0.0:3000",
+    );
   });
 
   it("seules les adresses génériques sont acceptées comme valeur", () => {

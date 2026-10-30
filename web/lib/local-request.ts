@@ -113,6 +113,17 @@ export function boundHostname(
   return value === "0.0.0.0" || value === "[::]" ? value : null;
 }
 
+/**
+ * Origine sur laquelle l'atelier se rappelle lui-même (outils du MCP). Sur un serveur lié à toutes les
+ * interfaces, l'URL porte `0.0.0.0` : on repart sur la boucle locale, hôte que la garde reconnaît.
+ */
+export function internalOrigin(requestUrl: string): string {
+  const url = new URL(requestUrl);
+  const bound = boundHostname();
+  if (!bound || url.hostname !== bound) return url.origin;
+  return `${url.protocol}//${bound === "[::]" ? "[::1]" : "127.0.0.1"}${url.port ? `:${url.port}` : ""}`;
+}
+
 function tokenAuthorized(request: Request, token: string, now: number) {
   const bearer = request.headers
     .get("authorization")
