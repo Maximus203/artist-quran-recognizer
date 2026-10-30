@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Administration : comptes et mots de passe temporaires
+Étiquettes : utilisateur, technique
+PR : #163
+
+**Ce qui change.** La zone Administration a une section « Comptes » : liste des inscrits (rôle, usage, dernière connexion), mot de passe temporaire pour quelqu'un qui a perdu le sien (montré une seule fois, ses connexions en cours sont coupées et son verrou de connexion levé), promotion et rétrogradation, désactivation et réactivation. Aucune action n'est offerte sur son propre compte. Jusqu'ici, rien ne permettait à un administrateur de réinitialiser un mot de passe alors que la page Compte disait que seul lui le pouvait.
+
+**Pourquoi / décision.** Pas d'e-mail dans l'atelier, donc pas de lien de réinitialisation : un mot de passe temporaire de 20 caractères tirés au hasard (~100 bits, sans caractères ambigus), à transmettre par un canal privé, que l'utilisateur change ensuite dans Compte > Sécurité. Nouvelle route `POST /api/admin/users/{id}/password` (administrateur seulement, refus sur son propre compte, `Cache-Control: no-store`, jamais écrit dans le journal). Le dernier administrateur ne peut pas être rétrogradé ni désactivé (règle existante, message du serveur affiché).
+
 ## 2026-10-30 — Administration : page Moteur pour créer, révoquer et surveiller les agents
 Étiquettes : utilisateur, technique
 PR : #162

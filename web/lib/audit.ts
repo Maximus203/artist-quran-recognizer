@@ -13,6 +13,7 @@ export type AuditEvent =
   | "login.locked"
   | "register"
   | "password.change"
+  | "password.reset_by_admin"
   | "password.change_failed"
   | "logout"
   | "logins.revoked_others"

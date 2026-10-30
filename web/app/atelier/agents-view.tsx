@@ -6,6 +6,9 @@ import { Icon } from "./icons";
  * création (le jeton n'est montré qu'une fois) et révocation. Composant d'AFFICHAGE : les appels réseau et l'état
  * vivent dans `AgentsPane`, ce qui le rend testable en HTML statique.
  */
+
+/** Une seule colonne : `.srow2` est une grille « libellé / contrôle » par défaut. */
+const ROW = { gridTemplateColumns: "1fr" } as const;
 export type AgentRowView = {
   id: number;
   name: string;
@@ -123,7 +126,7 @@ export function AgentsView(props: AgentsViewProps) {
           </p>
         </header>
 
-        <div className="srow2">
+        <div className="srow2" style={ROW}>
           <EngineBanner
             online={props.online}
             remote={props.remote}
@@ -132,7 +135,7 @@ export function AgentsView(props: AgentsViewProps) {
         </div>
 
         {fresh ? (
-          <div className="srow2">
+          <div className="srow2" style={ROW}>
             <div className="notice" role="status" data-testid="agent-fresh">
               <p>
                 <Icon name="key" /> <b>Copie ce jeton maintenant :</b> il ne
@@ -199,7 +202,7 @@ export function AgentsView(props: AgentsViewProps) {
           </div>
         </form>
 
-        <div className="srow2" data-testid="agent-list">
+        <div className="srow2" style={ROW} data-testid="agent-list">
           {agents === null ? (
             <p>Chargement…</p>
           ) : agents.length === 0 ? (

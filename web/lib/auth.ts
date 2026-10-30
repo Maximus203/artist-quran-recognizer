@@ -2,6 +2,7 @@ import {
   createHash,
   createHmac,
   randomBytes,
+  randomInt,
   timingSafeEqual,
 } from "node:crypto";
 import type { Db } from "./db";
@@ -437,6 +438,42 @@ export function unlockAccount(
 ): void {
   deps.limiters.loginAccount.succeed(`login-account:${usernameKey(username)}`);
   audit("account.unlock", {});
+}
+
+/** Sans caractères qui se confondent à la lecture (i l o 0 1) : le mot de passe temporaire se dicte et se recopie. */
+const TEMP_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+
+/** Mot de passe temporaire : 20 caractères au hasard en 4 groupes de 5 (~100 bits), `xxxxx-xxxxx-xxxxx-xxxxx`. */
+export function generateTemporaryPassword(): string {
+  const group = () =>
+    Array.from(
+      { length: 5 },
+      () => TEMP_ALPHABET[randomInt(TEMP_ALPHABET.length)],
+    ).join("");
+  return [group(), group(), group(), group()].join("-");
+}
+
+/**
+ * Réinitialisation par un administrateur (aucun e-mail dans l'atelier) : pose un mot de passe temporaire, révoque
+ * TOUTES les connexions du compte et lève son verrou de connexion. Le mot de passe n'est rendu qu'ici, jamais écrit
+ * dans le journal. L'utilisateur le change ensuite dans Compte > Sécurité.
+ */
+export async function resetPasswordByAdmin(
+  deps: AuthDeps,
+  target: User,
+  adminId: number,
+): Promise<string> {
+  const password = generateTemporaryPassword();
+  setPasswordHash(deps.db, target.id, await hashPassword(password));
+  revokeAllLogins(deps.db, target.id);
+  deps.limiters.loginAccount.succeed(
+    `login-account:${usernameKey(target.username)}`,
+  );
+  audit("password.reset_by_admin", {
+    userId: target.id,
+    reason: `administrateur ${adminId}`,
+  });
+  return password;
 }
 
 /** Changement de mot de passe : exige l'ancien ; les autres connexions du compte sont révoquées. */
