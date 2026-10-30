@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { getDb } from "./db";
+import { preferredAgentAvailable } from "./engine-agents";
 import { parseRecognition } from "./recognition";
 import { WarmRun, type JobProcess } from "./warm-worker";
 
@@ -53,8 +55,30 @@ type Waiter = {
   timer: NodeJS.Timeout;
 };
 
+/**
+ * Règle de priorité entre agents : « cet agent a-t-il le droit de prendre une analyse maintenant ? ». Fournie par
+ * l'appelant (elle lit les agents en base) ; sans règle, le premier qui appelle prend l'analyse.
+ */
+export type ClaimPolicy = (
+  agentId: number,
+  context: { busy: (agentId: number) => boolean; now: number },
+) => boolean;
+
 export class EngineBroker {
   readonly #offers: Offer[] = [];
+  readonly #mayClaim: ClaimPolicy | undefined;
+
+  constructor(options: { mayClaim?: ClaimPolicy } = {}) {
+    this.#mayClaim = options.mayClaim;
+  }
+
+  /** Cet agent tient-il un bail en cours ? */
+  isBusy(agentId: number): boolean {
+    for (const lease of this.#leases.values())
+      if (lease.agentId === agentId && !lease.cancelled) return true;
+    return false;
+  }
+
   readonly #leases = new Map<string, Held>();
   readonly #waiters: Waiter[] = [];
   #reaper: NodeJS.Timeout | undefined;
@@ -70,8 +94,14 @@ export class EngineBroker {
 
   /** Réclame la plus ancienne analyse en attente, ou null. Un agent ne tient qu'un bail à la fois. */
   claim(agentId: number, now = Date.now()): Lease | null {
-    for (const lease of this.#leases.values())
-      if (lease.agentId === agentId && !lease.cancelled) return null;
+    if (this.isBusy(agentId)) return null;
+    // Premier choix / secours : le secours attend tant qu'un agent préféré est en ligne et disponible.
+    if (
+      this.#mayClaim &&
+      this.#offers.length > 0 &&
+      !this.#mayClaim(agentId, { busy: (id) => this.isBusy(id), now })
+    )
+      return null;
     const offer = this.#offers.shift();
     if (!offer) return null;
     const lease = {
@@ -117,10 +147,10 @@ export class EngineBroker {
     waiter.resolve(lease);
   }
 
-  #dispatch(): void {
+  #dispatch(now = Date.now()): void {
     for (const waiter of [...this.#waiters]) {
       if (this.#offers.length === 0) return;
-      const lease = this.claim(waiter.agentId);
+      const lease = this.claim(waiter.agentId, now);
       if (lease) this.#drop(waiter, lease);
     }
   }
@@ -205,6 +235,8 @@ export class EngineBroker {
         );
       }
     }
+    // Réévalue les agents qui attendent : un agent préféré disparu libère le secours sans attendre son prochain appel.
+    if (this.#offers.length > 0) this.#dispatch(now);
     return expired;
   }
 
@@ -245,7 +277,11 @@ export class UnknownLeaseError extends Error {
 const GLOBAL = Symbol.for("aqr.engine-broker");
 export function engineBroker(): EngineBroker {
   const holder = globalThis as { [GLOBAL]?: EngineBroker };
-  return (holder[GLOBAL] ??= new EngineBroker());
+  // Premier choix / secours : un agent de secours attend tant qu'un agent préféré est en ligne et libre.
+  return (holder[GLOBAL] ??= new EngineBroker({
+    mayClaim: (agentId, { busy, now }) =>
+      !preferredAgentAvailable(getDb(), agentId, busy, now),
+  }));
 }
 
 export const remoteEngineEnabled = (

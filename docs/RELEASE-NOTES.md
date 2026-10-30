@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Moteur : premier choix et secours entre agents
+Étiquettes : utilisateur, technique, décision
+PR : #165
+
+**Ce qui change.** Les agents du moteur ont un ordre de préférence. Dans Administration > Moteur, chaque agent actif porte « Premier choix » ou « Secours » et se monte ou se descend d'un cran. Le secours (par exemple Atlas, sur processeur) ne reçoit une analyse que si le premier choix (par exemple le poste à GPU) est éteint, en veille, révoqué ou occupé ; dès que le premier choix revient, c'est lui qui reprend. Un nouvel agent arrive en dernier.
+
+**Pourquoi / décision.** Jusqu'ici le premier agent qui appelait prenait l'analyse, sans notion de rapidité. Le courtier reçoit une règle (`mayClaim`) évaluée à chaque appel et à chaque réveil périodique (5 s) : le secours attend tant qu'un agent préféré a donné signe de vie depuis moins de 75 s et ne tient aucun bail. Un agent silencieux plus de 75 s est considéré éteint : au plus ~75 s d'attente avant le repli, 20 s en moyenne. Migration `008_priorite_agents.sql` (les agents existants gardent leur ancienneté comme ordre). À noter : la file sert UNE analyse à la fois par défaut (`AQR_MAX_CONCURRENT=1`) ; pour que le secours aide quand le premier choix est occupé, il faut `AQR_MAX_CONCURRENT=2` (non activé).
+
 ## 2026-10-30 — Administration : invitations de testeurs par lien
 Étiquettes : utilisateur, technique, décision
 PR : #164

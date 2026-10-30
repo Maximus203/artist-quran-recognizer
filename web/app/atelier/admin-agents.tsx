@@ -66,6 +66,21 @@ export function AgentsPane() {
     }
   };
 
+  const move = async (agent: AgentRowView, direction: "up" | "down") => {
+    setProblem("");
+    try {
+      await api(`/api/admin/engine-agents/${agent.id}`, {
+        method: "PATCH",
+        json: { move: direction },
+      });
+      await load();
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : "Déplacement impossible.",
+      );
+    }
+  };
+
   const revoke = async (agent: AgentRowView) => {
     if (
       !window.confirm(
@@ -97,6 +112,7 @@ export function AgentsPane() {
       onName={setName}
       onCreate={(event) => void create(event)}
       onRevoke={(agent) => void revoke(agent)}
+      onMove={(agent, direction) => void move(agent, direction)}
       onDismissFresh={() => setFresh(null)}
     />
   );

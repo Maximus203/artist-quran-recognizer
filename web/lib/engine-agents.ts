@@ -19,6 +19,8 @@ export type AgentRow = {
   created_at: string;
   last_seen_at: string | null;
   revoked_at: string | null;
+  /** Plus petit = plus préféré (premier choix) ; les plus grands sont le secours. */
+  priority: number;
 };
 
 export class AgentLimitError extends Error {
@@ -47,7 +49,7 @@ export function bearerAgentToken(request: Request): string | null {
 }
 
 const COLUMNS =
-  "id, name, prefix, created_by, created_at, last_seen_at, revoked_at";
+  "id, name, prefix, created_by, created_at, last_seen_at, revoked_at, priority";
 
 export function cleanAgentName(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
@@ -67,8 +69,9 @@ export function createAgent(
   const token = AGENT_PREFIX + randomBytes(32).toString("base64url");
   const info = db
     .prepare(
-      `INSERT INTO engine_agents (name, token_hash, prefix, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
+      // Un nouvel agent arrive en dernier : il est le secours tant que l'administrateur ne l'a pas monté.
+      `INSERT INTO engine_agents (name, token_hash, prefix, created_by, created_at, priority)
+       VALUES (?, ?, ?, ?, ?, (SELECT COALESCE(MAX(priority), 0) + 10 FROM engine_agents))`,
     )
     .run(
       input.name,
@@ -85,7 +88,9 @@ export function createAgent(
 
 export function listAgents(db: Db): AgentRow[] {
   return db
-    .prepare(`SELECT ${COLUMNS} FROM engine_agents ORDER BY id DESC`)
+    .prepare(
+      `SELECT ${COLUMNS} FROM engine_agents ORDER BY revoked_at IS NOT NULL, priority, id`,
+    )
     .all() as AgentRow[];
 }
 
@@ -135,4 +140,62 @@ export function engineOnline(
     )
     .get() as { seen: string | null };
   return row.seen !== null && now - Date.parse(row.seen) < withinMs;
+}
+
+/** Silence maximal d'un agent préféré avant que le secours ne prenne le relais (l'agent appelle toutes les ~20 s). */
+export const PREFERRED_ONLINE_MS = 75_000;
+
+/**
+ * Monte ou descend un agent actif d'un cran dans l'ordre de préférence. Les agents révoqués ne comptent pas ;
+ * les priorités sont d'abord renumérotées (10, 20, 30…) pour que deux agents n'aient jamais le même rang.
+ * Faux s'il est inconnu, révoqué, ou déjà au bout.
+ */
+export function moveAgent(
+  db: Db,
+  id: number,
+  direction: "up" | "down",
+): boolean {
+  const active = db
+    .prepare(
+      "SELECT id FROM engine_agents WHERE revoked_at IS NULL ORDER BY priority, id",
+    )
+    .all() as Array<{ id: number }>;
+  const index = active.findIndex((row) => row.id === id);
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || target < 0 || target >= active.length) return false;
+  [active[index], active[target]] = [active[target], active[index]];
+  const set = db.prepare("UPDATE engine_agents SET priority = ? WHERE id = ?");
+  active.forEach((row, rank) => set.run((rank + 1) * 10, row.id));
+  return true;
+}
+
+/**
+ * Un agent PRÉFÉRÉ à celui-ci est-il en ligne (signal récent) et libre ? Si oui, celui-ci (le secours) attend.
+ * Un agent préféré occupé, silencieux (PC éteint ou en veille), jamais vu ou révoqué ne retient personne.
+ */
+export function preferredAgentAvailable(
+  db: Db,
+  agentId: number,
+  isBusy: (agentId: number) => boolean,
+  now = Date.now(),
+): boolean {
+  const me = db
+    .prepare("SELECT priority FROM engine_agents WHERE id = ?")
+    .get(agentId) as { priority: number } | undefined;
+  if (!me) return false;
+  const rivals = db
+    .prepare(
+      `SELECT id, last_seen_at FROM engine_agents
+       WHERE revoked_at IS NULL AND id != ? AND (priority < ? OR (priority = ? AND id < ?))`,
+    )
+    .all(agentId, me.priority, me.priority, agentId) as Array<{
+    id: number;
+    last_seen_at: string | null;
+  }>;
+  return rivals.some(
+    (rival) =>
+      rival.last_seen_at !== null &&
+      now - Date.parse(rival.last_seen_at) <= PREFERRED_ONLINE_MS &&
+      !isBusy(rival.id),
+  );
 }
