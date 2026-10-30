@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Administration : page Moteur pour créer, révoquer et surveiller les agents
+Étiquettes : utilisateur, technique
+PR : #162
+
+**Ce qui change.** Une zone Administration apparaît dans le menu du compte pour les administrateurs (`/gestion`). Sa première section, « Moteur », montre si un agent d'analyse est en ligne et combien d'analyses attendent, liste les agents avec leur dernière activité, crée un agent (jeton montré une seule fois, avec la marche à suivre pour le poser sur la machine) et le révoque. Plus besoin de commande dans la console du navigateur. Un testeur reçoit un 404 sur cette zone, un visiteur anonyme est renvoyé vers la connexion.
+
+**Pourquoi / décision.** Première étape de la zone Administration demandée par le mainteneur (agents, puis comptes et mots de passe, puis invitations de testeurs). La zone s'appelle `/gestion` et non `/admin` : `/admin` est un chemin piège qui bloque l'adresse du visiteur pendant une heure (`honeypot.ts`), défaut repéré au premier essai dans un vrai navigateur ; un test parcourt désormais toutes les pages de l'application et refuse tout nom piégé. L'API `GET /api/admin/engine-agents` rend aussi `remote` et `queue` (analyses en attente).
+
 ## 2026-10-30 — L'agent du moteur tourne sur Atlas : première analyse de bout en bout
 Étiquettes : utilisateur, technique
 PR : #161

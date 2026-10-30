@@ -7,6 +7,7 @@ import {
   listAgents,
 } from "@/lib/engine-agents";
 import { parseBody } from "@/lib/body";
+import { engineBroker, remoteEngineEnabled } from "@/lib/engine-broker";
 import { apiError, json, safe } from "@/lib/http";
 import { log } from "@/lib/log";
 import { requireAdmin } from "@/lib/route-guard";
@@ -18,7 +19,14 @@ const schema = z.object({ name: z.string().min(1).max(80) }).strict();
 async function handleGET(request: Request) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
-  return json({ online: engineOnline(auth.db), items: listAgents(auth.db) });
+  const remote = remoteEngineEnabled();
+  return json({
+    remote,
+    online: engineOnline(auth.db),
+    // File d'attente du courtier (en mémoire) : seulement pertinente quand le moteur est distant.
+    queue: remote ? engineBroker().status() : null,
+    items: listAgents(auth.db),
+  });
 }
 
 /** Crée un agent. Le jeton clair n'est rendu qu'ici, une seule fois. */

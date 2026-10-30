@@ -470,6 +470,35 @@ describe("agents : administration", () => {
     expect(text).not.toContain("token_hash");
   });
 
+  it("la liste dit si le moteur est distant, s'il est en ligne, et combien d'analyses attendent", async () => {
+    const before = await (await m.admin.GET(adminCall("GET"))).json();
+    expect(before).toMatchObject({
+      remote: true,
+      online: false, // aucun agent n'a encore appelé
+      queue: { waiting: 0, leased: 0 },
+    });
+    await m.claim.POST(
+      new Request(`${HOST}/api/engine/claim?wait=0`, {
+        method: "POST",
+        headers: bearer(tokens.one),
+      }),
+    );
+    expect((await (await m.admin.GET(adminCall("GET"))).json()).online).toBe(
+      true,
+    );
+    await seed(A);
+    await m.jobs.launch(A, undefined, 1);
+    await until(async () => m.broker.engineBroker().status().waiting === 1);
+    const during = await (await m.admin.GET(adminCall("GET"))).json();
+    expect(during.queue).toEqual({ waiting: 1, leased: 0 });
+  });
+
+  it("moteur local : la liste le dit (remote: false), sans file d'attente à distance", async () => {
+    vi.stubEnv("AQR_ENGINE", "");
+    const out = await (await m.admin.GET(adminCall("GET"))).json();
+    expect(out.remote).toBe(false);
+  });
+
   it("un utilisateur ordinaire, ou sans connexion, ne peut ni lister ni créer ni révoquer", async () => {
     const anon = (method: string) =>
       new Request(`${HOST}/api/admin/engine-agents`, {
