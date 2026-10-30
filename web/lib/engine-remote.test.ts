@@ -337,6 +337,24 @@ describe("moteur distant : qui a le droit de quoi", () => {
     expect(m.broker.engineBroker().status().waiting).toBe(1); // rien n'a été pris
   });
 
+  it("dans un conteneur (URL en 0.0.0.0), l'agent passe l'hôte public mais pas un hôte étranger", async () => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", "t".repeat(40));
+    vi.stubEnv("AQR_PUBLIC_ORIGIN", "https://atelier.example");
+    const claim = (host: string) =>
+      m.claim.POST(
+        new Request("http://0.0.0.0:3000/api/engine/claim?wait=0", {
+          method: "POST",
+          headers: { host, ...bearer(tokens.one) },
+        }),
+      );
+    // Sans la déclaration d'écoute, l'hôte de l'URL (0.0.0.0) n'est pas reconnu : refus.
+    expect((await claim("atelier.example")).status).toBe(403);
+    vi.stubEnv("AQR_SERVER_HOST", "0.0.0.0");
+    expect((await claim("atelier.example")).status).toBe(204); // authentifié, rien à analyser
+    expect((await claim("evil.example")).status).toBe(403);
+    expect((await claim("0.0.0.0:3000")).status).toBe(403);
+  });
+
   it("un jeton d'agent n'ouvre aucune autre route de l'atelier", async () => {
     const sessions = await import("@/app/api/sessions/route");
     const res = await sessions.GET(

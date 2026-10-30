@@ -366,3 +366,51 @@ describe("origine publique (tunnel) : AQR_PUBLIC_ORIGIN", () => {
     }
   });
 });
+
+describe("serveur lié à toutes les interfaces (conteneur) : AQR_SERVER_HOST", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  // Dans un conteneur, Next écoute sur 0.0.0.0 pour que le reverse proxy l'atteigne : l'URL qu'il
+  // reconstruit porte alors `0.0.0.0`. Le nom d'hôte réel reste celui des en-têtes Host / X-Forwarded-Host.
+  const PUBLIC = "https://lab.example";
+  const behindProxy = (headers: Record<string, string> = {}) =>
+    new Request("http://0.0.0.0:3000/api/auth/login", {
+      headers: { host: "lab.example", "x-aqr-token": TOKEN, ...headers },
+    });
+  const configure = (bound?: string) => {
+    vi.stubEnv("AQR_ACCESS_TOKEN", TOKEN);
+    vi.stubEnv("AQR_PUBLIC_ORIGIN", PUBLIC);
+    if (bound !== undefined) vi.stubEnv("AQR_SERVER_HOST", bound);
+  };
+
+  it("accepte l'URL d'écoute déclarée quand l'hôte annoncé est l'hôte public", () => {
+    configure("0.0.0.0");
+    expect(isLocalRequest(behindProxy())).toBe(true);
+  });
+
+  it("sans la déclaration, l'URL en 0.0.0.0 reste refusée (comportement historique)", () => {
+    configure();
+    expect(isLocalRequest(behindProxy())).toBe(false);
+  });
+
+  it("l'URL d'écoute ne dispense ni du jeton ni de l'hôte annoncé", () => {
+    configure("0.0.0.0");
+    expect(isLocalRequest(behindProxy({ "x-aqr-token": "faux" }))).toBe(false);
+    expect(isLocalRequest(behindProxy({ host: "evil.example" }))).toBe(false);
+    expect(
+      isLocalRequest(behindProxy({ "x-forwarded-host": "evil.example" })),
+    ).toBe(false);
+  });
+
+  it("0.0.0.0 n'est jamais accepté comme nom d'hôte ANNONCÉ (attaque « 0.0.0.0 day »)", () => {
+    configure("0.0.0.0");
+    expect(isLocalRequest(behindProxy({ host: "0.0.0.0:3000" }))).toBe(false);
+  });
+
+  it("seules les adresses génériques sont acceptées comme valeur", () => {
+    for (const value of ["evil.example", "10.0.0.5", "127.0.0.1.evil"]) {
+      vi.unstubAllEnvs();
+      configure(value);
+      expect(isLocalRequest(behindProxy())).toBe(false);
+    }
+  });
+});
