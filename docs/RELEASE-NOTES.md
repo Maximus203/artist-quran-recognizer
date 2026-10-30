@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-10-30 — Envoi d'audio par morceaux : un téléphone en 4G peut envoyer un long enregistrement
+Étiquettes : utilisateur, technique
+PR : #160
+
+**Ce qui change.** Un enregistrement ou un fichier de plus de 2 Mo s'envoie maintenant par morceaux de 4 Mo : depuis un téléphone en 4G, l'envoi n'échoue plus avec « erreur inattendue », et une coupure ne force plus à tout recommencer (seuls les morceaux manquants sont renvoyés, trois à la fois). Une progression en pourcentage s'affiche. L'enregistrement du direct (« Garder cet enregistrement ») fait de même. Les petits fichiers restent envoyés en une requête.
+
+**Pourquoi / décision.** Sur Alpha, Traefik (partagé avec SAP) coupe toute requête qui met plus de 60 s à arriver (`i/o timeout` relevé dans ses journaux) : un enregistrement de 14 minutes depuis un téléphone en 4G dépassait ce délai. On corrige dans l'application plutôt que de relever le délai d'un proxy partagé. Nouvelles routes `POST /api/uploads`, `PUT /api/uploads/{id}/chunks/{n}`, `GET`/`DELETE /api/uploads/{id}`, `POST /api/uploads/{id}/complete` : mêmes contrôles que l'envoi unique (type réel, plafonds, quota, place disque, sonde), 3 envois en cours par compte, purge après 24 h, empreinte facultative vérifiée, morceaux nommés par le serveur, famille de débit `chunk` suspendue en mode restreint. Éprouvé sur un vrai atelier local avec un mp3 de 24 Mo : coupure en plein morceau, reprise des seuls morceaux manquants, empreinte identique. Non éprouvé : le chemin réel par Traefik sur Alpha (à vérifier après déploiement) ; la reprise après rechargement de la page n'existe pas (l'envoi recommence).
+
 ## 2026-10-30 — Inscription par code : le premier compte peut enfin être créé
 Étiquettes : utilisateur, technique
 PR : #159

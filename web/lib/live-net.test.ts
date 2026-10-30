@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { SMALL_UPLOAD_BYTES, uploadInChunks } from "./chunked-upload-client";
 import { fetchLiveToken, keepRecording, type XhrLike } from "./live-net";
+
+// Les longs enregistrements passent par l'envoi par morceaux (testé à part) : ici, seule l'aiguillage compte.
+vi.mock("./chunked-upload-client", async (original) => ({
+  ...(await original<typeof import("./chunked-upload-client")>()),
+  uploadInChunks: vi.fn(),
+}));
 
 const reply = (status: number, body: unknown, headers: HeadersInit = {}) =>
   (async () =>
@@ -149,5 +156,43 @@ describe("keepRecording", () => {
     );
     xhr.onerror?.();
     await expect(promise).rejects.toThrow(/réseau/);
+  });
+
+  it("un long enregistrement part par morceaux (source microphone, nom choisi), sans XHR", async () => {
+    vi.mocked(uploadInChunks).mockResolvedValue({ id: "s9" });
+    const big = new File([new Uint8Array(SMALL_UPLOAD_BYTES + 1)], "live.webm");
+    const progress = () => undefined;
+    const result = await keepRecording(
+      big,
+      { visibility: "private", name: "Récitation en direct, 14:08" },
+      progress,
+      () => {
+        throw new Error("aucun XHR pour un long enregistrement");
+      },
+    );
+    expect(result).toEqual({ id: "s9" });
+    expect(uploadInChunks).toHaveBeenCalledWith(
+      big,
+      {
+        visibility: "private",
+        sourceKind: "microphone",
+        name: "Récitation en direct, 14:08",
+      },
+      { onProgress: progress },
+    );
+  });
+
+  it("un court enregistrement reste en une requête", async () => {
+    vi.mocked(uploadInChunks).mockClear();
+    const { xhr } = fakeXhr();
+    const promise = keepRecording(
+      new File([new Uint8Array(10)], "court.webm"),
+      { visibility: "global", name: "x" },
+      () => {},
+      () => xhr,
+    );
+    xhr.onerror?.();
+    await expect(promise).rejects.toThrow(/réseau/);
+    expect(uploadInChunks).not.toHaveBeenCalled();
   });
 });

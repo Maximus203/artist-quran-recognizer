@@ -78,6 +78,12 @@ describe("familles de routes", () => {
     ["POST", "/api/sessions", "upload"],
     ["POST", "/api/v1/recordings", "upload"],
     ["PUT", "/api/me/avatar", "upload"],
+    ["POST", "/api/uploads", "upload"],
+    ["POST", "/api/uploads/abc/complete", "upload"],
+    ["PUT", "/api/uploads/abc/chunks/3", "chunk"],
+    ["GET", "/api/uploads/abc", "read"],
+    ["DELETE", "/api/uploads/abc", "write"],
+    ["POST", "/api/uploads/abc/chunks/3", "write"],
     ["POST", "/api/sessions/abc/run", "generate"],
     ["POST", "/api/sessions/abc/export/video", "generate"],
     ["POST", "/api/v1/recordings/abc/export/video/jobs", "generate"],
@@ -111,6 +117,9 @@ describe("appelant et taille", () => {
     expect(tooLarge("POST", "write", "100")).toBe(false);
     expect(tooLarge("POST", "upload", String(900 * 1024 * 1024))).toBe(false);
     expect(tooLarge("GET", "read", "999999999")).toBe(false);
+    // Un morceau d'envoi : 8 Mio au plus (les morceaux font 4 Mio), jamais un fichier entier.
+    expect(tooLarge("PUT", "chunk", String(5 * 1024 * 1024))).toBe(false);
+    expect(tooLarge("PUT", "chunk", String(9 * 1024 * 1024))).toBe(true);
     expect(tooLarge("POST", "write", null)).toBe(false);
   });
 });

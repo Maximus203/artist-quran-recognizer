@@ -17,6 +17,7 @@ const SAMPLES: Record<Family, { method: string; path: string }> = {
   read: { method: "GET", path: "/api/sessions" },
   write: { method: "PATCH", path: "/api/me/preferences" },
   upload: { method: "POST", path: "/api/sessions" },
+  chunk: { method: "PUT", path: "/api/uploads/x/chunks/0" },
   generate: { method: "POST", path: "/api/sessions/x/run" },
   mcp: { method: "POST", path: "/api/mcp" },
   live: { method: "POST", path: "/api/live/token" },

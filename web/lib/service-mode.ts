@@ -58,7 +58,7 @@ export function resetModeCache(): void {
   Object.assign(cache, { at: 0, mode: "normal", key: "" });
 }
 
-const SUSPENDED = new Set(["upload", "generate", "live"]);
+const SUSPENDED = new Set(["upload", "chunk", "generate", "live"]);
 
 /** Refus à opposer à une requête dans ce mode, ou `null` si elle passe. Pure, donc testable. */
 export function modeRefusal(

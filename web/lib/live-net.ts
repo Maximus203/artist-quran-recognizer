@@ -5,6 +5,7 @@
  *    de transfert (un `fetch` ne donne pas la progression d'un envoi).
  * Les erreurs sont rendues en français lisible ; jamais un code brut.
  */
+import { SMALL_UPLOAD_BYTES, uploadInChunks } from "./chunked-upload-client";
 import type { SocketLike, TokenResult } from "./live-client";
 
 const NETWORK =
@@ -96,6 +97,17 @@ export function keepRecording(
   onProgress: (fraction: number) => void,
   makeXhr: () => XhrLike = () => new XMLHttpRequest() as unknown as XhrLike,
 ): Promise<{ id: string; autorunError?: string }> {
+  // Un enregistrement long part par morceaux (connexion lente) ; un court, en une requête.
+  if (file.size > SMALL_UPLOAD_BYTES)
+    return uploadInChunks(
+      file,
+      {
+        visibility: options.visibility,
+        sourceKind: "microphone",
+        name: options.name,
+      },
+      { onProgress },
+    );
   return new Promise((resolve, reject) => {
     const xhr = makeXhr();
     xhr.open(

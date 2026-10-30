@@ -1,6 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
+import {
+  SMALL_UPLOAD_BYTES,
+  uploadInChunks,
+} from "@/lib/chunked-upload-client";
 import type { ApiSession, Counts, SessionPage } from "@/lib/api-types";
 import { pollInterval } from "@/lib/polling";
 import type { Recognition } from "@/lib/recognition";
@@ -367,6 +371,8 @@ export type ImportItem = {
   name: string;
   state: "sending" | "queued" | "ready" | "error";
   error?: string;
+  /** Part envoyée (0 à 1) d'un gros fichier envoyé par morceaux. */
+  progress?: number;
 };
 
 type ImportOptions = {
@@ -379,8 +385,16 @@ type ImportOptions = {
 async function sendOne(
   file: File,
   options: ImportOptions,
+  onProgress?: (fraction: number) => void,
 ): Promise<{ id: string; autorunError?: string }> {
   const visibility = options.visibility ?? "global";
+  // Un gros fichier part par morceaux : sur une connexion lente, une seule requête dépasserait le délai du proxy.
+  if (!options.result && file.size > SMALL_UPLOAD_BYTES)
+    return uploadInChunks(
+      file,
+      { visibility, sourceKind: options.source ?? "file" },
+      { onProgress },
+    );
   if (options.result) {
     // Un résultat joint : formulaire (le moteur ne tourne pas, la session naît terminée).
     const form = new FormData();
@@ -441,7 +455,13 @@ export function useImporter(onDone: (ids: string[]) => void) {
       const errors: string[] = [];
       for (const [i, file] of files.entries()) {
         try {
-          const sent = await sendOne(file, options);
+          const sent = await sendOne(file, options, (progress) =>
+            setItems((list) =>
+              list.map((item) =>
+                item.key === keyOf(i) ? { ...item, progress } : item,
+              ),
+            ),
+          );
           ids.push(sent.id);
           if (sent.autorunError) errors.push(sent.autorunError);
           setItems((list) =>
