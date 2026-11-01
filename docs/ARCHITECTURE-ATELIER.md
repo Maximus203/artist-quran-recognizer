@@ -238,6 +238,12 @@ Le troisième onglet de la page Exporter produit un MP4 animé de la session ent
      -c:v copy -bsf:v setts=ts=N/(25*TB) -c:a aac → MP4 (jamais -shortest : il coupait toute la bande son)
 ```
 
+Le MP4 fabriqué est aussi gardé sur le serveur (`lib/video-library.ts`, `<session>/videos/<uuid>.mp4` + `.json`,
+au plus 40 par enregistrement) avec une clé de réutilisation calculée par le navigateur (en-tête `x-aqr-meta`).
+`GET /api/sessions/<id>/videos` les liste ; `GET …/videos/<uuid>` les lit (plages d'octets) ou les télécharge
+(`?download=1`) ; `DELETE` les supprime et recompte l'espace. Un export identique récupère la vidéo existante au lieu
+de refaire le rendu (`web/app/atelier/export/video-library.tsx`).
+
 **Mise en page (`lib/export-video-layout.ts`, fonctions pures testées).** Le verset est découpé
 mot par mot (`layoutArabicWords`) et passe à la ligne tout seul ; la traduction aussi. Les tailles
 d'écriture (réglées pour un côté court de 1080 px) suivent le côté court de la vidéo, donc le

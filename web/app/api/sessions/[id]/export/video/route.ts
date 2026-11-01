@@ -7,7 +7,15 @@ import {
 } from "@/lib/export-video";
 import { exportErrorResponse } from "@/lib/export-errors";
 import { safe } from "@/lib/http";
+import { log } from "@/lib/log";
 import { sessionAccess } from "@/lib/route-guard";
+import { refreshDiskBytes } from "@/lib/session-sync";
+import {
+  listVideos,
+  MAX_VIDEOS_PER_SESSION,
+  parseVideoMeta,
+  saveVideo,
+} from "@/lib/video-library";
 export const runtime = "nodejs";
 
 const HEADER_JOB = "x-aqr-job";
@@ -16,6 +24,7 @@ const HEADER_LAST = "x-aqr-last";
 const HEADER_FPS = "x-aqr-fps";
 const HEADER_START = "x-aqr-start";
 const HEADER_DURATION = "x-aqr-duration";
+const HEADER_META = "x-aqr-meta";
 
 function headerFloat(request: Request, name: string): number | undefined {
   const raw = request.headers.get(name);
@@ -29,6 +38,29 @@ function headerNumber(request: Request, name: string): number | null {
   if (raw === null) return null;
   const value = Number(raw);
   return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+async function keepVideo(
+  access: { id: string; db: Parameters<typeof refreshDiskBytes>[0] },
+  request: Request,
+  file: { content: Buffer; name: string },
+): Promise<string | null> {
+  const meta = parseVideoMeta(request.headers.get(HEADER_META));
+  if (!meta) return null;
+  try {
+    if ((await listVideos(access.id)).length >= MAX_VIDEOS_PER_SESSION)
+      return null;
+    const record = await saveVideo(access.id, {
+      ...meta,
+      name: meta.name || file.name,
+      bytes: file.content,
+    });
+    await refreshDiskBytes(access.db, access.id);
+    return record.id;
+  } catch (error) {
+    log.warn("export", "vidéo non gardée sur le serveur", error);
+    return null;
+  }
 }
 
 /**
@@ -85,8 +117,12 @@ async function handlePOST(
         return NextResponse.json({ error: error.message }, { status: 400 });
       throw error;
     }
+    // La vidéo reste sur le serveur (liste « Vidéos de cet enregistrement ») : un échec de stockage ne
+    // doit jamais faire perdre le téléchargement qui vient d'être fabriqué.
+    const stored = await keepVideo(access, request, file);
     return new Response(new Uint8Array(file.content), {
       headers: {
+        ...(stored ? { "X-Aqr-Video-Id": stored } : {}),
         "Content-Type": file.mime,
         "Content-Disposition": `attachment; filename="video.mp4"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
         "Cache-Control": "private, no-store",

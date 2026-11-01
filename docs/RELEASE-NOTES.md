@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-01 — Les vidéos déjà faites restent sur le serveur : les revoir, les retélécharger, les supprimer
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** Chaque vidéo fabriquée dans l'onglet « Vidéo » de l'export est gardée sur le serveur et apparaît dans « Vidéos de cet enregistrement » (nom, format, plage, taille, date). On peut la lire dans la page, la télécharger à nouveau ou la supprimer pour libérer de l'espace (le propriétaire ou un administrateur). Un nouvel export identique (mêmes réglages, même plage, même contenu) récupère la vidéo existante sans la refaire ; la case « Refaire même si une vidéo identique existe déjà » force un nouveau rendu. Un autre format, une autre plage ou un texte corrigé donne une vidéo nouvelle.
+
+**Pourquoi / décision.** Les vidéos n'étaient jamais gardées : chaque besoin obligeait à refaire un rendu de plusieurs minutes. Elles vivent dans `<session>/videos/` : elles comptent dans l'espace utilisé et partent avec la session ; au plus 40 par enregistrement. Routes : `GET /api/sessions/{id}/videos`, `GET` (lecture avec plages d'octets, `?download=1`) et `DELETE /api/sessions/{id}/videos/{video}`. La clé de réutilisation est une empreinte (SHA-256) calculée par le navigateur. Preuves : `video-library.test.ts`, `export-video-library.test.ts` ; dans un vrai navigateur sur un serveur local : vidéo fabriquée et envoyée par morceaux puis gardée (1,3 Mo), relue (1920 px, 18,7 s), second export identique sans nouveau rendu (aucun envoi), suppression (liste et dossier vides).
+
 ## 2026-11-01 — La vidéo animée s'exporte depuis l'adresse publique
 Étiquettes : utilisateur, technique
 PR : -

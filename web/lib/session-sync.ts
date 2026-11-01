@@ -1,6 +1,6 @@
 import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
-import { getDb } from "./db";
+import { getDb, type Db } from "./db";
 import { log } from "./log";
 import {
   createMeta,
@@ -135,4 +135,13 @@ export async function importLegacySessions(): Promise<number> {
 export function installSessionHooks(): void {
   sessionHooks.saved = syncSession;
   sessionHooks.removed = (id) => deleteMeta(getDb(), id);
+}
+
+/** Recompte l'espace occupé par une session après l'ajout ou la suppression d'un fichier (vidéos). */
+export async function refreshDiskBytes(db: Db, id: string): Promise<void> {
+  try {
+    setDerived(db, id, { diskBytes: await directoryBytes(sessionDir(id)) });
+  } catch (error) {
+    log.warn("index", "taille du dossier de session illisible", error);
+  }
 }
