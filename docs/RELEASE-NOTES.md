@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-01 — « Vérifier avant d'exporter » marche sur l'adresse publique
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** Sur l'adresse publique, la page « Vérifier avant d'exporter » affichait « Le contrôle n'a pas pu se faire » (erreur interne). Elle répond maintenant : le contrôle des passages ambigus et l'export des sous-titres (SRT, WebVTT, ASS, JSON) fonctionnent. L'export vidéo reste non servi sur cette adresse (pas de Chromium dans l'image).
+
+**Pourquoi / décision.** Ces commandes lancent le cœur Python du moteur depuis le serveur de l'atelier ; l'image d'Alpha n'avait ni Python, ni le code du moteur, ni le corpus (journal : `spawn python ENOENT`). L'image embarque désormais Python 3 avec pyyaml (sans torch ni modèle), le code `src/`, les segments de traduction et le corpus Tanzil téléchargé à la construction et vérifié par `LOCK.json`. Le cache des traductions vit dans le volume de données (`AQR_CACHE_DIR=/data/cache`).
+
 ## 2026-10-30 — Le menu « … » d'une ligne n'est plus coupé en bas de la liste
 Étiquettes : utilisateur
 PR : #169
