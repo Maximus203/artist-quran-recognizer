@@ -3,6 +3,7 @@
  * fond), rend chaque frame sur canvas (mot courant surligné, onde jouée/non jouée), encode
  * en H.264 puis envoie les segments au serveur, qui muxe le MP4 avec la copie d'écoute.
  */
+import { videoPieces } from "./export-video-pieces";
 import { api } from "./api-client";
 import { even, type VideoOrientation } from "./export-video-args";
 import { videoDimensions } from "./export-video-format";
@@ -349,9 +350,10 @@ async function sendSegments(
   fileName: string,
   mux: { fps: number; start?: number; duration?: number },
 ): Promise<Blob> {
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-    onSend(i / segments.length);
+  const pieces = videoPieces(segments);
+  for (let i = 0; i < pieces.length; i++) {
+    const segment = pieces[i];
+    onSend(i / pieces.length);
     const response = await fetch(`/api/sessions/${sessionId}/export/video`, {
       method: "POST",
       headers: {

@@ -121,6 +121,12 @@ export function classify(method: string, pathname: string): Family {
     // Envoi par morceaux : un morceau est une requête à part (plafond et corps propres).
     if (m === "PUT" && /^\/api\/uploads\/[^/]+\/chunks\/[^/]+$/.test(pathname))
       return "chunk";
+    // Vidéo encodée par le navigateur : envoyée par morceaux de 4 Mio (`lib/export-video-pieces.ts`).
+    if (
+      m === "POST" &&
+      /^\/api\/(v1\/recordings|sessions)\/[^/]+\/export\/video$/.test(pathname)
+    )
+      return "chunk";
     if (
       (m === "POST" &&
         /^\/api\/(v1\/recordings|sessions|uploads)\/?$/.test(pathname)) ||
@@ -132,7 +138,7 @@ export function classify(method: string, pathname: string): Family {
     )
       return "upload";
     if (
-      /\/(run|export\/video(\/jobs)?|export\/video\/jobs\/[^/]+)$/.test(
+      /\/(run|export\/video\/jobs|export\/video\/jobs\/[^/]+)$/.test(
         pathname,
       )
     )

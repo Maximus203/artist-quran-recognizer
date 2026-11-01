@@ -85,7 +85,7 @@ describe("familles de routes", () => {
     ["DELETE", "/api/uploads/abc", "write"],
     ["POST", "/api/uploads/abc/chunks/3", "write"],
     ["POST", "/api/sessions/abc/run", "generate"],
-    ["POST", "/api/sessions/abc/export/video", "generate"],
+    ["POST", "/api/sessions/abc/export/video", "chunk"],
     ["POST", "/api/v1/recordings/abc/export/video/jobs", "generate"],
     ["DELETE", "/api/sessions/abc/export/video/jobs/j1", "generate"],
     ["POST", "/api/auth/login", "auth"],

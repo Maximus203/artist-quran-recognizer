@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-01 — La vidéo animée s'exporte depuis l'adresse publique
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** À la fin du rendu, l'envoi de la vidéo échouait avec « Le corps de la requête est trop gros ». Le navigateur envoie maintenant la vidéo encodée par morceaux de 4 Mio au lieu de gros segments d'un coup ; le MP4 se télécharge comme avant.
+
+**Pourquoi / décision.** La route d'envoi des images encodées était rangée avec les petites requêtes JSON (plafond de 1 Mio) : tout segment plus lourd était refusé. Elle partage désormais la famille « morceau » (plafond 8 Mio, 300 requêtes par minute) déjà utilisée pour l'envoi d'audio, et reste sous les 60 s par requête du reverse proxy d'Alpha. Le serveur remet les morceaux bout à bout, il n'a donc pas changé. Preuves : `web/lib/export-video-pieces.test.ts`, `web/lib/http-security.test.ts`.
+
 ## 2026-11-01 — « Vérifier avant d'exporter » marche sur l'adresse publique
 Étiquettes : utilisateur, technique
 PR : -
