@@ -3,6 +3,12 @@
  * fond), rend chaque frame sur canvas (mot courant surligné, onde jouée/non jouée), encode
  * en H.264 puis envoie les segments au serveur, qui muxe le MP4 avec la copie d'écoute.
  */
+import {
+  announceVideosChanged,
+  savedVideoUrl,
+  videoKey,
+  type SavedVideo,
+} from "./export-video-library";
 import { videoPieces } from "./export-video-pieces";
 import { api } from "./api-client";
 import { even, type VideoOrientation } from "./export-video-args";
@@ -113,6 +119,10 @@ export type RenderVideoInputs = {
   shouldStop?: () => boolean;
   /** Garde chaque MP4 en mémoire (bouton « Retélécharger ») ; le rendu par l'API n'en a pas besoin. */
   keepFiles?: boolean;
+  /** Vidéos déjà gardées sur le serveur : une vidéo identique n'est pas refaite, on récupère celle du serveur. */
+  existing?: SavedVideo[];
+  /** Faux = refaire même si une vidéo identique existe (« Refaire quand même »). */
+  reuse?: boolean;
   onProgress: RenderProgress;
 };
 
@@ -253,6 +263,44 @@ export async function renderSessionVideo(
       const length = range.end - range.start;
       const frameCount = frameCountFor(length, fps);
       const job = newVideoJob();
+      // Ce qui fait la vidéo : contenu affiché, réglages, plage, taille, cadence, fond importé.
+      const key = await videoKey({
+        v: 1,
+        cards,
+        prefs,
+        width,
+        height,
+        fps,
+        range: whole ? null : [range.start, range.end],
+        duration,
+        upload: bgImage
+          ? [bgImage.name, bgImage.size, bgImage.lastModified]
+          : null,
+      });
+      const same =
+        inputs.reuse === false
+          ? undefined
+          : inputs.existing?.find((v) => v.key === key);
+      if (same) {
+        report({ index: position, total, phase: "send", ratio: 0.5 });
+        const blob = await fetchSavedBlob(sessionId, same);
+        if (blob) {
+          downloadBlob(blob, names[position]);
+          files.push({
+            name: names[position],
+            bytes: blob.size,
+            ...(inputs.keepFiles ? { blob } : {}),
+          });
+          report({
+            index: position,
+            total,
+            phase: "done",
+            ratio: 1,
+            bytes: blob.size,
+          });
+          continue;
+        }
+      }
 
       report({ index: position, total, phase: "render", ratio: 0 });
       try {
@@ -307,6 +355,11 @@ export async function renderSessionVideo(
           (ratio) => report({ index: position, total, phase: "send", ratio }),
           name,
           whole ? { fps } : { fps, start: range.start, duration: length },
+          {
+            key,
+            name,
+            label: videoLabel(prefs, width, height, fps, range, whole),
+          },
         );
         files.push({
           name,
@@ -349,6 +402,7 @@ async function sendSegments(
   onSend: (ratio: number) => void,
   fileName: string,
   mux: { fps: number; start?: number; duration?: number },
+  saved: { key: string; name: string; label: string },
 ): Promise<Blob> {
   const pieces = videoPieces(segments);
   for (let i = 0; i < pieces.length; i++) {
@@ -363,6 +417,7 @@ async function sendSegments(
         "x-aqr-last": segment.last ? "1" : "0",
         ...(segment.last
           ? {
+              "x-aqr-meta": encodeURIComponent(JSON.stringify(saved)),
               "x-aqr-fps": String(mux.fps),
               ...(mux.start !== undefined && mux.duration !== undefined
                 ? {
@@ -390,6 +445,7 @@ async function sendSegments(
     if (!segment.last) continue;
     const blob = await response.blob();
     downloadBlob(blob, fileName);
+    announceVideosChanged();
     return blob;
   }
   throw new Error("La vidéo n'a pas été assemblée : segment final manquant.");
@@ -404,4 +460,36 @@ export function downloadBlob(blob: Blob, fileName: string): void {
   link.click();
   // Le navigateur lit l'URL au clic ; la libérer tout de suite peut annuler le téléchargement.
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/** Résumé lisible d'une vidéo pour la liste : cadre, résolution, cadence, plage, contenu. */
+export function videoLabel(
+  prefs: VideoPrefs,
+  width: number,
+  height: number,
+  fps: number,
+  range: { start: number; end: number },
+  whole: boolean,
+): string {
+  const clock = (t: number) =>
+    `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  return [
+    `${width}×${height}`,
+    `${fps} im/s`,
+    prefs.showTranslation ? "avec traduction" : "arabe seul",
+    whole ? "tout l'audio" : `${clock(range.start)}–${clock(range.end)}`,
+  ].join(" · ");
+}
+
+/** La vidéo gardée sur le serveur, ou `null` si elle a disparu entre-temps (on la refait alors). */
+async function fetchSavedBlob(
+  sessionId: string,
+  video: SavedVideo,
+): Promise<Blob | null> {
+  try {
+    const response = await fetch(savedVideoUrl(sessionId, video.id, true));
+    return response.ok ? await response.blob() : null;
+  } catch {
+    return null;
+  }
 }

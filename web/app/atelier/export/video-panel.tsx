@@ -46,6 +46,7 @@ import {
   VideoFileError,
   type RenderedFile,
 } from "@/lib/export-video-render";
+import type { SavedVideo } from "@/lib/export-video-library";
 import { exportVideoRequest } from "@/lib/export-video-request";
 import { findSilences } from "@/lib/export-video-suggest";
 import {
@@ -92,13 +93,20 @@ export function VideoPanel({
   onError,
   onGoVerify,
   announce,
+  existingVideos,
+  reuseVideos,
 }: {
   sessionId: string;
   player: Player;
   onError: (message: string) => void;
   onGoVerify: () => void;
   announce: (message: string) => void;
+  /** Vidéos déjà gardées sur le serveur et réutilisation d'une vidéo identique. */
+  existingVideos: SavedVideo[];
+  reuseVideos: boolean;
 }) {
+  const savedRef = useRef({ existingVideos, reuseVideos });
+  savedRef.current = { existingVideos, reuseVideos };
   const wide = useMedia("(min-width: 1024px)");
   const [prefs, setPrefs] = useState<VideoPrefs>(DEFAULT_VIDEO_PREFS);
   const [prefsReady, setPrefsReady] = useState(false);
@@ -471,6 +479,8 @@ export function VideoPanel({
                 name: r.name || undefined,
               })),
           keepFiles: true,
+          existing: savedRef.current.existingVideos,
+          reuse: savedRef.current.reuseVideos,
           onCount: (_count, names) =>
             setFiles((rows) => [
               ...rows.slice(0, offset),

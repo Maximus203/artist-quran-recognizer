@@ -37,6 +37,8 @@ import { ExportPreview } from "./export-preview";
 import { ExportResult } from "./export-result";
 import { ExportSettings } from "./export-settings";
 import { ForceDialog } from "./force-dialog";
+import { useSavedVideos } from "./use-saved-videos";
+import { VideoLibrary } from "./video-library";
 import { VideoPanel } from "./video-panel";
 import { VerifyOverview } from "./verify-overview";
 import { NonQuranLine, VerdictCard } from "./readiness-card";
@@ -138,6 +140,8 @@ function ExportView({
     data ? data.decisions_sha256 : null,
   );
   const canEdit = data?.session?.can_edit ?? false;
+  const saved = useSavedVideos(sessionId);
+  const [reuseVideo, setReuseVideo] = useState(true);
 
   // --- lecture : un seul <audio> pour toute la page -------------------------------------------
   const [playingKey, setPlayingKey] = useState<string | null>(null);
@@ -735,6 +739,20 @@ function ExportView({
               onError={toast.show}
               onGoVerify={() => setTab("verifier")}
               announce={announce}
+              existingVideos={saved.videos}
+              reuseVideos={reuseVideo}
+            />
+          ) : null}
+          {tab === "video" && !failed ? (
+            <VideoLibrary
+              sessionId={sessionId}
+              videos={saved.videos}
+              totalBytes={saved.totalBytes}
+              loaded={saved.loaded}
+              canEdit={canEdit}
+              reuse={reuseVideo}
+              onReuse={setReuseVideo}
+              onError={toast.show}
             />
           ) : null}
         </section>
