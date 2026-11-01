@@ -13,17 +13,27 @@ RUN npm run build && npm prune --omit=dev
 
 FROM node:${NODE_VERSION}-bookworm-slim
 # ffmpeg/ffprobe : sondage des envois et photos de profil. Pas de Chromium : l'export vidéo n'est pas servi ici.
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+# python3 + pyyaml : le cœur du moteur (corpus, sous-titres, contrôle « prêt à exporter ? »), sans modèle
+# ni torch ; les analyses, elles, tournent sur les agents.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates python3 python3-yaml \
     && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
+    AQR_PYTHON=python3 \
+    AQR_CACHE_DIR=/data/cache \
     AQR_REVIEW_DIR=/data \
     AQR_SERVER_HOST=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app/web
 COPY --from=build --chown=node:node /app/web ./
 COPY --chown=node:node docs /app/docs
+COPY --chown=node:node src /app/src
+COPY --chown=node:node scripts/fetch_corpus.py /app/scripts/fetch_corpus.py
+COPY --chown=node:node data/corpus/LOCK.json /app/data/corpus/LOCK.json
+COPY --chown=node:node data/translation-segments /app/data/translation-segments
 RUN mkdir -p /data && chown node:node /data
 USER node
+# Corpus Tanzil téléchargé à la construction et vérifié par LOCK.json (jamais copié dans Git).
+RUN cd /app && PYTHONPATH=src python3 scripts/fetch_corpus.py --out data/corpus
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"
