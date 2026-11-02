@@ -13,6 +13,7 @@ const user = (over: Partial<UserRowView> = {}): UserRowView => ({
   last_login_at: ago(2 * 3600_000),
   sessions: 4,
   used_bytes: 12_500_000,
+  quota_bytes: 5_000_000_000,
   tests: 3,
   ...over,
 });

@@ -1,3 +1,4 @@
+import type { Actor } from "./access";
 import { normalizeSearch } from "./session-name";
 
 /**
@@ -206,7 +207,14 @@ export function sortValue(
   }
 }
 
-const VISIBLE = "(m.visibility = 'global' OR m.owner_id = ?)";
+/** Visible pour ce compte : global, son propre privé, ou tout pour un administrateur. */
+export const visibleSql = (viewer: Actor): Sql =>
+  viewer.role === "admin"
+    ? { sql: "1 = 1", params: [] }
+    : {
+        sql: "(m.visibility = 'global' OR m.owner_id = ?)",
+        params: [viewer.id],
+      };
 const FAVORITE =
   "EXISTS (SELECT 1 FROM favorites f WHERE f.user_id = ? AND f.session_id = m.id)";
 /** Terminée, propre à l'utilisateur, et pas ouverte depuis la fin de l'analyse. */
@@ -216,7 +224,8 @@ const UNREAD = `(m.state IN ('done', 'failed') AND m.owner_id = ? AND NOT EXISTS
 export const UNREAD_SELECT = UNREAD;
 export const FAVORITE_SELECT = FAVORITE;
 
-export function scopeSql(scope: Scope, me: number): Sql {
+export function scopeSql(scope: Scope, viewer: Actor): Sql {
+  const me = viewer.id;
   switch (scope) {
     case "mine":
       return {
@@ -228,18 +237,24 @@ export function scopeSql(scope: Scope, me: number): Sql {
         sql: "(m.visibility = 'global' AND (m.owner_id IS NULL OR m.owner_id != ?) AND m.archived_at IS NULL)",
         params: [me],
       };
-    case "all":
-      return { sql: `(${VISIBLE} AND m.archived_at IS NULL)`, params: [me] };
-    case "favorites":
+    case "all": {
+      const v = visibleSql(viewer);
+      return { sql: `(${v.sql} AND m.archived_at IS NULL)`, params: v.params };
+    }
+    case "favorites": {
+      const v = visibleSql(viewer);
       return {
-        sql: `(${VISIBLE} AND ${FAVORITE} AND m.archived_at IS NULL)`,
-        params: [me, me],
+        sql: `(${v.sql} AND ${FAVORITE} AND m.archived_at IS NULL)`,
+        params: [...v.params, me],
       };
-    case "archived":
+    }
+    case "archived": {
+      const v = visibleSql(viewer);
       return {
-        sql: `(${VISIBLE} AND m.archived_at IS NOT NULL)`,
-        params: [me],
+        sql: `(${v.sql} AND m.archived_at IS NOT NULL)`,
+        params: v.params,
       };
+    }
   }
 }
 
@@ -273,7 +288,7 @@ export type WhereOptions = {
 /** WHERE complet (portée, filtres, curseur) ; `opts` retire un morceau pour calculer les compteurs. */
 export function buildWhere(
   query: ListQuery,
-  me: number,
+  viewer: Actor,
   { scope = true, state = true, cursor = true }: WhereOptions = {},
 ): Sql {
   const clauses: string[] = [];
@@ -284,8 +299,8 @@ export function buildWhere(
     params.push(...part.params);
   };
   // Visibilité TOUJOURS : même sans portée, jamais de session privée d'autrui.
-  add(scope ? scopeSql(query.scope, me) : { sql: VISIBLE, params: [me] });
-  if (state) add(stateSql(query.states, me));
+  add(scope ? scopeSql(query.scope, viewer) : visibleSql(viewer));
+  if (state) add(stateSql(query.states, viewer.id));
   if (query.engines.length)
     add({
       sql: `m.engine IN (${query.engines.map(() => "?").join(", ")})`,

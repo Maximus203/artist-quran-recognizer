@@ -129,7 +129,9 @@ export function useSessionFeed(filter: SessionsFilter, pageSize = 20) {
   }, [pageSize]);
 
   // Sondage : relit ce qui est chargé (jamais plus de 100 lignes d'un coup).
-  const hasActive = feed.items.some((item) => isActive(item.state));
+  const hasActive = feed.items.some(
+    (item) => isActive(item.state) || item.exporting > 0,
+  );
   const interval = pollInterval(visible, hasActive);
   useEffect(() => {
     const timer = setInterval(async () => {

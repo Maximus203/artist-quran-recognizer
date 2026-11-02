@@ -44,7 +44,7 @@ const TABLE: Array<[string, Actor, Resource, Ability[]]> = [
   ["autre testeur, global", other, globalOwned, ["view", "review", "favorite"]],
   ["autre testeur, privé", other, privateOwned, []],
   ["admin, global d'un autre", admin, globalOwned, ABILITIES],
-  ["admin, privé d'un autre", admin, privateOwned, []],
+  ["admin, privé d'un autre", admin, privateOwned, ABILITIES],
   [
     "testeur, global d'avant les comptes",
     other,
@@ -53,7 +53,7 @@ const TABLE: Array<[string, Actor, Resource, Ability[]]> = [
   ],
   ["admin, global d'avant les comptes", admin, globalLegacy, ABILITIES],
   ["testeur, privé orphelin", owner, privateOrphan, []],
-  ["admin, privé orphelin", admin, privateOrphan, []],
+  ["admin, privé orphelin", admin, privateOrphan, ABILITIES],
 ];
 
 describe("autorisations (table de cas)", () => {
@@ -70,10 +70,11 @@ describe("autorisations (table de cas)", () => {
     expect(can(admin, "truth", globalOwned)).toBe(true);
   });
 
-  it("un audio privé n'est visible que de son propriétaire", () => {
+  it("un audio privé n'est visible que de son propriétaire et des administrateurs", () => {
     expect(canView(owner, privateOwned)).toBe(true);
     expect(canView(other, privateOwned)).toBe(false);
-    expect(canView(admin, privateOwned)).toBe(false);
+    expect(canView(admin, privateOwned)).toBe(true);
+    expect(canView(admin, privateOrphan)).toBe(true);
   });
 });
 
@@ -81,7 +82,7 @@ describe("décision HTTP", () => {
   it("404 (absent) pour l'invisible et l'inexistant, jamais 403", () => {
     expect(decide(other, "view", privateOwned)).toBe("absent");
     expect(decide(other, "edit", privateOwned)).toBe("absent");
-    expect(decide(admin, "view", privateOwned)).toBe("absent");
+    expect(decide(admin, "view", privateOwned)).toBe("ok");
     expect(decide(other, "view", null)).toBe("absent");
   });
   it("403 (interdit) quand la session est visible mais pas modifiable", () => {

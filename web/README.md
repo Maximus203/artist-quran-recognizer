@@ -163,7 +163,7 @@ Plusieurs analyses peuvent être lancées à la suite (audios et vidéos) : le s
 
 ## Comptes, partage et préférences
 
-Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonyme + mot de passe), ses **préférences** (côté serveur, elles le suivent d'un appareil à l'autre), ses **favoris** et son **non lu**. Les audios importés sont **globaux** par défaut (visibles et écoutables par tous les testeurs connectés, avec leurs performances) ou **privés** (visibles de leur seul propriétaire).
+Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonyme + mot de passe), ses **préférences** (côté serveur, elles le suivent d'un appareil à l'autre), ses **favoris** et son **non lu**. Les audios importés sont **globaux** par défaut (visibles et écoutables par tous les testeurs connectés, avec leurs performances) ou **privés** (visibles de leur seul propriétaire et des administrateurs).
 
 > **Interface (livrée).** Toute l'API sauf `/api/auth/*`, `/api/access` et `/api/fonts*` exige une connexion : sans cookie valide, `401 { error, code: "unauthenticated" }`. Une page protégée appelle `requirePageUser()` (`lib/page-auth.ts`, composant serveur : redirige vers `/login?next=…`) ; `/login` et `/register` appellent `redirectIfSignedIn()`. Pages : `/` (atelier), `/sessions`, `/performance` (`?vue=moi`), `/docs`, `/docs/<slug>`, `/compte`, `/compte/statistiques`, `/compte/securite`, `/login`, `/register`, `/access`. Côté navigateur, `lib/api-client.ts` renvoie vers `/login` sur un `401` et rend toute erreur lisible. L'onglet « Vérité terrain » est réservé aux administrateurs (`user.role === "admin"`). La page `/access` (jeton du mode test distant) reste en vigueur : c'est la couche réseau, l'identité vient en plus.
 
@@ -207,12 +207,12 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 
 | Action | Propriétaire | Autre testeur | Administrateur |
 | --- | :-: | :-: | :-: |
-| Lister, ouvrir, écouter, forme d'onde, exporter (JSON, ZIP) | ✅ | global seulement | global **et ses propres privés** |
+| Lister, ouvrir, écouter, forme d'onde, exporter (JSON, ZIP) | ✅ | global seulement | **tout**, privés d'autrui compris |
 | Signaler (revue), favori, marquer lu | ✅ | global seulement | idem |
 | Renommer, changer la portée, archiver, supprimer, lancer ou annuler l'analyse | ✅ | ❌ `403` | ✅ (sessions visibles) |
 | **Vérité terrain** (`/validation`, écriture dans le manifeste de test) | ❌ `403` | ❌ `403` | ✅ |
 
-- Un audio **privé** n'est ni listé, ni lisible, ni exportable par un autre compte, **administrateur compris** : toute route répond **`404 Session introuvable`** (jamais `403`, pour ne pas révéler son existence). `403` ne sort que pour une session visible mais non modifiable.
+- Un audio **privé** n'est ni listé, ni lisible, ni exportable par un autre testeur : toute route répond **`404 Session introuvable`** (jamais `403`, pour ne pas révéler son existence). L'**administrateur voit toutes les sessions**, privées d'autrui comprises (il régule le stockage et prévient les testeurs) ; ses actions sur le privé d'un autre sont celles d'un administrateur. `403` ne sort que pour une session visible mais non modifiable.
 - Une session d'avant les comptes (`owner: null`) n'a pas de propriétaire : seuls les administrateurs la modifient.
 - **Signalements** : le champ `tester` envoyé par le client est **ignoré**, l'auteur est le pseudonyme du compte (`updated_by` = le compte quand un administrateur modifie le signalement d'un autre). Un testeur ne modifie ni ne supprime le signalement d'un autre : ces `id` reviennent dans `rejected` de la réponse du `PUT` (administrateurs exceptés).
 - **Vérité terrain** : le relecteur écrit dans le manifeste (`reviewed_by`) est le pseudonyme de l'administrateur connecté (le champ du corps est ignoré). L'onglet se montre si `user.role === "admin"`.
@@ -367,7 +367,7 @@ Conception : `docs/design/export-sous-titres.md` · moteur : `docs/EXPORT-SOUS-T
 `aqr export-subtitles` et `aqr corpus-verse` (comme `recognize`), au plus 3 à la fois, avec une mémoire des
 réponses identiques (clé = prédiction, décisions, revue, options). Tout lecteur de la session peut lire le
 contrôle et exporter ; seuls le propriétaire (ou un administrateur) écrit des décisions ; l'audio privé d'un
-autre répond **404** partout.
+autre répond **404** à un testeur (l'administrateur le voit).
 
 | Route | Droit | Rôle |
 |---|---|---|

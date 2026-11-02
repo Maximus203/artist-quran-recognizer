@@ -3,6 +3,8 @@ import { can, type Actor } from "./access";
 import type { PersonRef } from "./avatar-config";
 import type { Db } from "./db";
 import { isMissingSession } from "./errors";
+import { exportSummary } from "./export-index";
+import { activeJobsBySession } from "./video-jobs";
 import { log } from "./log";
 import {
   deleteMeta,
@@ -48,6 +50,10 @@ export type ApiSession = Omit<SessionView, "pid"> & {
   can_edit: boolean;
   favorite: boolean;
   size_bytes: number;
+  /** Exports vidéo gardés pour la session (total) ; `new` = lancés par moi, terminés, pas encore ouverts. */
+  exports: { total: number; new: number };
+  /** Exports de cette session en file ou en cours, maintenant. */
+  exporting: number;
 };
 
 /** Session reconstruite depuis l'index seul (historique de durées, file des autres, session illisible). */
@@ -74,10 +80,16 @@ export function liteSession(row: MetaRow): Session {
 
 type Perso = Pick<ListedRow, "favorite" | "unread" | "viewed_at">;
 
+/** Ligne de session avec ses compteurs (exports compris, absents d'une lecture unitaire). */
+type Row = MetaRow &
+  Perso &
+  Partial<Pick<ListedRow, "exports_total" | "exports_new">>;
+
 function compose(
   me: Actor,
-  row: MetaRow & Perso,
+  row: Row,
   view: SessionView,
+  exporting: number,
 ): ApiSession {
   const { pid: _pid, ...rest } = view;
   return {
@@ -100,6 +112,8 @@ function compose(
     can_edit: can(me, "edit", row),
     favorite: row.favorite,
     size_bytes: row.size_bytes,
+    exports: { total: row.exports_total ?? 0, new: row.exports_new ?? 0 },
+    exporting,
     unread: row.unread,
     viewed_at: row.viewed_at,
   };
@@ -131,11 +145,7 @@ async function load(db: Db, row: MetaRow): Promise<Session | null> {
  * Vues de `rows` avec file et estimation. L'historique de durées et la file comptent TOUTES les
  * sessions (c'est la machine qui travaille), mais ne sortent que les lignes demandées.
  */
-async function viewsFor(
-  db: Db,
-  me: Actor,
-  rows: Array<MetaRow & Perso>,
-): Promise<ApiSession[]> {
+async function viewsFor(db: Db, me: Actor, rows: Row[]): Promise<ApiSession[]> {
   const real = new Map<string, Session>();
   for (const row of rows) {
     const session = await load(db, row);
@@ -146,13 +156,21 @@ async function viewsFor(
     .map(liteSession);
   const views = buildViews([...real.values(), ...others], currentContext());
   const byId = new Map(views.map((view) => [view.id, view]));
+  const exporting = activeJobsBySession();
   const out: ApiSession[] = [];
   for (const queried of rows) {
     const view = byId.get(queried.id);
     if (!view || !real.has(queried.id)) continue;
     // Lire la session sur le disque peut avoir adopté une fin d'analyse et mis l'index à jour :
     // l'état, l'étiquette et le « non lu » sont relus pour ne pas répondre avec la valeur d'avant.
-    out.push(compose(me, getListed(db, me.id, queried.id) ?? queried, view));
+    out.push(
+      compose(
+        me,
+        getListed(db, me.id, queried.id) ?? queried,
+        view,
+        exporting.get(queried.id) ?? 0,
+      ),
+    );
   }
   return out;
 }
@@ -169,12 +187,12 @@ export async function listForUser(
   me: Actor,
   query: ListQuery,
 ): Promise<SessionPage> {
-  const page = listPage(db, me.id, query);
+  const page = listPage(db, me, query);
   return {
     items: await viewsFor(db, me, page.items),
     next_cursor: page.next_cursor,
     total: page.total,
-    counts: listCounts(db, me.id, query),
+    counts: listCounts(db, me, query),
   };
 }
 
@@ -184,8 +202,15 @@ export async function viewForUser(
   me: Actor,
   meta: MetaRow,
 ): Promise<ApiSession | null> {
+  const summary = exportSummary(db, meta.id, me.id);
   const [item] = await viewsFor(db, me, [
-    { ...meta, owner_name: meta.owner_name, ...viewState(db, me.id, meta.id) },
+    {
+      ...meta,
+      owner_name: meta.owner_name,
+      ...viewState(db, me.id, meta.id),
+      exports_total: summary.total,
+      exports_new: summary.new,
+    },
   ]);
   return item ?? null;
 }
@@ -215,9 +240,9 @@ export type VisibleStats = Stats & {
   totals: { sessions: number; audio_bytes: number; audio_hours: number };
 };
 
-/** Statistiques de la machine pour CET utilisateur : les sessions globales et les siennes seulement. */
+/** Statistiques pour CET utilisateur : les sessions qu'il voit (tout, pour un administrateur). */
 export async function statsForUser(db: Db, me: Actor): Promise<VisibleStats> {
-  const rows = visibleRows(db, me.id);
+  const rows = visibleRows(db, me);
   const sessions = rows.map((row) => ({
     ...liteSession(row),
     // Le « non lu » d'une session est le sien, pas celui des autres.

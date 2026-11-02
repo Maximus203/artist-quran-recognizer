@@ -4,6 +4,7 @@ import { sessionAccess } from "@/lib/route-guard";
 import { readSession } from "@/lib/store";
 import {
   BrowserUnavailableError,
+  jobsForSession,
   publicJob,
   startVideoJob,
   VideoJobLimitError,
@@ -37,12 +38,14 @@ async function handlePOST(
 
   let raw: unknown = {};
   let background: { bytes: Buffer; type: string } | null = null;
+  let reuse = true;
   const type = (request.headers.get("content-type") ?? "").toLowerCase();
   try {
     if (type.startsWith("multipart/form-data")) {
       const form = await request.formData();
       const field = form.get("options");
       raw = typeof field === "string" && field ? JSON.parse(field) : {};
+      reuse = form.get("reuse") !== "0";
       const file = form.get("background_image");
       if (file instanceof File && file.size > 0) {
         if (!IMAGE_TYPES.includes(file.type))
@@ -62,6 +65,8 @@ async function handlePOST(
     } else {
       const text = await request.text();
       raw = text ? JSON.parse(text) : {};
+      if (raw && typeof raw === "object" && "reuse" in raw)
+        reuse = (raw as { reuse?: unknown }).reuse !== false;
     }
   } catch {
     return apiError(400, "Corps JSON invalide.", { code: "invalid" });
@@ -77,13 +82,17 @@ async function handlePOST(
       `Options invalides : ${optionIssuesFr(parsed.error.issues)}.`,
       { code: "invalid" },
     );
+  // Par l'API : le jeton de l'appelant. Depuis l'atelier : sa connexion (cookies), pour que l'export
+  // continue sur le serveur même si la page est quittée.
   const bearer = request.headers
     .get("authorization")
     ?.match(/^Bearer\s+(\S+)$/i)?.[1];
-  if (!bearer)
+  const cookie = request.headers.get("cookie");
+  const credential = bearer ? { bearer } : cookie ? { cookie } : null;
+  if (!credential)
     return apiError(
       401,
-      "L'export vidéo par l'API demande un jeton (Authorization: Bearer qtr_…).",
+      "Un export vidéo demande une connexion (cookie) ou un jeton (Authorization: Bearer qtr_…).",
       { code: "token_required" },
     );
   try {
@@ -92,8 +101,9 @@ async function handlePOST(
       userId: access.user.id,
       options: parsed.data,
       background,
-      bearer,
+      credential,
       origin: new URL(request.url).origin,
+      reuse,
     });
     return json({ job: publicJob(job) }, 202);
   } catch (error) {
@@ -105,4 +115,18 @@ async function handlePOST(
   }
 }
 
+/** Exports de cette session en file, en cours ou terminés depuis moins d'une heure, pour CE compte (l'administrateur voit ceux de tous). */
+async function handleGET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const access = await sessionAccess(request, params, "view");
+  if (!access.ok) return access.response;
+  const admin = access.user.role === "admin";
+  return json({
+    jobs: jobsForSession(access.id, admin ? null : access.user.id),
+  });
+}
+
 export const POST = safe(handlePOST);
+export const GET = safe(handleGET);

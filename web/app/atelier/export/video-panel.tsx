@@ -41,12 +41,18 @@ import {
   type FileRow,
 } from "@/lib/export-video-progress";
 import {
-  downloadBlob,
-  renderSessionVideo,
-  VideoFileError,
-  type RenderedFile,
-} from "@/lib/export-video-render";
-import type { SavedVideo } from "@/lib/export-video-library";
+  cancelServerJob,
+  fetchServerJob,
+  fetchSessionJobs,
+  isActiveJob,
+  serverJobFileUrl,
+  startServerExport,
+  type ServerJob,
+} from "@/lib/export-video-jobs-client";
+import {
+  announceVideosChanged,
+  type SavedVideo,
+} from "@/lib/export-video-library";
 import { exportVideoRequest } from "@/lib/export-video-request";
 import { findSilences } from "@/lib/export-video-suggest";
 import {
@@ -86,6 +92,33 @@ import { CustomQuality, QualityTiers, WeightGauge } from "./video-quality";
 type Player = ReturnType<typeof usePlayer>;
 const TL = EXPORT_VIDEO_CONFIG.timeline;
 const THUMBS = EXPORT_VIDEO_CONFIG.thumbnails;
+
+/** Intervalle de suivi d'un export confié au serveur. */
+const FOLLOW_MS = 1200;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Lignes de fichiers d'un job : terminé, en cours (la vidéo à `files_done`), en attente. */
+function rowsOf(names: readonly string[], job: ServerJob): FileRow[] {
+  return names.map((name, i) => {
+    if (job.state === "done" || i < job.files_done)
+      return { name, state: "done", ratio: 1, bytes: null };
+    if (job.state === "failed" && i === job.files_done)
+      return { name, state: "err", ratio: 0, bytes: null };
+    if (isActiveJob(job) && i === job.files_done)
+      return { name, state: "run", ratio: 0.5, bytes: null };
+    return { name, state: "wait", ratio: 0, bytes: null };
+  });
+}
+
+/** Téléchargement d'une adresse du serveur, sans quitter la page. */
+function downloadUrl(url: string, name: string): void {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
 
 export function VideoPanel({
   sessionId,
@@ -140,8 +173,6 @@ export function VideoPanel({
   const nextId = useRef(1);
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
-  const stopRef = useRef(false);
-  const blobs = useRef<(RenderedFile | null)[]>([]);
   const thumbUrl = useRef<string | null>(null);
   const stageWrap = useRef<HTMLDivElement>(null);
   const playing = useStoreValue(player.store, (s) => s.playing);
@@ -458,66 +489,137 @@ export function VideoPanel({
     [sessionId, prefs, ranges, duration],
   );
 
-  // --- export ---------------------------------------------------------------------------------
+  // --- export : confié au serveur ---------------------------------------------------------------
+  // Le rendu tourne sur le serveur (job) : quitter la page ne l'interrompt pas. Cette page ne fait
+  // que suivre l'avancement ; à son retour, un export encore actif reprend l'affichage.
+  const jobRef = useRef<string | null>(null);
+  const aliveRef = useRef(true);
+  const links = useRef<Array<{ name: string; url: string }>>([]);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+
+  const follow = useCallback(
+    async (jobId: string, names: string[], offset: number) => {
+      jobRef.current = jobId;
+      for (;;) {
+        let job: ServerJob;
+        try {
+          job = await fetchServerJob(sessionId, jobId);
+        } catch {
+          // Réseau coupé ou page en transition : le rendu continue côté serveur, on réessaie.
+          await sleep(FOLLOW_MS);
+          if (!aliveRef.current) return;
+          continue;
+        }
+        if (!aliveRef.current) return;
+        setFiles((rows) => [...rows.slice(0, offset), ...rowsOf(names, job)]);
+        if (isActiveJob(job)) {
+          await sleep(FOLLOW_MS);
+          if (!aliveRef.current) return;
+          continue;
+        }
+        jobRef.current = null;
+        if (job.state === "done") {
+          links.current = job.downloads.map((d) => ({
+            name: d.name,
+            url: serverJobFileUrl(sessionId, job.id, d.index),
+          }));
+          setPhase("done");
+          setStopRequested(false);
+          announceVideosChanged();
+          announce(
+            `${job.downloads.length} vidéo(s) prête(s), gardée(s) sur le serveur.`,
+          );
+        } else if (job.error === "Export annulé.") {
+          setPhase("done");
+          setStopRequested(false);
+          announceVideosChanged();
+          announce(
+            `Export arrêté : ${job.files_done + offset} vidéo(s) prête(s).`,
+          );
+        } else {
+          const message = job.error ?? "La vidéo n’a pas pu être fabriquée.";
+          const index = job.files_done + offset;
+          setFiles((rows) => failFile(rows, index));
+          setFailure({ message, index, memory: false });
+          setPhase("error");
+          onError(message);
+        }
+        return;
+      }
+    },
+    [announce, onError, sessionId],
+  );
+
   const run = useCallback(
     async (subset: PlanRange[], offset: number, useWhole: boolean) => {
       setPhase("render");
       setFailure(null);
       setStopRequested(false);
-      stopRef.current = false;
-      if (offset === 0) blobs.current = [];
-      try {
-        const outcome = await renderSessionVideo({
-          sessionId,
-          prefs: prefsRef.current,
-          bgImage: bgFile,
-          ranges: useWhole
-            ? undefined
-            : subset.map((r) => ({
-                start: r.start,
-                end: r.end,
-                name: r.name || undefined,
-              })),
-          keepFiles: true,
-          existing: savedRef.current.existingVideos,
-          reuse: savedRef.current.reuseVideos,
-          onCount: (_count, names) =>
-            setFiles((rows) => [
-              ...rows.slice(0, offset),
-              ...initialFiles(names),
-            ]),
-          onFile: (p) =>
-            setFiles((rows) =>
-              applyFileProgress(rows, { ...p, index: p.index + offset }),
+      if (offset === 0) links.current = [];
+      const names = subset.map((r) =>
+        useWhole
+          ? videoFileName(sessionName)
+          : videoRangeFileName(
+              sessionName,
+              undefined,
+              r,
+              ranges.length,
+              r.name,
             ),
-          shouldStop: () => stopRef.current,
-          onProgress: () => undefined,
-        });
-        outcome.files.forEach((f, i) => (blobs.current[offset + i] = f));
-        setPhase("done");
-        announce(
-          outcome.stopped
-            ? `Export arrêté : ${outcome.files.length + offset} vidéo(s) prête(s).`
-            : `${outcome.files.length + offset} vidéo(s) prête(s) et téléchargée(s).`,
+      );
+      try {
+        const job = await startServerExport(
+          sessionId,
+          exportVideoRequest(
+            prefsRef.current,
+            useWhole ? [] : subset,
+            duration,
+          ),
+          bgFile,
+          savedRef.current.reuseVideos,
         );
+        setFiles((rows) => [...rows.slice(0, offset), ...rowsOf(names, job)]);
+        await follow(job.id, names, offset);
       } catch (error) {
-        const index =
-          error instanceof VideoFileError ? error.index + offset : offset;
-        if (error instanceof VideoFileError)
-          error.done.forEach((f, i) => (blobs.current[offset + i] = f));
-        const message = renderErrorText(error);
-        setFiles((rows) => failFile(rows, index));
-        setFailure({
-          message,
-          index,
-          memory: error instanceof VideoFileError && error.memory,
-        });
+        const message =
+          error instanceof Error
+            ? error.message
+            : "L’export n’a pas pu démarrer.";
+        setFiles((rows) => failFile(rows, offset));
+        setFailure({ message, index: offset, memory: false });
         setPhase("error");
         onError(message);
       }
     },
-    [announce, bgFile, onError, sessionId],
+    [bgFile, duration, follow, onError, ranges.length, sessionId, sessionName],
   );
+
+  // Retour sur la page : un export encore en file ou en cours reprend son affichage.
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSessionJobs(sessionId)
+      .then((jobs) => {
+        const active = jobs.find(isActiveJob);
+        if (!active || cancelled) return;
+        const names = Array.from(
+          { length: active.files_total ?? 1 },
+          (_, i) => `Vidéo ${i + 1}`,
+        );
+        setPhase("render");
+        setFiles(rowsOf(names, active));
+        void follow(active.id, names, 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [follow, sessionId]);
+
   const exportNow = () => {
     setSheet(false);
     setFiles([]);
@@ -532,23 +634,12 @@ export function VideoPanel({
     void run(ranges.slice(failure.index), failure.index, whole);
   };
   const redownload = (index: number | null) => {
-    const list = index === null ? blobs.current.map((_, i) => i) : [index];
+    const list = index === null ? links.current.map((_, i) => i) : [index];
     for (const i of list) {
-      const f = blobs.current[i];
-      if (f?.blob) downloadBlob(f.blob, f.name);
+      const link = links.current[i];
+      if (link) downloadUrl(link.url, link.name);
     }
   };
-
-  // Quitter la page pendant un rendu le perdrait : le navigateur demande confirmation.
-  useEffect(() => {
-    if (phase !== "render") return;
-    const guard = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", guard);
-    return () => window.removeEventListener("beforeunload", guard);
-  }, [phase]);
 
   // --- aperçu réduit sur téléphone --------------------------------------------------------------
   useEffect(() => {
@@ -591,9 +682,10 @@ export function VideoPanel({
     canLighten: prefs.resolution > 1080 || prefs.fps > 30,
     onExport: exportNow,
     onStop: () => {
-      stopRef.current = true;
       setStopRequested(true);
-      announce("L’export s’arrêtera après la vidéo en cours.");
+      if (jobRef.current)
+        void cancelServerJob(sessionId, jobRef.current).catch(() => undefined);
+      announce("L’export s’arrêtera : la vidéo en cours est abandonnée.");
     },
     onResume: resume,
     onFinish: () => {
@@ -604,7 +696,7 @@ export function VideoPanel({
     onNew: () => {
       setPhase("idle");
       setFiles([]);
-      blobs.current = [];
+      links.current = [];
     },
     onRedownload: redownload,
     onLighten: () => {

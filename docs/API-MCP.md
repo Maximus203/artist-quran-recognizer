@@ -38,7 +38,8 @@ Tous les appels portent `Authorization: Bearer qtr_…`.
 | `POST /api/v1/recordings/{id}/export/subtitles` | Sous-titres (`{"options":{"format":"srt"}}`) |
 | `DELETE /api/v1/recordings/{id}` | Suppression (écriture) |
 | `GET /api/v1/export/options` | Catalogue des options de sous-titres et de vidéo |
-| `POST /api/v1/recordings/{id}/export/video/jobs` | Export vidéo (JSON ou multipart avec `background_image`) → `202` + job |
+| `POST /api/v1/recordings/{id}/export/video/jobs` | Export vidéo (JSON ou multipart avec `background_image`) → `202` + job. Depuis l'atelier, la connexion (cookie) remplace le jeton : l'export continue sur le serveur même si la page est quittée. `reuse: false` force un nouveau rendu (sinon une vidéo identique déjà gardée est récupérée) |
+| `GET …/export/video/jobs` | Exports de la session en cours ou terminés depuis moins d'une heure (les vôtres ; tous, pour un administrateur) |
 | `GET …/export/video/jobs/{job}` et `…/file` | Suivi du job, puis le MP4 (conservé une heure) |
 | `DELETE …/export/video/jobs/{job}` | Annule un export en attente ou en cours (`409` s'il est déjà terminé) |
 | `GET /api/me/stats`, `/api/stats`, `/api/corpus/verse?ref=` | Statistiques et texte d'un verset |

@@ -12,6 +12,7 @@ import {
   applyRenderState,
   cancelVideoJob,
   browserExecutable,
+  cookiesOf,
   getVideoJob,
   publicJob,
   startVideoJob,
@@ -37,7 +38,7 @@ const base = {
   userId: 1,
   options: {},
   background: null,
-  bearer: "qtr_x",
+  credential: { bearer: "qtr_x" },
   origin: "http://127.0.0.1:3000",
 };
 
@@ -242,7 +243,7 @@ describe("jobs d'export vidéo", () => {
     const done = await settle(job.id);
     expect(done.state).toBe("done");
     expect(await readFile(done.file as string, "utf8")).toBe("mp4");
-    expect(done.bearer).toBeNull();
+    expect(done.credential).toBeNull();
     expect(JSON.stringify(publicJob(done))).not.toContain("qtr_x");
     expect(publicJob(done).download).toBe("file");
   });
@@ -426,5 +427,22 @@ describe("navigateur de rendu", () => {
       browserExecutable({}, (f) => f.toLowerCase().includes("msedge")),
     ).toMatch(/msedge/i);
     expect(browserExecutable({}, () => false)).toBeNull();
+  });
+});
+
+describe("cookies du rendu (export lancé depuis l'atelier)", () => {
+  it("rattache chaque cookie de l'en-tête à l'origine de l'atelier", () => {
+    expect(
+      cookiesOf("aqr_session=abc; aqr_access=def=ghi", "http://127.0.0.1:3000"),
+    ).toEqual([
+      { name: "aqr_session", value: "abc", url: "http://127.0.0.1:3000" },
+      { name: "aqr_access", value: "def=ghi", url: "http://127.0.0.1:3000" },
+    ]);
+  });
+
+  it("ignore les fragments sans nom ni signe égal", () => {
+    expect(cookiesOf(" ; aqr_session=abc ;; oups", "http://x")).toEqual([
+      { name: "aqr_session", value: "abc", url: "http://x" },
+    ]);
   });
 });

@@ -8,6 +8,7 @@ import {
 import { exportErrorResponse } from "@/lib/export-errors";
 import { safe } from "@/lib/http";
 import { log } from "@/lib/log";
+import { recordExport } from "@/lib/export-index";
 import { sessionAccess } from "@/lib/route-guard";
 import { refreshDiskBytes } from "@/lib/session-sync";
 import {
@@ -41,7 +42,11 @@ function headerNumber(request: Request, name: string): number | null {
 }
 
 async function keepVideo(
-  access: { id: string; db: Parameters<typeof refreshDiskBytes>[0] },
+  access: {
+    id: string;
+    db: Parameters<typeof refreshDiskBytes>[0];
+    user: { id: number };
+  },
   request: Request,
   file: { content: Buffer; name: string },
 ): Promise<string | null> {
@@ -54,6 +59,14 @@ async function keepVideo(
       ...meta,
       name: meta.name || file.name,
       bytes: file.content,
+    });
+    recordExport(access.db, {
+      id: record.id,
+      sessionId: access.id,
+      ownerId: access.user.id,
+      name: record.name,
+      bytes: record.bytes,
+      createdAt: record.created_at,
     });
     await refreshDiskBytes(access.db, access.id);
     return record.id;

@@ -20,6 +20,13 @@ import {
  */
 export type VideoJobState = "queued" | "running" | "done" | "failed";
 
+/**
+ * Ce qui permet au navigateur de rendu de lire la page de l'atelier comme l'appelant : son jeton
+ * d'API (`Authorization: Bearer`) ou ses cookies de connexion (export lancé depuis l'atelier). Gardé
+ * en mémoire le temps du rendu seulement.
+ */
+export type Credential = { bearer: string } | { cookie: string };
+
 export type VideoJob = {
   id: string;
   sessionId: string;
@@ -39,8 +46,10 @@ export type VideoJob = {
   file: string | null;
   files: { name: string; path: string }[];
   background: string | null;
-  /** Jeton de l'appelant, gardé en mémoire le temps du rendu seulement. */
-  bearer: string | null;
+  /** Identifiants de l'appelant, gardés en mémoire le temps du rendu seulement. */
+  credential: Credential | null;
+  /** Vidéo identique déjà gardée : récupérée sans être refaite (défaut). */
+  reuse: boolean;
   origin: string;
   /** Annulation demandée par l'appelant (distingue « annulé » de « délai dépassé »). */
   cancelRequested?: boolean;
@@ -52,7 +61,7 @@ export type PublicVideoJob = Omit<
   | "file"
   | "files"
   | "background"
-  | "bearer"
+  | "credential"
   | "origin"
   | "userId"
   | "cancelRequested"
@@ -115,7 +124,7 @@ export function publicJob(job: VideoJob): PublicVideoJob {
     file,
     files,
     background,
-    bearer,
+    credential,
     origin,
     userId,
     cancelRequested,
@@ -124,7 +133,7 @@ export function publicJob(job: VideoJob): PublicVideoJob {
   void cancelRequested;
   void dir;
   void background;
-  void bearer;
+  void credential;
   void origin;
   void userId;
   return {
@@ -154,7 +163,7 @@ export function cancelVideoJob(id: string): boolean {
     job.state = "failed";
     job.error = "Export annulé.";
     job.progress = "Annulé";
-    job.bearer = null;
+    job.credential = null;
     job.finishedAt = new Date().toISOString();
     return true;
   }
@@ -182,6 +191,33 @@ export function getVideoJob(id: string): VideoJob | null {
   return registry().jobs.get(id) ?? null;
 }
 
+/**
+ * Exports d'une session encore en file, en cours, ou terminés depuis moins d'une heure (ceux qui
+ * sont déjà gardés dans la bibliothèque sont dans `listVideos`). `userId` absent = tous les
+ * lanceurs (administrateur).
+ */
+export function jobsForSession(
+  sessionId: string,
+  userId: number | null,
+): PublicVideoJob[] {
+  return [...registry().jobs.values()]
+    .filter(
+      (job) =>
+        job.sessionId === sessionId &&
+        (userId === null || job.userId === userId),
+    )
+    .map(publicJob);
+}
+
+/** Nombre d'exports en file ou en cours pour chaque session (bandeau de la liste). */
+export function activeJobsBySession(): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const job of registry().jobs.values())
+    if (job.state === "queued" || job.state === "running")
+      counts.set(job.sessionId, (counts.get(job.sessionId) ?? 0) + 1);
+  return counts;
+}
+
 async function purgeOld(): Promise<void> {
   const now = Date.now();
   for (const [id, job] of registry().jobs) {
@@ -200,8 +236,9 @@ export async function startVideoJob(input: {
   userId: number;
   options: VideoJobOptions;
   background: { bytes: Buffer; type: string } | null;
-  bearer: string;
+  credential: Credential;
   origin: string;
+  reuse?: boolean;
   /** Remplace le rendu (tests). */
   runner?: (job: VideoJob, aborted: AbortSignal) => Promise<void>;
 }): Promise<VideoJob> {
@@ -242,8 +279,9 @@ export async function startVideoJob(input: {
     file: null,
     files: [],
     background,
-    bearer: input.bearer,
+    credential: input.credential,
     origin: input.origin,
+    reuse: input.reuse !== false,
   };
   registry().jobs.set(id, job);
   const run = input.runner ?? renderInBrowser;
@@ -303,7 +341,7 @@ export async function startVideoJob(input: {
           job.cancelRequested ? "info" : "error",
         );
       } finally {
-        job.bearer = null;
+        job.credential = null;
         job.finishedAt = new Date().toISOString();
       }
     },
@@ -326,6 +364,25 @@ export function applyRenderState(job: VideoJob, state: RenderPageState): void {
   if (typeof state.files_done === "number") job.files_done = state.files_done;
 }
 
+/** Cookies d'un en-tête `Cookie` reçu, rattachés à l'origine de l'atelier (le rendu y est connecté). */
+export function cookiesOf(
+  header: string,
+  origin: string,
+): Array<{ name: string; value: string; url: string }> {
+  return header
+    .split(";")
+    .map((pair) => pair.trim())
+    .filter((pair) => pair.includes("="))
+    .map((pair) => {
+      const at = pair.indexOf("=");
+      return {
+        name: pair.slice(0, at),
+        value: pair.slice(at + 1),
+        url: origin,
+      };
+    });
+}
+
 /** Rendu réel : page technique `/render/video` dans Chrome/Edge sans interface. */
 async function renderInBrowser(
   job: VideoJob,
@@ -333,6 +390,7 @@ async function renderInBrowser(
 ): Promise<void> {
   const executablePath = browserExecutable();
   if (!executablePath) throw new BrowserUnavailableError();
+  const credential = job.credential;
   const playwright = await import("playwright-core");
   const browser = await playwright.chromium.launch({
     executablePath,
@@ -351,10 +409,13 @@ async function renderInBrowser(
     const context = await browser.newContext({
       acceptDownloads: true,
       viewport: { width: 1280, height: 720 },
-      extraHTTPHeaders: job.bearer
-        ? { authorization: `Bearer ${job.bearer}` }
-        : {},
+      extraHTTPHeaders:
+        credential && "bearer" in credential
+          ? { authorization: `Bearer ${credential.bearer}` }
+          : {},
     });
+    if (credential && "cookie" in credential)
+      await context.addCookies(cookiesOf(credential.cookie, job.origin));
     const page = await context.newPage();
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
     const prefs = videoPrefsFromOptions(job.options, job.background !== null);
@@ -373,6 +434,7 @@ async function renderInBrowser(
         padRanges: job.options.pad_ranges === true,
         prefs,
         hasBackground: job.background !== null,
+        reuse: job.reuse,
       },
     );
     // Chaque MP4 produit (un par plage) arrive comme un téléchargement : on les enregistre au fil de l'eau.
