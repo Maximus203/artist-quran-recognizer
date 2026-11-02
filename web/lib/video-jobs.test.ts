@@ -13,6 +13,7 @@ import {
   cancelVideoJob,
   browserExecutable,
   cookiesOf,
+  renderOrigin,
   getVideoJob,
   publicJob,
   startVideoJob,
@@ -427,6 +428,18 @@ describe("navigateur de rendu", () => {
       browserExecutable({}, (f) => f.toLowerCase().includes("msedge")),
     ).toMatch(/msedge/i);
     expect(browserExecutable({}, () => false)).toBeNull();
+  });
+});
+
+describe("origine du rendu", () => {
+  it("vaut la boucle locale par défaut, jamais l'adresse d'écoute ni le proxy", () => {
+    expect(renderOrigin({})).toBe("http://127.0.0.1:3000");
+  });
+
+  it("AQR_RENDER_ORIGIN la remplace", () => {
+    expect(renderOrigin({ AQR_RENDER_ORIGIN: " http://127.0.0.1:3100 " })).toBe(
+      "http://127.0.0.1:3100",
+    );
   });
 });
 

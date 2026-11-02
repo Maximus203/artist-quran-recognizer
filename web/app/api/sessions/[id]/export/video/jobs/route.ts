@@ -5,6 +5,7 @@ import { readSession } from "@/lib/store";
 import {
   BrowserUnavailableError,
   jobsForSession,
+  renderOrigin,
   publicJob,
   startVideoJob,
   VideoJobLimitError,
@@ -102,7 +103,7 @@ async function handlePOST(
       options: parsed.data,
       background,
       credential,
-      origin: new URL(request.url).origin,
+      origin: renderOrigin(),
       reuse,
     });
     return json({ job: publicJob(job) }, 202);
