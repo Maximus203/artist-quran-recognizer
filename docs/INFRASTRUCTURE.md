@@ -32,7 +32,7 @@ GPU** : le moteur y tourne sur processeur, à mesurer. Le direct reste à décid
   est écrit et éprouvé contre le vrai atelier** ; l'environnement du moteur est **installé et mesuré sur Atlas** (ADR-0017, 12 min d'audio en 3 min) et **l'agent tourne** (unité `aqr-engine-agent`, démarrée le 2026-10-30, première analyse réelle de bout en bout : 11 min d'enregistrement en 27 s) (modèle d'unité :
   `deploy/systemd/aqr-engine-agent.service`) : tant qu'aucun agent n'est en ligne, les envois sont acceptés mais
   aucune analyse ne démarre. Pour
-  geler les envois d'ici là : `AQR_SERVICE_MODE=restricted`. L'image ne contient ni Python ni Chromium.
+  geler les envois d'ici là : `AQR_SERVICE_MODE=restricted`. L'image contient Python (cœur du moteur) et Google Chrome stable (rendu des exports vidéo sur le serveur, `AQR_CHROME`), mais pas le moteur d'analyse.
 - Les bornes de l'atelier protègent les voisins : 2 Gio de mémoire, 2 processeurs, 512 processus, système de
   fichiers en lecture seule, aucune capacité Linux, disque protégé par la réserve de 1 Gio (`AQR_MIN_FREE_BYTES`).
 
