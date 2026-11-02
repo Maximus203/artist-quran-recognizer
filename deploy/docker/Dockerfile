@@ -21,7 +21,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certi
     && wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update && apt-get install -y --no-install-recommends google-chrome-stable fonts-noto-core \
-    && apt-get purge -y wget gnupg && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/google-chrome.list
 ENV NODE_ENV=production \
     AQR_PYTHON=python3 \
