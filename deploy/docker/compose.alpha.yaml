@@ -28,6 +28,8 @@ services:
     cpus: 2
     pids_limit: 512
     read_only: true
+    # Chrome du rendu vidéo : son mémoire partagée tient mal dans les 64 Mio par défaut.
+    shm_size: 512m
     tmpfs:
       - /tmp:size=512m
       - /app/web/.next/cache:size=256m

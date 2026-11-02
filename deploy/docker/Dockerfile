@@ -12,13 +12,20 @@ COPY web/ ./
 RUN npm run build && npm prune --omit=dev
 
 FROM node:${NODE_VERSION}-bookworm-slim
-# ffmpeg/ffprobe : sondage des envois et photos de profil. Pas de Chromium : l'export vidéo n'est pas servi ici.
+# ffmpeg/ffprobe : sondage des envois et photos de profil.
 # python3 + pyyaml : le cœur du moteur (corpus, sous-titres, contrôle « prêt à exporter ? »), sans modèle
 # ni torch ; les analyses, elles, tournent sur les agents.
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates python3 python3-yaml \
-    && rm -rf /var/lib/apt/lists/*
+# Google Chrome stable : rendu des exports vidéo sur le serveur (sans interface). Le Chromium de Debian n'a
+# pas le codec H.264 qu'exige l'encodeur du rendu : on prend celui de Google.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates python3 python3-yaml wget gnupg \
+    && wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update && apt-get install -y --no-install-recommends google-chrome-stable fonts-noto-core \
+    && apt-get purge -y wget gnupg && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/google-chrome.list
 ENV NODE_ENV=production \
     AQR_PYTHON=python3 \
+    AQR_CHROME=/usr/bin/google-chrome-stable \
     AQR_CACHE_DIR=/data/cache \
     AQR_REVIEW_DIR=/data \
     AQR_SERVER_HOST=0.0.0.0 \
