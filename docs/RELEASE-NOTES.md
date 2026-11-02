@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-02 — La préparation de la vidéo ne bloque plus la page
+Étiquettes : technique
+PR : -
+
+**Ce qui change.** Quand la vidéo d'origine doit être convertie pour le navigateur du serveur (HEVC des téléphones), la page ne reste plus bloquée pendant la conversion : elle répond « en préparation » tout de suite. L'export attend la conversion avant le rendu.
+
+**Pourquoi / décision.** La route vidéo attendait la fin de la conversion (plusieurs minutes pour une vidéo de 300 Mo), ce qui figeait l'onglet du panneau d'export.
+
 ## 2026-11-02 — Progression réelle de l'export, fond vidéo en HEVC, index recalé au démarrage
 Étiquettes : utilisateur, technique
 PR : -

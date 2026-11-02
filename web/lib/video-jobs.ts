@@ -4,7 +4,9 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { jobQueue } from "./jobs";
 import { log } from "./log";
-import { sessionDir } from "./store";
+import { audioPath, readSession, sessionDir } from "./store";
+import { isVideoContainer } from "./listening";
+import { prepareBrowserFile } from "./video-browser-copy";
 import {
   suggestOptionsOf,
   videoPrefsFromOptions,
@@ -302,6 +304,20 @@ export async function startVideoJob(input: {
         job: job.id,
       });
       try {
+        // Session vidéo dont la source n'est pas lisible par le navigateur du serveur : la copie d'abord.
+        let session: Awaited<ReturnType<typeof readSession>> | null = null;
+        try {
+          session = await readSession(job.sessionId);
+        } catch {
+          session = null; // session illisible : le rendu tentera sa chance sans copie
+        }
+        if (session && isVideoContainer(session.extension)) {
+          job.progress = "Préparation de la vidéo pour le navigateur";
+          await prepareBrowserFile(
+            job.sessionId,
+            await audioPath(job.sessionId),
+          );
+        }
         await Promise.race([
           run(job, signal.aborted),
           new Promise<never>((_, reject) =>
