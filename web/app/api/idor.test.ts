@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
  * d'être oubliée par une liste écrite à la main.
  *
  * A possède une session privée P et une session globale G. B est un autre compte, ADMIN un
- * administrateur (qui, par règle, ne voit pas non plus le privé d'autrui).
+ * administrateur (qui voit toutes les sessions, privées d'autrui comprises).
  */
 const HTTP = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 const ROUTES_DIR = path.join(__dirname, "sessions", "[id]");
@@ -186,24 +186,43 @@ describe("sans connexion : 401 partout", () => {
   });
 });
 
-describe("compte B et administrateur face à la session PRIVÉE de A : 404 partout (jamais 200, 403, 500)", () => {
-  for (const who of ["B", "ADMIN"] as const)
-    it(`${who} : chaque méthode de chaque route`, async () => {
-      const wrong: string[] = [];
-      for (const route of routes)
-        for (const { method, handler } of route.methods) {
-          const response = await call(
-            route,
-            handler,
-            method,
-            PRIVATE,
-            cookies[who],
-          );
-          if (response.status !== 404)
-            wrong.push(`${method} /${route.file} → ${response.status}`);
-        }
-      expect(wrong).toEqual([]);
-    });
+describe("compte B face à la session PRIVÉE de A : 404 partout (jamais 200, 403, 500)", () => {
+  it("B : chaque méthode de chaque route", async () => {
+    const wrong: string[] = [];
+    for (const route of routes)
+      for (const { method, handler } of route.methods) {
+        const response = await call(route, handler, method, PRIVATE, cookies.B);
+        if (response.status !== 404)
+          wrong.push(`${method} /${route.file} → ${response.status}`);
+      }
+    expect(wrong).toEqual([]);
+  });
+});
+
+describe("administrateur face à la session PRIVÉE de A : jamais refusée (lecture)", () => {
+  // Lecture seule : supprimer ou modifier la session casserait les tests suivants du même fichier.
+  it("ADMIN : chaque lecture (GET) de chaque route atteint la session", async () => {
+    const wrong: string[] = [];
+    for (const route of routes)
+      for (const { method, handler } of route.methods) {
+        if (method !== "GET" || route.file.includes("[job]")) continue;
+        const response = await call(
+          route,
+          handler,
+          method,
+          PRIVATE,
+          cookies.ADMIN,
+        );
+        // Refus d'accès = 401/403, ou « Session introuvable » ; une ressource absente (vidéo, pic) passe.
+        const refused =
+          response.status === 401 ||
+          response.status === 403 ||
+          (await response.clone().text()).includes("Session introuvable");
+        if (refused)
+          wrong.push(`${method} /${route.file} → ${response.status}`);
+      }
+    expect(wrong).toEqual([]);
+  });
 });
 
 describe("compte B face à la session GLOBALE de A : lecture oui, modification non", () => {
@@ -240,7 +259,7 @@ describe("compte B face à la session GLOBALE de A : lecture oui, modification n
       userId: owner.id,
       options: {},
       background: null,
-      bearer: "qtr_x",
+      credential: { bearer: "qtr_x" },
       origin: "http://127.0.0.1:3000",
       runner: async () => undefined,
     });

@@ -21,6 +21,30 @@ export type RowActions = {
   onDelete: (s: ApiSession) => void;
 };
 
+/**
+ * Exports vidéo de la session : combien sont gardés, lesquels sont à récupérer (lancés par moi et
+ * terminés pendant mon absence), et s'il en tourne un maintenant.
+ */
+function ExportsLine({ session }: { session: ApiSession }) {
+  const { total, new: fresh } = session.exports;
+  const running = session.exporting > 0;
+  if (total === 0 && !running) return null;
+  const plural = (n: number) => (n > 1 ? "s" : "");
+  const parts = [`${total} export${plural(total)}`];
+  if (fresh > 0) parts.push(`${fresh} à récupérer`);
+  if (running) parts.push("en cours");
+  return (
+    <span
+      className="sexp"
+      data-testid="session-exports"
+      data-new={fresh > 0 || undefined}
+      data-running={running || undefined}
+    >
+      {parts.join(" · ")}
+    </span>
+  );
+}
+
 type Props = {
   session: ApiSession;
   now: number;
@@ -161,6 +185,7 @@ export function SessionListRow({
             ) : null}
           </b>
           <span className="sstat">{row.status}</span>
+          <ExportsLine session={s} />
           {s.content_label ? (
             <span className="sdet" data-testid="content-label">
               Contenu détecté : <b>{s.content_label}</b>

@@ -18,6 +18,8 @@ export type UserRowView = {
   last_login_at: string | null;
   sessions: number;
   used_bytes: number;
+  /** Quota du compte (null = illimité). */
+  quota_bytes: number | null;
   tests: number;
 };
 
@@ -134,7 +136,11 @@ export function UsersView(props: UsersViewProps) {
                           ? `dernière connexion ${seenLabel(u.last_login_at, now)}`
                           : "jamais connecté"}{" "}
                         · {u.sessions} session{u.sessions > 1 ? "s" : ""} ·{" "}
-                        {formatBytesFr(u.used_bytes)} · {u.tests} analyse
+                        {formatBytesFr(u.used_bytes)}
+                        {u.quota_bytes
+                          ? ` (${Math.round((u.used_bytes / u.quota_bytes) * 100)} % du quota)`
+                          : ""}{" "}
+                        · {u.tests} analyse
                         {u.tests > 1 ? "s" : ""}
                       </small>
                     </div>

@@ -1,9 +1,10 @@
 /**
  * Autorisations : fonctions PURES, une seule table de règles pour toutes les routes de session.
  *
- *  - voir (lister, lire, écouter, exporter, signaler) : portée `global`, ou propriétaire.
- *    Un audio privé n'est visible de personne d'autre, administrateur compris : la route répond
- *    404 (pas 403) pour ne pas révéler son existence ;
+ *  - voir (lister, lire, écouter, exporter, signaler) : portée `global`, ou propriétaire, ou
+ *    administrateur. L'administrateur voit TOUTES les sessions, privées d'autrui comprises : il
+ *    régule le stockage et prévient les testeurs. Un testeur ne voit jamais le privé d'un autre ;
+ *    il répond alors 404 (pas 403) pour ne pas révéler l'existence de la session ;
  *  - modifier (renommer, portée, archiver, supprimer, lancer ou annuler) : le propriétaire ou un
  *    administrateur, parmi les sessions qu'on peut voir. Une session d'avant les comptes
  *    (`owner_id` nul) n'a pas de propriétaire : seuls les administrateurs la modifient ;
@@ -25,8 +26,10 @@ export type Ability =
 export const isOwner = (actor: Actor, meta: Resource): boolean =>
   meta.owner_id !== null && meta.owner_id === actor.id;
 
+export const isAdmin = (actor: Actor): boolean => actor.role === "admin";
+
 export function canView(actor: Actor, meta: Resource): boolean {
-  return meta.visibility === "global" || isOwner(actor, meta);
+  return meta.visibility === "global" || isOwner(actor, meta) || isAdmin(actor);
 }
 
 export function can(actor: Actor, ability: Ability, meta: Resource): boolean {
@@ -39,9 +42,9 @@ export function can(actor: Actor, ability: Ability, meta: Resource): boolean {
     case "edit":
     case "run":
     case "delete":
-      return actor.role === "admin" || isOwner(actor, meta);
+      return isAdmin(actor) || isOwner(actor, meta);
     case "truth":
-      return actor.role === "admin";
+      return isAdmin(actor);
   }
 }
 

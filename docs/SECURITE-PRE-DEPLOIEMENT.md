@@ -115,7 +115,7 @@ Règle : un utilisateur sait **qu'il attend et pourquoi**, sans voir les détail
 
 ## 6. Autorisation (qui voit quoi)
 
-- [x] ✅ (`web/app/api/idor.test.ts` : routes de session découvertes sur le disque, 401 sans connexion, 404 pour B et pour l'administrateur face au privé de A, lecture seule sur le partagé ; liste, statistiques, action groupée, jetons, administration ; le MCP passe par les mêmes routes) **Contrôle d'accès sur chaque route** `/api/sessions/[id]/…`, `/api/v1/recordings/…`, `/api/mcp`,
+- [x] ✅ (`web/app/api/idor.test.ts` : routes de session découvertes sur le disque, 401 sans connexion, 404 pour B, lecture (GET) acceptée à l'administrateur face au privé de A, lecture seule sur le partagé ; liste, statistiques, action groupée, jetons, administration ; le MCP passe par les mêmes routes) **Contrôle d'accès sur chaque route** `/api/sessions/[id]/…`, `/api/v1/recordings/…`, `/api/mcp`,
   `/api/users/…`, et les fichiers statiques (audio, vidéo, avatar, export). Un test automatisé vérifie qu'un compte B
   ne peut pas lire, modifier, supprimer ou télécharger une ressource de A (IDOR).
 - [x] ✅ (identifiants de session = UUID, vérifiés par `isSessionId`, et jamais la seule protection : le contrôle d'accès ci-dessus s'applique à chacun) Identifiants de ressources non devinables ou vérifiés (les identifiants séquentiels ne suffisent pas

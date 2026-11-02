@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { Readable } from "node:stream";
 import { apiError, json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
+import { forgetExport } from "@/lib/export-index";
 import { refreshDiskBytes } from "@/lib/session-sync";
 import { deleteVideo, parseRange, videoFile } from "@/lib/video-library";
 export const runtime = "nodejs";
@@ -64,6 +65,7 @@ async function handleDELETE(request: Request, { params }: Ctx) {
   if (!access.ok) return access.response;
   const removed = await deleteVideo(access.id, (await params).video);
   if (!removed) return apiError(404, "Vidéo introuvable.");
+  forgetExport(access.db, (await params).video);
   await refreshDiskBytes(access.db, access.id);
   return json({ deleted: true });
 }

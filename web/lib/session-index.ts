@@ -1,11 +1,12 @@
 import type { Db } from "./db";
 import { transaction } from "./db";
-import type { Visibility } from "./access";
+import type { Actor, Visibility } from "./access";
 import {
   FAVORITE_SELECT,
   SCOPES,
   UNREAD_SELECT,
   buildWhere,
+  visibleSql,
   encodeCursor,
   orderBy,
   sortValue,
@@ -52,16 +53,27 @@ export type ListedRow = MetaRow & {
   unread: boolean;
   /** Dernière ouverture du résultat PAR CET utilisateur (null = jamais). */
   viewed_at: string | null;
+  /** Exports vidéo gardés pour la session, et ceux qui sont nouveaux pour cet utilisateur. */
+  exports_total: number;
+  exports_new: number;
 };
 
-/** Colonnes propres à l'utilisateur courant : favori, non lu, dernière ouverture (4 paramètres `me`). */
+/**
+ * Colonnes propres à l'utilisateur courant : favori, non lu, dernière ouverture, exports nouveaux
+ * (5 paramètres `me`, dans l'ordre des `?`).
+ */
 const PER_USER = `${FAVORITE_SELECT} AS favorite, ${UNREAD_SELECT} AS unread,
-  (SELECT v.viewed_at FROM views v WHERE v.user_id = ? AND v.session_id = m.id) AS viewed_at`;
+  (SELECT v.viewed_at FROM views v WHERE v.user_id = ? AND v.session_id = m.id) AS viewed_at,
+  (SELECT COUNT(*) FROM exports e WHERE e.session_id = m.id) AS exports_total,
+  (SELECT COUNT(*) FROM exports e WHERE e.session_id = m.id AND e.owner_id = ? AND e.seen_at IS NULL) AS exports_new`;
+const perUser = (me: number): number[] => [me, me, me, me, me];
 const withUser = (row: Record<string, unknown>): ListedRow => ({
   ...toMeta(row),
   favorite: Boolean(row.favorite),
   unread: Boolean(row.unread),
   viewed_at: (row.viewed_at as string | null) ?? null,
+  exports_total: Number(row.exports_total ?? 0),
+  exports_new: Number(row.exports_new ?? 0),
 });
 
 const BASE = `SELECT m.id, m.owner_id, u.username AS owner_name, u.avatar_hash AS owner_avatar, m.name, m.name_source, m.original_name,
@@ -251,9 +263,7 @@ export function getListed(
 ): ListedRow | null {
   const row = db
     .prepare(`${BASE}, ${PER_USER} ${FROM} WHERE m.id = ?`)
-    .get(userId, userId, userId, userId, id) as
-    | Record<string, unknown>
-    | undefined;
+    .get(...perUser(userId), id) as Record<string, unknown> | undefined;
   return row ? withUser(row) : null;
 }
 
@@ -264,9 +274,7 @@ export function viewState(
 ): { favorite: boolean; unread: boolean; viewed_at: string | null } {
   const row = db
     .prepare(`SELECT ${PER_USER} FROM session_meta m WHERE m.id = ?`)
-    .get(userId, userId, userId, userId, id) as
-    | Record<string, unknown>
-    | undefined;
+    .get(...perUser(userId), id) as Record<string, unknown> | undefined;
   return row
     ? {
         favorite: Boolean(row.favorite),
@@ -283,14 +291,15 @@ export type Page = {
   total: number;
 };
 
-export function listPage(db: Db, me: number, query: ListQuery): Page {
-  const where = buildWhere(query, me);
+export function listPage(db: Db, viewer: Actor, query: ListQuery): Page {
+  const me = viewer.id;
+  const where = buildWhere(query, viewer);
   const rows = db
     .prepare(
       `${BASE}, ${PER_USER} ${FROM}
        WHERE ${where.sql} ORDER BY ${orderBy(query.sort)} LIMIT ?`,
     )
-    .all(me, me, me, me, ...where.params, query.limit + 1) as Record<
+    .all(...perUser(me), ...where.params, query.limit + 1) as Record<
     string,
     unknown
   >[];
@@ -300,9 +309,11 @@ export function listPage(db: Db, me: number, query: ListQuery): Page {
   const total = (
     db
       .prepare(
-        `SELECT COUNT(*) AS n FROM session_meta m WHERE ${buildWhere(query, me, { cursor: false }).sql}`,
+        `SELECT COUNT(*) AS n FROM session_meta m WHERE ${buildWhere(query, viewer, { cursor: false }).sql}`,
       )
-      .get(...buildWhere(query, me, { cursor: false }).params) as { n: number }
+      .get(...buildWhere(query, viewer, { cursor: false }).params) as {
+      n: number;
+    }
   ).n;
   return {
     items,
@@ -325,10 +336,10 @@ export type Counts = {
   states: Record<StateFilter | "total", number>;
 };
 
-export function listCounts(db: Db, me: number, query: ListQuery): Counts {
+export function listCounts(db: Db, viewer: Actor, query: ListQuery): Counts {
   const scopes = {} as Record<Scope, number>;
   for (const scope of SCOPES) {
-    const where = buildWhere({ ...query, scope }, me, {
+    const where = buildWhere({ ...query, scope }, viewer, {
       state: false,
       cursor: false,
     });
@@ -338,7 +349,7 @@ export function listCounts(db: Db, me: number, query: ListQuery): Counts {
         .get(...where.params) as { n: number }
     ).n;
   }
-  const where = buildWhere(query, me, { state: false, cursor: false });
+  const where = buildWhere(query, viewer, { state: false, cursor: false });
   const states = { total: scopes[query.scope] } as Counts["states"];
   const row = db
     .prepare(
@@ -360,21 +371,25 @@ export function listCounts(db: Db, me: number, query: ListQuery): Counts {
       .prepare(
         `SELECT COUNT(*) AS n FROM session_meta m WHERE ${where.sql} AND ${UNREAD_SELECT}`,
       )
-      .get(...where.params, me, me) as { n: number }
+      .get(...where.params, viewer.id, viewer.id) as { n: number }
   ).n;
   return { scopes, states };
 }
 
 // ── Lectures pour les statistiques et l'ordonnancement ────────────────────────────────────────
 /** Lignes minimales de toutes les sessions visibles : historique de durées, file, statistiques. */
-export function visibleRows(db: Db, me: number): ListedRow[] {
+export function visibleRows(db: Db, viewer: Actor): ListedRow[] {
+  const visible = visibleSql(viewer);
   return (
     db
       .prepare(
         `${BASE}, ${PER_USER} ${FROM}
-         WHERE (m.visibility = 'global' OR m.owner_id = ?)`,
+         WHERE ${visible.sql}`,
       )
-      .all(me, me, me, me, me) as Record<string, unknown>[]
+      .all(...perUser(viewer.id), ...visible.params) as Record<
+      string,
+      unknown
+    >[]
   ).map(withUser);
 }
 

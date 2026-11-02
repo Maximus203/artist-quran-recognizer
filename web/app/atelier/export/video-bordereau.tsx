@@ -170,8 +170,8 @@ export function Bordereau(props: BordereauProps) {
         <p className="xr-note">
           <XIcon name="alert" />
           <span>
-            Garde cet onglet ouvert : la vidéo se fabrique dans ton navigateur.
-            Chaque vidéo se télécharge dès qu’elle est prête.
+            Tu peux quitter cette page : la vidéo se fabrique sur le serveur et
+            reste dans la liste « Vidéos de cet enregistrement ».
           </span>
         </p>
         {files.length > 1 ? (
@@ -382,7 +382,7 @@ export function ExportDock({
         : phase === "render"
           ? {
               title: `Vidéo ${running < 0 ? counts.done : running + 1} sur ${files.length || count}${running >= 0 ? ` · ${Math.round(files[running].ratio * 100)} %` : ""}`,
-              hint: "Garde cet onglet ouvert",
+              hint: "Sur le serveur : tu peux quitter la page",
             }
           : phase === "done"
             ? {

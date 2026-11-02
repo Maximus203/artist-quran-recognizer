@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Actor } from "./access";
 import { openDatabase, type Db } from "./db";
 import {
   createMeta,
@@ -23,6 +24,8 @@ import { createUser } from "./users";
 let db: Db;
 let cherif: number;
 let awa: number;
+
+const asUser = (id: number): Actor => ({ id, role: "user" });
 
 const id = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -83,7 +86,7 @@ describe("propriétaire affiché : pseudo et empreinte de la photo", () => {
       "abcdef0123456789",
       awa,
     );
-    const rows = listPage(db, cherif, query("scope=all")).items;
+    const rows = listPage(db, asUser(cherif), query("scope=all")).items;
     const by = (n: number) => rows.find((r) => r.id === id(n))!;
     expect(by(1)).toMatchObject({ owner_name: "Cherif", owner_avatar: null });
     expect(by(2)).toMatchObject({
@@ -97,18 +100,40 @@ describe("propriétaire affiché : pseudo et empreinte de la photo", () => {
   it("changer la photo se voit aussitôt dans la liste", () => {
     add(1, { ownerId: awa });
     db.prepare("UPDATE users SET avatar_hash = 'v1' WHERE id = ?").run(awa);
-    expect(listPage(db, cherif, query("")).items[0].owner_avatar).toBe("v1");
+    expect(listPage(db, asUser(cherif), query("")).items[0].owner_avatar).toBe(
+      "v1",
+    );
     db.prepare("UPDATE users SET avatar_hash = 'v2' WHERE id = ?").run(awa);
-    expect(listPage(db, cherif, query("")).items[0].owner_avatar).toBe("v2");
+    expect(listPage(db, asUser(cherif), query("")).items[0].owner_avatar).toBe(
+      "v2",
+    );
     db.prepare("UPDATE users SET avatar_hash = NULL WHERE id = ?").run(awa);
-    expect(listPage(db, cherif, query("")).items[0].owner_avatar).toBeNull();
+    expect(
+      listPage(db, asUser(cherif), query("")).items[0].owner_avatar,
+    ).toBeNull();
   });
 
   it("une session privée reste invisible des autres, photo ou non (règle inchangée)", () => {
     add(1, { ownerId: awa, visibility: "private" });
     db.prepare("UPDATE users SET avatar_hash = 'v1' WHERE id = ?").run(awa);
-    expect(listPage(db, cherif, query("scope=all")).items).toHaveLength(0);
-    expect(listPage(db, awa, query("scope=all")).items).toHaveLength(1);
+    expect(listPage(db, asUser(cherif), query("scope=all")).items).toHaveLength(
+      0,
+    );
+    expect(listPage(db, asUser(awa), query("scope=all")).items).toHaveLength(1);
+  });
+
+  it("l'administrateur voit toutes les sessions, privées d'autrui comprises, dans toutes les portées", () => {
+    add(1, { ownerId: awa, visibility: "private" });
+    add(2, { ownerId: cherif, visibility: "private" });
+    add(3, { ownerId: null, visibility: "private" });
+    const admin: Actor = { id: cherif, role: "admin" };
+    expect(ids(listPage(db, admin, query("scope=all")).items).sort()).toEqual([
+      1, 2, 3,
+    ]);
+    expect(listCounts(db, admin, query("")).scopes.all).toBe(3);
+    expect(listPage(db, asUser(cherif), query("scope=all")).items).toHaveLength(
+      1,
+    );
   });
 });
 
@@ -122,27 +147,27 @@ describe("portées et visibilité", () => {
   });
 
   it("all : mes sessions + les globales, jamais le privé d'un autre", () => {
-    expect(ids(listPage(db, cherif, query("scope=all")).items).sort()).toEqual([
-      1, 2, 3, 5,
-    ]);
-    expect(ids(listPage(db, awa, query("scope=all")).items).sort()).toEqual([
-      1, 3, 4, 5,
-    ]);
+    expect(
+      ids(listPage(db, asUser(cherif), query("scope=all")).items).sort(),
+    ).toEqual([1, 2, 3, 5]);
+    expect(
+      ids(listPage(db, asUser(awa), query("scope=all")).items).sort(),
+    ).toEqual([1, 3, 4, 5]);
   });
 
   it("mine : seulement les miennes, privées comprises", () => {
-    expect(ids(listPage(db, cherif, query("scope=mine")).items).sort()).toEqual(
-      [1, 2],
-    );
+    expect(
+      ids(listPage(db, asUser(cherif), query("scope=mine")).items).sort(),
+    ).toEqual([1, 2]);
   });
 
   it("shared : les globales des autres (et d'avant les comptes)", () => {
     expect(
-      ids(listPage(db, cherif, query("scope=shared")).items).sort(),
+      ids(listPage(db, asUser(cherif), query("scope=shared")).items).sort(),
     ).toEqual([3, 5]);
-    expect(ids(listPage(db, awa, query("scope=shared")).items).sort()).toEqual([
-      1, 5,
-    ]);
+    expect(
+      ids(listPage(db, asUser(awa), query("scope=shared")).items).sort(),
+    ).toEqual([1, 5]);
   });
 
   it("favorites : mes favoris visibles, par utilisateur", () => {
@@ -150,45 +175,58 @@ describe("portées et visibilité", () => {
     setFavorite(db, cherif, id(3), true, "now");
     setFavorite(db, awa, id(1), true, "now");
     expect(
-      ids(listPage(db, cherif, query("scope=favorites")).items).sort(),
+      ids(listPage(db, asUser(cherif), query("scope=favorites")).items).sort(),
     ).toEqual([1, 3]);
-    expect(ids(listPage(db, awa, query("scope=favorites")).items)).toEqual([1]);
     expect(
-      listPage(db, awa, query("scope=all")).items.find((r) => r.id === id(1))
-        ?.favorite,
+      ids(listPage(db, asUser(awa), query("scope=favorites")).items),
+    ).toEqual([1]);
+    expect(
+      listPage(db, asUser(awa), query("scope=all")).items.find(
+        (r) => r.id === id(1),
+      )?.favorite,
     ).toBe(true);
     expect(
-      listPage(db, awa, query("scope=all")).items.find((r) => r.id === id(3))
-        ?.favorite,
+      listPage(db, asUser(awa), query("scope=all")).items.find(
+        (r) => r.id === id(3),
+      )?.favorite,
     ).toBe(false);
   });
 
   it("un favori sur une session devenue privée disparaît de la liste de l'autre", () => {
     setFavorite(db, awa, id(1), true, "now");
     updateMeta(db, id(1), { visibility: "private" }, "now");
-    expect(ids(listPage(db, awa, query("scope=favorites")).items)).toEqual([]);
+    expect(
+      ids(listPage(db, asUser(awa), query("scope=favorites")).items),
+    ).toEqual([]);
   });
 
   it("archived : retire la session des autres portées", () => {
     updateMeta(db, id(1), { archivedAt: "2026-10-02T00:00:00.000Z" }, "now");
-    expect(ids(listPage(db, cherif, query("scope=archived")).items)).toEqual([
-      1,
-    ]);
-    expect(ids(listPage(db, cherif, query("scope=all")).items)).not.toContain(
-      1,
-    );
-    expect(ids(listPage(db, awa, query("scope=archived")).items)).toEqual([1]);
+    expect(
+      ids(listPage(db, asUser(cherif), query("scope=archived")).items),
+    ).toEqual([1]);
+    expect(
+      ids(listPage(db, asUser(cherif), query("scope=all")).items),
+    ).not.toContain(1);
+    expect(
+      ids(listPage(db, asUser(awa), query("scope=archived")).items),
+    ).toEqual([1]);
     // L'archive d'un privé ne fuit pas.
     updateMeta(db, id(2), { archivedAt: "2026-10-02T00:00:00.000Z" }, "now");
-    expect(ids(listPage(db, awa, query("scope=archived")).items)).toEqual([1]);
+    expect(
+      ids(listPage(db, asUser(awa), query("scope=archived")).items),
+    ).toEqual([1]);
   });
 
   it("aucun filtre ne contourne la visibilité (recherche, états, curseur)", () => {
     expect(
-      ids(listPage(db, cherif, query("scope=all&q=session 4")).items),
+      ids(listPage(db, asUser(cherif), query("scope=all&q=session 4")).items),
     ).toEqual([]);
     expect(
-      ids(listPage(db, cherif, query("scope=all&state=ready&limit=100")).items),
+      ids(
+        listPage(db, asUser(cherif), query("scope=all&state=ready&limit=100"))
+          .items,
+      ),
     ).not.toContain(4);
   });
 });
@@ -218,50 +256,70 @@ describe("filtres", () => {
   });
 
   it("recherche insensible à la casse et aux accents, tous les mots", () => {
-    expect(ids(listPage(db, cherif, query("q=recitation")).items)).toEqual([1]);
-    expect(ids(listPage(db, cherif, query("q=YUSUF recit")).items)).toEqual([
-      1,
+    expect(
+      ids(listPage(db, asUser(cherif), query("q=recitation")).items),
+    ).toEqual([1]);
+    expect(
+      ids(listPage(db, asUser(cherif), query("q=YUSUF recit")).items),
+    ).toEqual([1]);
+    expect(ids(listPage(db, asUser(cherif), query("q=baqara")).items)).toEqual([
+      3,
     ]);
-    expect(ids(listPage(db, cherif, query("q=baqara")).items)).toEqual([3]);
-    expect(ids(listPage(db, cherif, query("q=yusuf micro")).items)).toEqual([]);
+    expect(
+      ids(listPage(db, asUser(cherif), query("q=yusuf micro")).items),
+    ).toEqual([]);
   });
 
   it("la recherche traite % et _ comme des caractères ordinaires", () => {
-    expect(listPage(db, cherif, query("q=%25")).items).toHaveLength(0);
-    expect(listPage(db, cherif, query("q=_")).items).toHaveLength(0);
+    expect(listPage(db, asUser(cherif), query("q=%25")).items).toHaveLength(0);
+    expect(listPage(db, asUser(cherif), query("q=_")).items).toHaveLength(0);
   });
 
   it("injection SQL via la recherche : sans effet", () => {
-    expect(listPage(db, cherif, query("q=' OR 1=1 --")).items).toHaveLength(0);
     expect(
-      listPage(db, cherif, query("q=a'); DROP TABLE session_meta;--")).items,
+      listPage(db, asUser(cherif), query("q=' OR 1=1 --")).items,
     ).toHaveLength(0);
-    expect(listPage(db, cherif, query("scope=all")).items).toHaveLength(3);
+    expect(
+      listPage(db, asUser(cherif), query("q=a'); DROP TABLE session_meta;--"))
+        .items,
+    ).toHaveLength(0);
+    expect(listPage(db, asUser(cherif), query("scope=all")).items).toHaveLength(
+      3,
+    );
   });
 
   it("état, plusieurs états, actif", () => {
-    expect(ids(listPage(db, cherif, query("state=done")).items)).toEqual([1]);
     expect(
-      ids(listPage(db, cherif, query("state=done,running")).items).sort(),
+      ids(listPage(db, asUser(cherif), query("state=done")).items),
+    ).toEqual([1]);
+    expect(
+      ids(
+        listPage(db, asUser(cherif), query("state=done,running")).items,
+      ).sort(),
     ).toEqual([1, 2]);
     expect(
-      ids(listPage(db, cherif, query("state=active")).items).sort(),
+      ids(listPage(db, asUser(cherif), query("state=active")).items).sort(),
     ).toEqual([2, 3]);
   });
 
   it("moteur et dates (jour inclus)", () => {
-    expect(ids(listPage(db, cherif, query("engine=cascade")).items)).toEqual([
-      1,
-    ]);
     expect(
-      listPage(db, cherif, query("from=2026-10-01&to=2026-10-01")).items,
+      ids(listPage(db, asUser(cherif), query("engine=cascade")).items),
+    ).toEqual([1]);
+    expect(
+      listPage(db, asUser(cherif), query("from=2026-10-01&to=2026-10-01"))
+        .items,
     ).toHaveLength(3);
-    expect(listPage(db, cherif, query("from=2026-10-02")).items).toHaveLength(
-      0,
-    );
-    expect(listPage(db, cherif, query("to=2026-09-30")).items).toHaveLength(0);
     expect(
-      ids(listPage(db, cherif, query("from=2026-10-01T00:02:00Z")).items),
+      listPage(db, asUser(cherif), query("from=2026-10-02")).items,
+    ).toHaveLength(0);
+    expect(
+      listPage(db, asUser(cherif), query("to=2026-09-30")).items,
+    ).toHaveLength(0);
+    expect(
+      ids(
+        listPage(db, asUser(cherif), query("from=2026-10-01T00:02:00Z")).items,
+      ),
     ).toEqual([3, 2]);
   });
 });
@@ -276,11 +334,15 @@ describe("non lu par utilisateur", () => {
     );
     expect(viewState(db, cherif, id(1)).unread).toBe(true);
     expect(viewState(db, awa, id(1)).unread).toBe(false);
-    expect(listPage(db, cherif, query("state=unread")).items).toHaveLength(1);
-    expect(listPage(db, awa, query("state=unread")).items).toHaveLength(0);
+    expect(
+      listPage(db, asUser(cherif), query("state=unread")).items,
+    ).toHaveLength(1);
+    expect(listPage(db, asUser(awa), query("state=unread")).items).toHaveLength(
+      0,
+    );
     markViewedBy(db, cherif, id(1), "2026-10-01T01:00:00.000Z");
     expect(viewState(db, cherif, id(1)).unread).toBe(false);
-    expect(listCounts(db, cherif, query("")).states.unread).toBe(0);
+    expect(listCounts(db, asUser(cherif), query("")).states.unread).toBe(0);
   });
 
   it("une session qui n'est pas terminée n'est pas non lue", () => {
@@ -326,7 +388,7 @@ describe("pagination par curseur (keyset)", () => {
   for (const sort of SORTS)
     it(`tri « ${sort} » : toutes les pages, sans doublon ni trou`, () => {
       const all = ids(
-        listPage(db, cherif, query(`sort=${sort}&limit=100`)).items,
+        listPage(db, asUser(cherif), query(`sort=${sort}&limit=100`)).items,
       );
       expect(all).toHaveLength(23);
       const seen: number[] = [];
@@ -335,7 +397,7 @@ describe("pagination par curseur (keyset)", () => {
       do {
         const page = listPage(
           db,
-          cherif,
+          asUser(cherif),
           query(`sort=${sort}&limit=5${cursor ? `&cursor=${cursor}` : ""}`),
         );
         seen.push(...ids(page.items));
@@ -348,11 +410,11 @@ describe("pagination par curseur (keyset)", () => {
     });
 
   it("reste stable quand une session arrive entre deux pages", () => {
-    const first = listPage(db, cherif, query("sort=recent&limit=10"));
+    const first = listPage(db, asUser(cherif), query("sort=recent&limit=10"));
     add(99, { createdAt: "2026-11-01T00:00:00.000Z" }); // plus récente : passe devant, hors des pages suivantes
     const second = listPage(
       db,
-      cherif,
+      asUser(cherif),
       query(`sort=recent&limit=10&cursor=${first.next_cursor}`),
     );
     expect(
@@ -362,7 +424,7 @@ describe("pagination par curseur (keyset)", () => {
   });
 
   it("refuse un curseur forgé, tronqué ou issu d'un autre tri", () => {
-    const first = listPage(db, cherif, query("sort=recent&limit=2"));
+    const first = listPage(db, asUser(cherif), query("sort=recent&limit=2"));
     const cursor = first.next_cursor as string;
     for (const bad of [
       "zzz",
@@ -386,7 +448,7 @@ describe("pagination par curseur (keyset)", () => {
     ).toString("base64url");
     const page = listPage(
       db,
-      cherif,
+      asUser(cherif),
       query(`sort=recent&limit=100&cursor=${evil}`),
     );
     expect(page.items.length).toBeLessThanOrEqual(23);
@@ -436,7 +498,7 @@ describe("compteurs", () => {
     );
     syncMirror(db, session(3, { state: "running" }), "now");
     updateMeta(db, id(2), { archivedAt: "2026-10-05T00:00:00.000Z" }, "now");
-    const counts = listCounts(db, cherif, query("scope=all"));
+    const counts = listCounts(db, asUser(cherif), query("scope=all"));
     expect(counts.scopes).toEqual({
       mine: 1,
       shared: 1,
@@ -452,9 +514,9 @@ describe("compteurs", () => {
       active: 1,
       unread: 1,
     });
-    expect(listCounts(db, cherif, query("scope=all&q=autre")).scopes.all).toBe(
-      1,
-    );
+    expect(
+      listCounts(db, asUser(cherif), query("scope=all&q=autre")).scopes.all,
+    ).toBe(1);
   });
 });
 
@@ -490,7 +552,9 @@ describe("mirroir, quota et journal", () => {
   it("le renommage est retrouvé par la recherche et le tri par nom", () => {
     add(1);
     updateMeta(db, id(1), { name: "Écoute Ñandú" }, "now");
-    expect(listPage(db, cherif, query("q=nandu")).items).toHaveLength(1);
+    expect(listPage(db, asUser(cherif), query("q=nandu")).items).toHaveLength(
+      1,
+    );
   });
 
   it("quota : somme des octets envoyés par propriétaire", () => {

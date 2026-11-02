@@ -1463,6 +1463,20 @@ body.auth-pg {
   text-underline-offset: 3px;
   text-decoration-color: var(--border-strong);
 }
+.srow .sexp {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  line-height: 1.35;
+}
+.srow .sexp[data-new] {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.srow .sexp[data-running]::after {
+  content: " ●";
+  color: var(--accent);
+}
 .srow .sstat {
   font-size: var(--fs-sm);
   color: var(--text-2);

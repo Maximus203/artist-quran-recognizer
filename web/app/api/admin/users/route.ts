@@ -1,6 +1,7 @@
 import { json, safe } from "@/lib/http";
 import { requireAdmin } from "@/lib/route-guard";
 import { ownedTotals } from "@/lib/session-index";
+import { userQuotaBytes } from "@/lib/quota";
 import { listUsers } from "@/lib/users";
 export const runtime = "nodejs";
 
@@ -29,6 +30,7 @@ async function handleGET(request: Request) {
         last_login_at: user.last_login_at,
         sessions: owned.sessions,
         used_bytes: owned.bytes,
+        quota_bytes: userQuotaBytes() || null,
         tests: tests.get(user.id) ?? 0,
       };
     }),

@@ -1,6 +1,6 @@
+import { markExportsSeen, reconcileSessionExports } from "@/lib/export-index";
 import { json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
-import { listVideos } from "@/lib/video-library";
 export const runtime = "nodejs";
 
 /**
@@ -14,7 +14,17 @@ async function handleGET(
 ) {
   const access = await sessionAccess(request, params, "view");
   if (!access.ok) return access.response;
-  const videos = await listVideos(access.id);
+  const videos = await reconcileSessionExports(
+    access.db,
+    access.id,
+    access.meta.owner_id,
+  );
+  markExportsSeen(
+    access.db,
+    access.id,
+    access.user.id,
+    new Date().toISOString(),
+  );
   return json({
     videos,
     total_bytes: videos.reduce((sum, v) => sum + v.bytes, 0),

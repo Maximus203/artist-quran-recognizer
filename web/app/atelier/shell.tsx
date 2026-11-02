@@ -1,5 +1,6 @@
 "use client";
 import { QueueNotice } from "./queue-notice";
+import { StorageNotice } from "./storage-notice";
 import { usePathname } from "next/navigation";
 import {
   createContext,
@@ -279,6 +280,7 @@ export function ShellProvider(props: Props) {
       {props.children}
       <PrefsNotice status={status} onRetry={retry} />
       <QueueNotice />
+      <StorageNotice />
     </Shell.Provider>
   );
 }

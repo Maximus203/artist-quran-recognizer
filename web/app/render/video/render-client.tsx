@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
+import type { SavedVideo } from "@/lib/export-video-library";
 import { renderSessionVideo } from "@/lib/export-video-render";
 
 /**
@@ -25,6 +26,8 @@ type Payload = {
     mergeGap?: number;
   };
   padRanges?: boolean;
+  /** Vidéo identique déjà gardée : récupérée sans être refaite (défaut). */
+  reuse?: boolean;
 };
 type State = {
   progress?: string;
@@ -64,10 +67,20 @@ export function RenderClient() {
         const blob = await response.blob();
         bgImage = new File([blob], "background", { type: blob.type });
       }
+      // La page est connectée comme l'appelant : elle lit elle-même les vidéos déjà gardées.
+      const existing = payload.reuse
+        ? (
+            (await fetch(`/api/sessions/${payload.sessionId}/videos`).then(
+              (r) => (r.ok ? r.json() : { videos: [] }),
+            )) as { videos: SavedVideo[] }
+          ).videos
+        : [];
       await renderSessionVideo({
         sessionId: payload.sessionId,
         prefs: payload.prefs,
         bgImage,
+        existing,
+        reuse: payload.reuse !== false,
         fileName: payload.fileName,
         ranges: payload.ranges,
         perVerse: payload.perVerse,

@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-02 — L'administrateur voit toutes les sessions ; l'export vidéo continue sur le serveur
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** L'administrateur voit toutes les sessions de tous les testeurs, privées comprises, avec leur propriétaire, le nombre d'exports et l'espace de chaque compte (en pourcentage de son quota, dans « Testeurs »). Un bandeau prévient le testeur dès que son espace atteint 80 %. Un export vidéo lancé depuis l'atelier se fabrique sur le serveur : quitter la page ne l'interrompt pas, et au retour la progression reprend ; la vidéo finie rejoint « Vidéos de cet enregistrement ». Dans la liste des sessions, chaque ligne indique le nombre d'exports gardés, ceux « à récupérer » (lancés par toi, terminés pendant ton absence) et un export « en cours ».
+
+**Pourquoi / décision.** Changement de règle, décidé par le mainteneur : jusqu'ici l'administrateur ne lisait pas le privé d'un testeur. Il le voit désormais, pour réguler le stockage et prévenir les testeurs ; les testeurs qui ont mis des audios en privé doivent en être informés. Le rendu serveur réutilise le code de la page de rendu (navigateur sans interface, connecté comme l'appelant) ; la vidéo entre dans la bibliothèque par la route d'envoi existante, et une table `exports` (migration 009) l'indexe pour compter sans lire le disque. Une vidéo identique déjà gardée est récupérée sans être refaite, comme avant. Limites connues : les jobs en cours sont en mémoire (perdus au redémarrage du serveur ; les vidéos déjà gardées, non), et les vidéos gardées ne comptent pas encore dans le quota (seul l'audio importé y compte). Preuves : tests `access`, `session-index`, `idor` (administrateur), `export-index`, `video-jobs` ; dans l'atelier sur une instance de test : export lancé, page quittée, « 1 à récupérer » à la liste au retour, vidéo gardée (223 Ko) et téléchargeable, réutilisation en 3 s sans doublon.
+
 ## 2026-11-01 — Les vidéos déjà faites restent sur le serveur : les revoir, les retélécharger, les supprimer
 Étiquettes : utilisateur, technique
 PR : -
