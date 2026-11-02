@@ -25,6 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certi
 ENV NODE_ENV=production \
     AQR_PYTHON=python3 \
     AQR_CHROME=/usr/bin/google-chrome-stable \
+    # Système de fichiers en lecture seule : Chrome (crashpad) écrit son profil dans /tmp (tmpfs), pas dans $HOME.
+    HOME=/tmp \
+    XDG_CONFIG_HOME=/tmp/xdg \
+    XDG_CACHE_HOME=/tmp/xdg-cache \
     AQR_CACHE_DIR=/data/cache \
     AQR_REVIEW_DIR=/data \
     AQR_SERVER_HOST=0.0.0.0 \
