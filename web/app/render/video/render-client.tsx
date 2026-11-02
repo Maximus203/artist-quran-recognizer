@@ -31,6 +31,8 @@ type Payload = {
 };
 type State = {
   progress?: string;
+  /** Avancement de la vidéo en cours, de 0 à 1. */
+  ratio?: number;
   error?: string;
   done?: boolean;
   /** Nombre de vidéos attendues (une par plage) : le serveur attend autant de téléchargements. */
@@ -93,7 +95,11 @@ export function RenderClient() {
           state.files_done = 0;
         },
         onFile: (progress) => {
-          if (progress.phase === "done") state.files_done = progress.index + 1;
+          // Avancement réel de la vidéo en cours (0 à 1) ; remis à zéro quand elle est prête.
+          if (progress.phase === "done") {
+            state.files_done = progress.index + 1;
+            state.ratio = 0;
+          } else state.ratio = progress.ratio;
         },
         onProgress: (message) => {
           state.progress = message;

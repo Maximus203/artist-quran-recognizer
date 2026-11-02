@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { isVideoContainer, videoMediaType } from "@/lib/listening";
 import { audioPath, readSession } from "@/lib/store";
+import { browserVideoFile } from "@/lib/video-browser-copy";
 import { safe } from "@/lib/http";
 import { parseByteRange } from "@/lib/byte-range";
 import { sessionAccess } from "@/lib/route-guard";
@@ -27,7 +28,12 @@ async function handleGET(
         { error: "Cette session n'a pas de piste vidéo." },
         { status: 404 },
       );
-    const file = await audioPath(access.id);
+    // Copie H.264 si la source (HEVC des téléphones…) n'est pas lisible par le navigateur du serveur.
+    const source = await browserVideoFile(
+      access.id,
+      await audioPath(access.id),
+    );
+    const file = source.path;
     const size = (await stat(file)).size;
     // Les intervalles d'octets sont indispensables : sans eux le navigateur ne peut pas se
     // positionner dans la vidéo et le fond de l'export resterait figé sur la première image.
@@ -46,7 +52,9 @@ async function handleGET(
       status: range.kind === "partial" ? 206 : 200,
       headers: {
         "Accept-Ranges": "bytes",
-        "Content-Type": videoMediaType(session.extension),
+        "Content-Type": source.copied
+          ? "video/mp4"
+          : videoMediaType(session.extension),
         "Content-Length": String(end - start + 1),
         ...(range.kind === "partial"
           ? { "Content-Range": `bytes ${start}-${end}/${size}` }

@@ -17,6 +17,10 @@ export async function register(): Promise<void> {
   // Base d'abord : elle suit les écritures de session.json que la reprise de file va provoquer.
   const { ready } = await import("./lib/server-init");
   await ready().catch(() => undefined); // l'erreur est journalisée ; la requête suivante réessaie
+  // Index des exports vidéo recalé sur le disque (vidéos d'avant la migration 009).
+  const { getDb } = await import("./lib/db");
+  const { reconcileAllExports } = await import("./lib/export-index");
+  await reconcileAllExports(getDb()).catch(() => 0);
   const { ensureQueueRecovered } = await import("./lib/jobs");
   await ensureQueueRecovered().catch(() => []);
 }

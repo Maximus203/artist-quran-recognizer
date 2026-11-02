@@ -459,3 +459,19 @@ describe("cookies du rendu (export lancé depuis l'atelier)", () => {
     ]);
   });
 });
+
+describe("avancement réel du rendu", () => {
+  it("reporte la fraction de la vidéo en cours, sans écraser les champs absents", () => {
+    const job = {
+      ratio: 0,
+      files_done: 0,
+      files_total: 2,
+      progress: "Démarrage",
+    } as VideoJob;
+    applyRenderState(job, { ratio: 0.37, files_done: 0 });
+    expect(job.ratio).toBe(0.37);
+    applyRenderState(job, { progress: "Vidéo 1/2 : rendu 40 %" });
+    expect(job.ratio).toBe(0.37);
+    expect(job.progress).toBe("Vidéo 1/2 : rendu 40 %");
+  });
+});

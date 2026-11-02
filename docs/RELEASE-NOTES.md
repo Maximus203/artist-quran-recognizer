@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-02 — Progression réelle de l'export, fond vidéo en HEVC, index recalé au démarrage
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** La barre de la vidéo en cours reflète son avancement réel (elle restait à 50 % puis passait à 100 %). Une vidéo d'origine en HEVC (la plupart des téléphones) sert de fond à l'export serveur : le serveur fabrique une copie H.264 une fois, puis la réutilise. Les compteurs d'exports des sessions d'avant la migration 009 sont justes dès le démarrage.
+
+**Pourquoi / décision.** Le Chrome du serveur (Linux) ne décode pas le HEVC : le fond restait vide sans message. La copie H.264 n'est faite que pour les codecs non lisibles ; le H.264, le VP8, le VP9 et l'AV1 ne sont pas touchés. Les vidéos gardées avant la migration n'avaient pas de ligne dans l'index : le démarrage le recale désormais pour toutes les sessions.
+
 ## 2026-11-02 — L'export vidéo fonctionne de nouveau sur le serveur
 Étiquettes : technique
 PR : #177
