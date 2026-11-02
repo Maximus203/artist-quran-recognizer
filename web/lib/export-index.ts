@@ -79,6 +79,26 @@ export async function reconcileSessionExports(
   return videos;
 }
 
+/**
+ * Au démarrage : recale l'index de TOUTES les sessions. Les vidéos gardées avant la migration 009 sont
+ * sur le disque sans ligne ; sans ce recalage, leur session afficherait 0 export jusqu'à son ouverture.
+ */
+export async function reconcileAllExports(db: Db): Promise<number> {
+  const sessions = db
+    .prepare("SELECT id, owner_id FROM session_meta")
+    .all() as Array<{ id: string; owner_id: number | null }>;
+  let total = 0;
+  for (const session of sessions) {
+    const videos = await reconcileSessionExports(
+      db,
+      session.id,
+      session.owner_id,
+    ).catch(() => []);
+    total += videos.length;
+  }
+  return total;
+}
+
 export type ExportSummary = {
   /** Exports gardés pour la session (tous lanceurs confondus). */
   total: number;

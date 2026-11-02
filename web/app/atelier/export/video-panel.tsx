@@ -105,7 +105,7 @@ function rowsOf(names: readonly string[], job: ServerJob): FileRow[] {
     if (job.state === "failed" && i === job.files_done)
       return { name, state: "err", ratio: 0, bytes: null };
     if (isActiveJob(job) && i === job.files_done)
-      return { name, state: "run", ratio: 0.5, bytes: null };
+      return { name, state: "run", ratio: job.ratio, bytes: null };
     return { name, state: "wait", ratio: 0, bytes: null };
   });
 }

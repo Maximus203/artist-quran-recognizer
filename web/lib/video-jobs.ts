@@ -34,6 +34,8 @@ export type VideoJob = {
   state: VideoJobState;
   /** « Vidéo 2/5 : rendu 64 % » : lisible tel quel par un humain ou un agent. */
   progress: string;
+  /** Avancement réel de la vidéo en cours de rendu, de 0 à 1. */
+  ratio: number;
   /** Vidéos déjà produites et nombre attendu (connu une fois les plages calculées). */
   files_done: number;
   files_total: number | null;
@@ -269,6 +271,7 @@ export async function startVideoJob(input: {
     userId: input.userId,
     state: "queued",
     progress: "En attente",
+    ratio: 0,
     files_done: 0,
     files_total: null,
     error: null,
@@ -352,6 +355,7 @@ export async function startVideoJob(input: {
 /** État publié par la page de rendu (`window.__AQR_STATE`). */
 export type RenderPageState = {
   progress?: string;
+  ratio?: number;
   files_done?: number;
   files_total?: number;
 };
@@ -362,6 +366,7 @@ export function applyRenderState(job: VideoJob, state: RenderPageState): void {
   if (typeof state.files_total === "number")
     job.files_total = state.files_total;
   if (typeof state.files_done === "number") job.files_done = state.files_done;
+  if (typeof state.ratio === "number") job.ratio = state.ratio;
 }
 
 /**
@@ -483,6 +488,7 @@ async function renderInBrowser(
           return state
             ? {
                 progress: state.progress,
+                ratio: state.ratio,
                 files_done: state.files_done,
                 files_total: state.files_total,
               }

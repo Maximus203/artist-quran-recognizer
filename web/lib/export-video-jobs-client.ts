@@ -14,6 +14,8 @@ export type ServerJob = {
   state: ServerJobState;
   /** « Vidéo 2/5 : rendu 64 % » : lisible tel quel. */
   progress: string;
+  /** Avancement réel de la vidéo en cours, de 0 à 1. */
+  ratio: number;
   files_done: number;
   files_total: number | null;
   error: string | null;
