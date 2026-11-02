@@ -54,24 +54,28 @@ async function transcode(source: string, output: string): Promise<void> {
   await rename(tmp, output);
 }
 
-/**
- * Fichier vidéo à servir au navigateur de rendu : la source si elle est lisible, sinon la copie H.264
- * (fabriquée au premier besoin, puis réutilisée tant que la source n'a pas changé).
- */
-export async function browserVideoFile(
+/** Copie fabriquée et à jour pour cette source, ou `null` (rien à faire : la source est lisible, ou pas encore prête). */
+async function freshCopy(
   sessionId: string,
   source: string,
-): Promise<{ path: string; copied: boolean }> {
+): Promise<string | null> {
   const codec = await codecOf(source);
-  if (!needsBrowserCopy(codec)) return { path: source, copied: false };
-  const dir = path.join(sessionDir(sessionId), "listening");
-  const output = path.join(dir, COPY_NAME);
+  if (!needsBrowserCopy(codec)) return null;
+  const output = path.join(sessionDir(sessionId), "listening", COPY_NAME);
   const sourceTime = (await stat(source)).mtimeMs;
   const current = await stat(output).catch(() => null);
-  if (current && current.mtimeMs >= sourceTime)
-    return { path: output, copied: true };
+  return current && current.mtimeMs >= sourceTime ? output : null;
+}
+
+/**
+ * Lancer la fabrication de la copie sans attendre (la route vidéo ne doit jamais bloquer la page).
+ * Sans effet si la copie est déjà prête ou si la fabrication est en cours.
+ */
+function startCopy(sessionId: string, source: string): Promise<string> {
+  const output = path.join(sessionDir(sessionId), "listening", COPY_NAME);
   let job = pending.get(output);
   if (!job) {
+    const dir = path.dirname(output);
     job = (async () => {
       await mkdir(dir, { recursive: true });
       await rm(output, { force: true });
@@ -80,5 +84,36 @@ export async function browserVideoFile(
     })().finally(() => pending.delete(output));
     pending.set(output, job);
   }
-  return { path: await job, copied: true };
+  return job;
+}
+
+/**
+ * Fichier à servir maintenant : la source si elle est lisible, la copie si elle est prête, sinon `null`
+ * (la fabrication part en arrière-plan ; l'appelant répond « en préparation »).
+ */
+export async function readyBrowserFile(
+  sessionId: string,
+  source: string,
+): Promise<{ path: string; copied: boolean } | null> {
+  const codec = await codecOf(source);
+  if (!needsBrowserCopy(codec)) return { path: source, copied: false };
+  const copy = await freshCopy(sessionId, source);
+  if (copy) return { path: copy, copied: true };
+  startCopy(sessionId, source).catch(() => undefined);
+  return null;
+}
+
+/**
+ * Pour un export : attend la copie si la source n'est pas lisible (le rendu a besoin de l'image).
+ * Sans effet pour une source lisible.
+ */
+export async function prepareBrowserFile(
+  sessionId: string,
+  source: string,
+): Promise<string | null> {
+  const codec = await codecOf(source);
+  if (!needsBrowserCopy(codec)) return null;
+  return freshCopy(sessionId, source).then(
+    (copy) => copy ?? startCopy(sessionId, source),
+  );
 }

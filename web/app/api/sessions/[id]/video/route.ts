@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { isVideoContainer, videoMediaType } from "@/lib/listening";
 import { audioPath, readSession } from "@/lib/store";
-import { browserVideoFile } from "@/lib/video-browser-copy";
+import { readyBrowserFile } from "@/lib/video-browser-copy";
 import { safe } from "@/lib/http";
 import { parseByteRange } from "@/lib/byte-range";
 import { sessionAccess } from "@/lib/route-guard";
@@ -29,10 +29,19 @@ async function handleGET(
         { status: 404 },
       );
     // Copie H.264 si la source (HEVC des téléphones…) n'est pas lisible par le navigateur du serveur.
-    const source = await browserVideoFile(
+    const source = await readyBrowserFile(
       access.id,
       await audioPath(access.id),
     );
+    if (!source)
+      return NextResponse.json(
+        {
+          error:
+            "Vidéo en préparation pour le navigateur : elle sera disponible dans quelques minutes.",
+          code: "preparing",
+        },
+        { status: 503, headers: { "Retry-After": "120" } },
+      );
     const file = source.path;
     const size = (await stat(file)).size;
     // Les intervalles d'octets sont indispensables : sans eux le navigateur ne peut pas se
