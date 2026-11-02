@@ -364,6 +364,17 @@ export function applyRenderState(job: VideoJob, state: RenderPageState): void {
   if (typeof state.files_done === "number") job.files_done = state.files_done;
 }
 
+/**
+ * Adresse que le navigateur de rendu appelle : la boucle locale du serveur, jamais l'adresse publique.
+ * Derrière un proxy, l'URL d'une requête porte l'adresse d'écoute (0.0.0.0) et un protocole faux ;
+ * le rendu, lui, tourne dans le même conteneur. `AQR_RENDER_ORIGIN` la remplace si besoin.
+ */
+export function renderOrigin(
+  env: Record<string, string | undefined> = process.env,
+): string {
+  return env.AQR_RENDER_ORIGIN?.trim() || "http://127.0.0.1:3000";
+}
+
 /** Cookies d'un en-tête `Cookie` reçu, rattachés à l'origine de l'atelier (le rendu y est connecté). */
 export function cookiesOf(
   header: string,

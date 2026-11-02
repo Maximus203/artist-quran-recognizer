@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-02 — L'export vidéo fonctionne de nouveau sur le serveur
+Étiquettes : technique
+PR : #177
+
+**Ce qui change.** Un export vidéo lancé depuis l'atelier échouait en production (« ERR_SSL_PROTOCOL_ERROR » vers une adresse 0.0.0.0). Le rendu, qui tourne dans le même conteneur que le serveur, passe maintenant par la boucle locale.
+
+**Pourquoi / décision.** Derrière le proxy, l'adresse d'une requête porte l'adresse d'écoute et un faux protocole : l'origine du rendu ne doit jamais en venir. `AQR_RENDER_ORIGIN` permet de la changer si besoin.
+
 ## 2026-11-02 — L'administrateur voit toutes les sessions ; l'export vidéo continue sur le serveur
 Étiquettes : utilisateur, technique, décision
 PR : -
