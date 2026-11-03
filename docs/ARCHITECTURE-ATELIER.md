@@ -335,9 +335,12 @@ changement (`patch` accepte une fonction qui part des réglages les plus récent
 avancé), composées par `inspector-sections.tsx` : UNE à la fois dans la feuille du téléphone (`plateau-mobile.tsx`), TOUTES
 dans l'inspecteur du bureau (`desktop-editor.tsx`, vue unifiée dès 1024 px). `ExportEditor({ mode, …EditorProps })`
 (`export-editor.tsx`) choisit la vue ; le registre `editor-registry.tsx` porte une ligne par éditeur mobile (`plateau` ;
-`table` et `pas` retombent sur lui tant qu'ils n'existent pas) ; `EditorMode`, `EditorProps` et le contrat d'intégration sont
+`pas` ; `table` retombe sur le plateau tant qu'il n'existe pas) ; `EditorMode`, `EditorProps` et le contrat d'intégration sont
 dans `editor-types.ts`. Le fond vidéo occupe l'emplacement `frame.backgroundVideo` (`BackgroundVideoSection`, ADR-0019) ; la feuille « Fond » et le volet « Cadre » restent montés une fois ouverts, car la section arrête son envoi à son démontage. Styles : `web/app/export-editor.css`
 (composants `.xe-`).
+
+**Le pas à pas (ADR-0022 ; `step-editor.tsx`, `step-panes.tsx`, `use-step-progress.ts`, `lib/export-video-steps.ts`).** Trois étapes (Le cadre, Les textes, Exporter), éditeur du rôle récitateur : une seule chose à l'écran, pastilles pour revenir à tout moment, Précédent / Suivant de 52 px, encart « déjà prête, exporter maintenant » à l'ouverture, gros bouton Exporter à la fin. La logique (ordre, garde `moveTo`, coches, lecture tolérante de la progression, onglet ouvert) est pure et testée sans DOM ; la progression est mémorisée par récitation dans l'onglet (`sessionStorage`). L'aperçu (`EditableStage`) n'a son calque d'édition qu'à l'étape des textes ; l'étape du cadre reste montée (cachée) pour que l'envoi d'une vidéo de fond survive au changement d'étape. Les réglages sont les sections partagées de l'éditeur (contrôleur commun). Styles : `web/app/export-steps.css` (composants `.xp-`).
+
 **Le choix du format sur téléphone (ADR-0021).** Qui voit quel éditeur est décidé par UNE règle pure (`web/lib/export-editor-mode.ts` :
 `defaultEditorModeFor`, `shouldAskEditorMode`, `effectiveEditorMode`, `editorChoiceFor`, `canChooseEditorMode`, une table par rôle). Le
 choix est la préférence `editorMode` du compte (`plateau` · `table` · `pas` · `null` = jamais choisi). `ExportEditorGate` (devant

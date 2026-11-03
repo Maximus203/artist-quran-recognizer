@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Export vidéo : l'éditeur « Pas à pas » en trois étapes
+Étiquettes : utilisateur, technique, décision
+PR : #204
+
+**Ce qui change.** Sur téléphone, l'export vidéo peut maintenant se faire « pas à pas », en trois étapes qui n'en montrent chacune qu'une : « Le cadre » (le format, le fond, la vidéo de fond), « Les textes » (un onglet par élément : arabe, traduction, onde, verset ; taille avec − / +, fond du texte, flèches ; l'aperçu se manipule en même temps) et « Exporter » (un résumé court, les passages, les réglages avancés, un gros bouton). Dès l'ouverture, un encart dit « Déjà prête avec nos réglages conseillés » et propose « Exporter maintenant » : une belle vidéo en trois touchers sans rien régler. Précédent et Suivant sont larges, les pastilles en haut ramènent à n'importe quelle étape, et l'étape où l'on s'est arrêté est retrouvée si l'on quitte puis revient (dans le même onglet). Changer d'étape n'interrompt pas l'envoi d'une vidéo de fond. Le texte arabe n'est jamais modifiable (cadenas et phrase) et la traduction garde son attribution. C'est l'éditeur du rôle récitateur, qui y arrive directement sans aucune question ; un administrateur ou un testeur peut le choisir dans la fenêtre de première ouverture ou dans ses paramètres. Deux petits défauts sont corrigés au passage : la page d'export demandait au récitateur un aperçu des sous-titres qui lui est refusé (une erreur 403 invisible à chaque ouverture), et la fenêtre des passages avait des numéros et des noms de plage trop petits pour un doigt.
+
+**Pourquoi / décision.** Décision du mainteneur du 2026-11-03 (maquette « Le pas à pas », brief du chantier) : `docs/adr/0022-editeur-pas-a-pas.md`. La logique des étapes (ordre, garde de navigation, coches, progression mémorisée) est pure et testée sans navigateur ; les réglages sont ceux des sections partagées de l'éditeur. Vérifié au navigateur (tactile, 360, 390 et 430 px, thèmes sombre et clair, comptes administrateur et récitateur) : parcours des trois étapes, rechargement à l'étape retrouvée, envoi d'une vidéo de fond qui survit au changement d'étape, cibles de 44 px, console propre, et un vrai export dont l'image ressemble à l'aperçu (écart moyen de niveaux de gris : voir `.artist/acceptance-playbooks/export-editeur-pas-a-pas.md`). Limite : lecteur d'écran non testé avec NVDA ou VoiceOver.
+
 ## 2026-11-03 — Export vidéo : choisir le format de l'éditeur sur téléphone
 Étiquettes : utilisateur, technique, décision
 PR : #205

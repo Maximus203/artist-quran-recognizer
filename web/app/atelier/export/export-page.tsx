@@ -147,10 +147,12 @@ function ExportView({
     type,
   });
   const data: ReadinessPayload | null = ready.data;
+  // L'aperçu des sous-titres n'est demandé qu'à qui peut les voir : le serveur le refuse au récitateur (403), et
+  // l'onglet « Sous-titres » ne lui est pas montré.
   const preview = usePreview(
     sessionId,
     options,
-    data ? data.decisions_sha256 : null,
+    data && !recitant ? data.decisions_sha256 : null,
   );
   const canEdit = data?.session?.can_edit ?? false;
   const saved = useSavedVideos(sessionId);

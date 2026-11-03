@@ -10,12 +10,17 @@ import { useCallback, useEffect, useState } from "react";
 export const FIRST_HINT_KEY = "aqr.export-editor.hint.v1";
 export const FIRST_HINT_MS = 6000;
 
-export function useFirstHint(key: string = FIRST_HINT_KEY): {
+export function useFirstHint(
+  key: string = FIRST_HINT_KEY,
+  /** Faux : l'aide attend (le pas à pas ne la montre qu'en arrivant à l'étape des textes). */
+  enabled: boolean = true,
+): {
   show: boolean;
   dismiss: () => void;
 } {
   const [show, setShow] = useState(false);
   useEffect(() => {
+    if (!enabled) return;
     let timer: number | undefined;
     let seen = false;
     try {
@@ -29,7 +34,7 @@ export function useFirstHint(key: string = FIRST_HINT_KEY): {
       timer = window.setTimeout(() => setShow(false), FIRST_HINT_MS);
     }
     return () => window.clearTimeout(timer);
-  }, [key]);
+  }, [key, enabled]);
   const dismiss = useCallback(() => setShow(false), []);
   return { show, dismiss };
 }

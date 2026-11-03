@@ -427,6 +427,13 @@
     "summary": "Accepté le 2026-11-03 : l'aperçu garde la vraie fonction de dessin et reçoit un calque de zones transparentes partagé (toucher, glisser avec aimants, poignées de 44 px, pincement, clavier, annonces) ; gestes en machine à états sans DOM, brouillon pendant le geste, sections de réglages communes à la feuille du téléphone et à l'inspecteur du bureau, registre des éditeurs, un seul bouton Exporter."
   },
   {
+    "slug": "adr-0022-editeur-pas-a-pas",
+    "title": "ADR-0022 — L'éditeur « Pas à pas » de la vidéo d'export",
+    "section": "Décisions",
+    "file": "docs/adr/0022-editeur-pas-a-pas.md",
+    "summary": "Accepté le 2026-11-03 : trois étapes (le cadre, les textes, exporter) pour le récitateur, logique pure testée sans DOM (garde de navigation, progression mémorisée par récitation), aperçu verrouillé hors de l'étape des textes, étape du cadre gardée montée pour ne pas couper l'envoi d'une vidéo de fond, sections de réglages partagées avec le plateau et le bureau."
+  },
+  {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
     "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
     "section": "Décisions",
