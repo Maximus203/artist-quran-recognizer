@@ -25,15 +25,6 @@
 .pl-now b {
   font-size: 1.15rem;
 }
-.pl-seek {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: var(--sp-3);
-  align-items: center;
-}
-.pl-seek input {
-  width: 100%;
-}
 .pl-transport {
   display: flex;
   align-items: center;
@@ -74,19 +65,6 @@
 .pl-btn--main:hover {
   background: var(--text);
   opacity: 0.88;
-}
-.pl-mix {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-5);
-  justify-content: center;
-}
-.pl-mix label {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: 0.9rem;
-  color: var(--text-2);
 }
 .pl-list {
   margin: 0;
@@ -136,9 +114,6 @@
 @media (max-width: 767px) {
   .pl-card {
     padding: var(--sp-4);
-  }
-  .pl-seek {
-    grid-template-columns: auto 1fr auto;
   }
 }
 
@@ -197,42 +172,6 @@
   gap: var(--sp-2);
 }
 
-/* La traduction, tout en haut du lecteur : c'est ce que l'application met en avant */
-.pl-verse {
-  display: grid;
-  gap: var(--sp-3);
-  min-height: 11rem;
-  align-content: start;
-  padding: var(--sp-4) var(--sp-5);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.pl-verse--wait {
-  align-content: center;
-}
-.pl-arabic {
-  margin: 0;
-  text-align: center;
-}
-.pl-ref {
-  margin: 0;
-  text-align: center;
-  color: var(--text-muted, inherit);
-}
-.pl-verse .translation {
-  margin: 0;
-}
-.pl-verse-blank {
-  min-height: 8rem;
-}
-@media (max-width: 640px) {
-  .pl-verse {
-    padding: var(--sp-3);
-    min-height: 9rem;
-  }
-}
-
 /* Grand écran : le lecteur et la liste côte à côte, pour ne pas faire défiler la page jusqu'au bout de la liste */
 .pl-body {
   display: grid;
@@ -240,7 +179,7 @@
 }
 @media (min-width: 1000px) {
   .pl.page {
-    max-width: 1180px;
+    max-width: 1240px;
   }
   .pl-body {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
@@ -254,5 +193,64 @@
     top: var(--sp-4);
     max-height: calc(100vh - 7rem);
     overflow-y: auto;
+  }
+}
+
+/* Colonne du lecteur : la commande de la playlist, puis le passage actif et l'écoute de la source */
+.pl-main {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.pl-main .pl-card {
+  margin: 0;
+}
+
+/* Lecteur réduit, en bas de toute page connectée */
+.mini-player {
+  position: fixed;
+  left: 50%;
+  bottom: var(--sp-4);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: min(560px, calc(100vw - 2 * var(--gutter)));
+  padding: var(--sp-2) var(--sp-3);
+  transform: translateX(-50%);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  box-shadow: var(--shadow-pop);
+}
+.mini-player-play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--bg, #fff);
+  background: var(--text);
+  border-radius: 50%;
+}
+.mini-player-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.mini-player-time {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+@media (max-width: 480px) {
+  .mini-player-time {
+    display: none;
   }
 }

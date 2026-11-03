@@ -10,9 +10,9 @@ import type { Annotation } from "@/lib/review";
 import { isSessionId } from "@/lib/session-id";
 import { pageTitle } from "@/lib/session-list";
 import { canImport } from "@/lib/storage-meter";
-import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
-import { Console, SKIP_SECONDS, type ListeningState } from "./atelier/console";
-import { FontPicker, FONT_SAMPLE } from "./atelier/font-picker";
+import { ArabicFontTools } from "./atelier/arabic-font-tools";
+import { Console, SKIP_SECONDS } from "./atelier/console";
+import { useGlobalPlayer } from "./atelier/global-player";
 import { Header } from "./atelier/header";
 import {
   useFocusTrap,
@@ -28,7 +28,7 @@ import { SessionHead } from "./atelier/session-head";
 import { SessionsPanel } from "./atelier/sessions-panel";
 import { useShell } from "./atelier/shell";
 import type { TimelineHandle } from "./atelier/timeline";
-import { usePlayer } from "./atelier/use-player";
+import { usePeaks } from "./atelier/use-peaks";
 import { useReviewController, type ToastAction } from "./atelier/use-review";
 import {
   cancelSession,
@@ -42,7 +42,6 @@ import {
   type Visibility,
 } from "./atelier/use-sessions";
 
-type Peaks = { duration: number; peaks: number[] };
 type View = "revue" | "new";
 const TOAST_MS = 6000;
 const VIEWED_RETRY_MS = 4000;
@@ -60,7 +59,6 @@ export default function ReviewApp() {
   } = useShell();
   const ready = mounted;
   const wide = useMedia("(min-width: 1280px)");
-  const narrow = useMedia("(max-width: 767px)");
   const visible = usePageVisible();
   const sidebar = useSidebarSessions(prefs.sidebarRecent);
   const admin = user.role === "admin";
@@ -83,8 +81,6 @@ export default function ReviewApp() {
   } | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [runBusy, setRunBusy] = useState(false);
-  const [peaks, setPeaks] = useState<Peaks | null>(null);
-  const [listening, setListening] = useState<ListeningState>("pending");
   const [importNotice, setImportNotice] = useState("");
 
   const timelineRef = useRef<TimelineHandle>(null);
@@ -106,6 +102,10 @@ export default function ReviewApp() {
   const intervals = useMemo(() => detail?.result?.intervals ?? [], [detail]);
   const intervalsRef = useRef(intervals);
   intervalsRef.current = intervals;
+  /* ── forme d'onde : crêtes de la copie d'écoute, calculées par le serveur ── */
+  // Seulement une fois la session connue : une session absente ou privée n'a pas de forme d'onde.
+  const detailId = detail?.session.id ?? null;
+  const { peaks, listening } = usePeaks(detailId, setMessage);
   const selectedRef = useRef(selectedIndex);
   selectedRef.current = selectedIndex;
 
@@ -119,16 +119,27 @@ export default function ReviewApp() {
     toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
   }, []);
 
-  const player = usePlayer(currentId, {
-    onError: setMessage,
-    onPlay: () => setSelectedIndex(null),
-    rate: prefs.playbackRate,
-    volume: prefs.volume,
-    onRate: (playbackRate) => update({ playbackRate }),
-    onVolume: (volume) => update({ volume }),
-    echo: prefs.echo,
-    onEcho: (echo) => update({ echo }),
+  // Le lecteur vit dans la coque des pages : la lecture continue quand on change de page.
+  const {
+    player,
+    audioId,
+    hooks: playerHooks,
+    loadSingle,
+    registerFullUi,
+    rememberLabel,
+  } = useGlobalPlayer();
+  useEffect(() => {
+    playerHooks.current = {
+      onPlay: () => setSelectedIndex(null),
+      onError: setMessage,
+    };
+    return () => {
+      playerHooks.current = {};
+    };
   });
+  useEffect(() => {
+    if (currentId) loadSingle(currentId);
+  }, [currentId, loadSingle]);
   const playerDuration = useStoreValue(player.store, (s) => s.duration);
   const duration =
     playerDuration || peaks?.duration || detail?.result?.source.duration_s || 0;
@@ -137,6 +148,11 @@ export default function ReviewApp() {
   const showingNew = view === "new" || currentId === null;
   // La revue humaine (signalements) est réservée aux testeurs et administrateurs.
   const rightAvailable = !showingNew && !recitant;
+  // Les commandes du lecteur sont ici : le mini lecteur de la coque s'efface.
+  useEffect(() => {
+    if (showingNew) return;
+    return registerFullUi();
+  }, [showingNew, registerFullUi]);
   const leftOpen = wide ? prefs.leftPanelOpen !== false : drawer === "left";
   const rightOpen =
     rightAvailable &&
@@ -192,8 +208,11 @@ export default function ReviewApp() {
   }, [currentId, showNew]);
 
   useEffect(() => {
-    const id = new URLSearchParams(location.search).get("session");
+    const params = new URLSearchParams(location.search);
+    const id = params.get("session");
     if (isSessionId(id)) open(id);
+    // Un audio est déjà chargé (lu depuis une autre page) : « Lecture » le retrouve, sauf « Nouvel essai ».
+    else if (audioId && params.get("vue") !== "new") open(audioId);
     // une seule fois, au montage
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -214,34 +233,9 @@ export default function ReviewApp() {
       .catch(() => viewedSent.current.delete(currentId));
   }, [currentId, currentView?.unread, detail, visible, patch, sidebar]);
 
-  /* ── forme d'onde : crêtes de la copie d'écoute, calculées par le serveur ── */
-  // Seulement une fois la session connue : une session absente ou privée n'a pas de forme d'onde.
-  const detailId = detail?.session.id ?? null;
   useEffect(() => {
-    if (!detailId) return;
-    let cancelled = false;
-    setPeaks(null);
-    setListening("pending");
-    // `no-cache` : le navigateur revalide (ETag) et réutilise ses crêtes si l'audio n'a pas changé.
-    fetch(`/api/sessions/${detailId}/peaks`, { cache: "no-cache" })
-      .then(async (r) => {
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error);
-        if (cancelled) return;
-        setPeaks({ duration: data.duration, peaks: data.peaks });
-        setListening("ready");
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setListening("fallback");
-        setMessage(
-          `${e instanceof Error ? e.message : "Copie d’écoute indisponible"}. Lecture du fichier original : le positionnement peut y être décalé de plusieurs secondes.`,
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [detailId]);
+    if (currentView) rememberLabel(currentView.id, currentView.name);
+  }, [currentView, rememberLabel]);
 
   /* ── revue humaine : l'auteur est le compte connecté ── */
   const targetAt = useCallback((time: number) => {
@@ -598,29 +592,7 @@ export default function ReviewApp() {
     document.title = pageTitle(unread);
   }, [unread]);
 
-  /* ── police arabe ── */
-  const defaultSize = narrow ? 32 : QURAN_SIZE.fallback;
-  const appliedSize = clampQuranSize(prefs.arabicSize ?? defaultSize);
-  const sample = useMemo(() => {
-    const first = intervals.find(
-      (i) => i.kind === "verse" && typeof i.text === "string" && i.text,
-    );
-    return first && first.kind === "verse" && first.text
-      ? first.text.split(/\s+/).slice(0, 5).join(" ")
-      : FONT_SAMPLE;
-  }, [intervals]);
-  const fontTools = (
-    <FontPicker
-      font={font}
-      availability={fontAvailability}
-      size={prefs.arabicSize}
-      appliedSize={appliedSize}
-      sample={sample}
-      onFont={(id) => update({ arabicFont: id })}
-      onSize={(px) => update({ arabicSize: clampQuranSize(px) })}
-      onReset={() => update({ arabicFont: null, arabicSize: null })}
-    />
-  );
+  const fontTools = <ArabicFontTools intervals={intervals} />;
 
   const attention = unread + sidebar.queue.filter((s) => s.mine).length;
   const showRightPanel = rightAvailable;
@@ -899,19 +871,6 @@ export default function ReviewApp() {
         </aside>
       </div>
       <div className="scrim" onClick={closeDrawer} aria-hidden="true" />
-      {detail ? (
-        <audio
-          key={detail.session.id}
-          ref={player.attach}
-          src={`/api/sessions/${detail.session.id}/audio`}
-          preload="metadata"
-          aria-label="Lecteur audio"
-          style={{ display: "none" }}
-          onError={() =>
-            setMessage("Lecture impossible pour cet audio dans ce navigateur.")
-          }
-        />
-      ) : null}
       {toast ? (
         <div className="toast" role="status" data-testid="toast">
           <span>{toast.text}</span>
