@@ -96,7 +96,7 @@ export function SessionsPage({ search }: { search: string }) {
   /* ── annonce des résultats ── */
   useEffect(() => {
     if (feed.status === "ready")
-      say(`${plural(feed.total, "session", "sessions")}`);
+      say(`${plural(feed.total, "récitation", "récitations")}`);
   }, [feed.status, feed.total, say]);
 
   /* ── « Charger plus » : le focus passe à la première ligne nouvelle ── */
@@ -111,7 +111,7 @@ export function SessionsPage({ search }: { search: string }) {
       );
       link?.focus();
       say(
-        `${plural(feed.items.length, "session affichée", "sessions affichées")}`,
+        `${plural(feed.items.length, "récitation affichée", "récitations affichées")}`,
       );
       focusAfter.current = null;
     }
@@ -201,8 +201,8 @@ export function SessionsPage({ search }: { search: string }) {
         setSelected(new Set());
         show(
           on
-            ? `${plural(applied.length, "session ajoutée", "sessions ajoutées")} aux favoris`
-            : `${plural(applied.length, "session retirée", "sessions retirées")} des favoris`,
+            ? `${plural(applied.length, "récitation ajoutée", "récitations ajoutées")} aux favoris`
+            : `${plural(applied.length, "récitation retirée", "récitations retirées")} des favoris`,
         );
       } catch (e) {
         fail(e);
@@ -220,13 +220,13 @@ export function SessionsPage({ search }: { search: string }) {
         feed.removeItems(applied);
         setSelected(new Set());
         if (applied.length === 0 && forbidden > 0)
-          return show("Tu ne peux pas modifier ces sessions.");
+          return show("Tu ne peux pas modifier ces récitations.");
         show(
           archived
-            ? `${plural(applied.length, "session archivée", "sessions archivées")}`
+            ? `${plural(applied.length, "récitation archivée", "récitations archivées")}`
             : applied.length > 1
               ? `${applied.length} sessions restaurées`
-              : "Session restaurée",
+              : "Récitation restaurée",
           {
             label: "Annuler",
             run: () =>
@@ -259,13 +259,13 @@ export function SessionsPage({ search }: { search: string }) {
         if (applied.length === 0)
           return show(
             forbidden
-              ? "Seul le propriétaire change la portée d’une session."
+              ? "Seul le propriétaire change la portée d’une récitation."
               : "Rien à modifier.",
           );
         show(
           visibility === "global"
-            ? `${plural(applied.length, "session rendue globale", "sessions rendues globales")}`
-            : `${plural(applied.length, "session rendue privée", "sessions rendues privées")}`,
+            ? `${plural(applied.length, "récitation rendue globale", "récitations rendues globales")}`
+            : `${plural(applied.length, "récitation rendue privée", "récitations rendues privées")}`,
           {
             label: "Annuler",
             run: () => {
@@ -323,8 +323,12 @@ export function SessionsPage({ search }: { search: string }) {
       void refreshQuota();
       show(
         blocked
-          ? `${plural(done.length, "session supprimée", "sessions supprimées")} · ${plural(blocked, "contient", "contiennent")} du travail de revue : ouvre-${blocked > 1 ? "les" : "la"} pour la supprimer en connaissance de cause.`
-          : plural(done.length, "session supprimée", "sessions supprimées"),
+          ? `${plural(done.length, "récitation supprimée", "récitations supprimées")} · ${plural(blocked, "contient", "contiennent")} du travail de revue : ouvre-${blocked > 1 ? "les" : "la"} pour la supprimer en connaissance de cause.`
+          : plural(
+              done.length,
+              "récitation supprimée",
+              "récitations supprimées",
+            ),
       );
     },
     [feed, refreshQuota, show, fail],
@@ -336,7 +340,7 @@ export function SessionsPage({ search }: { search: string }) {
     onVisibility: (s, v) => void setVisibility([s.id], v),
     onArchive: (s, archived) => void archive([s.id], archived),
     onDelete: (s) => void remove([s]),
-    onAddToPlaylist: recitant ? undefined : (s) => setPlaylistFor([s.id]),
+    onAddToPlaylist: (s) => setPlaylistFor([s.id]),
   };
 
   /* ── rendu ── */
@@ -380,10 +384,10 @@ export function SessionsPage({ search }: { search: string }) {
     <div className="page" data-testid="sessions-page">
       <div className="pg-title">
         <div>
-          <h1>Sessions</h1>
+          <h1>Récitations</h1>
           <p aria-live="polite" data-testid="summary">
             {summary
-              ? `${plural(summary.scopes.all, "session", "sessions")} · ${summary.scopes.mine} à toi · ${formatBytesFr(quota.used_bytes)} utilisés`
+              ? `${plural(summary.scopes.all, "récitation", "récitations")} · ${summary.scopes.mine} à toi · ${formatBytesFr(quota.used_bytes)} utilisés`
               : "Chargement…"}
           </p>
         </div>
@@ -413,7 +417,7 @@ export function SessionsPage({ search }: { search: string }) {
               {archivedScope ? ` archivée${feed.total > 1 ? "s" : ""}` : ""}
             </>
           ) : feed.status === "loading" ? (
-            "Chargement des sessions…"
+            "Chargement des récitations…"
           ) : (
             ""
           )}
@@ -441,10 +445,10 @@ export function SessionsPage({ search }: { search: string }) {
         <div className="form-alert has-error-banner" role="alert">
           <Icon name="alert" />
           <div>
-            <b>Impossible de charger les sessions.</b>
+            <b>Impossible de charger les récitations.</b>
             <br />
             <span>
-              Le serveur ne répond pas pour l’instant. Tes sessions n’ont pas
+              Le serveur ne répond pas pour l’instant. Tes récitations n’ont pas
               disparu.
             </span>
             <div className="btnrow" style={{ marginTop: 8 }}>
@@ -463,7 +467,7 @@ export function SessionsPage({ search }: { search: string }) {
       <section
         ref={listRef}
         className="card list-card"
-        aria-label="Liste des sessions"
+        aria-label="Liste des récitations"
         aria-busy={feed.status === "loading"}
         data-select={selectMode}
         data-testid="session-list"
@@ -601,7 +605,7 @@ export function SessionsPage({ search }: { search: string }) {
         ) : noSessionAtAll ? (
           <div className="state-box" data-testid="no-session">
             <HeroWave />
-            <h2>Aucune session pour l’instant</h2>
+            <h2>Aucune récitation pour l’instant</h2>
             <p>
               Enregistre un passage au micro ou importe un audio ou une vidéo :
               l’analyse démarre toute seule et le résultat apparaît ici.
@@ -616,14 +620,16 @@ export function SessionsPage({ search }: { search: string }) {
         ) : (
           <div className="state-box" data-testid="no-result">
             <Icon name="search" className="big" />
-            <h2>Aucune session ne correspond</h2>
+            <h2>Aucune récitation ne correspond</h2>
             <p>
               {archivedScope
                 ? "Rien dans les archives pour l’instant."
                 : "Essaie un autre mot, élargis la période ou retire un filtre."}
             </p>
             {archiveHint ? (
-              <p>Une session correspondante est peut-être dans les archives.</p>
+              <p>
+                Une récitation correspondante est peut-être dans les archives.
+              </p>
             ) : null}
             {activeFilterCount(filter) > 0 ? (
               <div className="acts">
@@ -682,9 +688,7 @@ export function SessionsPage({ search }: { search: string }) {
           archivedScope={archivedScope}
           canDelete={deletable}
           onFavorite={() => void bulkFavorite(!allFavorite)}
-          onAddToPlaylist={
-            recitant ? undefined : () => setPlaylistFor([...selected])
-          }
+          onAddToPlaylist={() => setPlaylistFor([...selected])}
           onArchive={() => void archive([...selected], !archivedScope)}
           onVisibility={(v) => void setVisibility([...selected], v)}
           onDelete={() => void remove(chosen)}

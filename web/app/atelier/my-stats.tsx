@@ -149,7 +149,7 @@ export function MyStats() {
             href="/sessions?portee=mine"
           >
             <Icon name="list" />
-            Voir mes sessions
+            Voir mes récitations
           </Link>
         </div>
         {limit ? (
@@ -211,8 +211,8 @@ export function MyStats() {
                   <b>Quota atteint : les nouveaux imports sont bloqués.</b>
                   <br />
                   <span>
-                    Supprime des sessions archivées pour libérer de la place, ou
-                    demande à l’administrateur d’augmenter ton quota.
+                    Supprime des récitations archivées pour libérer de la place,
+                    ou demande à l’administrateur d’augmenter ton quota.
                   </span>
                 </>
               )}
@@ -234,7 +234,7 @@ export function MyStats() {
           </div>
         ) : (
           <p className="hint">
-            Les sessions archivées comptent aussi. Seule la suppression
+            Les récitations archivées comptent aussi. Seule la suppression
             définitive libère de l’espace.
           </p>
         )}
@@ -246,7 +246,7 @@ export function MyStats() {
             <h2>Ce qui prend le plus de place</h2>
           </div>
           {biggest.length === 0 ? (
-            <p className="hint">Aucune session pour l’instant.</p>
+            <p className="hint">Aucune récitation pour l’instant.</p>
           ) : (
             biggest.map((s) => (
               <div className="qrow" key={s.id}>

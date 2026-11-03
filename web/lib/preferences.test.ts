@@ -38,6 +38,7 @@ describe("préférences : défauts centralisés", () => {
         "visibleSpanSeconds",
         "followPlayback",
         "leftPanelOpen",
+        "sidebarRecent",
         "rightPanelOpen",
         "sessionsFilter",
         "playbackRate",

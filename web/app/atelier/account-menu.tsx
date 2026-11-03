@@ -18,8 +18,8 @@ const THEMES = [
 ] as const;
 
 const GO_TO: { id: PageId; href: string; label: string; icon: IconName }[] = [
-  { id: "revue", href: "/", label: "Revue", icon: "wave" },
-  { id: "sessions", href: "/sessions", label: "Sessions", icon: "list" },
+  { id: "revue", href: "/", label: "Lecture", icon: "wave" },
+  { id: "sessions", href: "/sessions", label: "Récitations", icon: "list" },
   {
     id: "playlists",
     href: "/playlists",

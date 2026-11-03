@@ -5,11 +5,9 @@ import type { ApiSession } from "@/lib/api-types";
 import { buildRow, queueSummary, type SessionRow } from "@/lib/session-list";
 import { Avatar, useOwnerPerson } from "./avatar";
 import { Icon, SessionGlyph } from "./icons";
-import {
-  SIDEBAR_FAVORITES,
-  SIDEBAR_RECENT,
-  type Sidebar,
-} from "./use-sessions";
+import { SIDEBAR_RECENT_COUNTS } from "@/lib/preferences-schema";
+import { useShell } from "./shell";
+import { SIDEBAR_FAVORITES, type Sidebar } from "./use-sessions";
 
 type Props = {
   data: Sidebar;
@@ -118,7 +116,7 @@ function Row({
 
 /**
  * Barre de gauche : elle raccourcit, elle ne liste plus. La file d'analyse, quelques favoris
- * épinglés, les huit plus récentes, puis un bouton vers la page « Sessions » (la liste complète).
+ * épinglés, les plus récentes (5 à 30, au choix), puis un bouton vers la page « Sessions » (la liste complète).
  */
 export function SessionsPanel({
   data,
@@ -129,6 +127,7 @@ export function SessionsPanel({
   onClose,
 }: Props) {
   const now = Date.now();
+  const { prefs, update } = useShell();
   const mineQueue = useMemo(
     () => data.queue.filter((s) => s.mine),
     [data.queue],
@@ -156,7 +155,7 @@ export function SessionsPanel({
   return (
     <div className="panel-in">
       <div className="panel-head">
-        <h2>Sessions</h2>
+        <h2>Récitations</h2>
         <button
           type="button"
           className="btn btn--ghost btn--icon btn--sm"
@@ -169,7 +168,7 @@ export function SessionsPanel({
         <button
           type="button"
           className="btn btn--ghost btn--icon btn--sm drawer-close only-drawer"
-          aria-label="Fermer la liste des sessions"
+          aria-label="Fermer la liste des récitations"
           onClick={onClose}
         >
           <Icon name="x" />
@@ -189,7 +188,7 @@ export function SessionsPanel({
         <p className="sess-empty">Chargement…</p>
       ) : empty ? (
         <p className="sess-empty">
-          Aucune session. Dépose un audio ou une vidéo, ou enregistre une
+          Aucune récitation. Dépose un audio ou une vidéo, ou enregistre une
           récitation.
         </p>
       ) : (
@@ -241,9 +240,31 @@ export function SessionsPanel({
                   Récentes
                 </span>
                 <span className="more-n">
-                  {Math.min(SIDEBAR_RECENT, data.recent.length)} sur {total}
+                  {data.recent.length} sur {total}
                 </span>
               </h3>
+              <label className="sb-count">
+                Afficher
+                <select
+                  className="input"
+                  data-testid="sidebar-count"
+                  aria-label="Nombre de récitations récentes affichées"
+                  value={prefs.sidebarRecent}
+                  onChange={(event) =>
+                    update({
+                      sidebarRecent: Number(
+                        event.target.value,
+                      ) as (typeof SIDEBAR_RECENT_COUNTS)[number],
+                    })
+                  }
+                >
+                  {SIDEBAR_RECENT_COUNTS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <ul data-testid="list-recent">{render(data.recent)}</ul>
             </section>
           ) : null}
@@ -255,7 +276,7 @@ export function SessionsPanel({
           href="/sessions"
           data-testid="see-all"
         >
-          Voir toutes les sessions <span className="n">{total}</span>
+          Voir toutes les récitations <span className="n">{total}</span>
         </Link>
       </div>
       <nav className="panel-nav only-drawer" aria-label="Autres pages">

@@ -265,7 +265,7 @@ export function PreferencesPane() {
         <Setting
           id="lab-offset"
           label="Décalage audio"
-          help="Si le mot surligné devance la voix (écouteurs Bluetooth : 100 à 300 ms), retarde le surlignage. Seul l’affichage change, jamais l’audio. Pour caler à l’oreille, ouvre une session et utilise « Caler à l’oreille » sous le passage."
+          help="Si le mot surligné devance la voix (écouteurs Bluetooth : 100 à 300 ms), retarde le surlignage. Seul l’affichage change, jamais l’audio. Pour caler à l’oreille, ouvre une récitation et utilise « Caler à l’oreille » sous le passage."
         >
           <div className="slider-line">
             <input
@@ -455,11 +455,11 @@ export function PreferencesPane() {
         </header>
         <Setting
           id="lab-left"
-          label="Panneau Sessions ouvert"
-          help="La colonne de gauche : favoris et sessions récentes. Sur téléphone, c’est un tiroir et il reste fermé."
+          label="Panneau Récitations ouvert"
+          help="La colonne de gauche : favoris et récitations récentes. Sur téléphone, c’est un tiroir et il reste fermé."
         >
           <Switch
-            label="Panneau Sessions ouvert au démarrage"
+            label="Panneau Récitations ouvert au démarrage"
             testId="pref-left"
             yes="Ouvert"
             no="Fermé"

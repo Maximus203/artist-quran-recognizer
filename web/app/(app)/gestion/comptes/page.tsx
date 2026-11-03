@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function AdminUsersPage() {
   await requirePageAdmin("/gestion/comptes");
   return (
-    <PageFrame active="account">
+    <PageFrame active="admin" activeAdmin="admin-comptes">
       <AdminFrame tab="comptes">
         <UsersPane />
       </AdminFrame>

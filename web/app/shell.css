@@ -323,7 +323,7 @@
     padding-bottom: var(--sp-12);
   }
 }
-/* Bureau : titre, console, passage. Mobile : titre, passage, console (la lecture d'abord). */
+/* Titre, passage actif, puis l'écoute de la source (onde) : le verset d'abord, l'onde juste dessous. */
 .o-head {
   order: 0;
 }
@@ -341,14 +341,6 @@
 }
 .o-foot {
   order: 5;
-}
-@media (min-width: 768px) {
-  .o-console {
-    order: 1;
-  }
-  .o-passage {
-    order: 2;
-  }
 }
 @media (max-width: 767px) {
   .stack {
@@ -410,4 +402,60 @@
   overflow-x: auto;
   font: 400 var(--fs-xs) / 1.5 var(--font-mono);
   color: var(--text-2);
+}
+
+/* Barre de gauche : combien de récitations récentes afficher */
+.sb-count {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 var(--sp-4) var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.sb-count select {
+  width: auto;
+  min-height: 0;
+  padding: 2px var(--sp-2);
+}
+
+/* Groupes de la barre du haut (Récitations, Administration) : un bouton qui déplie ses pages */
+.nav-group {
+  position: relative;
+  display: inline-flex;
+}
+.nav-group > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-group > button svg.i {
+  transition: transform 0.15s;
+}
+.nav-group > button[aria-expanded="true"] svg.i {
+  transform: rotate(180deg);
+}
+.nav-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  display: grid;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+}
+.nav .nav-pop a {
+  justify-content: flex-start;
+  padding: 0 var(--sp-3);
+  white-space: nowrap;
+}
+.nav .nav-pop a[aria-current="page"] {
+  background: var(--surface-3);
+}
+.nav .nav-pop a[aria-current="page"]::after {
+  display: none;
 }

@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Lecture et récitations pour tous, menus déroulants
+Étiquettes : utilisateur, technique
+PR : #195
+
+**Ce qui change.** « Revue » devient « Lecture » et « Sessions » devient « Récitations » dans toute l'interface. Le récitateur a désormais la lecture complète (écoute de la source, onde, retour en arrière, passage actif, intervalles, renommer, archiver, exporter) et ses playlists ; après un enregistrement il reste sur la lecture au lieu d'être renvoyé vers l'export vidéo. Il n'a ni revue humaine, ni marquage, ni piste « Revue » sur l'onde. Le testeur garde tout cela en plus. Le passage actif passe au-dessus de l'écoute de la source ; la tuile « Intervalles » se replie. La barre de gauche affiche 5, 8, 10, 15, 20 ou 30 récitations récentes, au choix. La barre du haut range les pages en menus déroulants : « Récitations » (liste et playlists) et « Administration » (Moteur, Comptes, Invitations, pour l'administrateur).
+
+**Pourquoi / décision.** Décision du mainteneur : le récitateur doit pouvoir réécouter et se placer dans l'audio, pas seulement exporter ; les règles de sécurité du serveur ne changent pas (le récitateur n'a toujours pas la revue ni les sous-titres, `web/lib/access.ts`). Le direct reste masqué pour le récitateur tant qu'il n'est pas optimal.
+
 ## 2026-11-03 — L'écriture arabe se retire de la vidéo exportée
 Étiquettes : utilisateur, technique
 PR : #194

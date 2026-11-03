@@ -341,7 +341,7 @@ export default function Recorder({
         </p>
       )}
       <p className="hint hint--faint">
-        L’audio est conservé dans une session privée après analyse.
+        L’audio est conservé dans une récitation privée après analyse.
       </p>
     </section>
   );

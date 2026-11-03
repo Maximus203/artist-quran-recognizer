@@ -135,7 +135,7 @@ export function NewTrial(props: Props) {
           {space.state !== "ok" ? (
             <p className="notice notice--error" role="alert">
               {space.state === "full"
-                ? "Quota atteint : les nouveaux imports sont bloqués. Supprime des sessions archivées pour libérer de la place."
+                ? "Quota atteint : les nouveaux imports sont bloqués. Supprime des récitations archivées pour libérer de la place."
                 : "Espace presque plein : archive puis supprime les gros fichiers dont tu n’as plus besoin."}
             </p>
           ) : null}

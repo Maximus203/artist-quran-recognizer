@@ -53,7 +53,7 @@ export default function ValidationPanel({
       .then(async (r) =>
         r.ok ? setValidation((await r.json()).validation) : null,
       )
-      .catch(() => setError("Validation illisible pour cette session."));
+      .catch(() => setError("Validation illisible pour cette récitation."));
   }, [sessionId]);
 
   const act = useCallback(

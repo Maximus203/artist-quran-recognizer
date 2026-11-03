@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 import { useEffectiveTheme } from "./hooks";
 import { Icon } from "./icons";
 import { AccountMenu } from "./account-menu";
+import { NavMenu } from "./nav-menu";
 import { pageVisibleTo, type PageId } from "@/lib/role-view";
 import { useShell } from "./shell";
 
@@ -14,6 +15,7 @@ export type NavId =
   | "perf"
   | "live"
   | "docs"
+  | "admin"
   | "account";
 
 type PanelToggle = {
@@ -33,19 +35,44 @@ type Props = {
   onRevue?: () => void;
   /** « Nouvel essai » : un geste sur l'atelier, un lien ailleurs. */
   onNew?: () => void;
+  /** Pages d'administration : l'onglet courant (moteur, comptes, invitations). */
+  activeAdmin?: string;
 };
 
-const NAV: { id: PageId; href: string; label: string }[] = [
-  { id: "revue", href: "/", label: "Revue" },
-  { id: "sessions", href: "/sessions", label: "Sessions" },
-  { id: "playlists", href: "/playlists", label: "Playlists" },
-  { id: "perf", href: "/performance", label: "Performance" },
-  { id: "live", href: "/direct", label: "En direct" },
-  { id: "docs", href: "/docs", label: "Documentation" },
-];
+const LINKS: Record<PageId, { href: string; label: string }> = {
+  revue: { href: "/", label: "Lecture" },
+  sessions: { href: "/sessions", label: "Récitations" },
+  playlists: { href: "/playlists", label: "Playlists" },
+  perf: { href: "/performance", label: "Performance" },
+  live: { href: "/direct", label: "En direct" },
+  docs: { href: "/docs", label: "Documentation" },
+};
+
+/** Les pages qui se rangent sous « Récitations » : la liste, puis les playlists. */
+const LIBRARY: PageId[] = ["sessions", "playlists"];
+/** Le reste, à plat, dans l'ordre de la barre. */
+const FLAT_AFTER: PageId[] = ["perf", "live", "docs"];
+
+/** Administration : réservée à l'administrateur. */
+const ADMIN_ITEMS = [
+  { id: "admin-moteur", href: "/gestion/moteur", label: "Moteur" },
+  { id: "admin-comptes", href: "/gestion/comptes", label: "Comptes" },
+  {
+    id: "admin-invitations",
+    href: "/gestion/invitations",
+    label: "Invitations",
+  },
+] as const;
 
 /** Barre du haut commune à toutes les pages connectées. */
-export function Header({ active, left, right, onRevue, onNew }: Props) {
+export function Header({
+  active,
+  left,
+  right,
+  onRevue,
+  onNew,
+  activeAdmin,
+}: Props) {
   const { prefs, update, user } = useShell();
   const dark = useEffectiveTheme(prefs.theme) === "dark";
   return (
@@ -61,7 +88,7 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
           aria-label={
             left.attention > 0
               ? `Sessions, ${left.attention} à voir`
-              : "Sessions"
+              : "Récitations"
           }
           onClick={left.onToggle}
         >
@@ -96,25 +123,52 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
         </b>
       </Link>
       <nav className="nav" aria-label="Pages">
-        {NAV.filter((item) => pageVisibleTo(user.role, item.id)).map((item) => (
+        {pageVisibleTo(user.role, "revue") ? (
           <Link
-            key={item.id}
-            href={item.href}
-            data-testid={`nav-${item.id}`}
-            aria-current={active === item.id ? "page" : undefined}
+            href={LINKS.revue.href}
+            data-testid="nav-revue"
+            aria-current={active === "revue" ? "page" : undefined}
             onClick={(event) => {
-              if (item.id === "revue" && onRevue) {
+              if (onRevue) {
                 event.preventDefault();
                 onRevue();
               }
             }}
           >
-            {item.id === "live" ? (
+            {LINKS.revue.label}
+          </Link>
+        ) : null}
+        <NavMenu
+          id="library"
+          label="Récitations"
+          active={active}
+          items={LIBRARY.filter((id) => pageVisibleTo(user.role, id)).map(
+            (id) => ({ id, ...LINKS[id] }),
+          )}
+        />
+        {FLAT_AFTER.filter((id) => pageVisibleTo(user.role, id)).map((id) => (
+          <Link
+            key={id}
+            href={LINKS[id].href}
+            data-testid={`nav-${id}`}
+            aria-current={active === id ? "page" : undefined}
+          >
+            {id === "live" ? (
               <span className="livedot" aria-hidden="true" />
             ) : null}
-            {item.label}
+            {LINKS[id].label}
           </Link>
         ))}
+        {user.role === "admin" ? (
+          <NavMenu
+            id="admin"
+            label="Administration"
+            active={
+              active === "admin" ? (activeAdmin ?? "admin-moteur") : active
+            }
+            items={ADMIN_ITEMS}
+          />
+        ) : null}
       </nav>
       <span className="spacer" />
       {pageVisibleTo(user.role, "live") ? (

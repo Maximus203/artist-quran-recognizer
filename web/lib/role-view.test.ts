@@ -8,14 +8,15 @@ import {
 } from "./role-view";
 
 /**
- * Ce que voit chaque rôle. Le récitateur enregistre et exporte sa vidéo : rien d'autre dans l'interface.
+ * Ce que voit chaque rôle. Le récitateur enregistre, relit, range en playlists et exporte sa vidéo : pas de tests, de revue humaine, de performances ni de direct.
  * Les règles de SÉCURITÉ restent dans `access.ts` ; ici, seulement ce qui s'affiche et où l'on atterrit.
  */
 describe("interface par rôle", () => {
-  it("le récitateur n'a que la page Sessions dans la navigation", () => {
-    for (const page of ["revue", "perf", "live", "docs", "playlists"] as const)
+  it("le récitateur a la lecture, ses récitations et ses playlists, rien d'autre", () => {
+    for (const page of ["perf", "live", "docs"] as const)
       expect(pageVisibleTo("recitant", page)).toBe(false);
-    expect(pageVisibleTo("recitant", "sessions")).toBe(true);
+    for (const page of ["revue", "sessions", "playlists"] as const)
+      expect(pageVisibleTo("recitant", page)).toBe(true);
   });
 
   it("testeur et administrateur gardent toute la navigation", () => {
@@ -31,15 +32,14 @@ describe("interface par rôle", () => {
         expect(pageVisibleTo(role, page)).toBe(true);
   });
 
-  it("le récitateur atterrit sur ses sessions, les autres sur la revue", () => {
-    expect(landingFor("recitant")).toBe("/sessions");
-    expect(landingFor("user")).toBe("/");
-    expect(landingFor("admin")).toBe("/");
+  it("tous les rôles atterrissent sur la lecture", () => {
+    for (const role of ["recitant", "user", "admin"] as const)
+      expect(landingFor(role)).toBe("/");
   });
 
-  it("une session s'ouvre sur l'export vidéo pour le récitateur, sur la revue pour les autres", () => {
-    expect(sessionHref("recitant", "abc")).toBe("/s/abc/exporter");
-    expect(sessionHref("user", "abc")).toBe("/?session=abc");
+  it("une récitation s'ouvre sur la lecture, quel que soit le rôle", () => {
+    for (const role of ["recitant", "user", "admin"] as const)
+      expect(sessionHref(role, "abc")).toBe("/?session=abc");
   });
 
   it("le récitateur ne relit ni ne corrige, et ne voit pas les sous-titres", () => {

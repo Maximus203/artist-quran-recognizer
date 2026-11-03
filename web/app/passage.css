@@ -211,7 +211,7 @@
 }
 /* Carte vide (rien de détecté) : même hauteur qu'un passage court, pour ne pas faire sauter la page. */
 .p-empty.p-blank {
-  min-height: 9rem;
+  min-height: 5rem;
   padding: 0;
 }
 .p-empty .ar-label {

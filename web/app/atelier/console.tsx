@@ -44,7 +44,8 @@ function Transport({
 }: {
   player: Player;
   duration: number;
-  onDockMark: () => void;
+  /** Absent : pas de bouton de signalement (récitateur). */
+  onDockMark?: () => void;
   dockLabel: string;
 }) {
   const time = useClock(player.store);
@@ -98,15 +99,17 @@ function Transport({
       >
         <Icon name="seek-fwd" className="five" />
       </button>
-      <button
-        type="button"
-        className="seek mark-dock"
-        data-testid="dock-mark"
-        aria-label={dockLabel}
-        onClick={onDockMark}
-      >
-        <Icon name="flag" />
-      </button>
+      {onDockMark ? (
+        <button
+          type="button"
+          className="seek mark-dock"
+          data-testid="dock-mark"
+          aria-label={dockLabel}
+          onClick={onDockMark}
+        >
+          <Icon name="flag" />
+        </button>
+      ) : null}
       <label className="speed">
         <span className="sr">Vitesse de lecture</span>
         <select
@@ -133,6 +136,8 @@ const LEGEND: { label: string; style: string }[] = [
   { label: "Abstention", style: "s-abstention" },
 ];
 
+const NO_ANNOTATIONS: ReviewController["visible"] = [];
+
 type Props = {
   player: Player;
   duration: number;
@@ -149,12 +154,15 @@ type Props = {
   /** Choix explicite de l'utilisateur (l'interrupteur) : c'est lui qui devient une préférence. */
   onFollowToggle: (follow: boolean) => void;
   review: ReviewController;
+  /** Faux (récitateur) : ni marquage, ni signalements sur l'onde ; la lecture seule. */
+  annotate?: boolean;
   /** Clic sur un signalement de l'onde ou de la piste Revue : le sélectionne et ouvre la liste. */
   onSelectAnnotation: (id: string) => void;
 };
 
 export function Console(props: Props) {
   const { review, player } = props;
+  const annotate = props.annotate !== false;
   const marking = review.state.mark !== null;
   const status = marking ? (
     <>
@@ -192,41 +200,43 @@ export function Console(props: Props) {
             ? "Marquer la fin du signalement"
             : "Marquer le début d’un signalement"
         }
-        onDockMark={review.press}
+        onDockMark={annotate ? review.press : undefined}
       />
-      <div className="markbar" id="markbar">
-        <button
-          type="button"
-          className={`btn btn--sm ${review.draft ? "btn--secondary" : "btn--primary"}`}
-          data-testid="mark-button"
-          onClick={review.press}
-        >
-          <Icon name="flag" />
-          {marking ? "Marquer la fin" : "Marquer le début"} <kbd>M</kbd>
-        </button>
-        <button
-          type="button"
-          className="btn btn--secondary btn--sm"
-          data-testid="trace-toggle"
-          aria-pressed={review.trace}
-          onClick={() => review.setTrace(!review.trace)}
-        >
-          Tracer sur l’onde
-        </button>
-        {marking ? (
+      {annotate ? (
+        <div className="markbar" id="markbar">
           <button
             type="button"
-            className="btn btn--ghost btn--sm"
-            data-testid="mark-cancel"
-            onClick={review.cancel}
+            className={`btn btn--sm ${review.draft ? "btn--secondary" : "btn--primary"}`}
+            data-testid="mark-button"
+            onClick={review.press}
           >
-            Annuler <kbd>Échap</kbd>
+            <Icon name="flag" />
+            {marking ? "Marquer la fin" : "Marquer le début"} <kbd>M</kbd>
           </button>
-        ) : null}
-        <p className="mb-status" role="status" data-testid="mark-status">
-          {status}
-        </p>
-      </div>
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            data-testid="trace-toggle"
+            aria-pressed={review.trace}
+            onClick={() => review.setTrace(!review.trace)}
+          >
+            Tracer sur l’onde
+          </button>
+          {marking ? (
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              data-testid="mark-cancel"
+              onClick={review.cancel}
+            >
+              Annuler <kbd>Échap</kbd>
+            </button>
+          ) : null}
+          <p className="mb-status" role="status" data-testid="mark-status">
+            {status}
+          </p>
+        </div>
+      ) : null}
       <Timeline
         ref={props.timelineRef}
         duration={props.duration}
@@ -239,11 +249,12 @@ export function Console(props: Props) {
         span={props.span}
         follow={props.follow}
         onUserMove={() => props.onFollow(false)}
-        annotations={review.visible}
-        selectedAnnotationId={review.state.selectedId}
-        draftId={review.state.draftId}
-        mark={review.state.mark}
-        trace={review.trace}
+        showReview={annotate}
+        annotations={annotate ? review.visible : NO_ANNOTATIONS}
+        selectedAnnotationId={annotate ? review.state.selectedId : null}
+        draftId={annotate ? review.state.draftId : null}
+        mark={annotate ? review.state.mark : null}
+        trace={annotate && review.trace}
         onTrace={review.traceSelect}
         onEdge={review.edge}
         onNudge={review.nudge}
@@ -320,18 +331,22 @@ export function Console(props: Props) {
             {entry.label}
           </li>
         ))}
-        <li>
-          <span className="sw s-human">
-            <i />
-          </span>
-          Signalement confirmé
-        </li>
-        <li>
-          <span className="sw s-human draft">
-            <i />
-          </span>
-          Brouillon
-        </li>
+        {annotate ? (
+          <>
+            <li>
+              <span className="sw s-human">
+                <i />
+              </span>
+              Signalement confirmé
+            </li>
+            <li>
+              <span className="sw s-human draft">
+                <i />
+              </span>
+              Brouillon
+            </li>
+          </>
+        ) : null}
       </ul>
     </section>
   );

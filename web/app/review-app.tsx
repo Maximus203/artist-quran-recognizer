@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bindMediaDrop, isVideoName } from "@/lib/audio-upload";
 import { listenWindow } from "@/lib/marking";
 import { activeIndex, intervalLabel, intervalStateLabel } from "@/lib/passage";
-import { sessionHref } from "@/lib/role-view";
 import type { Preferences } from "@/lib/preferences-schema";
 import { canModifyAnnotation } from "@/lib/review-access";
 import type { Annotation } from "@/lib/review";
@@ -63,7 +62,7 @@ export default function ReviewApp() {
   const wide = useMedia("(min-width: 1280px)");
   const narrow = useMedia("(max-width: 767px)");
   const visible = usePageVisible();
-  const sidebar = useSidebarSessions();
+  const sidebar = useSidebarSessions(prefs.sidebarRecent);
   const admin = user.role === "admin";
   const recitant = user.role === "recitant";
   const me = useMemo(
@@ -136,7 +135,8 @@ export default function ReviewApp() {
 
   /* ── panneaux : bureau = préférences du compte, en dessous = tiroirs ── */
   const showingNew = view === "new" || currentId === null;
-  const rightAvailable = !showingNew;
+  // La revue humaine (signalements) est réservée aux testeurs et administrateurs.
+  const rightAvailable = !showingNew && !recitant;
   const leftOpen = wide ? prefs.leftPanelOpen !== false : drawer === "left";
   const rightOpen =
     rightAvailable &&
@@ -168,11 +168,6 @@ export default function ReviewApp() {
   /* ── ouverture d'une session ── */
   const open = useCallback(
     (id: string) => {
-      // Le récitateur n'ouvre pas la revue : une session qu'il choisit part vers son export vidéo.
-      if (recitant) {
-        window.location.assign(sessionHref("recitant", id));
-        return;
-      }
       setCurrentId(id);
       setView("revue");
       setSelectedIndex(null);
@@ -181,7 +176,7 @@ export default function ReviewApp() {
       setDrawer(null);
       history.replaceState(null, "", `?session=${id}`);
     },
-    [prefs.followPlayback, recitant],
+    [prefs.followPlayback],
   );
   const showNew = useCallback(() => {
     setView("new");
@@ -489,7 +484,9 @@ export default function ReviewApp() {
     try {
       await patchSession(currentView.id, { visibility: next });
       say(
-        next === "global" ? "Session rendue globale" : "Session rendue privée",
+        next === "global"
+          ? "Récitation rendue globale"
+          : "Récitation rendue privée",
       );
       void sidebar.refresh();
     } catch (e) {
@@ -504,7 +501,7 @@ export default function ReviewApp() {
     try {
       await patchSession(currentView.id, { archived });
       void sidebar.refresh();
-      showToast(archived ? "Session archivée" : "Session restaurée", {
+      showToast(archived ? "Récitation archivée" : "Récitation restaurée", {
         label: "Annuler",
         run: () => {
           patch({ archived_at: before });
@@ -521,6 +518,8 @@ export default function ReviewApp() {
 
   /* ── raccourcis clavier : jamais dans un champ, désactivables (WCAG 2.1.4) ── */
   const router = useRouter();
+  const recitantRef = useRef(recitant);
+  recitantRef.current = recitant;
   const latest = useRef({ prefs, showingNew, detail, router });
   latest.current = { prefs, showingNew, detail, router };
   useEffect(() => {
@@ -538,7 +537,7 @@ export default function ReviewApp() {
       );
       const r = reviewRef.current;
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        if (r.draft) {
+        if (!recitantRef.current && r.draft) {
           event.preventDefault();
           r.confirm(r.draft.id);
         }
@@ -564,6 +563,9 @@ export default function ReviewApp() {
       }
       if (!p.shortcutsEnabled) return;
       const key = event.key.toLowerCase();
+      if (recitantRef.current && (key === "m" || key === "p" || key === "l")) {
+        return;
+      }
       if (key === "m") {
         event.preventDefault();
         r.press();
@@ -674,7 +676,7 @@ export default function ReviewApp() {
           className="panel panel--left"
           data-testid="panel-left"
           data-open={ready ? String(leftOpen) : undefined}
-          aria-label="Sessions"
+          aria-label="Récitations"
           role={!wide && leftOpen ? "dialog" : undefined}
           aria-modal={!wide && leftOpen ? true : undefined}
           tabIndex={-1}
@@ -753,7 +755,7 @@ export default function ReviewApp() {
                 />
               ) : !detailError ? (
                 <header className="o-head session-head">
-                  <p className="muted">Chargement de la session…</p>
+                  <p className="muted">Chargement de la récitation…</p>
                 </header>
               ) : null}
               {detail ? (
@@ -781,6 +783,7 @@ export default function ReviewApp() {
                       update({ followPlayback: on });
                     }}
                     review={review}
+                    annotate={!recitant}
                     onSelectAnnotation={(id) => {
                       review.select(id);
                       setTab("list");
