@@ -1,5 +1,20 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-03 — Éditeur « Pas à pas » de la vidéo d'export (ADR-0021)
+- **Quoi** : trois étapes (Le cadre, Les textes, Exporter) pour le téléphone, éditeur du rôle récitateur ; encart « déjà prête,
+  exporter maintenant », pastilles, Précédent / Suivant, gros bouton ; progression mémorisée par récitation ; aperçu verrouillé
+  hors de l'étape des textes. Aucune dépendance ajoutée.
+- **Patterns** : State (progression `moveTo`, pure), Registry (une ligne au registre des éditeurs), Composite (les sections de
+  réglages partagées composées en étapes), Adapter (stockage de l'onglet derrière `StepsStorage`, absent ou bloqué sans casse).
+- **Choix pris seul** : « Précédent / Suivant » plutôt que « Retour / Continuer » (Retour = la flèche qui quitte l'éditeur) ;
+  mémoire dans l'onglet (`sessionStorage`) et non sur le compte ; étape du cadre toujours montée (cachée) pour ne pas couper
+  l'envoi d'une vidéo de fond ; titre de l'étape des textes lu seulement par les lecteurs d'écran ; fenêtre des passages à cibles
+  de 44 px pour tous les éditeurs ; l'aperçu des sous-titres n'est plus demandé au récitateur (403 à chaque ouverture de la page
+  d'export : défaut réel, appel inutile, corrigé).
+- **Méthode** : logique des étapes en TDD strict (test rouge vérifié avant le code) ; tests de composant écrits après le
+  composant (rendu statique), puis vérifiés par mutation (retrait de `hidden` et du verrouillage : trois tests échouent).
+- **Non fait / à suivre** : défaut du rôle `recitant` et choix du format (phase 4) ; lecteur d'écran non testé.
+
 ## 2026-11-03 — Éditeur de la vidéo d'export : calque partagé, plateau, vue bureau (ADR-0020)
 - **Quoi** : calque d'édition partagé sur l'aperçu (toucher, glisser avec aimants par axe, huit poignées de 44 px, pincement,
   clavier, `aria-live`), contrôleur et sections de réglages communs à la feuille du téléphone et à l'inspecteur du bureau,
