@@ -44,6 +44,17 @@
   ajoutés à l'API (facultatifs). **Reste** : le fichier de la vidéo de fond n'est pas envoyé au serveur (rendu sans interface :
   il ne peut pas lire un fichier resté sur l'appareil) ; `apiDifferences` le dit. Une phase d'interface qui propose « Ma vidéo »
   doit d'abord régler cet envoi (téléversement en flux, plafond de taille, nettoyage).
+- **Preuve au navigateur** (atelier construit depuis la branche, base jetable, Chrome 156) : des réglages d'AVANT écrits par
+  l'API reviennent convertis (tailles 120 pt → 1,667 et 52 pt → 1,733 ; remplir, onde, accent, marges gardés ; voile selon le
+  fond) ; l'écran d'export à 390 px et 1280 px, sombre et clair : « + » ×2 → 112 %, « − » → 106 %, pourcentage → 100 %, l'aperçu
+  change à chaque geste, console propre, aucun défilement horizontal à 390 px ; **vrais exports par l'écran** (rendu serveur,
+  720p, session de 20 s avec le texte du corpus) : MP4 H.264 + AAC de 20 s, avec les réglages par défaut puis avec des zones et
+  des fonds de texte personnalisés (traduction pleine en haut à gauche, arabe sur fond flou). Écarts de la preuve, dits : à 390 px
+  le bouton « + » mesure 40 px de haut dans une barre de 48 px (même gabarit que le contrôle segmenté d'avant ; les éditeurs
+  des phases suivantes doivent viser 44 px sur le bouton lui-même) ; à 390 px les contrôles « Remplir » et le JSON de l'API
+  sont sous la feuille du bas et n'ont pas été éprouvés par le script (éprouvés à 1280 px). **Piège du harnais** : sans
+  `AQR_RENDER_ORIGIN`, l'export serveur se connecte au port 3000 (celui de Cherif) et reste bloqué sur « Démarrage » ;
+  `harness/h.mjs serve` le pose désormais.
 - **Preuve** : `web/lib/export-video-{model,edit,vtime,layout,panels,frames,prefs,request,assets}.test.ts`,
   `preferences.test.ts`, `prefs-sync.test.ts`, `video-jobs.test.ts` ; suite complète 2 609 tests (209 fichiers) verts, `tsc` propre.
 
