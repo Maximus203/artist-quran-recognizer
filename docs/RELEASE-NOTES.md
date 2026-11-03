@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-03 — Un seul lecteur qui continue entre les pages ; playlist avec l'écoute de la source
 Étiquettes : utilisateur, technique
-PR : #0
+PR : #199
 
 **Ce qui change.** Le son ne s'arrête plus quand on change de page : le lecteur est unique et vit dans la coque de l'atelier. Une playlist continue d'enchaîner ses audios (suivant, répétition, aléatoire) même si on est ailleurs, et un petit lecteur en bas de page permet de mettre en pause, reprendre, ouvrir ou arrêter. « Lecture » retrouve l'audio en cours. La page d'une playlist reprend les deux blocs de la lecture : le passage actif (surlignage mot à mot, traduction) et l'écoute de la source (onde, retour de 5 secondes, position, vitesse, volume, écho), sans les outils de signalement.
 
