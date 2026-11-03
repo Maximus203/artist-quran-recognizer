@@ -1,27 +1,30 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
-import { ECHO } from "@/lib/audio-echo";
 import { formatClockLength } from "@/lib/format";
-import type { Interval } from "@/lib/recognition";
+import type { Preferences } from "@/lib/preferences-schema";
 import {
   createQueue,
   currentId,
   jumpTo,
   nextRepeat,
-  onEnded,
   skipNext,
   skipPrev,
   withRepeat,
   withShuffle,
-  type Queue,
   type RepeatMode,
 } from "@/lib/playlist-queue";
-import { applyEcho } from "./echo-graph";
+import { ArabicFontTools } from "./arabic-font-tools";
+import { Console } from "./console";
+import { useGlobalPlayer } from "./global-player";
+import { useStoreValue } from "./hooks";
 import { Icon } from "./icons";
-import { PlaylistVerse } from "./playlist-verse";
+import { LivePassage } from "./passage-card";
 import { useShell } from "./shell";
+import type { TimelineHandle } from "./timeline";
+import { usePeaks } from "./use-peaks";
+import { useSessionDetail } from "./use-sessions";
 
 type Item = {
   session_id: string;
@@ -37,48 +40,42 @@ const REPEAT_LABEL: Record<RepeatMode, string> = {
   one: "Répétition : cet audio",
 };
 
-const audioUrl = (id: string) => `/api/sessions/${id}/audio`;
-
 /**
- * Le lecteur d'une playlist : un seul `<audio>`, piloté par la file de lecture (`lib/playlist-queue.ts`, testée) :
- * passage automatique à l'audio suivant, répétition (aucune, toute la playlist, un audio), lecture aléatoire,
- * précédent / suivant. Volume, vitesse et écho sont ceux du compte. L'ordre se change ici et se garde.
+ * Le lecteur d'une playlist : les mêmes blocs que la page Lecture (passage actif avec surlignage mot à mot,
+ * écoute de la source avec l'onde et le retour en arrière), pilotés par la file de lecture
+ * (`lib/playlist-queue.ts`, testée) : suivant, précédent, répétition, aléatoire. L'audio vit dans le lecteur
+ * global de la coque : la lecture, et la suite de la playlist, continuent quand on change de page.
  */
 export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
   const { prefs, update } = useShell();
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const {
+    player,
+    audioId,
+    playlist,
+    hooks,
+    activatePlaylist,
+    syncPlaylist,
+    isActive,
+    isPlaying,
+    setQueue,
+    requestPlay,
+    registerFullUi,
+    rememberLabel,
+  } = useGlobalPlayer();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">(
     "loading",
   );
-  const [queue, setQueue] = useState<Queue>(() => createQueue([]));
-  const queueRef = useRef(queue);
-  queueRef.current = queue;
-  /** Vrai tant que la lecture est voulue : le passage à l'audio suivant continue de lire. */
-  const wantPlay = useRef(false);
-  const [playing, setPlaying] = useState(false);
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [notice, setNotice] = useState("");
   const [renaming, setRenaming] = useState<string | null>(null);
-  /** Les versets de l'audio en cours, pour afficher leur traduction en haut du lecteur. */
-  const [verses, setVerses] = useState<{
-    id: string;
-    status: "loading" | "ready" | "error";
-    intervals: Interval[];
-  }>({ id: "", status: "loading", intervals: [] });
+  /** Audio à garder comme courant au prochain rechargement de la liste (retrait d'un audio). */
+  const keepRef = useRef<string | null>(null);
+  const timelineRef = useRef<TimelineHandle>(null);
+  const [follow, setFollow] = useState(prefs.followPlayback);
 
-  /* ── chargement ── */
   const apply = useCallback((next: Detail, keepId?: string | null) => {
+    keepRef.current = keepId ?? null;
     setDetail(next);
-    const ids = next.items.map((item) => item.session_id);
-    setQueue((prev) =>
-      createQueue(ids, {
-        startId: keepId ?? currentId(prev) ?? undefined,
-        repeat: prev.repeat,
-        shuffle: prev.shuffle,
-      }),
-    );
   }, []);
   useEffect(() => {
     let cancelled = false;
@@ -101,162 +98,110 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
     };
   }, [playlistId, apply]);
 
-  /* ── l'audio courant ── */
+  /* ── la file : celle du lecteur global si cette playlist est en cours, sinon un aperçu ── */
+  const active = playlist?.id === playlistId;
+  const ids = useMemo(
+    () => detail?.items.map((item) => item.session_id) ?? [],
+    [detail],
+  );
+  const preview = useMemo(() => createQueue(ids), [ids]);
+  const queue = active && playlist ? playlist.queue : preview;
   const current = currentId(queue);
   const currentItem = detail?.items.find((item) => item.session_id === current);
-  const play = useCallback(() => {
-    const node = audioRef.current;
-    if (!node) return;
-    node.play().catch(() => {
-      wantPlay.current = false;
-      setNotice("Lecture impossible pour cet audio dans ce navigateur.");
-    });
-  }, []);
-  useEffect(() => {
-    const node = audioRef.current;
-    if (!node || !current) return;
-    node.src = audioUrl(current);
-    node.load();
-    setTime(0);
-    setDuration(0);
-    if (wantPlay.current) play();
-  }, [current, play]);
+  const playing = useStoreValue(player.store, (s) => s.playing) && active;
+  const elsewhere = !active && audioId !== null && isPlaying();
 
   useEffect(() => {
-    if (!current) return;
-    let cancelled = false;
-    setVerses({ id: current, status: "loading", intervals: [] });
-    api<{ result: { intervals?: Interval[] } | null }>(
-      `/api/sessions/${current}`,
-    )
-      .then((data) => {
-        if (cancelled) return;
-        setVerses({
-          id: current,
-          status: "ready",
-          intervals: data.result?.intervals ?? [],
-        });
-      })
-      .catch(() => {
-        if (!cancelled)
-          setVerses({ id: current, status: "error", intervals: [] });
-      });
+    if (!detail) return;
+    for (const item of detail.items) rememberLabel(item.session_id, item.name);
+    if (isActive(playlistId)) syncPlaylist(playlistId, ids, keepRef.current);
+    // Rien ne joue ailleurs : la playlist se charge (sans lancer la lecture) pour montrer son premier audio.
+    else if (!isPlaying()) activatePlaylist(playlistId, ids);
+    keepRef.current = null;
+  }, [
+    detail,
+    ids,
+    playlistId,
+    isActive,
+    isPlaying,
+    syncPlaylist,
+    activatePlaylist,
+    rememberLabel,
+  ]);
+  useEffect(() => {
+    hooks.current = { onError: setNotice };
     return () => {
-      cancelled = true;
+      hooks.current = {};
     };
-  }, [current]);
+  }, [hooks]);
+  // Les commandes sont ici tant que cette playlist est en lecture : le mini lecteur s'efface.
+  useEffect(() => {
+    if (!active) return;
+    return registerFullUi();
+  }, [active, registerFullUi]);
 
-  /* ── volume, vitesse et écho du compte ── */
-  useEffect(() => {
-    const node = audioRef.current;
-    if (!node) return;
-    const sync = () => {
-      node.volume = prefs.volume;
-      node.playbackRate = prefs.playbackRate;
-    };
-    sync();
-    // `load()` remet la vitesse à zéro : on la réapplique à chaque nouvel audio.
-    node.addEventListener("loadstart", sync);
-    return () => node.removeEventListener("loadstart", sync);
-  }, [prefs.volume, prefs.playbackRate, state]);
-  useEffect(() => {
-    if (audioRef.current) applyEcho(audioRef.current, prefs.echo);
-  }, [prefs.echo, state]);
-
-  /* ── événements de l'élément audio ── */
-  const restartOrAdvance = useCallback((next: Queue) => {
-    const same = currentId(next) === currentId(queueRef.current);
-    setQueue(next);
-    if (same && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      void audioRef.current.play().catch(() => undefined);
-    }
-  }, []);
-  useEffect(() => {
-    const node = audioRef.current;
-    if (!node) return;
-    const onTime = () => setTime(node.currentTime);
-    const onMeta = () =>
-      setDuration(Number.isFinite(node.duration) ? node.duration : 0);
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onEnd = () => {
-      const result = onEnded(queueRef.current);
-      if (!result.play) {
-        wantPlay.current = false;
-        setPlaying(false);
-        return;
-      }
-      wantPlay.current = true;
-      restartOrAdvance(result.queue);
-    };
-    const onFail = () => {
-      if (!node.getAttribute("src")) return;
-      const name = detail?.items.find(
-        (i) => i.session_id === currentId(queueRef.current),
-      )?.name;
-      setNotice(
-        `Audio illisible${name ? ` : « ${name} »` : ""}. Passage au suivant.`,
-      );
-      const result = skipNext(queueRef.current);
-      if (result.action === "move") restartOrAdvance(result.queue);
-      else wantPlay.current = false;
-    };
-    node.addEventListener("timeupdate", onTime);
-    node.addEventListener("loadedmetadata", onMeta);
-    node.addEventListener("durationchange", onMeta);
-    node.addEventListener("play", onPlay);
-    node.addEventListener("pause", onPause);
-    node.addEventListener("ended", onEnd);
-    node.addEventListener("error", onFail);
-    return () => {
-      node.removeEventListener("timeupdate", onTime);
-      node.removeEventListener("loadedmetadata", onMeta);
-      node.removeEventListener("durationchange", onMeta);
-      node.removeEventListener("play", onPlay);
-      node.removeEventListener("pause", onPause);
-      node.removeEventListener("ended", onEnd);
-      node.removeEventListener("error", onFail);
-    };
-  }, [state, detail, restartOrAdvance]);
+  /* ── l'audio courant : résultat, onde, passage actif ── */
+  const { detail: session } = useSessionDetail(active ? audioId : null);
+  const intervals = useMemo(
+    () =>
+      session && session.session.id === audioId
+        ? (session.result?.intervals ?? [])
+        : [],
+    [session, audioId],
+  );
+  const { peaks, listening } = usePeaks(active ? audioId : null, setNotice);
+  const playerDuration = useStoreValue(player.store, (s) => s.duration);
+  const duration =
+    playerDuration ||
+    peaks?.duration ||
+    session?.result?.source.duration_s ||
+    0;
+  const selectInterval = useCallback(
+    (index: number) => {
+      const item = intervals[index];
+      if (!item?.t) return;
+      setFollow(false);
+      player.seek(item.t[0]);
+      timelineRef.current?.centerOn(item.t[0]);
+    },
+    [intervals, player],
+  );
+  const listenPassage = ([start, end]: [number, number]) => {
+    timelineRef.current?.centerOn(start);
+    player.playRange(start, end);
+  };
+  const loopPassage = useCallback(
+    ([start, end]: [number, number]) => {
+      timelineRef.current?.centerOn(start);
+      player.playRange(start, end, { loop: true });
+    },
+    [player],
+  );
 
   /* ── commandes ── */
+  const start = (startId?: string) =>
+    activatePlaylist(playlistId, ids, { startId, play: true });
   const toggle = () => {
-    const node = audioRef.current;
-    if (!node || !current) return;
     setNotice("");
-    if (node.paused) {
-      wantPlay.current = true;
-      play();
-    } else {
-      wantPlay.current = false;
-      node.pause();
-    }
+    if (!active) start(current ?? undefined);
+    else player.toggle();
   };
   const next = () => {
     const result = skipNext(queue);
-    if (result.action === "move") {
-      wantPlay.current = playing;
-      restartOrAdvance(result.queue);
-    }
+    if (result.action === "move")
+      setQueue(result.queue, { restartIfSame: true });
   };
   const previous = () => {
-    const node = audioRef.current;
-    const result = skipPrev(queue, node?.currentTime ?? 0);
-    if (result.action === "restart" && node) node.currentTime = 0;
-    else if (result.action === "move") {
-      wantPlay.current = playing;
-      restartOrAdvance(result.queue);
-    }
+    const result = skipPrev(queue, player.position());
+    if (result.action === "restart") player.seek(0);
+    else if (result.action === "move")
+      setQueue(result.queue, { restartIfSame: true });
   };
   const open = (id: string) => {
-    wantPlay.current = true;
     setNotice("");
-    restartOrAdvance(jumpTo(queue, id));
-  };
-  const seek = (value: number) => {
-    if (audioRef.current) audioRef.current.currentTime = value;
-    setTime(value);
+    if (!active) return start(id);
+    setQueue(jumpTo(queue, id), { restartIfSame: true });
+    requestPlay();
   };
 
   /* ── contenu : ordre, retrait, nom ── */
@@ -264,19 +209,16 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
     setNotice(error instanceof Error ? error.message : "Action impossible.");
   const move = async (index: number, delta: -1 | 1) => {
     if (!detail) return;
-    const ids = detail.items.map((item) => item.session_id);
+    const order = [...ids];
     const target = index + delta;
-    if (target < 0 || target >= ids.length) return;
-    [ids[index], ids[target]] = [ids[target], ids[index]];
+    if (target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target], order[index]];
     try {
       const data = await api<{ playlist: Detail }>(
         `/api/playlists/${detail.id}`,
-        {
-          method: "PATCH",
-          json: { order: ids },
-        },
+        { method: "PATCH", json: { order } },
       );
-      apply(data.playlist);
+      apply(data.playlist, current);
     } catch (error) {
       fail(error);
     }
@@ -288,11 +230,11 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
         method: "DELETE",
       });
       const items = detail.items.filter((item) => item.session_id !== id);
-      const ids = items.map((item) => item.session_id);
+      const rest = items.map((item) => item.session_id);
       const at = detail.items.findIndex((item) => item.session_id === id);
       apply(
         { ...detail, items },
-        id === current ? (ids[at] ?? ids[0] ?? null) : current,
+        id === current ? (rest[at] ?? rest[0] ?? null) : current,
       );
     } catch (error) {
       fail(error);
@@ -306,10 +248,7 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
     try {
       const data = await api<{ playlist: Detail }>(
         `/api/playlists/${detail.id}`,
-        {
-          method: "PATCH",
-          json: { name },
-        },
+        { method: "PATCH", json: { name } },
       );
       setDetail((d) => (d ? { ...d, name: data.playlist.name } : d));
     } catch (error) {
@@ -388,152 +327,158 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
         </p>
       </header>
 
-      <div className="pl-body">
-        {detail.items.length === 0 ? (
-          <p className="notice" data-testid="pl-empty">
-            Cette playlist est vide. Ajoute des audios depuis la{" "}
-            <Link href="/sessions">liste des récitations</Link> : menu d’une
-            ligne, « Ajouter à une playlist ».
-          </p>
-        ) : (
-          <section className="pl-card" aria-label="Lecteur">
-            <audio ref={audioRef} preload="metadata" />
-            <PlaylistVerse
-              status={verses.id === current ? verses.status : "loading"}
-              intervals={verses.id === current ? verses.intervals : []}
-              time={time}
-              playing={playing}
-              offsetMs={prefs.audioOffsetMs}
-            />
-            <p className="pl-now" data-testid="pl-now" aria-live="polite">
-              <span className="eyebrow">En lecture</span>
-              <b>{currentItem?.name ?? "—"}</b>
-            </p>
-            <div className="pl-seek">
-              <span className="mono">{formatClockLength(time)}</span>
-              <input
-                type="range"
-                min={0}
-                max={duration || 0}
-                step={0.1}
-                value={Math.min(time, duration || 0)}
-                aria-label="Position dans l’audio"
-                data-testid="pl-seek"
-                disabled={!duration}
-                style={
-                  {
-                    "--p": `${duration ? (time / duration) * 100 : 0}%`,
-                  } as React.CSSProperties
-                }
-                onChange={(event) => seek(Number(event.target.value))}
-              />
-              <span className="mono">{formatClockLength(duration)}</span>
-            </div>
-            <div className="pl-transport">
-              <button
-                type="button"
-                className="pl-btn"
-                aria-label="Lecture aléatoire"
-                aria-pressed={queue.shuffle}
-                data-testid="pl-shuffle"
-                onClick={() => setQueue(withShuffle(queue, !queue.shuffle))}
-              >
-                <Icon name="shuffle" />
-              </button>
-              <button
-                type="button"
-                className="pl-btn"
-                aria-label="Audio précédent"
-                data-testid="pl-prev"
-                onClick={previous}
-              >
-                <Icon name="skip-prev" />
-              </button>
-              <button
-                type="button"
-                className="pl-btn pl-btn--main"
-                aria-label={playing ? "Mettre en pause" : "Lire"}
-                data-testid="pl-play"
-                onClick={toggle}
-              >
-                <Icon name={playing ? "pause" : "play"} />
-              </button>
-              <button
-                type="button"
-                className="pl-btn"
-                aria-label="Audio suivant"
-                data-testid="pl-next"
-                onClick={next}
-              >
-                <Icon name="skip-next" />
-              </button>
-              <button
-                type="button"
-                className="pl-btn"
-                aria-label={REPEAT_LABEL[queue.repeat]}
-                aria-pressed={queue.repeat !== "off"}
-                data-testid="pl-repeat"
-                data-mode={queue.repeat}
-                title={REPEAT_LABEL[queue.repeat]}
-                onClick={() =>
-                  setQueue(withRepeat(queue, nextRepeat(queue.repeat)))
-                }
-              >
-                <Icon name={queue.repeat === "one" ? "repeat-one" : "repeat"} />
-              </button>
-            </div>
-            <div className="pl-mix">
-              <label>
-                Volume
-                <input
-                  className="vol"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={prefs.volume}
-                  aria-label="Volume"
-                  style={
-                    { "--p": `${prefs.volume * 100}%` } as React.CSSProperties
-                  }
-                  onChange={(event) =>
-                    update({ volume: Number(event.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                Écho
-                <input
-                  className="vol"
-                  type="range"
-                  min={ECHO.min}
-                  max={ECHO.max}
-                  step={ECHO.step}
-                  value={prefs.echo}
-                  aria-label="Écho de l’écoute"
-                  data-testid="pl-echo"
-                  style={
-                    { "--p": `${prefs.echo * 100}%` } as React.CSSProperties
-                  }
-                  onChange={(event) =>
-                    update({ echo: Number(event.target.value) })
-                  }
-                />
-              </label>
-            </div>
-            {notice ? (
-              <p
-                className="notice notice--error"
-                role="status"
-                data-testid="pl-notice"
-              >
-                {notice}
+      {detail.items.length === 0 ? (
+        <p className="notice" data-testid="pl-empty">
+          Cette playlist est vide. Ajoute des audios depuis la{" "}
+          <Link href="/sessions">liste des récitations</Link> : menu d’une
+          ligne, « Ajouter à une playlist ».
+        </p>
+      ) : (
+        <div className="pl-body">
+          <div className="pl-main">
+            <section className="pl-card" aria-label="Playlist en lecture">
+              <p className="pl-now" data-testid="pl-now" aria-live="polite">
+                <span className="eyebrow">En lecture</span>
+                <b>{currentItem?.name ?? "—"}</b>
               </p>
-            ) : null}
-          </section>
-        )}
+              <div className="pl-transport">
+                <button
+                  type="button"
+                  className="pl-btn"
+                  aria-label="Lecture aléatoire"
+                  aria-pressed={queue.shuffle}
+                  data-testid="pl-shuffle"
+                  disabled={!active}
+                  onClick={() => setQueue(withShuffle(queue, !queue.shuffle))}
+                >
+                  <Icon name="shuffle" />
+                </button>
+                <button
+                  type="button"
+                  className="pl-btn"
+                  aria-label="Audio précédent"
+                  data-testid="pl-prev"
+                  disabled={!active}
+                  onClick={previous}
+                >
+                  <Icon name="skip-prev" />
+                </button>
+                <button
+                  type="button"
+                  className="pl-btn pl-btn--main"
+                  aria-label={playing ? "Mettre en pause" : "Lire"}
+                  data-testid="pl-play"
+                  onClick={toggle}
+                >
+                  <Icon name={playing ? "pause" : "play"} />
+                </button>
+                <button
+                  type="button"
+                  className="pl-btn"
+                  aria-label="Audio suivant"
+                  data-testid="pl-next"
+                  disabled={!active}
+                  onClick={next}
+                >
+                  <Icon name="skip-next" />
+                </button>
+                <button
+                  type="button"
+                  className="pl-btn"
+                  aria-label={REPEAT_LABEL[queue.repeat]}
+                  aria-pressed={queue.repeat !== "off"}
+                  data-testid="pl-repeat"
+                  data-mode={queue.repeat}
+                  title={REPEAT_LABEL[queue.repeat]}
+                  disabled={!active}
+                  onClick={() =>
+                    setQueue(withRepeat(queue, nextRepeat(queue.repeat)))
+                  }
+                >
+                  <Icon
+                    name={queue.repeat === "one" ? "repeat-one" : "repeat"}
+                  />
+                </button>
+              </div>
+              {elsewhere ? (
+                <p className="notice" data-testid="pl-elsewhere">
+                  Un autre audio est en cours de lecture. Lance un audio de
+                  cette playlist pour le remplacer.
+                </p>
+              ) : null}
+              {notice ? (
+                <p
+                  className="notice notice--error"
+                  role="status"
+                  data-testid="pl-notice"
+                >
+                  {notice}
+                </p>
+              ) : null}
+            </section>
 
-        {detail.items.length > 0 ? (
+            {active && audioId ? (
+              session && session.session.id === audioId ? (
+                <>
+                  <LivePassage
+                    store={player.store}
+                    intervals={intervals}
+                    selectedIndex={null}
+                    sessionId={audioId}
+                    showTranslation={prefs.translation}
+                    onToggleTranslation={() =>
+                      update({ translation: !prefs.translation })
+                    }
+                    liveHighlight={prefs.liveHighlight}
+                    onToggleLive={() =>
+                      update({ liveHighlight: !prefs.liveHighlight })
+                    }
+                    audioOffsetMs={prefs.audioOffsetMs}
+                    onAudioOffset={(audioOffsetMs) => update({ audioOffsetMs })}
+                    onSeek={player.seek}
+                    onLoop={loopPassage}
+                    onStopLoop={player.stopPlayback}
+                    tools={<ArabicFontTools intervals={intervals} />}
+                    onListen={listenPassage}
+                  />
+                  <Console
+                    player={player}
+                    duration={duration}
+                    peaks={peaks}
+                    listening={listening}
+                    intervals={intervals}
+                    selectedIndex={null}
+                    onSelectInterval={selectInterval}
+                    timelineRef={timelineRef}
+                    span={prefs.visibleSpanSeconds}
+                    onSpan={(span) =>
+                      update({
+                        visibleSpanSeconds:
+                          span as Preferences["visibleSpanSeconds"],
+                      })
+                    }
+                    follow={follow}
+                    onFollow={setFollow}
+                    onFollowToggle={(on) => {
+                      setFollow(on);
+                      update({ followPlayback: on });
+                    }}
+                    annotate={false}
+                    onSelectAnnotation={() => undefined}
+                  />
+                </>
+              ) : (
+                <p
+                  className="mini"
+                  role="status"
+                  data-testid="pl-loading-audio"
+                >
+                  Chargement de la récitation…
+                </p>
+              )
+            ) : null}
+          </div>
+
           <ol className="pl-list" aria-label="Audios de la playlist">
             {detail.items.map((item, index) => (
               <li
@@ -588,8 +533,8 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
               </li>
             ))}
           </ol>
-        ) : null}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

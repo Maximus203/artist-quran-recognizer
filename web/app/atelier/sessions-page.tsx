@@ -413,7 +413,7 @@ export function SessionsPage({ search }: { search: string }) {
         <span aria-live="polite" data-testid="count">
           {feed.status === "ready" ? (
             <>
-              <b>{feed.total}</b> session{feed.total > 1 ? "s" : ""}
+              <b>{feed.total}</b> récitation{feed.total > 1 ? "s" : ""}
               {archivedScope ? ` archivée${feed.total > 1 ? "s" : ""}` : ""}
             </>
           ) : feed.status === "loading" ? (

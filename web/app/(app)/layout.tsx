@@ -1,5 +1,6 @@
 import { pageUser } from "@/lib/page-auth";
 import { loadShellData } from "@/lib/shell-data";
+import { GlobalPlayerProvider } from "../atelier/global-player";
 import { ShellProvider } from "../atelier/shell";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export default async function AppLayout({
       quota={data.quota}
       repoUrl={data.repoUrl}
     >
-      {children}
+      <GlobalPlayerProvider>{children}</GlobalPlayerProvider>
     </ShellProvider>
   );
 }

@@ -137,6 +137,7 @@ const LEGEND: { label: string; style: string }[] = [
 ];
 
 const NO_ANNOTATIONS: ReviewController["visible"] = [];
+const NOOP = () => undefined;
 
 type Props = {
   player: Player;
@@ -153,7 +154,8 @@ type Props = {
   onFollow: (follow: boolean) => void;
   /** Choix explicite de l'utilisateur (l'interrupteur) : c'est lui qui devient une préférence. */
   onFollowToggle: (follow: boolean) => void;
-  review: ReviewController;
+  /** Absent (playlist) : ni marquage ni signalements, la lecture seule. */
+  review?: ReviewController;
   /** Faux (récitateur) : ni marquage, ni signalements sur l'onde ; la lecture seule. */
   annotate?: boolean;
   /** Clic sur un signalement de l'onde ou de la piste Revue : le sélectionne et ouvre la liste. */
@@ -162,14 +164,14 @@ type Props = {
 
 export function Console(props: Props) {
   const { review, player } = props;
-  const annotate = props.annotate !== false;
-  const marking = review.state.mark !== null;
+  const annotate = props.annotate !== false && review !== undefined;
+  const mark = review?.state.mark ?? null;
+  const marking = mark !== null;
   const status = marking ? (
     <>
-      Début posé à <b>{formatTenths(review.state.mark as number)}</b> — appuie
-      pour poser la fin.
+      Début posé à <b>{formatTenths(mark)}</b> — appuie pour poser la fin.
     </>
-  ) : review.trace ? (
+  ) : review?.trace ? (
     "Glisse sur l’onde pour tracer une plage, touche pour un point."
   ) : (
     "Appuie à la position de lecture, ou trace directement sur l’onde."
@@ -200,15 +202,15 @@ export function Console(props: Props) {
             ? "Marquer la fin du signalement"
             : "Marquer le début d’un signalement"
         }
-        onDockMark={annotate ? review.press : undefined}
+        onDockMark={annotate ? review?.press : undefined}
       />
       {annotate ? (
         <div className="markbar" id="markbar">
           <button
             type="button"
-            className={`btn btn--sm ${review.draft ? "btn--secondary" : "btn--primary"}`}
+            className={`btn btn--sm ${review?.draft ? "btn--secondary" : "btn--primary"}`}
             data-testid="mark-button"
-            onClick={review.press}
+            onClick={review?.press}
           >
             <Icon name="flag" />
             {marking ? "Marquer la fin" : "Marquer le début"} <kbd>M</kbd>
@@ -217,8 +219,8 @@ export function Console(props: Props) {
             type="button"
             className="btn btn--secondary btn--sm"
             data-testid="trace-toggle"
-            aria-pressed={review.trace}
-            onClick={() => review.setTrace(!review.trace)}
+            aria-pressed={review?.trace}
+            onClick={() => review?.setTrace(!review.trace)}
           >
             Tracer sur l’onde
           </button>
@@ -227,7 +229,7 @@ export function Console(props: Props) {
               type="button"
               className="btn btn--ghost btn--sm"
               data-testid="mark-cancel"
-              onClick={review.cancel}
+              onClick={review?.cancel}
             >
               Annuler <kbd>Échap</kbd>
             </button>
@@ -250,14 +252,16 @@ export function Console(props: Props) {
         follow={props.follow}
         onUserMove={() => props.onFollow(false)}
         showReview={annotate}
-        annotations={annotate ? review.visible : NO_ANNOTATIONS}
-        selectedAnnotationId={annotate ? review.state.selectedId : null}
-        draftId={annotate ? review.state.draftId : null}
-        mark={annotate ? review.state.mark : null}
-        trace={annotate && review.trace}
-        onTrace={review.traceSelect}
-        onEdge={review.edge}
-        onNudge={review.nudge}
+        annotations={annotate && review ? review.visible : NO_ANNOTATIONS}
+        selectedAnnotationId={
+          annotate ? (review?.state.selectedId ?? null) : null
+        }
+        draftId={annotate ? (review?.state.draftId ?? null) : null}
+        mark={annotate ? mark : null}
+        trace={annotate && Boolean(review?.trace)}
+        onTrace={review?.traceSelect ?? NOOP}
+        onEdge={review?.edge ?? NOOP}
+        onNudge={review?.nudge ?? NOOP}
         onSelectAnnotation={props.onSelectAnnotation}
       />
       <div className="tools">
