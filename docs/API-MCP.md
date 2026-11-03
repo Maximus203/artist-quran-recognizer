@@ -39,6 +39,11 @@ Tous les appels portent `Authorization: Bearer qtr_…`.
 | `DELETE /api/v1/recordings/{id}` | Suppression (écriture) |
 | `GET /api/v1/export/options` | Catalogue des options de sous-titres et de vidéo |
 | `POST /api/v1/recordings/{id}/export/video/jobs` | Export vidéo (JSON ou multipart avec `background_image`) → `202` + job. Depuis l'atelier, la connexion (cookie) remplace le jeton : l'export continue sur le serveur même si la page est quittée. `reuse: false` force un nouveau rendu (sinon une vidéo identique déjà gardée est récupérée) |
+| `POST /api/v1/recordings/{id}/background-videos` | Début de l'envoi d'une vidéo de fond `{ filename, size }` → `201 { id, chunk_size, chunks, limits }`. Format, poids (500 Mo), nombre (3 par compte) et place disque sont contrôlés avant le premier octet. Jeton en écriture. |
+| `PUT …/background-videos/{vid}/chunks/{n}` | Un morceau en octets bruts (`chunk_size` octets, le dernier plus court) ; renvoyable sans risque. |
+| `POST …/background-videos/{vid}/complete` | Assemble, contrôle le type RÉEL, lance la préparation (sans son, H.264, 1080p au plus) → `202 { state: "processing" }` ; corps facultatif `{ sha256 }`. |
+| `GET …/background-videos[/{vid}]` · `…/{vid}/file` · `DELETE …/{vid}` | Plafonds et vidéos de CE compte pour cette session · état (`uploading` avec `received`, `processing` avec `ratio`, `ready` avec durée et taille, `failed` avec `message`) · la copie préparée (intervalles d'octets) · retrait. Une vidéo d'un autre compte ou d'une autre session : `404`. |
+| export avec `background: { "video": { "upload_id", "offset"?, "mode"? } }` | La vidéo envoyée sert de fond (muette : seul le son de la récitation est exporté). `offset` : départ en secondes quand elle est plus longue (un seul pour toutes les plages) ; `mode` : `loop` (défaut), `pingpong`, `freeze`, `slow` quand elle est plus courte. `404 missing` si elle n'existe plus ou n'est pas à ce compte, `409 not_ready` pendant la préparation, `422` si la préparation a échoué. |
 | `GET …/export/video/jobs` | Exports de la session en cours ou terminés depuis moins d'une heure (les vôtres ; tous, pour un administrateur) |
 | `GET …/export/video/jobs/{job}` et `…/file` | Suivi du job, puis le MP4 (conservé une heure) |
 | `DELETE …/export/video/jobs/{job}` | Annule un export en attente ou en cours (`409` s'il est déjà terminé) |

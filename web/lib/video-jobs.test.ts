@@ -272,6 +272,153 @@ describe("options de l'export vidéo par l'API", () => {
   });
 });
 
+describe("fond vidéo choisi : background.video.upload_id", () => {
+  const id = "a".repeat(32);
+
+  it("reste compatible : les anciens appelants envoient toujours un identifiant de fond en texte", () => {
+    for (const background of ["desert-dunes", "source", "color"])
+      expect(videoJobOptionsSchema.safeParse({ background }).success).toBe(
+        true,
+      );
+  });
+
+  it("accepte l'objet { video: { upload_id, offset?, mode? } }", () => {
+    for (const background of [
+      { video: { upload_id: id } },
+      { video: { upload_id: id, offset: 3.5 } },
+      { video: { upload_id: id, mode: "pingpong" } },
+      { video: { upload_id: id, offset: 0, mode: "slow" } },
+    ])
+      expect(videoJobOptionsSchema.safeParse({ background }).success).toBe(
+        true,
+      );
+  });
+
+  it("refuse un objet incomplet, un identifiant qui n'en est pas un, une borne ou un mode inconnus", () => {
+    for (const background of [
+      {},
+      { video: {} },
+      { video: { upload_id: "pas-un-identifiant" } },
+      { video: { upload_id: "A".repeat(32) } },
+      { video: { upload_id: `${id}/../x` } },
+      { video: { upload_id: id, offset: -1 } },
+      { video: { upload_id: id, offset: 1e9 } },
+      { video: { upload_id: id, mode: "zigzag" } },
+      { video: { upload_id: id, surprise: true } },
+      { video: { upload_id: id }, surprise: true },
+      { image: { upload_id: id } },
+    ])
+      expect(videoJobOptionsSchema.safeParse({ background }).success).toBe(
+        false,
+      );
+  });
+
+  it("le rendu lit « ma vidéo » avec son départ et son comportement ; le fichier n'est pas nommé dans les réglages", () => {
+    const prefs = videoPrefsFromOptions(
+      { background: { video: { upload_id: id, offset: 4, mode: "freeze" } } },
+      false,
+    );
+    expect(prefs.background).toBe("video");
+    expect(prefs.backgroundVideo).toEqual({
+      file: null,
+      offset: 4,
+      mode: "freeze",
+    });
+  });
+
+  it("départ et mode par défaut : 0 et boucle", () => {
+    const prefs = videoPrefsFromOptions(
+      { background: { video: { upload_id: id } } },
+      false,
+    );
+    expect(prefs.backgroundVideo).toMatchObject({ offset: 0, mode: "loop" });
+  });
+
+  it("une image envoyée l'emporte aussi sur la vidéo choisie", () => {
+    const prefs = videoPrefsFromOptions(
+      { background: { video: { upload_id: id } } },
+      true,
+    );
+    expect(prefs.background).toBeNull();
+  });
+
+  it("le catalogue de l'API décrit la vidéo de fond", () => {
+    const text = JSON.stringify(videoOptionsCatalog().background);
+    expect(text).toContain("upload_id");
+    expect(text).toMatch(/muette/i);
+  });
+});
+
+describe("export avec une vidéo de fond", () => {
+  const id = "b".repeat(32);
+
+  it("garde la vidéo dans le dossier du job : elle survit au retrait de l'originale", async () => {
+    const source = path.join(mocks.root, "clip-source.mp4");
+    await writeFile(source, "images-du-fond");
+    const job = await startVideoJob({
+      ...base,
+      options: { background: { video: { upload_id: id } } },
+      clip: { path: source, sha256: "c".repeat(64) },
+      runner: async (j) => {
+        j.file = path.join(j.dir, "video.mp4");
+        await writeFile(j.file, "mp4");
+      },
+    });
+    expect(job.backgroundVideo).toBe(
+      path.join(job.dir, "background-video.mp4"),
+    );
+    await rm(source); // l'utilisateur retire la vidéo pendant l'export
+    expect(await readFile(job.backgroundVideo as string, "utf8")).toBe(
+      "images-du-fond",
+    );
+    await settle(job.id);
+  });
+
+  it("n'expose ni le chemin ni l'empreinte dans la vue publique", async () => {
+    const source = path.join(mocks.root, "clip-source-2.mp4");
+    await writeFile(source, "x");
+    const job = await startVideoJob({
+      ...base,
+      clip: { path: source, sha256: "d".repeat(64) },
+      runner: async () => undefined,
+    });
+    const shown = JSON.stringify(publicJob(await settle(job.id)));
+    expect(shown).not.toContain("background-video");
+    expect(shown).not.toContain("d".repeat(64));
+  });
+
+  it("dit au rendu qu'une vidéo de fond l'attend, avec son empreinte comme identité", async () => {
+    const { renderPayload } = await import("./video-jobs");
+    const source = path.join(mocks.root, "clip-source-3.mp4");
+    await writeFile(source, "x");
+    const job = await startVideoJob({
+      ...base,
+      options: { background: { video: { upload_id: id, offset: 2 } } },
+      clip: { path: source, sha256: "e".repeat(64) },
+      runner: async () => undefined,
+    });
+    const payload = renderPayload(job);
+    expect(payload).toMatchObject({
+      hasBackground: false,
+      hasBackgroundVideo: true,
+      backgroundVideoId: "e".repeat(64),
+    });
+    expect(payload.prefs.background).toBe("video");
+    expect(payload.prefs.backgroundVideo.offset).toBe(2);
+    await settle(job.id);
+  });
+
+  it("sans vidéo de fond, le rendu n'en cherche pas (anciens appelants inchangés)", async () => {
+    const { renderPayload } = await import("./video-jobs");
+    const job = await startVideoJob({ ...base, runner: async () => undefined });
+    expect(renderPayload(job)).toMatchObject({
+      hasBackgroundVideo: false,
+      backgroundVideoId: null,
+    });
+    await settle(job.id);
+  });
+});
+
 describe("jobs d'export vidéo", () => {
   it("exécute le rendu, garde le fichier et oublie le jeton", async () => {
     const job = await startVideoJob({

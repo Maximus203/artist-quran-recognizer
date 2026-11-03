@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
 import type { SavedVideo } from "@/lib/export-video-library";
+import { fetchJobBackgroundVideo } from "@/lib/export-video-job-clip";
 import { renderSessionVideo } from "@/lib/export-video-render";
 
 /**
@@ -15,6 +16,9 @@ type Payload = {
   jobId: string;
   prefs: VideoPrefs;
   hasBackground: boolean;
+  /** Une vidéo de fond (muette) attend, lue par la route du job ; son identité nomme le fichier. */
+  hasBackgroundVideo?: boolean;
+  backgroundVideoId?: string | null;
   fileName?: string;
   ranges?: { start: number; end: number; name?: string }[];
   perVerse?: boolean;
@@ -69,6 +73,14 @@ export function RenderClient() {
         const blob = await response.blob();
         bgImage = new File([blob], "background", { type: blob.type });
       }
+      // Vidéo de fond choisie (muette) : envoyée au serveur avant l'export, lue ici par la route propre au job.
+      const bgVideo = payload.hasBackgroundVideo
+        ? await fetchJobBackgroundVideo(
+            payload.sessionId,
+            payload.jobId,
+            payload.backgroundVideoId ?? null,
+          )
+        : null;
       // La page est connectée comme l'appelant : elle lit elle-même les vidéos déjà gardées.
       const existing = payload.reuse
         ? (
@@ -81,6 +93,7 @@ export function RenderClient() {
         sessionId: payload.sessionId,
         prefs: payload.prefs,
         bgImage,
+        bgVideo,
         existing,
         reuse: payload.reuse !== false,
         fileName: payload.fileName,

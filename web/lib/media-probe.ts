@@ -56,7 +56,9 @@ export const ffprobeRunner: ProbeRunner = async (file) => {
 };
 
 /** Étiquette `DURATION` (`hh:mm:ss.ffffff`) des pistes Matroska/WebM, dont `duration` vaut `N/A`. */
-function tagDuration(tags: Record<string, string> | undefined): number | null {
+export function tagDuration(
+  tags: Record<string, string> | undefined,
+): number | null {
   const match = /^(\d+):(\d{2}):(\d{2}(?:\.\d+)?)$/.exec(
     tags?.DURATION ?? tags?.duration ?? "",
   );

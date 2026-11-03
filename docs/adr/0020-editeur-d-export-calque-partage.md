@@ -1,4 +1,4 @@
-# ADR-0019 — L'éditeur de la vidéo d'export : calque d'édition partagé, contrôleur, sections réutilisables, registre
+# ADR-0020 — L'éditeur de la vidéo d'export : calque d'édition partagé, contrôleur, sections réutilisables, registre
 
 - Statut : **accepté** — phase 2 de la refonte de l'export vidéo en éditeur interactif (décisions du mainteneur du
   2026-11-03, brief commun du chantier). Bâtit sur le noyau de l'ADR-0018 ; les phases suivantes (table de montage,

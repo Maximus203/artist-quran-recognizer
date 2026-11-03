@@ -3,7 +3,7 @@
 Pour : le développeur de l'atelier. Statut : **proposition de design, rien n'est implémenté**.
 
 > Mise à jour du 2026-11-03 : l'onglet « Vidéo » décrit ici (chapitres numérotés, aperçu collant, dock du téléphone) est
-> remplacé par l'éditeur interactif (`docs/adr/0019-editeur-d-export-calque-partage.md`). Les onglets « Vérifier » et
+> remplacé par l'éditeur interactif (`docs/adr/0020-editeur-d-export-calque-partage.md`). Les onglets « Vérifier » et
 > « Sous-titres » et le bordereau restent ceux de cette spécification.
 Maquette interactive : `docs/design/export-refonte/index.html` (servir le dépôt en HTTP, par exemple
 `python -m http.server 3912` à la racine, puis ouvrir `/docs/design/export-refonte/index.html`).

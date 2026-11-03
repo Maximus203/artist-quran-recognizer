@@ -124,6 +124,33 @@ describe("suppression d'un compte", () => {
     expect((await remove(adminCookie, id)).status).toBe(404);
   });
 
+  it("supprimer un compte retire ses vidéos de fond du serveur, et seulement les siennes", async () => {
+    const mine = await make("avecVideo");
+    const other = await make("autreVideo");
+    const { createClip } = await import("@/lib/background-video-store");
+    const session = "00000000-0000-4000-8000-0000000000c1";
+    const deps = {
+      sniff: async () => ({ ok: true as const, family: "isobmff" }),
+      probe: async () => ({ duration: 1, width: 1, height: 1, codec: "h264" }),
+      normalize: async () => undefined,
+      freeBytes: async () => null,
+      now: () => Date.now(),
+    };
+    const a = await createClip(
+      { sessionId: session, ownerId: mine, filename: "a.mp4", size: 100 },
+      deps,
+    );
+    const b = await createClip(
+      { sessionId: session, ownerId: other, filename: "b.mp4", size: 100 },
+      deps,
+    );
+    expect((await remove(adminCookie, mine)).status).toBe(204);
+    const { readdir } = await import("node:fs/promises");
+    const left = await readdir(path.join(dir, "background-videos"));
+    expect(left).toContain(b.id);
+    expect(left).not.toContain(a.id);
+  });
+
   it("refuse de supprimer son propre compte", async () => {
     const { getDb } = await import("@/lib/db");
     const me = (

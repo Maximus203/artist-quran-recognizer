@@ -131,14 +131,38 @@ export function needsRenderCopy(codec: string | null): boolean {
   return codec !== NO_VIDEO;
 }
 
+/**
+ * Réglages en plus pour une source qui vient d'un utilisateur (la vidéo de fond) : le démultiplexeur est imposé
+ * (jamais deviné par ffmpeg), seul le fichier local est ouvert, la durée traitée et le débit sont bornés.
+ */
+export type CopyOptions = {
+  inputFormat?: string;
+  /** N'ouvre que des fichiers locaux (aucun protocole réseau, aucune liste de lecture). */
+  localOnly?: boolean;
+  /** Durée maximale écrite (s). */
+  limitSeconds?: number;
+  maxrate?: string;
+  bufsize?: string;
+};
+
 /** Arguments ffmpeg de la copie : 1080p au plus (jamais agrandie), H.264, image clé toutes les 8 images, sans son. */
-export function copyArgs(source: string, output: string): string[] {
+export function copyArgs(
+  source: string,
+  output: string,
+  options: CopyOptions = {},
+): string[] {
   const side = COPY_LONG_SIDE;
   const scale = `scale='if(gt(iw,ih),min(${side},iw),-2)':'if(gt(iw,ih),-2,min(${side},ih))'`;
   return [
-    "-nostdin", "-v", "error", "-nostats", "-y", "-i", source, "-an",
+    "-nostdin", "-v", "error", "-nostats", "-y",
+    ...(options.localOnly ? ["-protocol_whitelist", "file"] : []),
+    ...(options.inputFormat ? ["-f", options.inputFormat] : []),
+    "-i", source, "-an",
+    ...(options.limitSeconds ? ["-t", String(options.limitSeconds)] : []),
     "-vf", scale,
     "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+    ...(options.maxrate ? ["-maxrate", options.maxrate] : []),
+    ...(options.bufsize ? ["-bufsize", options.bufsize] : []),
     "-g", String(COPY_KEYFRAME_EVERY), "-keyint_min", String(COPY_KEYFRAME_EVERY),
     // Mémoire et processeur bornés : le serveur est partagé et limité à 2 cœurs.
     "-threads", "2",
@@ -157,15 +181,21 @@ export function progressRatio(line: string, duration: number): number | null {
 type Ratio = (ratio: number) => void;
 const listeners = new Map<string, Set<Ratio>>();
 
-async function transcode(
-  source: string,
-  output: string,
-  duration: number,
-  onRatio: Ratio,
+/**
+ * Lance ffmpeg avec ces arguments (qui finissent par `-progress pipe:1`) et suit l'avancement. `signal`
+ * l'arrête tout de suite (annulation) ; sinon il est tué après `timeoutMs`. Rejette si ffmpeg échoue.
+ */
+export async function runFfmpeg(
+  args: string[],
+  options: {
+    duration: number;
+    onRatio: Ratio;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  },
 ): Promise<void> {
-  const tmp = `${output}.tmp.mp4`;
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(ffmpegCommand(), copyArgs(source, tmp), {
+    const child = spawn(ffmpegCommand(), args, {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -175,22 +205,40 @@ async function transcode(
       const lines = (rest + chunk.toString()).split(/\r?\n/);
       rest = lines.pop() ?? "";
       for (const line of lines) {
-        const ratio = progressRatio(line, duration);
-        if (ratio !== null) onRatio(ratio);
+        const ratio = progressRatio(line, options.duration);
+        if (ratio !== null) options.onRatio(ratio);
       }
     });
     child.stderr.on("data", (chunk: Buffer) => {
       errors = (errors + chunk.toString()).slice(-2000);
     });
-    const timer = setTimeout(() => child.kill("SIGKILL"), 30 * 60_000);
-    child.on("error", reject);
+    const kill = () => child.kill("SIGKILL");
+    const timer = setTimeout(kill, options.timeoutMs ?? 30 * 60_000);
+    // Annulé avant même le départ : l'événement « abort » ne viendra plus, on arrête tout de suite.
+    if (options.signal?.aborted) kill();
+    else options.signal?.addEventListener("abort", kill, { once: true });
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
     child.on("close", (code) => {
       clearTimeout(timer);
+      options.signal?.removeEventListener("abort", kill);
       if (code === 0) resolve();
       else
         reject(new Error(`ffmpeg a échoué (code ${code}) : ${errors.trim()}`));
     });
   });
+}
+
+async function transcode(
+  source: string,
+  output: string,
+  duration: number,
+  onRatio: Ratio,
+): Promise<void> {
+  const tmp = `${output}.tmp.mp4`;
+  await runFfmpeg(copyArgs(source, tmp), { duration, onRatio });
   await rename(tmp, output);
 }
 

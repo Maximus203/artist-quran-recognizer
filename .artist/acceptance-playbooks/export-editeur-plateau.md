@@ -1,6 +1,6 @@
 # Export vidéo — l'éditeur : plateau mobile, vue bureau, calque d'édition partagé (phase 2)
 > Surfaces : [WEB] (mobile 360 / 390 / 430 px d'abord, puis 1280 px ; thèmes sombre et clair) · [CALC] (fonctions pures)
-> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-plateau` @ 8d77aa7 (PR #202) · ADR-0019
+> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-plateau` @ 8d77aa7 (PR #202) · ADR-0020
 > Périmètre : calque d'édition partagé, sections de réglages (taille, fond du texte, position, cadre), plateau (< 1024 px),
 > vue bureau unifiée (≥ 1024 px), `ExportEditor` + registre, retrait des boutons « petit / moyen / grand ». Hors périmètre :
 > fond vidéo (emplacement seulement), table de montage, pas à pas, choix du format d'éditeur.
