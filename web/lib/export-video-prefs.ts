@@ -44,6 +44,8 @@ export const videoPrefsSchema = z
     /** Taille de la traduction (px). */
     translationSize: z.number().int().min(16).max(140),
     showTranslation: z.boolean(),
+    /** Écriture arabe affichée (sinon la vidéo ne montre que la référence et la traduction). */
+    showArabic: z.boolean().default(true),
     /** Résolution : taille du côté court de l'image (720 = 1280×720 en 16:9). */
     resolution: z
       .number()
@@ -107,6 +109,7 @@ export const DEFAULT_VIDEO_PREFS: VideoPrefs = {
   arabicSize: 72,
   translationSize: 30,
   showTranslation: true,
+  showArabic: true,
   resolution: DEFAULT_VIDEO_RESOLUTION,
   fps: DEFAULT_VIDEO_FPS,
   bg: "#101418",

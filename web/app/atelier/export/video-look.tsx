@@ -325,10 +325,28 @@ export function VideoLook({
       </div>
       <div className="xr-two">
         <Switch
+          checked={prefs.showArabic}
+          testId="video-show-arabic"
+          onChange={(v) => patch({ showArabic: v })}
+          label="Afficher l’écriture arabe"
+          disabled={prefs.showArabic && !prefs.showTranslation}
+          hint={
+            prefs.showArabic && !prefs.showTranslation
+              ? "Une des deux écritures reste affichée"
+              : undefined
+          }
+        />
+        <Switch
           checked={prefs.showTranslation}
           testId="video-show-translation"
           onChange={(v) => patch({ showTranslation: v })}
           label="Afficher la traduction"
+          disabled={prefs.showTranslation && !prefs.showArabic}
+          hint={
+            prefs.showTranslation && !prefs.showArabic
+              ? "Une des deux écritures reste affichée"
+              : undefined
+          }
         />
         <Switch
           checked={prefs.showWave}

@@ -62,7 +62,7 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
 5. **Vidéo** (facultatif) — pour découper, appeler d'abord `suggest_video_ranges` : chaque plage commence avant la
    récitation et finit après (aucune voix coupée) ; lire `warnings` et signaler les passages `inferred`. Puis : `export_video` avec les mêmes réglages que le formulaire de l'atelier —
    `orientation` (`16:9`, `9:16`, `1:1`, `source`), `arabic_size` et `translation_size` (points ou
-   `small|medium|large|xlarge`), `show_translation`, `fill` (le texte occupe la zone libre),
+   `small|medium|large|xlarge`), `show_translation`, `show_arabic` (`false` = traduction seule, les deux à `false` sont refusés), `fill` (le texte occupe la zone libre),
    `text_position` (0 haut à 100 bas, ou `top|middle|bottom`), `show_wave`, `accent` (`{h,s,l,a}`),
    `file_name`, `background` (un fond proposé, `source` ou
    `color`), `fps` (30 ou 60), `resolution` (360, 480, 720, 1080, 1440 ou 2160 : côté court de l'image),

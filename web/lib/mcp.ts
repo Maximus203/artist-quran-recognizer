@@ -298,6 +298,11 @@ export const TOOLS: Tool[] = [
           description: "Points (16-64) ou small | medium | large | xlarge.",
         },
         show_translation: { type: "boolean" },
+        show_arabic: {
+          type: "boolean",
+          description:
+            "Écriture arabe affichée (défaut true). Avec false, la vidéo ne montre que la traduction ; les deux à false sont refusés.",
+        },
         fps: {
           type: "number",
           enum: [30, 60],
@@ -400,6 +405,7 @@ export const TOOLS: Tool[] = [
         "arabic_size",
         "translation_size",
         "show_translation",
+        "show_arabic",
         "fps",
         "resolution",
         "ranges",
