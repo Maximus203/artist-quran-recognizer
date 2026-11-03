@@ -282,7 +282,7 @@ export const TOOLS: Tool[] = [
   {
     name: "export_video",
     description:
-      "Demande la vidéo MP4 d'un essai terminé (verset surligné mot à mot, traduction, onde audio) : mêmes réglages que le formulaire de l'atelier. Renvoie un job ; suivre avec get_video_export jusqu'à « done », puis télécharger chaque entrée de `download_paths` (ou `download_path` s'il n'y a qu'une vidéo) avec le même jeton. Plusieurs plages (ranges) ou per_verse donnent plusieurs vidéos, une par plage. Le rendu dure à peu près la moitié de la durée de l'audio à 30 im/s, davantage à 60 im/s ou en 1440p/4K.",
+      "Demande la vidéo MP4 d'un essai terminé (verset surligné mot à mot, traduction, onde audio) : mêmes réglages que le formulaire de l'atelier. Renvoie un job ; suivre avec get_video_export jusqu'à « done », puis télécharger chaque entrée de `download_paths` (ou `download_path` s'il n'y a qu'une vidéo) avec le même jeton. Plusieurs plages (ranges) ou per_verse donnent plusieurs vidéos, une par plage. Le rendu dure à peu près la moitié de la durée de l'audio à 30 im/s, davantage à 60 im/s. La résolution maximale est le 1080p.",
     inputSchema: {
       type: "object",
       properties: {
@@ -311,7 +311,7 @@ export const TOOLS: Tool[] = [
         },
         resolution: {
           type: "number",
-          enum: [360, 480, 720, 1080, 1440, 2160],
+          enum: [360, 480, 720, 1080],
           description:
             "Côté court de l'image en pixels (720 = 1280×720 en 16:9). Défaut 1080.",
         },

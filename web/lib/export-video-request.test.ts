@@ -20,7 +20,7 @@ describe("« Même export par l'API » : le JSON export_video exact", () => {
   const prefs: VideoPrefs = {
     ...DEFAULT_VIDEO_PREFS,
     orientation: "9:16",
-    resolution: 2160,
+    resolution: 1080,
     fps: 60,
     arabicSize: 96,
     showWave: false,

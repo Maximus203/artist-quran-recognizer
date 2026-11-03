@@ -39,12 +39,7 @@ export function weightLevel(
     weight.maxFileMb > limits.fileDangerMb
   )
     return "danger";
-  if (
-    weight.totalMb > limits.warnMb ||
-    (quality.resolution >= limits.alwaysHeavy.resolution &&
-      quality.fps >= limits.alwaysHeavy.fps)
-  )
-    return "warn";
+  if (weight.totalMb > limits.warnMb) return "warn";
   return "ok";
 }
 

@@ -94,7 +94,8 @@ remplissage de l'espace, hauteur du texte, onde, couleur d'accent, nom du fichie
 fond (dix-sept choix proposés, vidéo d'origine, couleur unie, ou image envoyée).
 
 **Qualité et parties.** `fps` : 30 (défaut) ou 60 (plus fluide, fichier environ deux fois plus lourd) ;
-`resolution` : côté court de l'image, 360, 480, 720, 1080 (défaut), 1440 ou 2160 (720 = 1280×720 en 16:9,
+`resolution` : côté court de l'image, 360, 480, 720 ou 1080 (défaut et **maximum** : le rendu se fait sur un
+serveur partagé ; 1440 et 2160 sont refusés) (720 = 1280×720 en 16:9,
 720×1280 en 9:16). `ranges` : `[{ "start": 12, "end": 40 }, …]` en secondes de l'audio, **une vidéo par
 plage** (50 au plus, 0,5 s au moins, une fin au-delà de la durée est ramenée à la durée) ; `per_verse: true` :
 une vidéo par verset reconnu (exclusif avec `ranges`). Sans plage, une seule vidéo de tout l'audio.
@@ -111,8 +112,8 @@ imagettes (1 à 120) larges de `width` px (32 à 320) ; l'imagette i montre l'in
 Un silence, pour l'aimantation (`snap_to_silence`, `snapped`, `silences=1`), est au moins 12 dB sous le niveau médian de la voix pendant la récitation ; une marge s'arrête toujours avant une abstention ou un passage non coranique (avertissement dans `warnings`). Les erreurs de validation sont en français (« lead_in : 5 au plus », « option inconnue « per_vers » ») ; un outil MCP appelé avec un argument qu'il ne connaît pas répond par une erreur qui le nomme, sans rien exécuter.
 L'écran d'export affiche, dans « Même export par l'API », le JSON `export_video` exact de ses réglages. Le job
 terminé liste ses fichiers dans `downloads` (`index`, `name`, `url`) : `…/file` pour la première vidéo,
-`…/file?index=N` pour les suivantes. Un export est plus long à 60 im/s et en 1440p ou 4K (mesuré : 3 s
-de 4K à 60 im/s en 14 s).
+`…/file?index=N` pour les suivantes. Un export est plus long à 60 im/s (mesuré : 3 s
+de 4K à 60 im/s en 14 s, avant le plafond à 1080p).
 
 ## Compétence pour l'agent
 

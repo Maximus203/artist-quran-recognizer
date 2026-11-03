@@ -78,13 +78,18 @@ describe("options de l'export vidéo par l'API", () => {
     expect(
       videoJobOptionsSchema.safeParse({
         fps: 60,
-        resolution: 2160,
+        resolution: 1080,
         ranges: [
           { start: 0, end: 12.5 },
           { start: 30, end: 41 },
         ],
       }).success,
     ).toBe(true);
+    // Le 1080p est le maximum : le rendu se fait sur un serveur partagé.
+    for (const resolution of [1440, 2160])
+      expect(videoJobOptionsSchema.safeParse({ resolution }).success).toBe(
+        false,
+      );
     expect(videoJobOptionsSchema.safeParse({ per_verse: true }).success).toBe(
       true,
     );

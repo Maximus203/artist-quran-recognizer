@@ -145,9 +145,7 @@ export function WeightGauge({
             </b>{" "}
             La vidéo se fabrique dans ce navigateur, qui garde tout en mémoire
             pendant le rendu : sur téléphone, il peut s’arrêter en route.{" "}
-            {height >= 1440 || width >= 2560
-              ? "1080p reste net sur presque tous les écrans."
-              : "Raccourcis les plages ou baisse la fluidité."}
+            Raccourcis les plages ou baisse la fluidité.
           </span>
         )}
       </p>

@@ -168,18 +168,19 @@ Exporter ─┬─ Rail d'étapes (tablist) : [Vérifier ● n à valider] [Sous
 - **Écriture** : taille de l'arabe (Petit/Moyen/Grand/Très grand) et place du texte (Haut/Centre/Bas) en
   contrôles segmentés ; interrupteurs traduction et onde. Repliés : curseur arabe 40–240, taille de la
   traduction, hauteur 0–100 %, remplir, couleur d'accent (`AccentDialog` existant).
-- **Qualité** : 5 **paliers** qui affichent chacun le **poids total estimé pour les plages choisies** :
-  Léger 720p·30, **Standard 1080p·30 (défaut)**, Fluide 1080p·60, Grand écran 1440p·30, Maximum 2160p·60 ;
-  « Sur mesure » replié = les 6 résolutions × 30/60 actuels. Jauge 0 → 1 Go avec repères 250 Mo et 800 Mo.
+- **Qualité** : 3 **paliers** (depuis le 2026-11-03 : plus rien au-dessus du 1080p, pour la santé du serveur) qui
+  affichent chacun le **poids total estimé pour les plages choisies** :
+  Léger 720p·30, **Standard 1080p·30 (défaut)**, Fluide 1080p·60 ;
+  « Sur mesure » replié = les 4 résolutions (360 à 1080p) × 30/60. Jauge 0 → 1 Go avec repères 250 Mo et 800 Mo.
 - **Seuils** (`LIMITS`, à mettre en **configuration**, pas en dur — valeurs de départ à calibrer sur de vrais
-  rendus, aucune mesure ne les fonde encore) : `warnMb 250`, `dangerMb 800`, `fileDangerMb 500`, et toujours
-  « lourd » en 2160p·60. Lourd = motif hachuré + libellé, très lourd = points + libellé (jamais la couleur seule).
+  rendus, aucune mesure ne les fonde encore) : `warnMb 250`, `dangerMb 800`, `fileDangerMb 500` (le palier « toujours
+  lourd en 2160p·60 » a disparu avec le plafond à 1080p). Lourd = motif hachuré + libellé, très lourd = points + libellé (jamais la couleur seule).
   Message : « Lourd : ≈ 2,9 Go. La vidéo se fabrique dans ce navigateur, qui garde tout en mémoire pendant le
   rendu : sur téléphone, il peut s'arrêter en route. 1080p reste net sur presque tous les écrans. » + action
   « Passer en 1080p · 30 im/s » dans le bordereau.
 - **Bordereau** (carte droite / feuille mobile) : grand nombre serif « 3 vidéos · une par plage », durée totale,
   format + dimensions, fluidité, poids estimé, temps de rendu (« ≈ moitié de la durée à 30 im/s », d'après la
-  description de l'outil MCP `export_video` ; « plus de … » en 60 im/s ou ≥ 1440p), bouton **Exporter 3 vidéos**,
+  description de l'outil MCP `export_video` ; « plus de … » en 60 im/s), bouton **Exporter 3 vidéos**,
   modèle du nom de fichier, et repli « Même export par l'API (export_video) » qui montre le JSON équivalent.
 
 ### États (tous dessinés dans la maquette, sélecteur « État »)

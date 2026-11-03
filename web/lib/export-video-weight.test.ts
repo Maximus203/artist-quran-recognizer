@@ -16,13 +16,11 @@ import {
 const HD = { width: 1920, height: 1080 };
 
 describe("paliers de qualité", () => {
-  it("proposent cinq paliers, le standard étant 1080p à 30 im/s", () => {
+  it("proposent trois paliers (jamais au-dessus du 1080p), le standard étant 1080p à 30 im/s", () => {
     expect(VIDEO_QUALITY_TIERS.map((t) => [t.resolution, t.fps])).toEqual([
       [720, 30],
       [1080, 30],
       [1080, 60],
-      [1440, 30],
-      [2160, 60],
     ]);
     expect(tierOf(1080, 30)?.id).toBe("standard");
     expect(tierOf(480, 60)).toBeNull();
@@ -52,13 +50,13 @@ describe("niveau de poids : seuils lus dans la configuration", () => {
   it("léger sous le seuil d'alerte", () => {
     expect(weightLevel({ totalMb: L.warnMb - 1, maxFileMb: 10 }, q)).toBe("ok");
   });
-  it("lourd au-dessus du seuil d'alerte, et toujours en 2160p à 60 im/s", () => {
+  it("lourd au-dessus du seuil d'alerte seulement", () => {
     expect(weightLevel({ totalMb: L.warnMb + 1, maxFileMb: 10 }, q)).toBe(
       "warn",
     );
     expect(
-      weightLevel({ totalMb: 5, maxFileMb: 5 }, { resolution: 2160, fps: 60 }),
-    ).toBe("warn");
+      weightLevel({ totalMb: 5, maxFileMb: 5 }, { resolution: 1080, fps: 60 }),
+    ).toBe("ok");
   });
   it("très lourd au-delà du total ou d'un fichier trop gros", () => {
     expect(weightLevel({ totalMb: L.dangerMb + 1, maxFileMb: 10 }, q)).toBe(
@@ -98,9 +96,9 @@ describe("temps de rendu", () => {
 });
 
 describe("aucune vidéo", () => {
-  it("n'est jamais « lourde », même en 2160p à 60 im/s", () => {
+  it("n'est jamais « lourde », même en 1080p à 60 im/s", () => {
     expect(
-      weightLevel({ totalMb: 0, maxFileMb: 0 }, { resolution: 2160, fps: 60 }),
+      weightLevel({ totalMb: 0, maxFileMb: 0 }, { resolution: 1080, fps: 60 }),
     ).toBe("ok");
   });
 });

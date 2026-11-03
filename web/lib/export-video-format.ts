@@ -19,24 +19,34 @@ export const VIDEO_RESOLUTIONS = [
   { short: 480, label: "480p" },
   { short: 720, label: "720p (HD)" },
   { short: 1080, label: "1080p (Full HD)" },
-  { short: 1440, label: "1440p (2K)" },
-  { short: 2160, label: "2160p (4K)" },
 ] as const;
 export type VideoResolution = (typeof VIDEO_RESOLUTIONS)[number]["short"];
 export const DEFAULT_VIDEO_RESOLUTION: VideoResolution = 1080;
 export const VIDEO_RESOLUTION_VALUES: readonly VideoResolution[] =
   VIDEO_RESOLUTIONS.map((r) => r.short);
+/**
+ * Plafond : le rendu se fait sur le serveur (partagé, 2 cœurs, 2 Go) ; au-delà du 1080p le temps de rendu et la
+ * mémoire explosent pour un gain invisible sur un écran de téléphone ou de partage.
+ */
+export const MAX_VIDEO_RESOLUTION: VideoResolution = 1080;
+/** Valeurs qu'un ancien réglage enregistré peut encore porter : elles sont ramenées au plafond, pas refusées. */
+export const LEGACY_VIDEO_RESOLUTIONS: readonly number[] = [
+  ...VIDEO_RESOLUTION_VALUES,
+  1440,
+  2160,
+];
+/** Résolution d'un réglage enregistré, jamais au-dessus du plafond. */
+export const capResolution = (value: number): VideoResolution =>
+  Math.min(value, MAX_VIDEO_RESOLUTION) as VideoResolution;
 
 /**
  * Paliers de qualité proposés en un geste : chacun affiche le poids des plages choisies. « Sur
- * mesure » garde les six résolutions × 30/60 im/s.
+ * mesure » garde les quatre résolutions (jusqu'au 1080p) × 30/60 im/s.
  */
 export const VIDEO_QUALITY_TIERS = [
   { id: "light", label: "Léger", usage: "Messagerie, téléphone", resolution: 720, fps: 30 },
   { id: "standard", label: "Standard", usage: "YouTube, partage", resolution: 1080, fps: 30 },
   { id: "smooth", label: "Fluide", usage: "Mouvements plus doux", resolution: 1080, fps: 60 },
-  { id: "large", label: "Grand écran", usage: "Projection, TV", resolution: 1440, fps: 30 },
-  { id: "max", label: "Maximum", usage: "4K : très lourd", resolution: 2160, fps: 60 },
 ] as const satisfies readonly {
   id: string;
   label: string;

@@ -16,8 +16,6 @@ export const EXPORT_VIDEO_CONFIG = {
     fileDangerMb: 500,
     /** Fin de la jauge. */
     gaugeMaxMb: 1000,
-    /** Toujours « lourd » à cette qualité, quel que soit le poids. */
-    alwaysHeavy: { resolution: 2160, fps: 60 },
   },
   render: {
     /** « ≈ moitié de la durée à 30 im/s » (description de l'outil MCP export_video, non mesurée au-delà). */
@@ -83,5 +81,4 @@ export type WeightLimits = {
   dangerMb: number;
   fileDangerMb: number;
   gaugeMaxMb: number;
-  alwaysHeavy: { resolution: number; fps: number };
 };

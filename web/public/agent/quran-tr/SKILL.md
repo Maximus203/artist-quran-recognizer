@@ -65,7 +65,7 @@ ou écriture). Il le copie une seule fois. Adresse de base : celle de l'atelier,
    `small|medium|large|xlarge`), `show_translation`, `show_arabic` (`false` = traduction seule, les deux à `false` sont refusés), `fill` (le texte occupe la zone libre),
    `text_position` (0 haut à 100 bas, ou `top|middle|bottom`), `show_wave`, `accent` (`{h,s,l,a}`),
    `file_name`, `background` (un fond proposé, `source` ou
-   `color`), `fps` (30 ou 60), `resolution` (360, 480, 720, 1080, 1440 ou 2160 : côté court de l'image),
+   `color`), `fps` (30 ou 60), `resolution` (360, 480, 720 ou 1080 : côté court de l'image, le 1080p est le maximum),
    `ranges` (`[{start, end, name?}]` en secondes : UNE vidéo par plage ; `name`, par exemple la référence,
    nomme le fichier) ou `per_verse: true` (une vidéo par verset reconnu) — puis `get_video_export` toutes
    les 10 s jusqu'à `done` (`progress` et `files_done`/`files_total` disent où en est le rendu) et téléchargement de chaque
