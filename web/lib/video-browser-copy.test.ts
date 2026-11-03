@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BROWSER_VIDEO_CODECS, needsBrowserCopy } from "./video-browser-copy";
+import {
+  BROWSER_VIDEO_CODECS,
+  NO_VIDEO,
+  needsBrowserCopy,
+} from "./video-browser-copy";
 
 describe("copie de la vidéo pour le navigateur du serveur", () => {
   it("garde les codecs que Chrome sur Linux lit (H.264, VP8, VP9, AV1)", () => {
@@ -12,5 +16,9 @@ describe("copie de la vidéo pour le navigateur du serveur", () => {
     expect(needsBrowserCopy("hevc")).toBe(true);
     expect(needsBrowserCopy("HEVC")).toBe(true);
     expect(needsBrowserCopy(null)).toBe(true);
+  });
+
+  it("ne fabrique rien pour un enregistrement audio seul : il n'a pas d'image à copier", () => {
+    expect(needsBrowserCopy(NO_VIDEO)).toBe(false);
   });
 });

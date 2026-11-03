@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Un enregistrement audio seul ne bloque plus l'export vidéo
+Étiquettes : utilisateur, technique
+PR : #180
+
+**Ce qui change.** Une session d'enregistrement audio seul (micro, fichier .webm sans image) ne fait plus échouer l'export vidéo avec « Output file #0 does not contain any stream ». Le serveur ne cherche plus à fabriquer une copie d'une image qui n'existe pas : l'export part sans fond vidéo, comme prévu pour un son.
+
+**Pourquoi / décision.** `ffprobe` ne renvoie aucun codec vidéo pour un fichier audio seul ; le code lisait ce cas comme « codec inconnu » et lançait un transcodage voué à l'échec. Le cas est désormais distingué (`NO_VIDEO` dans `web/lib/video-browser-copy.ts`), couvert par `web/lib/video-browser-copy.test.ts`.
+
 ## 2026-11-02 — La préparation de la vidéo ne bloque plus la page
 Étiquettes : technique
 PR : -

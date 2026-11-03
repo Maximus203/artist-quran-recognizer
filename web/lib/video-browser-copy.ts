@@ -12,14 +12,18 @@ import { sessionDir } from "./store";
  */
 export const BROWSER_VIDEO_CODECS = new Set(["h264", "vp8", "vp9", "av1"]);
 const COPY_NAME = "video-browser.mp4";
+/** Source sans flux vidéo (enregistrement audio seul, ex. micro en .webm) : il n'y a rien à copier. */
+export const NO_VIDEO = "aucun";
 const exec = promisify(execFile);
 const pending = new Map<string, Promise<string>>();
 
 /** Vrai si le navigateur du serveur doit recevoir une copie (codec absent ou illisible). */
 export function needsBrowserCopy(codec: string | null): boolean {
+  if (codec === NO_VIDEO) return false;
   return codec === null || !BROWSER_VIDEO_CODECS.has(codec.toLowerCase());
 }
 
+/** Codec du premier flux vidéo, `NO_VIDEO` si la source n'en a pas, `null` si ffprobe échoue. */
 export async function probeVideoCodec(source: string): Promise<string | null> {
   const ffprobe = ffmpegCommand().replace(/ffmpeg(\.exe)?$/, "ffprobe$1");
   try {
@@ -27,7 +31,7 @@ export async function probeVideoCodec(source: string): Promise<string | null> {
       "-v", "error", "-select_streams", "v:0",
       "-show_entries", "stream=codec_name", "-of", "csv=p=0", source,
     ], { windowsHide: true, timeout: 60_000 }); // prettier-ignore
-    return stdout.trim().split(/\r?\n/)[0] || null;
+    return stdout.trim().split(/\r?\n/)[0] || NO_VIDEO;
   } catch {
     return null;
   }
