@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Export vidéo : noyau de la mise en page par blocs (zones, fonds de texte, fond vidéo)
+Étiquettes : utilisateur, technique, décision
+PR : #201
+
+**Ce qui change.** Le texte de la vidéo exportée n'est plus un seul bloc : la sourate et le verset, l'arabe, la traduction et l'onde ont chacun leur zone (une mise en page par format : horizontal, vertical, carré), un style de texte (taille relative en pourcentage, remplir la zone, place dans la zone) et un fond au choix (aucun avec ombre douce ou contour, transparent, flou, plein), indépendant pour l'arabe et la traduction. Un texte trop long pour sa zone est réduit seul, et la réduction est annoncée (« réduit à 87 % »). Un fond vidéo muet est prévu : plus court que la récitation il recommence (ou va et vient, ou s'arrête, ou ralentit), plus long on en garde une portion. « Petit / moyen / grand » disparaît au profit de boutons − / + (≈ 6 % par appui) ; les réglages déjà enregistrés sont convertis à l'identique à l'ouverture. Aucun éditeur à l'écran n'est livré ici : l'écran d'export actuel garde ses réglages, sur le nouveau modèle ; l'éditeur interactif est la suite du chantier.
+
+**Pourquoi / décision.** Un éditeur où l'on touche, déplace et redimensionne chaque élément ne se construit pas sur un seul bloc empilé : `docs/adr/0018-mise-en-page-par-blocs.md`. Le fond flouté a été mesuré avant d'être livré (1080p, Chrome 156 : environ +3,6 ms par image sur un fond photo, aucun surcoût mesurable sur un fond vidéo ; tableau dans `.artist/decision-log.md`). L'export lancé depuis l'atelier étant rendu sur le serveur, l'API accepte aussi `layouts`, `styles` et `show_ref`. Limite connue : le fichier d'une vidéo de fond n'est pas encore envoyé au serveur.
+
 ## 2026-11-03 — Un seul lecteur qui continue entre les pages ; playlist avec l'écoute de la source
 Étiquettes : utilisateur, technique
 PR : #199
