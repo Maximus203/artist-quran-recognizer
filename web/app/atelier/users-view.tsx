@@ -47,6 +47,7 @@ export type UsersViewProps = {
   onReset: (user: UserRowView) => void;
   onToggleDisabled: (user: UserRowView) => void;
   onChangeRole: (user: UserRowView, role: Role) => void;
+  onDelete: (user: UserRowView) => void;
   onDismissReveal: () => void;
 };
 
@@ -198,6 +199,15 @@ export function UsersView(props: UsersViewProps) {
                           onClick={() => props.onToggleDisabled(u)}
                         >
                           {u.disabled ? "Réactiver" : "Désactiver"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          disabled={busy}
+                          data-testid={`user-delete-${u.id}`}
+                          onClick={() => props.onDelete(u)}
+                        >
+                          Supprimer
                         </button>
                       </div>
                     )}

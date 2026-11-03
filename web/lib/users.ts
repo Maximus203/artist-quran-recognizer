@@ -162,6 +162,41 @@ const activeAdmins = (db: Db): number =>
       .get() as { n: number }
   ).n;
 
+export class SelfDeleteError extends Error {
+  constructor() {
+    super("Tu ne peux pas supprimer ton propre compte.");
+    this.name = "SelfDeleteError";
+  }
+}
+
+/**
+ * Supprime un compte (administrateur). Ses connexions, préférences, favoris et jetons partent avec lui ;
+ * ses sessions restent, sans propriétaire. Les invitations et agents du moteur qu'il avait créés sont
+ * rattachés à celui qui supprime (leur historique ne disparaît pas). Refuse de supprimer son propre compte
+ * ou le dernier administrateur actif. Faux si le compte n'existe pas.
+ */
+export function deleteUser(db: Db, id: number, actorId: number): boolean {
+  return transaction(db, () => {
+    const target = getUser(db, id);
+    if (!target) return false;
+    if (id === actorId) throw new SelfDeleteError();
+    if (
+      target.role === "admin" &&
+      target.disabled_at === null &&
+      activeAdmins(db) <= 1
+    )
+      throw new LastAdminError();
+    db.prepare(
+      "UPDATE invitations SET created_by = ? WHERE created_by = ?",
+    ).run(actorId, id);
+    db.prepare(
+      "UPDATE engine_agents SET created_by = ? WHERE created_by = ?",
+    ).run(actorId, id);
+    db.prepare("DELETE FROM users WHERE id = ?").run(id);
+    return true;
+  });
+}
+
 /**
  * Change le rôle et/ou l'état d'un compte. Désactiver un compte révoque ses connexions. Refuse de
  * retirer le dernier administrateur actif (rôle ou désactivation). `null` si le compte n'existe pas.

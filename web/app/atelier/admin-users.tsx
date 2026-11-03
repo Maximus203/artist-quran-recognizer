@@ -81,6 +81,15 @@ export function UsersPane() {
           },
         )
       }
+      onDelete={(user) =>
+        void act(
+          user,
+          `Supprimer le compte « ${user.username} » ? C’est définitif : ses connexions, préférences et favoris disparaissent. Ses sessions restent, sans propriétaire.`,
+          async () => {
+            await api(`/api/admin/users/${user.id}`, { method: "DELETE" });
+          },
+        )
+      }
       onChangeRole={(user, role) => {
         if (role === user.role) return;
         void act(
