@@ -676,8 +676,9 @@ export function VideoPanel({
     };
   }, [follow, sessionId]);
 
+  // La fenêtre-résumé reste ouverte pendant le rendu : c'est elle qui montre la progression, puis les vidéos
+  // prêtes (le bouton du haut en garde l'état quand on la ferme).
   const exportNow = () => {
-    setSheet(false);
     setFiles([]);
     void run(ranges, 0, whole);
   };
@@ -731,7 +732,6 @@ export function VideoPanel({
     onResume: resume,
     onFinish: () => {
       const done = files.filter((f) => f.state === "done").length;
-      setSheet(false);
       void run(ranges.slice(done), done, whole);
     },
     onNew: () => {

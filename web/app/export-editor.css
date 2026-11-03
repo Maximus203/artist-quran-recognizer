@@ -535,6 +535,15 @@
 }
 
 /* ── Sections de réglages (feuille ET inspecteur) ────────────────────────────────────── */
+/* Toute colonne de grille est `minmax(0, 1fr)` : un champ ou un texte trop large ne pousse jamais la feuille de côté. */
+.xe-sec,
+.xe-sheet-body,
+.xe-dialog-body,
+.xe-passages,
+.xe-actions,
+.xe-ctx {
+  grid-template-columns: minmax(0, 1fr);
+}
 .xe-sec {
   display: grid;
   gap: var(--sp-4);
@@ -542,6 +551,7 @@
 }
 .xe-field {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-2);
   min-width: 0;
 }
@@ -911,6 +921,7 @@ button.xe-step-val:hover {
 }
 .xe-pct {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   font-size: var(--fs-xs);
   color: var(--text-3);
@@ -918,6 +929,7 @@ button.xe-step-val:hover {
 }
 .xe-pct-box {
   display: flex;
+  min-width: 0;
   align-items: center;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
@@ -926,6 +938,7 @@ button.xe-step-val:hover {
 }
 .xe-pct-box input {
   flex: 1;
+  width: 100%;
   min-width: 0;
   min-height: var(--hit);
   border: 0;
