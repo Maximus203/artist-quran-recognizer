@@ -95,3 +95,33 @@ describe("décision HTTP", () => {
     expect(decide(other, "review", globalOwned)).toBe("ok");
   });
 });
+
+describe("récitateur : enregistre et exporte sa vidéo, rien de plus", () => {
+  const recitant: Actor = { id: 4, role: "recitant" };
+  const ownedByRecitant: Resource = { owner_id: 4, visibility: "private" };
+  const othersGlobal: Resource = { owner_id: 2, visibility: "global" };
+
+  it("gère ses propres sessions (écouter, lancer, renommer, supprimer)", () => {
+    for (const ability of ["view", "edit", "run", "delete"] as Ability[])
+      expect(can(recitant, ability, ownedByRecitant)).toBe(true);
+  });
+
+  it("ne relit, ne corrige et n'exporte jamais les sous-titres", () => {
+    expect(can(recitant, "review", ownedByRecitant)).toBe(false);
+    expect(can(recitant, "export_subtitles", ownedByRecitant)).toBe(false);
+  });
+
+  it("n'accède jamais à la vérité terrain, même sur sa propre session", () => {
+    expect(can(recitant, "truth", ownedByRecitant)).toBe(false);
+  });
+
+  it("ne modifie pas une session globale d'autrui, et n'y signale rien", () => {
+    expect(can(recitant, "edit", othersGlobal)).toBe(false);
+    expect(can(recitant, "review", othersGlobal)).toBe(false);
+  });
+
+  it("le testeur garde les sous-titres ; seul le récitateur en est privé", () => {
+    expect(can(owner, "export_subtitles", globalOwned)).toBe(true);
+    expect(can(admin, "export_subtitles", globalOwned)).toBe(true);
+  });
+});

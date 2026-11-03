@@ -16,6 +16,7 @@ const schema = z
     label: z.string().min(1).max(200),
     expires_in_days: z.number().int().min(1).max(90).optional(),
     max_uses: z.number().int().min(1).max(20).optional(),
+    role: z.enum(["user", "recitant"]).optional(),
   })
   .strict();
 
@@ -36,7 +37,7 @@ async function handlePOST(request: Request) {
   const body = await parseBody(
     request,
     schema,
-    "{ label, expires_in_days?, max_uses? }",
+    "{ label, expires_in_days?, max_uses?, role? }",
   );
   if (!body.ok) return body.response;
   const label = cleanInvitationLabel(body.data.label);
@@ -51,6 +52,7 @@ async function handlePOST(request: Request) {
       createdBy: auth.user.id,
       expiresInDays: body.data.expires_in_days,
       maxUses: body.data.max_uses,
+      role: body.data.role,
     });
     log.event(
       "security",

@@ -81,20 +81,23 @@ export function UsersPane() {
           },
         )
       }
-      onToggleRole={(user) =>
+      onChangeRole={(user, role) => {
+        if (role === user.role) return;
         void act(
           user,
-          user.role === "admin"
-            ? `Rétrograder « ${user.username} » en testeur ?`
-            : `Promouvoir « ${user.username} » administrateur ? Il pourra gérer les comptes et le moteur.`,
+          role === "admin"
+            ? `Promouvoir « ${user.username} » administrateur ? Il pourra gérer les comptes et le moteur.`
+            : role === "recitant"
+              ? `Passer « ${user.username} » en récitateur ? Il n’aura plus que l’enregistrement et l’export vidéo.`
+              : `Passer « ${user.username} » en testeur ?`,
           async () => {
             await api(`/api/admin/users/${user.id}`, {
               method: "PATCH",
-              json: { role: user.role === "admin" ? "user" : "admin" },
+              json: { role },
             });
           },
-        )
-      }
+        );
+      }}
     />
   );
 }

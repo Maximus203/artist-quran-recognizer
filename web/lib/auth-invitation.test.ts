@@ -56,6 +56,17 @@ const register = (username: string, code?: string) =>
   );
 
 describe("mode code", () => {
+  it("l'invitation de récitateur crée un compte récitateur, celle de testeur un compte testeur", async () => {
+    const reciter = invite({ role: "recitant" });
+    const result = await register("Amina", reciter.token);
+    expect(result).toMatchObject({ ok: true, user: { role: "recitant" } });
+    const tester = invite();
+    expect(await register("Bintou", tester.token)).toMatchObject({
+      ok: true,
+      user: { role: "user" },
+    });
+  });
+
   it("une invitation valide tient lieu de code et crée le compte", async () => {
     const { token } = invite();
     const result = await register("Aminata", token);

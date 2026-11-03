@@ -40,14 +40,20 @@ const plural = (n: number, one: string, many: string) =>
 
 /** Page « Sessions » : la liste complète, avec recherche, filtres, tri, groupes par date et actions groupées. */
 export function SessionsPage({ search }: { search: string }) {
-  const { prefs, update, refreshQuota, quota } = useShell();
+  const { prefs, update, refreshQuota, quota, user } = useShell();
   const [filter, setFilter] = useState<SessionsFilter>(() => {
     const params = new URLSearchParams(search);
     return hasUrlFilter(params)
       ? filterFromUrl(params)
       : fromPreference(prefs.sessionsFilter);
   });
-  const feed = useSessionFeed(filter, PAGE_SIZE);
+  // Le récitateur ne voit que ses propres sessions, quel que soit le filtre mémorisé ou effacé.
+  const recitant = user.role === "recitant";
+  const listFilter = useMemo<SessionsFilter>(
+    () => (recitant ? { ...filter, scope: "mine" } : filter),
+    [filter, recitant],
+  );
+  const feed = useSessionFeed(listFilter, PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [announcement, setAnnouncement] = useState("");

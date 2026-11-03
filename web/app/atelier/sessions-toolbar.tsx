@@ -17,6 +17,7 @@ import {
   type SessionsFilter,
 } from "@/lib/sessions-filter";
 import { Icon, type IconName } from "./icons";
+import { useShell } from "./shell";
 import { useDismiss } from "./session-bits";
 
 const SCOPES_UI: { id: Scope; label: string; icon?: IconName }[] = [
@@ -115,6 +116,9 @@ export function SessionsToolbar({
   selectMode,
   onSelectMode,
 }: Props) {
+  // Le récitateur n'a ni portée (toutes, partagées, favoris, archives) ni filtre de moteur.
+  const { user } = useShell();
+  const recitant = user.role === "recitant";
   // La recherche part 180 ms après la dernière frappe.
   const [text, setText] = useState(filter.q);
   const last = useRef(filter.q);
@@ -214,21 +218,29 @@ export function SessionsToolbar({
         </button>
       </div>
       <div className="tb-row">
-        <div className="seg-ctl" role="group" aria-label="Portée des sessions">
-          {SCOPES_UI.map((scope) => (
-            <button
-              key={scope.id}
-              type="button"
-              data-testid={`scope-${scope.id}`}
-              aria-pressed={filter.scope === scope.id}
-              onClick={() => onChange({ scope: scope.id })}
-            >
-              {scope.icon ? <Icon name={scope.icon} /> : null}
-              {scope.label}{" "}
-              <span className="n">{counts ? counts.scopes[scope.id] : ""}</span>
-            </button>
-          ))}
-        </div>
+        {recitant ? null : (
+          <div
+            className="seg-ctl"
+            role="group"
+            aria-label="Portée des sessions"
+          >
+            {SCOPES_UI.map((scope) => (
+              <button
+                key={scope.id}
+                type="button"
+                data-testid={`scope-${scope.id}`}
+                aria-pressed={filter.scope === scope.id}
+                onClick={() => onChange({ scope: scope.id })}
+              >
+                {scope.icon ? <Icon name={scope.icon} /> : null}
+                {scope.label}{" "}
+                <span className="n">
+                  {counts ? counts.scopes[scope.id] : ""}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="fbar">
         <FilterPop
@@ -285,55 +297,60 @@ export function SessionsToolbar({
             </>
           )}
         </FilterPop>
-        <FilterPop
-          id="engine"
-          icon="wave"
-          label="Moteur"
-          active={filter.engines.length > 0}
-          value={
-            filter.engines.length === 0
-              ? ""
-              : filter.engines.length === 1
-                ? engineLabel(filter.engines[0])
-                : `${filter.engines.length} choisis`
-          }
-        >
-          {(close) => (
-            <>
-              <p className="eyebrow menu-label" style={{ padding: "4px 8px" }}>
-                Moteur d’analyse
-              </p>
-              {ENGINE_FILTERS.map((engine) => (
-                <label className="check" key={engine}>
-                  <input
-                    type="checkbox"
-                    checked={filter.engines.includes(engine)}
-                    onChange={() =>
-                      onChange({ engines: toggle(filter.engines, engine) })
-                    }
-                  />
-                  {engineLabel(engine)}
-                </label>
-              ))}
-              <div className="foot-row">
-                <button
-                  className="btn btn--ghost btn--sm"
-                  type="button"
-                  onClick={() => onChange({ engines: [] })}
+        {recitant ? null : (
+          <FilterPop
+            id="engine"
+            icon="wave"
+            label="Moteur"
+            active={filter.engines.length > 0}
+            value={
+              filter.engines.length === 0
+                ? ""
+                : filter.engines.length === 1
+                  ? engineLabel(filter.engines[0])
+                  : `${filter.engines.length} choisis`
+            }
+          >
+            {(close) => (
+              <>
+                <p
+                  className="eyebrow menu-label"
+                  style={{ padding: "4px 8px" }}
                 >
-                  Effacer
-                </button>
-                <button
-                  className="btn btn--secondary btn--sm"
-                  type="button"
-                  onClick={close}
-                >
-                  Fermer
-                </button>
-              </div>
-            </>
-          )}
-        </FilterPop>
+                  Moteur d’analyse
+                </p>
+                {ENGINE_FILTERS.map((engine) => (
+                  <label className="check" key={engine}>
+                    <input
+                      type="checkbox"
+                      checked={filter.engines.includes(engine)}
+                      onChange={() =>
+                        onChange({ engines: toggle(filter.engines, engine) })
+                      }
+                    />
+                    {engineLabel(engine)}
+                  </label>
+                ))}
+                <div className="foot-row">
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    type="button"
+                    onClick={() => onChange({ engines: [] })}
+                  >
+                    Effacer
+                  </button>
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    type="button"
+                    onClick={close}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </>
+            )}
+          </FilterPop>
+        )}
         <FilterPop
           id="date"
           icon="calendar"

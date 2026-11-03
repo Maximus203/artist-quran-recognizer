@@ -10,6 +10,7 @@ import {
   cleanInvitationLabel,
   consumeInvitation,
   createInvitation,
+  invitationRole,
   invitationState,
   listInvitations,
   looksLikeInvitation,
@@ -187,5 +188,37 @@ describe("état et révocation", () => {
     expect(revokeInvitation(db, row.id, NOW)).toBe(true);
     expect(revokeInvitation(db, row.id, NOW)).toBe(false);
     expect(revokeInvitation(db, 9999, NOW)).toBe(false);
+  });
+});
+
+describe("rôle accordé par l'invitation", () => {
+  it("une invitation de testeur accorde le rôle testeur, par défaut", () => {
+    const { token, row } = createInvitation(db, {
+      label: "Testeur",
+      createdBy: adminId,
+    });
+    expect(row.role).toBe("user");
+    expect(invitationRole(db, token, NOW)).toBe("user");
+  });
+
+  it("une invitation de récitateur accorde le rôle récitateur", () => {
+    const { token, row } = createInvitation(db, {
+      label: "Récitant",
+      createdBy: adminId,
+      role: "recitant",
+    });
+    expect(row.role).toBe("recitant");
+    expect(invitationRole(db, token, NOW)).toBe("recitant");
+  });
+
+  it("aucun rôle pour un jeton inconnu, révoqué ou épuisé", () => {
+    expect(invitationRole(db, "inv_inconnu_0000000000000", NOW)).toBeNull();
+    const { token, row } = createInvitation(db, {
+      label: "Révoquée",
+      createdBy: adminId,
+      role: "recitant",
+    });
+    revokeInvitation(db, row.id, NOW);
+    expect(invitationRole(db, token, NOW)).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { authConfig, resolveLogin, sessionToken, SESSION_COOKIE } from "./auth";
 import { hasAccessCredential } from "./local-request";
 import { ready } from "./server-init";
+import { landingFor } from "./role-view";
 import type { User } from "./users";
 
 /**
@@ -47,6 +48,16 @@ export function safeNext(
 export async function requirePageAdmin(next = "/"): Promise<User> {
   const user = await requirePageUser(next);
   if (user.role !== "admin") notFound();
+  return user;
+}
+
+/**
+ * Pages de la revue, des performances, de la documentation ou de la correction : le récitateur, qui n'y a pas
+ * accès, est renvoyé à ses sessions (sans 404 : la page existe, elle n'est simplement pas la sienne).
+ */
+export async function requireTesterPage(next = "/"): Promise<User> {
+  const user = await requirePageUser(next);
+  if (user.role === "recitant") redirect(landingFor(user.role));
   return user;
 }
 

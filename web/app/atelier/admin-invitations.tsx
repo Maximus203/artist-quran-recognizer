@@ -10,6 +10,7 @@ export function InvitationsPane() {
   const [label, setLabel] = useState("");
   const [days, setDays] = useState("14");
   const [maxUses, setMaxUses] = useState("1");
+  const [role, setRole] = useState<"user" | "recitant">("user");
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState("");
   const [fresh, setFresh] = useState<{
@@ -49,6 +50,7 @@ export function InvitationsPane() {
           label,
           expires_in_days: Number(days),
           max_uses: Number(maxUses),
+          role,
         },
       });
       setFresh({
@@ -96,6 +98,8 @@ export function InvitationsPane() {
       label={label}
       days={days}
       maxUses={maxUses}
+      role={role}
+      onRole={setRole}
       pending={pending}
       onLabel={setLabel}
       onDays={setDays}

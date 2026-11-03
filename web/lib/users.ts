@@ -3,7 +3,8 @@ import { transaction } from "./db";
 import { LEGACY_TESTER, TESTER_PATTERN, TESTER_RULE_MESSAGE } from "./tester";
 
 /** Dépôt des comptes (couche données) : SQL paramétré uniquement, aucune règle d'authentification. */
-export type Role = "user" | "admin";
+/** testeur (« user ») · administrateur · récitateur (enregistre et exporte sa vidéo, interface réduite). */
+export type Role = "user" | "admin" | "recitant";
 
 export type User = {
   id: number;
@@ -78,19 +79,24 @@ export function countUsers(db: Db): number {
  */
 export function createUser(
   db: Db,
-  input: { username: string; passwordHash: string },
+  input: {
+    username: string;
+    passwordHash: string;
+    role?: Exclude<Role, "admin">;
+  },
   now = new Date().toISOString(),
 ): User {
   try {
     const result = db
       .prepare(
         `INSERT INTO users (username, username_key, password_hash, role, created_at)
-         VALUES (?, ?, ?, CASE WHEN (SELECT COUNT(*) FROM users) = 0 THEN 'admin' ELSE 'user' END, ?)`,
+         VALUES (?, ?, ?, CASE WHEN (SELECT COUNT(*) FROM users) = 0 THEN 'admin' ELSE ? END, ?)`,
       )
       .run(
         input.username,
         usernameKey(input.username),
         input.passwordHash,
+        input.role ?? "user",
         now,
       );
     return getUser(db, Number(result.lastInsertRowid)) as User;

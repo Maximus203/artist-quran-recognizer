@@ -84,3 +84,15 @@ describe("PATCH /api/admin/users/[id] { unlock: true }", () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe("rôle récitateur", () => {
+  it("un administrateur promeut un compte en récitateur, puis le rétrograde en testeur", async () => {
+    expect((await call(adminCookie, { role: "recitant" })).status).toBe(200);
+    const { getDb } = await import("@/lib/db");
+    const row = getDb()
+      .prepare("SELECT role FROM users WHERE id = ?")
+      .get(targetId) as { role: string };
+    expect(row.role).toBe("recitant");
+    expect((await call(adminCookie, { role: "user" })).status).toBe(200);
+  });
+});

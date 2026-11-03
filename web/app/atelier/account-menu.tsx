@@ -5,6 +5,8 @@ import { api } from "@/lib/api-client";
 import { formatBytesFr } from "@/lib/format";
 import { storageState } from "@/lib/storage-meter";
 import { Avatar } from "./avatar";
+import { pageVisibleTo, type PageId } from "@/lib/role-view";
+import type { Role } from "@/lib/users";
 import type { NavId } from "./header";
 import { Icon, type IconName } from "./icons";
 import { useShell } from "./shell";
@@ -15,7 +17,7 @@ const THEMES = [
   { id: "system", label: "Système" },
 ] as const;
 
-const GO_TO: { id: NavId; href: string; label: string; icon: IconName }[] = [
+const GO_TO: { id: PageId; href: string; label: string; icon: IconName }[] = [
   { id: "revue", href: "/", label: "Revue", icon: "wave" },
   { id: "sessions", href: "/sessions", label: "Sessions", icon: "list" },
   { id: "perf", href: "/performance", label: "Performance", icon: "gauge" },
@@ -23,11 +25,18 @@ const GO_TO: { id: NavId; href: string; label: string; icon: IconName }[] = [
   { id: "docs", href: "/docs", label: "Documentation", icon: "book" },
 ];
 
+const ROLE_LABEL: Record<Role, string> = {
+  user: "Testeur",
+  admin: "Administrateur",
+  recitant: "Récitateur",
+};
+
 const MENU_ITEMS = '[role="menuitem"], .menu-theme button, .menu-quota a';
 
 /** Menu du compte : préférences, statistiques, thème, espace utilisé, déconnexion. */
 export function AccountMenu({ active }: { active: NavId }) {
   const { user, prefs, update, quota } = useShell();
+  const pages = GO_TO.filter((item) => pageVisibleTo(user.role, item.id));
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -117,15 +126,14 @@ export function AccountMenu({ active }: { active: NavId }) {
               <div>
                 <b>{user.username}</b>
                 <small>
-                  {user.role === "admin" ? "Administrateur" : "Testeur"} ·
-                  inscrit le {joined}
+                  {ROLE_LABEL[user.role]} · inscrit le {joined}
                 </small>
               </div>
             </div>
             <div className="menu-only-sm">
               <div className="menu-sep" />
               <p className="eyebrow menu-label">Aller à</p>
-              {GO_TO.map((item) => (
+              {pages.map((item) => (
                 <Link
                   key={item.id}
                   role="menuitem"

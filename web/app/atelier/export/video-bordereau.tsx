@@ -52,7 +52,7 @@ export type BordereauProps = {
   onNew: () => void;
   onRedownload: (index: number | null) => void;
   onLighten: () => void;
-  onGoVerify: () => void;
+  onGoVerify?: () => void;
   /** Un seul bouton porte l'identifiant de test (bureau ou téléphone). */
   primaryTestId?: string;
 };

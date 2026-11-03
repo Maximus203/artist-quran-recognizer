@@ -6,6 +6,7 @@ import { formatBytesFr } from "@/lib/format";
 import { storageState, type Quota } from "@/lib/storage-meter";
 import Recorder from "../recorder";
 import { HeroWave } from "./hero-wave";
+import { useShell } from "./shell";
 import { Icon } from "./icons";
 import type { ImportItem, Visibility } from "./use-sessions";
 
@@ -32,6 +33,8 @@ const stateLabel: Record<ImportItem["state"], string> = {
 };
 
 export function NewTrial(props: Props) {
+  // L'écoute en direct (détection du moteur pendant la récitation) est un outil de test : absente pour le récitateur.
+  const recitant = useShell().user.role === "recitant";
   const input = useRef<HTMLInputElement>(null);
   const audio = useRef<HTMLInputElement>(null);
   const result = useRef<HTMLInputElement>(null);
@@ -148,25 +151,27 @@ export function NewTrial(props: Props) {
             .
           </p>
         </fieldset>
-        <section className="live-card" data-testid="live-card">
-          <span className="live-card-icon" aria-hidden="true">
-            <Icon name="live" />
-          </span>
-          <div className="live-card-text">
-            <h2>Écouter en direct</h2>
-            <p>
-              Le moteur nomme les versets pendant que tu récites. Le son n’est
-              pas conservé.
-            </p>
-          </div>
-          <Link
-            className="btn btn--secondary"
-            href="/direct"
-            data-testid="live-open"
-          >
-            Écouter en direct
-          </Link>
-        </section>
+        {recitant ? null : (
+          <section className="live-card" data-testid="live-card">
+            <span className="live-card-icon" aria-hidden="true">
+              <Icon name="live" />
+            </span>
+            <div className="live-card-text">
+              <h2>Écouter en direct</h2>
+              <p>
+                Le moteur nomme les versets pendant que tu récites. Le son n’est
+                pas conservé.
+              </p>
+            </div>
+            <Link
+              className="btn btn--secondary"
+              href="/direct"
+              data-testid="live-open"
+            >
+              Écouter en direct
+            </Link>
+          </section>
+        )}
         <Recorder onAnalyze={props.onRecording} />
         <div className="or">ou</div>
         <label className="drop" htmlFor="media-input" data-testid="drop-zone">

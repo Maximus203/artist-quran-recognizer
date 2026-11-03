@@ -10,8 +10,10 @@
  *    (`owner_id` nul) n'a pas de propriétaire : seuls les administrateurs la modifient ;
  *  - vérité terrain (écriture dans le manifeste de test) : administrateurs, sur une session visible.
  */
+import type { Role } from "./users";
+
 export type Visibility = "global" | "private";
-export type Actor = { id: number; role: "user" | "admin" };
+export type Actor = { id: number; role: Role };
 export type Resource = { owner_id: number | null; visibility: Visibility };
 
 export type Ability =
@@ -21,7 +23,8 @@ export type Ability =
   | "edit"
   | "run"
   | "delete"
-  | "truth";
+  | "truth"
+  | "export_subtitles";
 
 export const isOwner = (actor: Actor, meta: Resource): boolean =>
   meta.owner_id !== null && meta.owner_id === actor.id;
@@ -36,13 +39,16 @@ export function can(actor: Actor, ability: Ability, meta: Resource): boolean {
   if (!canView(actor, meta)) return false;
   switch (ability) {
     case "view":
-    case "review":
     case "favorite":
       return true;
     case "edit":
     case "run":
     case "delete":
       return isAdmin(actor) || isOwner(actor, meta);
+    case "review":
+      return actor.role !== "recitant";
+    case "export_subtitles":
+      return actor.role !== "recitant";
     case "truth":
       return isAdmin(actor);
   }
