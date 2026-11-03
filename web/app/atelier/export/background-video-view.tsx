@@ -584,12 +584,18 @@ export function BackgroundVideoView(props: BackgroundVideoViewProps) {
                 {value.width > 0 ? ` · ${value.width}×${value.height}` : ""}
               </small>
             </span>
-            <FilePicker onPick={props.onPick} tone="plain">
-              Changer
-            </FilePicker>
-            <button type="button" className="bvs-btn" onClick={props.onRemove}>
-              Retirer
-            </button>
+            <span className="bvs-file-actions">
+              <FilePicker onPick={props.onPick} tone="plain">
+                Changer
+              </FilePicker>
+              <button
+                type="button"
+                className="bvs-btn"
+                onClick={props.onRemove}
+              >
+                Retirer
+              </button>
+            </span>
           </div>
           <p className="bvs-mute">
             <Glyph name="mute" />

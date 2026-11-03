@@ -123,16 +123,23 @@
 /* ── fichier choisi ───────────────────────────────────────────────────────────────────────── */
 .bvs-file {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
+  gap: var(--sp-2);
+}
+.bvs-file-actions {
+  display: flex;
   gap: var(--sp-2);
 }
 @media (max-width: 479px) {
   .bvs-file {
     grid-template-columns: auto minmax(0, 1fr);
   }
-  .bvs-file > .bvs-btn {
-    grid-column: span 1;
+  .bvs-file-actions {
+    grid-column: 1 / -1;
+  }
+  .bvs-file-actions > .bvs-btn {
+    flex: 1;
   }
 }
 .bvs-file-ic {
