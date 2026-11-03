@@ -1806,6 +1806,10 @@ fieldset {
   background: var(--surface-1);
   color: var(--text);
 }
+/* En tête de session, le bouton « Exporter » est calé en fin de ligne (à droite du titre et de l'étoile). */
+.export-entry {
+  margin-inline-start: auto;
+}
 .ex-pill--warn {
   color: var(--warn);
   border-color: var(--warn-edge);

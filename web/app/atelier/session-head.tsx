@@ -177,7 +177,12 @@ export function SessionHead({
     <header className="o-head session-head" data-testid="session-head">
       <div
         className="title-row-wrap"
-        style={{ display: "flex", alignItems: "center", gap: 4 }}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 4,
+        }}
       >
         <div style={{ flex: "0 1 auto", minWidth: 0 }}>
           <InlineName
@@ -187,6 +192,7 @@ export function SessionHead({
           />
         </div>
         <FavButton favorite={view.favorite} onToggle={onFavorite} />
+        <ExportEntry sessionId={view.id} state={view.state} />
       </div>
       {view.content_label ? (
         <p className="detected" data-testid="content-label">
@@ -265,7 +271,6 @@ export function SessionHead({
         <span className="f mono muted m-hide">
           SHA-256 {view.audio_sha256.slice(0, 12)}…
         </span>
-        <ExportEntry sessionId={view.id} state={view.state} />
         <button
           className="btn btn--ghost btn--sm"
           type="button"
