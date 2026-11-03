@@ -519,12 +519,19 @@ describe("assemblage, contrôle du type réel et préparation", () => {
       },
     });
     const { id } = await uploaded(d);
-    const first = completeClip({ ...owner, id }, d);
-    await expect(completeClip({ ...owner, id }, d)).rejects.toMatchObject({
+    // Les deux demandes partent ensemble : laquelle gagne dépend de l'ordre d'arrivée, mais UNE SEULE assemble.
+    const both = Promise.allSettled([
+      completeClip({ ...owner, id }, d),
+      completeClip({ ...owner, id }, d),
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    release();
+    const results = await both;
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const refused = results.find((r) => r.status === "rejected");
+    expect((refused as PromiseRejectedResult).reason).toMatchObject({
       status: 409,
     });
-    release();
-    await first;
     await settledClip(id);
     expect((await completeClip({ ...owner, id }, d)).state).toBe("ready");
   });
