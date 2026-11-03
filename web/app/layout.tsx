@@ -18,6 +18,7 @@ import "./phase2.css";
 import "./pages.css";
 import "./live.css";
 import "./export.css";
+import "./playlists.css";
 import "./export-refonte.css";
 
 export const metadata: Metadata = {

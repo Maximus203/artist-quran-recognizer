@@ -20,6 +20,12 @@ const THEMES = [
 const GO_TO: { id: PageId; href: string; label: string; icon: IconName }[] = [
   { id: "revue", href: "/", label: "Revue", icon: "wave" },
   { id: "sessions", href: "/sessions", label: "Sessions", icon: "list" },
+  {
+    id: "playlists",
+    href: "/playlists",
+    label: "Playlists",
+    icon: "playlist",
+  },
   { id: "perf", href: "/performance", label: "Performance", icon: "gauge" },
   { id: "live", href: "/direct", label: "En direct", icon: "live" },
   { id: "docs", href: "/docs", label: "Documentation", icon: "book" },

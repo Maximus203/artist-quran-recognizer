@@ -7,7 +7,14 @@ import { AccountMenu } from "./account-menu";
 import { pageVisibleTo, type PageId } from "@/lib/role-view";
 import { useShell } from "./shell";
 
-export type NavId = "revue" | "sessions" | "perf" | "live" | "docs" | "account";
+export type NavId =
+  | "revue"
+  | "sessions"
+  | "playlists"
+  | "perf"
+  | "live"
+  | "docs"
+  | "account";
 
 type PanelToggle = {
   open: boolean;
@@ -31,6 +38,7 @@ type Props = {
 const NAV: { id: PageId; href: string; label: string }[] = [
   { id: "revue", href: "/", label: "Revue" },
   { id: "sessions", href: "/sessions", label: "Sessions" },
+  { id: "playlists", href: "/playlists", label: "Playlists" },
   { id: "perf", href: "/performance", label: "Performance" },
   { id: "live", href: "/direct", label: "En direct" },
   { id: "docs", href: "/docs", label: "Documentation" },

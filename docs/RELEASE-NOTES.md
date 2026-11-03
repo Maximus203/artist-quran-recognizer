@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Des playlists pour écouter des audios à la suite
+Étiquettes : utilisateur, technique
+PR : #184
+
+**Ce qui change.** On peut regrouper des audios dans des playlists (menu « Playlists »), les ajouter depuis le menu d'une session ou la sélection de la liste, puis les écouter à la suite comme avec un vrai lecteur : passage automatique à l'audio suivant, précédent / suivant, répétition (aucune, toute la playlist, un audio), lecture aléatoire, ordre modifiable. Une playlist est privée à son propriétaire.
+
+**Pourquoi / décision.** Une playlist ne donne accès à rien : chaque audio garde le droit de sa session, et une session devenue invisible sort de la lecture sans quitter la playlist. La logique de lecture est une file pure testée (`web/lib/playlist-queue.ts`), les données sont dans `web/lib/playlists.ts` (migration 011). Les playlists sont masquées pour le récitateur, dont l'interface reste réduite.
+
 ## 2026-11-03 — L'écho de l'écoute se règle depuis le lecteur
 Étiquettes : utilisateur, technique
 PR : #183

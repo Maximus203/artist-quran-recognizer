@@ -6,7 +6,13 @@
 import type { Role } from "./users";
 
 /** Pages de la barre du haut. */
-export type PageId = "revue" | "sessions" | "perf" | "live" | "docs";
+export type PageId =
+  | "revue"
+  | "sessions"
+  | "perf"
+  | "live"
+  | "docs"
+  | "playlists";
 
 /** Pages visibles par le récitateur : ses sessions, et rien d'autre. */
 const RECITANT_PAGES: readonly PageId[] = ["sessions"];
