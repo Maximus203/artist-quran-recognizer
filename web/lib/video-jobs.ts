@@ -347,6 +347,7 @@ export async function startVideoJob(input: {
         if (job.files.length === 0)
           job.files = [{ name: path.basename(job.file), path: job.file }];
         job.state = "done";
+        job.ratio = 1;
         job.progress = "Terminé";
         job.files_done = job.files.length;
         job.files_total = job.files.length;

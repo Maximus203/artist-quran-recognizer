@@ -80,7 +80,7 @@ PR : -
 **Ce qui change.** L'export d'une vidéo envoyée avec « Vidéo d'origine » en fond (le choix par défaut) était trop lent
 sur le serveur : une vidéo 4K de 2 minutes mettait plus d'une heure et occupait deux cœurs du serveur partagé. Le
 serveur fabrique maintenant, une seule fois par vidéo, une copie de travail en 1080p au plus ; l'export s'appuie
-dessus. La barre de progression avance pendant cette préparation (première fois seulement), au lieu de rester à 0 %.
+dessus. La barre de progression avance pendant cette préparation (première fois seulement), au lieu de rester à 0 %. Mesuré en production sur une vidéo 4K de 129 s : 9 min 28 s au total, copie comprise (3 min, une fois), contre plus de 100 min avant ; la barre finit à 100 %. La copie de travail (≈ 20 % du poids de l'original) est comptée dans l'espace du compte.
 
 **Pourquoi / décision.** Le rendu se positionne dans la vidéo image par image : mesuré avec le navigateur du rendu,
 une source 4K à images clés espacées donne 0,9 image par seconde, la copie 1080p avec une image clé toutes les 8
