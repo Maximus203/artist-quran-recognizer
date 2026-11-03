@@ -1,0 +1,159 @@
+{
+ "schema": "aqr.recognition/1",
+ "source": {
+  "file": "lot1-05_60-240.wav",
+  "sha256": "de01e2d25bccb50fa34c76820752df6f4296e38d7358ce6713d89c7d583366e9",
+  "duration_s": 180.0
+ },
+ "engine": {
+  "asr": "whisper-base-quran@5c3c53fdf927/times-estimated",
+  "segmenter": "recitation-segmenter-v2@5ee90364e709",
+  "matcher": "flow-matcher (ADR-0004)",
+  "decoder": "viterbi-decoder-v2",
+  "constrained": false,
+  "corpus": "tanzil.net hafs (2026-09-25T09:01:58.990153+00:00)"
+ },
+ "decoder": {
+  "min_recognized_score": 0.75,
+  "uncertainty_ratio": 0.92,
+  "merge_max_gap_s": 5.0,
+  "infer_max_gap_s": 180.0
+ },
+ "timing": {
+  "extract_s": 0.241,
+  "segment_s": 69.952,
+  "asr_s": 38.192,
+  "match_s": 0.026,
+  "total_s": 108.419
+ },
+ "windows": 9,
+ "warnings": [],
+ "intervals": [
+  {
+   "kind": "verse",
+   "ref": "42:4",
+   "words": [
+    1,
+    10
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    5.11,
+    19.75
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:5",
+   "words": [
+    1,
+    13
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    28.965,
+    55.76
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:5",
+   "words": [
+    14,
+    19
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    60.995,
+    72.575
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:6",
+   "words": [
+    1,
+    12
+   ],
+   "partial": false,
+   "status": "recognized",
+   "t": [
+    78.515,
+    102.745
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:7",
+   "words": [
+    1,
+    16
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    112.245,
+    139.94
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8571,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:7",
+   "words": [
+    17,
+    22
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    146.115,
+    157.315
+   ],
+   "time_interpolated": false,
+   "confidence": 1.0,
+   "candidates": [],
+   "repetition": false
+  },
+  {
+   "kind": "verse",
+   "ref": "42:8",
+   "words": [
+    1,
+    8
+   ],
+   "partial": true,
+   "status": "recognized",
+   "t": [
+    162.51,
+    180.0
+   ],
+   "time_interpolated": false,
+   "confidence": 0.8889,
+   "candidates": [],
+   "repetition": false
+  }
+ ]
+}

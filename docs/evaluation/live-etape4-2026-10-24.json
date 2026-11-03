@@ -1,0 +1,2086 @@
+{
+ "etape": "ADR-0011 étape 4, écran « En direct »",
+ "date": "2026-10-24",
+ "mesure": "délais en secondes d'AUDIO reçues depuis le début de la voix (le micro simulé de Chrome ne tourne pas en temps réel sur cette machine) ; rendu en horloge murale",
+ "local": {
+  "verses": 48,
+  "named": 19,
+  "false_named": 0,
+  "candidates_on_screen_ms": {
+   "n": 38,
+   "median": 2231.5,
+   "p90": 3218,
+   "max": 7425
+  },
+  "name_on_screen_ms": {
+   "n": 19,
+   "median": 4021,
+   "p90": 6899,
+   "max": 7846
+  },
+  "name_message_ms": {
+   "n": 23,
+   "median": 4049,
+   "p90": 6879,
+   "max": 7846
+  },
+  "screen_after_message_ms": {
+   "n": 19,
+   "median": 2,
+   "p90": 7,
+   "max": 14
+  }
+ },
+ "tunnel_cloudflare": {
+  "verses": 13,
+  "named": 6,
+  "candidates_on_screen_ms": {
+   "n": 10,
+   "median": 2524.5,
+   "p90": 2669,
+   "max": 6886
+  },
+  "name_on_screen_ms": {
+   "n": 6,
+   "median": 4572.0,
+   "p90": 10266,
+   "max": 10266
+  },
+  "screen_after_message_ms": {
+   "n": 6,
+   "median": 3.0,
+   "p90": 24,
+   "max": 24
+  }
+ },
+ "scenarios": [
+  {
+   "scenario": "busy",
+   "tag": "busy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "service plein : écran 'service complet' avec le texte du service",
+     "ok": true,
+     "detail": "ÉCOUTE IMPOSSIBLE  Le service d’écoute est complet  Pourquoi. Trop de personnes écoutent en même temps : le serveur a une limite de flux simultanés.  Ce que ça change. Ton écoute n’a pas démarré ; le micro a été refermé "
+    },
+    {
+     "name": "un nouvel essai automatique est annoncé",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "l'essai automatique aboutit une fois la place libérée",
+     "ok": true,
+     "detail": "5.3 s après le clic"
+    }
+   ],
+   "auto_retry_after_s": 5.3,
+   "file": "busy-1280-dark.json"
+  },
+  {
+   "scenario": "cut",
+   "tag": "cut-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "la coupure est dite en clair (bandeau + son gardé)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le bandeau dit que le son est gardé",
+     "ok": true,
+     "detail": "Connexion perdue. Je continue de capter ta voix et je garde le son (2 s) pour le renvoyer dès que la connexion revient. Les résultats reprendront ensuite.  Rées"
+    },
+    {
+     "name": "reprise automatique, connexion rétablie",
+     "ok": true,
+     "detail": "10.2 s après la coupure"
+    },
+    {
+     "name": "la reprise a présenté la session (START avec resume)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le service a répondu READY resumed=true",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé après la reprise (I3)",
+     "ok": true,
+     "detail": "1:2,1:4,1:5,1:7"
+    },
+    {
+     "name": "aucun message en double (seq strictement croissant, rejeu compris)",
+     "ok": true,
+     "detail": "28 messages"
+    },
+    {
+     "name": "tout le son a été renvoyé (aucun trou)",
+     "ok": true,
+     "detail": "{\"closes\":3,\"opens\":2,\"sent_s\":57,\"clip_s\":51.322}"
+    },
+    {
+     "name": "console propre hors coupure volontaire",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "recovered_after_s": 10.2,
+   "facts": "Durée 00:56\n4 versets nommés\n1 passage non nommé",
+   "locked": [
+    "1:2",
+    "1:4",
+    "1:5",
+    "1:7"
+   ],
+   "cut": {
+    "closes": 3,
+    "opens": 2,
+    "sent_s": 57,
+    "clip_s": 51.322
+   },
+   "file": "cut-1280-dark.json"
+  },
+  {
+   "scenario": "cut",
+   "tag": "cut-fatiha-alafasy-375-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 375,
+   "height": 812,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "la coupure est dite en clair (bandeau + son gardé)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le bandeau dit que le son est gardé",
+     "ok": true,
+     "detail": "Connexion perdue. Je continue de capter ta voix et je garde le son (2 s) pour le renvoyer dès que la connexion revient. Les résultats reprendront ensuite.  Rées"
+    },
+    {
+     "name": "reprise automatique, connexion rétablie",
+     "ok": true,
+     "detail": "10.8 s après la coupure"
+    },
+    {
+     "name": "la reprise a présenté la session (START avec resume)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le service a répondu READY resumed=true",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé après la reprise (I3)",
+     "ok": true,
+     "detail": "1:2,1:4,1:5,1:7"
+    },
+    {
+     "name": "aucun message en double (seq strictement croissant, rejeu compris)",
+     "ok": true,
+     "detail": "30 messages"
+    },
+    {
+     "name": "tout le son a été renvoyé (aucun trou)",
+     "ok": true,
+     "detail": "{\"closes\":3,\"opens\":2,\"sent_s\":57,\"clip_s\":51.322}"
+    },
+    {
+     "name": "console propre hors coupure volontaire",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "recovered_after_s": 10.8,
+   "facts": "Durée 00:57\n4 versets nommés\n1 passage non nommé",
+   "locked": [
+    "1:2",
+    "1:4",
+    "1:5",
+    "1:7"
+   ],
+   "cut": {
+    "closes": 3,
+    "opens": 2,
+    "sent_s": 57,
+    "clip_s": 51.322
+   },
+   "file": "cut-fatiha-alafasy-375-dark.json"
+  },
+  {
+   "scenario": "deny",
+   "tag": "deny-375-light",
+   "base": "http://127.0.0.1:3410",
+   "width": 375,
+   "height": 812,
+   "scheme": "light",
+   "checks": [
+    {
+     "name": "micro (deny) : écran dédié",
+     "ok": true,
+     "detail": "ÉCOUTE IMPOSSIBLE  Le micro est bloqué pour ce site  Pourquoi. Tu as refusé l’accès au micro, ou le navigateur s’en souvient d’une fois précédente.  Ce que ça c"
+    },
+    {
+     "name": "cause, impact et quoi faire sont dits",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucune connexion n'a été ouverte (rien n'est parti)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "l'écran d'erreur bloquant est une alerte (role=alert)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "deny-375-light.json"
+  },
+  {
+   "scenario": "inject",
+   "tag": "inject-fatiha-alafasy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "un verset a été nommé avant l'injection",
+     "ok": true,
+     "detail": "1:2"
+    },
+    {
+     "name": "injection DEGRADED reçue",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le bandeau du mode allégé dit le retard et que les noms arrivent plus tard",
+     "ok": true,
+     "detail": "Mode allégé : serveur surchargé. L’analyse a 5,3 s de retard : les mots arrivent plus tard. Pour rester sûr, je demande plus de mots avant de nommer un verset.  Ce que ça change. Les noms arrivent plu"
+    },
+    {
+     "name": "la puce « Mode allégé » est affichée",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le bandeau est permanent (toujours là 2,5 s plus tard)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "injection REVISION reçue",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le bandeau « Correction » nomme le verset retiré",
+     "ok": true,
+     "detail": "Correction. Al-Fatiha 1:2 n’est plus nommé : la vérification acoustique n’a pas confirmé ces mots. Le passage reste dans la liste, marqué « corrigé », et son te"
+    },
+    {
+     "name": "la ligne n'est pas effacée (même nombre de lignes)",
+     "ok": true,
+     "detail": "1 -> 1"
+    },
+    {
+     "name": "la ligne est marquée Corrigé",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "le texte du verset retiré n'est plus affiché",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la correction est annoncée aux lecteurs d'écran",
+     "ok": true,
+     "detail": "Correction : 1:2 n’est plus nommé."
+    },
+    {
+     "name": "retour au mode normal : le bandeau disparaît",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute rappelle le mode allégé",
+     "ok": true,
+     "detail": "Durée 00:16 0 verset nommé 0 passage non nommé mode allégé 00:00–00:00"
+    }
+   ],
+   "file": "inject-fatiha-alafasy-1280-dark.json"
+  },
+  {
+   "scenario": "keep",
+   "tag": "keep-fatiha-alafasy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "rien n'a été envoyé au serveur avant le geste « Garder »",
+     "ok": true,
+     "detail": "0 envoi(s)"
+    },
+    {
+     "name": "« Ne rien garder » dit que rien n'a été gardé",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "« Annuler » (6 s) restaure le son : « Garder » est de nouveau proposé",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "« Garder » met l'enregistrement dans la file d'analyse",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "envoyé comme un import classique (autorun, source microphone)",
+     "ok": true,
+     "detail": "http://127.0.0.1:3410/api/sessions?autorun=1&visibility=global microphone"
+    },
+    {
+     "name": "le nom proposé est « Récitation en direct, hh:mm »",
+     "ok": true,
+     "detail": "Récitation en direct, 06:47"
+    },
+    {
+     "name": "la session apparaît dans la liste de l'atelier",
+     "ok": true,
+     "detail": "{\"id\":\"30e3ea9c-d1b1-4452-bcae-2c3235950853\",\"name\":\"Récitation en direct, 06:47\",\"state\":\"running\"}"
+    },
+    {
+     "name": "les résultats du direct n'ont pas été réutilisés (analyse complète en file)",
+     "ok": true,
+     "detail": "running"
+    }
+   ],
+   "sessions": [
+    {
+     "id": "30e3ea9c-d1b1-4452-bcae-2c3235950853",
+     "name": "Récitation en direct, 06:47",
+     "state": "running"
+    }
+   ],
+   "kept_session": {
+    "id": "30e3ea9c-d1b1-4452-bcae-2c3235950853",
+    "name": "Récitation en direct, 06:47",
+    "state": "running"
+   },
+   "file": "keep-fatiha-alafasy-1280-dark.json"
+  },
+  {
+   "scenario": "micbusy",
+   "tag": "micbusy-375-light",
+   "base": "http://127.0.0.1:3410",
+   "width": 375,
+   "height": 812,
+   "scheme": "light",
+   "checks": [
+    {
+     "name": "micro (micbusy) : écran dédié",
+     "ok": true,
+     "detail": "ÉCOUTE IMPOSSIBLE  Le micro est déjà utilisé  Pourquoi. Une autre application ou un autre onglet a pris le micro.  Ce que ça change. L’écoute n’a pas démarré.  "
+    },
+    {
+     "name": "cause, impact et quoi faire sont dits",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucune connexion n'a été ouverte (rien n'est parti)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "l'écran d'erreur bloquant est une alerte (role=alert)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "micbusy-375-light.json"
+  },
+  {
+   "scenario": "nomic",
+   "tag": "nomic-375-light",
+   "base": "http://127.0.0.1:3410",
+   "width": 375,
+   "height": 812,
+   "scheme": "light",
+   "checks": [
+    {
+     "name": "micro (none) : écran dédié",
+     "ok": true,
+     "detail": "ÉCOUTE IMPOSSIBLE  Aucun micro trouvé  Pourquoi. Le navigateur ne voit aucune entrée audio (micro débranché, casque coupé).  Ce que ça change. Rien n’est écouté"
+    },
+    {
+     "name": "cause, impact et quoi faire sont dits",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucune connexion n'a été ouverte (rien n'est parti)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "l'écran d'erreur bloquant est une alerte (role=alert)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "nomic-375-light.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "nominal-fatiha-alafasy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "2/7 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 00:57 · 3 versets nommés · 2 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "57.4 s envoyées pour 57.4 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "57.4 s captées, clip de 51.322 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "1:1",
+      "voice_s": 1.04,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "1:2",
+      "voice_s": 7.711,
+      "candidates_ms": 2509,
+      "locked_ms": 3709,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3709,
+      "screen_after_message_ms": 6,
+      "first_cands_on_screen_ms": 2529
+     },
+     {
+      "ref": "1:3",
+      "voice_s": 13.825,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "1:4",
+      "voice_s": 18.977,
+      "candidates_ms": 2463,
+      "locked_ms": 4763,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2483
+     },
+     {
+      "ref": "1:5",
+      "voice_s": 24.199,
+      "candidates_ms": 1741,
+      "locked_ms": 4021,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4021,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 1741
+     },
+     {
+      "ref": "1:6",
+      "voice_s": 31.431,
+      "candidates_ms": 2369,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2369
+     },
+     {
+      "ref": "1:7",
+      "voice_s": 37.575,
+      "candidates_ms": 645,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 645
+     }
+    ],
+    "verses": 7,
+    "named": 2,
+    "not_named": 5,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 2369,
+     "p90": 2529,
+     "n": 5
+    },
+    "name_on_screen_ms": {
+     "median": 3865,
+     "p90": 4021,
+     "n": 2
+    },
+    "name_message_ms": {
+     "median": 4021,
+     "p90": 4763,
+     "n": 3
+    },
+    "screen_after_message_ms": {
+     "median": 4,
+     "p90": 6,
+     "max": 6
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 2870,
+    "audio_s": 57,
+    "wall_s": 71,
+    "max_gap_ms": 39,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 72,
+   "facts": "Durée 00:57\n3 versets nommés\n2 passages non nommés",
+   "zero_frames": 171,
+   "file": "nominal-fatiha-alafasy-1280-dark.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "nominal-fatiha-alafasy-1280-light",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "light",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "2/7 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 00:57 · 3 versets nommés · 2 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "57.4 s envoyées pour 57.4 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "57.4 s captées, clip de 51.322 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "1:1",
+      "voice_s": 1.04,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "1:2",
+      "voice_s": 7.711,
+      "candidates_ms": 2529,
+      "locked_ms": 3709,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3709,
+      "screen_after_message_ms": 6,
+      "first_cands_on_screen_ms": 2529
+     },
+     {
+      "ref": "1:3",
+      "voice_s": 13.825,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "1:4",
+      "voice_s": 18.977,
+      "candidates_ms": 2443,
+      "locked_ms": 4763,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2443
+     },
+     {
+      "ref": "1:5",
+      "voice_s": 24.199,
+      "candidates_ms": 1721,
+      "locked_ms": 4021,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4021,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 1721
+     },
+     {
+      "ref": "1:6",
+      "voice_s": 31.431,
+      "candidates_ms": 2369,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2369
+     },
+     {
+      "ref": "1:7",
+      "voice_s": 37.575,
+      "candidates_ms": 645,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 645
+     }
+    ],
+    "verses": 7,
+    "named": 2,
+    "not_named": 5,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 2369,
+     "p90": 2529,
+     "n": 5
+    },
+    "name_on_screen_ms": {
+     "median": 3865,
+     "p90": 4021,
+     "n": 2
+    },
+    "name_message_ms": {
+     "median": 4021,
+     "p90": 4763,
+     "n": 3
+    },
+    "screen_after_message_ms": {
+     "median": 4,
+     "p90": 6,
+     "max": 6
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 2871,
+    "audio_s": 57,
+    "wall_s": 72,
+    "max_gap_ms": 40,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 73,
+   "facts": "Durée 00:57\n3 versets nommés\n2 passages non nommés",
+   "zero_frames": 172,
+   "file": "nominal-fatiha-alafasy-1280-light.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "nominal-mixte-alafasy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "6/11 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 01:01 · 6 versets nommés · 3 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "61.6 s envoyées pour 61.6 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "61.6 s captées, clip de 55.573 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "112:1",
+      "voice_s": 1.08,
+      "candidates_ms": 1340,
+      "locked_ms": 2500,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 2500,
+      "screen_after_message_ms": 6,
+      "first_cands_on_screen_ms": 1340
+     },
+     {
+      "ref": "112:2",
+      "voice_s": 4.557,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "112:3",
+      "voice_s": 7.663,
+      "candidates_ms": 1457,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 1457
+     },
+     {
+      "ref": "112:4",
+      "voice_s": 11.18,
+      "candidates_ms": 2420,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2420
+     },
+     {
+      "ref": "113:1",
+      "voice_s": 16.564,
+      "candidates_ms": 1536,
+      "locked_ms": 6056,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 6056,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 1536
+     },
+     {
+      "ref": "113:2",
+      "voice_s": 20.562,
+      "candidates_ms": 3218,
+      "locked_ms": 3218,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3218,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 3218
+     },
+     {
+      "ref": "113:3",
+      "voice_s": 24.774,
+      "candidates_ms": 2246,
+      "locked_ms": 4526,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4526,
+      "screen_after_message_ms": 3,
+      "first_cands_on_screen_ms": 2246
+     },
+     {
+      "ref": "113:4",
+      "voice_s": 30.363,
+      "candidates_ms": 2217,
+      "locked_ms": 3417,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3417,
+      "screen_after_message_ms": 1,
+      "first_cands_on_screen_ms": 2217
+     },
+     {
+      "ref": "113:5",
+      "voice_s": 36.927,
+      "candidates_ms": 1253,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 1253
+     },
+     {
+      "ref": "114:1",
+      "voice_s": 43.131,
+      "candidates_ms": null,
+      "locked_ms": 1849,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 1849,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 1409
+     },
+     {
+      "ref": "114:2",
+      "voice_s": 49.761,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     }
+    ],
+    "verses": 11,
+    "named": 6,
+    "not_named": 5,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 1536,
+     "p90": 3218,
+     "n": 9
+    },
+    "name_on_screen_ms": {
+     "median": 3318,
+     "p90": 6056,
+     "n": 6
+    },
+    "name_message_ms": {
+     "median": 3318,
+     "p90": 6056,
+     "n": 6
+    },
+    "screen_after_message_ms": {
+     "median": 2,
+     "p90": 6,
+     "max": 6
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 3081,
+    "audio_s": 62,
+    "wall_s": 78,
+    "max_gap_ms": 46,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 79,
+   "facts": "Durée 01:01\n6 versets nommés\n3 passages non nommés",
+   "zero_frames": 203,
+   "file": "nominal-mixte-alafasy-1280-dark.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "nominal-mixte-alafasy-375-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 375,
+   "height": 812,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "4/11 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 01:01 · 6 versets nommés · 3 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "61.7 s envoyées pour 61.7 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "61.7 s captées, clip de 55.573 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "112:1",
+      "voice_s": 1.08,
+      "candidates_ms": 1300,
+      "locked_ms": 2580,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 2580,
+      "screen_after_message_ms": 6,
+      "first_cands_on_screen_ms": 1320
+     },
+     {
+      "ref": "112:2",
+      "voice_s": 4.557,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "112:3",
+      "voice_s": 7.663,
+      "candidates_ms": 1417,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 1437
+     },
+     {
+      "ref": "112:4",
+      "voice_s": 11.18,
+      "candidates_ms": 2400,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2400
+     },
+     {
+      "ref": "113:1",
+      "voice_s": 16.564,
+      "candidates_ms": 1516,
+      "locked_ms": 6016,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 1516
+     },
+     {
+      "ref": "113:2",
+      "voice_s": 20.562,
+      "candidates_ms": 3178,
+      "locked_ms": 3178,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3178,
+      "screen_after_message_ms": 1,
+      "first_cands_on_screen_ms": 3178
+     },
+     {
+      "ref": "113:3",
+      "voice_s": 24.774,
+      "candidates_ms": 2206,
+      "locked_ms": 4506,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4506,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 2206
+     },
+     {
+      "ref": "113:4",
+      "voice_s": 30.363,
+      "candidates_ms": 2197,
+      "locked_ms": 4497,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4497,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 2197
+     },
+     {
+      "ref": "113:5",
+      "voice_s": 36.927,
+      "candidates_ms": 1233,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 1233
+     },
+     {
+      "ref": "114:1",
+      "voice_s": 43.131,
+      "candidates_ms": null,
+      "locked_ms": 4049,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 1289
+     },
+     {
+      "ref": "114:2",
+      "voice_s": 49.761,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     }
+    ],
+    "verses": 11,
+    "named": 4,
+    "not_named": 7,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 1516,
+     "p90": 3178,
+     "n": 9
+    },
+    "name_on_screen_ms": {
+     "median": 3838,
+     "p90": 4506,
+     "n": 4
+    },
+    "name_message_ms": {
+     "median": 4273,
+     "p90": 6016,
+     "n": 6
+    },
+    "screen_after_message_ms": {
+     "median": 2,
+     "p90": 6,
+     "max": 6
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 3087,
+    "audio_s": 62,
+    "wall_s": 78,
+    "max_gap_ms": 34,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 80,
+   "facts": "Durée 01:01\n6 versets nommés\n3 passages non nommés",
+   "zero_frames": 206,
+   "file": "nominal-mixte-alafasy-375-dark.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "nominal-mulk-alafasy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "2/6 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 01:37 · 2 versets nommés · 4 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "97.3 s envoyées pour 97.3 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "97.3 s captées, clip de 91.202 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "67:1",
+      "voice_s": 1.1,
+      "candidates_ms": 2360,
+      "locked_ms": 4700,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4700,
+      "screen_after_message_ms": 7,
+      "first_cands_on_screen_ms": 2360
+     },
+     {
+      "ref": "67:2",
+      "voice_s": 12.454,
+      "candidates_ms": 6726,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 6726
+     },
+     {
+      "ref": "67:3",
+      "voice_s": 26.861,
+      "candidates_ms": 2399,
+      "locked_ms": 6879,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 6879,
+      "screen_after_message_ms": 3,
+      "first_cands_on_screen_ms": 2399
+     },
+     {
+      "ref": "67:4",
+      "voice_s": 46.477,
+      "candidates_ms": 683,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 683
+     },
+     {
+      "ref": "67:5",
+      "voice_s": 59.915,
+      "candidates_ms": 625,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 7425
+     },
+     {
+      "ref": "67:6",
+      "voice_s": 80.357,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     }
+    ],
+    "verses": 6,
+    "named": 2,
+    "not_named": 4,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 2399,
+     "p90": 7425,
+     "n": 5
+    },
+    "name_on_screen_ms": {
+     "median": 5790,
+     "p90": 6879,
+     "n": 2
+    },
+    "name_message_ms": {
+     "median": 5790,
+     "p90": 6879,
+     "n": 2
+    },
+    "screen_after_message_ms": {
+     "median": 5,
+     "p90": 7,
+     "max": 7
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 4865,
+    "audio_s": 97,
+    "wall_s": 132,
+    "max_gap_ms": 35,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 133,
+   "facts": "Durée 01:37\n2 versets nommés\n4 passages non nommés",
+   "zero_frames": 302,
+   "file": "nominal-mulk-alafasy-1280-dark.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "nominal-mulk-alafasy-375-light",
+   "base": "http://127.0.0.1:3410",
+   "width": 375,
+   "height": 812,
+   "scheme": "light",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "3/6 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 01:37 · 3 versets nommés · 3 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "97.3 s envoyées pour 97.3 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "97.3 s captées, clip de 91.202 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "67:1",
+      "voice_s": 1.1,
+      "candidates_ms": 2380,
+      "locked_ms": 3540,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3540,
+      "screen_after_message_ms": 14,
+      "first_cands_on_screen_ms": 2380
+     },
+     {
+      "ref": "67:2",
+      "voice_s": 12.454,
+      "candidates_ms": 3326,
+      "locked_ms": 7846,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 7846,
+      "screen_after_message_ms": 3,
+      "first_cands_on_screen_ms": 3326
+     },
+     {
+      "ref": "67:3",
+      "voice_s": 26.861,
+      "candidates_ms": 2419,
+      "locked_ms": 6899,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 6899,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 2419
+     },
+     {
+      "ref": "67:4",
+      "voice_s": 46.477,
+      "candidates_ms": 683,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 683
+     },
+     {
+      "ref": "67:5",
+      "voice_s": 59.915,
+      "candidates_ms": 645,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2985
+     },
+     {
+      "ref": "67:6",
+      "voice_s": 80.357,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     }
+    ],
+    "verses": 6,
+    "named": 3,
+    "not_named": 3,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 2419,
+     "p90": 3326,
+     "n": 5
+    },
+    "name_on_screen_ms": {
+     "median": 6899,
+     "p90": 7846,
+     "n": 3
+    },
+    "name_message_ms": {
+     "median": 6899,
+     "p90": 7846,
+     "n": 3
+    },
+    "screen_after_message_ms": {
+     "median": 3,
+     "p90": 14,
+     "max": 14
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 4866,
+    "audio_s": 97,
+    "wall_s": 132,
+    "max_gap_ms": 40,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 134,
+   "facts": "Durée 01:37\n3 versets nommés\n3 passages non nommés",
+   "zero_frames": 301,
+   "file": "nominal-mulk-alafasy-375-light.json"
+  },
+  {
+   "scenario": "pause",
+   "tag": "pause-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "en pause, rien du micro n'est envoyé (que du silence très court)",
+     "ok": true,
+     "detail": "24960 octets en 40 s"
+    },
+    {
+     "name": "la connexion survit à 40 s de pause (au-delà du délai d'inactivité du service)",
+     "ok": true,
+     "detail": "0 fermeture(s)"
+    },
+    {
+     "name": "l'écoute reprend et se termine proprement",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "pause-1280-dark.json"
+  },
+  {
+   "scenario": "tech",
+   "tag": "tech-fatiha-alafasy-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "mode technique éteint par défaut (aucun panneau)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "l'interrupteur est éteint",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la touche T allume le mode technique",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la transcription provisoire est étiquetée « non vérifiée, jamais le texte du Mushaf »",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "les derniers messages du service sont listés",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "PARTIAL n'entre jamais dans la région annoncée",
+     "ok": true,
+     "detail": "Écoute démarrée."
+    },
+    {
+     "name": "PARTIAL n'est pas affiché comme « passage entendu » dans la carte",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "T éteint le panneau",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "tech-fatiha-alafasy-1280-dark.json"
+  },
+  {
+   "scenario": "token",
+   "tag": "token-1280-dark",
+   "base": "http://127.0.0.1:3410",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "jeton expiré : l'erreur s'explique (cause, impact, quoi faire)",
+     "ok": true,
+     "detail": "ÉCOUTE IMPOSSIBLE  Le laissez-passer d’écoute n’a pas été accepté  Pourquoi. Il ne vaut qu’une minute et ne sert qu’une fois : celui de cette écoute a expiré ou avait déjà servi.  Ce que ça change. L’"
+    },
+    {
+     "name": "un seul nouvel essai automatique avec un jeton neuf (2 demandes)",
+     "ok": true,
+     "detail": "2 demandes"
+    },
+    {
+     "name": "le message ne montre aucun code brut",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "« Réessayer » avec un vrai jeton démarre l'écoute",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "token-1280-dark.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "tunnel-nominal-fatiha-alafasy-375-dark",
+   "base": "https://sql-acne-representatives-oriented.trycloudflare.com",
+   "width": 375,
+   "height": 812,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "3/7 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 00:57 · 3 versets nommés · 2 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "57.4 s envoyées pour 57.4 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "57.4 s captées, clip de 51.322 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "1:1",
+      "voice_s": 1.04,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "1:2",
+      "voice_s": 7.711,
+      "candidates_ms": 2669,
+      "locked_ms": 3849,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3869,
+      "screen_after_message_ms": 6,
+      "first_cands_on_screen_ms": 2669
+     },
+     {
+      "ref": "1:3",
+      "voice_s": 13.825,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     },
+     {
+      "ref": "1:4",
+      "voice_s": 18.977,
+      "candidates_ms": 2623,
+      "locked_ms": 4923,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4923,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 2623
+     },
+     {
+      "ref": "1:5",
+      "voice_s": 24.199,
+      "candidates_ms": 1881,
+      "locked_ms": 4221,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 4221,
+      "screen_after_message_ms": 2,
+      "first_cands_on_screen_ms": 1901
+     },
+     {
+      "ref": "1:6",
+      "voice_s": 31.431,
+      "candidates_ms": 2509,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 2509
+     },
+     {
+      "ref": "1:7",
+      "voice_s": 37.575,
+      "candidates_ms": 765,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 405
+     }
+    ],
+    "verses": 7,
+    "named": 3,
+    "not_named": 4,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 2509,
+     "p90": 2669,
+     "n": 5
+    },
+    "name_on_screen_ms": {
+     "median": 4221,
+     "p90": 4923,
+     "n": 3
+    },
+    "name_message_ms": {
+     "median": 4221,
+     "p90": 4923,
+     "n": 3
+    },
+    "screen_after_message_ms": {
+     "median": 2,
+     "p90": 6,
+     "max": 6
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 2872,
+    "audio_s": 57,
+    "wall_s": 71,
+    "max_gap_ms": 52,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 73,
+   "facts": "Durée 00:57\n3 versets nommés\n2 passages non nommés",
+   "zero_frames": 172,
+   "file": "tunnel/tunnel-nominal-fatiha-alafasy-375-dark.json"
+  },
+  {
+   "scenario": "nominal",
+   "tag": "tunnel-nominal-mulk-alafasy-1280-light",
+   "base": "https://sql-acne-representatives-oriented.trycloudflare.com",
+   "width": 1280,
+   "height": 900,
+   "scheme": "light",
+   "checks": [
+    {
+     "name": "page /direct ouverte, état Prêt",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "des candidats sont apparus PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "un verset nommé est apparu PENDANT la lecture",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "aucun faux verset nommé (I3)",
+     "ok": true,
+     "detail": "[]"
+    },
+    {
+     "name": "au moins un verset nommé à l'écran",
+     "ok": true,
+     "detail": "3/6 nommés"
+    },
+    {
+     "name": "pas de nom de verset pendant l'état candidats",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "la fin d'écoute donne le résumé honnête",
+     "ok": true,
+     "detail": "Durée 01:37 · 3 versets nommés · 3 passages non nommés"
+    },
+    {
+     "name": "« Garder cet enregistrement » est proposé (son en mémoire du navigateur)",
+     "ok": true,
+     "detail": ""
+    },
+    {
+     "name": "tout l'audio capté est envoyé (16 kHz mono 16 bits, aucune perte)",
+     "ok": true,
+     "detail": "97.2 s envoyées pour 97.2 s captées"
+    },
+    {
+     "name": "la récitation entière a été captée",
+     "ok": true,
+     "detail": "97.2 s captées, clip de 91.202 s"
+    },
+    {
+     "name": "aucun défilement horizontal",
+     "ok": true,
+     "detail": "0px"
+    },
+    {
+     "name": "console propre (aucune erreur)",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "delays": {
+    "rows": [
+     {
+      "ref": "67:1",
+      "voice_s": 1.1,
+      "candidates_ms": 2540,
+      "locked_ms": 3700,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 3700,
+      "screen_after_message_ms": 24,
+      "first_cands_on_screen_ms": 2540
+     },
+     {
+      "ref": "67:2",
+      "voice_s": 12.454,
+      "candidates_ms": 6886,
+      "locked_ms": 10266,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 10266,
+      "screen_after_message_ms": 3,
+      "first_cands_on_screen_ms": 6886
+     },
+     {
+      "ref": "67:3",
+      "voice_s": 26.861,
+      "candidates_ms": 2559,
+      "locked_ms": 7019,
+      "locked_status": "recognized",
+      "first_name_on_screen_ms": 7019,
+      "screen_after_message_ms": 3,
+      "first_cands_on_screen_ms": 2559
+     },
+     {
+      "ref": "67:4",
+      "voice_s": 46.477,
+      "candidates_ms": 803,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 803
+     },
+     {
+      "ref": "67:5",
+      "voice_s": 59.915,
+      "candidates_ms": 765,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": 765
+     },
+     {
+      "ref": "67:6",
+      "voice_s": 80.357,
+      "candidates_ms": null,
+      "locked_ms": null,
+      "locked_status": null,
+      "first_name_on_screen_ms": null,
+      "screen_after_message_ms": null,
+      "first_cands_on_screen_ms": null
+     }
+    ],
+    "verses": 6,
+    "named": 3,
+    "not_named": 3,
+    "false_named": [],
+    "candidates_on_screen_ms": {
+     "median": 2540,
+     "p90": 6886,
+     "n": 5
+    },
+    "name_on_screen_ms": {
+     "median": 7019,
+     "p90": 10266,
+     "n": 3
+    },
+    "name_message_ms": {
+     "median": 7019,
+     "p90": 10266,
+     "n": 3
+    },
+    "screen_after_message_ms": {
+     "median": 3,
+     "p90": 24,
+     "max": 24
+    }
+   },
+   "capture": {
+    "sample_rate": 48000,
+    "chunks": 4862,
+    "audio_s": 97,
+    "wall_s": 132,
+    "max_gap_ms": 42,
+    "gaps_over_100ms": 0
+   },
+   "elapsed_s": 133,
+   "facts": "Durée 01:37\n3 versets nommés\n3 passages non nommés",
+   "zero_frames": 300,
+   "file": "tunnel/tunnel-nominal-mulk-alafasy-1280-light.json"
+  },
+  {
+   "scenario": "pause",
+   "tag": "tunnel-pause-fatiha-alafasy-1280-dark",
+   "base": "https://sql-acne-representatives-oriented.trycloudflare.com",
+   "width": 1280,
+   "height": 900,
+   "scheme": "dark",
+   "checks": [
+    {
+     "name": "en pause, rien du micro n'est envoyé (que du silence très court)",
+     "ok": true,
+     "detail": "81920 octets en 130 s"
+    },
+    {
+     "name": "la connexion survit à 130 s de pause (au-delà du délai d'inactivité du service)",
+     "ok": true,
+     "detail": "0 fermeture(s)"
+    },
+    {
+     "name": "l'écoute reprend et se termine proprement",
+     "ok": true,
+     "detail": ""
+    }
+   ],
+   "file": "tunnel/tunnel-pause-fatiha-alafasy-1280-dark.json"
+  }
+ ],
+ "controles": {
+  "total": 168,
+  "echecs": 0,
+  "scenarios": 20
+ }
+}

@@ -1,0 +1,200 @@
+"""Décodage contraint au corpus : preuve acoustique d'un texte candidat (ADR-0005).
+
+Le matcher (B6) propose des versets à partir du TEXTE libre de l'ASR ; ce module vérifie, sur le
+treillis CTC (log-probabilités par trame), que l'**audio** soutient bien le texte du corpus :
+- `forced_logprob` : meilleur chemin CTC contraint à produire EXACTEMENT le texte candidat (le
+  chemin « Coran exact ») ;
+- `free_logprob` : meilleur chemin non contraint (somme des maxima par trame), borne supérieure
+  qui joue le rôle du **chemin « poubelle »** : si la parole est autre chose que le candidat, le
+  chemin libre est bien meilleur que le chemin contraint ;
+- `llr_per_frame = (forced - free) / trames` ≤ 0 : proche de 0, l'audio soutient le candidat ; très
+  négatif, le texte candidat n'explique pas l'audio (hallucination de l'ASR, parole non coranique).
+
+Pur Python (aucune dépendance) : testable sans GPU. Le seuil de la porte est une CONFIGURATION
+(`AcousticGate.min_llr_per_frame`, désactivée par défaut) à calibrer sur des annotations humaines
+(phase 6) ; rien n'est mesuré sur de l'audio réel tant que le modèle CTC n'a pas tourné.
+L'alignement forcé donne aussi les trames de chaque symbole (temps de mots).
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Callable, Collection, Sequence
+from dataclasses import dataclass
+
+from aqr.domain.ports import Candidate
+
+LogProbs = Sequence[Sequence[float]]  # [trame][symbole], log-probabilités normalisées
+
+
+@dataclass(frozen=True)
+class CtcEvidence:
+    forced_logprob: float
+    free_logprob: float
+    llr_per_frame: float
+    frames: int
+    voiced_llr_per_frame: float | None = None
+    """Même rapport, sur les seules trames entre le premier et le dernier symbole émis (ADR-0013).
+    `llr_per_frame` est dilué par les blancs d'un long passage : un texte faux posé sur quelques
+    trames y paraît soutenu. None = non calculé (ex. `acoustic_support`)."""
+    voiced_frames: int = 0
+    """Nombre de trames de la parole alignée (la base de `voiced_llr_per_frame`)."""
+
+
+@dataclass(frozen=True)
+class AcousticGate:
+    min_llr_per_frame: float | None = None
+    """Seuil sur `llr_per_frame` (négatif). None = porte désactivée : rien n'est filtré."""
+
+    def accepts(self, evidence: CtcEvidence) -> bool:
+        if self.min_llr_per_frame is None:
+            return True
+        return evidence.llr_per_frame >= self.min_llr_per_frame
+
+
+def _validate(log_probs: LogProbs, labels: Sequence[int], blank: int) -> int:
+    if not log_probs:
+        raise ValueError("aucune trame")
+    if not labels:
+        raise ValueError("texte candidat vide")
+    vocab = len(log_probs[0])
+    for symbol in (*labels, blank):
+        if not 0 <= symbol < vocab:
+            raise ValueError(f"symbole hors du vocabulaire : {symbol} (taille {vocab})")
+    return vocab
+
+
+def ctc_free_logprob(log_probs: LogProbs) -> float:
+    """Meilleur chemin sans contrainte : somme des maxima par trame."""
+    return sum(max(frame) for frame in log_probs)
+
+
+def frame_maxima(log_probs: LogProbs) -> list[float]:
+    """Meilleure log-probabilité de chaque trame (le chemin libre y passe)."""
+    return [max(frame) for frame in log_probs]
+
+
+def voiced_llr(
+    log_probs: LogProbs,
+    blank: int,
+    forced: float,
+    frames: Sequence[tuple[int, int]],
+    maxima: Sequence[float] | None = None,
+) -> tuple[float, int]:
+    """(rapport par trame, nombre de trames) sur la seule parole alignée : de la première trame du
+    premier symbole à la dernière du dernier. Hors de cette plage, le chemin contraint ne peut être
+    que blanc : on retire ce qu'il y vaut, et on compare au meilleur chemin libre de la plage."""
+    best = frame_maxima(log_probs) if maxima is None else maxima
+    start, stop = frames[0][0], frames[-1][1]
+    outside = sum(log_probs[t][blank] for t in range(len(log_probs)) if not start <= t <= stop)
+    free = sum(best[start : stop + 1])
+    count = stop - start + 1
+    return (forced - outside - free) / count, count
+
+
+def word_llrs(
+    log_probs: LogProbs,
+    blank: int,
+    labels: Sequence[int],
+    frames: Sequence[tuple[int, int]],
+    words: Sequence[tuple[int, int]],
+    maxima: Sequence[float] | None = None,
+) -> list[float]:
+    """Rapport par trame de chaque mot sur ses propres trames. `words` : (premier, dernier) indices
+    de symbole de chaque mot ; `frames` : trames (première, dernière) de chaque symbole. Un symbole
+    occupe ses trames, les blancs entre deux symboles complètent : c'est le chemin contraint. Un mot
+    posé sur du silence a un rapport très négatif, que la moyenne du passage ne laisse pas voir."""
+    best = frame_maxima(log_probs) if maxima is None else maxima
+    out: list[float] = []
+    for first_symbol, last_symbol in words:
+        start, stop = frames[first_symbol][0], frames[last_symbol][1]
+        owner = dict.fromkeys(range(start, stop + 1), blank)
+        for n in range(first_symbol, last_symbol + 1):
+            first, last = frames[n]
+            for t in range(first, last + 1):
+                owner[t] = labels[n]
+        forced = sum(log_probs[t][symbol] for t, symbol in owner.items())
+        out.append((forced - sum(best[start : stop + 1])) / (stop - start + 1))
+    return out
+
+
+def ctc_forced_align(
+    log_probs: LogProbs,
+    labels: Sequence[int],
+    blank: int,
+    ends: Collection[int] | None = None,
+) -> tuple[float, list[tuple[int, int]]]:
+    """Viterbi CTC contraint à `labels`. Renvoie (log-vraisemblance, intervalle de trames
+    [début, fin] par symbole émis) ; (-inf, []) si le texte ne tient pas dans les trames.
+
+    `ends` (fin libre) : nombres de symboles après lesquels le passage peut s'arrêter (frontières de
+    mots) ; le chemin retenu n'émet alors qu'un début de `labels`, le plus vraisemblable. None = le
+    texte entier doit être émis."""
+    _validate(log_probs, labels, blank)
+    extended = [blank]
+    for symbol in labels:
+        extended += [symbol, blank]
+    states, frames = len(extended), len(log_probs)
+    neg = -math.inf
+    score = [[neg] * states for _ in range(frames)]
+    back = [[0] * states for _ in range(frames)]
+    score[0][0] = log_probs[0][extended[0]]
+    if states > 1:
+        score[0][1] = log_probs[0][extended[1]]
+    for t in range(1, frames):
+        for s in range(states):
+            candidates = [(score[t - 1][s], s)]
+            if s >= 1:
+                candidates.append((score[t - 1][s - 1], s - 1))
+            if s >= 2 and extended[s] != blank and extended[s] != extended[s - 2]:
+                candidates.append((score[t - 1][s - 2], s - 2))
+            best, source = max(candidates, key=lambda c: c[0])
+            if best > neg:
+                score[t][s] = best + log_probs[t][extended[s]]
+                back[t][s] = source
+    counts = [len(labels)] if ends is None else sorted({m for m in ends if 1 <= m <= len(labels)})
+    finals = [s for m in counts for s in (2 * m, 2 * m - 1)]
+    end = max(finals, key=lambda s: score[frames - 1][s])
+    final = score[frames - 1][end]
+    if final == neg:
+        return neg, []
+    first: dict[int, int] = {}
+    last: dict[int, int] = {}
+    state = end
+    for t in range(frames - 1, -1, -1):
+        if extended[state] != blank:
+            index = (state - 1) // 2
+            first[index] = t
+            last.setdefault(index, t)
+        state = back[t][state]
+    return final, [(first[i], last[i]) for i in range(len(first))]
+
+
+def acoustic_support(log_probs: LogProbs, labels: Sequence[int], blank: int) -> CtcEvidence:
+    forced, _spans = ctc_forced_align(log_probs, labels, blank)
+    free = ctc_free_logprob(log_probs)
+    frames = len(log_probs)
+    llr = -math.inf if forced == -math.inf else (forced - free) / frames
+    return CtcEvidence(forced_logprob=forced, free_logprob=free, llr_per_frame=llr, frames=frames)
+
+
+def verify_candidates(
+    candidates: Sequence[Candidate],
+    log_probs: LogProbs,
+    blank: int,
+    candidate_text: Callable[[Candidate], str],
+    encode: Callable[[str], Sequence[int]],
+    gate: AcousticGate,
+) -> list[tuple[Candidate, CtcEvidence]]:
+    """Garde les candidats que l'audio soutient (porte configurée), avec leur preuve.
+
+    `candidate_text` rend le texte du CORPUS couvert par le candidat (jamais une sortie d'ASR) ;
+    `encode` le convertit en symboles du modèle CTC. Un candidat dont le texte ne tient pas dans le
+    treillis (preuve -inf) est écarté dès que la porte est active ; avec la porte désactivée, la
+    preuve est seulement jointe (observabilité), rien n'est filtré."""
+    kept: list[tuple[Candidate, CtcEvidence]] = []
+    for candidate in candidates:
+        evidence = acoustic_support(log_probs, list(encode(candidate_text(candidate))), blank)
+        if gate.accepts(evidence):
+            kept.append((candidate, evidence))
+    return kept

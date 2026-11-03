@@ -1,0 +1,408 @@
+[
+  {
+    "slug": "systeme-en-bref",
+    "title": "Le système en bref",
+    "section": "Vue d'ensemble",
+    "file": "docs/SYSTEME-EN-BREF.md",
+    "summary": "À quoi sert le système, ce qui se passe de bout en bout pour un audio, les règles qui ne bougent jamais, l'avancement réel (A → B → C → D), les chiffres mesurés avec leurs limites."
+  },
+  {
+    "slug": "release-notes",
+    "title": "Notes de version",
+    "section": "Vue d'ensemble",
+    "file": "docs/RELEASE-NOTES.md",
+    "summary": "Ce qui a changé et pourquoi, en ordre chronologique inverse, avec les étiquettes utilisateur, technique et décision."
+  },
+  {
+    "slug": "plan",
+    "title": "Plan de réalisation",
+    "section": "Vue d'ensemble",
+    "file": "docs/PLAN.md",
+    "summary": "Les phases du projet, leur statut, et la direction du 2026-10-19 : vérité terrain (A), décision acoustique (B), fine-tuning (C), détecteur parole / récitation (D)."
+  },
+  {
+    "slug": "specification-v1",
+    "title": "Spécification de la version 1",
+    "section": "Vue d'ensemble",
+    "file": "docs/spec-v1.md",
+    "summary": "Objectif, périmètre, exigences fonctionnelles et non fonctionnelles de la première version."
+  },
+  {
+    "slug": "defauts-connus",
+    "title": "Défauts connus",
+    "section": "Vue d'ensemble",
+    "file": "docs/KNOWN-ISSUES.md",
+    "summary": "Les limites observées dans les sources externes et l'environnement (traduction de la sourate 42, droits des audios, repli Silero) et ce que le dépôt en fait."
+  },
+  {
+    "slug": "architecture-moteur",
+    "title": "Architecture du moteur",
+    "section": "Architecture",
+    "file": "docs/ARCHITECTURE.md",
+    "summary": "Les invariants I1 à I7, le pipeline B1 à B9, les contrats de chaque brique, les pièges connus et l'organisation du code Python."
+  },
+  {
+    "slug": "architecture-atelier",
+    "title": "Architecture de l'atelier web",
+    "section": "Architecture",
+    "file": "docs/ARCHITECTURE-ATELIER.md",
+    "summary": "L'application Next.js : routes, file d'attente, copie d'écoute, revue humaine, stockage, sécurité, polices, et le plan (non réalisé) des comptes de la phase 2."
+  },
+  {
+    "slug": "sortie-recognize",
+    "title": "Contrat de sortie de la reconnaissance",
+    "section": "Architecture",
+    "file": "docs/RECOGNIZE-OUTPUT.md",
+    "summary": "Le format JSON aqr.recognition/1 produit par aqr recognize, ce que chaque statut affirme, les sous-titres SRT et VTT."
+  },
+  {
+    "slug": "protocole-direct",
+    "title": "Protocole du direct (aqr.live/1)",
+    "section": "Architecture",
+    "file": "docs/LIVE-PROTOCOL.md",
+    "summary": "Le contrat WebSocket de la détection en direct : jeton de session, messages du client et du serveur avec exemples, erreurs, reprise après coupure, contre-pression, quotas et vie privée."
+  },
+  {
+    "slug": "sortie-alignement",
+    "title": "Alignement forcé et vérité terrain",
+    "section": "Architecture",
+    "file": "docs/ALIGN-OUTPUT.md",
+    "summary": "Le parcours qui fabrique une vérité terrain : le moteur propose, l'humain déclare, l'alignement pose les temps, l'humain écoute et valide."
+  },
+  {
+    "slug": "sortie-decisions",
+    "title": "Contrat de sortie du calque de décisions",
+    "section": "Architecture",
+    "file": "docs/DECISIONS.md",
+    "summary": "Le format aqr.decisions/1 : genres de décision et leur valeur, empreinte d'un intervalle, états (appliquée, orpheline, annulée), ce que le calque ne fait pas."
+  },
+  {
+    "slug": "export-sous-titres",
+    "title": "Export des sous-titres : le moteur",
+    "section": "Architecture",
+    "file": "docs/EXPORT-SOUS-TITRES.md",
+    "summary": "La commande aqr export-subtitles : ce qui est ambigu dans la partie coranique, la politique d'un export forcé, les options, les formats SRT, WebVTT, ASS et JSON, le contrôle de préparation."
+  },
+  {
+    "slug": "adr-0001",
+    "title": "ADR-0001 — Pas d'entraînement de zéro, pas de LLM génératif",
+    "section": "Décisions",
+    "file": "docs/adr/0001-pas-de-llm-generatif.md",
+    "summary": "Assembler des briques plutôt qu'entraîner un modèle de zéro ou un LLM : le texte et la traduction sont consultés dans le corpus, jamais générés."
+  },
+  {
+    "slug": "adr-0002",
+    "title": "ADR-0002 — Rejet de l'arabe non coranique par double transcription",
+    "section": "Décisions",
+    "file": "docs/adr/0002-rejet-arabe-non-coranique.md",
+    "summary": "Comment éviter qu'un modèle spécialisé voie du Coran dans n'importe quel arabe (statut : proposé, à valider par benchmark)."
+  },
+  {
+    "slug": "adr-0003",
+    "title": "ADR-0003 — Recherche lexicale contrainte, pas de base vectorielle",
+    "section": "Décisions",
+    "file": "docs/adr/0003-recherche-lexicale-contrainte-pas-de-base-vectorielle.md",
+    "summary": "Pourquoi la recherche de versets reste lexicale et déterministe, sans base vectorielle ni LangChain."
+  },
+  {
+    "slug": "adr-0004",
+    "title": "ADR-0004 — Recherche sur le flux continu du Coran",
+    "section": "Décisions",
+    "file": "docs/adr/0004-recherche-sur-flux-continu.md",
+    "summary": "Le Coran vu comme un flux de mots : passages partiels et multi-versets retrouvés sans jamais nommer un faux verset."
+  },
+  {
+    "slug": "adr-0005",
+    "title": "ADR-0005 — Décodage contraint : preuve acoustique sur le treillis CTC",
+    "section": "Décisions",
+    "file": "docs/adr/0005-decodage-contraint-preuve-acoustique.md",
+    "summary": "Mesurer, pour chaque candidat du matcher, à quel point l'audio soutient le texte du corpus (chemin contraint contre chemin libre sur le treillis CTC)."
+  },
+  {
+    "slug": "adr-0006",
+    "title": "ADR-0006 — Alignement forcé du texte du corpus",
+    "section": "Décisions",
+    "file": "docs/adr/0006-alignement-force-texte-du-corpus.md",
+    "summary": "Aligner le texte du corpus (pas une transcription) sur l'audio pour obtenir le temps de chaque mot et une preuve acoustique ; base de la vérité terrain."
+  },
+  {
+    "slug": "adr-0007",
+    "title": "ADR-0007 — Preuve cumulée par la suite",
+    "section": "Décisions",
+    "file": "docs/adr/0007-preuve-cumulee-par-la-suite.md",
+    "summary": "Les versets courts qui s'enchaînent dans le Mushaf se confirment entre eux : EveryAyah 71,8 % → 91,2 % de versets reconnus, sans faux verset."
+  },
+  {
+    "slug": "adr-0008",
+    "title": "ADR-0008 — Vérification acoustique des suites et temps au mot",
+    "section": "Décisions",
+    "file": "docs/adr/0008-verification-acoustique-des-suites.md",
+    "summary": "Une suite de versets n'est nommée que si l'audio soutient le texte du corpus ; temps mesurés au mot ; suite d'un verset commencé."
+  },
+  {
+    "slug": "adr-0009",
+    "title": "ADR-0009 — Cascade multi-modèles arbitrée par l'audio",
+    "section": "Décisions",
+    "file": "docs/adr/0009-cascade-multi-modeles-arbitre-acoustique.md",
+    "summary": "Trois moteurs de reconnaissance en cascade : seules les fenêtres douteuses sont réécoutées, et l'audio arbitre."
+  },
+  {
+    "slug": "adr-0010",
+    "title": "ADR-0010 — Promotion par le voisin reconnu et temps au mot",
+    "section": "Décisions",
+    "file": "docs/adr/0010-promotion-par-le-voisin-et-temps-au-mot.md",
+    "summary": "Un début de verset ambigu prolongé par un verset reconnu est promu si l'audio soutient son texte ; chaque mot reçoit son temps dans la sortie."
+  },
+  {
+    "slug": "adr-0011",
+    "title": "ADR-0011 — Détection en direct sur flux, sans plage déclarée",
+    "section": "Décisions",
+    "file": "docs/adr/0011-detection-en-direct-sans-plage.md",
+    "summary": "Accepté le 2026-10-23 : garder les candidats ouverts au début d'un verset, nommer la source exacte dès qu'un mot départage, attendre la suite, signaler les sauts ; protocole WebSocket aqr.live/1 (pas WebRTC) ; étape 1 livrée, critère de sortie atteint en vérité calculée, non démontré sur la voix réelle."
+  },
+  {
+    "slug": "adr-0012",
+    "title": "ADR-0012 — La traduction est découpée en fragments alignés sur les mots arabes",
+    "section": "Décisions",
+    "file": "docs/adr/0012-traduction-decoupee-en-fragments.md",
+    "summary": "Pour un verset partiel, la traduction suit les mots affichés : découpage hors ligne et déterministe, précision d'abord, repli sur le verset entier."
+  },
+  {
+    "slug": "adr-0013",
+    "title": "ADR-0013 — Combler un trou entre deux versets reconnus, sur l'audio",
+    "section": "Décisions",
+    "file": "docs/adr/0013-comblement-de-trou.md",
+    "summary": "Quand une partie d'un verset est reconnue et l'autre abstenue : hypothèses de texte déduites du contexte, alignées sur le trou, preuve sur la seule parole alignée, promotion par la suite acceptée, extension d'un bord."
+  },
+  {
+    "slug": "adr-0014",
+    "title": "ADR-0014 — Les décisions humaines se superposent à une prédiction immuable",
+    "section": "Décisions",
+    "file": "docs/adr/0014-decisions-humaines-sur-une-prediction-immuable.md",
+    "summary": "Une correction à l'oreille ne réécrit jamais la sortie du moteur : un calque de décisions, accroché à l'empreinte de l'intervalle, un champ « résolu » à côté du statut, l'omission comme règle d'un export forcé, le consentement d'entraînement."
+  },
+  {
+    "slug": "metriques-evaluation",
+    "title": "Métriques d'évaluation",
+    "section": "Évaluation",
+    "file": "docs/EVALUATION-METRICS.md",
+    "summary": "Les définitions exactes des métriques (rappel, précision, faux verset, omissions, erreurs de limites) et comment elles sont calculées."
+  },
+  {
+    "slug": "protocole-reglage-evaluation",
+    "title": "Protocole réglage et évaluation",
+    "section": "Évaluation",
+    "file": "docs/evaluation/protocole-reglage-evaluation.md",
+    "summary": "Comment on s'assure qu'aucun chiffre présenté comme une performance n'a servi à régler le système (séparation dev / test)."
+  },
+  {
+    "slug": "reproductibilite",
+    "title": "Reproductibilité",
+    "section": "Évaluation",
+    "file": "docs/REPRODUCIBILITY.md",
+    "summary": "Ce qui a réellement été exécuté, avec versions et durées, pour refaire les mesures."
+  },
+  {
+    "slug": "rapport-reel-2026-10-09",
+    "title": "Évaluation réelle du 2026-10-09",
+    "section": "Évaluation",
+    "file": "docs/evaluation/rapport-reel-2026-10-09.md",
+    "summary": "Premier rapport sur de l'audio réel : 52,6 % de versets retrouvés par FastConformer, aucun faux verset, constat que la décision est le goulot."
+  },
+  {
+    "slug": "asr-comparaison",
+    "title": "Whisper-Tarteel contre FastConformer",
+    "section": "Évaluation",
+    "file": "docs/evaluation/asr-comparison.md",
+    "summary": "Accord entre deux moteurs sur un extrait : une mesure d'accord, pas d'exactitude."
+  },
+  {
+    "slug": "repli-silero",
+    "title": "Repli Silero VAD",
+    "section": "Évaluation",
+    "file": "docs/evaluation/silero-fallback.md",
+    "summary": "Mesure de fond du découpeur de secours : pourquoi il n'est pas fiable par défaut."
+  },
+  {
+    "slug": "alignement-2026-10-19",
+    "title": "Alignement forcé : mesures du 2026-10-19",
+    "section": "Évaluation",
+    "file": "docs/evaluation/alignment-2026-10-19.md",
+    "summary": "Ce que l'alignement forcé mesure sur EveryAyah et sur une prière réelle, et ce qu'il ne prouve pas encore."
+  },
+  {
+    "slug": "preuve-par-la-suite-2026-10-19",
+    "title": "Preuve cumulée par la suite : mesures du 2026-10-19",
+    "section": "Évaluation",
+    "file": "docs/evaluation/chain-proof-2026-10-19.md",
+    "summary": "Comparaison avec et sans la preuve par la suite : voix au micro et EveryAyah (71,8 % → 91,2 %, aucun faux verset)."
+  },
+  {
+    "slug": "alignement-unk-2026-10-20",
+    "title": "L'aligneur n'exige plus le symbole inconnu",
+    "section": "Évaluation",
+    "file": "docs/evaluation/alignment-unk-2026-10-20.md",
+    "summary": "Mesures avant et après la correction de l'aligneur, sur les mêmes transcriptions."
+  },
+  {
+    "slug": "cascade-2026-10-20",
+    "title": "Cascade multi-modèles contre FastConformer seul",
+    "section": "Évaluation",
+    "file": "docs/evaluation/cascade-2026-10-20.md",
+    "summary": "Mesure de la cascade : aucun verset perdu, EveryAyah 216/216, coût en temps multiplié par 2,85."
+  },
+  {
+    "slug": "comblement-de-trou-2026-10-23",
+    "title": "Comblement de trou : mesure sur la revue lot3-04 et 11 fichiers",
+    "section": "Évaluation",
+    "file": "docs/evaluation/comblement-de-trou-2026-10-23.md",
+    "summary": "Les cinq signalements de la revue, 0 verset perdu sur 6 lot3, lot1-05, lot1-06 et lot2-04, 0 verset ajouté sans Coran, EveryAyah 216/216, ajouts à écouter."
+  },
+  {
+    "slug": "traduction-par-passage-2026-10-23",
+    "title": "Traduction par passage : mesure du découpage en fragments",
+    "section": "Évaluation",
+    "file": "docs/evaluation/traduction-par-passage-2026-10-23.md",
+    "summary": "Pseudo-vérité, couverture (69,5 % des versets), 732 intervalles partiels réels et relecture de 40 versets : 153 frontières justes, 15 discutables, 1 fausse sur 169."
+  },
+  {
+    "slug": "riwaya-2026-10-20",
+    "title": "Détecter une autre riwaya que le Hafs",
+    "section": "Évaluation",
+    "file": "docs/evaluation/riwaya-2026-10-20.md",
+    "summary": "Deux signaux testés pour détecter le Warsh, tous deux négatifs ; origine de l'avertissement « riwaya supposée Hafs »."
+  },
+  {
+    "slug": "courbe-degradation-2026-10-23",
+    "title": "Courbe de dégradation : robustesse du moteur",
+    "section": "Évaluation",
+    "file": "docs/evaluation/courbe-degradation-2026-10-23.md",
+    "summary": "Rappel du moteur sous bruit, réverbération, téléphone, MP3 et récitation lente, règle de décision écrite d'avance : un fine-tuning avec dégradations n'est pas justifié, mais la mesure est saturée."
+  },
+  {
+    "slug": "courbe-vitesse-2026-10-23",
+    "title": "Courbe de vitesse : réécouter un audio accéléré",
+    "section": "Évaluation",
+    "file": "docs/evaluation/courbe-vitesse-2026-10-23.md",
+    "summary": "Rappel sur témoins étirés et sur vrais fichiers lents quand l'audio est accéléré de ×1,25 à ×4, estimateurs du débit sans vérité, règle de décision écrite d'avance : l'étage « candidat de vitesse » n'est pas implémenté."
+  },
+  {
+    "slug": "live-etape1-2026-10-23",
+    "title": "Détection en direct, étape 1 : simulation hors ligne",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape1-2026-10-23.md",
+    "summary": "Temps jusqu'aux candidats et au verrou sur 82 scénarios à vérité calculée, faux verrous (0 avec la densité à 0,9, 1 sans), verrous sur la parole réelle, sauts, balayage de 91 réglages, cibles de latence proposées et limites."
+  },
+  {
+    "slug": "live-etape2-2026-10-24",
+    "title": "Détection en direct, étape 2 : moteur incrémental",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape2-2026-10-24.md",
+    "summary": "Facteur temps réel du Muno incrémental sur CPU (0,06) et GPU (1,0), retard, latence de bout en bout du premier mot et du verrou contre les cibles de l'étape 1, mémoire, flux simultanés, vitesse réelle contre temps simulé, mode dégradé et limites."
+  },
+  {
+    "slug": "live-etape3-2026-10-24",
+    "title": "Détection en direct, étape 3 : service WebSocket",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape3-2026-10-24.md",
+    "summary": "Délai ajouté par le service, flux simultanés tenus avec le vrai modèle, mémoire, reprise, quotas, ce qui est prouvé dans un vrai client et les limites."
+  },
+  {
+    "slug": "live-etape4-2026-10-24",
+    "title": "Détection en direct, étape 4 : l'écran En direct dans un vrai navigateur",
+    "section": "Évaluation",
+    "file": "docs/evaluation/live-etape4-2026-10-24.md",
+    "summary": "Écran d'écoute en temps réel éprouvé dans Chrome (micro simulé, vrai service, tunnel Cloudflare) : délais voix vers écran, coupure et reprise, pause, pannes dites en clair, mode allégé et correction injectés, écarts avec la conception et limites."
+  },
+  {
+    "slug": "corpus-de-test",
+    "title": "Corpus de test audio",
+    "section": "Données",
+    "file": "docs/TEST-CORPUS.md",
+    "summary": "Les catégories d'audio de test, chacune ciblant un risque, et le protocole de la vérité terrain (aucun audio n'est versionné)."
+  },
+  {
+    "slug": "atelier-direction-artistique",
+    "title": "Direction artistique de l'atelier",
+    "section": "Interface",
+    "file": "docs/design/atelier-direction.md",
+    "summary": "La direction « Encre & lapis » : principes visuels, composants, thème clair et sombre, polices."
+  },
+  {
+    "slug": "export-sous-titres-conception",
+    "title": "Exporter les sous-titres : conception",
+    "section": "Interface",
+    "file": "docs/design/export-sous-titres.md",
+    "summary": "Conception (non livrée) de l'export SRT/WebVTT/ASS/JSON : contrôle de préparation, correction par calque de décisions, export forcé, options."
+  },
+  {
+    "slug": "en-direct-conception",
+    "title": "L'écran « En direct » : conception",
+    "section": "Interface",
+    "file": "docs/design/en-direct.md",
+    "summary": "Conception (non livrée, étape 4 de l'ADR-0011) de l'écoute en direct : parcours du micro à la fin, quatre niveaux d'affichage sans jamais nommer un faux verset, attente de 5 à 20 s, mode allégé, coupure, correction, ce qui reste après l'écoute, et ce que le protocole aqr.live/1 doit ajouter."
+  },
+  {
+    "slug": "api-mcp",
+    "title": "API et MCP de Quran TR",
+    "section": "Architecture",
+    "file": "docs/API-MCP.md",
+    "summary": "Jetons d'API, API REST sous /api/v1, serveur MCP sous /mcp et compétence d'agent : ce qu'un jeton peut faire, les outils, les droits, l'accès par tunnel."
+  },
+  {
+    "slug": "adr-0015",
+    "title": "ADR-0015 — Récitation guidée : la sourate est annoncée, le moteur ne cherche que dans celle-ci",
+    "section": "Décisions",
+    "file": "docs/adr/0015-recitation-guidee.md",
+    "summary": "Accepté le 2026-10-28 : option START.options.surah, index limité à la sourate annoncée, réglages de verrou plus souples ; sur Hud 11:61-71 (10 min) tous les versets sont nommés, aucun sauté, contre 5 sur 11 en écoute classique."
+  },
+  {
+    "slug": "adr-0016",
+    "title": "ADR-0016 — Confirmation du direct par le moteur du lot",
+    "section": "Décisions",
+    "file": "docs/adr/0016-confirmation-par-le-lot.md",
+    "summary": "Accepté le 2026-10-29 : le flux est coupé aux pauses et chaque passage clos est réécouté par le moteur du lot (message CONFIRMED) ; sur deux sessions micro, 4/6 devient 6/6 et 11/22 devient 21/22, sans verset en trop."
+  },
+  {
+    "slug": "securite-dependances",
+    "title": "Dépendances, runtime et CVE",
+    "section": "Architecture",
+    "file": "docs/SECURITE-DEPENDANCES.md",
+    "summary": "État de Node.js (CVE-2026-111497), Next.js, zod et des paquets Python au 2026-10-29 : audits, exceptions datées, ce qui reste à faire."
+  },
+  {
+    "slug": "diagnostic-production",
+    "title": "Diagnostic en production",
+    "section": "Architecture",
+    "file": "docs/DIAGNOSTIC-PRODUCTION.md",
+    "summary": "Où sont les journaux, ce qu'ils contiennent, relier les lignes d'une requête, les premières commandes et le rapport des erreurs récurrentes."
+  },
+  {
+    "slug": "secrets-et-configuration",
+    "title": "Secrets et configuration",
+    "section": "Architecture",
+    "file": "docs/SECRETS-ET-CONFIGURATION.md",
+    "summary": "Variables de sécurité exigées au démarrage en production, un jeu de secrets par environnement, rotation de chaque secret, vérification de l'historique Git."
+  },
+  {
+    "slug": "scans-securite",
+    "title": "Scans de sécurité",
+    "section": "Architecture",
+    "file": "docs/SCANS-SECURITE.md",
+    "summary": "Scans à lancer avant la mise en production, commandes, critères de réussite, et ce qui a déjà été fait ou reste à faire."
+  },
+  {
+    "slug": "infrastructure",
+    "title": "Infrastructure et exposition",
+    "section": "Architecture",
+    "file": "docs/INFRASTRUCTURE.md",
+    "summary": "Serveur cible, proxy, pare-feu, utilisateur dédié, sauvegardes 3-2-1 avec restauration éprouvée, supervision, arrêt d'urgence, retour arrière."
+  },
+  {
+    "slug": "adr-0017-moteur-distant",
+    "title": "ADR-0017 — Moteur d'analyse à distance",
+    "section": "Décisions",
+    "file": "docs/adr/0017-moteur-d-analyse-a-distance.md",
+    "summary": "L'agent du moteur appelle l'atelier (baux, jetons d'agent, résultat unique vérifié) ; il tourne sur Atlas, relié à Alpha par un second WireGuard."
+  }
+]

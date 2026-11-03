@@ -30,7 +30,7 @@ class NonQuranKind(StrEnum):
     OTHER_LANGUAGE = "other_language"
     ARABIC_SPEECH = "arabic_speech"  # hadith, dou'a, khutba, arabe courant
     ISTIADHA = "istiadha"
-    BASMALA = "basmala"  # hors Al-Fatiha 1:1
+    BASMALA = "basmala"  # d'ouverture d'une sourate, ou 1:1 isolé (non suivi de 1:2) : même texte
     TAKBIR = "takbir"
     AMIN = "amin"
 
@@ -102,15 +102,28 @@ class Detection:
     status: Status
     confidence: float
     time_interpolated: bool = False
+    """True si `time` est estimé plutôt que mesuré : verset INFERRED entre deux versets
+    reconnus, ou frontière entre les versets d'un même segment (RECOGNIZED dont le
+    segment est mesuré mais la coupure interne estimée, ADR-0004)."""
     candidates: tuple[VerseRef, ...] = field(default_factory=tuple)
+    is_repetition: bool = False
+    """True si ce passage redit des mots déjà reconnus juste avant (reprise, i'ada) : la détection
+    garde son propre temps au lieu d'être fusionnée avec la précédente (playbook P8)."""
+    word_times: tuple[TimeSpan, ...] = field(default_factory=tuple)
+    """Temps MESURÉS de chaque mot de la plage `span` (alignement forcé du texte du corpus,
+    ADR-0010), dans l'ordre ; vide = inconnus. Jamais estimés ici : l'interpolation est faite à
+    la sortie, et déclarée comme telle."""
+    promoted_by: str | None = None
+    """Comment un `UNCERTAIN` est devenu `RECOGNIZED` : `neighbor` = il prolonge le verset reconnu
+    voisin ET l'audio soutient son texte (ADR-0010). None = le score du candidat a suffi."""
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence doit être dans [0, 1]")
         if self.status is Status.RECOGNIZED and self.time is None:
             raise ValueError("une détection RECOGNIZED doit avoir un horodatage mesuré")
-        if self.status is Status.RECOGNIZED and self.time_interpolated:
-            raise ValueError("une détection RECOGNIZED ne peut pas avoir un temps interpolé")
+        if self.is_repetition and self.status is not Status.RECOGNIZED:
+            raise ValueError("seule une détection RECOGNIZED peut être marquée répétition")
         if self.status is Status.UNCERTAIN and len(self.candidates) < 2:
             raise ValueError("une détection UNCERTAIN doit lister au moins 2 candidats")
 

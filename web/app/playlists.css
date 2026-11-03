@@ -1,0 +1,198 @@
+/* Playlists : le lecteur à la suite (suivant, répétition, aléatoire) et la liste des audios. */
+.pl {
+  max-width: 760px;
+}
+.pl-head h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-1);
+}
+.pl-card {
+  display: grid;
+  gap: var(--sp-4);
+  margin: var(--sp-4) 0;
+  padding: var(--sp-5);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.pl-now {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+.pl-now b {
+  font-size: 1.15rem;
+}
+.pl-seek {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+}
+.pl-seek input {
+  width: 100%;
+}
+.pl-transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+.pl-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pl-btn:hover {
+  background: var(--surface-3);
+}
+.pl-btn svg.i {
+  width: 20px;
+  height: 20px;
+}
+.pl-btn[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.pl-btn--main {
+  width: 58px;
+  height: 58px;
+  color: var(--bg);
+  background: var(--text);
+  border-color: var(--text);
+}
+.pl-btn--main:hover {
+  background: var(--text);
+  opacity: 0.88;
+}
+.pl-mix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  justify-content: center;
+}
+.pl-mix label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+.pl-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.pl-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.pl-item:last-child {
+  border-bottom: 0;
+}
+.pl-item[aria-current="true"] {
+  background: var(--accent-soft);
+}
+.pl-open {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 2rem 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.pl-n,
+.pl-dur {
+  color: var(--text-3);
+  font-size: 0.85rem;
+}
+.pl-actions {
+  display: flex;
+  gap: 2px;
+  padding-right: var(--sp-2);
+}
+.i-flip {
+  transform: rotate(180deg);
+}
+@media (max-width: 767px) {
+  .pl-card {
+    padding: var(--sp-4);
+  }
+  .pl-seek {
+    grid-template-columns: auto 1fr auto;
+  }
+}
+
+/* « Ajouter à une playlist » */
+.pl-dialog {
+  position: fixed;
+  z-index: 50;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  gap: var(--sp-3);
+  width: min(440px, calc(100vw - 32px));
+  max-height: 86dvh;
+  padding: var(--sp-5);
+  overflow-y: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.3);
+  transform: translate(-50%, -50%);
+}
+.pl-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pl-dialog-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.pl-pick {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pl-pick-btn {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  color: inherit;
+  text-align: left;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.pl-pick-btn:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.pl-new {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+}

@@ -29,11 +29,11 @@
  [B3] LanguageGate ────────── français / autre langue → NON_QURAN direct
         │  (arabe seulement)
  [B4] QuranASR ────────────── transcription orientée Coran + timestamps mots
-        │                     (FastConformer-Quran | Whisper-Tarteel)
+        │                     (FastConformer-Quran | Whisper-Tarteel | Muno Streaming)
  [B5] QuranicityGate ──────── est-ce VRAIMENT du Coran ?  (cf. §4, piège n°1)
         │
  [B6] VerseMatcher ────────── texte normalisé → candidats (VerseRef, plage de mots, score)
-        │                     index n-grammes sur les 6236 versets + alignement fin
+        │                     recherche sur le flux continu (ADR-0004) : alignement local, spans multi-versets
  [B7] SequenceDecoder ─────── Viterbi sur le graphe des versets :
         │                     continuité, sauts, répétitions, trous → INFERRED
  [B8] Timeline ────────────── [ {ref, mots i..j, t_debut, t_fin, statut, confiance}, NON_QURAN… ]
@@ -53,13 +53,22 @@ que toute implémentation doit passer.
 | B1 | `AudioExtractor` | chemin fichier → `AudioClip` (PCM 16 kHz mono) | ffmpeg | oui |
 | B2 | `SpeechSegmenter` | `AudioClip` → `list[TimeSpan]` | recitation-segmenter-v2, repli Silero VAD | faux (fake) |
 | B3 | `LanguageGate` | segment → `lang` + confiance | Whisper LID | faux |
-| B4 | `QuranASR` | segment → `Transcript` (mots + timestamps + confiance) | FastConformer-Quran (CC-BY-4.0) ; Whisper-Tarteel en challenger | faux |
+| B4 | `QuranASR` | segment → `Transcript` (mots + timestamps + confiance) | FastConformer-Quran (CC-BY-4.0) ; Whisper-Tarteel et Muno Streaming (NPL-1.1) en challengers | faux |
 | B5 | `QuranicityGate` | `Transcript` (+ transcript générique) → score ∈ [0,1] | double ASR + couverture d'alignement | **oui (pur)** |
-| B6 | `VerseMatcher` | texte normalisé → `list[Candidate]` | index n-grammes + Levenshtein au niveau mot | **oui (pur)** |
+| B6 | `VerseMatcher` | texte normalisé → `list[Candidate]` | flux continu + alignement local par mots (ADR-0004) | **oui (pur)** |
 | B7 | `SequenceDecoder` | `list[list[Candidate]]` → `Timeline` | Viterbi / HMM | **oui (pur)** |
 | — | `CorpusRepository` | `VerseRef` → texte Mushaf, texte normalisé | Tanzil Uthmani (CC-BY-3.0), checksum épinglé | oui |
 | — | `TranslationRepository` | `VerseRef`, `translation_id` → texte + version | QuranEnc (Hamidullah/KFC, Rachid Maach, Nûr) | oui |
 | B9 | `Renderer` | `Timeline` + options de lot → JSON / SRT / VTT | maison | **oui (pur)** |
+
+> B9 et l'export des sous-titres (ADR-0014) : `aqr export-subtitles` lit la prédiction JSON et un calque de
+> décisions humaines (`aqr.decisions/1`, jamais écrit dans la prédiction), contrôle les passages ambigus de la
+> partie coranique puis écrit SRT, WebVTT, ASS (karaoké) ou JSON avec les mêmes écrivains que `aqr recognize`
+> (`src/aqr/export/`, `src/aqr/rendering/subtitles.py` ; `docs/EXPORT-SOUS-TITRES.md`).
+>
+> B9 et les traductions partielles (ADR-0012) : `translation.segments` / `translation.fragment` viennent de
+> `data/translation-segments/<id>.json` (calculé hors ligne par `src/aqr/translation_align/`, lu en Python pur par
+> `aqr.rendering.translation_segments`). Le renderer ne découpe jamais à l'exécution ; il vérifie l'empreinte.
 
 **Conséquence TDD** : le cœur de l'intelligence (B5, B6, B7, normalisation arabe,
 rendu) est **pur et déterministe** → on l'écrit test d'abord, sans modèle, en
@@ -130,8 +139,15 @@ src/aqr/
 ├── corpus/        # normalisation arabe, chargement Tanzil, checksums
 ├── matching/      # B5 + B6 (pur)
 ├── decoding/      # B7 (pur)
-├── adapters/      # ffmpeg, modèles HF/NeMo, QuranEnc… (dépendances lourdes, extras optionnels)
-├── app/           # cas d'usage : recognize(), render()
+├── live/          # détection en direct (ADR-0011) : PrefixIndex, HypothesisTracker, LiveConfig, banc de
+│                  #   simulation, LivePipeline (blocs -> ASR incrémental -> suivi), LiveBudget (paliers,
+│                  #   mode dégradé), horloges et rejeu (pur : l'ASR arrive par le port StreamingAsr) ;
+│                  #   service : LiveHub (jetons, quotas, reprise), LiveStream (un flux), LivePresenter
+│                  #   (événements -> messages aqr.live/1), protocole, journal sans donnée sensible
+├── adapters/      # ffmpeg, modèles HF/NeMo, QuranEnc… (dépendances lourdes, extras optionnels) ;
+│                  #   muno_incremental = ASR en flux, caches du modèle gardés d'un bloc à l'autre ;
+│                  #   ws/ = transport WebSocket du direct (extra [live]) : serveur, jeton HMAC, client de référence
+├── app/           # cas d'usage : recognize(), render() ; live_service = racine d'assemblage de `aqr live-serve`
 └── cli.py
 tests/
 ├── unit/          # pur, rapide, lancé à chaque commit
@@ -162,4 +178,11 @@ complément (métriques Words F1, Repeats F1).
 - **V2** : traduction anglaise (nouveau `translation_id`, zéro changement de code).
 - **V2+** : sous-titrage automatique de vidéos (Timeline → SRT/ASS stylé → incrustation
   ffmpeg, polices arabes). Nouveau cas d'usage dans `app/`, aucune brique existante modifiée.
-- **V2+** : mode temps réel (streaming) : B2–B7 en fenêtres glissantes.
+- **Détection en direct sur flux WebSocket, sans plage déclarée** (direction produit du 2026-10-23) :
+  conception dans `docs/adr/0011-detection-en-direct-sans-plage.md` (accepté) ; remplace l'ancienne idée
+  « B2–B7 en fenêtres glissantes ». Étapes 1 (simulation hors ligne) et 2 (moteur incrémental : port
+  `StreamingAsr`, adaptateur `muno_incremental`, `LivePipeline`, budget et mode dégradé) livrées ;
+  service WebSocket (étape 3, `aqr live-serve`, contrat `docs/LIVE-PROTOCOL.md`) livré ; écran « En direct »
+  (étape 4) à faire. Le flux de données d'un flux
+  en direct : `blocs PCM -> StreamingAsr (mots stabilisés + texte provisoire) -> normalisation ->
+  HypothesisTracker -> événements`, le retard de chaque bloc décidant des paliers du budget.

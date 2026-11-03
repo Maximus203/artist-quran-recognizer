@@ -1,0 +1,52 @@
+name: Problème de reconnaissance
+description: Le moteur a nommé un mauvais verset, en a manqué un, ou a placé un début ou une fin au mauvais moment
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Ne joignez pas d'audio si vous n'en avez pas les droits.** Aucun audio n'est jamais versionné dans ce dépôt. Décrivez le passage avec précision : c'est ce qui permet d'en faire un cas de test.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Nature du problème
+      options:
+        - Mauvais verset nommé
+        - Verset manqué (non détecté)
+        - Début trop tard ou trop tôt
+        - Fin trop tôt ou trop tard
+        - Parole non coranique prise pour un verset
+        - Répétition mal gérée
+        - Traduction mal découpée ou mal affichée
+        - Autre
+    validations:
+      required: true
+  - type: input
+    id: passage
+    attributes:
+      label: Passage concerné
+      description: Référence attendue (sourate:verset) et plage de temps (mm:ss à mm:ss) dans l'audio.
+    validations:
+      required: true
+  - type: textarea
+    id: observe
+    attributes:
+      label: Ce que le moteur a rendu
+      description: Statut de preuve (reconnu, supposé, incertain), référence nommée, temps. Un extrait du JSON `aqr.recognition/1` convient.
+  - type: dropdown
+    id: type-audio
+    attributes:
+      label: Nature de l'audio
+      options: [Récitation de studio, Prière, Récitation en public, Enregistrement au micro, Cours ou conférence mêlant d'autres langues, Autre]
+  - type: input
+    id: vitesse
+    attributes:
+      label: Particularités
+      description: Récitation lente ou rapide, mélodie marquée, bruit, réverbération, qualité (MP3, téléphone)…
+  - type: checkboxes
+    id: droits
+    attributes:
+      label: Confirmation
+      options:
+        - label: Je n'ai joint aucun audio dont je n'ai pas les droits.
+          required: true

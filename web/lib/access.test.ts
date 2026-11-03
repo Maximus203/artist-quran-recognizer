@@ -1,0 +1,127 @@
+import { describe, expect, it } from "vitest";
+import {
+  can,
+  canView,
+  decide,
+  type Ability,
+  type Actor,
+  type Resource,
+} from "./access";
+
+const admin: Actor = { id: 1, role: "admin" };
+const owner: Actor = { id: 2, role: "user" };
+const other: Actor = { id: 3, role: "user" };
+
+const globalOwned: Resource = { owner_id: 2, visibility: "global" };
+const privateOwned: Resource = { owner_id: 2, visibility: "private" };
+const globalLegacy: Resource = { owner_id: null, visibility: "global" };
+const privateOrphan: Resource = { owner_id: null, visibility: "private" };
+
+const ABILITIES: Ability[] = [
+  "view",
+  "review",
+  "favorite",
+  "edit",
+  "run",
+  "delete",
+  "truth",
+];
+
+/** Table de cas : [acteur, ressource] → capacités accordées (tout le reste est refusé). */
+const TABLE: Array<[string, Actor, Resource, Ability[]]> = [
+  [
+    "propriétaire, global",
+    owner,
+    globalOwned,
+    ["view", "review", "favorite", "edit", "run", "delete"],
+  ],
+  [
+    "propriétaire, privé",
+    owner,
+    privateOwned,
+    ["view", "review", "favorite", "edit", "run", "delete"],
+  ],
+  ["autre testeur, global", other, globalOwned, ["view", "review", "favorite"]],
+  ["autre testeur, privé", other, privateOwned, []],
+  ["admin, global d'un autre", admin, globalOwned, ABILITIES],
+  ["admin, privé d'un autre", admin, privateOwned, ABILITIES],
+  [
+    "testeur, global d'avant les comptes",
+    other,
+    globalLegacy,
+    ["view", "review", "favorite"],
+  ],
+  ["admin, global d'avant les comptes", admin, globalLegacy, ABILITIES],
+  ["testeur, privé orphelin", owner, privateOrphan, []],
+  ["admin, privé orphelin", admin, privateOrphan, ABILITIES],
+];
+
+describe("autorisations (table de cas)", () => {
+  for (const [label, actor, resource, granted] of TABLE)
+    it(label, () => {
+      for (const ability of ABILITIES)
+        expect(can(actor, ability, resource), `${label} / ${ability}`).toBe(
+          granted.includes(ability),
+        );
+    });
+
+  it("la vérité terrain est réservée aux administrateurs, même propriétaire", () => {
+    expect(can(owner, "truth", globalOwned)).toBe(false);
+    expect(can(admin, "truth", globalOwned)).toBe(true);
+  });
+
+  it("un audio privé n'est visible que de son propriétaire et des administrateurs", () => {
+    expect(canView(owner, privateOwned)).toBe(true);
+    expect(canView(other, privateOwned)).toBe(false);
+    expect(canView(admin, privateOwned)).toBe(true);
+    expect(canView(admin, privateOrphan)).toBe(true);
+  });
+});
+
+describe("décision HTTP", () => {
+  it("404 (absent) pour l'invisible et l'inexistant, jamais 403", () => {
+    expect(decide(other, "view", privateOwned)).toBe("absent");
+    expect(decide(other, "edit", privateOwned)).toBe("absent");
+    expect(decide(admin, "view", privateOwned)).toBe("ok");
+    expect(decide(other, "view", null)).toBe("absent");
+  });
+  it("403 (interdit) quand la session est visible mais pas modifiable", () => {
+    expect(decide(other, "edit", globalOwned)).toBe("forbidden");
+    expect(decide(other, "delete", globalLegacy)).toBe("forbidden");
+    expect(decide(owner, "truth", globalOwned)).toBe("forbidden");
+  });
+  it("accorde sinon", () => {
+    expect(decide(owner, "delete", privateOwned)).toBe("ok");
+    expect(decide(other, "review", globalOwned)).toBe("ok");
+  });
+});
+
+describe("récitateur : enregistre et exporte sa vidéo, rien de plus", () => {
+  const recitant: Actor = { id: 4, role: "recitant" };
+  const ownedByRecitant: Resource = { owner_id: 4, visibility: "private" };
+  const othersGlobal: Resource = { owner_id: 2, visibility: "global" };
+
+  it("gère ses propres sessions (écouter, lancer, renommer, supprimer)", () => {
+    for (const ability of ["view", "edit", "run", "delete"] as Ability[])
+      expect(can(recitant, ability, ownedByRecitant)).toBe(true);
+  });
+
+  it("ne relit, ne corrige et n'exporte jamais les sous-titres", () => {
+    expect(can(recitant, "review", ownedByRecitant)).toBe(false);
+    expect(can(recitant, "export_subtitles", ownedByRecitant)).toBe(false);
+  });
+
+  it("n'accède jamais à la vérité terrain, même sur sa propre session", () => {
+    expect(can(recitant, "truth", ownedByRecitant)).toBe(false);
+  });
+
+  it("ne modifie pas une session globale d'autrui, et n'y signale rien", () => {
+    expect(can(recitant, "edit", othersGlobal)).toBe(false);
+    expect(can(recitant, "review", othersGlobal)).toBe(false);
+  });
+
+  it("le testeur garde les sous-titres ; seul le récitateur en est privé", () => {
+    expect(can(owner, "export_subtitles", globalOwned)).toBe(true);
+    expect(can(admin, "export_subtitles", globalOwned)).toBe(true);
+  });
+});

@@ -1,0 +1,128 @@
+# Lot 2 — voix sénégalaises : récitants locaux et tafsir en wolof (manifeste, contrat local ↔ agents).
+# Les fichiers ne sont JAMAIS dans git (droits, AGENTS.md) : ce manifeste ne contient que des
+# empreintes, des durées et des liens publics. Copie de travail : $AQR_AUDIO_DIR/lot-2/<id YouTube>.mp3
+# (téléchargés le 2026-10-20 par `yt-dlp -x --audio-format mp3`). Vérification : sha256 si copie
+# identique, sinon durée à ±2 s si le fichier a été re-téléchargé depuis `source`.
+# Droits : enregistrements de tiers diffusés sur YouTube, droits non établis. Pas de dataset
+# Hugging Face pour ce lot (rien n'est déposé hors de la machine locale) ; voir RIGHTS.md.
+# Identifiants anonymes (DATA-COLLECTION.md §3) : orateur_C est le même intervenant qu'au lot 1
+# (lot1-01, lot1-04), ce qui garde son affectation dev/test.
+# Identité : le titre et la chaîne de chaque vidéo nomment l'intervenant ; les vidéos d'attribution
+# douteuse (homonymes, compilations) ont été écartées.
+lot: 2
+total_heures: 4.96
+licence: "droits non établis : usage interne d'évaluation uniquement, jamais redistribué (docs/data-lots/ref-corpus-provenance.md)"
+fichiers:
+  # orateur_C — récitant sénégalais (récitations seules)
+  - id: lot2-01
+    sha256: 44aa475137d967360b9e25a57805dfbc148ab78ffd99b53f1b2d611b58770fc6
+    octets: 14637716
+    duree_s: 1686.5
+    categorie: [C01, C12]   # conférence publique (sonorisation, assistance) : C12 présumé
+    recitant: orateur_C
+    riwaya: inconnu
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=cGlP-UQPD6w"
+  - id: lot2-02
+    sha256: d1b9f00fcddb46aeda52e2804098c21f6f9ae3713e075b3dc871d4f2ec47daf0
+    octets: 18511916
+    duree_s: 1600.2
+    categorie: [C01]
+    recitant: orateur_C
+    riwaya: inconnu
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=Nwptvr63lRg"
+  - id: lot2-03
+    sha256: ee2e68416ab281a11a6b0c0713e0fa7145d46dc28860e17e1490955485d912ef
+    octets: 8047148
+    duree_s: 817.0
+    categorie: [C01]
+    recitant: orateur_C
+    riwaya: inconnu
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=zVCgDf255bU"
+  - id: lot2-04
+    sha256: d8a982fac9f75f539f74a3faee42da509d614ea5f8f78bbb4d2134d4cce7c9e6
+    octets: 5018972
+    duree_s: 585.9
+    categorie: [C01]
+    recitant: orateur_C
+    riwaya: hafs   # annoncée en arabe au début de l'enregistrement (entendue par l'ASR)
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=EWFX_0o3qmQ"
+  # recitant_L — récitant sénégalais, style d'Al-Husary (récitations en public)
+  - id: lot2-05
+    sha256: 56929d6fc79a50df3cc8c35453fdc0440ac4d3b61d0a66c739d89ef8afdfacb2
+    octets: 11148164
+    duree_s: 1107.2
+    categorie: [C01, C15]
+    recitant: recitant_L
+    riwaya: warsh  # concours : le présentateur annonce une lecture « selon Warsh » (entendue par l'ASR)
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=2J2n8A4Hz0c"
+  - id: lot2-06
+    sha256: d7735f1b02d98eafd4dd54edffd0f6d1a78353ae05d34b1b258d124b9458b292
+    octets: 6186188
+    duree_s: 639.0
+    categorie: [C01]
+    recitant: recitant_L
+    riwaya: inconnu
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=roOVn6fQpuk"
+  - id: lot2-07
+    sha256: 45d551df6a270d0e72796671efe7b93c3a9e92e722d5445552756faa841e45f0
+    octets: 2601788
+    duree_s: 373.1
+    categorie: [C01]
+    recitant: recitant_L
+    riwaya: inconnu
+    langues: [ar]
+    source: "https://www.youtube.com/watch?v=wn52Srssjyk"
+  # orateur_M — tafsir en wolof, citations coraniques (test « parole non coranique + citations »)
+  - id: lot2-08
+    sha256: e00612d02a70972fa8d2726b5b9d877aba387fdadfb7aa045a54cb24d02ddcda
+    octets: 15034172
+    duree_s: 1460.9
+    categorie: [C09, C11]
+    recitant: orateur_M
+    riwaya: inconnu
+    langues: [wo, ar]
+    source: "https://www.youtube.com/watch?v=jg8YhIaBBrc"
+  - id: lot2-09
+    sha256: 8b5ef1d6ebebed9c9d55d2117ff629b540e1f6bcf7529c82a8a6188e9f50d7bf
+    octets: 24894212
+    duree_s: 2742.7
+    categorie: [C09, C11]
+    recitant: orateur_M
+    riwaya: inconnu
+    langues: [wo, ar]
+    source: "https://www.youtube.com/watch?v=v-VmMnnqNrE"
+  - id: lot2-10
+    sha256: bdffa09e23d307f146fc5127cd4b646da6ba3d1cd302e0b9ec6e29337e227046
+    octets: 29058524
+    duree_s: 2626.2
+    categorie: [C09, C11]
+    recitant: orateur_M
+    riwaya: inconnu
+    langues: [wo, ar]
+    source: "https://www.youtube.com/watch?v=3RmdapPMbk8"
+  # orateur_N — second tafsir en wolof, ajouté parce que le découpage par récitant place orateur_M
+  # en test (jamais ouvert pendant le réglage) : orateur_N, en dev, porte les observations.
+  - id: lot2-11
+    sha256: 9c48fa263222ef52f891c4d69f3efd065f77abb401203cc3619773dc689b5871
+    octets: 10699196
+    duree_s: 914.8
+    categorie: [C09, C11]
+    recitant: orateur_N
+    riwaya: inconnu
+    langues: [wo, ar]
+    source: "https://www.youtube.com/watch?v=7cw2jBrLNd0"
+  - id: lot2-12
+    sha256: cbba6e9c827916976743170b76b0ac33a2051cd1227a9841cf2f67aaf6f33288
+    octets: 35708564
+    duree_s: 3291.6
+    categorie: [C09, C11]
+    recitant: orateur_N
+    riwaya: inconnu
+    langues: [wo, ar]
+    source: "https://www.youtube.com/watch?v=AwAWKuXJXzc"

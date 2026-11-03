@@ -1,0 +1,5773 @@
+{
+ "engine": "fastconformer-quran@b33af7936f9a/ctc",
+ "samples": [
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "108:2",
+   "duration_s": 3.736,
+   "raw_text": "فصل لربك وانحر",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "فصل",
+     "t": [
+      0.48,
+      0.88
+     ],
+     "confidence": 0.953
+    },
+    {
+     "text": "لربك",
+     "t": [
+      0.88,
+      2.24
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "وانحر",
+     "t": [
+      2.24,
+      2.96
+     ],
+     "confidence": 0.999
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "108:2",
+   "score": 0.6,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "109:1",
+   "duration_s": 5.825,
+   "raw_text": "قل يا أيها الكافرون",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "قل",
+     "t": [
+      0.8,
+      0.88
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "يا",
+     "t": [
+      0.88,
+      1.44
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أيها",
+     "t": [
+      1.44,
+      2.96
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الكافرون",
+     "t": [
+      2.96,
+      4.8
+     ],
+     "confidence": 0.996
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "109:1",
+   "score": 0.392,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "109:5",
+   "duration_s": 7.732,
+   "raw_text": "وَلَا أنتم عابدون ما أعبد",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَلَا",
+     "t": [
+      0.72,
+      0.8
+     ],
+     "confidence": 0.886
+    },
+    {
+     "text": "أنتم",
+     "t": [
+      0.8,
+      3.68
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "عابدون",
+     "t": [
+      3.68,
+      4.96
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "ما",
+     "t": [
+      4.96,
+      5.44
+     ],
+     "confidence": 0.966
+    },
+    {
+     "text": "أعبد",
+     "t": [
+      5.44,
+      7.12
+     ],
+     "confidence": 0.998
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "109:3",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "110:1",
+   "duration_s": 5.878,
+   "raw_text": "إذا جاءَ نصر اللَّهِ والفتح",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إذا",
+     "t": [
+      0.4,
+      0.48
+     ],
+     "confidence": 0.83
+    },
+    {
+     "text": "جاءَ",
+     "t": [
+      0.48,
+      2.72
+     ],
+     "confidence": 0.97
+    },
+    {
+     "text": "نصر",
+     "t": [
+      2.72,
+      3.2
+     ],
+     "confidence": 0.912
+    },
+    {
+     "text": "اللَّهِ",
+     "t": [
+      3.2,
+      3.76
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "والفتح",
+     "t": [
+      3.76,
+      4.8
+     ],
+     "confidence": 0.984
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "110:1",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "110:3",
+   "duration_s": 9.587,
+   "raw_text": "فسبح بحمد ربك واستغفره إِنَّه كان توابا",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "فسبح",
+     "t": [
+      0.56,
+      1.36
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بحمد",
+     "t": [
+      1.36,
+      2.08
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "ربك",
+     "t": [
+      2.08,
+      3.12
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "واستغفره",
+     "t": [
+      3.12,
+      4.72
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "إِنَّه",
+     "t": [
+      4.72,
+      6.72
+     ],
+     "confidence": 0.974
+    },
+    {
+     "text": "كان",
+     "t": [
+      6.72,
+      7.12
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "توابا",
+     "t": [
+      7.12,
+      8.56
+     ],
+     "confidence": 0.973
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "110:3",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "112:1",
+   "duration_s": 3.161,
+   "raw_text": "ق هو اللَّهُ أحد",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ق",
+     "t": [
+      0.24,
+      0.32
+     ],
+     "confidence": 0.854
+    },
+    {
+     "text": "هو",
+     "t": [
+      0.32,
+      0.88
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "اللَّهُ",
+     "t": [
+      0.88,
+      1.44
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "أحد",
+     "t": [
+      1.44,
+      2.32
+     ],
+     "confidence": 0.932
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "112:1",
+   "score": 0.45,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "113:1",
+   "duration_s": 4.206,
+   "raw_text": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.0,
+      1.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَعُوذُ",
+     "t": [
+      1.04,
+      1.92
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بِرَبِّ",
+     "t": [
+      1.92,
+      2.72
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "الْفَلَقِ",
+     "t": [
+      2.72,
+      3.68
+     ],
+     "confidence": 0.942
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:1",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "113:2",
+   "duration_s": 3.709,
+   "raw_text": "مِن شَرِّ مَا خَلَقَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مِن",
+     "t": [
+      0.48,
+      0.56
+     ],
+     "confidence": 0.838
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.56,
+      1.84
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "مَا",
+     "t": [
+      1.84,
+      2.08
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "خَلَقَ",
+     "t": [
+      2.08,
+      3.04
+     ],
+     "confidence": 0.961
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:2",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "113:3",
+   "duration_s": 5.251,
+   "raw_text": "ومن شر غاسق إذا وقب",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "ومن",
+     "t": [
+      0.56,
+      0.64
+     ],
+     "confidence": 0.959
+    },
+    {
+     "text": "شر",
+     "t": [
+      0.64,
+      1.76
+     ],
+     "confidence": 0.92
+    },
+    {
+     "text": "غاسق",
+     "t": [
+      1.76,
+      3.12
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "إذا",
+     "t": [
+      3.12,
+      3.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وقب",
+     "t": [
+      3.52,
+      4.64
+     ],
+     "confidence": 0.993
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:3",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:10",
+   "duration_s": 13.636,
+   "raw_text": "وقالوا لو كنا نسمع أو نعقل ما كا في أصحاب السعير",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "وقالوا",
+     "t": [
+      0.8,
+      1.6
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "لو",
+     "t": [
+      1.6,
+      2.08
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "كنا",
+     "t": [
+      2.08,
+      3.44
+     ],
+     "confidence": 0.949
+    },
+    {
+     "text": "نسمع",
+     "t": [
+      3.44,
+      4.48
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أو",
+     "t": [
+      4.48,
+      5.2
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "نعقل",
+     "t": [
+      5.2,
+      6.32
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "ما",
+     "t": [
+      6.32,
+      6.88
+     ],
+     "confidence": 0.941
+    },
+    {
+     "text": "كا",
+     "t": [
+      6.88,
+      8.4
+     ],
+     "confidence": 0.982
+    },
+    {
+     "text": "في",
+     "t": [
+      8.4,
+      9.04
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "أصحاب",
+     "t": [
+      9.04,
+      11.36
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "السعير",
+     "t": [
+      11.36,
+      12.56
+     ],
+     "confidence": 0.986
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:10",
+   "score": 0.909,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:11",
+   "duration_s": 10.24,
+   "raw_text": "فاعترفوا بذنبهم فسحقا لأصحاب السعير",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "فاعترفوا",
+     "t": [
+      0.64,
+      1.92
+     ],
+     "confidence": 0.961
+    },
+    {
+     "text": "بذنبهم",
+     "t": [
+      1.92,
+      4.08
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "فسحقا",
+     "t": [
+      4.08,
+      6.4
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "لأصحاب",
+     "t": [
+      6.4,
+      7.92
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "السعير",
+     "t": [
+      7.92,
+      9.12
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:11",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:12",
+   "duration_s": 14.785,
+   "raw_text": "إِنَّ الذين يخشون ربهُمْ بالغيب لهم مغفرة وأجر كبير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِنَّ",
+     "t": [
+      0.88,
+      0.96
+     ],
+     "confidence": 0.959
+    },
+    {
+     "text": "الذين",
+     "t": [
+      0.96,
+      2.16
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "يخشون",
+     "t": [
+      2.16,
+      4.0
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "ربهُمْ",
+     "t": [
+      4.0,
+      5.36
+     ],
+     "confidence": 0.912
+    },
+    {
+     "text": "بالغيب",
+     "t": [
+      5.36,
+      7.6
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "لهم",
+     "t": [
+      7.6,
+      8.0
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "مغفرة",
+     "t": [
+      8.0,
+      10.4
+     ],
+     "confidence": 0.98
+    },
+    {
+     "text": "وأجر",
+     "t": [
+      10.4,
+      12.08
+     ],
+     "confidence": 0.926
+    },
+    {
+     "text": "كبير",
+     "t": [
+      12.08,
+      13.28
+     ],
+     "confidence": 0.999
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:12",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:14",
+   "duration_s": 7.393,
+   "raw_text": "ألا يعلم من خلق وهو اللطيف الخبير",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "ألا",
+     "t": [
+      0.56,
+      0.88
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "يعلم",
+     "t": [
+      0.88,
+      1.68
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "من",
+     "t": [
+      1.68,
+      2.4
+     ],
+     "confidence": 0.978
+    },
+    {
+     "text": "خلق",
+     "t": [
+      2.4,
+      2.88
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وهو",
+     "t": [
+      2.88,
+      3.76
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "اللطيف",
+     "t": [
+      3.76,
+      5.44
+     ],
+     "confidence": 0.981
+    },
+    {
+     "text": "الخبير",
+     "t": [
+      5.44,
+      6.56
+     ],
+     "confidence": 0.986
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:14",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:16",
+   "duration_s": 14.733,
+   "raw_text": "أأَمِتم من في السماء أَنْ يخسف بكم الأرض فإذا هي تمور",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أأَمِتم",
+     "t": [
+      1.04,
+      2.96
+     ],
+     "confidence": 0.964
+    },
+    {
+     "text": "من",
+     "t": [
+      2.96,
+      4.0
+     ],
+     "confidence": 0.939
+    },
+    {
+     "text": "في",
+     "t": [
+      4.0,
+      5.12
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "السماء",
+     "t": [
+      5.12,
+      7.44
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "أَنْ",
+     "t": [
+      7.44,
+      7.84
+     ],
+     "confidence": 0.792
+    },
+    {
+     "text": "يخسف",
+     "t": [
+      7.84,
+      9.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بكم",
+     "t": [
+      9.52,
+      10.16
+     ],
+     "confidence": 0.955
+    },
+    {
+     "text": "الأرض",
+     "t": [
+      10.16,
+      10.72
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فإذا",
+     "t": [
+      10.72,
+      11.68
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "هي",
+     "t": [
+      11.68,
+      12.56
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "تمور",
+     "t": [
+      12.56,
+      13.76
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:16",
+   "score": 0.909,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:17",
+   "duration_s": 18.26,
+   "raw_text": "أم أمنتم من في السماء أن يرسل عليكم حاصبا فعلمون كيف نذير",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "أم",
+     "t": [
+      1.2,
+      1.28
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "أمنتم",
+     "t": [
+      1.28,
+      3.36
+     ],
+     "confidence": 0.967
+    },
+    {
+     "text": "من",
+     "t": [
+      3.36,
+      4.4
+     ],
+     "confidence": 0.925
+    },
+    {
+     "text": "في",
+     "t": [
+      4.4,
+      5.44
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "السماء",
+     "t": [
+      5.44,
+      7.84
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "أن",
+     "t": [
+      7.84,
+      8.24
+     ],
+     "confidence": 0.774
+    },
+    {
+     "text": "يرسل",
+     "t": [
+      8.24,
+      9.6
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "عليكم",
+     "t": [
+      9.6,
+      10.32
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "حاصبا",
+     "t": [
+      10.32,
+      12.32
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "فعلمون",
+     "t": [
+      12.32,
+      15.36
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "كيف",
+     "t": [
+      15.36,
+      15.92
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "نذير",
+     "t": [
+      15.92,
+      17.28
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:17",
+   "score": 0.979,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:18",
+   "duration_s": 10.109,
+   "raw_text": "ولقد كذب الذيننَ من قبلِهِمْ فكيف كان نكير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ولقد",
+     "t": [
+      0.64,
+      1.2
+     ],
+     "confidence": 0.952
+    },
+    {
+     "text": "كذب",
+     "t": [
+      1.2,
+      2.08
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "الذيننَ",
+     "t": [
+      2.08,
+      3.6
+     ],
+     "confidence": 0.909
+    },
+    {
+     "text": "من",
+     "t": [
+      3.6,
+      4.24
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "قبلِهِمْ",
+     "t": [
+      4.24,
+      6.24
+     ],
+     "confidence": 0.928
+    },
+    {
+     "text": "فكيف",
+     "t": [
+      6.24,
+      7.36
+     ],
+     "confidence": 0.971
+    },
+    {
+     "text": "كان",
+     "t": [
+      7.36,
+      7.84
+     ],
+     "confidence": 0.971
+    },
+    {
+     "text": "نكير",
+     "t": [
+      7.84,
+      9.12
+     ],
+     "confidence": 0.994
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:18",
+   "score": 0.979,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:20",
+   "duration_s": 20.167,
+   "raw_text": "أمن هذا الذي هو جند لكم ينصركم من دون الرحمن إن الكافرون إِل في غرور",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أمن",
+     "t": [
+      1.2,
+      2.32
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "هذا",
+     "t": [
+      2.32,
+      2.72
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "الذي",
+     "t": [
+      2.72,
+      3.6
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "هو",
+     "t": [
+      3.6,
+      4.48
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "جند",
+     "t": [
+      4.48,
+      6.0
+     ],
+     "confidence": 0.969
+    },
+    {
+     "text": "لكم",
+     "t": [
+      6.0,
+      6.64
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "ينصركم",
+     "t": [
+      6.64,
+      9.2
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "من",
+     "t": [
+      9.2,
+      10.32
+     ],
+     "confidence": 0.854
+    },
+    {
+     "text": "دون",
+     "t": [
+      10.32,
+      11.2
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "الرحمن",
+     "t": [
+      11.2,
+      12.48
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "إن",
+     "t": [
+      12.48,
+      14.72
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "الكافرون",
+     "t": [
+      14.72,
+      16.48
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "إِل",
+     "t": [
+      16.48,
+      17.12
+     ],
+     "confidence": 0.971
+    },
+    {
+     "text": "في",
+     "t": [
+      17.12,
+      18.0
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "غرور",
+     "t": [
+      18.0,
+      19.04
+     ],
+     "confidence": 0.978
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:20",
+   "score": 0.933,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:24",
+   "duration_s": 9.143,
+   "raw_text": "قل هو الذي ذرأكم في الأرض وإليه تحشرون",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "قل",
+     "t": [
+      0.88,
+      0.96
+     ],
+     "confidence": 0.959
+    },
+    {
+     "text": "هو",
+     "t": [
+      0.96,
+      1.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الذي",
+     "t": [
+      1.52,
+      2.16
+     ],
+     "confidence": 0.877
+    },
+    {
+     "text": "ذرأكم",
+     "t": [
+      2.16,
+      3.92
+     ],
+     "confidence": 0.981
+    },
+    {
+     "text": "في",
+     "t": [
+      3.92,
+      4.56
+     ],
+     "confidence": 0.968
+    },
+    {
+     "text": "الأرض",
+     "t": [
+      4.56,
+      4.96
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وإليه",
+     "t": [
+      4.96,
+      6.64
+     ],
+     "confidence": 0.962
+    },
+    {
+     "text": "تحشرون",
+     "t": [
+      6.64,
+      8.08
+     ],
+     "confidence": 0.999
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:24",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:25",
+   "duration_s": 10.345,
+   "raw_text": "ويقولون متى هذا الوعد إن كنتم صادقين",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "ويقولون",
+     "t": [
+      0.56,
+      1.92
+     ],
+     "confidence": 0.97
+    },
+    {
+     "text": "متى",
+     "t": [
+      1.92,
+      2.88
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "هذا",
+     "t": [
+      2.88,
+      3.2
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الوعد",
+     "t": [
+      3.2,
+      4.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "إن",
+     "t": [
+      4.56,
+      5.2
+     ],
+     "confidence": 0.783
+    },
+    {
+     "text": "كنتم",
+     "t": [
+      5.2,
+      7.76
+     ],
+     "confidence": 0.974
+    },
+    {
+     "text": "صادقين",
+     "t": [
+      7.76,
+      9.2
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "10:48",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": false
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:28",
+   "duration_s": 18.547,
+   "raw_text": "قل أرأيتم إن أهلكني اللَّهُ ومنَنْ معي أو رحمَنَا فم يجير الْ الكافرين من عذاب أليم",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قل",
+     "t": [
+      1.52,
+      1.6
+     ],
+     "confidence": 0.98
+    },
+    {
+     "text": "أرأيتم",
+     "t": [
+      1.6,
+      3.44
+     ],
+     "confidence": 0.976
+    },
+    {
+     "text": "إن",
+     "t": [
+      3.44,
+      3.76
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "أهلكني",
+     "t": [
+      3.76,
+      5.36
+     ],
+     "confidence": 0.931
+    },
+    {
+     "text": "اللَّهُ",
+     "t": [
+      5.36,
+      6.08
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "ومنَنْ",
+     "t": [
+      6.08,
+      7.44
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "معي",
+     "t": [
+      7.44,
+      8.72
+     ],
+     "confidence": 0.98
+    },
+    {
+     "text": "أو",
+     "t": [
+      8.72,
+      9.12
+     ],
+     "confidence": 0.992
+    },
+    {
+     "text": "رحمَنَا",
+     "t": [
+      9.12,
+      10.48
+     ],
+     "confidence": 0.9
+    },
+    {
+     "text": "فم",
+     "t": [
+      10.48,
+      11.2
+     ],
+     "confidence": 0.957
+    },
+    {
+     "text": "يجير",
+     "t": [
+      11.2,
+      12.96
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْ",
+     "t": [
+      12.96,
+      13.52
+     ],
+     "confidence": 0.868
+    },
+    {
+     "text": "الكافرين",
+     "t": [
+      13.52,
+      14.64
+     ],
+     "confidence": 0.979
+    },
+    {
+     "text": "من",
+     "t": [
+      14.64,
+      15.2
+     ],
+     "confidence": 0.971
+    },
+    {
+     "text": "عذاب",
+     "t": [
+      15.2,
+      16.4
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "أليم",
+     "t": [
+      16.4,
+      17.52
+     ],
+     "confidence": 0.998
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:28",
+   "score": 0.859,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:3",
+   "duration_s": 23.745,
+   "raw_text": "الذي خلق سبع سماوات طباقا ما ترى في خلق الرحمن من تفاوت فارجع البصر هل ترى من فطور",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "الذي",
+     "t": [
+      1.6,
+      1.68
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "خلق",
+     "t": [
+      1.68,
+      2.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "سبع",
+     "t": [
+      2.56,
+      3.76
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "سماوات",
+     "t": [
+      3.76,
+      5.44
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "طباقا",
+     "t": [
+      5.44,
+      7.6
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "ما",
+     "t": [
+      7.6,
+      9.76
+     ],
+     "confidence": 0.813
+    },
+    {
+     "text": "ترى",
+     "t": [
+      9.76,
+      10.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "في",
+     "t": [
+      10.56,
+      11.04
+     ],
+     "confidence": 0.949
+    },
+    {
+     "text": "خلق",
+     "t": [
+      11.04,
+      11.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الرحمن",
+     "t": [
+      11.52,
+      12.88
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "من",
+     "t": [
+      12.88,
+      13.92
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "تفاوت",
+     "t": [
+      13.92,
+      15.76
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "فارجع",
+     "t": [
+      15.76,
+      17.84
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "البصر",
+     "t": [
+      17.84,
+      18.96
+     ],
+     "confidence": 0.954
+    },
+    {
+     "text": "هل",
+     "t": [
+      18.96,
+      19.44
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "ترى",
+     "t": [
+      19.44,
+      20.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "من",
+     "t": [
+      20.24,
+      20.72
+     ],
+     "confidence": 0.875
+    },
+    {
+     "text": "فطور",
+     "t": [
+      20.72,
+      22.72
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:3",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:30",
+   "duration_s": 18.129,
+   "raw_text": "ق أَرَأيتم إن أصبح مَاؤُكُمْ غورا فمَنْ يأتيْتِكم بماء معِين",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ق",
+     "t": [
+      1.12,
+      1.2
+     ],
+     "confidence": 0.804
+    },
+    {
+     "text": "أَرَأيتم",
+     "t": [
+      1.2,
+      3.04
+     ],
+     "confidence": 0.953
+    },
+    {
+     "text": "إن",
+     "t": [
+      3.04,
+      3.44
+     ],
+     "confidence": 0.924
+    },
+    {
+     "text": "أصبح",
+     "t": [
+      3.44,
+      4.32
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مَاؤُكُمْ",
+     "t": [
+      4.32,
+      7.36
+     ],
+     "confidence": 0.957
+    },
+    {
+     "text": "غورا",
+     "t": [
+      7.36,
+      8.64
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "فمَنْ",
+     "t": [
+      8.64,
+      10.0
+     ],
+     "confidence": 0.978
+    },
+    {
+     "text": "يأتيْتِكم",
+     "t": [
+      10.0,
+      12.16
+     ],
+     "confidence": 0.933
+    },
+    {
+     "text": "بماء",
+     "t": [
+      12.16,
+      15.52
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "معِين",
+     "t": [
+      15.52,
+      17.28
+     ],
+     "confidence": 0.967
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:30",
+   "score": 0.886,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:5",
+   "duration_s": 22.544,
+   "raw_text": "ولقد زيا السماء الدنيا بمصابيح وجعلناها رجوما للشياطين وَأَعتدنا لهم عذَاب السعير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ولقد",
+     "t": [
+      1.6,
+      2.16
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "زيا",
+     "t": [
+      2.16,
+      4.08
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "السماء",
+     "t": [
+      4.08,
+      6.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الدنيا",
+     "t": [
+      6.56,
+      7.12
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بمصابيح",
+     "t": [
+      7.12,
+      9.76
+     ],
+     "confidence": 0.978
+    },
+    {
+     "text": "وجعلناها",
+     "t": [
+      9.76,
+      11.84
+     ],
+     "confidence": 0.962
+    },
+    {
+     "text": "رجوما",
+     "t": [
+      11.84,
+      13.2
+     ],
+     "confidence": 0.943
+    },
+    {
+     "text": "للشياطين",
+     "t": [
+      13.2,
+      15.36
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "وَأَعتدنا",
+     "t": [
+      15.36,
+      18.32
+     ],
+     "confidence": 0.945
+    },
+    {
+     "text": "لهم",
+     "t": [
+      18.32,
+      18.88
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "عذَاب",
+     "t": [
+      18.88,
+      20.32
+     ],
+     "confidence": 0.939
+    },
+    {
+     "text": "السعير",
+     "t": [
+      20.32,
+      21.52
+     ],
+     "confidence": 0.996
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:5",
+   "score": 0.979,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:6",
+   "duration_s": 12.565,
+   "raw_text": "ولذِينَ كفروا بربهم عذاب جهنم وبئس المصير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ولذِينَ",
+     "t": [
+      1.36,
+      2.56
+     ],
+     "confidence": 0.924
+    },
+    {
+     "text": "كفروا",
+     "t": [
+      2.56,
+      3.84
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بربهم",
+     "t": [
+      3.84,
+      5.2
+     ],
+     "confidence": 0.937
+    },
+    {
+     "text": "عذاب",
+     "t": [
+      5.2,
+      6.48
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "جهنم",
+     "t": [
+      6.48,
+      8.32
+     ],
+     "confidence": 0.979
+    },
+    {
+     "text": "وبئس",
+     "t": [
+      8.32,
+      10.48
+     ],
+     "confidence": 0.974
+    },
+    {
+     "text": "المصير",
+     "t": [
+      10.48,
+      11.68
+     ],
+     "confidence": 0.998
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:6",
+   "score": 0.976,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:8",
+   "duration_s": 20.402,
+   "raw_text": "تكاد تميز من الغيظ كلما ألقيِيَ فيها فوج سألهُمْ خزنتها ألم يأتكم نذير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "تكاد",
+     "t": [
+      0.64,
+      1.28
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "تميز",
+     "t": [
+      1.28,
+      2.72
+     ],
+     "confidence": 0.973
+    },
+    {
+     "text": "من",
+     "t": [
+      2.72,
+      3.12
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "الغيظ",
+     "t": [
+      3.12,
+      4.48
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "كلما",
+     "t": [
+      4.48,
+      7.2
+     ],
+     "confidence": 0.988
+    },
+    {
+     "text": "ألقيِيَ",
+     "t": [
+      7.2,
+      9.6
+     ],
+     "confidence": 0.908
+    },
+    {
+     "text": "فيها",
+     "t": [
+      9.6,
+      9.92
+     ],
+     "confidence": 0.9
+    },
+    {
+     "text": "فوج",
+     "t": [
+      9.92,
+      11.52
+     ],
+     "confidence": 0.948
+    },
+    {
+     "text": "سألهُمْ",
+     "t": [
+      11.52,
+      13.52
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "خزنتها",
+     "t": [
+      13.52,
+      15.12
+     ],
+     "confidence": 0.96
+    },
+    {
+     "text": "ألم",
+     "t": [
+      15.12,
+      16.96
+     ],
+     "confidence": 0.956
+    },
+    {
+     "text": "يأتكم",
+     "t": [
+      16.96,
+      18.24
+     ],
+     "confidence": 0.959
+    },
+    {
+     "text": "نذير",
+     "t": [
+      18.24,
+      19.36
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:8",
+   "score": 0.985,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "67:9",
+   "duration_s": 24.242,
+   "raw_text": "قالوا بلى ق جاءنَا نذير فكذبنا وقلنا ما نزل اللَّهُ من شيء إن أنتم إلا في ضلال كبير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قالوا",
+     "t": [
+      0.64,
+      1.28
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "بلى",
+     "t": [
+      1.28,
+      2.0
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "ق",
+     "t": [
+      2.0,
+      2.48
+     ],
+     "confidence": 0.889
+    },
+    {
+     "text": "جاءنَا",
+     "t": [
+      2.48,
+      4.96
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "نذير",
+     "t": [
+      4.96,
+      6.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فكذبنا",
+     "t": [
+      6.16,
+      8.72
+     ],
+     "confidence": 0.954
+    },
+    {
+     "text": "وقلنا",
+     "t": [
+      8.72,
+      10.08
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "ما",
+     "t": [
+      10.08,
+      10.56
+     ],
+     "confidence": 0.871
+    },
+    {
+     "text": "نزل",
+     "t": [
+      10.56,
+      11.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "اللَّهُ",
+     "t": [
+      11.52,
+      12.4
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "من",
+     "t": [
+      12.4,
+      13.28
+     ],
+     "confidence": 0.945
+    },
+    {
+     "text": "شيء",
+     "t": [
+      13.28,
+      14.32
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "إن",
+     "t": [
+      14.32,
+      16.96
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "أنتم",
+     "t": [
+      16.96,
+      18.8
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "إلا",
+     "t": [
+      18.8,
+      19.36
+     ],
+     "confidence": 0.982
+    },
+    {
+     "text": "في",
+     "t": [
+      19.36,
+      20.24
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "ضلال",
+     "t": [
+      20.24,
+      21.6
+     ],
+     "confidence": 0.988
+    },
+    {
+     "text": "كبير",
+     "t": [
+      21.6,
+      22.64
+     ],
+     "confidence": 0.999
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:9",
+   "score": 0.944,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Abdul_Basit_Murattal_192kbps",
+   "ref": "97:2",
+   "duration_s": 5.851,
+   "raw_text": "وما أدراك ما ليلة القدر",
+   "has_vowels": false,
+   "words": [
+    {
+     "text": "وما",
+     "t": [
+      0.48,
+      0.56
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "أدراك",
+     "t": [
+      0.56,
+      2.96
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "ما",
+     "t": [
+      2.96,
+      3.28
+     ],
+     "confidence": 0.965
+    },
+    {
+     "text": "ليلة",
+     "t": [
+      3.28,
+      4.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "القدر",
+     "t": [
+      4.24,
+      5.04
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "97:2",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "103:1",
+   "duration_s": 1.73,
+   "raw_text": "وَالْعَفْرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَالْعَفْرِ",
+     "t": [
+      0.08,
+      0.96
+     ],
+     "confidence": 0.98
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": null,
+   "score": null,
+   "correct": false,
+   "top3_has_ref": false
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "103:3",
+   "duration_s": 12.494,
+   "raw_text": "إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِلَّا",
+     "t": [
+      0.16,
+      0.56
+     ],
+     "confidence": 0.959
+    },
+    {
+     "text": "الَّذِينَ",
+     "t": [
+      0.56,
+      1.28
+     ],
+     "confidence": 0.966
+    },
+    {
+     "text": "آمَنُوا",
+     "t": [
+      1.28,
+      2.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَعَمِلُوا",
+     "t": [
+      2.56,
+      3.68
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "الصَّالِحَاتِ",
+     "t": [
+      3.68,
+      4.96
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "وَتَوَاصَوْا",
+     "t": [
+      4.96,
+      6.56
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "بِالْحَقِّ",
+     "t": [
+      6.56,
+      7.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَتَوَاصَوْا",
+     "t": [
+      7.52,
+      9.04
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "بِالصَّبْرِ",
+     "t": [
+      9.04,
+      9.92
+     ],
+     "confidence": 0.999
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "103:3",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "108:3",
+   "duration_s": 5.192,
+   "raw_text": "إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِنَّ",
+     "t": [
+      0.24,
+      0.32
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "شَانِئَكَ",
+     "t": [
+      0.32,
+      2.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "هُوَ",
+     "t": [
+      2.56,
+      3.12
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "الْأَبْتَرُ",
+     "t": [
+      3.12,
+      4.4
+     ],
+     "confidence": 0.992
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "108:3",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "110:1",
+   "duration_s": 6.877,
+   "raw_text": "إِذَا جََ نَصْرُ اللَّهِ وَالْفَتْحُ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِذَا",
+     "t": [
+      0.24,
+      0.64
+     ],
+     "confidence": 0.869
+    },
+    {
+     "text": "جََ",
+     "t": [
+      0.64,
+      3.44
+     ],
+     "confidence": 0.957
+    },
+    {
+     "text": "نَصْرُ",
+     "t": [
+      3.44,
+      4.24
+     ],
+     "confidence": 0.98
+    },
+    {
+     "text": "اللَّهِ",
+     "t": [
+      4.24,
+      4.48
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "وَالْفَتْحُ",
+     "t": [
+      4.48,
+      6.16
+     ],
+     "confidence": 0.963
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "110:1",
+   "score": 0.64,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "110:2",
+   "duration_s": 8.134,
+   "raw_text": "وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَرَأَيْتَ",
+     "t": [
+      0.08,
+      1.04
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "النَّاسَ",
+     "t": [
+      1.04,
+      2.4
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "يَدْخُلُونَ",
+     "t": [
+      2.4,
+      3.68
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "فِي",
+     "t": [
+      3.68,
+      4.0
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "دِينِ",
+     "t": [
+      4.0,
+      5.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "اللَّهِ",
+     "t": [
+      5.04,
+      5.28
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَفْوَاجًا",
+     "t": [
+      5.28,
+      7.04
+     ],
+     "confidence": 0.997
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "110:2",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "112:1",
+   "duration_s": 2.917,
+   "raw_text": "قُلْ هُوَ اللَّهُ أَحَدٌ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.0,
+      0.4
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "هُوَ",
+     "t": [
+      0.4,
+      0.88
+     ],
+     "confidence": 0.958
+    },
+    {
+     "text": "اللَّهُ",
+     "t": [
+      0.88,
+      1.12
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَحَدٌ",
+     "t": [
+      1.12,
+      2.24
+     ],
+     "confidence": 0.985
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "112:1",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "113:2",
+   "duration_s": 3.592,
+   "raw_text": "مِنْ شَرِّ مَا خَلَقَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مِنْ",
+     "t": [
+      0.08,
+      0.16
+     ],
+     "confidence": 0.862
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.16,
+      1.84
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "مَا",
+     "t": [
+      1.84,
+      2.08
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "خَلَقَ",
+     "t": [
+      2.08,
+      2.96
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:2",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "113:4",
+   "duration_s": 5.964,
+   "raw_text": "وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَمِنْ",
+     "t": [
+      0.08,
+      0.64
+     ],
+     "confidence": 0.976
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.64,
+      1.92
+     ],
+     "confidence": 0.976
+    },
+    {
+     "text": "النَّفَّاثَاتِ",
+     "t": [
+      1.92,
+      4.08
+     ],
+     "confidence": 0.984
+    },
+    {
+     "text": "فِي",
+     "t": [
+      4.08,
+      4.4
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْعُقَدِ",
+     "t": [
+      4.4,
+      5.44
+     ],
+     "confidence": 0.998
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:4",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "113:5",
+   "duration_s": 5.604,
+   "raw_text": "وَمِنْ شَرِّ حاسِدٍ إِذَا حَسَدَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَمِنْ",
+     "t": [
+      0.16,
+      0.64
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.64,
+      1.76
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "حاسِدٍ",
+     "t": [
+      1.76,
+      2.88
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "إِذَا",
+     "t": [
+      2.88,
+      3.44
+     ],
+     "confidence": 0.96
+    },
+    {
+     "text": "حَسَدَ",
+     "t": [
+      3.44,
+      4.24
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:5",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "114:1",
+   "duration_s": 6.071,
+   "raw_text": "ق أعُوذُ بَربِّ النَّ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ق",
+     "t": [
+      0.0,
+      0.08
+     ],
+     "confidence": 0.862
+    },
+    {
+     "text": "أعُوذُ",
+     "t": [
+      0.08,
+      1.12
+     ],
+     "confidence": 0.951
+    },
+    {
+     "text": "بَربِّ",
+     "t": [
+      1.12,
+      2.0
+     ],
+     "confidence": 0.887
+    },
+    {
+     "text": "النَّ",
+     "t": [
+      2.0,
+      3.04
+     ],
+     "confidence": 0.97
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:1",
+   "score": 0.2,
+   "correct": false,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "114:3",
+   "duration_s": 5.292,
+   "raw_text": "إِلَ النَّ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِلَ",
+     "t": [
+      0.16,
+      0.56
+     ],
+     "confidence": 0.967
+    },
+    {
+     "text": "النَّ",
+     "t": [
+      0.56,
+      1.76
+     ],
+     "confidence": 0.983
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "8:66",
+   "score": 0.1,
+   "correct": false,
+   "top3_has_ref": false
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "114:4",
+   "duration_s": 7.944,
+   "raw_text": "مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاس",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مِنْ",
+     "t": [
+      0.16,
+      0.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.24,
+      1.92
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "الْوَسْوَاسِ",
+     "t": [
+      1.92,
+      3.28
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "الْخَنَّاس",
+     "t": [
+      3.28,
+      5.36
+     ],
+     "confidence": 0.98
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "114:4",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "114:5",
+   "duration_s": 7.852,
+   "raw_text": "الَّذِي يوسَسْوس فِي صدورِ النَّ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "الَّذِي",
+     "t": [
+      0.32,
+      0.4
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "يوسَسْوس",
+     "t": [
+      0.4,
+      1.76
+     ],
+     "confidence": 0.942
+    },
+    {
+     "text": "فِي",
+     "t": [
+      1.76,
+      2.24
+     ],
+     "confidence": 0.802
+    },
+    {
+     "text": "صدورِ",
+     "t": [
+      2.24,
+      3.44
+     ],
+     "confidence": 0.945
+    },
+    {
+     "text": "النَّ",
+     "t": [
+      3.44,
+      4.32
+     ],
+     "confidence": 0.952
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "114:5",
+   "score": 0.588,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "114:6",
+   "duration_s": 8.192,
+   "raw_text": "مِنةِ وَالنَّاس",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مِنةِ",
+     "t": [
+      0.24,
+      2.32
+     ],
+     "confidence": 0.886
+    },
+    {
+     "text": "وَالنَّاس",
+     "t": [
+      2.32,
+      4.48
+     ],
+     "confidence": 0.912
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "114:6",
+   "score": 0.1,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "1:2",
+   "duration_s": 5.534,
+   "raw_text": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالمِينَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "الْحَمْدُ",
+     "t": [
+      0.24,
+      0.96
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "لِلَّهِ",
+     "t": [
+      0.96,
+      1.6
+     ],
+     "confidence": 0.943
+    },
+    {
+     "text": "رَبِّ",
+     "t": [
+      1.6,
+      2.32
+     ],
+     "confidence": 0.944
+    },
+    {
+     "text": "الْعَالمِينَ",
+     "t": [
+      2.32,
+      3.52
+     ],
+     "confidence": 0.926
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:2",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "1:3",
+   "duration_s": 4.572,
+   "raw_text": "الرَّحْمَنِ الرَّحِيم",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "الرَّحْمَنِ",
+     "t": [
+      0.32,
+      1.28
+     ],
+     "confidence": 0.957
+    },
+    {
+     "text": "الرَّحِيم",
+     "t": [
+      1.28,
+      2.08
+     ],
+     "confidence": 0.969
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:3",
+   "score": 0.4,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "1:5",
+   "duration_s": 6.652,
+   "raw_text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِيَّاكَ",
+     "t": [
+      0.08,
+      0.8
+     ],
+     "confidence": 0.988
+    },
+    {
+     "text": "نَعْبُدُ",
+     "t": [
+      0.8,
+      1.68
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "وَإِيَّاكَ",
+     "t": [
+      1.68,
+      2.64
+     ],
+     "confidence": 0.978
+    },
+    {
+     "text": "نَسْتَعِينُ",
+     "t": [
+      2.64,
+      4.08
+     ],
+     "confidence": 0.995
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:5",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "1:7",
+   "duration_s": 13.188,
+   "raw_text": "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَ الضَّالِّينَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "صِرَاطَ",
+     "t": [
+      0.0,
+      0.8
+     ],
+     "confidence": 0.981
+    },
+    {
+     "text": "الَّذِينَ",
+     "t": [
+      0.8,
+      1.36
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَنْعَمْتَ",
+     "t": [
+      1.36,
+      2.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "عَلَيْهِمْ",
+     "t": [
+      2.56,
+      3.28
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "غَيْرِ",
+     "t": [
+      3.28,
+      4.0
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "الْمَغْضُوبِ",
+     "t": [
+      4.0,
+      5.36
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "عَلَيْهِمْ",
+     "t": [
+      5.36,
+      6.0
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَ",
+     "t": [
+      6.0,
+      6.4
+     ],
+     "confidence": 0.902
+    },
+    {
+     "text": "الضَّالِّينَ",
+     "t": [
+      6.4,
+      10.24
+     ],
+     "confidence": 0.988
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:7",
+   "score": 0.889,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:14",
+   "duration_s": 7.214,
+   "raw_text": "أَلَ يعلم من خلق وهو اللَّطيفخبير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أَلَ",
+     "t": [
+      0.16,
+      0.4
+     ],
+     "confidence": 0.92
+    },
+    {
+     "text": "يعلم",
+     "t": [
+      0.4,
+      0.96
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "من",
+     "t": [
+      0.96,
+      1.52
+     ],
+     "confidence": 0.804
+    },
+    {
+     "text": "خلق",
+     "t": [
+      1.52,
+      1.92
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "وهو",
+     "t": [
+      1.92,
+      2.56
+     ],
+     "confidence": 0.976
+    },
+    {
+     "text": "اللَّطيفخبير",
+     "t": [
+      2.56,
+      4.8
+     ],
+     "confidence": 0.944
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:14",
+   "score": 0.533,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:15",
+   "duration_s": 15.302,
+   "raw_text": "هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِنْ رِزْقِهِ وَإِلَيْهِ النُّشُور",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "هُوَ",
+     "t": [
+      0.0,
+      0.4
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "الَّذِي",
+     "t": [
+      0.4,
+      0.64
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "جَعَلَ",
+     "t": [
+      0.64,
+      1.6
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "لَكُمُ",
+     "t": [
+      1.6,
+      2.24
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "الْأَرْضَ",
+     "t": [
+      2.24,
+      3.04
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "ذَلُولًا",
+     "t": [
+      3.04,
+      4.08
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "فَامْشُوا",
+     "t": [
+      4.08,
+      5.44
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "فِي",
+     "t": [
+      5.44,
+      5.68
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مَنَاكِبِهَا",
+     "t": [
+      5.68,
+      7.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَكُلُوا",
+     "t": [
+      7.04,
+      8.0
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "مِنْ",
+     "t": [
+      8.0,
+      8.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "رِزْقِهِ",
+     "t": [
+      8.24,
+      9.36
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "وَإِلَيْهِ",
+     "t": [
+      9.36,
+      10.8
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "النُّشُور",
+     "t": [
+      10.8,
+      12.56
+     ],
+     "confidence": 0.984
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:15",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:17",
+   "duration_s": 16.262,
+   "raw_text": "أَمْ أَمِنْتُمْ من فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِي",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أَمْ",
+     "t": [
+      0.08,
+      0.4
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَمِنْتُمْ",
+     "t": [
+      0.4,
+      1.92
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "من",
+     "t": [
+      1.92,
+      3.2
+     ],
+     "confidence": 0.848
+    },
+    {
+     "text": "فِي",
+     "t": [
+      3.2,
+      3.92
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "السَّمَاءِ",
+     "t": [
+      3.92,
+      6.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَنْ",
+     "t": [
+      6.24,
+      6.64
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "يُرْسِلَ",
+     "t": [
+      6.64,
+      8.16
+     ],
+     "confidence": 0.988
+    },
+    {
+     "text": "عَلَيْكُمْ",
+     "t": [
+      8.16,
+      8.88
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "حَاصِبًا",
+     "t": [
+      8.88,
+      10.24
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "فَسَتَعْلَمُونَ",
+     "t": [
+      10.24,
+      12.4
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "كَيْفَ",
+     "t": [
+      12.4,
+      13.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "نَذِي",
+     "t": [
+      13.04,
+      13.76
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:17",
+   "score": 0.979,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:2",
+   "duration_s": 13.847,
+   "raw_text": "الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا وَهُوَ الْعَزِيزُ الْغَفُور",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "الَّذِي",
+     "t": [
+      0.32,
+      0.4
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "خَلَقَ",
+     "t": [
+      0.4,
+      1.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْمَوْتَ",
+     "t": [
+      1.52,
+      2.32
+     ],
+     "confidence": 0.973
+    },
+    {
+     "text": "وَالْحَيَاةَ",
+     "t": [
+      2.32,
+      3.6
+     ],
+     "confidence": 0.992
+    },
+    {
+     "text": "لِيَبْلُوَكُمْ",
+     "t": [
+      3.6,
+      4.8
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "أَيُّكُمْ",
+     "t": [
+      4.8,
+      5.84
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "أَحْسَنُ",
+     "t": [
+      5.84,
+      6.88
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "عَمَلًا",
+     "t": [
+      6.88,
+      7.68
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَهُوَ",
+     "t": [
+      7.68,
+      8.88
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "الْعَزِيزُ",
+     "t": [
+      8.88,
+      9.84
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "الْغَفُور",
+     "t": [
+      9.84,
+      10.88
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:2",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:23",
+   "duration_s": 14.982,
+   "raw_text": "قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.0,
+      0.4
+     ],
+     "confidence": 0.992
+    },
+    {
+     "text": "هُوَ",
+     "t": [
+      0.4,
+      0.8
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "الَّذِي",
+     "t": [
+      0.8,
+      1.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَنْشَأَكُمْ",
+     "t": [
+      1.04,
+      4.32
+     ],
+     "confidence": 0.984
+    },
+    {
+     "text": "وَجَعَلَ",
+     "t": [
+      4.32,
+      5.36
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "لَكُمُ",
+     "t": [
+      5.36,
+      6.0
+     ],
+     "confidence": 0.992
+    },
+    {
+     "text": "السَّمْعَ",
+     "t": [
+      6.0,
+      6.88
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَالْأَبْصَارَ",
+     "t": [
+      6.88,
+      8.24
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "وَالْأَفْئِدَةَ",
+     "t": [
+      8.24,
+      9.68
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "قَلِيلًا",
+     "t": [
+      9.68,
+      10.64
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مَا",
+     "t": [
+      10.64,
+      11.36
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "تَشْكُرُونَ",
+     "t": [
+      11.36,
+      14.96
+     ],
+     "confidence": 0.997
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:23",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:29",
+   "duration_s": 15.571,
+   "raw_text": "قُلْ هُوَ الرَّحْمَنُ آمَنَّا بِهِ وَعَلَيْهِ تَوَكَّلْنَا فَسَتَعْلَمُونَ مَنْ هُوَ فِي ضَلَالٍ مُبِينٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.0,
+      0.4
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "هُوَ",
+     "t": [
+      0.4,
+      0.8
+     ],
+     "confidence": 0.979
+    },
+    {
+     "text": "الرَّحْمَنُ",
+     "t": [
+      0.8,
+      1.84
+     ],
+     "confidence": 0.956
+    },
+    {
+     "text": "آمَنَّا",
+     "t": [
+      1.84,
+      3.52
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "بِهِ",
+     "t": [
+      3.52,
+      4.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَعَلَيْهِ",
+     "t": [
+      4.24,
+      5.28
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "تَوَكَّلْنَا",
+     "t": [
+      5.28,
+      6.64
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "فَسَتَعْلَمُونَ",
+     "t": [
+      6.64,
+      8.8
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "مَنْ",
+     "t": [
+      8.8,
+      9.12
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "هُوَ",
+     "t": [
+      9.12,
+      9.84
+     ],
+     "confidence": 0.974
+    },
+    {
+     "text": "فِي",
+     "t": [
+      9.84,
+      10.0
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "ضَلَالٍ",
+     "t": [
+      10.0,
+      11.2
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مُبِينٍ",
+     "t": [
+      11.2,
+      13.12
+     ],
+     "confidence": 0.967
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:29",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:30",
+   "duration_s": 18.405,
+   "raw_text": "قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَنْ يَأْتِيكُمْ بِمَاءٍ مَعِينٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.0,
+      0.4
+     ],
+     "confidence": 0.982
+    },
+    {
+     "text": "أَرَأَيْتُمْ",
+     "t": [
+      0.4,
+      1.36
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "إِنْ",
+     "t": [
+      1.36,
+      1.76
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "أَصْبَحَ",
+     "t": [
+      1.76,
+      2.64
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "مَاؤُكُمْ",
+     "t": [
+      2.64,
+      5.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "غَوْرًا",
+     "t": [
+      5.04,
+      6.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فَمَنْ",
+     "t": [
+      6.16,
+      7.2
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "يَأْتِيكُمْ",
+     "t": [
+      7.2,
+      8.96
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "بِمَاءٍ",
+     "t": [
+      8.96,
+      12.08
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "مَعِينٍ",
+     "t": [
+      12.08,
+      18.32
+     ],
+     "confidence": 0.986
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:30",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:4",
+   "duration_s": 12.858,
+   "raw_text": "ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ يَنْقَلِبْ إِلَيْكَ الْبَصَرُ خَاسِئًا وَهُوَ حَسِير",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "ثُمَّ",
+     "t": [
+      0.16,
+      1.12
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "ارْجِعِ",
+     "t": [
+      1.12,
+      2.08
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "الْبَصَرَ",
+     "t": [
+      2.08,
+      2.88
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "كَرَّتَيْنِ",
+     "t": [
+      2.88,
+      4.16
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "يَنْقَلِبْ",
+     "t": [
+      4.16,
+      6.08
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "إِلَيْكَ",
+     "t": [
+      6.08,
+      6.72
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْبَصَرُ",
+     "t": [
+      6.72,
+      7.68
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "خَاسِئًا",
+     "t": [
+      7.68,
+      8.72
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "وَهُوَ",
+     "t": [
+      8.72,
+      9.84
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "حَسِير",
+     "t": [
+      9.84,
+      10.64
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:4",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "67:9",
+   "duration_s": 20.422,
+   "raw_text": "قَالُوا بَلَى قَدْ جَاءَنَا نَذِيرٌ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللَّهُ مِنْ شَيْءٍ إِنْ أَنْتُمْ إِلَّا فِي ضَلَالٍ كَبِيرٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قَالُوا",
+     "t": [
+      0.0,
+      0.56
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "بَلَى",
+     "t": [
+      0.56,
+      1.12
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "قَدْ",
+     "t": [
+      1.12,
+      1.6
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "جَاءَنَا",
+     "t": [
+      1.6,
+      3.92
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "نَذِيرٌ",
+     "t": [
+      3.92,
+      5.04
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فَكَذَّبْنَا",
+     "t": [
+      5.04,
+      6.96
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "وَقُلْنَا",
+     "t": [
+      6.96,
+      8.0
+     ],
+     "confidence": 0.992
+    },
+    {
+     "text": "مَا",
+     "t": [
+      8.0,
+      8.32
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "نَزَّلَ",
+     "t": [
+      8.32,
+      9.36
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "اللَّهُ",
+     "t": [
+      9.36,
+      9.68
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مِنْ",
+     "t": [
+      9.68,
+      10.4
+     ],
+     "confidence": 0.931
+    },
+    {
+     "text": "شَيْءٍ",
+     "t": [
+      10.4,
+      12.16
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "إِنْ",
+     "t": [
+      12.16,
+      12.64
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "أَنْتُمْ",
+     "t": [
+      12.64,
+      14.08
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "إِلَّا",
+     "t": [
+      14.08,
+      14.8
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "فِي",
+     "t": [
+      14.8,
+      15.2
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "ضَلَالٍ",
+     "t": [
+      15.2,
+      16.48
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "كَبِيرٍ",
+     "t": [
+      16.48,
+      20.4
+     ],
+     "confidence": 0.987
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:9",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "97:1",
+   "duration_s": 7.91,
+   "raw_text": "إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِنَّا",
+     "t": [
+      0.16,
+      1.44
+     ],
+     "confidence": 0.986
+    },
+    {
+     "text": "أَنزَلْنَاهُ",
+     "t": [
+      1.44,
+      5.12
+     ],
+     "confidence": 0.967
+    },
+    {
+     "text": "فِي",
+     "t": [
+      5.12,
+      5.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "لَيْلَةِ",
+     "t": [
+      5.52,
+      6.48
+     ],
+     "confidence": 0.964
+    },
+    {
+     "text": "الْقَدْرِ",
+     "t": [
+      6.48,
+      7.28
+     ],
+     "confidence": 0.967
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "97:1",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Alafasy_128kbps",
+   "ref": "97:3",
+   "duration_s": 5.484,
+   "raw_text": "لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "لَيْلَةُ",
+     "t": [
+      0.16,
+      0.72
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "الْقَدْرِ",
+     "t": [
+      0.72,
+      1.52
+     ],
+     "confidence": 0.965
+    },
+    {
+     "text": "خَيْرٌ",
+     "t": [
+      1.52,
+      2.32
+     ],
+     "confidence": 0.942
+    },
+    {
+     "text": "مِنْ",
+     "t": [
+      2.32,
+      3.2
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "أَلْفِ",
+     "t": [
+      3.2,
+      4.16
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "شَهْرٍ",
+     "t": [
+      4.16,
+      4.88
+     ],
+     "confidence": 0.954
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "97:3",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "103:1",
+   "duration_s": 2.769,
+   "raw_text": "وَالْعَصْرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَالْعَصْرِ",
+     "t": [
+      0.24,
+      1.36
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "103:1",
+   "score": 0.2,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "103:2",
+   "duration_s": 7.079,
+   "raw_text": "إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِنَّ",
+     "t": [
+      0.48,
+      0.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْإِنْسَانَ",
+     "t": [
+      0.56,
+      3.84
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "لَفِي",
+     "t": [
+      3.84,
+      4.8
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "خُسْرٍ",
+     "t": [
+      4.8,
+      7.04
+     ],
+     "confidence": 0.996
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "103:2",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "109:1",
+   "duration_s": 9.691,
+   "raw_text": "قُلْ يَا أَيُّهَا الْكَافِرُونَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      1.12,
+      1.52
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "يَا",
+     "t": [
+      1.52,
+      1.92
+     ],
+     "confidence": 0.967
+    },
+    {
+     "text": "أَيُّهَا",
+     "t": [
+      1.92,
+      4.64
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "الْكَافِرُونَ",
+     "t": [
+      4.64,
+      9.68
+     ],
+     "confidence": 0.986
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "109:1",
+   "score": 0.392,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "109:2",
+   "duration_s": 7.602,
+   "raw_text": "لَا أَعْبُدُ مَا تَعْبُدُونَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "لَا",
+     "t": [
+      0.48,
+      0.72
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَعْبُدُ",
+     "t": [
+      0.72,
+      3.44
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "مَا",
+     "t": [
+      3.44,
+      3.68
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "تَعْبُدُونَ",
+     "t": [
+      3.68,
+      7.52
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "109:2",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "110:2",
+   "duration_s": 12.878,
+   "raw_text": "وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَرَأَيْتَ",
+     "t": [
+      0.72,
+      2.0
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "النَّاسَ",
+     "t": [
+      2.0,
+      3.92
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "يَدْخُلُونَ",
+     "t": [
+      3.92,
+      5.84
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فِي",
+     "t": [
+      5.84,
+      6.48
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "دِينِ",
+     "t": [
+      6.48,
+      8.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "اللَّهِ",
+     "t": [
+      8.16,
+      8.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَفْوَاجًا",
+     "t": [
+      8.56,
+      12.8
+     ],
+     "confidence": 0.993
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "110:2",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "113:2",
+   "duration_s": 5.46,
+   "raw_text": "مِنْ شَرِّ مَا خَلَقَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مِنْ",
+     "t": [
+      0.56,
+      0.64
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.64,
+      2.32
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "مَا",
+     "t": [
+      2.32,
+      2.72
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "خَلَقَ",
+     "t": [
+      2.72,
+      4.16
+     ],
+     "confidence": 0.964
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:2",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "113:4",
+   "duration_s": 9.221,
+   "raw_text": "وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَمِنْ",
+     "t": [
+      0.56,
+      1.12
+     ],
+     "confidence": 0.984
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      1.12,
+      2.48
+     ],
+     "confidence": 0.981
+    },
+    {
+     "text": "النَّفَّاثَاتِ",
+     "t": [
+      2.48,
+      5.92
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "فِي",
+     "t": [
+      5.92,
+      6.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْعُقَدِ",
+     "t": [
+      6.56,
+      9.2
+     ],
+     "confidence": 0.982
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "113:4",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "114:1",
+   "duration_s": 7.915,
+   "raw_text": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.32,
+      0.88
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "أَعُوذُ",
+     "t": [
+      0.88,
+      2.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بِرَبِّ",
+     "t": [
+      2.16,
+      3.6
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "النَّاسِ",
+     "t": [
+      3.6,
+      7.84
+     ],
+     "confidence": 0.993
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "114:1",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "114:2",
+   "duration_s": 4.702,
+   "raw_text": "مكِ النَّ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مكِ",
+     "t": [
+      0.32,
+      1.2
+     ],
+     "confidence": 0.98
+    },
+    {
+     "text": "النَّ",
+     "t": [
+      1.2,
+      2.08
+     ],
+     "confidence": 0.804
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "8:66",
+   "score": 0.1,
+   "correct": false,
+   "top3_has_ref": false
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "114:4",
+   "duration_s": 9.43,
+   "raw_text": "مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مِنْ",
+     "t": [
+      0.24,
+      0.32
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "شَرِّ",
+     "t": [
+      0.32,
+      2.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْوَسْوَاسِ",
+     "t": [
+      2.16,
+      4.56
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "الْخَنَّاسِ",
+     "t": [
+      4.56,
+      9.36
+     ],
+     "confidence": 0.997
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "114:4",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "1:1",
+   "duration_s": 5.12,
+   "raw_text": "بسم اللَّهِ الرحمن الرحيم",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "بسم",
+     "t": [
+      0.08,
+      0.48
+     ],
+     "confidence": 0.951
+    },
+    {
+     "text": "اللَّهِ",
+     "t": [
+      0.48,
+      0.8
+     ],
+     "confidence": 0.955
+    },
+    {
+     "text": "الرحمن",
+     "t": [
+      0.8,
+      1.68
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "الرحيم",
+     "t": [
+      1.68,
+      2.8
+     ],
+     "confidence": 0.995
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:1",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "1:3",
+   "duration_s": 4.493,
+   "raw_text": "الرَّحْمَنِ الرَّحِيمِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "الرَّحْمَنِ",
+     "t": [
+      0.4,
+      1.36
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "الرَّحِيمِ",
+     "t": [
+      1.36,
+      4.48
+     ],
+     "confidence": 0.989
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:3",
+   "score": 0.4,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "1:4",
+   "duration_s": 4.624,
+   "raw_text": "مَالِكِ يَوْمِ الدِّينِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "مَالِكِ",
+     "t": [
+      0.0,
+      0.96
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "يَوْمِ",
+     "t": [
+      0.96,
+      1.52
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "الدِّينِ",
+     "t": [
+      1.52,
+      2.56
+     ],
+     "confidence": 0.943
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:4",
+   "score": 0.504,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "1:5",
+   "duration_s": 6.844,
+   "raw_text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِين",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "إِيَّاكَ",
+     "t": [
+      0.32,
+      1.12
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "نَعْبُدُ",
+     "t": [
+      1.12,
+      2.08
+     ],
+     "confidence": 0.989
+    },
+    {
+     "text": "وَإِيَّاكَ",
+     "t": [
+      2.08,
+      3.28
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "نَسْتَعِين",
+     "t": [
+      3.28,
+      4.48
+     ],
+     "confidence": 0.984
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:5",
+   "score": 0.8,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "1:6",
+   "duration_s": 5.355,
+   "raw_text": "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "اهْدِنَا",
+     "t": [
+      0.16,
+      0.88
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "الصِّرَاطَ",
+     "t": [
+      0.88,
+      1.92
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الْمُسْتَقِيمَ",
+     "t": [
+      1.92,
+      5.28
+     ],
+     "confidence": 0.985
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "1:6",
+   "score": 0.6,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:10",
+   "duration_s": 18.495,
+   "raw_text": "وَقَالُوا لَوْ كُنَّا نَسْمَعُ أَوْ نَعْقِلُ مَا كُنَّا فِي أَصْحَابِ السَّعِيرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَقَالُوا",
+     "t": [
+      0.48,
+      1.6
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "لَوْ",
+     "t": [
+      1.6,
+      2.64
+     ],
+     "confidence": 0.984
+    },
+    {
+     "text": "كُنَّا",
+     "t": [
+      2.64,
+      4.0
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "نَسْمَعُ",
+     "t": [
+      4.0,
+      5.84
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "أَوْ",
+     "t": [
+      5.84,
+      6.56
+     ],
+     "confidence": 0.959
+    },
+    {
+     "text": "نَعْقِلُ",
+     "t": [
+      6.56,
+      8.0
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "مَا",
+     "t": [
+      8.0,
+      8.32
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "كُنَّا",
+     "t": [
+      8.32,
+      10.16
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "فِي",
+     "t": [
+      10.16,
+      10.96
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَصْحَابِ",
+     "t": [
+      10.96,
+      14.16
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "السَّعِيرِ",
+     "t": [
+      14.16,
+      18.48
+     ],
+     "confidence": 0.976
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:10",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:11",
+   "duration_s": 13.845,
+   "raw_text": "فَاعْتَرَفُوا بِذَنْبِهِمْ فَسُحْقًا لِأَصْحَابِ السَّعِيرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "فَاعْتَرَفُوا",
+     "t": [
+      0.48,
+      2.0
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بِذَنْبِهِمْ",
+     "t": [
+      2.0,
+      4.72
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "فَسُحْقًا",
+     "t": [
+      4.72,
+      6.56
+     ],
+     "confidence": 0.978
+    },
+    {
+     "text": "لِأَصْحَابِ",
+     "t": [
+      6.56,
+      8.88
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "السَّعِيرِ",
+     "t": [
+      8.88,
+      13.76
+     ],
+     "confidence": 0.997
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:11",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:13",
+   "duration_s": 18.573,
+   "raw_text": "وَأَسِرُّوا قَوْلَكُمْ أَوِ اجْهَرُوا بِهِ إِنَّهُ عَلِيمٌ بِذَاتِ الصُّدُورِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "وَأَسِرُّوا",
+     "t": [
+      0.64,
+      2.08
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "قَوْلَكُمْ",
+     "t": [
+      2.08,
+      3.84
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "أَوِ",
+     "t": [
+      3.84,
+      4.96
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "اجْهَرُوا",
+     "t": [
+      4.96,
+      6.24
+     ],
+     "confidence": 0.979
+    },
+    {
+     "text": "بِهِ",
+     "t": [
+      6.24,
+      7.12
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "إِنَّهُ",
+     "t": [
+      7.12,
+      10.08
+     ],
+     "confidence": 0.999
+    },
+    {
+     "text": "عَلِيمٌ",
+     "t": [
+      10.08,
+      12.0
+     ],
+     "confidence": 0.988
+    },
+    {
+     "text": "بِذَاتِ",
+     "t": [
+      12.0,
+      14.16
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "الصُّدُورِ",
+     "t": [
+      14.16,
+      18.56
+     ],
+     "confidence": 0.989
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:13",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:16",
+   "duration_s": 18.521,
+   "raw_text": "أَأَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يَخْسِفَ بِكُمُ الْأَرْضَ فَإِذَا هِيَ تَمُورُ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أَأَمِنْتُمْ",
+     "t": [
+      0.24,
+      2.4
+     ],
+     "confidence": 0.956
+    },
+    {
+     "text": "مَنْ",
+     "t": [
+      2.4,
+      3.52
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فِي",
+     "t": [
+      3.52,
+      4.72
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "السَّمَاءِ",
+     "t": [
+      4.72,
+      7.2
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "أَنْ",
+     "t": [
+      7.2,
+      7.6
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "يَخْسِفَ",
+     "t": [
+      7.6,
+      9.68
+     ],
+     "confidence": 0.99
+    },
+    {
+     "text": "بِكُمُ",
+     "t": [
+      9.68,
+      10.64
+     ],
+     "confidence": 0.97
+    },
+    {
+     "text": "الْأَرْضَ",
+     "t": [
+      10.64,
+      12.08
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "فَإِذَا",
+     "t": [
+      12.08,
+      13.12
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "هِيَ",
+     "t": [
+      13.12,
+      14.16
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "تَمُورُ",
+     "t": [
+      14.16,
+      18.48
+     ],
+     "confidence": 0.982
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:16",
+   "score": 0.985,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:17",
+   "duration_s": 24.555,
+   "raw_text": "أَمْ أَمِنْتُمْ مَنْ فِي السَّمَاءِ أَنْ يُرْسِلَ عَلَيْكُمْ حَاصِبًا فَسَتَعْلَمُونَ كَيْفَ نَذِيرِ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أَمْ",
+     "t": [
+      0.56,
+      0.96
+     ],
+     "confidence": 0.988
+    },
+    {
+     "text": "أَمِنْتُمْ",
+     "t": [
+      0.96,
+      3.04
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "مَنْ",
+     "t": [
+      3.04,
+      4.0
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "فِي",
+     "t": [
+      4.0,
+      5.2
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "السَّمَاءِ",
+     "t": [
+      5.2,
+      7.68
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "أَنْ",
+     "t": [
+      7.68,
+      8.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "يُرْسِلَ",
+     "t": [
+      8.24,
+      10.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "عَلَيْكُمْ",
+     "t": [
+      10.24,
+      11.6
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "حَاصِبًا",
+     "t": [
+      11.6,
+      14.0
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "فَسَتَعْلَمُونَ",
+     "t": [
+      14.0,
+      18.24
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "كَيْفَ",
+     "t": [
+      18.24,
+      19.52
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "نَذِيرِ",
+     "t": [
+      19.52,
+      24.4
+     ],
+     "confidence": 0.974
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:17",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:19",
+   "duration_s": 35.553,
+   "raw_text": "أَوَلَمْ يَرَوْا إِلَى الطَّيْرِ فَوْقَهُمْ صَافَّاتٍ وَيَقْبِضْنَ مَا يُمْسِكُهُنَّ إِلَّا الرَّحْمَنُ إِنَّهُ بِكُلِّ شَيْءٍ بَصِيرٌ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أَوَلَمْ",
+     "t": [
+      1.12,
+      2.0
+     ],
+     "confidence": 0.972
+    },
+    {
+     "text": "يَرَوْا",
+     "t": [
+      2.0,
+      3.2
+     ],
+     "confidence": 0.982
+    },
+    {
+     "text": "إِلَى",
+     "t": [
+      3.2,
+      3.84
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "الطَّيْرِ",
+     "t": [
+      3.84,
+      4.96
+     ],
+     "confidence": 0.997
+    },
+    {
+     "text": "فَوْقَهُمْ",
+     "t": [
+      4.96,
+      6.72
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "صَافَّاتٍ",
+     "t": [
+      6.72,
+      11.44
+     ],
+     "confidence": 0.984
+    },
+    {
+     "text": "وَيَقْبِضْنَ",
+     "t": [
+      11.44,
+      14.4
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مَا",
+     "t": [
+      14.4,
+      16.08
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "يُمْسِكُهُنَّ",
+     "t": [
+      16.08,
+      18.64
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "إِلَّا",
+     "t": [
+      18.64,
+      20.32
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "الرَّحْمَنُ",
+     "t": [
+      20.32,
+      23.28
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "إِنَّهُ",
+     "t": [
+      23.28,
+      26.56
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "بِكُلِّ",
+     "t": [
+      26.56,
+      28.48
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "شَيْءٍ",
+     "t": [
+      28.48,
+      29.68
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "بَصِيرٌ",
+     "t": [
+      29.68,
+      35.52
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:19",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:22",
+   "duration_s": 26.436,
+   "raw_text": "أَفَمَنْ يَمْشِي مُكِبًّا عَلَى وَجْهِهِ أَهْدَى أَمَّنْ يَمْشِي سَوِيًّا عَلَى صِرَاطٍ مُسْتَقِيمٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "أَفَمَنْ",
+     "t": [
+      0.96,
+      1.84
+     ],
+     "confidence": 0.998
+    },
+    {
+     "text": "يَمْشِي",
+     "t": [
+      1.84,
+      3.6
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مُكِبًّا",
+     "t": [
+      3.6,
+      5.52
+     ],
+     "confidence": 0.978
+    },
+    {
+     "text": "عَلَى",
+     "t": [
+      5.52,
+      6.24
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "وَجْهِهِ",
+     "t": [
+      6.24,
+      8.24
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "أَهْدَى",
+     "t": [
+      8.24,
+      10.8
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَمَّنْ",
+     "t": [
+      10.8,
+      13.44
+     ],
+     "confidence": 0.993
+    },
+    {
+     "text": "يَمْشِي",
+     "t": [
+      13.44,
+      15.36
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "سَوِيًّا",
+     "t": [
+      15.36,
+      17.12
+     ],
+     "confidence": 0.991
+    },
+    {
+     "text": "عَلَى",
+     "t": [
+      17.12,
+      17.84
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "صِرَاطٍ",
+     "t": [
+      17.84,
+      20.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مُسْتَقِيمٍ",
+     "t": [
+      20.16,
+      26.4
+     ],
+     "confidence": 0.987
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:22",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "67:23",
+   "duration_s": 26.122,
+   "raw_text": "قُلْ هُوَ الَّذِي أَنْشَأَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْأَبْصَارَ وَالْأَفْئِدَةَ قَلِيلًا مَا تَشْكُرُونَ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "قُلْ",
+     "t": [
+      0.48,
+      0.96
+     ],
+     "confidence": 0.996
+    },
+    {
+     "text": "هُوَ",
+     "t": [
+      0.96,
+      1.6
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "الَّذِي",
+     "t": [
+      1.6,
+      2.16
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "أَنْشَأَكُمْ",
+     "t": [
+      2.16,
+      6.08
+     ],
+     "confidence": 0.985
+    },
+    {
+     "text": "وَجَعَلَ",
+     "t": [
+      6.08,
+      7.84
+     ],
+     "confidence": 0.973
+    },
+    {
+     "text": "لَكُمُ",
+     "t": [
+      7.84,
+      8.96
+     ],
+     "confidence": 0.987
+    },
+    {
+     "text": "السَّمْعَ",
+     "t": [
+      8.96,
+      10.48
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "وَالْأَبْصَارَ",
+     "t": [
+      10.48,
+      13.2
+     ],
+     "confidence": 0.995
+    },
+    {
+     "text": "وَالْأَفْئِدَةَ",
+     "t": [
+      13.2,
+      15.84
+     ],
+     "confidence": 0.992
+    },
+    {
+     "text": "قَلِيلًا",
+     "t": [
+      15.84,
+      19.28
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "مَا",
+     "t": [
+      19.28,
+      20.32
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "تَشْكُرُونَ",
+     "t": [
+      20.32,
+      26.08
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "67:23",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  },
+  {
+   "reciter": "Husary_128kbps",
+   "ref": "97:4",
+   "duration_s": 17.215,
+   "raw_text": "تَنَزَّلُ الْمَلَائِكَةُ وَالرُّوحُ فِيهَا بِإِذْنِ رَبِّهِمْ مِنْ كُلِّ أَمْرٍ",
+   "has_vowels": true,
+   "words": [
+    {
+     "text": "تَنَزَّلُ",
+     "t": [
+      0.4,
+      1.76
+     ],
+     "confidence": 0.983
+    },
+    {
+     "text": "الْمَلَائِكَةُ",
+     "t": [
+      1.76,
+      5.12
+     ],
+     "confidence": 0.974
+    },
+    {
+     "text": "وَالرُّوحُ",
+     "t": [
+      5.12,
+      7.12
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "فِيهَا",
+     "t": [
+      7.12,
+      8.16
+     ],
+     "confidence": 0.994
+    },
+    {
+     "text": "بِإِذْنِ",
+     "t": [
+      8.16,
+      10.24
+     ],
+     "confidence": 0.977
+    },
+    {
+     "text": "رَبِّهِمْ",
+     "t": [
+      10.24,
+      11.6
+     ],
+     "confidence": 0.975
+    },
+    {
+     "text": "مِنْ",
+     "t": [
+      11.6,
+      12.72
+     ],
+     "confidence": 1.0
+    },
+    {
+     "text": "كُلِّ",
+     "t": [
+      12.72,
+      14.4
+     ],
+     "confidence": 0.976
+    },
+    {
+     "text": "أَمْرٍ",
+     "t": [
+      14.4,
+      17.2
+     ],
+     "confidence": 1.0
+    }
+   ],
+   "engine": "fastconformer-quran@b33af7936f9a/ctc",
+   "top1": "97:4",
+   "score": 1.0,
+   "correct": true,
+   "top3_has_ref": true
+  }
+ ]
+}

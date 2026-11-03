@@ -1,0 +1,17 @@
+# Second WireGuard, côté ATLAS : Atlas initie la connexion vers Alpha (il est derrière une box : aucun port à ouvrir
+# chez lui). MODÈLE, NON APPLIQUÉ ; aucune clé ici. Installer en /etc/wireguard/wg1.conf (root, mode 0600),
+# puis `systemctl enable --now wg-quick@wg1` (Atlas : tâche d'administration, voir artist-atlas-securite — protocole
+# anti-lockout, ne pas toucher à tailscale0 ni à ufw sans vérifier l'accès dans une seconde session).
+#
+# Atlas doit aussi résoudre le nom de l'atelier vers l'adresse VPN d'Alpha, pour que le trafic du moteur ne passe
+# jamais par Internet :   echo '10.78.0.1 quran-tr.artist-dev.com' >> /etc/hosts
+[Interface]
+Address = 10.78.0.2/30
+PrivateKey = <clé privée d'Atlas, lue depuis /etc/wireguard/wg1.key — jamais écrite dans ce dépôt>
+
+[Peer]
+# Alpha
+PublicKey = <clé publique d'Alpha>
+Endpoint = <adresse publique d'Alpha, à saisir sur place : volontairement absente du dépôt>:51821
+AllowedIPs = 10.78.0.1/32
+PersistentKeepalive = 25

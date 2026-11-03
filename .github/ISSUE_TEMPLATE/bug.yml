@@ -1,0 +1,40 @@
+name: Bug
+description: Quelque chose ne marche pas (moteur, ligne de commande, atelier web)
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci. Pour une **erreur de reconnaissance sur un audio** (mauvais verset, début trop tard…), utilisez plutôt le formulaire « Problème de reconnaissance ». Pour une faille de sécurité, **n'ouvrez pas d'issue** : voir SECURITY.md.
+  - type: dropdown
+    id: partie
+    attributes:
+      label: Où ?
+      options: [Moteur Python, Ligne de commande (aqr), Atelier web, Documentation, Autre]
+    validations:
+      required: true
+  - type: textarea
+    id: observe
+    attributes:
+      label: Ce qui se passe
+      description: Message d'erreur complet, capture d'écran si c'est visuel.
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Ce qui était attendu
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Comment reproduire
+      description: Les commandes ou les étapes, dans l'ordre.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environnement
+      description: Système, version de Python et de Node, GPU ou CPU, version du dépôt (`git rev-parse --short HEAD`).

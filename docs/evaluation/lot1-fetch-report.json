@@ -1,0 +1,80 @@
+{
+ "lot": 1,
+ "repo": "printf0cherif/aqr-audio-private",
+ "revision": "f00ebced79755213c0d2050566126602454f5517",
+ "remote_head_moved": false,
+ "files": [
+  {
+   "id": "lot1-01",
+   "status": "telecharge",
+   "size": 32399057,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-02",
+   "status": "telecharge",
+   "size": 99636728,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-03",
+   "status": "telecharge",
+   "size": 93227587,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-04",
+   "status": "telecharge",
+   "size": 171648127,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-05",
+   "status": "telecharge",
+   "size": 43960873,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-06",
+   "status": "telecharge",
+   "size": 96241884,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-07",
+   "status": "telecharge",
+   "size": 27857137,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-08",
+   "status": "telecharge",
+   "size": 12342807,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-09",
+   "status": "telecharge",
+   "size": 36582983,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-10",
+   "status": "telecharge",
+   "size": 23113433,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-11",
+   "status": "telecharge",
+   "size": 38750390,
+   "sha256_ok": true
+  },
+  {
+   "id": "lot1-12",
+   "status": "telecharge",
+   "size": 38297376,
+   "sha256_ok": true
+  }
+ ]
+}

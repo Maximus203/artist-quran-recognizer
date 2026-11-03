@@ -1,0 +1,28 @@
+name: Idée ou fonctionnalité
+description: Proposer une amélioration
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Le problème, du point de vue de celui qui utilise
+      description: Qui est gêné, dans quelle situation, et ce que cela coûte aujourd'hui.
+    validations:
+      required: true
+  - type: textarea
+    id: idee
+    attributes:
+      label: Ce que vous proposez
+    validations:
+      required: true
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Compatibilité avec les invariants
+      description: Le texte arabe reste celui du corpus (I1), la traduction reste celle de QuranEnc (I2), la précision prime sur le rappel (I3). Dites en quoi votre idée les respecte.
+  - type: checkboxes
+    id: aide
+    attributes:
+      label: Participation
+      options:
+        - label: Je suis prêt à travailler dessus ou à tester une version.

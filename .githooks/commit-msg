@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Retire toute signature d'IA du message de commit (règle du mainteneur, AGENTS.md).
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=signature-pattern.sh
+. "$here/signature-pattern.sh"
+msg="$1"
+tmp="$(mktemp)"
+grep -viE "$AI_SIGNATURE_RE" "$msg" > "$tmp" || true
+# supprime les lignes vides en fin de message
+sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$tmp" > "$msg"
+rm -f "$tmp"

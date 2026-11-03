@@ -1,0 +1,1833 @@
+[
+ {
+  "name": "document vide",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": []
+  }
+ },
+ {
+  "name": "choix d'un candidat",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "pseudonyme avec espace et accent",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "Chérif Diouf",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "exclure",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "exclude",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "reason": "not_heard"
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "confirmer un supposé avec temps",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "confirm_inferred",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "inferred",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "t": [
+       1.0,
+       2.0
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "confirmer une coupure",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "confirm_partial",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "cut",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {},
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "portée de la traduction",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "translation_scope",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "approx",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "scope": "fragment"
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "corriger le temps d'un signalement",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "adjust_time",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "report",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "t": [
+       1.0,
+       2.5
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "ignorer",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "ignore",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {},
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "verset posé sur un signalement",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "set_ref",
+     "target": {
+      "fingerprint": null,
+      "item": "report",
+      "index": null,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": [
+       "11111111-1111-4111-8111-111111111111"
+      ]
+     },
+     "value": {
+      "ref": "112:3",
+      "words": [
+       1,
+       4
+      ],
+      "t": [
+       30.0,
+       33.0
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "décision annulée",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": "2026-10-23T15:00:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "name": "empreinte absente de la prédiction",
+  "valid": true,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": null,
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "mauvais schéma",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/2",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": []
+  }
+ },
+ {
+  "name": "session_id invalide",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "pas-un-uuid",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": []
+  }
+ },
+ {
+  "name": "genre inconnu",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "inventer",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "sourate 0",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "0:1",
+      "words": [
+       1,
+       2
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "sourate 115",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "115:1",
+      "words": [
+       1,
+       2
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "plage inversée",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       5,
+       2
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "mot 0",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       0,
+       2
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "ref manquante",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "words": [
+       1,
+       2
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "champ superflu",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "exclude",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "reason": "not_quran",
+      "ref": "1:1"
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "raison inconnue",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "exclude",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "reason": "pas_une_raison"
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "portée inconnue",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "translation_scope",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "approx",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "scope": "tout"
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "temps manquant",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "adjust_time",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "report",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {},
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "temps vide",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "adjust_time",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "report",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "t": [
+       3.0,
+       3.0
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "empreinte invalide",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "zz",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "sorte de passage inconnue",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "autre",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "genre qui ne répond pas à la sorte",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "inferred",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "cible sans empreinte ni signalement",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": null,
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "durée écoutée négative",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": -1,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "identifiant invalide",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "a",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "date invalide",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "hier",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "révision 0",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 0,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "identifiant en double",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    },
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "consentement absent",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "choose",
+     "target": {
+      "fingerprint": "5653d5611b4c620e84e35fa67002a0dfcc79fb9d19631b7583445eae6e96fd9e",
+      "item": "uncertain",
+      "index": 0,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": []
+     },
+     "value": {
+      "ref": "11:61",
+      "words": [
+       1,
+       10
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ },
+ {
+  "name": "verset posé sur un signalement sans temps",
+  "valid": false,
+  "document": {
+   "schema": "aqr.decisions/1",
+   "session_id": "5014015f-0000-4000-8000-000000000001",
+   "prediction_sha256": "9c41000000000000000000000000000000000000000000000000000000000000",
+   "consent": {
+    "training": true,
+    "by": "cherif",
+    "at": "2026-10-23T14:00:00Z"
+   },
+   "revision": 3,
+   "updated_at": "2026-10-23T14:02:11Z",
+   "decisions": [
+    {
+     "id": "00000000-0000-4000-8000-000000000001",
+     "kind": "set_ref",
+     "target": {
+      "fingerprint": null,
+      "item": "report",
+      "index": null,
+      "snapshot": {
+       "kind": "verse",
+       "status": "uncertain",
+       "t": [
+        48.2,
+        62.6
+       ]
+      },
+      "review_ids": [
+       "11111111-1111-4111-8111-111111111111"
+      ]
+     },
+     "value": {
+      "ref": "112:3",
+      "words": [
+       1,
+       4
+      ]
+     },
+     "evidence": {
+      "listened": true,
+      "listened_s": 14.4,
+      "device": "desktop"
+     },
+     "use_for_training": true,
+     "decided_by": "cherif",
+     "decided_at": "2026-10-23T14:02:11Z",
+     "revision": 1,
+     "superseded_by": null,
+     "withdrawn_at": null
+    }
+   ]
+  }
+ }
+]

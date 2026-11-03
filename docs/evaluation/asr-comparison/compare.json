@@ -1,0 +1,27 @@
+{
+ "a": "whisper-base-quran@5c3c53fdf927/times-estimated",
+ "b": "fastconformer-quran@b33af7936f9a",
+ "recognized_a": 7,
+ "recognized_b": 6,
+ "agree": 6,
+ "only_a": [
+  "42:7"
+ ],
+ "only_b": [],
+ "disagreements": [],
+ "timing_a": {
+  "extract_s": 0.241,
+  "segment_s": 69.952,
+  "asr_s": 38.192,
+  "match_s": 0.026,
+  "total_s": 108.419
+ },
+ "timing_b": {
+  "extract_s": 0.239,
+  "segment_s": 58.369,
+  "asr_s": 9.256,
+  "match_s": 0.025,
+  "total_s": 67.897
+ },
+ "note": "accord entre moteurs, pas exactitude : aucune vérité terrain"
+}

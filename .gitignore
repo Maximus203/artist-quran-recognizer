@@ -13,7 +13,18 @@ dist/
 # Données et modèles (lourds, droits)
 data/*
 !data/.gitkeep
-models/
+!data/corpus/
+data/corpus/*
+!data/corpus/LOCK.json
+!data/finetune/
+data/finetune/*
+!data/finetune/LOCK.json
+# Frontières de découpage des traductions (indices, offsets, empreintes : aucun texte)
+!data/translation-segments/
+data/translation-segments/*
+!data/translation-segments/*.json
+models/*
+!models/LOCK.json
 tests/fixtures/audio/files/
 *.wav
 *.mp3
@@ -23,5 +34,31 @@ tests/fixtures/audio/files/
 *.ogg
 *.flac
 
-# Secrets
+# Secrets et configuration personnelle d'agents/éditeurs (jamais versionnés)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.sqlite
+*.sqlite-*
+.claude/settings.local.json
+.claude/projects/
+.codex/
+.cursor/
+.aider*
+.vscode/
+.idea/
+.hypothesis/
+
+# Application locale Next.js
+web/node_modules/
+web/.next/
+web/.turbo/
+web/*.tsbuildinfo
+web/AGENTS.md
+
+# Polices sous licence « tous droits réservés » : jamais versionnées ni servies depuis public/
+KFGQPC*
+*Hafs*V30*
+web/public/fonts/KFGQPC*

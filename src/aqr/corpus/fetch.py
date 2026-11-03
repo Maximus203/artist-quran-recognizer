@@ -1,0 +1,137 @@
+"""Téléchargement et épinglage du corpus Tanzil (Hafs).
+
+Séparé en deux : la logique pure (`count_verses`, `build_lock`, `source_url`) est
+testée sans réseau ; `fetch_url`/`fetch_and_lock` font l'I/O réseau réelle et ne
+sont pas couverts par la suite unitaire (cf. NF2).
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import urllib.request
+from collections.abc import Callable
+from dataclasses import replace
+from pathlib import Path
+
+from aqr.corpus.checksums import CorpusChecksumError, CorpusLock, LockedFile, sha256_of
+
+TANZIL_BASE = "https://tanzil.net/pub/download/index.php"
+
+# Le fichier simple-clean est épinglé pour la provenance / vérification croisée
+# uniquement. L'indexation des mots (WordSpan, matching B6) utilise la tokenisation
+# Uthmani, jamais simple-clean : ~363/6236 versets ont un découpage en mots différent
+# entre les deux (ex. « يَـٰٓأَيُّهَا » fusionné vs « يا أيها » séparé), voir
+# .artist/decision-log.md (2026-09-25).
+# Le fichier `simple` (imla'i AVEC voyelles) sert uniquement à l'alignement acoustique sur le
+# treillis CTC (ADR-0006) : c'est la graphie que l'ASR a apprise ; il n'est jamais rendu (I1).
+SOURCES: dict[str, dict[str, str]] = {
+    "uthmani": {
+        "path": "quran-uthmani.txt",
+        "params": "quranType=uthmani&outType=txt-2&marks=true&sajdah=true&tatweel=true&agree=true",
+        "purpose": "rendu (invariant I1) — texte Mushaf exact, jamais modifié",
+    },
+    "simple_clean": {
+        "path": "quran-simple-clean.txt",
+        "params": (
+            "quranType=simple-clean&outType=txt-2&marks=false&sajdah=false&tatweel=false&agree=true"
+        ),
+        "purpose": "provenance / vérification croisée uniquement (voir decision-log)",
+    },
+    "simple": {
+        "path": "quran-simple.txt",
+        "params": (
+            "quranType=simple&outType=txt-2&marks=false&sajdah=false&tatweel=false&agree=true"
+        ),
+        "purpose": "alignement acoustique CTC uniquement (ADR-0006) — jamais rendu",
+    },
+}
+
+
+def source_url(key: str) -> str:
+    return f"{TANZIL_BASE}?{SOURCES[key]['params']}"
+
+
+def count_verses(uthmani_raw: str) -> int:
+    return sum(
+        1
+        for line in uthmani_raw.splitlines()
+        if line and not line.startswith("#") and line.count("|") >= 2
+    )
+
+
+def _locked_file(key: str, data: bytes) -> LockedFile:
+    return LockedFile(
+        path=SOURCES[key]["path"],
+        url=source_url(key),
+        sha256=sha256_of(data),
+        quran_type=SOURCES[key]["params"].split("quranType=")[1].split("&")[0],
+        purpose=SOURCES[key]["purpose"],
+    )
+
+
+def build_lock(raw_by_key: dict[str, bytes], *, fetched_at: str | None = None) -> CorpusLock:
+    if raw_by_key.keys() != SOURCES.keys():
+        raise ValueError(f"sources attendues {sorted(SOURCES)}, reçues {sorted(raw_by_key)}")
+    files = {key: _locked_file(key, data) for key, data in raw_by_key.items()}
+    verse_count = count_verses(raw_by_key["uthmani"].decode("utf-8"))
+    return CorpusLock(
+        riwaya="hafs",
+        source="tanzil.net",
+        fetched_at=fetched_at or dt.datetime.now(dt.UTC).isoformat(),
+        verse_count=verse_count,
+        files=files,
+    )
+
+
+def fetch_url(url: str) -> bytes:  # pragma: no cover - I/O réseau
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "artist-quran-recognizer/0.1 (+scripts/fetch_corpus.py)"}
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        body: bytes = response.read()
+        return body
+
+
+def fetch_and_lock(
+    out_dir: Path, *, fetch: Callable[[str], bytes] = fetch_url, repin: bool = False
+) -> CorpusLock:
+    """Télécharge le corpus ; le `LOCK.json` déjà épinglé fait foi.
+
+    Premier passage : fichiers écrits, lock créé. Passages suivants : le contenu distant est
+    comparé aux empreintes épinglées ; identique -> lock laissé tel quel (pas de `fetched_at`
+    qui bouge) ; différent -> `CorpusChecksumError`, ni lock ni fichiers modifiés. Seul
+    `repin=True` (décision explicite) accepte un nouveau contenu et réécrit le lock.
+    Une source ajoutée au dépôt après l'épinglage (absente du lock) est épinglée à son premier
+    téléchargement ; les sources déjà épinglées restent vérifiées et leurs empreintes inchangées.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    raw_by_key = {key: fetch(source_url(key)) for key in SOURCES}
+    lock_path = out_dir / "LOCK.json"
+    if lock_path.exists() and not repin:
+        pinned = CorpusLock.load(lock_path)
+        added = {key: data for key, data in raw_by_key.items() if key not in pinned.files}
+        for key, data in raw_by_key.items():
+            if key in added:
+                continue
+            expected = pinned.files[key].sha256
+            if sha256_of(data) != expected:
+                raise CorpusChecksumError(
+                    f"le contenu distant de {key} diffère de l'empreinte épinglée "
+                    f"({expected[:12]}…) : refusé. Relancer avec --repin pour l'accepter."
+                )
+        for key, data in raw_by_key.items():
+            target = out_dir / SOURCES[key]["path"]
+            if not target.exists():
+                target.write_bytes(data)
+        if added:
+            pinned = replace(
+                pinned,
+                files={**pinned.files, **{k: _locked_file(k, d) for k, d in added.items()}},
+            )
+            pinned.save(lock_path)
+        return pinned
+    for key, data in raw_by_key.items():
+        (out_dir / SOURCES[key]["path"]).write_bytes(data)
+    lock = build_lock(raw_by_key)
+    lock.save(lock_path)
+    return lock

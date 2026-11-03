@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="fr" data-quran-font="amiri-quran">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Recitation fatiha baqara — Quran TR</title>
+
+<!--
+  PROTOTYPE STATIQUE — données factices. Les tokens viennent de ../tokens.css (source unique).
+  Polices : en production, next/font/google les auto-héberge ; ici le <link> ci-dessous suffit à les
+  voir. Sans réseau, la pile de repli de tokens.css s'applique (rien ne casse).
+  Texte arabe de démonstration : extraits du corpus Tanzil (CC BY 3.0, tanzil.net), non modifiés.
+  Traductions : QuranEnc.com (french_hameedullah), non modifiées.
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27none%27 stroke=%27%236f95f5%27 stroke-width=%273%27/%3E%3Cpath d=%27M13 12v8M16 8.5v15M19 11v10%27 stroke=%27%23888%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&family=Scheherazade+New:wght@400;600&display=swap">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="phase2.css">
+</head>
+<body>
+
+<!-- ───────── Icônes dessinées pour le projet (trait 1,6 px, bouts ronds) ───────── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-panel-l" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></symbol>
+  <symbol id="i-panel-r" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M14.5 4.5v15"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.6.6 0 0 0 .9.5l10.6-6.8a.6.6 0 0 0 0-1L8.9 4.7a.6.6 0 0 0-.9.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.8" height="14" rx="1"/><rect x="13.7" y="5" width="3.8" height="14" rx="1"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2M12 17v.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4m0 0h11l-2.5 4L17 12H6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0M12 16l4-5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2 2 0 0 1 3 3L8 18.5zM14.5 6l3.5 3.5"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5 2-2h4"/></symbol>
+  <symbol id="i-seek-back" viewBox="0 0 24 24"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-seek-fwd" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><path d="M6.7 7.7A7.5 7.5 0 1 0 12 5.5"/><path d="M14.6 3L12 5.5 14.6 8"/></g><path d="M14 10.6h-2.9l-.5 2.5c.35-.25.8-.4 1.3-.4 1.2 0 2 .8 2 1.9 0 1.2-.9 2-2.2 2-.7 0-1.3-.2-1.8-.7"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="4.5" rx="1.5"/><path d="M5 9.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V9.5M10 13.5h4"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"/><circle cx="14" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol><symbol id="i-chevron-d" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol><symbol id="i-chevron-r" viewBox="0 0 24 24"><path d="M9.5 6.5l5.5 5.5-5.5 5.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.6 5.3 3.6 8.5s-1 6.1-3.6 8.5c-2.6-2.4-3.6-5.3-3.6-8.5s1-6.1 3.6-8.5z"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.3 3-5 6-5s5.4 1.7 6 5M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.8c2 .5 3.2 2.1 3.5 4.7"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.7-3.7 3.5-5.5 7-5.5s6.3 1.8 7 5.5"/></symbol><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4.5H7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3M14 8l4 4-4 4M18 12H9.5"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5c1.6 0 3 .5 4.2 1.2M21.5 12S18 18.5 12 18.5c-1.6 0-3-.5-4.2-1.2"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4.2 4.2M4 4l16 16"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h10a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M14 3.5v4h4M8.5 12h7M8.5 15.5h7"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M4 14h16M4 14l2-7.5A2 2 0 0 1 7.9 5h8.2A2 2 0 0 1 18 6.5L20 14v3.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M7.5 16.5h.01M11 16.5h.01"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol><symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/><path d="M6 7.5v9M18 16.5V10a3 3 0 0 0-3-3h-2.5M15 4.5l-2.5 2.5L15 9.5"/></symbol><symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 19v-8M12 19V5M19 19v-5"/></symbol><symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 19V5M8 19l-3-3M8 19l3-3M16 5v14M16 5l-3 3M16 5l3 3"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M7 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L5 11l4 4M5 11h9a5 5 0 0 1 0 10h-3"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol><symbol id="i-signpost" viewBox="0 0 24 24"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.2"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.5v5.5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="3.5"/><path d="M10.5 12.5L19 4M16 7l2.5 2.5M13.5 9.5L15 11"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5M6 9.5V19a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V9.5"/></symbol><symbol id="i-filter-x" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></symbol>
+</svg>
+
+<div class="sr" id="aria-live" aria-live="polite" role="status"></div>
+<div class="app">
+  <header class="header">
+    <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-left" aria-controls="panel-left" aria-expanded="true" aria-label="Sessions"><svg class="i" aria-hidden="true"><use href="#i-panel-l"/></svg><span class="dot" id="left-dot" aria-hidden="true"></span></button>
+    <a class="brand" href="index.html" aria-label="Quran TR, accueil"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.6"/><path d="M9.5 16h0M13 12v8M16 8.5v15M19 11v10M22.5 14v4" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round"/></svg><b>Quran <em>TR</em></b></a>
+    <nav class="nav" aria-label="Pages">
+      <button data-view="revue" aria-current="page">Revue</button>
+      <a href="sessions.html">Sessions</a>
+      <button data-view="perf">Performance</button>
+      <a href="docs.html">Documentation<span class="nav-dot" title="Nouveautés depuis ta dernière visite"><span class="sr"> Nouveautés</span></span></a>
+    </nav>
+    <span class="spacer"></span>
+    <button class="btn btn--primary btn--sm" id="btn-new" aria-label="Nouvel essai"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span class="hide-sm">Nouvel essai</span></button>
+    <button class="btn btn--ghost btn--icon btn--sm hide-sm" id="btn-theme" aria-label="Basculer le thème clair / sombre"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <div class="pop-wrap" id="acct-wrap">
+      <button class="acct-btn" id="acct-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="acct-menu"><span class="av" data-i="C" aria-hidden="true"></span><span class="acct-name">cherif</span><span class="sr"> (menu du compte)</span><svg class="i" aria-hidden="true"><use href="#i-chevron-d"/></svg></button>
+      <div class="menu" id="acct-menu" role="menu" aria-label="Compte" hidden>
+        <div class="menu-head"><span class="av av--lg" data-i="C" aria-hidden="true"></span><div><b>cherif</b><small>Administrateur · inscrit le 14 oct. 2026</small></div></div>
+        <div class="menu-only-sm"><div class="menu-sep"></div><p class="eyebrow menu-label">Aller à</p><a role="menuitem" class="menu-item" href="index.html" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg>Revue</a><a role="menuitem" class="menu-item" href="sessions.html"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Sessions</a><a role="menuitem" class="menu-item" href="index.html#view=perf"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg>Performance</a><a role="menuitem" class="menu-item" href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documentation</a></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item" href="compte.html"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+        <a role="menuitem" class="menu-item" href="compte.html#statistiques"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg>Mes statistiques</a>
+        <p class="eyebrow menu-label" id="theme-lbl">Thème</p>
+        <div class="menu-theme" role="group" aria-labelledby="theme-lbl"><button data-theme-set="light" aria-pressed="false">Clair</button><button data-theme-set="dark" aria-pressed="false">Sombre</button><button data-theme-set="" aria-pressed="true">Système</button></div>
+        <div class="menu-quota"><span>Espace utilisé : <b class="mono" style="font-weight:600;color:var(--text)">2,3 Go</b> sur 5 Go · <a href="compte.html#statistiques">détails</a></span><div class="quota-hint"><span class="mini" style="flex:1"><i style="--w:46%"></i></span></div></div>
+        <div class="menu-sep"></div>
+        <a role="menuitem" class="menu-item menu-item--danger" href="login.html"><svg class="i" aria-hidden="true"><use href="#i-logout"/></svg>Se déconnecter</a>
+      </div>
+    </div>
+    <button class="btn btn--ghost btn--icon toggle-panel" id="tgl-right" aria-controls="panel-right" aria-expanded="true" aria-label="Revue humaine"><svg class="i" aria-hidden="true"><use href="#i-panel-r"/></svg></button>
+  </header>
+
+  <div class="workspace" id="ws" data-left="open" data-right="open">
+
+    <!-- ═════════ Panneau gauche : sessions ═════════ -->
+    <aside class="panel panel--left" id="panel-left" data-open="true" aria-label="Sessions">
+      <div class="panel-in">
+        <div class="panel-head">
+          <h2>Sessions</h2>
+          <button class="btn btn--ghost btn--icon btn--sm" aria-label="Actualiser la liste"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+          <button class="btn btn--ghost btn--icon btn--sm drawer-close only-drawer" data-close="left" aria-label="Fermer"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+        </div>
+        <p class="queue-line" role="status"><svg class="i" aria-hidden="true" style="width:16px;height:16px;color:var(--accent)"><use href="#i-wave"/></svg><span><b>1 en cours</b> · 1 en attente · fin estimée dans ≈ 12 min</span></p>
+
+        <section class="grp" aria-labelledby="g-queue">
+          <h3 class="grp-title"><span class="eyebrow" id="g-queue">File d’analyse</span></h3>
+          <ul id="list-active"><li><button class="sess is-compact" data-state="running" data-g="active">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring-track" cx="12" cy="12" r="9"/><circle class="ring-arc" cx="12" cy="12" r="9" stroke-dasharray="35.1 56.55"/></svg></span>
+            <span class="sess-name"><span class="t">Lot1 12</span></span>
+            <span class="sess-end"><span>62 %</span></span>
+            <span class="sess-status">En cours · ≈ 2 min restantes</span><span class="sess-bar" aria-hidden="true"><i style="--p:62%"></i></span>
+          </button></li><li><button class="sess is-compact" data-state="queued" data-g="active">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring-dash" cx="12" cy="12" r="9"/><text class="ring-n" x="12" y="15.6" text-anchor="middle">1</text></svg></span>
+            <span class="sess-name"><span class="t">Conf ramadan nuit 3</span></span>
+            <span class="sess-end"><span>14:31</span></span>
+            <span class="sess-status">En attente · n° 1 · ≈ 10 min</span>
+          </button></li></ul>
+        </section>
+        <section class="grp" aria-labelledby="g-fav">
+          <h3 class="grp-title"><span class="eyebrow" id="g-fav">Favoris</span><span class="more-n">3</span></h3>
+          <ul id="list-fav"><li><button class="sess is-compact" data-state="done" data-g="read" aria-current="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Recitation fatiha baqara</span></span>
+            <span class="sess-end"><span>12:20</span></span>
+            <span class="sess-status">Terminé · ×7,1</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Récitation Kahf, Yacine</span></span>
+            <span class="sess-end"><span>hier</span></span>
+            <span class="sess-status">par yacine · Terminé · ×9,2</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Ar-Rahman, taraweeh</span></span>
+            <span class="sess-end"><span>19 oct.</span></span>
+            <span class="sess-status">par moussa_d · Terminé · ×7,6</span>
+          </button></li></ul>
+        </section>
+        <section class="grp" aria-labelledby="g-rec">
+          <h3 class="grp-title"><span class="eyebrow" id="g-rec">Récentes</span><span class="more-n">8 sur 52</span></h3>
+          <ul id="list-done"><li><button class="sess is-compact" data-state="done" data-g="unread" data-unread="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><svg class="i i-lock-inline" aria-hidden="true"><use href="#i-lock"/></svg><span class="sr">Privée · </span><span class="t">Enregistrement du 22 oct. à 17:51</span></span>
+            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>17:55</span></span>
+            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · ×8,4</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="unread" data-unread="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Khutba vendredi</span></span>
+            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>14:02</span></span>
+            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · ×7,3</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="unread" data-unread="true">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Sourate baqara warsh</span></span>
+            <span class="sess-end"><span class="unread" aria-hidden="true"></span><span>13:48</span></span>
+            <span class="sess-status"><span class="sr">Non lue · </span>Résultat prêt · ×4,7</span>
+          </button></li><li><button class="sess is-compact" data-state="failed" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert"/></svg></span>
+            <span class="sess-name"><span class="t">Micro 55 1 4 muno nuit</span></span>
+            <span class="sess-end"><span>11:05</span></span>
+            <span class="sess-status">Échec · moteur indisponible</span>
+          </button></li><li><button class="sess is-compact" data-state="cancelled" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 18L18 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span class="sess-name"><span class="t">Lot2 05 warsh</span></span>
+            <span class="sess-end"><span>hier</span></span>
+            <span class="sess-status">Annulé après 2 min 10 s</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Test 55</span></span>
+            <span class="sess-end"><span>hier</span></span>
+            <span class="sess-status">Terminé · ×7,1</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Audio importé le 20 oct. à 11:02</span></span>
+            <span class="sess-end"><span>20 oct.</span></span>
+            <span class="sess-status">Terminé · ×7,1</span>
+          </button></li><li><button class="sess is-compact" data-state="done" data-g="read">
+            <span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="sess-name"><span class="t">Recitation du 20 oct. à 17:58</span></span>
+            <span class="sess-end"><span>20 oct.</span></span>
+            <span class="sess-status">Terminé · ×5,2</span>
+          </button></li></ul>
+        </section>
+        <div class="see-all"><a class="btn btn--secondary btn--block" href="sessions.html">Voir toutes les sessions <span class="n">52</span></a></div>
+        <nav class="panel-nav only-drawer" aria-label="Autres pages">
+          <a href="index.html#view=perf"><svg class="i" aria-hidden="true"><use href="#i-gauge"/></svg>Performance</a>
+          <a href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Documentation</a>
+          <a href="compte.html"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Préférences</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- ═════════ Centre ═════════ -->
+    <main class="center" id="center">
+
+      <!-- Vue : revue d'une session -->
+      <section class="view" data-view-id="revue" data-active="true">
+        <div class="stack">
+          <header class="o-head session-head">
+            <div class="title-row" data-default="Recitation fatiha baqara">
+              <h1 title="Double-clic pour renommer">Recitation fatiha baqara</h1>
+              <button class="fav" type="button" data-fav aria-pressed="true" aria-label="Retirer des favoris" data-tip="Retirer des favoris"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg></button>
+              <button class="rename-btn" type="button" aria-label="Renommer la session" data-tip="Renommer"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>
+            </div>
+            <p class="detected"><svg class="i" aria-hidden="true"><use href="#i-wave"/></svg><span>Contenu détecté : <b>Al-Fatiha 1:1–7 · Al-Baqara 2:1–5</b></span><button class="btn btn--ghost btn--sm" type="button" id="use-det">Utiliser comme nom</button></p>
+            <div class="facts">
+              <span class="f pop-wrap" id="scope-wrap">
+                <button class="btn btn--ghost btn--sm" type="button" id="scope-btn" style="margin:-6px -8px" aria-haspopup="dialog" aria-expanded="false" aria-controls="scope-pop" title="Modifier la portée"><span class="badge badge--global" id="scope-badge"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global</span><svg class="i" aria-hidden="true" style="width:16px;height:16px"><use href="#i-chevron-d"/></svg></button>
+                <div class="scope-pop" id="scope-pop" role="dialog" aria-label="Portée de la session" data-current="global" hidden>
+                  <p class="eyebrow">Qui peut voir cette session ?</p>
+                  <button class="radio-card" type="button" role="radio" data-scope="global" aria-checked="true"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global</b><span class="d">Tous les testeurs l’écoutent et voient ses résultats et ses performances.</span></button>
+                  <button class="radio-card" type="button" role="radio" data-scope="private" aria-checked="false"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Privé</b><span class="d">Toi seul. Il n’apparaît ni dans les listes des autres ni dans leurs statistiques.</span></button>
+                  <div class="scope-confirm" hidden><p class="banner"><small>Tout le monde pourra écouter cet audio et voir ses résultats. Tu pourras le repasser en privé à tout moment.</small></p><div class="btnrow" style="margin-top:8px"><button class="btn btn--primary btn--sm" type="button" data-scope-confirm>Rendre global</button><button class="btn btn--ghost btn--sm" type="button" data-scope-cancel>Annuler</button></div></div>
+                </div>
+              </span>
+              <span class="f" id="owner-fact" hidden><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Propriétaire : <b id="owner-name" style="font-weight:600;color:var(--text)">amina</b></span>
+              <span class="f"><svg class="i" aria-hidden="true"><use href="#i-audio"/></svg>Audio · <span class="mono">03:04.700</span> · <span class="mono">4,2 Mo</span></span>
+              <span class="f m-hide">Cascade (FastConformer → Whisper, Muno)</span>
+              <span class="f">Terminé en <b class="mono" style="font-weight:600;color:var(--text)">26 s</b> · ×7,1 temps réel</span>
+              <span class="f riwaya" tabindex="0" title="La riwaya n’est pas détectée : Hafs est supposée. Le texte vient du corpus Tanzil (Hafs).">Riwaya Hafs supposée · non vérifiée</span>
+              <span class="f mono muted m-hide">SHA-256 8b5ef1d6ebeb…</span>
+              <button class="btn btn--ghost btn--sm" type="button" id="btn-archive" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg><span>Archiver</span></button>
+            </div>
+          </header>
+
+          <!-- Console -->
+          <section class="card console o-console" aria-label="Écoute et pistes synchronisées">
+            <div class="transport" id="transport">
+              <button class="play" id="play" aria-label="Lancer la lecture"><svg class="i fill"><use href="#i-play"/></svg></button>
+              <button class="seek" type="button" data-seek="-5" aria-label="Reculer de 5 secondes" data-tip="Reculer de 5 s  ←"><svg class="i five" aria-hidden="true"><use href="#i-seek-back"/></svg></button>
+              <div class="scrub">
+                <div class="times mono"><b id="t-now">01:12.400</b><span class="tm-total">03:04.700</span></div>
+                <input type="range" id="scrubber" min="0" max="184.7" step="0.01" value="72.4" aria-label="Position de lecture" style="--p:39.2%">
+              </div>
+              <button class="seek" type="button" data-seek="5" aria-label="Avancer de 5 secondes" data-tip="Avancer de 5 s  →"><svg class="i five" aria-hidden="true"><use href="#i-seek-fwd"/></svg></button>
+              <button class="seek mark-dock" id="dock-mark" aria-label="Marquer le début d’un signalement" style="background:var(--surface-3)"><svg class="i"><use href="#i-flag"/></svg></button>
+              <label class="speed"><span class="sr">Vitesse de lecture</span><select class="input"><option>0,5×</option><option>0,75×</option><option selected>1×</option><option>1,25×</option><option>1,5×</option></select></label>
+            </div>
+
+            <div class="markbar" id="markbar">
+              <button class="btn btn--primary btn--sm" id="mb-mark"></button>
+              <button class="btn btn--secondary btn--sm" id="mb-trace" aria-pressed="false">Tracer sur l’onde</button>
+              <button class="btn btn--ghost btn--sm" id="mb-cancel" hidden>Annuler <kbd>Échap</kbd></button>
+              <p class="mb-status" id="mb-status" role="status"></p>
+            </div>
+            <div class="timeline" id="timeline" style="--t:.392">
+              <div class="playhead" aria-hidden="true"></div>
+              <div class="tl-row wave-row">
+                <div class="tl-name" data-short="Onde"><b>Onde</b><small>copie du moteur</small></div>
+                <div class="tl-track" id="wave-track">
+                  <svg class="wave" viewBox="0 0 1000 104" preserveAspectRatio="none" aria-label="Forme d’onde ; cliquer pour se déplacer dans l’audio" role="img"><g class="bars" id="bars"></g><g class="played" id="bars-played" clip-path="url(#clip-played)"></g><defs><clipPath id="clip-played"><rect x="0" y="0" width="392" height="104"/></clipPath></defs></svg>
+                  <div id="wave-segs"></div><div id="rv-layer"></div><div class="trace-hint" id="trace-hint" hidden>Glisse pour une plage · touche pour un point · Échap pour sortir</div>
+                </div>
+              </div>
+              <div class="lanes" id="lanes">
+                <div class="tl-row lane"><div class="tl-name" data-short="Moteur"><b>Moteur</b></div><div class="tl-track" id="lane-main"></div></div>
+                <div class="tl-row lane"><div class="tl-name" data-short="Hypoth."><b>Hypothèses</b></div><div class="tl-track" id="lane-inf"></div></div>
+                <div class="tl-row lane"><div class="tl-name" data-short="Revue"><b>Revue</b></div><div class="tl-track" id="lane-rev"></div></div>
+              </div>
+              <div class="ticks"><i></i><div id="ticks"></div></div>
+            </div>
+
+            <div class="tools">
+              <label>Fenêtre visible
+                <select class="input"><option>Fichier entier</option><option>2 min</option><option>30 s</option><option>10 s</option></select>
+              </label>
+              <button class="switch" role="switch" aria-checked="true" id="sw-follow"><i></i>Suivre la lecture</button>
+              <label class="hide-sm">Volume <input type="range" class="vol" min="0" max="1" step="0.05" value="1" style="--p:100%"></label>
+            </div>
+            <ul class="legend" aria-label="Légende des intervalles (forme, motif et libellé : jamais la couleur seule)">
+              <li><span class="sw s-recognized"></span>Reconnu</li>
+              <li><span class="sw s-inferred"></span>Déduit · non entendu</li>
+              <li><span class="sw s-uncertain"></span>Incertain</li>
+              <li><span class="sw s-formula"></span>Formule</li>
+              <li><span class="sw s-abstention"></span>Abstention</li>
+              <li><span class="sw s-human"><i></i></span>Signalement confirmé</li>
+              <li><span class="sw s-human draft"><i></i></span>Brouillon</li>
+            </ul>
+          </section>
+
+          <!-- Passage actif -->
+          <section class="card passage o-passage" id="passage" aria-live="polite" aria-label="Passage actif">
+            <div class="p-top">
+              <span class="eyebrow">Passage actif</span>
+              <div class="tools-inline">
+                <div class="pop-wrap">
+                  <button class="btn btn--secondary btn--sm" id="btn-font" aria-expanded="false" aria-controls="pop-font">Police arabe</button>
+                  <div class="popover" id="pop-font" role="dialog" aria-label="Police du texte arabe" hidden>
+                    <div style="display:flex;align-items:center;gap:8px"><h3 style="flex:1">Police du texte arabe</h3><button class="btn btn--ghost btn--icon btn--sm" id="pop-close" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+                    <p class="hint" style="margin-top:2px">Aperçu en direct. Le texte, lui, ne change jamais : il vient du corpus.</p>
+                    <div class="fonts" role="radiogroup" aria-label="Police arabe" id="fonts">
+                      <button class="fopt" role="radio" aria-checked="true" data-font="amiri-quran"><span class="radio"></span><span class="nm">Amiri Quran <small>naskh classique, signes coraniques complets</small></span><span class="sample" lang="ar" dir="rtl" style="font-family:'Amiri Quran'">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span><span class="lic">SIL OFL · 1 graisse · ≈ 137 Ko</span></button>
+                      <button class="fopt" role="radio" aria-checked="false" data-font="scheherazade"><span class="radio"></span><span class="nm">Scheherazade New <small>naskh ouvert, lisible en petit</small></span><span class="sample" lang="ar" dir="rtl" style="font-family:'Scheherazade New'">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span><span class="lic">SIL OFL · 4 graisses · ≈ 332 Ko (400)</span></button>
+                      <button class="fopt" role="radio" aria-checked="false" data-font="noto-naskh"><span class="radio"></span><span class="nm">Noto Naskh Arabic <small>police actuelle de l’atelier</small></span><span class="sample" lang="ar" dir="rtl" style="font-family:'Noto Naskh Arabic'">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span><span class="lic">SIL OFL · variable 400–700 · ≈ 308 Ko · déjà dans public/fonts</span></button>
+                      <button class="fopt" role="radio" aria-checked="false" aria-disabled="true" data-font="kfgqpc-hafs" tabindex="-1"><span class="radio"></span><span class="nm">KFGQPC Uthmanic Hafs <small>écriture du Mushaf de Médine</small></span><span class="sample" lang="ar" dir="rtl" style="font-family:'KFGQPC Uthmanic Script HAFS','Amiri Quran'">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</span><span class="lic">à télécharger · licence propriétaire gratuite, redistribution à autoriser par le Complexe du Roi Fahd</span></button>
+                    </div>
+                    <div class="size-row"><span>Taille</span><input type="range" id="size" min="28" max="72" step="4" value="40" aria-label="Taille du texte arabe" style="--p:33%"><output id="size-out">40 px</output></div>
+                    <div class="foot"><span>Enregistré sur cet appareil</span><button class="btn btn--ghost btn--sm" id="font-reset">Réinitialiser</button></div>
+                  </div>
+                </div>
+                <button class="btn btn--ghost btn--icon btn--sm" id="a-minus" aria-label="Réduire le texte arabe, A−"><span style="font-size:.8rem;font-weight:700">A−</span></button>
+                <button class="btn btn--ghost btn--icon btn--sm" id="a-plus" aria-label="Agrandir le texte arabe, A+"><span style="font-size:1rem;font-weight:700">A+</span></button>
+              </div>
+            </div>
+            <div id="passage-body"></div>
+            <div class="p-actions">
+              <button class="btn btn--secondary" id="btn-listen"><svg class="i fill" style="width:16px;height:16px"><use href="#i-play"/></svg>Écouter ce passage</button>
+              <button class="switch" role="switch" aria-checked="true" id="sw-trans"><i></i>Afficher la traduction</button>
+            </div>
+          </section>
+
+          <!-- Intervalles -->
+          <section class="card o-intervals" aria-label="Intervalles">
+            <div class="card-pad" style="padding-bottom:var(--sp-3)">
+              <div class="sec-title"><h2>Intervalles</h2><span class="muted mono" style="font-size:var(--fs-sm)">17 · repère commun 01:12.400</span></div>
+              <div class="seg-filters" role="group" aria-label="Filtrer les intervalles">
+                <button class="chip" aria-pressed="true">Tous</button><button class="chip" aria-pressed="false">Versets</button><button class="chip" aria-pressed="false">À revoir</button><button class="chip" aria-pressed="false">Formules</button><button class="chip" aria-pressed="false">Abstentions</button>
+              </div>
+            </div>
+            <div id="irows"></div>
+          </section>
+
+          <details class="card diag o-diag">
+            <summary>Détails du moteur et avertissements</summary>
+            <p style="margin-top:8px">ASR : cascade · segmentation : fenêtres glissantes. Ces scores viennent du moteur ; ils ne sont pas des probabilités de justesse calibrées.</p>
+          </details>
+
+          <footer class="o-foot foot-note">
+            Texte coranique : Tanzil Project (CC BY 3.0) · <a href="https://tanzil.net">tanzil.net</a> — non modifié. Traductions : QuranEnc.com, provenance affichée par passage. Aucune reconnaissance simulée : les données de ce prototype sont factices.
+          </footer>
+        </div>
+      </section>
+
+      <!-- Vue : performance -->
+      <section class="view" data-view-id="perf">
+        <div class="stack">
+          <header class="page-title">
+            <div><h1>Performance</h1><p id="perf-sub">Combien de temps prend une analyse, et à quelle vitesse. Sert à estimer la fin d’une file avant de partir.</p></div>
+            <div class="seg-ctl" role="group" aria-label="Périmètre" id="perf-scope"><button type="button" data-perf="all" aria-pressed="true">Tous les testeurs</button><button type="button" data-perf="mine" aria-pressed="false">Moi</button></div>
+            <div class="seg-filters" style="margin:0" role="group" aria-label="Période"><button class="chip" aria-pressed="true">7 jours</button><button class="chip" aria-pressed="false">30 jours</button><button class="chip" aria-pressed="false">Tout</button></div>
+          </header>
+          <div class="perf-global">
+          <div class="tiles">
+            <div class="card tile"><span class="eyebrow">Durée moyenne</span><div class="v">4<small>min</small> 02<small>s</small></div><div class="s">par analyse · 38 terminées</div></div>
+            <div class="card tile"><span class="eyebrow">Vitesse médiane</span><div class="v">×7,1</div><div class="s">temps réel · 1 h d’audio ≈ 8 min</div></div>
+            <div class="card tile"><span class="eyebrow">Audio traité</span><div class="v">14<small>h</small> 20</div><div class="s">dont 9 h de vidéo</div></div>
+            <div class="card tile"><span class="eyebrow">File d’attente</span><div class="v">1<small>+ 1 en attente</small></div><div class="s">fin estimée dans ≈ 12 min</div></div>
+          </div>
+          <div class="grid2">
+            <section class="card card-pad">
+              <div class="sec-title"><h2>Vitesse par moteur</h2><span class="muted" style="font-size:var(--fs-xs)">médiane · × temps réel</span></div>
+              <div class="bars" role="list">
+                <div class="bar-row" role="listitem"><div class="nm">FastConformer<small>9 analyses</small></div><div class="bar-track"><i style="--v:100%"></i></div><div class="val">×18,2</div></div>
+                <div class="bar-row" role="listitem"><div class="nm">Cascade<small>21 · moteur par défaut</small></div><div class="bar-track"><i style="--v:37%"></i></div><div class="val">×6,8</div></div>
+                <div class="bar-row" role="listitem"><div class="nm">Whisper<small>5 analyses</small></div><div class="bar-track"><i style="--v:30%"></i></div><div class="val">×5,4</div></div>
+                <div class="bar-row" role="listitem"><div class="nm">Muno Streaming<small>3 analyses</small></div><div class="bar-track"><i style="--v:21%"></i></div><div class="val">×3,9</div></div>
+              </div>
+              <p class="axis-note">Plus la barre est longue, plus l’analyse est rapide. La couleur ne porte aucun sens : chaque barre est nommée et chiffrée.</p>
+              <details class="diag" style="padding:var(--sp-3) 0 0"><summary>Voir en tableau</summary>
+                <div class="scroll-x"><table class="table"><thead><tr><th>Moteur</th><th class="num">Analyses</th><th class="num">× temps réel</th><th class="num">Durée moy.</th></tr></thead><tbody>
+                  <tr><td>FastConformer</td><td class="num">9</td><td class="num">18,2</td><td class="num">1 min 05 s</td></tr>
+                  <tr><td>Cascade</td><td class="num">21</td><td class="num">6,8</td><td class="num">4 min 31 s</td></tr>
+                  <tr><td>Whisper</td><td class="num">5</td><td class="num">5,4</td><td class="num">5 min 20 s</td></tr>
+                  <tr><td>Muno Streaming</td><td class="num">3</td><td class="num">3,9</td><td class="num">7 min 44 s</td></tr></tbody></table></div>
+              </details>
+            </section>
+            <section class="card card-pad">
+              <div class="sec-title"><h2>File en cours</h2></div>
+              <div class="qrow"><span class="sess-glyph" style="color:var(--accent)"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><circle class="ring-track" cx="12" cy="12" r="9"/><circle class="ring-arc" cx="12" cy="12" r="9" stroke-dasharray="35.1 56.55"/></svg></span><div><div style="font-weight:600">Lot1 12</div><div class="hint">Cascade · 18:42 · écoulé 2 min 40 s</div></div><div class="mono" style="color:var(--accent);font-weight:600">≈ 2 min</div></div>
+              <div class="qrow"><span class="sess-glyph"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><circle class="ring-dash" cx="12" cy="12" r="9"/><text class="ring-n" x="12" y="15.6" text-anchor="middle">1</text></svg></span><div><div style="font-weight:600">Conf ramadan nuit 3</div><div class="hint">Cascade · 1:12:08 · attend la fin de Lot1 12</div></div><div class="mono muted">≈ 12 min</div></div>
+              <p class="hint" style="margin-top:var(--sp-3)">Estimation = durée de l’audio ÷ vitesse médiane du moteur sur les analyses récentes, moins le temps déjà écoulé.</p>
+            </section>
+          </div>
+          <section class="card card-pad">
+            <div class="sec-title"><h2>Dernières analyses</h2></div>
+            <div class="scroll-x"><table class="table"><thead><tr><th>Session</th><th>Testeur</th><th>Type</th><th class="num">Audio</th><th class="num">Analyse</th><th class="num">× temps réel</th></tr></thead><tbody>
+              <tr><td>Khutba vendredi</td><td>cherif</td><td>Vidéo</td><td class="num">41:15</td><td class="num">5:40</td><td class="num">7,3</td></tr>
+              <tr><td>Tajwid cours 4</td><td>amina</td><td>Audio</td><td class="num">32:10</td><td class="num">4:40</td><td class="num">6,9</td></tr>
+              <tr><td>Sourate baqara warsh</td><td>cherif</td><td>Audio</td><td class="num">21:08</td><td class="num">4:31</td><td class="num">4,7</td></tr>
+              <tr><td>Récitation Kahf, Yacine</td><td>yacine</td><td>Audio</td><td class="num">10:40</td><td class="num">1:09</td><td class="num">9,2</td></tr>
+              <tr><td>Recitation fatiha baqara</td><td>cherif</td><td>Audio</td><td class="num">3:04</td><td class="num">0:26</td><td class="num">7,1</td></tr></tbody></table></div>
+            <p class="hint" style="margin-top:var(--sp-3)">Seules les sessions globales sont nommées ici. Les sessions privées comptent dans les moyennes, sans nom ni propriétaire.</p>
+          </section>
+          <section class="card meter-card" data-state="ok" aria-label="Stockage du serveur">
+            <div class="meter-head"><div><p class="eyebrow">Stockage du serveur</p><p class="big">38,4 <small>Go sur 120 Go</small></p></div><span class="muted" style="font-size:var(--fs-sm)">142 fichiers · 12 testeurs</span></div>
+            <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="120" aria-valuenow="38.4" aria-valuetext="38,4 Go utilisés sur 120 Go" aria-label="Espace utilisé sur le serveur"><span class="m aud" style="--w:20%"></span><span class="m vid" style="--w:12%"></span><span class="tick" aria-hidden="true"></span></div>
+            <ul class="meter-legend" aria-label="Légende du stockage"><li><span><i class="sw s-recognized" aria-hidden="true"></i>Audio · <b class="mono">24,1 Go</b></span></li><li><span><i class="sw s-inferred" aria-hidden="true"></i>Vidéo · <b class="mono">14,3 Go</b></span></li><li><span class="muted">Libre · <b class="mono">81,6 Go</b></span></li></ul>
+          </section>
+          </div>
+          <div class="perf-mine" hidden>
+      <div class="tiles tiles--3" aria-label="Mes chiffres">
+        <div class="card tile"><p class="eyebrow">Tests</p><p class="v">47</p><p class="s">sessions analysées, dont 3 en échec</p></div>
+        <div class="card tile"><p class="eyebrow">Audio analysé</p><p class="v">12 h 40<small>min</small></p><p class="s">sur 47 sessions</p></div>
+        <div class="card tile"><p class="eyebrow">Vitesse moyenne</p><p class="v">×6,8</p><p class="s">fois plus vite que l’audio</p></div>
+        <div class="card tile"><p class="eyebrow">Espace utilisé</p><p class="v" id="tile-space">2,3<small>Go</small></p><p class="s" id="tile-space-s">sur 5 Go de quota</p></div>
+      </div>
+
+      <div class="card meter-card" id="meter-card" data-state="ok">
+        <div class="meter-head"><div><p class="eyebrow">Stockage</p><p class="big"><span id="m-used">2,3</span> <small>Go sur 5 Go</small></p></div><a class="btn btn--secondary btn--sm" href="sessions.html?portee=mine"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Voir mes sessions</a></div>
+        <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="2.3" aria-valuetext="2,3 Go utilisés sur 5 Go" id="meter" aria-label="Espace utilisé"><span class="m aud" style="--w:28%"></span><span class="m vid" style="--w:18%"></span><span class="tick" aria-hidden="true"></span></div>
+        <ul class="meter-legend" aria-label="Légende du stockage"><li><span><i class="sw s-recognized" aria-hidden="true"></i>Audio · <b class="mono" id="m-aud">1,4 Go</b></span></li><li><span><i class="sw s-inferred" aria-hidden="true"></i>Vidéo · <b class="mono" id="m-vid">0,9 Go</b></span></li><li><span class="muted">Libre · <b class="mono" id="m-free">2,7 Go</b></span></li></ul>
+        <div class="meter-alert" role="status"><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><div><b class="when-warn" id="m-alert-t">Espace presque plein : 4,2 Go sur 5 Go.</b><b class="when-full">Quota atteint : les nouveaux imports sont bloqués.</b><br><span class="when-warn">À partir de 5 Go, tu ne pourras plus importer. Archive puis supprime les gros fichiers dont tu n’as plus besoin.</span><span class="when-full">Supprime des sessions archivées pour libérer de la place, ou demande à l’administrateur d’augmenter ton quota.</span><div class="btnrow"><a class="btn btn--secondary btn--sm" href="sessions.html?portee=mine">Trier par taille</a><a class="btn btn--secondary btn--sm" href="sessions.html?portee=arch">Voir les archives</a></div></div></div>
+        <p class="hint when-ok">Les sessions archivées comptent aussi. Seule la suppression définitive libère de l’espace.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="card card-pad bigfiles"><div class="sec-title"><h2>Ce qui prend le plus de place</h2></div>
+          <div class="qrow"><span class="nm">Conf ramadan nuit 3<small>Vidéo · 1:12:08 · global</small></span><span class="sz">332 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Khutba vendredi<small>Vidéo · 41:15 · global</small></span><span class="sz">186 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Micro 55 1 4 muno nuit<small>Audio WAV · 6:12 · global</small></span><span class="sz">63 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+          <div class="qrow"><span class="nm">Sourate baqara warsh<small>Audio · 21:08 · global</small></span><span class="sz">21 Mo</span><a class="btn btn--ghost btn--sm" href="sessions.html?portee=mine">Voir</a></div>
+        </div>
+        <div class="card card-pad"><div class="sec-title"><h2>Vitesse par moteur</h2></div><p class="hint">Sur mes analyses. Plus la barre est longue, plus le moteur est rapide.</p>
+          <div class="bars">
+            <div class="bar-row"><span class="nm">Cascade<small>31 analyses</small></span><span class="bar-track"><i style="--v:80%"></i></span><span class="val">×7,3</span></div>
+            <div class="bar-row"><span class="nm">FastConformer<small>9 analyses</small></span><span class="bar-track"><i style="--v:100%"></i></span><span class="val">×9,2</span></div>
+            <div class="bar-row"><span class="nm">Whisper<small>4 analyses</small></span><span class="bar-track"><i style="--v:57%"></i></span><span class="val">×5,2</span></div>
+            <div class="bar-row"><span class="nm">Muno<small>3 analyses</small></span><span class="bar-track"><i style="--v:45%"></i></span><span class="val">×4,1</span></div>
+          </div>
+          <p class="axis-note">Échelle commune : ×0 à ×10. Valeurs médianes.</p>
+        </div>
+      </div>
+    </div>
+        </div>
+      </section>
+
+      <!-- Vue : nouvel essai (enregistreur conservé, centré) -->
+      <section class="view" data-view-id="new">
+        <div class="stack">
+          <div class="new">
+            <header><svg class="hero-wave" viewBox="0 0 220 56" role="img" aria-label="Une onde sonore"><g fill="var(--border-strong)"><rect x="4.0" y="25.9" width="2.4" height="4.1" rx="1.2"/><rect x="9.2" y="25.8" width="2.4" height="4.4" rx="1.2"/><rect x="14.4" y="25.6" width="2.4" height="4.7" rx="1.2"/><rect x="19.6" y="25.6" width="2.4" height="4.9" rx="1.2"/><rect x="24.8" y="25.5" width="2.4" height="5.0" rx="1.2"/><rect x="30.0" y="24.8" width="2.4" height="6.3" rx="1.2"/><rect x="35.2" y="24.3" width="2.4" height="7.4" rx="1.2"/><rect x="40.4" y="24.4" width="2.4" height="7.3" rx="1.2"/><rect x="45.6" y="23.7" width="2.4" height="8.7" rx="1.2"/><rect x="50.8" y="21.6" width="2.4" height="12.8" rx="1.2"/><rect x="56.0" y="20.7" width="2.4" height="14.7" rx="1.2"/><rect x="61.2" y="22.0" width="2.4" height="12.0" rx="1.2"/><rect x="66.4" y="18.8" width="2.4" height="18.4" rx="1.2"/><rect x="71.6" y="15.1" width="2.4" height="25.8" rx="1.2"/><rect class="a" x="76.8" y="15.2" width="2.4" height="25.5" rx="1.2"/><rect class="a" x="82.0" y="18.9" width="2.4" height="18.1" rx="1.2"/><rect class="a" x="87.2" y="11.5" width="2.4" height="32.9" rx="1.2"/><rect class="a" x="92.4" y="8.2" width="2.4" height="39.5" rx="1.2"/><rect class="a" x="97.6" y="11.9" width="2.4" height="32.2" rx="1.2"/><rect class="a" x="102.8" y="14.1" width="2.4" height="27.8" rx="1.2"/><rect class="a" x="108.0" y="7.1" width="2.4" height="41.8" rx="1.2"/><rect class="a" x="113.2" y="7.1" width="2.4" height="41.8" rx="1.2"/><rect class="a" x="118.4" y="14.0" width="2.4" height="28.0" rx="1.2"/><rect class="a" x="123.6" y="13.2" width="2.4" height="29.7" rx="1.2"/><rect class="a" x="128.8" y="9.8" width="2.4" height="36.4" rx="1.2"/><rect class="a" x="134.0" y="12.8" width="2.4" height="30.4" rx="1.2"/><rect class="a" x="139.2" y="19.5" width="2.4" height="17.1" rx="1.2"/><rect x="144.4" y="17.1" width="2.4" height="21.9" rx="1.2"/><rect x="149.6" y="16.9" width="2.4" height="22.2" rx="1.2"/><rect x="154.8" y="20.0" width="2.4" height="16.0" rx="1.2"/><rect x="160.0" y="23.0" width="2.4" height="10.0" rx="1.2"/><rect x="165.2" y="22.0" width="2.4" height="12.1" rx="1.2"/><rect x="170.4" y="22.7" width="2.4" height="10.7" rx="1.2"/><rect x="175.6" y="24.2" width="2.4" height="7.5" rx="1.2"/><rect x="180.8" y="24.9" width="2.4" height="6.3" rx="1.2"/><rect x="186.0" y="24.8" width="2.4" height="6.4" rx="1.2"/><rect x="191.2" y="25.2" width="2.4" height="5.6" rx="1.2"/><rect x="196.4" y="25.7" width="2.4" height="4.7" rx="1.2"/><rect x="201.6" y="25.7" width="2.4" height="4.5" rx="1.2"/><rect x="206.8" y="25.8" width="2.4" height="4.5" rx="1.2"/><rect x="212.0" y="25.9" width="2.4" height="4.3" rx="1.2"/></g><path d="M4 52h212" stroke="var(--border)" stroke-width="1"/><path d="M110 48l4 4-4 4-4-4z" fill="var(--text-3)"/></svg><h1>Nouvel essai</h1><p class="lead">Enregistre une récitation ou dépose un audio ou une vidéo. L’analyse part dans la file ; tu peux fermer la page.</p></header>
+            <fieldset class="card visib" style="border:1px solid var(--border);margin:0;min-width:0">
+              <legend class="sr">Qui peut voir cet essai ?</legend>
+              <p style="font-weight:700">Qui peut voir cet essai ?</p>
+              <div class="opts" role="radiogroup" aria-label="Portée de l’essai">
+                <button class="radio-card" type="button" role="radio" data-scope="global" aria-checked="true"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>Global <span class="badge badge--plain badge--outline" style="min-height:20px;padding:0 6px">par défaut</span></b><span class="d">Tous les testeurs l’écoutent et voient ses résultats et ses performances.</span></button>
+                <button class="radio-card" type="button" role="radio" data-scope="private" aria-checked="false"><span class="radio" aria-hidden="true"></span><b><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Privé</b><span class="d">Toi seul. Il n’apparaît pas dans les listes des autres testeurs.</span></button>
+              </div>
+              <p class="quota-hint"><svg class="i" aria-hidden="true" style="width:16px;height:16px"><use href="#i-drive"/></svg><span>Espace utilisé : <b class="mono" style="font-weight:600;color:var(--text)">2,3 Go</b> sur 5 Go</span><span class="mini"><i style="--w:46%"></i></span></p>
+              <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Taille maximale d’un fichier : 500 Mo.</p>
+            </fieldset>
+            <section class="card recorder" data-phase="idle" id="recorder">
+              <span class="rec-ic"><svg class="i"><use href="#i-mic"/></svg></span>
+              <div><strong>Enregistrer une récitation</strong><p class="hint">Depuis le microphone de cet appareil</p></div>
+              <output class="rec-timer mono" data-only="recording" aria-label="Durée de l’enregistrement">00:14</output>
+              <span class="hint" data-only="recording" role="status">Enregistrement en cours</span>
+              <button class="btn btn--secondary btn--lg" id="rec-start" data-only="idle"><span class="rec-dot"></span>Démarrer l’enregistrement</button>
+              <button class="btn btn--secondary btn--lg" id="rec-stop" data-only="recording"><span class="rec-sq" style="color:var(--danger)"></span>Arrêter</button>
+              <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">L’audio est conservé après l’analyse, avec la portée choisie ci-dessus.</p>
+            </section>
+            <div class="or">ou</div>
+            <label class="drop" for="file" id="drop">
+              <svg class="i"><use href="#i-upload"/></svg>
+              <strong>Dépose un fichier ici</strong>
+              <span class="kinds"><span><svg class="i"><use href="#i-audio"/></svg>mp3 · wav · m4a · webm</span><span><svg class="i"><use href="#i-video"/></svg>mp4 · mov · mkv</span></span>
+              <span class="btn btn--primary">Choisir un fichier</span>
+              <input type="file" id="file" class="sr" accept="audio/*,video/*">
+            </label>
+            <details class="acc" style="border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:0 var(--sp-4)"><summary>Importer aussi un résultat existant <span class="muted" style="font-weight:400">· facultatif</span></summary><div class="acc-body"><p class="hint">Un fichier .json de résultat. Il doit correspondre exactement au même audio : l’empreinte SHA-256 est vérifiée.</p><input type="file" class="input" accept=".json" style="padding:8px"></div></details>
+            <div class="auto"><svg class="i" style="color:var(--accent)"><use href="#i-wave"/></svg><p><b>Reconnaissance automatique.</b> FastConformer écoute tout ; Whisper et Muno réécoutent les passages douteux ; l’audio départage leurs propositions. Aucun choix à faire. Fichiers conservés localement, hors Git.</p></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ═════════ Panneau droit : revue humaine ═════════ -->
+    <aside class="panel panel--right" id="panel-right" data-open="true" aria-label="Revue humaine">
+      <div class="panel-in">
+        <div class="panel-head">
+          <h2>Revue humaine</h2>
+          <button class="btn btn--ghost btn--icon btn--sm drawer-close only-drawer" data-close="right" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button>
+        </div>
+        <section class="tester" id="tester" aria-label="Testeur"></section>
+        <div class="tabs" role="tablist" aria-label="Revue humaine">
+          <button role="tab" id="tab-sig" data-tab="sig" aria-selected="true" aria-controls="pn-sig">Signaler</button>
+          <button role="tab" id="tab-list" data-tab="list" aria-selected="false" tabindex="-1" aria-controls="pn-list">Signalements <span class="count" id="cnt">3</span></button>
+          <button role="tab" id="tab-truth" data-tab="truth" class="tab-adv" aria-selected="false" tabindex="-1" aria-controls="pn-truth">Vérité terrain</button>
+        </div>
+
+        <div role="tabpanel" id="pn-sig" data-tab="sig" aria-labelledby="tab-sig">
+          <ol class="steps" id="steps" aria-label="Étapes du signalement"></ol>
+          <div id="sig-body"></div>
+          <div class="panel-foot">
+            <details class="acc" style="padding:0;border-top:1px solid var(--border-subtle)"><summary>Raccourcis clavier</summary>
+              <div class="acc-body"><button class="switch" role="switch" aria-checked="true" id="sw-keys"><i></i>Raccourcis à une touche</button><div class="keys"><kbd>M</kbd><span>Poser le début, puis (même touche) la fin</span><kbd>P</kbd><span>Signaler un point à la position de lecture</span><kbd>L</kbd><span>Écouter la plage en boucle</span><kbd>Échap</kbd><span>Annuler la pose en cours</span><kbd>Ctrl ↵</kbd><span>Confirmer le signalement</span><kbd>Espace</kbd><span>Lecture / pause</span></div></div></details>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="pn-list" data-tab="list" aria-labelledby="tab-list" hidden>
+          <div class="lfilters">
+            <label class="field"><span>Testeur</span><select class="input" id="f-tester"></select></label>
+            <div class="seg-filters" style="margin:0" role="group" aria-label="Filtrer par état" id="f-state"><button class="chip" data-state="all" aria-pressed="true">Tous</button><button class="chip" data-state="draft" aria-pressed="false">Brouillons</button><button class="chip" data-state="confirmed" aria-pressed="false">Confirmés</button></div>
+            <p class="hint" style="font-size:var(--fs-xs)">Le filtre s’applique aussi à la forme d’onde et à la piste Revue.</p>
+          </div>
+          <ul class="alist" id="alist"></ul>
+          <div class="panel-sec" style="display:grid;gap:var(--sp-2)">
+            <button class="btn btn--secondary btn--block"><svg class="i"><use href="#i-download"/></svg>Pack complet (ZIP)</button>
+            <button class="btn btn--ghost btn--block">Exporter le bilan JSON</button>
+            <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Le ZIP contient audio, prédiction et signalements, avec le pseudonyme de chaque testeur. Aucun envoi cloud automatique.</p>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="pn-truth" data-tab="truth" aria-labelledby="tab-truth" hidden>
+          <div class="panel-sec" style="display:grid;gap:var(--sp-3);border-top:0">
+            <p class="banner"><small><b style="font-family:inherit">Réservé au relecteur.</b> Cette section sert à valider des passages complets pour la vérité terrain. Pour signaler une erreur, reste dans l’onglet « Signaler ».</small></p>
+            
+            <p class="hint">Dis ce qui est récité, l’outil pose les temps, écoute chaque verset puis valide. Seul un passage validé à l’oreille devient une vérité terrain.</p>
+            <article class="passage-v">
+              <header><button class="btn btn--ghost btn--sm" style="padding-left:6px"><svg class="i fill" style="width:14px;height:14px"><use href="#i-play"/></svg><span class="mono">00:04 – 00:47</span></button><span class="badge badge--plain">Aligné · à écouter</span></header>
+              <label class="field">Versets récités, dans l’ordre<input class="input mono" value="1:1-1:7, amin"></label>
+              <p class="evidence"><svg class="i" style="width:14px;height:14px;margin-top:2px"><use href="#i-info"/></svg><span>Preuve acoustique 0,84 par trame · l’audio soutient la déclaration (repère indicatif).</span></p>
+              <ol class="aligned"><li><button><svg class="i fill"><use href="#i-play"/></svg><strong>1:1</strong><span class="mono muted">00:04 – 00:11</span></button></li><li><button><svg class="i fill"><use href="#i-play"/></svg><em>âmîn (non coranique)</em><span class="mono muted">00:47 – 00:52</span></button></li></ol>
+              <div class="btnrow"><button class="btn btn--primary btn--sm">Valider après écoute</button><button class="btn btn--ghost btn--sm">Exclure</button></div>
+            </article>
+            <article class="passage-v">
+              <header><button class="btn btn--ghost btn--sm" style="padding-left:6px"><svg class="i fill" style="width:14px;height:14px"><use href="#i-play"/></svg><span class="mono">00:58 – 01:41</span></button><span class="badge badge--ok"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg>Validé à l’oreille</span></header>
+              <p class="hint mono">2:255</p>
+              <div class="btnrow"><button class="btn btn--secondary btn--sm">Rouvrir</button></div>
+            </article>
+            <button class="btn btn--secondary btn--block btn--sm">+ Passage à partir d’ici (30 s)</button>
+            <label class="field">Relecteur (identifiant anonyme, jamais un nom)<input class="input mono" value="rel-01"></label>
+            <button class="btn btn--primary btn--block">Écrire 1 passage validé dans le manifeste</button>
+            <p class="hint" style="font-size:var(--fs-xs);color:var(--text-3)">Fichiers de développement seulement. Chaque passage validé devient une fenêtre annotée ; hors fenêtre, rien n’est vérité terrain.</p>
+          
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <div class="scrim" id="scrim"></div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement, ws = $('#ws');
+  const store = { get(k, d) { try { return JSON.parse(localStorage.getItem('aqr-proto-' + k)) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem('aqr-proto-' + k, JSON.stringify(v)); } catch {} } };
+  const hash = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+  const wide = matchMedia('(min-width: 1280px)');
+
+  /* ── Panneaux repliables : état mémorisé, tiroirs sous 1280 px ── */
+  function panel(side, open, persist = true) {
+    const el = $('#panel-' + side), btn = $('#tgl-' + side);
+    ws.dataset[side] = open ? 'open' : 'closed';
+    el.dataset.open = String(open);
+    btn.setAttribute('aria-expanded', String(open));
+    if (persist && wide.matches) store.set('panel-' + side, open);
+    if (!wide.matches && open) { el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); } else { el.removeAttribute('role'); el.removeAttribute('aria-modal'); }
+  }
+  function initPanels() {
+    ['left', 'right'].forEach(s => {
+      const want = hash[s] ? hash[s] === 'open' : wide.matches ? store.get('panel-' + s, true) : false;
+      panel(s, want, false);
+    });
+    if (hash.drawer) panel(hash.drawer, true, false);
+  }
+  ['left', 'right'].forEach(s => $('#tgl-' + s).addEventListener('click', () => panel(s, ws.dataset[s] !== 'open')));
+  $$('[data-close]').forEach(b => b.addEventListener('click', () => panel(b.dataset.close, false)));
+  $('#scrim').addEventListener('click', () => { panel('left', false); panel('right', false); });
+  wide.addEventListener('change', initPanels);
+  addEventListener('keydown', e => { if (e.key === 'Escape') { panel('left', false, false); if (!wide.matches) panel('right', false, false); $('#pop-font').hidden = true; $('#btn-font').setAttribute('aria-expanded', 'false'); } });
+
+  /* ── Vues ── */
+  function view(name) {
+    $$('.view').forEach(v => v.dataset.active = String(v.dataset.viewId === name));
+    $$('.nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === name ? 'page' : 'false'));
+    $('#btn-new').setAttribute('aria-pressed', String(name === 'new'));
+    if (!wide.matches) { panel('left', false, false); }
+    $('#center').scrollTop = 0;
+  }
+  $$('[data-view]').forEach(b => b.addEventListener('click', () => view(b.dataset.view)));
+  $('#btn-new').addEventListener('click', () => view('new'));
+  $$('.sess').forEach(b => b.addEventListener('click', () => { $$('.sess').forEach(x => x.removeAttribute('aria-current')); b.setAttribute('aria-current', 'true'); if (b.dataset.unread) { delete b.dataset.unread; $('.unread', b)?.remove(); } view('revue'); updateDot(); }));
+  function updateDot() { const n = $$('.sess[data-unread="true"]').length; $('#left-dot').style.display = n || $$('.sess[data-state="running"]').length ? 'block' : 'none'; }
+
+  /* ── Filtres de la liste ── */
+  $$('.filters .chip').forEach(c => c.addEventListener('click', () => {
+    $$('.filters .chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+    const f = c.dataset.f;
+    $$('.sess').forEach(s => { const ok = f === 'all' || (f === 'active' && s.dataset.g === 'active') || (f === 'unread' && s.dataset.unread === 'true'); s.parentElement.hidden = !ok; });
+  }));
+  $$('.seg-filters .chip').forEach(c => c.addEventListener('click', () => { $$('.chip', c.parentElement).forEach(x => x.setAttribute('aria-pressed', String(x === c))); }));
+
+  /* ── Thème ── */
+  function theme(t, persist = true) {
+    if (t) root.dataset.theme = t; else delete root.dataset.theme;
+    const dark = (t || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')) === 'dark';
+    $('#btn-theme use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+    if (persist) store.set('theme', t);
+  }
+  theme(hash.theme || store.get('theme', null), false);
+  $('#btn-theme').addEventListener('click', () => theme(root.dataset.theme === 'light' ? 'dark' : 'light'));
+
+  /* ── Police arabe + taille ── */
+  function setFont(id, persist = true) {
+    root.dataset.quranFont = id;
+    $$('.fopt').forEach(b => b.setAttribute('aria-checked', String(b.dataset.font === id)));
+    if (persist) store.set('font', id);
+  }
+  function setSize(px, persist = true) {
+    px = Math.max(28, Math.min(72, px));
+    if (px === null) return;
+    root.style.setProperty('--quran-size', px + 'px');
+    const s = $('#size'); s.value = px; s.style.setProperty('--p', ((px - 28) / 44 * 100) + '%'); $('#size-out').textContent = px + ' px';
+    if (persist) store.set('size', px);
+  }
+  setFont(hash.font || store.get('font', 'amiri-quran'), false);
+  const savedSize = hash.size || store.get('size', null);
+  if (savedSize) setSize(+savedSize, false); else { const px = parseInt(getComputedStyle(root).getPropertyValue('--quran-size'), 10) || 40; $('#size').value = px; $('#size').style.setProperty('--p', ((px - 28) / 44 * 100) + '%'); $('#size-out').textContent = px + ' px'; }
+  $$('.fopt').forEach(b => b.addEventListener('click', () => { if (b.getAttribute('aria-disabled') !== 'true') setFont(b.dataset.font); }));
+  $('#size').addEventListener('input', e => setSize(+e.target.value));
+  $('#a-minus').addEventListener('click', () => setSize(+$('#size').value - 4));
+  $('#a-plus').addEventListener('click', () => setSize(+$('#size').value + 4));
+  $('#font-reset').addEventListener('click', () => { setFont('amiri-quran'); root.style.removeProperty('--quran-size'); try { localStorage.removeItem('aqr-proto-size'); } catch {} const px = parseInt(getComputedStyle(root).getPropertyValue('--quran-size'), 10); $('#size').value = px; $('#size').style.setProperty('--p', ((px - 28) / 44 * 100) + '%'); $('#size-out').textContent = px + ' px'; });
+  const pop = $('#pop-font'), btnFont = $('#btn-font');
+  btnFont.addEventListener('click', () => { pop.hidden = !pop.hidden; btnFont.setAttribute('aria-expanded', String(!pop.hidden)); });
+  document.addEventListener('click', e => { if (!pop.hidden && !e.target.closest('.pop-wrap')) { pop.hidden = true; btnFont.setAttribute('aria-expanded', 'false'); } });
+  $('#pop-close').addEventListener('click', () => { pop.hidden = true; btnFont.setAttribute('aria-expanded', 'false'); btnFont.focus(); });
+  if (hash.pop) { pop.hidden = false; btnFont.setAttribute('aria-expanded', 'true'); }
+
+  /* ── Interrupteurs ── */
+  $$('.switch').forEach(b => b.addEventListener('click', () => { b.setAttribute('aria-checked', String(b.getAttribute('aria-checked') !== 'true')); if (b.id === 'sw-trans') render(current); }));
+
+  /* ── Enregistreur (états conservés : micro, point rouge, carré d'arrêt) ── */
+  const rec = $('#recorder'); let timer, sec = 0;
+  const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  $('#rec-start').addEventListener('click', () => { rec.dataset.phase = 'recording'; sec = 0; $('.rec-timer', rec).textContent = fmt(0); timer = setInterval(() => { sec++; $('.rec-timer', rec).textContent = fmt(sec); }, 1000); });
+  $('#rec-stop').addEventListener('click', () => { clearInterval(timer); rec.dataset.phase = 'idle'; });
+
+  /* ── Données de démonstration : intervalles ── */
+  const T = 184.7;
+  const BAS = { ar: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', fr: 'Au nom d’Allah, le Tout Miséricordieux, le Très Miséricordieux.<sup>[1]</sup>' };
+  const KURSI = { ar: 'ٱللَّهُ لَآ إِلَـٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُۥ مَا فِى ٱلسَّمَـٰوَٰتِ وَمَا فِى ٱلْأَرْضِ ۗ مَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَىْءٍ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ ۚ وَسِعَ كُرْسِيُّهُ ٱلسَّمَـٰوَٰتِ وَٱلْأَرْضَ ۖ وَلَا يَـُٔودُهُۥ حِفْظُهُمَا ۚ وَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ', fr: 'Allah! Point de divinité à part Lui, le Vivant, Celui qui subsiste par Lui-même (Al Qayyum). Ni somnolence ni sommeil ne Le saisissent. À Lui appartient tout ce qui est dans les cieux et sur la terre. Qui peut intercéder auprès de Lui sans Sa permission? Il connaît leur passé et leur futur. Et, de Sa science, ils n’embrassent que ce qu’Il veut. Son Trône « Kursîy » déborde les cieux et la terre, dont la garde ne Lui coûte aucune peine. Et Il est le Très-Haut, le Très-Grand .<sup>[112]</sup>' };
+  const ATTR = 'QuranEnc.com — Muhammad Hamidullah (révision du Complexe du Roi Fahd) · french_hameedullah · source quranenc.com';
+  const I = [
+    { k: 'formula', f: 'istiadha', t: [0, 4.2], title: 'isti’adha', ar: 'الاستعاذة' },
+    { k: 'verse', s: 'recognized', basmala: true, t: [4.2, 11.8], title: 'Basmala', ref: '1:1', ...BAS },
+    { k: 'verse', s: 'recognized', t: [11.8, 17], ref: '1:2' }, { k: 'verse', s: 'recognized', t: [17, 20.4], ref: '1:3' },
+    { k: 'verse', s: 'recognized', t: [20.4, 25.9], ref: '1:4' }, { k: 'verse', s: 'recognized', t: [25.9, 31.6], ref: '1:5' },
+    { k: 'verse', s: 'recognized', t: [31.6, 36.1], ref: '1:6' }, { k: 'verse', s: 'recognized', t: [36.1, 47.5], ref: '1:7' },
+    { k: 'formula', f: 'amin', t: [47.5, 52], title: 'âmîn', ar: 'آمين' },
+    { k: 'abstention', t: [52, 58.5], title: 'Silence selon le moteur' },
+    { k: 'verse', s: 'recognized', t: [58.5, 101.2], ref: '2:255', ...KURSI },
+    { k: 'verse', s: 'uncertain', t: [101.2, 108], title: 'Références possibles : 2:256 · 2:257' },
+    { k: 'verse', s: 'inferred', t: [108, 125], ref: '2:256', hyp: true },
+    { k: 'abstention', t: [125, 140], title: 'Score insuffisant' },
+    { k: 'formula', f: 'takbir', t: [140, 150], title: 'takbir', ar: 'التكبير' },
+    { k: 'verse', s: 'recognized', t: [150, 156], ref: '112:1' },
+    { k: 'verse', s: 'recognized', t: [156, 184.7], ref: '112:2–4' },
+  ];
+  const sw = (i) => i.k === 'verse' ? 's-' + i.s : 's-' + (i.k === 'formula' ? 'formula' : 'abstention');
+  const stLabel = (i) => i.k === 'verse' ? ({ recognized: 'Reconnu', inferred: 'Déduit', uncertain: 'Incertain' })[i.s] : i.k === 'formula' ? 'Formule' : 'Abstention';
+  const mmss = s => { const m = Math.floor(s / 60), r = s - m * 60; return String(m).padStart(2, '0') + ':' + r.toFixed(3).padStart(6, '0'); };
+  const pct = x => (x / T * 100).toFixed(3) + '%';
+  let current = 10; // 2:255
+
+  /* ── Rendu : onde, segments, pistes, règle, liste ── */
+  (() => {
+    const speech = I.filter(i => i.k !== 'abstention'); let bars = '', playedBars = '', n = 232;
+    for (let b = 0; b < n; b++) {
+      const t = b / n * T, seg = speech.find(i => t >= i.t[0] && t < i.t[1]);
+      const env = seg ? .55 + .35 * Math.sin(t * 1.7) * Math.cos(t * .43) : .06;
+      const r = Math.abs(Math.sin(b * 12.9898) * 43758.5453) % 1;
+      const h = Math.max(3, (env * (.45 + .55 * r)) * 92), x = b * (1000 / n);
+      const rect = `<rect x="${x.toFixed(2)}" y="${(52 - h / 2).toFixed(2)}" width="2.6" height="${h.toFixed(2)}" rx="1.3"/>`;
+      bars += rect; playedBars += rect;
+    }
+    $('#bars').innerHTML = bars; $('#bars-played').innerHTML = playedBars;
+    $('#wave-segs').innerHTML = I.map((i, n) => {
+      const wide = (i.t[1] - i.t[0]) / T * 780 > 40;
+      const lab = i.k === 'verse' && i.s !== 'uncertain' && i.ref && wide ? i.ref : '';
+      return `<button class="wave-seg ${sw(i)}" style="--l:${pct(i.t[0])};--w:${pct(i.t[1] - i.t[0])}" data-i="${n}" aria-label="${(i.ref || i.title)} ${stLabel(i)}">${lab ? '<span>' + lab + '</span>' : ''}</button>`;
+    }).join('');
+    const seg = (i, n) => `<button class="seg ${sw(i)}" style="--l:${pct(i.t[0])};--w:${pct(i.t[1] - i.t[0])}" data-i="${n}" title="${i.ref || i.title} · ${mmss(i.t[0])}" aria-label="${(i.ref || i.title)} ${stLabel(i)}"></button>`;
+    $('#lane-main').innerHTML = I.map((i, n) => i.s === 'inferred' ? '' : seg(i, n)).join('');
+    $('#lane-inf').innerHTML = I.map((i, n) => i.s === 'inferred' ? seg(i, n) : '').join('');
+    let ticks = ''; const tickStep = matchMedia("(max-width: 767px)").matches ? 60 : 30; for (let s = 0; s <= 150; s += tickStep) ticks += `<span style="left:${pct(s)}">${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}</span>`;
+    $('#ticks').innerHTML = ticks;
+    $('#irows').innerHTML = I.map((i, n) => `<button class="irow" data-i="${n}" aria-pressed="false"><span class="tm">${mmss(i.t[0]).slice(0, 8)}</span><span class="ti">${i.k === 'verse' ? (i.basmala ? 'Basmala' : (i.ref || i.title)) : i.k === 'formula' ? i.title + '<span class="ar" lang="ar" dir="rtl">' + i.ar + '</span>' : i.title}${i.basmala ? ' <span class="muted" style="font-weight:400">· ' + i.ref + '</span>' : ''}${i.s === 'uncertain' ? '' : ''}</span><span class="st"><span class="sw ${sw(i)}"></span>${stLabel(i)}</span></button>`).join('');
+  })();
+
+  /* ── Carte du passage ── */
+  function render(n) {
+    current = n; const i = I[n], body = $('#passage-body'), showT = $('#sw-trans').getAttribute('aria-checked') === 'true';
+    $$('[data-i]').forEach(e => e.setAttribute('aria-pressed', String(+e.dataset.i === n)));
+    $('#btn-listen').disabled = false;
+    const range = `<span class="mono muted" style="font-size:var(--fs-sm)">${mmss(i.t[0])} – ${mmss(i.t[1])}</span>`;
+    if (i.k === 'verse' && i.ar) {
+      const num = (i.ref.split(':')[1] || '').replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+      const badge = i.basmala
+        ? `<span class="badge badge--ink"><svg class="i" style="width:14px;height:14px"><use href="#i-wave"/></svg>Basmala</span>`
+        : `<span class="badge"><span class="sw s-${i.s}"></span>${stLabel(i)}</span>`;
+      body.innerHTML = `<div class="p-meta">${badge}<span class="p-ref"${i.basmala ? ' lang="ar" dir="rtl" style="font:400 1.5rem/1.2 var(--font-quran)"' : ''}>${i.basmala ? 'البسملة' : i.ref}</span>${range}</div>
+        ${i.basmala ? '<div class="orn" aria-hidden="true"><i></i></div>' : ''}
+        <p class="arabic ${i.basmala ? 'basmala' : ''}" lang="ar" dir="rtl">${i.ar}${i.basmala ? '' : `<span class="ayah-end" aria-hidden="true">${num}</span>`}</p>
+        ${showT ? `<div class="translation"><p>${i.fr}</p><small>${ATTR}</small></div>` : ''}`;
+    } else if (i.k === 'verse') {
+      body.innerHTML = `<div class="p-meta"><span class="badge ${i.s === 'uncertain' ? 'badge--warn' : ''}"><span class="sw s-${i.s}"></span>${i.s === 'inferred' ? 'Hypothèse · non entendue' : stLabel(i)}</span><span class="p-ref">${i.s === 'uncertain' ? 'Identification ambiguë' : i.ref}</span>${range}</div>
+        <div class="p-empty"><p>${i.s === 'uncertain' ? 'Références candidates : 2:256 · 2:257. Le texte n’est affiché que lorsque le verset est identifié.' : 'Verset déduit du contexte, jamais entendu. Il n’est pas une preuve.'}</p></div>`;
+    } else if (i.k === 'formula') {
+      body.innerHTML = `<div class="p-meta"><span class="badge"><span class="sw s-formula"></span>Formule non coranique</span><span class="p-ref">${i.title}</span>${range}</div>
+        <div class="p-empty"><div class="ar-label" lang="ar" dir="rtl">${i.ar}</div><p>Cette formule n’est pas un verset : aucun texte du Mushaf n’est affiché.</p></div>`;
+      $('#btn-listen').disabled = false;
+    } else {
+      body.innerHTML = `<div class="p-meta"><span class="badge"><span class="sw s-abstention"></span>Abstention</span>${range}</div><div class="p-empty"><p>${i.title}. Le moteur préfère ne rien nommer plutôt que nommer un faux verset.</p></div>`;
+    }
+  }
+  document.addEventListener('click', e => { const el = e.target.closest('[data-i]'); if (el) { render(+el.dataset.i); } });
+  render(current);
+
+  /* ── Lecteur : curseur fictif ── */
+  const scr = $('#scrubber');
+  scr.addEventListener('input', () => { const v = +scr.value; scr.style.setProperty('--p', (v / T * 100) + '%'); $('#timeline').style.setProperty('--t', v / T); $('#clip-played rect').setAttribute('width', v / T * 1000); $('#t-now').textContent = mmss(v); });
+  let playing = false, raf;
+  $('#play').addEventListener('click', () => { playing = !playing; $('#play').innerHTML = `<svg class="i fill"><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`; $('#play').setAttribute('aria-label', playing ? 'Mettre en pause' : 'Lancer la lecture'); if (playing) { let last = performance.now(); const step = now => { scr.value = Math.min(T, +scr.value + (now - last) / 1000); last = now; scr.dispatchEvent(new Event('input')); const j = I.findIndex(i => i.k === 'verse' && +scr.value >= i.t[0] && +scr.value < i.t[1]); if (j >= 0 && j !== current) render(j); if (playing && +scr.value < T) raf = requestAnimationFrame(step); }; raf = requestAnimationFrame(step); } else cancelAnimationFrame(raf); });
+  $('#wave-track').addEventListener('click', e => { if (e.target.closest('[data-i],.rv-region,.rv-h') || RV.trace || e.shiftKey) return; const r = e.currentTarget.getBoundingClientRect(); scr.value = (e.clientX - r.left) / r.width * T; scr.dispatchEvent(new Event('input')); });
+
+
+  /* ═════════ Revue humaine (prototype) ═════════
+   * REVIEW_PRESETS = la liste de configuration centralisée (en production : web/lib/review-presets.ts).
+   * Les libellés ne sont écrits qu'ici ; le reste de l'interface ne fait que les lire.
+   */
+  const REVIEW_PRESETS = [
+    { id: 'verse', label: 'Verset', hint: 'Ce que le moteur affiche est faux ou incomplet.', items: [
+      ['wrong_verse', 'Verset faux'], ['missing_verse', 'Verset manquant'], ['extra_verse', 'Verset en trop'], ['repetition_missed', 'Répétition non détectée'] ] },
+    { id: 'bounds', label: 'Limites et synchronisation', hint: 'Le verset est bon, mais pas ses bornes.', items: [
+      ['start_early', 'Début trop tôt'], ['start_late', 'Début trop tard'], ['end_early', 'Fin trop tôt'], ['end_late', 'Fin trop tard'], ['display_offset', 'Affichage décalé de la voix'] ] },
+    { id: 'detection', label: 'Coran ou pas Coran', hint: 'Le moteur se trompe sur la nature de la parole.', items: [
+      ['non_quran_as_quran', 'Parole non coranique prise pour du Coran'], ['quran_undetected', 'Coran non détecté'], ['abstention_wrong', 'Abstention à tort (le verset était audible)'] ] },
+    { id: 'formula', label: 'Formules', hint: 'Basmala, isti’adha, takbir, âmîn.', items: [
+      ['basmala_missing', 'Basmala manquante'], ['basmala_extra', 'Basmala en trop'], ['istiadha_missing', 'Isti’adha manquante'], ['istiadha_extra', 'Isti’adha en trop'], ['takbir_amin', 'Takbir ou âmîn manquant / en trop'] ] },
+    { id: 'recitation', label: 'Récitation', hint: 'Ce qui tient au lecteur plutôt qu’au moteur.', items: [
+      ['riwaya', 'Mauvaise récitation / lecture (riwaya)'], ['reciter_error', 'Le lecteur se trompe (le moteur a raison)'] ] },
+    { id: 'audio', label: 'Qualité de l’audio', hint: '', items: [
+      ['inaudible', 'Audio inaudible'], ['noise', 'Bruit ou parasites'], ['overlap', 'Plusieurs voix en même temps'] ] },
+    { id: 'other', label: 'Autre', hint: '', items: [ ['other', 'Autre (précise en commentaire)'] ] },
+  ];
+  const PRESET_LABEL = Object.fromEntries(REVIEW_PRESETS.flatMap(f => f.items));
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const fmt1 = s => { const m = Math.floor(s / 60); return String(m).padStart(2, '0') + ':' + (s - m * 60).toFixed(1).padStart(4, '0'); };
+  const fr1 = n => n.toFixed(1).replace('.', ',');
+  const ico = (id, cls = '') => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+  const ago = a => { const m = Math.round((Date.now() - a.ts) / 60000); return m < 1 ? 'à l’instant' : m < 60 ? `il y a ${m} min` : `il y a ${Math.round(m / 60)} h`; };
+  const now = Date.now();
+  let uid = 10;
+  const RV = {
+    tab: 'sig', mark: null, draft: null, sel: null, trace: false, changing: false, done: null,
+    tester: 'cherif', recent: [],
+    fTester: 'all', fState: 'all', listened: {}, loop: false, save: 'saved', testerErr: '',
+    annots: [
+      { id: 'a1', start: 31.2, end: null, tags: ['display_offset'], expected: '', comment: 'La voix arrive avant l’affichage.', tester: 'amina', status: 'confirmed', ts: now - 36 * 60000 },
+      { id: 'a2', start: 101.2, end: 106.4, tags: ['missing_verse', 'start_late'], expected: '2:256', comment: 'Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.', tester: 'moussa_d', status: 'confirmed', ts: now - 12 * 60000 },
+      { id: 'a3', start: 140, end: 146.5, tags: ['non_quran_as_quran'], expected: '', comment: '', tester: 'cherif', status: 'draft', ts: now - 4 * 60000 },
+    ],
+  };
+  const cur = () => +$('#scrubber').value;
+  const annot = id => RV.annots.find(a => a.id === id);
+  const draftObj = () => RV.draft ? annot(RV.draft) : null;
+  const visible = () => RV.annots.filter(a => (RV.fTester === 'all' || a.tester === RV.fTester) && (RV.fState === 'all' || a.status === RV.fState));
+  const live = $('#aria-live');
+  const say = t => { live.textContent = ''; setTimeout(() => live.textContent = t, 30); };
+
+  /* ── toasts ── */
+  let toastTimer;
+  function toast(text, action) {
+    $('#toast')?.remove(); clearTimeout(toastTimer);
+    const el = document.createElement('div'); el.className = 'toast'; el.id = 'toast'; el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${esc(text)}</span>${action ? `<button>${esc(action.label)}</button>` : ''}`;
+    document.body.append(el);
+    el.querySelector('button')?.addEventListener('click', () => { action.fn(); el.remove(); });
+    toastTimer = setTimeout(() => el.remove(), 6000);
+  }
+
+  /* ── sauvegarde simulée ── */
+  let saveTimer;
+  function touchSave() { RV.save = 'saving'; paintSave(); clearTimeout(saveTimer); saveTimer = setTimeout(() => { RV.save = 'saved'; paintSave(); }, 600); }
+  function paintSave() {
+    const el = $('#savebar'); if (!el) return;
+    el.className = 'savebar' + (RV.save === 'error' ? ' err' : '');
+    el.innerHTML = RV.save === 'saving' ? 'Enregistrement…' : RV.save === 'error' ? `${ico('alert')} Échec de l’enregistrement. <button class="btn btn--ghost btn--sm" data-act="retry-save">Réessayer</button>` : `${ico('check')} Enregistré sur cet ordinateur`;
+  }
+
+  /* ── onglets ── */
+  function setTab(name) {
+    RV.tab = name;
+    $$('.tabs [role=tab]').forEach(t => { const on = t.dataset.tab === name; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+    $$('[role=tabpanel]', $('#panel-right')).forEach(p => p.hidden = p.dataset.tab !== name);
+  }
+  $('.tabs').addEventListener('click', e => { const t = e.target.closest('[role=tab]'); if (t) setTab(t.dataset.tab); });
+  $('.tabs').addEventListener('keydown', e => { const tabs = $$('.tabs [role=tab]'), i = tabs.indexOf(document.activeElement); if (i < 0 || !['ArrowRight', 'ArrowLeft'].includes(e.key)) return; const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); setTab(n.dataset.tab); });
+
+  /* ── testeur ── */
+  function renderTester() {
+    const el = $('#tester');
+    el.innerHTML = `<div class="tester-row"><span class="av" aria-hidden="true">${esc(RV.tester[0].toUpperCase())}</span><div style="flex:1;min-width:0"><span class="eyebrow">Relecteur</span><b>${esc(RV.tester)} <span class="you">· ton compte</span></b></div></div>`;
+  }
+  function setTester(name) {
+    name = name.trim();
+    if (!/^[\p{L}\p{N} _.\-]{2,24}$/u.test(name) || name.includes('@')) { RV.testerErr = '2 à 24 caractères : lettres, chiffres, espace, - _ . (pas d’adresse e-mail).'; renderTester(); $('#tester-input')?.focus(); return; }
+    RV.tester = name; RV.testerErr = ''; RV.changing = false;
+    RV.recent = [name, ...RV.recent.filter(n => n !== name)].slice(0, 8);
+    store.set('tester', name); store.set('testers', RV.recent);
+    renderAll(); say(`Testeur : ${name}`);
+  }
+
+  /* ── pose début / fin, point, plage ── */
+  function needTester() { if (RV.tester) return false; setTab('sig'); if (!wide.matches) panel('right', true, false); $('#tester-input')?.focus(); toast('Indique d’abord qui teste.'); return true; }
+  function markPress() {
+    if (needTester()) return;
+    if (!RV.mark) { RV.mark = { start: +cur().toFixed(1) }; RV.draft = RV.draft; say(`Début posé à ${fmt1(RV.mark.start)}`); renderAll(); return; }
+    const end = +cur().toFixed(1);
+    if (end - RV.mark.start < 0.2) { toast('Avance un peu l’écoute avant de poser la fin.'); return; }
+    newDraft(RV.mark.start, end);
+  }
+  function pointPress() { if (needTester()) return; RV.mark = null; newDraft(+cur().toFixed(1), null); }
+  function cancelMark() { RV.mark = null; renderAll(); say('Pose annulée'); }
+  /* un brouillon vide (ni puce, ni commentaire, ni verset attendu) disparaît quand on passe à autre chose */
+  function dropEmptyDraft() { const d = draftObj(); if (d && d.status === 'draft' && !d.tags.length && !d.comment.trim() && !d.expected.trim()) { RV.annots.splice(RV.annots.indexOf(d), 1); if (RV.sel === d.id) RV.sel = null; } RV.draft = null; }
+  function newDraft(s, e) {
+    dropEmptyDraft();
+    const a = { id: 'a' + (++uid), start: s, end: e, tags: [], expected: '', comment: '', tester: RV.tester, status: 'draft', ts: Date.now() };
+    RV.annots.push(a); RV.draft = a.id; RV.sel = a.id; RV.mark = null; RV.done = null; RV.listened[a.id] = false;
+    setTab('sig'); if (!wide.matches) panel('right', true, false);
+    renderAll(); touchSave(); say(e == null ? `Point posé à ${fmt1(s)}` : `Plage de ${fmt1(s)} à ${fmt1(e)}`);
+  }
+  function confirmDraft() {
+    const a = draftObj(); if (!a) return;
+    if (!a.tags.length && !a.comment.trim()) { toast('Choisis au moins une puce ou écris un commentaire.'); return; }
+    a.status = 'confirmed'; a.ts = Date.now(); RV.done = a.id; RV.draft = null; RV.sel = a.id; stopSim();
+    renderAll(); touchSave(); say('Signalement enregistré');
+  }
+  function removeAnnot(id) {
+    const i = RV.annots.findIndex(a => a.id === id); if (i < 0) return; const [a] = RV.annots.splice(i, 1);
+    if (RV.draft === id) RV.draft = null; if (RV.sel === id) RV.sel = null; if (RV.done === id) RV.done = null; stopSim();
+    renderAll(); toast('Signalement supprimé', { label: 'Annuler', fn: () => { RV.annots.splice(i, 0, a); renderAll(); } });
+  }
+  function jump(id, edit) {
+    const a = annot(id); if (!a) return; RV.sel = id; RV.mark = null;
+    scr.value = a.start; scr.dispatchEvent(new Event('input'));
+    if (edit) { dropEmptyDraft(); RV.draft = id; RV.done = null; setTab('sig'); if (!wide.matches) panel('right', true, false); }
+    renderAll(); $('#wave-track').scrollIntoView({ block: 'nearest' });
+  }
+  function setRange(a, s, e) {
+    s = Math.max(0, Math.min(T, +s.toFixed(1))); if (e != null) e = Math.max(0, Math.min(T, +e.toFixed(1)));
+    if (e != null && e - s < 0.2) { if (a._edge === 'end') s = +(e - 0.2).toFixed(1); else e = +(s + 0.2).toFixed(1); }
+    a.start = s; a.end = e; RV.listened[a.id] = false; touchSave();
+  }
+
+  /* ── écoute simulée de la plage (boucle possible) ── */
+  let sim;
+  function stopSim() { clearInterval(sim); sim = null; }
+  function playRange(a) {
+    stopSim(); const s = a.end == null ? Math.max(0, a.start - 2) : a.start, e = a.end == null ? Math.min(T, a.start + 2) : a.end;
+    scr.value = s; scr.dispatchEvent(new Event('input'));
+    sim = setInterval(() => {
+      let v = +scr.value + 0.08;
+      if (v >= e) { RV.listened[a.id] = true; if (RV.loop) v = s; else { stopSim(); renderSig(); return; } renderSig(); }
+      scr.value = v; scr.dispatchEvent(new Event('input'));
+    }, 80);
+  }
+
+  /* ── rendu : barre de marquage ── */
+  function renderMarkbar() {
+    const m = RV.mark, lock = !RV.tester;
+    const b = $('#mb-mark'); b.innerHTML = `${ico('flag')}${m ? 'Marquer la fin' : 'Marquer le début'} <kbd>M</kbd>`; b.disabled = false; b.setAttribute('aria-disabled', String(lock));
+    $('#dock-mark').setAttribute('aria-label', m ? 'Marquer la fin du signalement' : 'Marquer le début d’un signalement');
+    $('#dock-mark').dataset.state = m ? 'end' : 'start';
+    $('#mb-cancel').hidden = !m;
+    const tr = $('#mb-trace'); tr.setAttribute('aria-pressed', String(RV.trace));
+    $('#mb-status').innerHTML = lock ? 'Indique d’abord qui teste, dans le panneau Revue humaine.'
+      : m ? `Début posé à <b>${fmt1(m.start)}</b> — appuie pour poser la fin.`
+      : RV.trace ? 'Glisse sur l’onde pour tracer une plage, touche pour un point.'
+      : 'Appuie à la position de lecture, ou trace directement sur l’onde.';
+    $('#wave-track').classList.toggle('tracing', RV.trace);
+    $('#trace-hint').hidden = !RV.trace;
+  }
+
+  /* ── rendu : onglet Signaler ── */
+  function ctxLine(a) {
+    const i = I.find(x => a.start >= x.t[0] && a.start < x.t[1]); if (!i) return 'Aucun intervalle du moteur ici.';
+    const what = i.k === 'verse' ? (i.s === 'uncertain' ? 'Identification ambiguë' : (i.basmala ? 'Basmala' : i.ref)) + ' · ' + stLabel(i) : i.k === 'formula' ? 'Formule ' + i.title : 'Abstention';
+    return `Sur cette plage, le moteur affiche <b>${esc(what)}</b>.`;
+  }
+  function renderSig() {
+    const a = draftObj(), m = RV.mark, lock = !RV.tester, done = RV.done ? annot(RV.done) : null;
+    const tags = a?.tags.length || a?.comment.trim();
+    const steps = [['Délimiter', !!a || !!done], ['Écouter', !!a && RV.listened[a.id] || !!done], ['Décrire', !!done]];
+    const curStep = steps.findIndex(s => !s[1]);
+    $('#steps').innerHTML = steps.map((s, i) => `<li data-s="${s[1] ? 'done' : i === curStep ? 'current' : 'todo'}"><span data-n="${i + 1}">${s[0]}</span></li>`).join('');
+    // 1 — Délimiter
+    let s1;
+    if (a) s1 = `<h3><span class="n">1</span>Plage à signaler</h3><div class="range-chip">${ico('flag')}<span class="mono">${fmt1(a.start)}${a.end == null ? '' : ' → ' + fmt1(a.end)}</span><span class="len">${a.end == null ? 'point' : fr1(a.end - a.start) + ' s'}</span></div>
+      <p class="ctx">${ico('info')}<span>${ctxLine(a)}</span></p>
+      <div class="btnrow"><button class="btn btn--ghost btn--sm" data-act="restart" style="justify-content:flex-start;padding-left:0">Tout recommencer</button></div>`;
+    else if (done) s1 = `<h3><span class="n">✓</span>Signalement enregistré</h3><div class="range-chip"><span class="sw s-human"><i></i></span><span class="mono">${fmt1(done.start)}${done.end == null ? '' : ' → ' + fmt1(done.end)}</span><span class="len">${esc(done.tester)}</span></div>
+      <div class="btnrow"><button class="btn btn--primary" data-act="mark">${ico('flag')}Signaler autre chose <kbd>M</kbd></button><button class="btn btn--secondary" data-act="tab-list">Voir la liste</button></div>`;
+    else if (m) s1 = `<h3><span class="n">1</span>Délimiter</h3><div class="banner"><span>Début posé à <b>${fmt1(m.start)}</b></span><small>Avance l’écoute jusqu’à la fin du problème, puis appuie pour poser la fin.</small><small>Longueur provisoire : <b>${fr1(Math.max(0, cur() - m.start))} s</b></small></div>
+      <div class="btnrow"><button class="btn btn--primary btn--lg" data-act="mark">${ico('flag')}Marquer la fin <kbd>M</kbd></button><button class="btn btn--ghost btn--lg" data-act="cancel" style="flex:none">Annuler</button></div>`;
+    else s1 = `<h3><span class="n">1</span>Où est le problème ?</h3>
+      <div class="btnrow" style="flex-direction:column"><button class="btn btn--primary btn--lg" data-act="mark" ${lock ? 'aria-disabled="true"' : ''}>${ico('flag')}Marquer le début <kbd>M</kbd></button><button class="btn btn--secondary" data-act="point" ${lock ? 'aria-disabled="true"' : ''}>Signaler un point ici <kbd>P</kbd></button></div>
+      <p class="hint">${lock ? 'Indique d’abord qui teste (ci-dessus).' : 'Écoute, appuie quand le problème commence, puis une seconde fois quand il finit. Ou trace-le directement sur la forme d’onde : « Tracer sur l’onde », puis glisse pour une plage, touche pour un point.'}</p>`;
+    // 2 — Écouter
+    let s2 = '';
+    if (a) {
+      const heard = RV.listened[a.id];
+      s2 = `<h3><span class="n">2</span>Écouter et affiner</h3>
+        <div class="nudge"><div class="field"><span>Début</span><div class="ctl"><button class="btn btn--secondary" data-act="nudge" data-edge="start" data-d="-0.1" aria-label="Début 0,1 s plus tôt">−</button><input class="input" value="${fmt1(a.start)}" aria-label="Début de la plage" readonly><button class="btn btn--secondary" data-act="nudge" data-edge="start" data-d="0.1" aria-label="Début 0,1 s plus tard">+</button></div></div><button class="btn btn--ghost btn--icon" data-act="snap" data-edge="start" aria-label="Caler le début sur la lecture" title="Caler sur la lecture"><svg class="i"><use href="#i-target"/></svg></button></div>
+        ${a.end == null ? '' : `<div class="nudge"><div class="field"><span>Fin</span><div class="ctl"><button class="btn btn--secondary" data-act="nudge" data-edge="end" data-d="-0.1" aria-label="Fin 0,1 s plus tôt">−</button><input class="input" value="${fmt1(a.end)}" aria-label="Fin de la plage" readonly><button class="btn btn--secondary" data-act="nudge" data-edge="end" data-d="0.1" aria-label="Fin 0,1 s plus tard">+</button></div></div><button class="btn btn--ghost btn--icon" data-act="snap" data-edge="end" aria-label="Caler la fin sur la lecture" title="Caler sur la lecture"><svg class="i"><use href="#i-target"/></svg></button></div>`}
+        <div class="listen-row"><button class="btn btn--secondary" data-act="listen">${ico('play', 'fill')} ${a.end == null ? 'Écouter autour du point' : 'Écouter la plage'}</button>
+          <button class="switch" role="switch" aria-checked="${RV.loop}" data-act="loop"><i></i>En boucle <kbd>L</kbd></button>
+          <span class="ok">${heard ? ico('check') + ' Écoutée' : 'Pas encore écoutée'}</span></div>
+        <p class="hint" style="font-size:var(--fs-xs)">Tu peux aussi déplacer les poignées sur la forme d’onde (flèches du clavier : 0,1 s, avec Maj : 1 s).</p>`;
+    }
+    // 3 — Décrire
+    let s3 = '';
+    if (a) {
+      const fams = REVIEW_PRESETS.map((f, fi) => {
+        const n = f.items.filter(([id]) => a.tags.includes(id)).length;
+        return `<details class="fam" ${fi < 2 || n ? 'open' : ''}><summary>${esc(f.label)}${n ? `<span class="sel-n" aria-label="${n} choisie${n > 1 ? 's' : ''}">${n}</span>` : ''}</summary>${f.hint ? `<p class="fh">${esc(f.hint)}</p>` : ''}<div class="pchips" role="group" aria-label="${esc(f.label)}">${f.items.map(([id, l]) => `<button class="pchip" aria-pressed="${a.tags.includes(id)}" data-act="tag" data-tag="${id}">${esc(l)}</button>`).join('')}</div></details>`;
+      }).join('');
+      const other = a.tester !== RV.tester ? `<div class="banner"><small>Signalement de <b style="font-family:inherit">${esc(a.tester)}</b> : tu le modifies en tant que <b style="font-family:inherit">${esc(RV.tester)}</b>. Son nom reste sur le signalement.</small></div>` : '';
+      s3 = `<h3><span class="n">3</span>Décrire le souci</h3>${other}
+        <div><p class="hint" style="margin-bottom:4px">Choisis une ou plusieurs puces, ou écris un commentaire.</p></div>
+        <div class="fams">${fams}</div>
+        <label class="field"><span>Verset attendu <span class="opt">· facultatif</span></span><input class="input mono" data-f="expected" value="${esc(a.expected)}" placeholder="ex. 2:256" inputmode="text" maxlength="7" aria-describedby="exp-help"><span class="opt" id="exp-help" style="font-weight:400;font-size:var(--fs-xs)">Sourate:verset, par exemple 2:255.</span></label>
+        <label class="field"><span>Commentaire <span class="opt">· ${a.tags.length ? 'facultatif' : 'obligatoire sans puce'}</span></span><textarea class="input" data-f="comment" maxlength="3000" placeholder="Qu’as-tu entendu ? Que faut-il corriger ?">${esc(a.comment)}</textarea></label>
+        <div class="btnrow" style="flex-direction:column"><button class="btn btn--primary btn--lg" data-act="confirm" ${tags ? '' : 'aria-disabled="true"'}>${a.status === 'confirmed' ? 'Enregistrer les modifications' : 'Confirmer le signalement'} <kbd>Ctrl ↵</kbd></button>
+        <div class="row" style="align-items:center"><button class="btn btn--ghost" data-act="keep" style="justify-content:flex-start">Garder en brouillon</button><button class="btn btn--ghost" data-act="del" style="color:var(--danger)">Supprimer</button></div></div>
+        <div class="savebar" id="savebar"></div>`;
+    }
+    $('#sig-body').innerHTML = `<section class="rcard ${lock && !a ? 'is-locked' : ''}">${s1}</section>${a ? `<section class="rcard">${s2}</section><section class="rcard">${s3}</section>` : ''}`;
+    paintSave();
+  }
+
+  /* ── rendu : onglet Signalements ── */
+  function renderList() {
+    const all = RV.annots, list = visible().sort((x, y) => x.start - y.start);
+    $('#cnt').textContent = all.length;
+    const testers = [...new Set(all.map(a => a.tester))];
+    $('#f-tester').innerHTML = `<option value="all">Tous les testeurs</option>` + testers.map(t => `<option ${RV.fTester === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+    $$('#f-state .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.state === RV.fState)));
+    $('#alist').innerHTML = list.length ? list.map(a => `<li class="aitem" data-id="${a.id}" data-sel="${RV.sel === a.id}"><button class="aitem-main" data-act="jump" data-id="${a.id}" aria-label="Aller à ${fmt1(a.start)}">
+      <span class="ai-top"><span class="sw s-human ${a.status === 'draft' ? 'draft' : ''}"><i></i></span><span class="mono">${fmt1(a.start)}${a.end == null ? '' : ' – ' + fmt1(a.end)}</span><span class="badge ${a.status === 'draft' ? 'badge--outline' : ''}">${a.status === 'draft' ? 'Brouillon' : 'Confirmé'}</span></span>
+      <span class="ai-tags">${a.tags.length ? esc(PRESET_LABEL[a.tags[0]]) + (a.tags.length > 1 ? ` <span class="muted">+ ${a.tags.length - 1}</span>` : '') : '<span class="muted">Commentaire seul</span>'}</span>
+      <span class="ai-meta">${esc(a.tester)} · ${ago(a)}${a.comment ? ' · ' + esc(a.comment) : ''}</span></button>
+      <div class="ai-acts"><button class="btn btn--ghost btn--icon" data-act="listen-id" data-id="${a.id}" aria-label="Écouter ce signalement">${ico('play', 'fill')}</button><button class="btn btn--ghost btn--icon" data-act="edit" data-id="${a.id}" aria-label="Modifier ce signalement">${ico('edit')}</button></div></li>`).join('')
+      : `<li class="empty-list">${all.length ? 'Aucun signalement ne correspond à ce filtre.' : 'Aucun signalement pour l’instant. Ils apparaîtront ici, sur la forme d’onde et sur la piste Revue.'}</li>`;
+  }
+
+  /* ── rendu : forme d'onde + piste Revue ── */
+  function renderWave() {
+    const layer = $('#rv-layer'), lane = $('#lane-rev'), list = visible(); let h = '', l = '';
+    list.forEach(a => {
+      const pt = a.end == null, sel = RV.sel === a.id, edit = RV.draft === a.id;
+      const cls = `rv-region ${a.status} ${pt ? 'pt' : ''} ${sel ? 'sel' : ''}`;
+      const w = pt ? '' : `;--w:${pct(a.end - a.start)}`;
+      h += `<div class="${cls}" style="--l:${pct(a.start)}${w}" data-id="${a.id}"><button class="rv-hit" data-act="jump" data-id="${a.id}" tabindex="-1" aria-label="Signalement ${fmt1(a.start)}"></button>${sel && !edit ? `<span class="rv-label">${esc(a.tester)}</span>` : ''}${edit ? `<span class="rv-h" data-edge="start" role="slider" tabindex="0" aria-label="Début de la plage" aria-valuemin="0" aria-valuemax="${T}" aria-valuenow="${a.start}" aria-valuetext="${fmt1(a.start)}"><i></i></span>${pt ? '' : `<span class="rv-h" data-edge="end" role="slider" tabindex="0" aria-label="Fin de la plage" aria-valuemin="0" aria-valuemax="${T}" aria-valuenow="${a.end}" aria-valuetext="${fmt1(a.end)}"><i></i></span>`}` : ''}</div>`;
+      l += `<button class="human ${a.status === 'draft' ? 'draft' : ''} ${pt ? 'pt' : ''} ${sel ? 'sel' : ''}" style="--l:${pct(a.start)}${w}" data-act="jump" data-id="${a.id}" title="${esc(a.tester)} · ${fmt1(a.start)} · ${a.status === 'draft' ? 'brouillon' : 'confirmé'}" aria-label="Signalement de ${esc(a.tester)} à ${fmt1(a.start)}"></button>`;
+    });
+    h += `<div class="rv-region live" id="rv-live" hidden></div>`;
+    layer.innerHTML = h; lane.innerHTML = l; paintLive();
+  }
+  function paintLive() {
+    const el = $('#rv-live'); if (!el) return;
+    if (RV.mark) { const e = Math.max(cur(), RV.mark.start); el.hidden = false; el.style.setProperty('--l', pct(RV.mark.start)); el.style.setProperty('--w', pct(e - RV.mark.start)); el.innerHTML = `<span class="rv-label">Début ${fmt1(RV.mark.start)}</span>`; }
+    else if (!g) el.hidden = true;
+  }
+  function renderAll() { renderTester(); renderMarkbar(); renderSig(); renderList(); renderWave(); }
+
+  /* ── tracer directement sur la forme d'onde ── */
+  const wt = $('#wave-track'); let g = null;
+  const tOf = e => { const r = wt.getBoundingClientRect(); return Math.max(0, Math.min(T, (e.clientX - r.left) / r.width * T)); };
+  wt.addEventListener('pointerdown', e => {
+    const hd = e.target.closest('.rv-h');
+    if (hd) { const a = draftObj(); if (!a) return; e.preventDefault(); hd.setPointerCapture(e.pointerId); g = { handle: hd.dataset.edge, a }; return; }
+    if (!(RV.trace || e.shiftKey)) return;
+    if (needTester()) return;
+    e.preventDefault(); wt.setPointerCapture(e.pointerId); g = { x0: e.clientX, t0: tOf(e), moved: false };
+  });
+  wt.addEventListener('pointermove', e => {
+    if (!g) return; const t = tOf(e);
+    if (g.handle) { const a = g.a; a._edge = g.handle; if (g.handle === 'start') setRange(a, Math.min(t, a.end ?? t), a.end); else setRange(a, a.start, Math.max(t, a.start)); renderWave(); return; }
+    if (Math.abs(e.clientX - g.x0) > 6) g.moved = true;
+    if (g.moved) { const a = Math.min(g.t0, t), b = Math.max(g.t0, t), el = $('#rv-live'); el.hidden = false; el.style.setProperty('--l', pct(a)); el.style.setProperty('--w', pct(b - a)); el.innerHTML = `<span class="rv-label">${fmt1(a)} → ${fmt1(b)}</span>`; }
+  });
+  wt.addEventListener('pointerup', e => {
+    if (!g) return; const k = g; g = null;
+    if (k.handle) { renderSig(); renderList(); return; }
+    const t = tOf(e), a = Math.min(k.t0, t), b = Math.max(k.t0, t);
+    $('#rv-live').hidden = true;
+    scr.value = a; scr.dispatchEvent(new Event('input'));
+    if (!k.moved || b - a < 0.2) newDraft(+k.t0.toFixed(1), null); else newDraft(+a.toFixed(1), +b.toFixed(1));
+  });
+  wt.addEventListener('keydown', e => {
+    const hd = e.target.closest('.rv-h'); if (!hd || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    e.preventDefault(); const a = draftObj(), d = (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 0.1); a._edge = hd.dataset.edge;
+    if (hd.dataset.edge === 'start') setRange(a, a.start + d, a.end); else setRange(a, a.start, a.end + d);
+    renderAll(); $(`.rv-h[data-edge="${hd.dataset.edge}"]`)?.focus();
+  });
+  $('#mb-trace').addEventListener('click', () => { RV.trace = !RV.trace; renderMarkbar(); say(RV.trace ? 'Mode tracé activé' : 'Mode tracé désactivé'); });
+  $('#mb-mark').addEventListener('click', markPress);
+  $('#dock-mark').addEventListener('click', markPress);
+  $('#mb-cancel').addEventListener('click', cancelMark);
+  scr.addEventListener('input', () => { paintLive(); if (RV.mark) { const b = $('#sig-body .banner b:last-of-type'); if (b) b.textContent = fr1(Math.max(0, cur() - RV.mark.start)) + ' s'; } });
+
+  /* ── délégation des clics du panneau ── */
+  const rp = $('#panel-right');
+  rp.addEventListener('submit', e => { if (e.target.id === 'tester-form') { e.preventDefault(); setTester($('#tester-input').value); } });
+  rp.addEventListener('input', e => {
+    const f = e.target.dataset.f, a = draftObj(); if (!f || !a) return;
+    a[f] = e.target.value; a.ts = a.status === 'draft' ? a.ts : Date.now(); touchSave();
+    if (f === 'comment') { const b = $('[data-act=confirm]'); if (b) b.setAttribute('aria-disabled', String(!(a.tags.length || a.comment.trim()))); }
+  });
+  rp.addEventListener('change', e => { if (e.target.id === 'f-tester') { RV.fTester = e.target.value; renderList(); renderWave(); } });
+  rp.addEventListener('click', e => {
+    const t = e.target.closest('[data-act],[data-tester],#tester-change,#tester-cancel,#f-state .chip'); if (!t) return;
+    if (t.dataset.tester) return setTester(t.dataset.tester);
+    if (t.id === 'tester-change') { RV.changing = true; renderTester(); return $('#tester-input').focus(); }
+    if (t.id === 'tester-cancel') { RV.changing = false; renderTester(); return; }
+    if (t.classList.contains('chip') && t.dataset.state) { RV.fState = t.dataset.state; renderList(); renderWave(); return; }
+    const a = draftObj(), act = t.dataset.act;
+    switch (act) {
+      case 'mark': markPress(); break;
+      case 'point': pointPress(); break;
+      case 'cancel': cancelMark(); break;
+      case 'restart': if (a) removeAnnot(a.id); break;
+      case 'tag': { const i = a.tags.indexOf(t.dataset.tag); i < 0 ? a.tags.push(t.dataset.tag) : a.tags.splice(i, 1); touchSave(); renderSig(); renderList(); break; }
+      case 'nudge': a._edge = t.dataset.edge; if (t.dataset.edge === 'start') setRange(a, a.start + +t.dataset.d, a.end); else setRange(a, a.start, a.end + +t.dataset.d); renderAll(); break;
+      case 'snap': a._edge = t.dataset.edge; if (t.dataset.edge === 'start') setRange(a, cur(), a.end); else setRange(a, a.start, cur()); renderAll(); break;
+      case 'listen': playRange(a); break;
+      case 'loop': RV.loop = !RV.loop; renderSig(); break;
+      case 'confirm': if (t.getAttribute('aria-disabled') === 'true') { toast('Choisis au moins une puce ou écris un commentaire.'); } else confirmDraft(); break;
+      case 'keep': dropEmptyDraft(); stopSim(); renderAll(); toast('Brouillon gardé : retrouve-le dans Signalements.'); break;
+      case 'del': removeAnnot(a.id); break;
+      case 'jump': jump(t.dataset.id, false); break;
+      case 'edit': jump(t.dataset.id, true); break;
+      case 'listen-id': { const x = annot(t.dataset.id); RV.sel = x.id; renderAll(); playRange(x); break; }
+      case 'tab-list': setTab('list'); break;
+      case 'retry-save': touchSave(); break;
+    }
+  });
+  /* clic sur une plage ou un losange de la forme d'onde / de la piste Revue */
+  document.addEventListener('click', e => { const t = e.target.closest('#rv-layer [data-act=jump], #lane-rev [data-act=jump]'); if (t) { jump(t.dataset.id, false); setTab('list'); } });
+
+  /* ── raccourcis clavier ── */
+  document.addEventListener('keydown', e => {
+    const tg = e.target, typing = tg.matches?.('input,textarea,select,[contenteditable]');
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { if (draftObj()) { e.preventDefault(); confirmDraft(); } return; }
+    if (e.ctrlKey || e.metaKey || e.altKey || typing) return;
+    if (e.key === 'Escape') { if (RV.mark) cancelMark(); else if (RV.trace) { RV.trace = false; renderMarkbar(); } return; }
+    if ($('#sw-keys').getAttribute('aria-checked') !== 'true') return;
+    const k = e.key.toLowerCase();
+    if (k === 'm') { e.preventDefault(); markPress(); }
+    else if (k === 'p') { e.preventDefault(); pointPress(); }
+    else if (k === 'l' && draftObj()) { RV.loop = !RV.loop; renderSig(); }
+    else if (k === ' ' && !tg.closest?.('button,[role=tab],summary')) { e.preventDefault(); $('#play').click(); }
+    else if (e.key === 'Escape') { if (RV.mark) cancelMark(); else if (RV.trace) { RV.trace = false; renderMarkbar(); } }
+  });
+
+  setTab(hash.tab || 'sig');
+  renderAll();
+  /* états de démonstration pour les captures : #rev=start | draft | tags | done  */
+  if (hash.rev === 'start') { scr.value = 104.6; scr.dispatchEvent(new Event('input')); RV.mark = { start: 101.2 }; renderAll(); paintLive(); }
+  if (hash.rev === 'draft' || hash.rev === 'tags' || hash.rev === 'done') {
+    newDraft(101.2, 106.4); const a = draftObj(); a.expected = '2:256'; RV.listened[a.id] = true;
+    if (hash.rev !== 'draft') { a.tags = ['missing_verse', 'start_late']; a.comment = 'Le lecteur enchaîne sur 2:256, le moteur ne le voit pas.'; }
+    if (hash.rev === 'done') confirmDraft();
+    renderAll(); if (hash.rev === 'tags') setTimeout(() => $('#sig-body .rcard:nth-of-type(3)')?.scrollIntoView({ block: 'start' }), 300);
+  }
+  if (hash.trace) { RV.trace = true; renderMarkbar(); }
+  if (hash.listsel) { RV.sel = hash.listsel; renderAll(); }
+
+  /* ── Démarrage ── */
+  initPanels(); updateDot();
+  if (hash.rev && hash.rev !== 'start' && !wide.matches) panel('right', true, false);
+  if (hash.view) view(hash.view);
+  if (hash.sel) render(+hash.sel);
+  if (hash.scroll) setTimeout(() => document.getElementById(hash.scroll)?.scrollIntoView({ block: 'start' }), 400);
+})();
+</script>
+<script src="phase2.js"></script>
+<script src="index2.js"></script>
+</body>
+</html>
