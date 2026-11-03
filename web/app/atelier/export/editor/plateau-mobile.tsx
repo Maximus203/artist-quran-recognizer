@@ -373,6 +373,14 @@ export function PlateauEditor(editor: EditorProps) {
         )}
       </div>
 
+      <p
+        className="sr"
+        role="status"
+        aria-live="polite"
+        data-testid="editor-status"
+      >
+        {controller.status}
+      </p>
       <PassagesDialog
         open={passagesOpen}
         onClose={() => setPassagesOpen(false)}

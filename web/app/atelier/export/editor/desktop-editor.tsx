@@ -156,6 +156,14 @@ export function DesktopEditor(editor: EditorProps) {
           </div>
         </aside>
       </div>
+      <p
+        className="sr"
+        role="status"
+        aria-live="polite"
+        data-testid="editor-status"
+      >
+        {controller.status}
+      </p>
       <PassagesDialog
         open={passagesOpen}
         onClose={() => setPassagesOpen(false)}

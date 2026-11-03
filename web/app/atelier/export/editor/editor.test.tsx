@@ -371,6 +371,8 @@ describe("ExportEditor (le contrat d'intégration)", () => {
     for (const tool of ["format", "fond", "passages", "avance"])
       expect(html).toContain(`data-testid="tool-${tool}"`);
     expect(html).toContain('data-testid="editor-ready"');
+    // La région qui annonce « Traduction masquée. » aux lecteurs d'écran.
+    expect(html).toContain('data-testid="editor-status"');
     expect(html).toContain("Récitation du vendredi");
   });
 
