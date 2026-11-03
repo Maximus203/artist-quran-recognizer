@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — L'écriture arabe se retire de la vidéo exportée
+Étiquettes : utilisateur, technique
+PR : #194
+
+**Ce qui change.** Dans l'export vidéo, un interrupteur « Afficher l’écriture arabe » s'ajoute à « Afficher la traduction ». Une vidéo peut ainsi ne montrer que la référence et la traduction en français. Les deux écritures ne peuvent pas être coupées ensemble. L'API et l'outil MCP `export_video` acceptent `show_arabic` (défaut : oui) ; `show_arabic` et `show_translation` à `false` sont refusés.
+
+**Pourquoi / décision.** Demande du mainteneur : pouvoir exporter une vidéo en français seul, sans écriture arabe. Le texte arabe reste celui du corpus (I1) ; la traduction est rendue sans modification (I2).
+
 ## 2026-11-03 — Playlist : la liste des audios passe à côté du lecteur
 Étiquettes : utilisateur
 PR : #192
