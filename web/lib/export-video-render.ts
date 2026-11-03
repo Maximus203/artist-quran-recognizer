@@ -35,7 +35,12 @@ import {
   frameCountFor,
   type FrameColors,
 } from "./export-video-frames";
-import { resolveOrientation, type VideoPrefs } from "./export-video-prefs";
+import {
+  layoutFor,
+  resolveOrientation,
+  type VideoPrefs,
+} from "./export-video-prefs";
+import { backgroundVideoTimeAt } from "./export-video-vtime";
 import {
   chooseBackground,
   findBackground,
@@ -99,6 +104,8 @@ export type RenderVideoInputs = {
   sessionId: string;
   prefs: VideoPrefs;
   bgImage: File | null;
+  /** Vidéo de fond choisie (muette) : le fichier reste sur l'appareil. Utilisée quand le fond choisi est « ma vidéo ». */
+  bgVideo?: File | null;
   /** Nom du fichier téléchargé (avec .mp4) ; sinon celui de l'audio. */
   fileName?: string;
   /** Parties à exporter (une vidéo chacune, nom facultatif) ; absent = tout l'audio, une seule vidéo. */
@@ -133,10 +140,12 @@ async function sourceVideoSize(
   background: LoadedBackground,
   sessionId: string,
 ): Promise<{ width: number; height: number } | null> {
-  const video = background.video ?? (await loadSourceVideo(sessionId));
+  // La vidéo de fond choisie n'est pas la vidéo d'origine : on lit toujours les dimensions de celle-ci.
+  const own = background.video && !background.clip ? background.video : null;
+  const video = own ?? (await loadSourceVideo(sessionId));
   if (!video) return null;
   const size = { width: video.videoWidth, height: video.videoHeight };
-  if (!background.video) {
+  if (!own) {
     video.removeAttribute("src");
     video.load();
   }
@@ -212,12 +221,15 @@ export async function renderSessionVideo(
   // Fond : image téléversée, sinon choix mémorisé, sinon vidéo d'origine / dégradé par défaut.
   onProgress("Préparation du fond…");
   const isVideo = isVideoExtension(detail.session.extension);
+  const bgVideo = inputs.bgVideo ?? null;
   const choice = chooseBackground(prefs.background, {
     hasUpload: bgImage !== null,
+    hasVideoUpload: bgVideo !== null,
     isVideo,
   });
   const background = await loadBackground(choice, {
     upload: bgImage,
+    clip: bgVideo,
     sessionId,
     fallback: findBackground(DEFAULT_BACKGROUND_ID) as GradientBackground,
   });
@@ -269,9 +281,10 @@ export async function renderSessionVideo(
       const job = newVideoJob();
       // Ce qui fait la vidéo : contenu affiché, réglages, plage, taille, cadence, fond importé.
       const key = await videoKey({
-        v: 1,
+        v: 2,
         cards,
-        prefs,
+        // Seule la mise en page de CETTE forme de cadre compte : changer celle d'un autre format ne refait rien.
+        prefs: { ...prefs, layouts: layoutFor(prefs, width, height) },
         width,
         height,
         fps,
@@ -280,6 +293,10 @@ export async function renderSessionVideo(
         upload: bgImage
           ? [bgImage.name, bgImage.size, bgImage.lastModified]
           : null,
+        clip:
+          choice.kind === "video" && bgVideo
+            ? [bgVideo.name, bgVideo.size, bgVideo.lastModified]
+            : null,
       });
       const same =
         inputs.reuse === false
@@ -315,8 +332,18 @@ export async function renderSessionVideo(
           frameCount,
           beforeFrame: seek
             ? async (index) => {
+                // Vidéo d'origine : son temps est celui de la récitation. Vidéo de fond choisie : `vtime`
+                // la cale sur CETTE vidéo exportée (boucle, portion, ralenti…), muette.
                 await seek(
-                  Math.min(range.start + index / fps, duration - 0.001),
+                  backgroundVideoTimeAt({
+                    clip: background.clip,
+                    t: Math.min(range.start + index / fps, duration - 0.001),
+                    rangeStart: range.start,
+                    rangeLength: length,
+                    videoDuration: background.video?.duration ?? 0,
+                    offset: prefs.backgroundVideo.offset,
+                    mode: prefs.backgroundVideo.mode,
+                  }),
                 );
               }
             : undefined,

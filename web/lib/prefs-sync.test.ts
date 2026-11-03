@@ -10,6 +10,33 @@ import {
   type SyncStatus,
 } from "./prefs-sync";
 
+describe("cache local d'avant le modèle de mise en page de la vidéo", () => {
+  it("convertit les anciens réglages de la vidéo au lieu de jeter tout le cache", () => {
+    const legacy = {
+      orientation: "9:16",
+      arabicSize: 96,
+      translationSize: 40,
+      showTranslation: true,
+      bg: "#101418",
+    };
+    const raw = JSON.stringify({
+      v: 1,
+      user: 3,
+      prefs: { ...PREFERENCE_DEFAULTS, videoPrefs: legacy },
+      pending: { videoPrefs: legacy },
+    });
+    const cache = parseCache(raw, 3);
+    expect(cache).not.toBeNull();
+    expect(cache!.prefs.videoPrefs.orientation).toBe("9:16");
+    expect(cache!.prefs.videoPrefs.styles.arabic.size).toBeCloseTo(96 / 72, 3);
+    // Une modification en attente, elle aussi à l'ancien format, repart au nouveau format.
+    expect(cache!.pending.videoPrefs?.styles.translation.size).toBeCloseTo(
+      40 / 30,
+      3,
+    );
+  });
+});
+
 describe("mergePatch / applyPatch", () => {
   it("la modification la plus récente d'une clé gagne, les autres clés restent", () => {
     expect(

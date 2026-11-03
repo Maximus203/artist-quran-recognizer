@@ -58,4 +58,43 @@ describe("fonds de la vidéo", () => {
       chooseBackground("color", { hasUpload: false, isVideo: true }),
     ).toEqual({ kind: "color" });
   });
+
+  it("ma propre vidéo : prise quand elle est choisie ET que le fichier est là", () => {
+    expect(
+      chooseBackground("video", {
+        hasUpload: false,
+        hasVideoUpload: true,
+        isVideo: false,
+      }),
+    ).toEqual({ kind: "video" });
+  });
+
+  it("ma propre vidéo choisie mais fichier absent (page rechargée) : retombe sur le fond automatique", () => {
+    expect(
+      chooseBackground("video", { hasUpload: false, isVideo: false }),
+    ).toMatchObject({ kind: "preset", preset: { id: DEFAULT_BACKGROUND_ID } });
+    expect(
+      chooseBackground("video", { hasUpload: false, isVideo: true }),
+    ).toEqual({ kind: "source" });
+  });
+
+  it("un fichier vidéo présent ne compte que si « ma vidéo » est le fond choisi", () => {
+    expect(
+      chooseBackground("desert-dunes", {
+        hasUpload: false,
+        hasVideoUpload: true,
+        isVideo: false,
+      }),
+    ).toMatchObject({ kind: "preset", preset: { id: "desert-dunes" } });
+  });
+
+  it("ma vidéo choisie l'emporte sur une image restée en mémoire", () => {
+    expect(
+      chooseBackground("video", {
+        hasUpload: true,
+        hasVideoUpload: true,
+        isVideo: false,
+      }),
+    ).toEqual({ kind: "video" });
+  });
 });

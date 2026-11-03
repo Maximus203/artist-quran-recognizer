@@ -21,6 +21,7 @@ import {
   type FrameCard,
 } from "@/lib/export-video-frames";
 import { resolveOrientation, type VideoPrefs } from "@/lib/export-video-prefs";
+import { backgroundVideoTimeAt } from "@/lib/export-video-vtime";
 import type { ListeningPeaks } from "@/lib/listening";
 import type { Interval } from "@/lib/recognition";
 
@@ -57,12 +58,32 @@ export function worstCase(
   return { card: best, t };
 }
 
+/** L'instant de la vidéo à montrer : la vidéo d'origine suit la récitation, une vidéo de fond est calée par `vtime`. */
+function backgroundTime(
+  background: LoadedBackground,
+  prefs: VideoPrefs,
+  t: number,
+  duration: number,
+): number {
+  return backgroundVideoTimeAt({
+    clip: background.clip,
+    t,
+    rangeStart: 0,
+    rangeLength: duration,
+    videoDuration: background.video?.duration ?? 0,
+    offset: prefs.backgroundVideo.offset,
+    mode: prefs.backgroundVideo.mode,
+  });
+}
+
 type PreviewInputs = {
   sessionId: string;
   intervals: readonly Interval[] | null;
   peaks: ListeningPeaks | null;
   prefs: VideoPrefs;
   upload: File | null;
+  /** Vidéo de fond choisie (muette) ; utilisée quand le fond choisi est « ma vidéo ». */
+  clip?: File | null;
   isVideo: boolean;
   sourceSize: { width: number; height: number } | null;
   /** Instant montré (image fixe) : la position de la poignée ; absent = le verset le plus long. */
@@ -88,12 +109,14 @@ function previewSize(
 async function loadResources(inputs: PreviewInputs, sample: string) {
   const choice = chooseBackground(inputs.prefs.background, {
     hasUpload: inputs.upload !== null,
+    hasVideoUpload: !!inputs.clip,
     isVideo: inputs.isVideo,
   });
   const [fonts, background] = await Promise.all([
     loadFrameFonts(sample),
     loadBackground(choice, {
       upload: inputs.upload,
+      clip: inputs.clip ?? null,
       sessionId: inputs.sessionId,
       fallback: findBackground(DEFAULT_BACKGROUND_ID) as GradientBackground,
     }),
@@ -138,7 +161,11 @@ export function VideoPreview(inputs: PreviewInputs) {
       // L'accent se lit AVANT de se placer à t : la vidéo est lue à l'instant commun (ACCENT_SAMPLE_S).
       const colors = await videoColors(prefs.accent, background);
       if (cancelled) return;
-      if (background.video) await videoSeeker(background.video, VIDEO_FPS)(t);
+      if (background.video)
+        await videoSeeker(
+          background.video,
+          VIDEO_FPS,
+        )(backgroundTime(background, prefs, t, peaks.duration));
       if (cancelled) return;
       drawFrame(ctx, {
         width,
@@ -176,6 +203,7 @@ export function VideoPreview(inputs: PreviewInputs) {
     peaks,
     prefs,
     upload,
+    inputs.clip,
     isVideo,
     sourceSize,
     sessionId,
@@ -227,13 +255,24 @@ export function VideoPreview(inputs: PreviewInputs) {
       audio = new Audio(`/api/sessions/${sessionId}/audio`);
       audio.currentTime = start;
       if (background.video) {
-        background.video.currentTime = start;
+        background.video.currentTime = backgroundTime(
+          background,
+          prefs,
+          start,
+          peaks.duration,
+        );
         void background.video.play().catch(() => undefined);
       }
       await audio.play();
       const tick = () => {
         if (!audio || !ctx) return;
         const t = audio.currentTime;
+        // Une vidéo de fond suit `vtime` (boucle, portion…) : on la recale quand elle s'en écarte.
+        if (background?.clip && background.video) {
+          const want = backgroundTime(background, prefs, t, peaks.duration);
+          if (Math.abs(background.video.currentTime - want) > 0.3)
+            background.video.currentTime = want;
+        }
         drawFrame(ctx, {
           width,
           height,

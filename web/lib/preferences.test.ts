@@ -149,6 +149,59 @@ describe("préférences : fusion partielle", () => {
   });
 });
 
+describe("préférences : réglages de la vidéo enregistrés avant le modèle à blocs", () => {
+  const store = (value: unknown) =>
+    db
+      .prepare(
+        "INSERT INTO preferences (user_id, key, value, updated_at) VALUES (?, 'videoPrefs', ?, '2026-10-01T00:00:00.000Z')",
+      )
+      .run(userId, JSON.stringify(value));
+
+  it("un compte qui avait des réglages à plat les retrouve convertis, avec leur horodatage", () => {
+    store({
+      orientation: "9:16",
+      arabicSize: 120,
+      translationSize: 52,
+      showTranslation: false,
+      textPosition: 88,
+      fill: true,
+      showWave: true,
+      bg: "#223344",
+      background: "desert-dunes",
+    });
+    const view = readPreferences(db, userId);
+    const prefs = view.preferences.videoPrefs;
+    expect(prefs.orientation).toBe("9:16");
+    expect(prefs.showTranslation).toBe(false);
+    expect(prefs.styles.arabic.size).toBeCloseTo(120 / 72, 3);
+    expect(prefs.styles.translation.size).toBeCloseTo(52 / 30, 3);
+    expect(prefs.styles.arabic.fill).toBe(true);
+    expect(prefs.background).toBe("desert-dunes");
+    expect(view.updated_at.videoPrefs).toBe("2026-10-01T00:00:00.000Z");
+  });
+
+  it("une valeur abîmée dans le nouveau format ne fait pas perdre le reste", () => {
+    const custom = structuredClone(PREFERENCE_DEFAULTS.videoPrefs);
+    custom.orientation = "1:1";
+    custom.styles.translation.size = 1.5;
+    (custom.styles.arabic.panel as { kind: string }).kind = "verre";
+    store(custom);
+    const prefs = readPreferences(db, userId).preferences.videoPrefs;
+    expect(prefs.orientation).toBe("1:1");
+    expect(prefs.styles.translation.size).toBe(1.5);
+    expect(prefs.styles.arabic.panel.kind).toBe(
+      PREFERENCE_DEFAULTS.videoPrefs.styles.arabic.panel.kind,
+    );
+  });
+
+  it("un contenu qui n'est pas un objet retombe sur les défauts", () => {
+    store("pas des réglages");
+    expect(readPreferences(db, userId).preferences.videoPrefs).toEqual(
+      PREFERENCE_DEFAULTS.videoPrefs,
+    );
+  });
+});
+
 describe("préférences : schéma strict du corps", () => {
   const ok = (value: unknown) =>
     preferencesPatchSchema.safeParse(value).success;

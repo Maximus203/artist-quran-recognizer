@@ -247,14 +247,32 @@ au plus 40 par enregistrement) avec une clé de réutilisation calculée par le 
 (`?download=1`) ; `DELETE` les supprime et recompte l'espace. Un export identique récupère la vidéo existante au lieu
 de refaire le rendu (`web/app/atelier/export/video-library.tsx`).
 
-**Mise en page (`lib/export-video-layout.ts`, fonctions pures testées).** Le verset est découpé
-mot par mot (`layoutArabicWords`) et passe à la ligne tout seul ; la traduction aussi. Les tailles
-d'écriture (réglées pour un côté court de 1080 px) suivent le côté court de la vidéo, donc le
-portrait garde des écritures lisibles. Si un verset est trop long pour la zone libre, toutes les
-tailles sont réduites ensemble (jamais en dessous de 40 %) et le texte n'est **jamais coupé** :
-référence, arabe et traduction s'enchaînent sans chevauchement et restent au-dessus de l'onde
-(zone réservée : 22 % de la hauteur, 16 % en portrait). Sur fond photo ou vidéo, le texte est posé
-sur un support gris sombre aux bords adoucis (couches concentriques, sans coût par image).
+**Mise en page par blocs (ADR-0018 ; `lib/export-video-model.ts`, `export-video-layout.ts`,
+`export-video-panels.ts`, fonctions pures testées).** Quatre blocs — sourate et verset, arabe,
+traduction, onde — chacun dans SA boîte `{ x, y, w, h }` en fractions du cadre, une mise en page par
+forme de cadre (16:9, 9:16, 1:1 ; « comme la vidéo » suit la plus proche : `layoutKeyFor`). Le verset
+est découpé mot par mot (`layoutArabicWords`) et passe à la ligne tout seul dans la largeur de sa boîte ;
+la traduction aussi. Les tailles (réglées pour un côté court de 1080 px, **relatives** : 1 = taille par
+défaut) suivent le côté court de la vidéo. Un bloc trop long pour sa boîte est réduit **seul** jusqu'à
+tenir (jamais en dessous de 40 %), la plus grande taille qui tient est retrouvée, et le texte n'est
+**jamais coupé** : `layoutCard` rapporte le facteur (« réduit à 87 % ») et un débordement quand la
+zone est vraiment trop petite. Chaque texte a un style : taille, remplir la zone, place dans la boîte,
+fond **aucun** (ombre douce ou contour), **transparent** (voile aux bords adoucis, comme avant),
+**flou** ou **plein**, indépendants pour l'arabe et la traduction. Le **flou** est calculé en basse
+résolution depuis le décor (jamais en relisant le canevas) et mis en cache sur un décor fixe : mesures
+au journal des décisions. L'aperçu et le rendu final appellent la même `drawFrame`.
+
+**Aides à l'édition (`lib/export-video-edit.ts`, pures).** Déplacer et redimensionner une boîte avec
+aimant sur le centre et les marges (les repères actifs sont rendus), bornes du cadre, clavier (1 % ou
+5 %, Ctrl = zone), pixels d'écran ↔ fractions, taille par pas (≈ 6 %) et pincement : les éditeurs ne
+refont aucun de ces calculs.
+
+**Fond vidéo (`lib/export-video-vtime.ts`).** `vtime` cale une vidéo de fond sur la récitation de CHAQUE
+vidéo exportée : boucle, aller-retour, figé ou ralenti si elle est plus courte, portion à partir d'un
+départ (unique pour toutes les plages, borné pour chacune) si elle est plus longue. `describeFit` le
+dit en français (« plus courte : environ 2,5 fois »). La vidéo de fond est muette : le MP4 ne reprend
+que la copie d'écoute. Son fichier reste sur l'appareil : le rendu par le serveur ne la reçoit pas
+encore (voir ADR-0018).
 
 **Fonds (`lib/export-video-backgrounds.ts`).** Cinq dégradés dessinés à la volée et neuf photos
 libres Pexels embarquées (`web/public/backgrounds/`, crédits dans `CREDITS.md`) sont proposés avant
@@ -267,8 +285,12 @@ réel (la même fonction de dessin que l'export, sur le verset le plus long de l
 La police arabe est préchargée (`document.fonts`) : la marque U+06DA y est rendue
 comme dans le DOM. I1/I2 tenus : corpus source unique, traduction sans modification, et
 l'attribution QuranEnc n'est pas incrustée (choix du mainteneur). Réglages (format, tailles
-d'écriture, fond, traduction) enregistrés SUR LE COMPTE (préférence serveur `videoPrefs`, comme
-les réglages de sous-titres `exportOptions`) : chaque personne retrouve les siens, sur tout appareil. Encodage navigateur requis : WebCodecs
+d'écriture, fond, traduction, zones et fonds de texte) enregistrés SUR LE COMPTE (préférence serveur `videoPrefs`, comme
+les réglages de sous-titres `exportOptions`) : chaque personne retrouve les siens, sur tout appareil. Un compte qui avait
+des réglages d'avant le modèle à blocs les retrouve convertis à l'identique (`lib/export-video-prefs.ts`, `z.preprocess`) ;
+une valeur abîmée se récupère champ par champ à la lecture. L'export lancé depuis l'atelier est rendu sur le serveur par
+le JSON de « Même export par l'API » : il porte aussi `layouts`, `styles` et `show_ref` quand les options à plat ne
+suffisent pas. Encodage navigateur requis : WebCodecs
 H.264 (Chrome, Edge) ; sinon message explicite. Un export est un acte : rien n'est
 mémorisé, les segments et le MP4 temporaires sont supprimés dans tous les cas.
 

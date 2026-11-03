@@ -4,12 +4,14 @@
  * l'atelier), la traduction, l'onde jouée/non jouée — puis l'encode en H.264 (WebCodecs).
  * Le serveur ne fait plus que muxer (vidéo + copie d'écoute → MP4).
  *
- * La disposition du texte (retours à la ligne, tailles ajustées, pas de chevauchement) vit
- * dans `export-video-layout.ts` ; ici on ne fait que dessiner ce qu'elle a calculé.
+ * La disposition du texte (boîtes, retours à la ligne, tailles ajustées, pas de chevauchement) vit
+ * dans `export-video-layout.ts` ; le fond du texte (transparent, flou, plein) dans
+ * `export-video-panels.ts` ; ici on ne fait que dessiner ce qu'ils ont calculé.
  *
  * INVARIANTS : le texte vient du résultat (corpus, I1) ; la traduction est rendue sans
- * modification et SANS attribution incrustée (choix du mainteneur, 2026-10-27) ; les
- * temps de mots invalides se replient sur un passage entier jamais sur un mot deviné.
+ * modification et SANS attribution incrustée (choix du mainteneur, 2026-10-27 : `attribution`
+ * reste null ici, la mise en page sait pourtant la coller sous la traduction, I2) ; les temps de
+ * mots invalides se replient sur un passage entier jamais sur un mot deviné.
  */
 import {
   currentWordIndex,
@@ -21,14 +23,16 @@ import type { Interval } from "./recognition";
 import { barHeights, peakNorm } from "./waveform";
 import { videoCardInputs, type VideoCardInput } from "./export-video-cards";
 import type { ListeningPeaks } from "./listening";
-import type { VideoPrefs } from "./export-video-prefs";
+import { layoutFor, type VideoPrefs } from "./export-video-prefs";
+import { clampBox } from "./export-video-edit";
+import { layoutCard, type CardLayout, type Rect } from "./export-video-layout";
+import { sizeScale, type ExportLayout } from "./export-video-model";
 import {
-  layoutCard,
-  sizeScale,
-  waveZoneFraction,
-  type CardLayout,
-  type Rect,
-} from "./export-video-layout";
+  drawLegibleText,
+  paintPanel,
+  type Backdrop,
+  type PanelDeps,
+} from "./export-video-panels";
 import {
   paintGradientBackground,
   type GradientBackground,
@@ -103,26 +107,43 @@ export function playedBarCount(
 }
 
 export type WaveGeometry = {
+  /** Bord gauche de la zone de l'onde. */
+  zoneX: number;
   zoneY: number;
+  zoneW: number;
   zoneH: number;
   bars: number;
   pitch: number;
   barWidth: number;
 };
 
-export function waveBarGeometry(
-  width: number,
-  height: number,
-  zoneHeightPct = waveZoneFraction(width, height) * 100,
-): WaveGeometry {
-  const zoneH = Math.round((height * zoneHeightPct) / 100);
-  const bars = Math.max(1, Math.floor(width / BAR_PITCH));
+/** Barres de l'onde dans le rectangle `zone` (pixels) : celui de la boîte « onde » de la mise en page. */
+export function waveBarGeometry(zone: Rect): WaveGeometry {
+  const zoneH = Math.round(zone.height);
+  const bars = Math.max(1, Math.floor(zone.width / BAR_PITCH));
   return {
-    zoneY: height - zoneH,
+    zoneX: zone.x,
+    zoneY: Math.round(zone.y),
+    zoneW: zone.width,
     zoneH,
     bars,
-    pitch: width / bars,
+    pitch: zone.width / bars,
     barWidth: BAR_WIDTH,
+  };
+}
+
+/** La boîte de l'onde en pixels (ramenée dans le cadre). */
+export function waveRectOf(
+  layout: ExportLayout,
+  width: number,
+  height: number,
+): Rect {
+  const box = clampBox(layout.wave);
+  return {
+    x: box.x * width,
+    y: box.y * height,
+    width: box.w * width,
+    height: box.h * height,
   };
 }
 
@@ -150,32 +171,34 @@ export type FrameState = {
   cards: readonly FrameCard[];
   peaks: ListeningPeaks;
   colors: FrameColors;
-  prefs: Pick<
-    VideoPrefs,
-    "arabicSize" | "translationSize" | "fill" | "textPosition" | "showWave"
-  >;
+  /** Mises en page, styles et blocs affichés (la mise en page lue est celle de la forme du cadre). */
+  prefs: Pick<VideoPrefs, "layouts" | "styles" | "showWave" | "showRef">;
   /** Fond : image/vidéo (image courante), sinon dégradé, sinon couleur unie. */
   background: {
     color: string;
     image?: CanvasImageSource | null;
     gradient?: GradientBackground | null;
   };
-  /** Support de lisibilité derrière le texte (fond photo ou vidéo). */
+  /** Fond photo ou vidéo : un voile sombre est posé sous l'onde (lisibilité de l'onde). */
   scrim: boolean;
   measureContext: CanvasRenderingContext2D;
   /** Police du texte arabe (Mushaf). */
   fontFamily: string;
   /** Police de la référence et de la traduction (interface). */
   translationFontFamily: string;
+  /** Canevas de travail du flou ; absent = ceux du navigateur (injectés dans les tests). */
+  panelDeps?: Pick<PanelDeps, "scratch" | "fresh">;
 };
 
-/** Couvre le canvas avec la source (image ou vidéo), en rognant l'excédent. */
-function paintCover(
-  ctx: CanvasRenderingContext2D,
+/**
+ * Comment une source (image ou vidéo) couvre le cadre, en rognant l'excédent : son rectangle dans le
+ * cadre et sa taille propre.
+ */
+export function coverRect(
   source: CanvasImageSource,
   width: number,
   height: number,
-): void {
+): { dest: Rect; size: { width: number; height: number } } {
   const any = source as {
     videoWidth?: number;
     videoHeight?: number;
@@ -189,70 +212,82 @@ function paintCover(
   const scale = Math.max(width / sw, height / sh);
   const dw = sw * scale;
   const dh = sh * scale;
-  ctx.drawImage(source, (width - dw) / 2, (height - dh) / 2, dw, dh);
+  return {
+    dest: { x: (width - dw) / 2, y: (height - dh) / 2, width: dw, height: dh },
+    size: { width: sw, height: sh },
+  };
 }
 
-/** Rectangle arrondi à bords adoucis : couches concentriques de faible opacité. */
-function paintSoftPanel(
-  ctx: CanvasRenderingContext2D,
-  rect: Rect,
-  feather: number,
-): void {
-  const layers = 14;
-  ctx.save();
-  ctx.fillStyle = "rgba(6, 8, 12, 0.075)";
-  for (let i = 0; i < layers; i++) {
-    const inset = (i / layers) * feather * 2 - feather;
-    const radius = Math.max(2, feather * 1.4 - Math.max(0, inset) * 0.4);
-    ctx.beginPath();
-    ctx.roundRect(
-      rect.x + inset,
-      rect.y + inset,
-      Math.max(1, rect.width - inset * 2),
-      Math.max(1, rect.height - inset * 2),
-      radius,
-    );
-    ctx.fill();
-  }
-  ctx.restore();
-}
+/** Le décor bouge-t-il d'une image à l'autre ? Une vidéo, oui ; une photo, non. */
+const isLiveSource = (source: CanvasImageSource): boolean =>
+  "videoWidth" in (source as object);
 
 /** Voile sombre sous l'onde : l'onde reste lisible sur n'importe quelle image. */
-function paintWaveScrim(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-): void {
-  const zone = Math.round(height * waveZoneFraction(width, height));
-  const top = height - zone * 1.4;
-  const gradient = ctx.createLinearGradient(0, top, 0, height);
+function paintWaveScrim(ctx: CanvasRenderingContext2D, zone: Rect): void {
+  const bottom = zone.y + zone.height;
+  const top = bottom - zone.height * 1.4;
+  const gradient = ctx.createLinearGradient(0, top, 0, bottom);
   gradient.addColorStop(0, "rgba(6, 8, 12, 0)");
   gradient.addColorStop(1, "rgba(6, 8, 12, 0.6)");
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, top, width, zone * 1.4);
+  ctx.fillRect(zone.x, top, zone.width, zone.height * 1.4);
 }
+
+type LayoutKey = {
+  width: number;
+  height: number;
+  layout: ExportLayout;
+  styles: VideoPrefs["styles"];
+  showRef: boolean;
+  showWave: boolean;
+  fontFamily: string;
+  translationFontFamily: string;
+};
 
 const layoutMemo = new WeakMap<
   FrameCard,
-  { key: string; layout: CardLayout }
+  { key: LayoutKey; layout: CardLayout }
 >();
 
-/** Mise en page d'une carte (mémorisée : les tailles ne changent pas pendant le rendu). */
+const sameKey = (a: LayoutKey, b: LayoutKey): boolean =>
+  a.width === b.width &&
+  a.height === b.height &&
+  a.layout === b.layout &&
+  a.styles === b.styles &&
+  a.showRef === b.showRef &&
+  a.showWave === b.showWave &&
+  a.fontFamily === b.fontFamily &&
+  a.translationFontFamily === b.translationFontFamily;
+
+/**
+ * Mise en page d'une carte (mémorisée : elle ne change pas pendant le rendu). La mémoire compare les
+ * réglages par identité : un réglage modifié est un NOUVEL objet, jamais une mutation.
+ */
 export function cardLayoutFor(state: FrameState, card: FrameCard): CardLayout {
   const { width, height, prefs } = state;
-  const key = `${width}x${height}:${prefs.arabicSize}:${prefs.translationSize}:${prefs.fill}:${prefs.textPosition}:${prefs.showWave}:${state.fontFamily}`;
+  const key: LayoutKey = {
+    width,
+    height,
+    layout: layoutFor(prefs, width, height),
+    styles: prefs.styles,
+    showRef: prefs.showRef,
+    showWave: prefs.showWave,
+    fontFamily: state.fontFamily,
+    translationFontFamily: state.translationFontFamily,
+  };
   const known = layoutMemo.get(card);
-  if (known && known.key === key) return known.layout;
+  if (known && sameKey(known.key, key)) return known.layout;
   const measure = state.measureContext;
   const layout = layoutCard({
     width,
     height,
+    layout: key.layout,
+    styles: prefs.styles,
+    refLabel: card.card.refLabel,
     parts: layoutArabicWords(card.card.arabic).parts,
     translation: card.card.translation,
-    arabicSize: prefs.arabicSize,
-    translationSize: prefs.translationSize,
-    fill: prefs.fill,
-    position: prefs.textPosition / 100,
+    attribution: card.card.attribution,
+    showRef: prefs.showRef,
     showWave: prefs.showWave,
     measureArabic: (text, size) => {
       measure.font = `${size}px ${state.fontFamily}`;
@@ -260,6 +295,10 @@ export function cardLayoutFor(state: FrameState, card: FrameCard): CardLayout {
     },
     measureTranslation: (text, size) => {
       measure.font = `${size}px ${state.translationFontFamily}`;
+      return measure.measureText(text).width;
+    },
+    measureRef: (text, size) => {
+      measure.font = `600 ${size}px ${state.translationFontFamily}`;
       return measure.measureText(text).width;
     },
   });
@@ -272,14 +311,24 @@ export function drawFrame(
   ctx: CanvasRenderingContext2D,
   state: FrameState,
 ): void {
-  const { width, height, t, duration, peaks } = state;
+  const { width, height, t, duration, peaks, prefs } = state;
   const scale = sizeScale(width, height);
   ctx.clearRect(0, 0, width, height);
 
   // Fond.
   const bg = state.background;
+  // Le décor que les fonds « flou » doivent flouter : l'image ou la vidéo (un dégradé ou une couleur
+  // unie se passent de flou : le flou d'un décor lisse est le décor).
+  let backdrop: Backdrop | undefined;
   if (bg.image) {
-    paintCover(ctx, bg.image, width, height);
+    const { dest, size } = coverRect(bg.image, width, height);
+    ctx.drawImage(bg.image, dest.x, dest.y, dest.width, dest.height);
+    backdrop = {
+      source: bg.image,
+      dest,
+      size,
+      live: isLiveSource(bg.image),
+    };
   } else if (bg.gradient) {
     paintGradientBackground(ctx, bg.gradient, width, height);
   } else {
@@ -291,40 +340,97 @@ export function drawFrame(
   const active = activeCardAt(state.cards, t);
   if (active) {
     const layout = cardLayoutFor(state, active);
-    if (state.scrim) paintSoftPanel(ctx, layout.panel, 34 * scale);
+    const { ref, arabic, translation } = layout;
+    const styles = prefs.styles;
+
+    // Les fonds d'abord, puis les textes par-dessus.
+    const deps = { ...state.panelDeps, backdrop };
+    if (ref) paintPanel(ctx, ref.panel, styles.ref.panel, scale, deps);
+    if (arabic) paintPanel(ctx, arabic.panel, styles.arabic.panel, scale, deps);
+    if (translation)
+      paintPanel(ctx, translation.panel, styles.translation.panel, scale, deps);
+
     ctx.direction = "ltr";
     ctx.textBaseline = "middle";
-    ctx.textAlign = "center";
 
-    ctx.fillStyle = state.colors.accent;
-    ctx.font = `600 ${layout.refSize}px ${state.translationFontFamily}`;
-    ctx.fillText(active.card.refLabel, width / 2, layout.refY);
+    if (ref) {
+      ctx.textAlign = "center";
+      ctx.font = `600 ${ref.size}px ${state.translationFontFamily}`;
+      drawLegibleText(
+        ctx,
+        ref.text,
+        ref.centerX,
+        ref.y,
+        styles.ref.panel,
+        ref.size,
+        scale,
+        state.colors.accent,
+      );
+    }
 
-    const current = active.live ? currentWordIndex(active.live.times, t) : null;
-    ctx.font = `${layout.arabicSize}px ${state.fontFamily}`;
-    ctx.textAlign = "left";
-    for (const line of layout.arabicLines) {
-      for (const part of line.parts) {
-        ctx.fillStyle =
-          part.word !== null && part.word === current
-            ? state.colors.accent
-            : state.colors.text;
-        ctx.fillText(part.text, part.x, line.y);
+    if (arabic) {
+      const current = active.live
+        ? currentWordIndex(active.live.times, t)
+        : null;
+      ctx.font = `${arabic.size}px ${state.fontFamily}`;
+      ctx.textAlign = "left";
+      for (const line of arabic.lines) {
+        for (const part of line.parts) {
+          drawLegibleText(
+            ctx,
+            part.text,
+            part.x,
+            line.y,
+            styles.arabic.panel,
+            arabic.size,
+            scale,
+            part.word !== null && part.word === current
+              ? state.colors.accent
+              : state.colors.text,
+          );
+        }
       }
     }
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = state.colors.text;
-    ctx.font = `${layout.translationSize}px ${state.translationFontFamily}`;
-    for (const line of layout.translationLines)
-      ctx.fillText(line.text, width / 2, line.y);
+    if (translation) {
+      ctx.textAlign = "center";
+      ctx.font = `${translation.size}px ${state.translationFontFamily}`;
+      for (const line of translation.lines)
+        drawLegibleText(
+          ctx,
+          line.text,
+          translation.centerX,
+          line.y,
+          styles.translation.panel,
+          translation.size,
+          scale,
+          state.colors.text,
+        );
+      const attribution = translation.attribution;
+      if (attribution) {
+        ctx.font = `${attribution.size}px ${state.translationFontFamily}`;
+        attribution.lines.forEach((text, index) =>
+          drawLegibleText(
+            ctx,
+            text,
+            translation.centerX,
+            attribution.y + index * attribution.lineHeight,
+            styles.translation.panel,
+            attribution.size,
+            scale,
+            state.colors.text,
+          ),
+        );
+      }
+    }
   }
 
   // Onde : comme la timeline de l'atelier, une fenêtre qui défile avec la tête de lecture,
   // barres jouées en clair, à venir en sombre, tête de lecture en accent.
-  if (!state.prefs.showWave) return;
-  if (state.scrim) paintWaveScrim(ctx, width, height);
-  const geometry = waveBarGeometry(width, height);
+  if (!prefs.showWave) return;
+  const zone = waveRectOf(layoutFor(prefs, width, height), width, height);
+  if (state.scrim) paintWaveScrim(ctx, zone);
+  const geometry = waveBarGeometry(zone);
   const windowSec = Math.min(duration, WAVE_WINDOW_SECONDS);
   const t0 = Math.max(0, Math.min(duration - windowSec, t - windowSec / 2));
   const norm = peakNorm(peaks.peaks);
@@ -342,13 +448,18 @@ export function drawFrame(
   for (let i = 0; i < geometry.bars; i++) {
     const bar = Math.max(2 * scale, heights[i] * usableH);
     const x =
-      i * geometry.pitch + (geometry.pitch - geometry.barWidth * scale) / 2;
+      geometry.zoneX +
+      i * geometry.pitch +
+      (geometry.pitch - geometry.barWidth * scale) / 2;
     ctx.fillStyle = i < played ? state.colors.wavePlayed : state.colors.wave;
     ctx.beginPath();
     ctx.roundRect(x, middle - bar / 2, geometry.barWidth * scale, bar, 1.3);
     ctx.fill();
   }
-  const playheadX = windowSec > 0 ? ((t - t0) / windowSec) * width : 0;
+  const playheadX =
+    windowSec > 0
+      ? geometry.zoneX + ((t - t0) / windowSec) * geometry.zoneW
+      : 0;
   ctx.fillStyle = state.colors.accent;
   ctx.fillRect(
     playheadX - scale,

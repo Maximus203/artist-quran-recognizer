@@ -25,12 +25,42 @@ import {
   type SuggestOptions,
 } from "./export-video-suggest";
 import {
+  layoutsSchema,
+  stylesSchema,
+  TEXT_BASE_SIZE,
+} from "./export-video-model";
+import {
   accentSchema,
-  ARABIC_SIZE_PRESETS,
   DEFAULT_VIDEO_PREFS,
-  TRANSLATION_SIZE_PRESETS,
+  videoPrefsSchema,
   type VideoPrefs,
 } from "./export-video-prefs";
+
+/**
+ * Tailles nommées de l'API (« small » … « xlarge »), en px dans la vidéo de référence de 1080 px de côté
+ * court. Elles ne servent plus qu'ici : l'interface a abandonné « petit / moyen / grand » pour des
+ * boutons − / + (taille relative) ; l'API les garde pour ne pas casser ses appelants.
+ */
+const ARABIC_SIZE_PRESETS = [
+  { id: "s", size: 56 },
+  { id: "m", size: 72 },
+  { id: "l", size: 96 },
+  { id: "xl", size: 120 },
+] as const;
+const TRANSLATION_SIZE_PRESETS = [
+  { id: "s", size: 24 },
+  { id: "m", size: 30 },
+  { id: "l", size: 40 },
+  { id: "xl", size: 52 },
+] as const;
+/** Valeurs par défaut de l'API (celles de l'interface : taille relative 1). */
+export const API_DEFAULTS = {
+  arabicSize: TEXT_BASE_SIZE.arabic,
+  translationSize: TEXT_BASE_SIZE.translation,
+  textPosition: 50,
+  fill: false,
+  showWave: true,
+} as const;
 
 /**
  * Options de l'export vidéo demandé par l'API : les mêmes réglages que le formulaire de l'atelier
@@ -131,6 +161,16 @@ export const videoJobOptionsSchema = z
       .optional(),
     /** Afficher l'onde audio en bas. */
     show_wave: z.boolean().optional(),
+    /**
+     * Mise en page fine, celle de l'éditeur de l'atelier : les quatre boîtes (sourate et verset, arabe,
+     * traduction, onde) en fractions du cadre, pour chacun des trois formats. Facultatif ; l'emporte sur
+     * `text_position`. Voir `GET /api/v1/export/options`.
+     */
+    layouts: layoutsSchema.optional(),
+    /** Style fin de chaque texte (taille relative, remplir, fond). Facultatif ; l'emporte sur les tailles à plat et `fill`. */
+    styles: stylesSchema.optional(),
+    /** Afficher « sourate et verset » (défaut oui). */
+    show_ref: z.boolean().optional(),
     /** Couleur d'accent (mot récité, référence) : teinte, saturation, luminosité, opacité ; null = automatique. */
     accent: accentSchema.nullable().optional(),
     /** Nom du fichier téléchargé (sans chemin) ; par défaut celui de l'audio. */
@@ -170,35 +210,40 @@ function pickSize(
 
 const POSITION_NAMES = { top: 12, middle: 50, bottom: 88 } as const;
 function positionOf(value: VideoJobOptions["text_position"]): number {
-  if (value === undefined) return DEFAULT_VIDEO_PREFS.textPosition;
+  if (value === undefined) return API_DEFAULTS.textPosition;
   return typeof value === "number" ? value : POSITION_NAMES[value];
 }
 
-/** Réglages du rendu : ce qui n'est pas demandé prend la valeur par défaut du formulaire. */
+/**
+ * Réglages du rendu : ce qui n'est pas demandé prend la valeur par défaut du formulaire. L'API garde
+ * ses options à plat (tailles en points, hauteur du texte, « remplir ») : elles passent par la même
+ * conversion que les anciens réglages enregistrés (`migrateVideoPrefs`), donc un export demandé par
+ * l'API donne exactement ce que donnait le formulaire pour les mêmes valeurs.
+ */
 export function videoPrefsFromOptions(
   options: VideoJobOptions,
   hasUpload: boolean,
 ): VideoPrefs {
-  return {
+  const flat = videoPrefsSchema.parse({
     orientation: options.orientation ?? DEFAULT_VIDEO_PREFS.orientation,
     arabicSize: pickSize(
       options.arabic_size,
       ARABIC_SIZE_PRESETS,
-      DEFAULT_VIDEO_PREFS.arabicSize,
+      API_DEFAULTS.arabicSize,
     ),
     translationSize: pickSize(
       options.translation_size,
       TRANSLATION_SIZE_PRESETS,
-      DEFAULT_VIDEO_PREFS.translationSize,
+      API_DEFAULTS.translationSize,
     ),
     showTranslation:
       options.show_translation ?? DEFAULT_VIDEO_PREFS.showTranslation,
     showArabic: options.show_arabic ?? DEFAULT_VIDEO_PREFS.showArabic,
     resolution: options.resolution ?? DEFAULT_VIDEO_PREFS.resolution,
     fps: options.fps ?? DEFAULT_VIDEO_PREFS.fps,
-    fill: options.fill ?? DEFAULT_VIDEO_PREFS.fill,
+    fill: options.fill ?? API_DEFAULTS.fill,
     textPosition: positionOf(options.text_position),
-    showWave: options.show_wave ?? DEFAULT_VIDEO_PREFS.showWave,
+    showWave: options.show_wave ?? API_DEFAULTS.showWave,
     accent: options.accent ?? DEFAULT_VIDEO_PREFS.accent,
     bg: options.color ?? DEFAULT_VIDEO_PREFS.bg,
     // Une image envoyée l'emporte : le rendu ne lit alors pas ce choix.
@@ -212,6 +257,13 @@ export function videoPrefsFromOptions(
       options.tail_out ?? DEFAULT_TAIL_OUT,
     ),
     snapToSilence: options.snap_to_silence ?? true,
+  });
+  // La mise en page fine, quand on la donne, l'emporte sur les options à plat qui en sont le résumé.
+  return {
+    ...flat,
+    ...(options.layouts ? { layouts: options.layouts } : {}),
+    ...(options.styles ? { styles: options.styles } : {}),
+    ...(options.show_ref !== undefined ? { showRef: options.show_ref } : {}),
   };
 }
 
@@ -286,6 +338,11 @@ export function videoOptionsCatalog() {
     },
     pad_ranges:
       "boolean : élargit aussi tes `ranges` avec lead_in / tail_out sans empiéter sur la récitation voisine (sinon tes plages sont prises telles quelles).",
+    layouts:
+      '{ "16:9": { ref, arabic, translation, wave }, "9:16": …, "1:1": … } : chaque bloc est { x, y, w, h } en fractions du cadre (0 à 1, w ≥ 0,1, h ≥ 0,04, dans le cadre). Facultatif, l\'emporte sur text_position.',
+    styles:
+      "{ ref, arabic, translation } : chacun { size: 0,4 à 5 (1 = taille par défaut), fill: boolean, panel: { kind: none | transparent | blur | solid, color: #rrggbb, opacity: 0 à 1, radius: 0 à 80, legibility: shadow | outline, extent: text | box } }. Facultatif, l'emporte sur les tailles à plat et fill.",
+    show_ref: "boolean (défaut true) : afficher sourate et verset",
     fill: "boolean (le texte occupe toute la zone libre)",
     text_position: "0 (haut) à 100 (bas), ou top | middle | bottom",
     show_wave: "boolean (onde audio en bas)",
@@ -303,15 +360,15 @@ export function videoOptionsCatalog() {
     },
     defaults: {
       orientation: DEFAULT_VIDEO_PREFS.orientation,
-      arabic_size: DEFAULT_VIDEO_PREFS.arabicSize,
-      translation_size: DEFAULT_VIDEO_PREFS.translationSize,
+      arabic_size: API_DEFAULTS.arabicSize,
+      translation_size: API_DEFAULTS.translationSize,
       show_translation: DEFAULT_VIDEO_PREFS.showTranslation,
       show_arabic: DEFAULT_VIDEO_PREFS.showArabic,
       fps: DEFAULT_VIDEO_FPS,
       resolution: DEFAULT_VIDEO_RESOLUTION,
-      fill: DEFAULT_VIDEO_PREFS.fill,
-      text_position: DEFAULT_VIDEO_PREFS.textPosition,
-      show_wave: DEFAULT_VIDEO_PREFS.showWave,
+      fill: API_DEFAULTS.fill,
+      text_position: API_DEFAULTS.textPosition,
+      show_wave: API_DEFAULTS.showWave,
       accent: DEFAULT_VIDEO_PREFS.accent,
     },
   };

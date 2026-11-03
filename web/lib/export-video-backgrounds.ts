@@ -172,19 +172,27 @@ export function paintGradientBackground(
 
 export type BackgroundChoice =
   | { kind: "upload" }
+  /** Une vidéo choisie par l'utilisateur (muette), distincte de la vidéo d'origine de la session. */
+  | { kind: "video" }
   | { kind: "source" }
   | { kind: "color" }
   | { kind: "preset"; preset: BackgroundPreset };
 
+/** Identifiant du choix « ma propre vidéo » dans les réglages. */
+export const CLIP_BACKGROUND_ID = "video";
+
 /**
- * Quel fond appliquer. Une image téléversée gagne toujours (choisir un fond proposé la retire) ;
- * sinon le choix mémorisé ; sinon, sans choix, la vidéo d'origine pour une session vidéo, et le
- * dégradé par défaut pour une session audio.
+ * Quel fond appliquer. « Ma vidéo » gagne quand elle est choisie et que son fichier est là (le fichier
+ * reste sur l'appareil : après un rechargement il manque, et le fond redevient automatique) ; une image
+ * téléversée gagne ensuite (choisir un fond proposé la retire) ; sinon le choix mémorisé ; sinon, sans
+ * choix, la vidéo d'origine pour une session vidéo, et le dégradé par défaut pour une session audio.
  */
 export function chooseBackground(
   saved: string | null | undefined,
-  context: { hasUpload: boolean; isVideo: boolean },
+  context: { hasUpload: boolean; hasVideoUpload?: boolean; isVideo: boolean },
 ): BackgroundChoice {
+  if (saved === CLIP_BACKGROUND_ID && context.hasVideoUpload)
+    return { kind: "video" };
   if (context.hasUpload) return { kind: "upload" };
   if (saved === "color") return { kind: "color" };
   if (saved === SOURCE_BACKGROUND_ID && context.isVideo)

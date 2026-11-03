@@ -35,9 +35,10 @@ conteneur vidéo).
 - Format : paysage / portrait / carré mis à jour dans l'aperçu ; « Format de la vidéo »
   n'apparaît que pour une session importée en vidéo, et la vidéo produite reprend alors ses
   dimensions.
-- Tailles arabe et traduction (Petit, Moyen, Grand, Très grand + « Réglage précis ») : le choix
-  se voit tout de suite dans l'aperçu, se mémorise et est repris après rechargement de la page ;
-  la case traduction aussi.
+- Tailles arabe et traduction (boutons − / + d'environ 6 %, pourcentage qui remet à 100 %, curseur
+  dans les réglages fins ; plus de « Petit / Moyen / Grand », voir `export-noyau-mise-en-page.md`) :
+  le choix se voit tout de suite dans l'aperçu, se mémorise et est repris après rechargement de la
+  page ; la case traduction aussi.
 - Fond : défaut lisible (jamais noir) ; image téléversée visible dans l'aperçu et dans la vidéo ;
   retrait de l'image possible ; sans choix sur une session vidéo, la vidéo d'origine sert de fond
   avec un support lisible derrière le texte.
