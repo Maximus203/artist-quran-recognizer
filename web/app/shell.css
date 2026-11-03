@@ -151,6 +151,9 @@
   width: var(--w-right);
 }
 .center {
+  /* Bloc contenant des éléments absolus (champs « .sr » masqués…) : sans lui ils s'accrochent au document,
+     échappent au défilement d'ici et allongent la page (deuxième barre de défilement, fond qui s'arrête). */
+  position: relative;
   min-width: 0;
   overflow-y: auto;
   scrollbar-width: thin;
