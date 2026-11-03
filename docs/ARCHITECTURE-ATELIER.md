@@ -271,8 +271,22 @@ refont aucun de ces calculs.
 vidéo exportée : boucle, aller-retour, figé ou ralenti si elle est plus courte, portion à partir d'un
 départ (unique pour toutes les plages, borné pour chacune) si elle est plus longue. `describeFit` le
 dit en français (« plus courte : environ 2,5 fois »). La vidéo de fond est muette : le MP4 ne reprend
-que la copie d'écoute. Son fichier reste sur l'appareil : le rendu par le serveur ne la reçoit pas
-encore (voir ADR-0018).
+que la copie d'écoute.
+
+**Vidéo de fond choisie, transportée au serveur (ADR-0019).** Le fichier choisi (« Ma vidéo… ») est envoyé
+par morceaux (`lib/background-video-client.ts`, moteur `chunkSender` commun avec l'import de sessions), reçu
+par `lib/background-video-store.ts` (routes `/api/sessions/<id>/background-videos…`, cœur
+`lib/chunk-staging.ts`), contrôlé sur son contenu réel, puis préparé UNE fois par ffmpeg
+(`lib/background-video-media.ts` : sans son, H.264, 1080p au plus), une à la fois, hors de la requête
+(état lu par `GET`). Une vidéo appartient à un compte ET à une session (autrui : 404) et disparaît à
+l'abandon, à l'expiration, à la suppression de la session et du compte. Au lancement d'un export
+(`background.video.upload_id`), la copie est liée dans le dossier du job (`video-jobs.ts`,
+`renderPayload`) et le navigateur de rendu la lit par `…/jobs/<job>/background-video`
+(`lib/export-video-job-clip.ts`), puis `videoSeeker` + `backgroundVideoTimeAt`. Côté écran : composant
+autonome `app/atelier/export/background-video-section.tsx` (vue pure `background-video-view.tsx`,
+machine d'états `lib/background-video-flow.ts`, modèle de vue `lib/background-video-view.ts`) ; le parent
+lit `backgroundVideoPrefs(value)` pour ses réglages et `backgroundVideoRequest(value)` pour
+`exportVideoRequest`, et appelle `ensureClipOnServer` juste avant un export.
 
 **Fonds (`lib/export-video-backgrounds.ts`).** Cinq dégradés dessinés à la volée et neuf photos
 libres Pexels embarquées (`web/public/backgrounds/`, crédits dans `CREDITS.md`) sont proposés avant

@@ -411,5 +411,12 @@
     "section": "Décisions",
     "file": "docs/adr/0018-mise-en-page-par-blocs.md",
     "summary": "Accepté le 2026-11-03 : quatre blocs (sourate et verset, arabe, traduction, onde) dans leurs boîtes par forme de cadre, style par texte (taille relative, fond aucun, transparent, flou ou plein), fond vidéo muet calé par vtime, anciens réglages convertis ; capacité des boîtes par défaut identique à l'ancien rendu, flou mesuré à ≈ +3,6 ms par image en 1080p."
+  },
+  {
+    "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
+    "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
+    "section": "Décisions",
+    "file": "docs/adr/0019-video-de-fond-envoyee-au-serveur.md",
+    "summary": "Accepté le 2026-11-03 : envoi par morceaux factorisé avec l'import de sessions, contrôle du contenu réel, propriété par compte et par session, préparation muette H.264 sur le serveur, lecture par le job, plafonds dits avant le choix, nettoyage (abandon, expiration, session, compte), API background.video rétro-compatible."
   }
 ]

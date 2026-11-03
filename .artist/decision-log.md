@@ -1,5 +1,30 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-03 — Export vidéo : la vidéo de fond choisie est envoyée au serveur (ADR-0019)
+- **Quoi** : envoi par morceaux (reprenable, progression, annulation), contrôle du contenu réel, préparation muette H.264 sur le
+  serveur, propriété par compte ET session, nettoyage, lecture par le job, API `background.video`, composant autonome
+  `BackgroundVideoSection` (non branché dans le panneau : phase éditeur). Pas d'API payante, pas de nouvelle dépendance.
+- **Patterns** : Strategy (finalisation d'un envoi : session / vidéo de fond, sur un cœur d'envoi commun `chunk-staging`),
+  Adapter (ffprobe et ffmpeg derrière `ClipDeps`, navigateur derrière `ProbeDeps` et `services`), Repository (le magasin de
+  vidéos : un seul endroit lit et écrit le disque), State (`flowReducer`, états d'une vidéo `uploading → processing → ready |
+  failed`), Observer (le crochet existant `sessionHooks.removed` purge les vidéos d'une session), Factory (arguments ffmpeg).
+- **Choix pris seul** : vidéo rattachée à la session et non au seul compte (suppression gratuite, isolement) ; copie préparée
+  toujours (même H.264 : positionnement image par image) ; délai de 3 jours pour une vidéo prête non utilisée ; limites 500 Mo /
+  10 min / 3 vidéos ; côté d'image ≤ 7 680 px ; vidéos de fond hors quota de stockage ; pas de liste « vidéos déjà envoyées »
+  à l'écran (YAGNI : la valeur vit chez le parent, `ensureClipOnServer` renvoie depuis le fichier gardé si le serveur l'a oubliée).
+- **Mesures** (vraies vidéos, Chrome 156 de Playwright, ffmpeg 9.0, poste de développement ; « ×4 » = ralentissement du processeur
+  par le protocole de débogage, **un émulateur, pas un téléphone**) :
+  | cas | mesure |
+  |---|---|
+  | vidéo de 5 min, 1080p30, 224,6 Mo | lecture des faits (durée, taille) : 0,05 à 0,6 s (×1 puis ×4) |
+  | idem, envoi de 54 morceaux sur la boucle locale | 6 à 8 s (le débit réel d'une 4G n'est pas mesuré ici) |
+  | idem, préparation serveur (ffmpeg veryfast, 2 fils) | 136 à 187 s selon les essais ; copie de 287 Mo |
+  | idem, 12 vignettes de la bande « film » | première après 0,4 s, douzième après 2,1 s (×4), écran non bloqué |
+  | idem, tas JavaScript de la page | 6 Mo au départ, 9 à 14 Mo au plus : le fichier n'est jamais chargé en mémoire |
+  | coupure de réseau au 8e morceau | échec annoncé après 62 s (6 essais espacés), envoi gardé ; reprise : 54 morceaux distincts, aucun renvoyé |
+- **Preuve** : `.artist/acceptance-playbooks/export-fond-video.md` (98 vérifications navigateur à 390 et 1280 px, 16 sur de
+  vrais exports : une piste son, boucle aux raccords, portion, figé), tests unitaires et de routes.
+
 ## 2026-11-03 — Export vidéo : noyau de la mise en page par blocs (ADR-0018), fond flouté mesuré
 - **Quoi** : quatre blocs (sourate et verset, arabe, traduction, onde) dans leurs boîtes, par forme de cadre ; style par texte
   (taille relative, remplir, place dans la boîte, fond aucun / transparent / flou / plein) ; fond vidéo (`vtime`) ; préférences

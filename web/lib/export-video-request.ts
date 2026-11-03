@@ -11,7 +11,10 @@
  * Reste hors de portée de l'API : la vidéo de fond (le fichier reste sur l'appareil), listée par
  * `apiDifferences`.
  */
-import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
+import {
+  BACKGROUND_PRESETS,
+  CLIP_BACKGROUND_ID,
+} from "./export-video-backgrounds";
 import { isWhole, type PlanRange } from "./export-video-plan";
 import {
   TEXT_BASE_SIZE,
@@ -43,11 +46,18 @@ const clampInt = (value: number, min: number, max: number): number =>
 const apiLayoutKey = (prefs: VideoPrefs): LayoutKey =>
   prefs.orientation === "source" ? "16:9" : prefs.orientation;
 
+/** Ce que le JSON ne peut pas deviner des seuls réglages : l'envoi de la vidéo de fond choisie. */
+export type RequestExtras = {
+  /** Identifiant (côté serveur) de la vidéo de fond déjà envoyée et prête ; absent = pas encore envoyée. */
+  backgroundVideoUploadId?: string | null;
+};
+
 export function exportVideoRequest(
   prefs: VideoPrefs,
   ranges: readonly PlanRange[],
   duration: number,
   fileName?: string,
+  extras: RequestExtras = {},
 ): VideoJobOptions {
   const key = apiLayoutKey(prefs);
   const body: VideoJobOptions = {
@@ -82,6 +92,15 @@ export function exportVideoRequest(
   if (!prefs.snapToSilence) body.snap_to_silence = false;
   if (prefs.background && KNOWN_BACKGROUNDS.has(prefs.background))
     body.background = prefs.background as VideoJobOptions["background"];
+  // Ma vidéo : le JSON la désigne par son identifiant d'envoi, avec le départ et le comportement choisis.
+  if (prefs.background === CLIP_BACKGROUND_ID && extras.backgroundVideoUploadId)
+    body.background = {
+      video: {
+        upload_id: extras.backgroundVideoUploadId,
+        offset: prefs.backgroundVideo.offset,
+        mode: prefs.backgroundVideo.mode,
+      },
+    };
   if (prefs.background === "color") body.color = prefs.bg;
   const whole = ranges.length === 1 && isWhole(ranges[0], duration);
   if (ranges.length > 0 && !whole)
@@ -108,13 +127,22 @@ function same(a: unknown, b: unknown): boolean {
  * que « Même export par l'API » ne promette pas plus qu'il ne tient. Vide = l'API refait la même vidéo.
  * Méthode : on refait les réglages depuis le JSON, et on compare.
  */
-export function apiDifferences(prefs: VideoPrefs): string[] {
+export function apiDifferences(
+  prefs: VideoPrefs,
+  extras: RequestExtras = {},
+): string[] {
   const out: string[] = [];
-  if (prefs.background === "video")
+  if (
+    prefs.background === CLIP_BACKGROUND_ID &&
+    !extras.backgroundVideoUploadId
+  )
     out.push(
-      "La vidéo de fond (son fichier reste sur l'appareil : l'API ne la reçoit pas encore).",
+      "La vidéo de fond n'est pas encore envoyée au serveur : le JSON ne la désigne pas, l'export ne l'utiliserait pas.",
     );
-  const back = videoPrefsFromOptions(exportVideoRequest(prefs, [], 0), false);
+  const back = videoPrefsFromOptions(
+    exportVideoRequest(prefs, [], 0, undefined, extras),
+    false,
+  );
   // Tout le reste doit repasser à l'identique ; sinon un réglage se perd entre l'aperçu et l'export.
   const { background: _a, backgroundVideo: _b, ...mine } = prefs;
   const { background: _c, backgroundVideo: _d, ...theirs } = back;

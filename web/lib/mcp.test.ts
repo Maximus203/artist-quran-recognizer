@@ -295,6 +295,33 @@ describe("outils d'export vidéo et de gestion", () => {
     );
   });
 
+  it("export_video transmet une vidéo de fond envoyée (objet background.video)", async () => {
+    const call = vi.fn(async () => ({
+      status: 202,
+      body: { job: { id: "j" } },
+    })) as unknown as ApiCall;
+    const background = {
+      video: { upload_id: "a".repeat(32), offset: 2, mode: "pingpong" },
+    };
+    await callTool("export_video", { id: ID, background }, call);
+    expect(call).toHaveBeenCalledWith(
+      "POST",
+      `/api/sessions/${ID}/export/video/jobs`,
+      { json: { options: { background } } },
+    );
+  });
+
+  it("l'outil export_video annonce les deux formes du fond et dit que la vidéo envoyée est muette", () => {
+    const tool = TOOLS.find((t) => t.name === "export_video");
+    const schema = tool?.inputSchema.properties as Record<
+      string,
+      { type?: unknown; description?: string }
+    >;
+    expect(schema.background.type).toEqual(["string", "object"]);
+    expect(schema.background.description).toContain("upload_id");
+    expect(schema.background.description).toMatch(/muette/i);
+  });
+
   it("export_video transmet la découpe protégée", async () => {
     const call = vi.fn(async () => ({
       status: 202,

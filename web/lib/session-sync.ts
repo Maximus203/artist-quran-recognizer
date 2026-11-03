@@ -1,5 +1,6 @@
 import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
+import { purgeClips } from "./background-video-store";
 import { getDb, type Db } from "./db";
 import { log } from "./log";
 import {
@@ -134,7 +135,11 @@ export async function importLegacySessions(): Promise<number> {
 /** Branche l'index sur les écritures de `store.ts`. */
 export function installSessionHooks(): void {
   sessionHooks.saved = syncSession;
-  sessionHooks.removed = (id) => deleteMeta(getDb(), id);
+  sessionHooks.removed = async (id) => {
+    deleteMeta(getDb(), id);
+    // Les vidéos de fond choisies pour cette session partent avec elle (jamais de fichier orphelin sur le disque).
+    await purgeClips({ sessionId: id });
+  };
 }
 
 /** Recompte l'espace occupé par une session après l'ajout ou la suppression d'un fichier (vidéos). */

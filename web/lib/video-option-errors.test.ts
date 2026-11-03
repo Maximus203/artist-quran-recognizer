@@ -28,6 +28,14 @@ describe("erreurs d'options d'export vidéo, en français clair", () => {
       /name : 1 caractère au moins/,
     );
   });
+  it("fond : dit les deux formes permises, jamais « Invalid input »", () => {
+    for (const background of ["inconnu", {}, { video: {} }, 12]) {
+      const text = explain({ background });
+      expect(text).toMatch(/background/);
+      expect(text).toMatch(/upload_id/);
+      expect(text).not.toMatch(/Invalid input/i);
+    }
+  });
   it("mauvais type", () => {
     expect(explain({ fill: "oui" })).toMatch(
       /fill : oui ou non attendu|fill : booléen attendu/,

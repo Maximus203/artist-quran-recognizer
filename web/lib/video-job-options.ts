@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { optionIssuesFr } from "./video-option-errors";
-import { BACKGROUND_PRESETS } from "./export-video-backgrounds";
+import {
+  BACKGROUND_PRESETS,
+  CLIP_BACKGROUND_ID,
+} from "./export-video-backgrounds";
 import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
 import {
   DEFAULT_VIDEO_FPS,
@@ -25,7 +28,10 @@ import {
   type SuggestOptions,
 } from "./export-video-suggest";
 import {
+  BG_VIDEO_MODES,
+  DEFAULT_BACKGROUND_VIDEO,
   layoutsSchema,
+  MAX_BG_VIDEO_OFFSET,
   stylesSchema,
   TEXT_BASE_SIZE,
 } from "./export-video-model";
@@ -82,6 +88,37 @@ const BACKGROUND_IDS = [
   "source",
   "color",
 ] as const;
+
+/**
+ * Vidéo de fond choisie, déjà ENVOYÉE au serveur (`POST …/background-videos`) : `upload_id` la désigne (elle
+ * doit appartenir au même compte et à la même session), `offset` est le départ dans la vidéo quand elle est plus
+ * longue que la récitation (un seul pour toutes les plages), `mode` ce qu'elle fait quand elle est plus courte.
+ */
+export const clipBackgroundSchema = z
+  .object({
+    video: z
+      .object({
+        upload_id: z.string().regex(/^[0-9a-f]{32}$/),
+        offset: z.number().min(0).max(MAX_BG_VIDEO_OFFSET).optional(),
+        mode: z.enum(BG_VIDEO_MODES).optional(),
+      })
+      .strict(),
+  })
+  .strict();
+export type ClipBackground = z.infer<typeof clipBackgroundSchema>;
+
+/** Un identifiant de fond (anciens appelants, inchangé) OU une vidéo de fond envoyée. */
+const backgroundOption = z.union([
+  z.enum(BACKGROUND_IDS),
+  clipBackgroundSchema,
+]);
+/** L'identifiant d'envoi d'une vidéo de fond demandée, ou `null`. */
+export const clipUploadIdOf = (
+  background: VideoJobOptions["background"],
+): string | null =>
+  typeof background === "object" && background !== null
+    ? background.video.upload_id
+    : null;
 
 export const videoJobOptionsSchema = z
   .object({
@@ -175,8 +212,11 @@ export const videoJobOptionsSchema = z
     accent: accentSchema.nullable().optional(),
     /** Nom du fichier téléchargé (sans chemin) ; par défaut celui de l'audio. */
     file_name: z.string().min(1).max(120).optional(),
-    /** Identifiant d'un fond proposé, « source » (vidéo d'origine) ou « color » (couleur unie). */
-    background: z.enum(BACKGROUND_IDS).optional(),
+    /**
+     * Identifiant d'un fond proposé, « source » (vidéo d'origine) ou « color » (couleur unie) ; ou
+     * `{ video: { upload_id, offset?, mode? } }` pour une vidéo de fond envoyée (muette).
+     */
+    background: backgroundOption.optional(),
     /** Couleur unie `#rrggbb` (avec `background: "color"`). */
     color: z
       .string()
@@ -224,6 +264,8 @@ export function videoPrefsFromOptions(
   options: VideoJobOptions,
   hasUpload: boolean,
 ): VideoPrefs {
+  const clip =
+    typeof options.background === "object" ? options.background.video : null;
   const flat = videoPrefsSchema.parse({
     orientation: options.orientation ?? DEFAULT_VIDEO_PREFS.orientation,
     arabicSize: pickSize(
@@ -247,7 +289,11 @@ export function videoPrefsFromOptions(
     accent: options.accent ?? DEFAULT_VIDEO_PREFS.accent,
     bg: options.color ?? DEFAULT_VIDEO_PREFS.bg,
     // Une image envoyée l'emporte : le rendu ne lit alors pas ce choix.
-    background: hasUpload ? null : (options.background ?? null),
+    background: hasUpload
+      ? null
+      : clip
+        ? CLIP_BACKGROUND_ID
+        : ((options.background as string | undefined) ?? null),
     paddingBefore: Math.min(
       EXPORT_VIDEO_CONFIG.padding.max,
       options.lead_in ?? DEFAULT_LEAD_IN,
@@ -261,6 +307,17 @@ export function videoPrefsFromOptions(
   // La mise en page fine, quand on la donne, l'emporte sur les options à plat qui en sont le résumé.
   return {
     ...flat,
+    // La vidéo de fond n'a pas de nom dans les réglages : c'est le serveur qui la désigne (`upload_id`). Reprise
+    // après la conversion des anciens réglages à plat, qui remet la vidéo de fond à ses valeurs par défaut.
+    ...(clip && !hasUpload
+      ? {
+          backgroundVideo: {
+            file: null,
+            offset: clip.offset ?? DEFAULT_BACKGROUND_VIDEO.offset,
+            mode: clip.mode ?? DEFAULT_BACKGROUND_VIDEO.mode,
+          },
+        }
+      : {}),
     ...(options.layouts ? { layouts: options.layouts } : {}),
     ...(options.styles ? { styles: options.styles } : {}),
     ...(options.show_ref !== undefined ? { showRef: options.show_ref } : {}),
@@ -351,7 +408,17 @@ export function videoOptionsCatalog() {
     background: {
       ids: BACKGROUND_IDS,
       notes:
-        "Sans choix : la vidéo d'origine pour une session vidéo, sinon le dégradé « nuit-doree ». « color » + `color` donne une couleur unie. Une image PNG/JPEG/WebP envoyée dans le champ multipart `background_image` l'emporte sur tout.",
+        "Sans choix : la vidéo d'origine pour une session vidéo, sinon le dégradé « nuit-doree ». « color » + `color` donne une couleur unie. Une image PNG/JPEG/WebP envoyée dans le champ multipart `background_image` l'emporte sur tout. Une vidéo de fond se désigne par `{ video: { upload_id, offset?, mode? } }` (voir `background_video`).",
+      video: {
+        shape:
+          '{ "video": { "upload_id": "<32 caractères hexadécimaux>", "offset"?: secondes, "mode"?: "loop" | "pingpong" | "freeze" | "slow" } }',
+        upload:
+          "POST /api/v1/recordings/{id}/background-videos { filename, size } → { id, chunk_size, chunks, limits } ; PUT …/{vid}/chunks/{n} (octets bruts, un morceau de chunk_size octets, le dernier plus court) ; POST …/{vid}/complete ; puis GET …/{vid} jusqu'à state « ready » (« processing » : préparation en cours ; « failed » : `message` dit pourquoi). L'identifiant est celui de `id`. Il appartient à CE compte et à CETTE session ; un autre compte ne le voit pas. Jeton en écriture requis pour l'envoi.",
+        notes:
+          "La vidéo de fond est MUETTE : seul le son de la récitation est exporté. `offset` (s, défaut 0) : départ dans la vidéo quand elle est plus longue que la récitation, UN SEUL pour toutes les plages (borné pour chaque plage). `mode` (défaut « loop ») : plus courte que la récitation, elle recommence (loop), va et vient (pingpong), s'arrête sur sa dernière image (freeze) ou est ralentie pour tout couvrir (slow). La vidéo envoyée est préparée par le serveur (image seule, H.264, 1080p au plus). Une image envoyée (`background_image`) l'emporte. Vidéo absente, expirée, d'un autre compte ou pas prête : 404 `missing` ou 409 `not_ready`.",
+        limits:
+          "GET /api/v1/recordings/{id}/background-videos → { limits: { max_bytes, max_seconds, max_clips }, videos }",
+      },
       presets: BACKGROUND_PRESETS.map((p) => ({
         id: p.id,
         label: p.label,

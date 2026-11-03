@@ -59,6 +59,9 @@ function one(issue: Issue): string {
     case "invalid_format":
     case "invalid_string":
       return `${field} : format non reconnu`;
+    case "invalid_union":
+      // Le seul champ à deux formes est le fond : un identifiant, ou une vidéo de fond envoyée.
+      return `${field} : un identifiant de fond de la liste (GET /api/v1/export/options), ou { video: { upload_id, offset?, mode? } } pour une vidéo de fond envoyée`;
     default:
       // Messages métier écrits en français dans le schéma (refine) : repris tels quels.
       return `${field} : ${issue.message}`;

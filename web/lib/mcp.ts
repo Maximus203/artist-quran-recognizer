@@ -386,9 +386,9 @@ export const TOOLS: Tool[] = [
           description: "Nom du fichier téléchargé.",
         },
         background: {
-          type: "string",
+          type: ["string", "object"],
           description:
-            "Identifiant d'un fond proposé, « source » (vidéo d'origine) ou « color » ; voir get_export_options.",
+            "Identifiant d'un fond proposé, « source » (vidéo d'origine) ou « color » (voir get_export_options) ; OU { video: { upload_id, offset?, mode? } } pour une vidéo de fond déjà envoyée au serveur par l'API REST (POST /api/v1/recordings/{id}/background-videos, puis morceaux, puis complete). Cette vidéo est muette : seul le son de la récitation est exporté. offset = départ (s) quand elle est plus longue que la récitation ; mode = loop | pingpong | freeze | slow quand elle est plus courte.",
         },
         color: {
           type: "string",

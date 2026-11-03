@@ -1,4 +1,6 @@
 import { optionIssuesFr } from "@/lib/video-option-errors";
+import { clipFailure } from "@/lib/background-video-http";
+import { readyClip } from "@/lib/background-video-store";
 import { apiError, json, safe } from "@/lib/http";
 import { sessionAccess } from "@/lib/route-guard";
 import { readSession } from "@/lib/store";
@@ -10,7 +12,7 @@ import {
   startVideoJob,
   VideoJobLimitError,
 } from "@/lib/video-jobs";
-import { videoJobOptionsSchema } from "@/lib/video-job-options";
+import { clipUploadIdOf, videoJobOptionsSchema } from "@/lib/video-job-options";
 export const runtime = "nodejs";
 
 const MAX_BACKGROUND_BYTES = 20 * 1024 * 1024;
@@ -83,6 +85,28 @@ async function handlePOST(
       `Options invalides : ${optionIssuesFr(parsed.error.issues)}.`,
       { code: "invalid" },
     );
+  // Vidéo de fond choisie : elle doit être celle de CE compte, pour CETTE session, et prête (sinon « inconnue »,
+  // 404, comme pour toute ressource d'autrui). Une image envoyée en même temps est ambiguë : refusée.
+  const clipId = clipUploadIdOf(parsed.data.background);
+  let clip: { path: string; sha256: string } | null = null;
+  if (clipId) {
+    if (background)
+      return apiError(
+        400,
+        "Choisis une image de fond OU une vidéo de fond, pas les deux.",
+        { code: "invalid", field: "background" },
+      );
+    try {
+      const ready = await readyClip({
+        id: clipId,
+        sessionId: access.id,
+        ownerId: access.user.id,
+      });
+      clip = { path: ready.path, sha256: ready.sha256 };
+    } catch (error) {
+      return clipFailure(error);
+    }
+  }
   // Par l'API : le jeton de l'appelant. Depuis l'atelier : sa connexion (cookies), pour que l'export
   // continue sur le serveur même si la page est quittée.
   const bearer = request.headers
@@ -102,6 +126,7 @@ async function handlePOST(
       userId: access.user.id,
       options: parsed.data,
       background,
+      clip,
       credential,
       origin: renderOrigin(),
       reuse,

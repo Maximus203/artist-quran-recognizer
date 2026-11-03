@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Export vidéo : la vidéo de fond choisie est envoyée au serveur et utilisée par l'export
+Étiquettes : utilisateur, technique, décision
+PR : #203
+
+**Ce qui change.** Une vidéo choisie comme fond (« Ma vidéo… ») est maintenant envoyée au serveur, qui la prépare une fois (image seule, 1080p au plus) puis l'utilise pour l'export : jusqu'ici l'export, rendu sur le serveur, ne pouvait pas lire un fichier resté sur l'appareil. L'envoi se fait par morceaux, avec une barre de progression, la reprise après une coupure de réseau (seuls les morceaux manquants repartent), l'annulation et le retrait. Les plafonds sont dits avant le choix (500 Mo, 10 min, trois vidéos par compte) et chaque refus s'explique en français (format, taille, durée, fichier abîmé, sans image, réseau, place). La vidéo de fond est muette : seul le son de la récitation est exporté. Un composant autonome `BackgroundVideoSection` dit en clair ce que la vidéo fera sous la récitation (« plus courte : elle recommence environ 2,5 fois », « plus longue : on garde la portion de X s à Y s », « même durée : rien à régler »), propose la boucle par défaut et trois autres comportements, et, pour une vidéo plus longue, une bande « film » avec fenêtre éclairée, boutons ± 0,1 s et ± 1 s, « début · milieu · fin » et clavier. L'API d'export accepte `background: { video: { upload_id, offset?, mode? } }` (les anciens appelants ne changent pas) et un envoi par `/api/sessions/<id>/background-videos`. Le composant n'est pas encore branché dans l'écran d'export : c'est la phase éditeur.
+
+**Pourquoi / décision.** Une vidéo appartient à un compte ET à une session (un autre compte, ou une autre session, la voit « inconnue », même un administrateur), disparaît à l'abandon, à l'expiration (envoi 24 h, vidéo prête 3 jours sans usage, échec 1 h), à la suppression de la session et du compte, et son contenu réel est contrôlé (signature, sonde avec démultiplexeur imposé) avant toute préparation : `docs/adr/0019-video-de-fond-envoyee-au-serveur.md`. Mesures sur de vraies vidéos : `.artist/decision-log.md`.
+
 ## 2026-11-03 — Export vidéo : noyau de la mise en page par blocs (zones, fonds de texte, fond vidéo)
 Étiquettes : utilisateur, technique, décision
 PR : #201
