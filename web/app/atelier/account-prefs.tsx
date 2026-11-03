@@ -8,6 +8,7 @@ import {
 import type { Preferences } from "@/lib/preferences-schema";
 import { QURAN_FONTS, type QuranFontId } from "@/lib/quran-fonts";
 import { QURAN_SIZE, clampQuranSize } from "@/lib/ui-prefs";
+import { EditorModeSetting } from "./account-editor-mode";
 import { AvatarSetting } from "./avatar-setting";
 import { Avatar } from "./avatar";
 import { Switch, SegControl } from "./controls";
@@ -514,6 +515,7 @@ export function PreferencesPane() {
           />
         </Setting>
       </div>
+      <EditorModeSetting />
       <p
         className="hint"
         style={{
