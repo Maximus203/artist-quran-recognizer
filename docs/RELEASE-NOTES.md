@@ -41,6 +41,22 @@ PR : #181
 
 **Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
 
+## 2026-11-03 — Une vidéo envoyée ressort telle quelle, avec la traduction par-dessus
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Pour une vidéo envoyée, « Vidéo d'origine » est désormais proposée à chaque fois, et c'est le
+fond et le format par défaut de l'export, quels que soient les réglages enregistrés du compte. La personne peut
+choisir un autre fond ou un autre format pour cette vidéo ; ce choix ne vaut que pour elle et le défaut n'est jamais
+écrit dans ses préférences. Sur téléphone, le choix ne disparaît plus quand l'appareil ne sait pas lire la vidéo :
+l'aperçu peut alors rester neutre (un message l'explique) mais l'export, fabriqué sur le serveur, reprend bien la vidéo.
+
+**Pourquoi / décision.** La présence de l'image était décidée par le navigateur de la personne (il devait charger la
+vidéo) : HEVC des téléphones, gros fichier ou copie en préparation, et le choix disparaissait. C'est maintenant le
+serveur qui répond (`GET /api/sessions/:id/video-info`, ffprobe, taille affichée rotation comprise). Un fond
+enregistré pesait aussi plus lourd que la vidéo d'origine dans `chooseBackground` : le défaut d'une session vidéo
+l'emporte désormais, sans toucher aux préférences.
+
 ## 2026-11-03 — Les réglages d'export sont ceux de chaque compte
 Étiquettes : utilisateur, technique, décision
 PR : -

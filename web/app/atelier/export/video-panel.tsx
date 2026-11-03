@@ -1,7 +1,11 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api-client";
-import { isVideoExtension, loadSourceVideo } from "@/lib/export-video-assets";
+import {
+  fetchVideoInfo,
+  isVideoExtension,
+  loadSourceVideo,
+} from "@/lib/export-video-assets";
 import {
   chooseBackground,
   SOURCE_BACKGROUND_ID,
@@ -148,6 +152,10 @@ export function VideoPanel({
   const [isVideo, setIsVideo] = useState(false);
   const [videoCandidate, setVideoCandidate] = useState(false);
   const [videoChecked, setVideoChecked] = useState(false);
+  // Le navigateur de cette personne sait-il afficher l'image dans l'aperçu ? (l'export, lui, est sur le serveur)
+  const [previewReadable, setPreviewReadable] = useState(true);
+  // Ce que le COMPTE a retenu : le défaut « vidéo d'origine » d'une session vidéo n'y entre jamais.
+  const accountRef = useRef(accountPrefs.videoPrefs);
   const [sourceSize, setSourceSize] = useState<{
     width: number;
     height: number;
@@ -199,18 +207,35 @@ export function VideoPanel({
         setPeaks(peakData);
         if (!peakData) setLoadFailed(true);
         if (candidate)
-          void loadSourceVideo(sessionId).then((element) => {
+          void (async () => {
+            // C'est le serveur qui dit s'il y a une image : un téléphone qui ne décode pas la vidéo ne doit
+            // jamais faire disparaître « Vidéo d'origine ». Le navigateur ne sert qu'à juger de l'aperçu.
+            const info = await fetchVideoInfo(sessionId);
             if (cancelled) return;
-            setVideoChecked(true);
-            if (!element) return;
-            setIsVideo(true);
-            setSourceSize({
-              width: element.videoWidth,
-              height: element.videoHeight,
-            });
-            element.removeAttribute("src");
-            element.load();
-          });
+            if (info) {
+              setVideoChecked(true);
+              if (!info.has_video) return;
+              setIsVideo(true);
+              setSourceSize({ width: info.width, height: info.height });
+            }
+            const element = await loadSourceVideo(sessionId);
+            if (cancelled) return;
+            if (!info) {
+              // Serveur injoignable : on retombe sur ce que le navigateur voit.
+              setVideoChecked(true);
+              if (!element) return;
+              setIsVideo(true);
+              setSourceSize({
+                width: element.videoWidth,
+                height: element.videoHeight,
+              });
+            }
+            setPreviewReadable(element !== null);
+            if (element) {
+              element.removeAttribute("src");
+              element.load();
+            }
+          })();
       })
       .catch(() => !cancelled && setLoadFailed(true));
     return () => {
@@ -242,12 +267,29 @@ export function VideoPanel({
     };
   }, [isVideo, duration, sessionId]);
 
+  // Une vidéo envoyée ressort telle quelle, avec la traduction par-dessus : « Vidéo d'origine » est le fond ET le
+  // format par défaut, quels que soient les réglages enregistrés du compte. Un choix de la personne le remplace
+  // pour cette session seulement ; ce défaut n'est jamais écrit dans ses préférences.
+  const defaulted = useRef(false);
+  useEffect(() => {
+    if (!isVideo || defaulted.current) return;
+    defaulted.current = true;
+    const next: VideoPrefs = {
+      ...prefsRef.current,
+      orientation: "source",
+      background: SOURCE_BACKGROUND_ID,
+    };
+    prefsRef.current = next;
+    setPrefs(next);
+  }, [isVideo]);
+
   const patch = useCallback(
     (next: Partial<VideoPrefs>) => {
       const value = { ...prefsRef.current, ...next };
       prefsRef.current = value;
       setPrefs(value);
-      update({ videoPrefs: value });
+      accountRef.current = { ...accountRef.current, ...next };
+      update({ videoPrefs: accountRef.current });
     },
     [update],
   );
@@ -904,6 +946,7 @@ export function VideoPanel({
             isVideo={isVideo}
             sourceSize={sourceSize}
             sourceUnreadable={videoCandidate && videoChecked && !isVideo}
+            previewUnavailable={isVideo && !previewReadable}
             selectedBg={selectedBg}
             upload={bgFile}
             uploadThumb={bgThumb}
