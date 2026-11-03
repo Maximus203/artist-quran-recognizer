@@ -135,6 +135,7 @@
 **Issue** : —
 
 ### XR.14 — [WEB] Téléphone : aperçu en bandeau, dock et feuille
+> Remplacé le 2026-11-03 pour l'onglet Vidéo : le bandeau et le dock n'existent plus (l'aperçu est l'éditeur, un seul bouton « Exporter » ouvre la feuille) ; voir `export-editeur-plateau.md` (E.10).
 **Priorité** : critique
 **Technique** : nominal
 **Action** : 375 px, onglet Vidéo, défiler sous l'aperçu ; toucher le résumé du dock ; Échap.

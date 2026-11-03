@@ -1,5 +1,27 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-03 — Éditeur de la vidéo d'export : calque partagé, plateau, vue bureau (ADR-0019)
+- **Quoi** : calque d'édition partagé sur l'aperçu (toucher, glisser avec aimants par axe, huit poignées de 44 px, pincement,
+  clavier, `aria-live`), contrôleur et sections de réglages communs à la feuille du téléphone et à l'inspecteur du bureau,
+  plateau mobile, vue bureau unifiée, `ExportEditor` + registre. Les passages vont dans leur fenêtre, la qualité sous « Réglages
+  avancés ». Aucune dépendance ajoutée.
+- **Patterns** : State (machine à gestes sans DOM, effets `live` / `end` / `cancel`), Command (chaque réglage est une fonction
+  pure testée), Registry (`editor-registry.tsx`), Adapter (le calque ne connaît que `onSelect` / `onBox` / `onSize`),
+  Strategy (un éditeur par mode). Brouillon pendant le geste, un seul enregistrement au relâcher.
+- **Choix pris seul** : (1) l'éditeur remplace l'en-tête de la page (titre, faits, rail d'étapes) sur l'onglet Vidéo : il a sa
+  barre (retour, nom, Exporter), le retour mène à « Vérifier » (au récitateur : à ses récitations) ; (2) la fenêtre-résumé de
+  l'export reste ouverte pendant le rendu (sinon la progression n'a plus d'écran) ; (3) la taille de la sourate ne suit plus celle
+  de l'arabe : chaque texte a la sienne ; (4) l'aide du premier affichage est mémorisée dans le navigateur, pas sur le compte ;
+  (5) zones d'appui élargies à 44 px pour les éléments minces (la ligne de la sourate fait 11 px sur un téléphone), la vraie boîte
+  reste celle de la mise en page ; (6) pas de jsdom ni de testing-library : logique testée sans DOM, rendu en HTML statique, gestes
+  réels au navigateur.
+- **Écarts d'aperçu corrigés** (en regardant une image de la vidéo produite, 720p, face à l'aperçu de 640 px) : le plancher de la
+  sourate (14 px) ne suivait pas l'échelle (l'aperçu la montrait 60 % plus grande) et l'espacement des barres de l'onde non plus
+  (2× moins de barres dans l'aperçu à 720p). Les deux suivent maintenant l'échelle ; à 1080 px rien ne change. Écart moyen de
+  niveaux de gris aperçu / image exportée (miniatures 64 × 36) : 4,8 / 255 avant, 1,5 après.
+- **Non fait / à suivre** : emplacement du fond vidéo (phase « transport du fond vidéo ») ; table de montage et pas à pas
+  (registre) ; choix du format d'éditeur (phase 4) ; lecteur d'écran non testé avec NVDA ou VoiceOver.
+
 ## 2026-11-03 — Export vidéo : noyau de la mise en page par blocs (ADR-0018), fond flouté mesuré
 - **Quoi** : quatre blocs (sourate et verset, arabe, traduction, onde) dans leurs boîtes, par forme de cadre ; style par texte
   (taille relative, remplir, place dans la boîte, fond aucun / transparent / flou / plein) ; fond vidéo (`vtime`) ; préférences
