@@ -336,7 +336,7 @@ avancé), composées par `inspector-sections.tsx` : UNE à la fois dans la feuil
 dans l'inspecteur du bureau (`desktop-editor.tsx`, vue unifiée dès 1024 px). `ExportEditor({ mode, …EditorProps })`
 (`export-editor.tsx`) choisit la vue ; le registre `editor-registry.tsx` porte une ligne par éditeur mobile (`plateau` ;
 `table` et `pas` retombent sur lui tant qu'ils n'existent pas) ; `EditorMode`, `EditorProps` et le contrat d'intégration sont
-dans `editor-types.ts`. Le fond vidéo est un emplacement (`frame.backgroundVideo`). Styles : `web/app/export-editor.css`
+dans `editor-types.ts`. Le fond vidéo occupe l'emplacement `frame.backgroundVideo` (`BackgroundVideoSection`, ADR-0019) ; la feuille « Fond » et le volet « Cadre » restent montés une fois ouverts, car la section arrête son envoi à son démontage. Styles : `web/app/export-editor.css`
 (composants `.xe-`).
 Styles : `web/app/export-refonte.css` (jetons `--x-*`, composants `.xr-*`) ; l'éditeur a les siens (voir ci-dessus).
 

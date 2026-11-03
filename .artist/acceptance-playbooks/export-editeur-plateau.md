@@ -1,9 +1,9 @@
 # Export vidéo — l'éditeur : plateau mobile, vue bureau, calque d'édition partagé (phase 2)
 > Surfaces : [WEB] (mobile 360 / 390 / 430 px d'abord, puis 1280 px ; thèmes sombre et clair) · [CALC] (fonctions pures)
-> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-plateau` @ 8d77aa7 (PR #202) · ADR-0020
+> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-plateau` @ 27baa2a (PR #202) · ADR-0020
 > Périmètre : calque d'édition partagé, sections de réglages (taille, fond du texte, position, cadre), plateau (< 1024 px),
 > vue bureau unifiée (≥ 1024 px), `ExportEditor` + registre, retrait des boutons « petit / moyen / grand ». Hors périmètre :
-> fond vidéo (emplacement seulement), table de montage, pas à pas, choix du format d'éditeur.
+> table de montage, pas à pas, choix du format d'éditeur.
 > Environnement : atelier construit dans un worktree jetable, base de test jetable (`harness/h.mjs`), session d'essai avec le
 > texte du corpus (sourate 112) et traductions d'essai, comptes `admin_test` et `recitant_test`. Jamais d'audio de personne.
 > Gestes : Chrome piloté par Playwright ; au toucher, `Input.dispatchTouchEvent` (un et deux doigts) ; à la souris, événements
@@ -91,6 +91,12 @@
 **Attendu** : machine à gestes (toucher, glisser avec seuil souris / doigt, aimants par axe, poignées, pincement, annulation propre, `reset`), `hitLayout` (44 px, dans le cadre), `handlePlacements` (jamais deux cibles l'une sur l'autre), `overlappingBlocks`, `cycleBlock`, réglages purs.
 **Preuve** : `export-video-gesture.test.ts`, `export-video-handles.test.ts`, `export-video-hit.test.ts`, `export-video-edit.test.ts`, `export-video-edit-snap.test.ts`, `export-video-editor.test.ts`, `export-video-edit-text.test.ts`, `editor.test.tsx`.
 
+### E.16 — [WEB][BE] Une vidéo de fond choisie depuis l'éditeur sort dans la vidéo exportée
+**Priorité** : critique · **Technique** : transition-état (choisir, fermer en plein envoi, exporter)
+**Action** : section Fond, « Ma vidéo… » (clip de 3 s, puis de 20 s) ; fermer la feuille (au bureau : choisir un autre élément) pendant l'envoi ; revenir au Fond ; qualité légère ; « Exporter » ; télécharger le MP4.
+**Attendu** : l'envoi se termine malgré la fermeture ; les réglages du compte portent `background: "video"`, le nom du fichier, le départ et le comportement ; MP4 H.264 avec UNE seule piste audio ; le fond change d'un instant à l'autre dans l'image extraite ; l'aperçu et l'image exportée montrent la même scène.
+**Preuve** : `proof-editor-fond.mjs` (390 px, clip 3 s ; 1280 px, clip 20 s) ; capture `apercu-contre-export.png`.
+
 ## Must-fail (doivent être refusés ou retomber proprement)
 
 - **F.1** `pointercancel` en plein glissement, redimensionnement ou pincement : l'élément retrouve sa place de départ, plus aucun geste en cours (`export-video-gesture.test.ts`).
@@ -101,7 +107,6 @@
 - **F.6** Un appui long qui atteint la borne s'arrête (le bouton désactivé ne laisse pas tourner la répétition).
 
 ## Limites connues (dites, pas cachées)
-- L'emplacement du fond vidéo (`frame.backgroundVideo`) est vide : la phase « transport du fond vidéo » le remplit.
 - La table de montage et le pas à pas n'existent pas encore : leur mode retombe sur le plateau.
 - Pas de barre de position dans l'aperçu animé (10 secondes à partir du verset le plus long, avec le son).
 - Lecteur d'écran (NVDA, VoiceOver) : étiquettes, rôles et annonces posés, non testés.

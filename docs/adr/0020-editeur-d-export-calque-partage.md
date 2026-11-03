@@ -72,7 +72,11 @@ est le composant le plus délicat, et le moins pardonnable s'il est écrit trois
 - Pas de barre de position dans l'aperçu : le lecteur anime 10 secondes à partir du verset le plus long, avec le son.
 - Aucune dépendance de test ajoutée (pas de jsdom ni de testing-library dans le projet) : la logique des gestes est testée sans
   DOM, le rendu des composants en HTML statique, les gestes réels au navigateur (Chrome DevTools, un et deux doigts).
-- Le fond vidéo est un **emplacement** (`frame.backgroundVideo`) rempli par la phase « transport du fond vidéo ».
+- Le fond vidéo est un **emplacement** (`frame.backgroundVideo`) rempli par `BackgroundVideoSection` (ADR-0019, fond vidéo) : le panneau garde la
+  valeur (`BackgroundVideoValue`), range `backgroundVideoPrefs` dans les réglages du compte, appelle `ensureClipOnServer` juste avant le
+  rendu et passe `backgroundVideoRequest` à `exportVideoRequest`. La section héberge un envoi qui s'arrête à son démontage : la feuille « Fond »
+  du téléphone et le volet « Cadre » du bureau restent montés (cachés) une fois ouverts, pour que fermer la feuille ou choisir un élément
+  n'interrompe pas l'envoi.
 
 ## Conséquences
 

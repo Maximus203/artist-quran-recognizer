@@ -19,7 +19,10 @@
   sourate (14 px) ne suivait pas l'échelle (l'aperçu la montrait 60 % plus grande) et l'espacement des barres de l'onde non plus
   (2× moins de barres dans l'aperçu à 720p). Les deux suivent maintenant l'échelle ; à 1080 px rien ne change. Écart moyen de
   niveaux de gris aperçu / image exportée (miniatures 64 × 36) : 4,8 / 255 avant, 1,5 après.
-- **Non fait / à suivre** : emplacement du fond vidéo (phase « transport du fond vidéo ») ; table de montage et pas à pas
+- **Fond vidéo branché** (fusion de #203) : `BackgroundVideoSection` dans la section Fond (feuille et inspecteur), `ensureClipOnServer`
+  avant l'export, `backgroundVideoRequest` dans le JSON ; la feuille « Fond » (téléphone) et le volet « Cadre » (bureau) restent montés une
+  fois ouverts, car la section arrête son envoi à son démontage. Numéro d'ADR : celui de l'éditeur passe de 0019 à 0020 (0019 pris par #203).
+- **Non fait / à suivre** : table de montage et pas à pas
   (registre) ; choix du format d'éditeur (phase 4) ; lecteur d'écran non testé avec NVDA ou VoiceOver.
 
 ## 2026-11-03 — Export vidéo : la vidéo de fond choisie est envoyée au serveur (ADR-0019)
