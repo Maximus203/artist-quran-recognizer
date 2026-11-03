@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Playlist : la liste des audios passe à côté du lecteur
+Étiquettes : utilisateur
+PR : #0
+
+**Ce qui change.** Sur grand écran (à partir de 1000 px), la liste des audios s'affiche à droite du lecteur au lieu d'en dessous ; elle reste visible et défile seule si elle est longue. Sur téléphone et écran étroit, elle reste sous le lecteur.
+
+**Pourquoi / décision.** Évite de faire défiler toute la page pour atteindre le bas d'une longue playlist.
+
 ## 2026-11-03 — La traduction s'affiche dans le lecteur de playlist
 Étiquettes : utilisateur
 PR : #191

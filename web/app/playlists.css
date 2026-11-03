@@ -232,3 +232,27 @@
     min-height: 9rem;
   }
 }
+
+/* Grand écran : le lecteur et la liste côte à côte, pour ne pas faire défiler la page jusqu'au bout de la liste */
+.pl-body {
+  display: grid;
+  gap: var(--sp-4);
+}
+@media (min-width: 1000px) {
+  .pl.page {
+    max-width: 1180px;
+  }
+  .pl-body {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    align-items: start;
+  }
+  .pl-body .pl-card {
+    margin: 0;
+  }
+  .pl-body .pl-list {
+    position: sticky;
+    top: var(--sp-4);
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+  }
+}

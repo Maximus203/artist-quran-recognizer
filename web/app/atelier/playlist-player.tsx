@@ -388,204 +388,208 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
         </p>
       </header>
 
-      {detail.items.length === 0 ? (
-        <p className="notice" data-testid="pl-empty">
-          Cette playlist est vide. Ajoute des audios depuis la{" "}
-          <Link href="/sessions">liste des sessions</Link> : menu d’une ligne, «
-          Ajouter à une playlist ».
-        </p>
-      ) : (
-        <section className="pl-card" aria-label="Lecteur">
-          <audio ref={audioRef} preload="metadata" />
-          <PlaylistVerse
-            status={verses.id === current ? verses.status : "loading"}
-            intervals={verses.id === current ? verses.intervals : []}
-            time={time}
-            playing={playing}
-            offsetMs={prefs.audioOffsetMs}
-          />
-          <p className="pl-now" data-testid="pl-now" aria-live="polite">
-            <span className="eyebrow">En lecture</span>
-            <b>{currentItem?.name ?? "—"}</b>
+      <div className="pl-body">
+        {detail.items.length === 0 ? (
+          <p className="notice" data-testid="pl-empty">
+            Cette playlist est vide. Ajoute des audios depuis la{" "}
+            <Link href="/sessions">liste des sessions</Link> : menu d’une ligne,
+            « Ajouter à une playlist ».
           </p>
-          <div className="pl-seek">
-            <span className="mono">{formatClockLength(time)}</span>
-            <input
-              type="range"
-              min={0}
-              max={duration || 0}
-              step={0.1}
-              value={Math.min(time, duration || 0)}
-              aria-label="Position dans l’audio"
-              data-testid="pl-seek"
-              disabled={!duration}
-              style={
-                {
-                  "--p": `${duration ? (time / duration) * 100 : 0}%`,
-                } as React.CSSProperties
-              }
-              onChange={(event) => seek(Number(event.target.value))}
+        ) : (
+          <section className="pl-card" aria-label="Lecteur">
+            <audio ref={audioRef} preload="metadata" />
+            <PlaylistVerse
+              status={verses.id === current ? verses.status : "loading"}
+              intervals={verses.id === current ? verses.intervals : []}
+              time={time}
+              playing={playing}
+              offsetMs={prefs.audioOffsetMs}
             />
-            <span className="mono">{formatClockLength(duration)}</span>
-          </div>
-          <div className="pl-transport">
-            <button
-              type="button"
-              className="pl-btn"
-              aria-label="Lecture aléatoire"
-              aria-pressed={queue.shuffle}
-              data-testid="pl-shuffle"
-              onClick={() => setQueue(withShuffle(queue, !queue.shuffle))}
-            >
-              <Icon name="shuffle" />
-            </button>
-            <button
-              type="button"
-              className="pl-btn"
-              aria-label="Audio précédent"
-              data-testid="pl-prev"
-              onClick={previous}
-            >
-              <Icon name="skip-prev" />
-            </button>
-            <button
-              type="button"
-              className="pl-btn pl-btn--main"
-              aria-label={playing ? "Mettre en pause" : "Lire"}
-              data-testid="pl-play"
-              onClick={toggle}
-            >
-              <Icon name={playing ? "pause" : "play"} />
-            </button>
-            <button
-              type="button"
-              className="pl-btn"
-              aria-label="Audio suivant"
-              data-testid="pl-next"
-              onClick={next}
-            >
-              <Icon name="skip-next" />
-            </button>
-            <button
-              type="button"
-              className="pl-btn"
-              aria-label={REPEAT_LABEL[queue.repeat]}
-              aria-pressed={queue.repeat !== "off"}
-              data-testid="pl-repeat"
-              data-mode={queue.repeat}
-              title={REPEAT_LABEL[queue.repeat]}
-              onClick={() =>
-                setQueue(withRepeat(queue, nextRepeat(queue.repeat)))
-              }
-            >
-              <Icon name={queue.repeat === "one" ? "repeat-one" : "repeat"} />
-            </button>
-          </div>
-          <div className="pl-mix">
-            <label>
-              Volume
-              <input
-                className="vol"
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={prefs.volume}
-                aria-label="Volume"
-                style={
-                  { "--p": `${prefs.volume * 100}%` } as React.CSSProperties
-                }
-                onChange={(event) =>
-                  update({ volume: Number(event.target.value) })
-                }
-              />
-            </label>
-            <label>
-              Écho
-              <input
-                className="vol"
-                type="range"
-                min={ECHO.min}
-                max={ECHO.max}
-                step={ECHO.step}
-                value={prefs.echo}
-                aria-label="Écho de l’écoute"
-                data-testid="pl-echo"
-                style={{ "--p": `${prefs.echo * 100}%` } as React.CSSProperties}
-                onChange={(event) =>
-                  update({ echo: Number(event.target.value) })
-                }
-              />
-            </label>
-          </div>
-          {notice ? (
-            <p
-              className="notice notice--error"
-              role="status"
-              data-testid="pl-notice"
-            >
-              {notice}
+            <p className="pl-now" data-testid="pl-now" aria-live="polite">
+              <span className="eyebrow">En lecture</span>
+              <b>{currentItem?.name ?? "—"}</b>
             </p>
-          ) : null}
-        </section>
-      )}
-
-      {detail.items.length > 0 ? (
-        <ol className="pl-list" aria-label="Audios de la playlist">
-          {detail.items.map((item, index) => (
-            <li
-              key={item.session_id}
-              className="pl-item"
-              aria-current={item.session_id === current ? "true" : undefined}
-              data-testid={`pl-item-${item.session_id}`}
-            >
+            <div className="pl-seek">
+              <span className="mono">{formatClockLength(time)}</span>
+              <input
+                type="range"
+                min={0}
+                max={duration || 0}
+                step={0.1}
+                value={Math.min(time, duration || 0)}
+                aria-label="Position dans l’audio"
+                data-testid="pl-seek"
+                disabled={!duration}
+                style={
+                  {
+                    "--p": `${duration ? (time / duration) * 100 : 0}%`,
+                  } as React.CSSProperties
+                }
+                onChange={(event) => seek(Number(event.target.value))}
+              />
+              <span className="mono">{formatClockLength(duration)}</span>
+            </div>
+            <div className="pl-transport">
               <button
                 type="button"
-                className="pl-open"
-                onClick={() => open(item.session_id)}
-                data-testid={`pl-open-${item.session_id}`}
+                className="pl-btn"
+                aria-label="Lecture aléatoire"
+                aria-pressed={queue.shuffle}
+                data-testid="pl-shuffle"
+                onClick={() => setQueue(withShuffle(queue, !queue.shuffle))}
               >
-                <span className="pl-n mono">{index + 1}</span>
-                <span className="pl-name">{item.name}</span>
-                <span className="pl-dur mono">
-                  {item.audio_duration_s
-                    ? formatClockLength(item.audio_duration_s)
-                    : ""}
-                </span>
+                <Icon name="shuffle" />
               </button>
-              <span className="pl-actions">
+              <button
+                type="button"
+                className="pl-btn"
+                aria-label="Audio précédent"
+                data-testid="pl-prev"
+                onClick={previous}
+              >
+                <Icon name="skip-prev" />
+              </button>
+              <button
+                type="button"
+                className="pl-btn pl-btn--main"
+                aria-label={playing ? "Mettre en pause" : "Lire"}
+                data-testid="pl-play"
+                onClick={toggle}
+              >
+                <Icon name={playing ? "pause" : "play"} />
+              </button>
+              <button
+                type="button"
+                className="pl-btn"
+                aria-label="Audio suivant"
+                data-testid="pl-next"
+                onClick={next}
+              >
+                <Icon name="skip-next" />
+              </button>
+              <button
+                type="button"
+                className="pl-btn"
+                aria-label={REPEAT_LABEL[queue.repeat]}
+                aria-pressed={queue.repeat !== "off"}
+                data-testid="pl-repeat"
+                data-mode={queue.repeat}
+                title={REPEAT_LABEL[queue.repeat]}
+                onClick={() =>
+                  setQueue(withRepeat(queue, nextRepeat(queue.repeat)))
+                }
+              >
+                <Icon name={queue.repeat === "one" ? "repeat-one" : "repeat"} />
+              </button>
+            </div>
+            <div className="pl-mix">
+              <label>
+                Volume
+                <input
+                  className="vol"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={prefs.volume}
+                  aria-label="Volume"
+                  style={
+                    { "--p": `${prefs.volume * 100}%` } as React.CSSProperties
+                  }
+                  onChange={(event) =>
+                    update({ volume: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label>
+                Écho
+                <input
+                  className="vol"
+                  type="range"
+                  min={ECHO.min}
+                  max={ECHO.max}
+                  step={ECHO.step}
+                  value={prefs.echo}
+                  aria-label="Écho de l’écoute"
+                  data-testid="pl-echo"
+                  style={
+                    { "--p": `${prefs.echo * 100}%` } as React.CSSProperties
+                  }
+                  onChange={(event) =>
+                    update({ echo: Number(event.target.value) })
+                  }
+                />
+              </label>
+            </div>
+            {notice ? (
+              <p
+                className="notice notice--error"
+                role="status"
+                data-testid="pl-notice"
+              >
+                {notice}
+              </p>
+            ) : null}
+          </section>
+        )}
+
+        {detail.items.length > 0 ? (
+          <ol className="pl-list" aria-label="Audios de la playlist">
+            {detail.items.map((item, index) => (
+              <li
+                key={item.session_id}
+                className="pl-item"
+                aria-current={item.session_id === current ? "true" : undefined}
+                data-testid={`pl-item-${item.session_id}`}
+              >
                 <button
                   type="button"
-                  className="btn btn--ghost btn--icon btn--sm"
-                  aria-label={`Monter « ${item.name} »`}
-                  disabled={index === 0}
-                  onClick={() => void move(index, -1)}
+                  className="pl-open"
+                  onClick={() => open(item.session_id)}
+                  data-testid={`pl-open-${item.session_id}`}
                 >
-                  <Icon name="chevron-d" className="i-flip" />
+                  <span className="pl-n mono">{index + 1}</span>
+                  <span className="pl-name">{item.name}</span>
+                  <span className="pl-dur mono">
+                    {item.audio_duration_s
+                      ? formatClockLength(item.audio_duration_s)
+                      : ""}
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--icon btn--sm"
-                  aria-label={`Descendre « ${item.name} »`}
-                  disabled={index === detail.items.length - 1}
-                  onClick={() => void move(index, 1)}
-                >
-                  <Icon name="chevron-d" />
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--icon btn--sm"
-                  aria-label={`Retirer « ${item.name} » de la playlist`}
-                  data-testid={`pl-remove-${item.session_id}`}
-                  onClick={() => void remove(item.session_id)}
-                >
-                  <Icon name="x" />
-                </button>
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+                <span className="pl-actions">
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--icon btn--sm"
+                    aria-label={`Monter « ${item.name} »`}
+                    disabled={index === 0}
+                    onClick={() => void move(index, -1)}
+                  >
+                    <Icon name="chevron-d" className="i-flip" />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--icon btn--sm"
+                    aria-label={`Descendre « ${item.name} »`}
+                    disabled={index === detail.items.length - 1}
+                    onClick={() => void move(index, 1)}
+                  >
+                    <Icon name="chevron-d" />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--icon btn--sm"
+                    aria-label={`Retirer « ${item.name} » de la playlist`}
+                    data-testid={`pl-remove-${item.session_id}`}
+                    onClick={() => void remove(item.session_id)}
+                  >
+                    <Icon name="x" />
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+      </div>
     </div>
   );
 }
