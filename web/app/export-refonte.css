@@ -19,7 +19,6 @@
   --x-view: color-mix(in srgb, var(--accent) 16%, transparent);
   --x-view-edge: var(--accent);
   --x-side-w: 400px;
-  --x-dock-h: 72px;
   --x-chap-gap: var(--sp-6);
   --x-stage-max-h: 46vh;
   --x-gauge-ok: var(--ok);
@@ -52,12 +51,6 @@
   max-width: 920px;
   width: 100%;
 }
-@media (max-width: 1023px) {
-  .ex-xcol--video {
-    padding-bottom: calc(var(--x-dock-h) + var(--sp-6));
-  }
-}
-
 /* ── Rail d'étapes : une porte (Vérifier) et deux livrables ──────────────────────────── */
 .xr-rail {
   display: grid;
@@ -1306,66 +1299,6 @@ details.xr-fine > div {
   color: var(--danger);
 }
 
-/* ═══════════════ Aperçu ═══════════════ */
-.xr-stage-wrap {
-  min-width: 0;
-  scroll-margin-top: calc(var(--header-h) + var(--sp-2));
-}
-.xr-stage-wrap .ex-video-preview {
-  position: static;
-  padding: 0;
-  background: transparent;
-}
-.xr-stage-wrap .ex-video-preview {
-  /* Une piste qui ne dépasse jamais la colonne (sinon le bouton d'aperçu l'élargit à 320 px). */
-  grid-template-columns: minmax(0, 1fr);
-  min-width: 0;
-}
-.xr-stage-wrap .ex-video-canvas {
-  max-block-size: var(--x-stage-max-h);
-  max-inline-size: 100%;
-}
-.xr-stage-wrap .ex-video-preview-bar,
-.xr-stage-wrap .ex-video-preview-bar .btn {
-  max-width: 100%;
-  white-space: normal;
-}
-.xr-ministage {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--header-h);
-  z-index: 20;
-  display: none;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-1) var(--gutter);
-  background: color-mix(in srgb, var(--surface-1) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-}
-.xr-ministage[data-show] {
-  display: flex;
-}
-.xr-ministage p {
-  font-size: var(--fs-xs);
-  color: var(--text-2);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  margin: 0;
-}
-.xr-ministage b {
-  color: var(--text);
-}
-@media (min-width: 1024px) {
-  .xr-ministage {
-    display: none !important;
-  }
-}
-
 /* ═══════════════ Bordereau : récapitulatif + action ═══════════════ */
 .xr-bord {
   background: var(--surface-2);
@@ -1503,61 +1436,7 @@ details.xr-api pre {
   padding: 0;
 }
 
-/* Dock et feuille (téléphone) */
-.xr-dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 25;
-  min-height: var(--x-dock-h);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--gutter)
-    calc(var(--sp-2) + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surface-1) 96%, transparent);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--border-strong);
-}
-.xr-dock .sumbtn {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-  min-height: var(--hit);
-  display: grid;
-  align-content: center;
-  border-radius: var(--r-sm);
-}
-.xr-dock .sumbtn:focus-visible {
-  outline: 2px solid var(--focus);
-}
-.xr-dock .sumbtn b {
-  font-size: var(--fs-sm);
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.xr-dock .sumbtn small {
-  font-size: var(--fs-xs);
-  color: var(--text-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-}
-.xr-dock .sumbtn small.warn {
-  color: var(--warn);
-}
-.xr-dock .btn {
-  flex: none;
-}
-@media (min-width: 1024px) {
-  .xr-dock {
-    display: none;
-  }
-}
+/* Feuille récapitulative de l'export */
 .xr-scrim {
   position: fixed;
   inset: 0;

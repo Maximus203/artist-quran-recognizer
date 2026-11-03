@@ -116,13 +116,13 @@
   border-radius: var(--r-md);
   background: var(--cue-bg);
 }
-.xe-stage .ex-video-canvas {
+.xe-canvas {
+  display: block;
   inline-size: 100%;
   block-size: 100%;
-  max-inline-size: none;
-  max-block-size: none;
   border-radius: inherit;
   border: 1px solid var(--border);
+  background: var(--cue-bg);
 }
 .xe-transport {
   display: flex;

@@ -496,7 +496,7 @@ export function VideoPreview(inputs: PreviewInputs) {
         >
           <canvas
             ref={canvasRef}
-            className="ex-video-canvas"
+            className="xe-canvas"
             data-testid="video-preview"
             role="img"
             aria-label="Aperçu de la vidéo avec le verset le plus long de la session"
