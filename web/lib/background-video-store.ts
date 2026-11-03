@@ -23,6 +23,7 @@ import {
 import {
   checkClipFile,
   clipExplanation,
+  MAX_PICTURE_SIDE,
   parseClipLimits,
   type ClipCode,
   type ClipLimits,
@@ -63,6 +64,8 @@ export const READY_TTL_S = 72 * 3600;
 /** Un échec reste lisible une heure (le temps de l'expliquer), puis disparaît. */
 export const FAILED_TTL_S = 3600;
 const ID_RE = /^[0-9a-f]{32}$/;
+/** Un assemblage ne dure pas 10 minutes : au-delà, son marqueur est un reste de panne. */
+const STALE_MARKER_MS = 10 * 60_000;
 /** Écriture de `touchedAt` au plus une fois par minute. */
 const TOUCH_EVERY_MS = 60_000;
 
@@ -192,6 +195,8 @@ async function writeMeta(meta: Meta): Promise<void> {
     await rename(temp, target); // atomique : on ne lit jamais une méta à moitié écrite
   } catch (error) {
     await rm(temp, { force: true });
+    // Dossier retiré entre-temps (abandon, expiration) : rien à écrire, ce n'est pas une panne de disque.
+    if ((error as NodeJS.ErrnoException)?.code === "ENOENT") throw error;
     throw diskError(error);
   }
 }
@@ -205,7 +210,12 @@ function updateMeta(
     const meta = await readMetaRaw(id);
     if (!meta) return null;
     const next = change(meta);
-    await writeMeta(next);
+    try {
+      await writeMeta(next);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === "ENOENT") return null;
+      throw error;
+    }
     return next;
   });
 }
@@ -452,6 +462,10 @@ export async function completeClip(
   }
   const dir = dirOf(first.id);
   const marker = path.join(dir, "completing");
+  // Un marqueur vieux de plus de 10 min vient d'une panne en plein assemblage : il ne bloque pas la reprise.
+  const left = await stat(marker).catch(() => null);
+  if (left && deps.now() - left.mtimeMs > STALE_MARKER_MS)
+    await rm(marker, { force: true });
   try {
     await (await open(marker, "wx")).close();
   } catch {
@@ -502,6 +516,9 @@ export async function completeClip(
       if (error.code === "server") throw new ClipError(503, "server");
       return await refuse(new ClipError(422, error.code));
     }
+    // Des images démesurées coûteraient au serveur plus de mémoire que n'importe quel export n'en a besoin.
+    if (Math.max(probe.width, probe.height) > MAX_PICTURE_SIDE)
+      return await refuse(new ClipError(413, "too_wide"));
     const limits = clipLimitsNow();
     if (probe.duration !== null && probe.duration > limits.maxSeconds)
       return await refuse(

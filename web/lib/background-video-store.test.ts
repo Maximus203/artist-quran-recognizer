@@ -7,6 +7,7 @@ import {
   readdir,
   rm,
   stat,
+  utimes,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -394,6 +395,43 @@ describe("assemblage, contrôle du type réel et préparation", () => {
       code: "too_long",
     });
     expect(await entries()).toEqual([]);
+  });
+
+  it("des images démesurées (bombe de décompression) sont refusées avant toute préparation", async () => {
+    let prepared = false;
+    const d = await withDeps({
+      probe: async () => ({
+        duration: 5,
+        width: 20000,
+        height: 12000,
+        codec: "h264",
+      }),
+      normalize: async () => {
+        prepared = true;
+      },
+    });
+    const { id } = await uploaded(d);
+    await expect(completeClip({ ...owner, id }, d)).rejects.toMatchObject({
+      status: 413,
+      code: "too_wide",
+    });
+    expect(prepared).toBe(false);
+    expect(await entries()).toEqual([]);
+  });
+
+  it("un marqueur d'assemblage resté après une panne (plus de 10 min) ne bloque pas la reprise", async () => {
+    const d = await withDeps();
+    const { id } = await uploaded(d);
+    const marker = path.join(root(), id, "completing");
+    await writeFile(marker, "");
+    // frais : un autre assemblage est vraiment en cours
+    await expect(completeClip({ ...owner, id }, d)).rejects.toMatchObject({
+      status: 409,
+    });
+    const old = new Date(Date.now() - 11 * 60_000);
+    await utimes(marker, old, old);
+    expect((await completeClip({ ...owner, id }, d)).state).toBe("processing");
+    await settledClip(id);
   });
 
   it("une empreinte annoncée qui ne correspond pas est refusée et tout est supprimé", async () => {

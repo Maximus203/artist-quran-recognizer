@@ -40,6 +40,9 @@ export const DEFAULT_CLIP_LIMITS: ClipLimits = {
   maxClips: 3,
 };
 
+/** Plus grand côté d'image accepté (px) : au-delà, le décodage coûterait trop de mémoire au serveur (8K = 7 680). */
+export const MAX_PICTURE_SIDE = 7680;
+
 const positiveInt = (raw: string | undefined, fallback: number): number => {
   const value = Number(raw);
   return raw !== undefined && Number.isInteger(value) && value > 0
@@ -88,6 +91,7 @@ export type ClipCode =
   | "empty"
   | "too_big"
   | "too_long"
+  | "too_wide"
   | "no_duration"
   | "unreadable"
   | "no_video"
@@ -121,6 +125,8 @@ export function clipExplanation(code: ClipCode, context: Context): string {
       return `Ce fichier est trop lourd${context.size ? ` (${formatBytesFr(context.size)})` : ""} : le maximum est ${max}. La vidéo de fond n'est pas utilisée. Choisis une vidéo plus légère, ou raccourcis-la avant de l'envoyer.`;
     case "too_long":
       return `Cette vidéo est trop longue${context.seconds ? ` (${formatDurationFr(context.seconds)})` : ""} : le maximum est ${maxTime}. La vidéo de fond n'est pas utilisée. Coupe-la à ${maxTime} ou moins avant de la choisir.`;
+    case "too_wide":
+      return `Les images de cette vidéo sont démesurées (plus de ${MAX_PICTURE_SIDE} px de côté). Elle n'est pas utilisée. Réduis-la (1080p suffit pour l'export), puis choisis-la de nouveau.`;
     case "no_duration":
       return "On n'arrive pas à lire la durée de cette vidéo. Sans elle, on ne peut pas la caler sur la récitation. Essaie un autre fichier, de préférence en MP4.";
     case "unreadable":

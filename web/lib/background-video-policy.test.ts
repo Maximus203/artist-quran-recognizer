@@ -120,6 +120,7 @@ describe("explications d'erreur en français clair (cause, effet, que faire)", (
     "empty",
     "too_big",
     "too_long",
+    "too_wide",
     "no_duration",
     "unreadable",
     "no_video",

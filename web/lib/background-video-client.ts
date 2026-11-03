@@ -84,6 +84,7 @@ const KNOWN_CODES = new Set<string>([
   "empty",
   "too_big",
   "too_long",
+  "too_wide",
   "no_duration",
   "unreadable",
   "no_video",
