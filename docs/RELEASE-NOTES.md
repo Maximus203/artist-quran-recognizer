@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Export vidéo : choisir le format de l'éditeur sur téléphone
+Étiquettes : utilisateur, technique, décision
+PR : #205
+
+**Ce qui change.** Sur téléphone, la première fois qu'un testeur ou un administrateur ouvre l'export vidéo, une fenêtre lui demande comment il préfère régler sa vidéo : le Plateau (« je touche ce que je veux changer »), la Table de montage (« je règle avec une chronologie, comme un monteur ») ou le Pas à pas (« on me guide en trois étapes »). Chaque format s'explique en une phrase, dit pour qui il est, et se montre par une courte animation (images fixes, avec légendes, si le téléphone réduit les mouvements). Un seul geste choisit ; « Choisir plus tard » donne le plateau pour cette visite et la question revient à la suivante. Le choix est gardé sur le compte (on le retrouve sur un autre appareil) et se change dans Compte, Préférences, section « Éditeur d'export (téléphone) ». Le récitateur a le Pas à pas sans aucune question. Au bureau, jamais de question : la vue reste unique.
+
+**Pourquoi / décision.** Décisions du mainteneur du 2026-11-03. La règle (qui est interrogé, quel éditeur sans choix) tient en un seul fichier testé, `web/lib/export-editor-mode.ts` ; le choix est la préférence `editorMode` du compte, validée par le serveur. La table de montage et le pas à pas reviennent au plateau tant que leur éditeur n'est pas livré : le choix est déjà enregistré. Voir `docs/adr/0021-choix-du-format-d-editeur.md`.
+
 ## 2026-11-03 — Export vidéo : l'aperçu devient l'éditeur (plateau sur téléphone, vue unique au bureau)
 Étiquettes : utilisateur, technique, décision
 PR : #202
