@@ -69,11 +69,15 @@ export function parseCache(
       const shape = (
         preferencesShape as Record<
           string,
-          { safeParse: (v: unknown) => { success: boolean } }
+          {
+            safeParse: (v: unknown) => { success: boolean; data?: unknown };
+          }
         >
       )[key];
-      if (shape?.safeParse(value).success)
-        (pending as Record<string, unknown>)[key] = value;
+      // On garde la valeur VALIDÉE (et non l'originale) : un ancien format est ainsi converti.
+      const checked = shape?.safeParse(value);
+      if (checked?.success)
+        (pending as Record<string, unknown>)[key] = checked.data;
     }
   }
   return { prefs: full, pending };

@@ -77,7 +77,7 @@ import {
   type ExportFailure,
   type ExportPhase,
 } from "./video-bordereau";
-import { backgroundName, formatName, sizeName, VideoLook } from "./video-look";
+import { backgroundName, formatName, sizeLabel, VideoLook } from "./video-look";
 import { VideoPreview } from "./video-preview";
 import { useShell } from "../shell";
 import { CustomQuality, QualityTiers, WeightGauge } from "./video-quality";
@@ -471,7 +471,9 @@ export function VideoPanel({
         ? SOURCE_BACKGROUND_ID
         : choice.kind === "color"
           ? "color"
-          : choice.preset.id;
+          : choice.kind === "video"
+            ? "video"
+            : choice.preset.id;
 
   // --- poids, bordereau, API ------------------------------------------------------------------
   const whole = ranges.length === 1 && isWhole(ranges[0], duration);
@@ -750,7 +752,7 @@ export function VideoPanel({
   const whatSummary = whole
     ? `Tout l’audio · ${formatDurationFr(seconds)}`
     : `${ranges.length} plage${ranges.length > 1 ? "s" : ""} · ${formatDurationFr(seconds)}`;
-  const lookSummary = `${formatName(prefs.orientation)} · ${backgroundName(selectedBg, bgFile !== null)} · arabe ${sizeName(prefs.arabicSize)}`;
+  const lookSummary = `${formatName(prefs.orientation)} · ${backgroundName(selectedBg, bgFile !== null)} · arabe ${sizeLabel(prefs.styles.arabic.size)}`;
   const qualitySummary = `${prefs.resolution}p · ${prefs.fps} im/s · ≈ ${megabytesFr(weight.totalMb)}`;
 
   return (

@@ -58,6 +58,7 @@ const videoBackground = (ready: boolean): LoadedBackground => {
     gradient: null,
     scrim: true,
     video,
+    clip: false,
     close: () => undefined,
   };
 };
@@ -79,6 +80,7 @@ describe("accent automatique : une seule fonction, le même résultat partout", 
         gradient,
         scrim: false,
         video: null,
+        clip: false,
         close: () => undefined,
       }),
     ).toEqual(gradient.accent);
@@ -88,6 +90,7 @@ describe("accent automatique : une seule fonction, le même résultat partout", 
         gradient: null,
         scrim: false,
         video: null,
+        clip: false,
         close: () => undefined,
       }),
     ).toEqual(DEFAULT_ACCENT);

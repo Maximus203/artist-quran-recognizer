@@ -41,6 +41,20 @@ describe("muxArgs", () => {
     expect(args[args.length - 1]).toBe("out.mp4");
   });
 
+  it("le seul son du MP4 est celui de la récitation : une vidéo de fond est muette par construction", () => {
+    const args = muxArgs({
+      video: "fond.h264",
+      wav: "ecoute.wav",
+      out: "o",
+      fps: 30,
+    });
+    // Deux entrées seulement : le flux H.264 brut (des images, jamais de son) et la copie d'écoute.
+    expect(args.filter((a) => a === "-i")).toHaveLength(2);
+    const maps = args.flatMap((a, i) => (a === "-map" ? [args[i + 1]] : []));
+    expect(maps).toEqual(["0:v:0", "1:a:0"]);
+    expect(args.join(" ")).not.toMatch(/-map 0:a|-an /);
+  });
+
   it("n'utilise jamais -shortest : sur un flux brut il supprime toute la bande son", () => {
     const args = muxArgs({ video: "v", wav: "w", out: "o", fps: 25 });
     expect(args).not.toContain("-shortest");

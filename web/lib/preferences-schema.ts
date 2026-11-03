@@ -6,7 +6,11 @@ import {
   toStoredExportOptions,
   DEFAULT_EXPORT_OPTIONS,
 } from "./export-options";
-import { DEFAULT_VIDEO_PREFS, videoPrefsSchema } from "./export-video-prefs";
+import {
+  DEFAULT_VIDEO_PREFS,
+  sanitizeVideoPrefs,
+  videoPrefsSchema,
+} from "./export-video-prefs";
 import { QURAN_FONTS, type QuranFontId } from "./quran-fonts";
 import { ENGINE_FILTERS, SCOPES, SORTS, STATE_FILTERS } from "./session-query";
 
@@ -114,6 +118,15 @@ export const PREFERENCE_DEFAULTS: Preferences = {
 };
 
 export const PREFERENCE_KEYS = Object.keys(preferencesShape) as PreferenceKey[];
+
+/**
+ * Clés dont une valeur abîmée se récupère CHAMP PAR CHAMP à la lecture, au lieu de retomber sur le
+ * défaut pour toute la clé : les réglages de la vidéo sont un grand objet, une seule valeur invalide
+ * ne doit pas effacer tout le reste. (L'écriture, elle, reste strictement validée.)
+ */
+export const PREFERENCE_RECOVERY: Partial<
+  Record<PreferenceKey, (raw: unknown) => unknown>
+> = { videoPrefs: sanitizeVideoPrefs };
 
 /** Corps d'une mise à jour : clés connues seulement (les autres sont REFUSÉES), fusion partielle. */
 export const preferencesPatchSchema = z

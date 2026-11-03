@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { TEXT_BASE_SIZE, textStackPosition } from "./export-video-model";
 
 const mocks = vi.hoisted(() => ({ root: "" }));
 vi.mock("./store", () => ({
@@ -185,8 +186,14 @@ describe("options de l'export vidéo par l'API", () => {
       { arabic_size: "xlarge", translation_size: "small" },
       false,
     );
-    expect(prefs.arabicSize).toBe(120);
-    expect(prefs.translationSize).toBe(24);
+    // Les noms de taille de l'API restent des points : 120 pt d'arabe, 24 pt de traduction.
+    expect(prefs.styles.arabic.size * TEXT_BASE_SIZE.arabic).toBeCloseTo(
+      120,
+      1,
+    );
+    expect(
+      prefs.styles.translation.size * TEXT_BASE_SIZE.translation,
+    ).toBeCloseTo(24, 1);
     expect(prefs.orientation).toBe("16:9");
     expect(prefs.showTranslation).toBe(true);
     expect(prefs.showArabic).toBe(true);
@@ -221,11 +228,18 @@ describe("options de l'export vidéo par l'API", () => {
       arabic_size: 200,
     });
     const prefs = videoPrefsFromOptions(options, false);
-    expect(prefs.fill).toBe(true);
-    expect(prefs.textPosition).toBe(12);
+    expect(prefs.styles.arabic.fill).toBe(true);
+    expect(prefs.styles.translation.fill).toBe(true);
+    expect(textStackPosition(prefs.layouts["16:9"], "16:9", false)).toBeCloseTo(
+      0.12,
+      6,
+    );
     expect(prefs.showWave).toBe(false);
     expect(prefs.accent).toEqual(accent);
-    expect(prefs.arabicSize).toBe(200);
+    expect(prefs.styles.arabic.size * TEXT_BASE_SIZE.arabic).toBeCloseTo(
+      200,
+      1,
+    );
     expect(
       videoJobOptionsSchema.safeParse({ accent: { h: 400, s: 1, l: 50, a: 1 } })
         .success,
@@ -234,8 +248,11 @@ describe("options de l'export vidéo par l'API", () => {
       videoJobOptionsSchema.safeParse({ text_position: 150 }).success,
     ).toBe(false);
     expect(
-      videoPrefsFromOptions({ text_position: 30 }, false).textPosition,
-    ).toBe(30);
+      textStackPosition(
+        videoPrefsFromOptions({ text_position: 30 }, false).layouts["9:16"],
+        "9:16",
+      ),
+    ).toBeCloseTo(0.3, 6);
   });
 
   it("une image envoyée l'emporte sur le fond choisi", () => {

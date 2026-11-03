@@ -3,6 +3,7 @@ import { transaction } from "./db";
 import { log } from "./log";
 import {
   PREFERENCE_DEFAULTS,
+  PREFERENCE_RECOVERY,
   preferencesShape as shape,
   type PreferenceKey,
   type Preferences,
@@ -34,7 +35,12 @@ export function readPreferences(db: Db, userId: number): PreferencesView {
     if (!(row.key in shape)) continue; // clé retirée depuis : ignorée
     const key = row.key as PreferenceKey;
     // Jamais fiable : une valeur corrompue ou devenue invalide retombe sur le défaut.
-    const parsed = shape[key].safeParse(safeJson(row.value));
+    const json = safeJson(row.value);
+    let parsed = shape[key].safeParse(json);
+    // Un grand objet abîmé (réglages de la vidéo) se récupère champ par champ plutôt que d'être perdu.
+    const recover = PREFERENCE_RECOVERY[key];
+    if (!parsed.success && recover && json !== undefined)
+      parsed = shape[key].safeParse(recover(json));
     if (!parsed.success) {
       log.warn("preferences", `valeur invalide ignorée pour « ${key} »`);
       continue;

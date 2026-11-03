@@ -1,12 +1,24 @@
 /**
  * Mise en page d'une carte-passage de la vidéo d'export : fonctions pures (aucun canvas), donc
- * testables. Garantit que la référence, l'arabe et la traduction s'enchaînent sans se
- * chevaucher et restent au-dessus de l'onde : retour à la ligne automatique, puis réduction
- * homothétique des tailles si le bloc dépasse encore la zone libre.
+ * testables. Chaque bloc (sourate et verset, arabe, traduction) est placé dans SA boîte
+ * (`ExportLayout`, fractions du cadre) : retour à la ligne automatique, puis réduction homothétique
+ * de CE bloc jusqu'à tenir dans sa boîte. La réduction est rapportée (« réduit à 87 % ») pour que
+ * l'interface puisse la dire ; une boîte vraiment trop petite est signalée (`overflow`).
  *
  * INVARIANT I1 : le texte arabe n'est que découpé (mots du corpus, caractères conservés).
+ * INVARIANT I2 : la traduction n'est que découpée en lignes, jamais modifiée ; son attribution (id,
+ * version, source) est placée DANS le bloc de la traduction, collée sous elle, quand on la fournit.
  */
 import type { ArabicPart } from "./live-highlight";
+import { clampBox } from "./export-video-edit";
+import {
+  sizeScale,
+  textPixelSize,
+  type Box,
+  type ExportLayout,
+  type TextStyle,
+  type TextStyles,
+} from "./export-video-model";
 
 /** Largeur du texte à la taille `size` (px), pour la police concernée. */
 export type MeasureText = (text: string, size: number) => number;
@@ -15,59 +27,90 @@ export type PlacedPart = ArabicPart & { x: number; width: number };
 export type ArabicLine = { parts: PlacedPart[]; width: number; y: number };
 export type TranslationLine = { text: string; y: number };
 
+/** Rectangle en pixels du cadre. */
 export type Rect = { x: number; y: number; width: number; height: number };
 
-export type CardLayout = {
-  refY: number;
-  refSize: number;
-  arabicSize: number;
-  arabicLines: ArabicLine[];
-  translationSize: number;
-  translationLines: TranslationLine[];
-  /** Rectangle englobant tout le texte, marge comprise (support de lisibilité). */
-  panel: Rect;
-  /** Bas de la zone de texte ; l'onde commence en dessous. */
-  textBottom: number;
-  /** Facteur d'ajustement appliqué aux tailles demandées (1 = tailles telles que choisies). */
+/** Ce que l'ajustement d'un bloc à sa boîte a fait, pour que l'interface le dise. */
+export type BlockFit = {
+  /** Facteur appliqué à la taille choisie : 1 = telle quelle, < 1 réduite, > 1 agrandie (« remplir »). */
   fit: number;
+  /** « réduit à 87 % », « agrandi à 140 % » ; null quand la taille est celle qui a été choisie. */
+  note: string | null;
+  /** Vrai si le texte dépasse encore sa boîte au plus petit facteur : la zone est trop petite. */
+  overflow: boolean;
+};
+
+type BlockBase = BlockFit & {
+  /** Boîte du bloc, en pixels. */
+  box: Rect;
+  /** Rectangle du fond du texte (jamais plus grand que la boîte, sauf l'adoucissement des bords). */
+  panel: Rect;
+  /** Milieu horizontal de la boîte : axe du texte centré. */
+  centerX: number;
+};
+
+export type RefBlock = BlockBase & { text: string; size: number; y: number };
+export type ArabicBlock = BlockBase & { size: number; lines: ArabicLine[] };
+export type TranslationBlock = BlockBase & {
+  size: number;
+  lines: TranslationLine[];
+  /** Attribution de la traduction, sous ses lignes (taille réduite), ou null. */
+  attribution: {
+    lines: string[];
+    /** Milieu de la première ligne. */
+    y: number;
+    size: number;
+    lineHeight: number;
+  } | null;
+};
+
+export type CardLayout = {
+  width: number;
+  height: number;
+  ref: RefBlock | null;
+  arabic: ArabicBlock | null;
+  translation: TranslationBlock | null;
+  /** Rectangle de l'onde, en pixels ; null si elle est masquée. */
+  wave: Rect | null;
 };
 
 export type LayoutInput = {
   width: number;
   height: number;
-  /** Découpe en mots du verset (`layoutArabicWords`). */
+  /** Les quatre boîtes de la mise en page à lire (déjà choisie pour la forme du cadre). */
+  layout: ExportLayout;
+  styles: TextStyles;
+  /** Texte de la référence (« Al-Fatiha 1:1 »). */
+  refLabel: string;
+  /** Découpe en mots du verset (`layoutArabicWords`) ; vide = pas de bloc arabe. */
   parts: readonly ArabicPart[];
   translation: string | null;
-  /** Tailles demandées, dans la vidéo de référence de 1080 px de côté court. */
-  arabicSize: number;
-  translationSize: number;
+  /** Attribution de la traduction (I2), collée sous elle ; absente = rien n'est ajouté. */
+  attribution?: string | null;
   measureArabic: MeasureText;
   measureTranslation: MeasureText;
-  /** Les écritures grandissent jusqu'à occuper toute la zone libre (au lieu de rester à la taille choisie). */
-  fill?: boolean;
-  /** Hauteur du bloc dans la zone libre : 0 = en haut, 0,5 = au centre, 1 = en bas. */
-  position?: number;
-  /** Onde affichée en bas : sinon la zone de texte prend toute la hauteur. */
+  /** Mesure de la référence (police en gras) ; défaut : celle de la traduction. */
+  measureRef?: MeasureText;
+  showRef?: boolean;
   showWave?: boolean;
 };
 
-/** Côté court de référence : les tailles des préférences s'y rapportent. */
-export const REFERENCE_SHORT_SIDE = 1080;
-/** Part de la hauteur réservée à l'onde, en bas (plus basse en portrait : l'écran est déjà haut). */
-export const waveZoneFraction = (
-  width: number,
-  height: number,
-  showWave = true,
-): number => (!showWave ? 0 : height > width ? 0.16 : 0.22);
 const MIN_FIT = 0.4;
-/** Plafond de l'agrandissement automatique (mode « remplir »). */
+/** Plafond de l'agrandissement automatique (« remplir »). */
 const MAX_FIT = 4;
 const ARABIC_LINE_HEIGHT = 1.75;
 const TRANSLATION_LINE_HEIGHT = 1.4;
-
-/** Échelle px d'une taille de référence pour ce canvas. */
-export const sizeScale = (width: number, height: number): number =>
-  Math.min(width, height) / REFERENCE_SHORT_SIDE;
+const REF_LINE_HEIGHT = 1.4;
+/** Plus petite référence lisible (px), quelle que soit la taille de la vidéo. */
+const MIN_REF_PX = 14;
+const ATTRIBUTION_RATIO = 0.6;
+const ATTRIBUTION_LINE_HEIGHT = 1.3;
+const ATTRIBUTION_GAP = 0.3;
+/** Marge intérieure d'un fond (px de la vidéo de référence) et sa part maximale d'une petite boîte. */
+const PANEL_PAD = 30;
+const PANEL_PAD_MAX_SHARE = 0.2;
+/** Tolérance de comparaison (px) : un texte « tient » à moins d'un demi-pixel près. */
+const FIT_TOLERANCE = 0.5;
 
 /** Retour à la ligne glouton de la traduction (mots séparés par des espaces). */
 export function wrapTranslation(
@@ -132,151 +175,308 @@ export function wrapArabic(
   return lines;
 }
 
-type Pass = {
-  arabic: ReturnType<typeof wrapArabic>;
-  translation: string[];
-  refSize: number;
-  arabicSize: number;
-  translationSize: number;
-  gapRef: number;
-  gapArabic: number;
-  height: number;
-};
-
-function pass(input: LayoutInput, fit: number, maxWidth: number): Pass {
-  const base = sizeScale(input.width, input.height) * fit;
-  const arabicSize = input.arabicSize * base;
-  const translationSize = input.translationSize * base;
-  const refSize = Math.max(14, input.arabicSize * 0.36 * base);
-  const arabic = wrapArabic(
-    input.parts,
-    maxWidth,
-    arabicSize,
-    input.measureArabic,
-  );
-  const translation = input.translation
-    ? wrapTranslation(
-        input.translation,
-        maxWidth,
-        translationSize,
-        input.measureTranslation,
-      )
-    : [];
-  const gapRef = refSize * 0.5;
-  const gapArabic = translation.length ? arabicSize * 0.3 : 0;
-  const height =
-    refSize * 1.4 +
-    gapRef +
-    arabic.length * arabicSize * ARABIC_LINE_HEIGHT +
-    gapArabic +
-    translation.length * translationSize * TRANSLATION_LINE_HEIGHT;
-  return {
-    arabic,
-    translation,
-    refSize,
-    arabicSize,
-    translationSize,
-    gapRef,
-    gapArabic,
-    height,
-  };
+/** « réduit à 87 % » ou « agrandi à 140 % » ; null si la taille choisie est respectée. */
+export function fitNote(fit: number): string | null {
+  const percent = Math.round(fit * 100);
+  if (fit < 0.995) return `réduit à ${percent} %`;
+  if (fit > 1.005) return `agrandi à ${percent} %`;
+  return null;
 }
 
-/** Disposition complète d'une carte pour un canvas `width × height`. */
-export function layoutCard(input: LayoutInput): CardLayout {
-  const { width, height } = input;
-  const sideMargin = width * (width < height ? 0.07 : 0.08);
-  const maxWidth = width - sideMargin * 2;
-  const top = height * 0.05;
-  const waveFraction = waveZoneFraction(width, height, input.showWave ?? true);
-  const textBottom =
-    height * (1 - waveFraction) -
-    (waveFraction > 0 ? height * 0.025 : height * 0.05);
-  const zoneHeight = textBottom - top;
-  const pad = sizeScale(width, height) * 40;
-  // Le support de lisibilité est inclus dans la zone : on lui réserve sa marge.
-  const available = zoneHeight - pad * 2;
+type Built = { width: number; height: number };
 
+/**
+ * Cherche le facteur d'échelle d'un bloc : 1 (taille choisie), agrandi par paliers en mode « remplir »,
+ * puis réduit tant que le bloc (hauteur OU largeur d'un mot) dépasse sa zone, jusqu'à `MIN_FIT`.
+ */
+function fitBlock<B extends Built>(
+  build: (fit: number) => B,
+  availWidth: number,
+  availHeight: number,
+  fill: boolean,
+): { fit: number; built: B; overflow: boolean } {
+  const fits = (b: Built) =>
+    b.height <= availHeight + FIT_TOLERANCE &&
+    b.width <= availWidth + FIT_TOLERANCE;
   let fit = 1;
-  let current = pass(input, fit, maxWidth);
-  if (input.fill) {
-    // Agrandit par paliers tant que tout tient, puis affine : le bloc occupe la zone libre.
+  let built = build(fit);
+  if (fill) {
+    // Agrandit par paliers tant que tout tient, puis affine : le bloc occupe sa zone.
     let step = 1.15;
     for (let i = 0; i < 18; i++) {
-      const next = pass(input, Math.min(MAX_FIT, fit * step), maxWidth);
-      if (next.height <= available && fit < MAX_FIT) {
-        fit = Math.min(MAX_FIT, fit * step);
-        current = next;
+      const candidate = Math.min(MAX_FIT, fit * step);
+      const next = build(candidate);
+      if (fits(next) && fit < MAX_FIT) {
+        fit = candidate;
+        built = next;
       } else {
         step = 1 + (step - 1) / 2;
       }
     }
   }
-  for (let i = 0; i < 10 && current.height > available && fit > MIN_FIT; i++) {
-    fit = Math.max(
-      MIN_FIT,
-      fit * Math.max(0.5, (available / current.height) * 0.98),
+  for (let i = 0; i < 12 && !fits(built) && fit > MIN_FIT; i++) {
+    const ratio = Math.min(
+      availHeight / Math.max(1e-6, built.height),
+      availWidth / Math.max(1e-6, built.width),
     );
-    current = pass(input, fit, maxWidth);
+    fit = Math.max(MIN_FIT, fit * Math.max(0.5, ratio * 0.98));
+    built = build(fit);
+  }
+  return { fit, built, overflow: !fits(built) };
+}
+
+const toRect = (box: Box, width: number, height: number): Rect => ({
+  x: box.x * width,
+  y: box.y * height,
+  width: box.w * width,
+  height: box.h * height,
+});
+
+/**
+ * Marge intérieure du fond, sur les côtés (elle réduit la largeur du texte) : aucune sans fond ; jamais
+ * plus de 20 % d'une petite boîte. En hauteur le texte peut occuper toute la boîte ; le fond, lui, ne
+ * sort jamais de la boîte.
+ */
+function padFor(style: TextStyle, scale: number, box: Rect): number {
+  if (style.panel.kind === "none") return 0;
+  return Math.min(
+    PANEL_PAD * scale,
+    PANEL_PAD_MAX_SHARE * Math.min(box.width, box.height),
+  );
+}
+
+/**
+ * Haut du texte dans sa boîte : tout en haut, au milieu ou tout en bas. En haut et en bas, le texte
+ * garde la marge du fond tant qu'il reste de la place (jamais au prix de sortir de la boîte) ; un texte
+ * plus haut que sa boîte (zone trop petite) déborde également des deux côtés.
+ */
+function contentTopOf(
+  style: TextStyle,
+  box: Rect,
+  contentHeight: number,
+  pad: number,
+): number {
+  const room = box.height - contentHeight;
+  if (room <= 0 || style.valign === "center") return box.y + room / 2;
+  const margin = Math.min(pad, room);
+  return style.valign === "start" ? box.y + margin : box.y + room - margin;
+}
+
+/** Rectangle du fond : épouse le texte (borné à la boîte) ou prend toute la boîte. */
+function panelRect(
+  style: TextStyle,
+  box: Rect,
+  contentWidth: number,
+  contentHeight: number,
+  contentTop: number,
+  pad: number,
+): Rect {
+  if (style.panel.extent === "box") return { ...box };
+  const width = Math.min(box.width, contentWidth + pad * 2);
+  const height = Math.min(box.height, contentHeight + pad * 2);
+  const top = Math.min(
+    Math.max(box.y, contentTop - pad),
+    box.y + box.height - height,
+  );
+  return { x: box.x + (box.width - width) / 2, y: top, width, height };
+}
+
+const report = (
+  fit: number,
+  overflow: boolean,
+): Pick<BlockFit, "fit" | "note" | "overflow"> => ({
+  fit,
+  note: fitNote(fit),
+  overflow,
+});
+
+/** Disposition complète d'une carte pour un canvas `width × height` : chaque bloc dans sa boîte. */
+export function layoutCard(input: LayoutInput): CardLayout {
+  const { width, height } = input;
+  const empty: CardLayout = {
+    width,
+    height,
+    ref: null,
+    arabic: null,
+    translation: null,
+    wave: null,
+  };
+  if (!(width > 0) || !(height > 0)) return empty;
+  const scale = sizeScale(width, height);
+  const rectOf = (box: Box): Rect => toRect(clampBox(box), width, height);
+  const measureRef = input.measureRef ?? input.measureTranslation;
+  const layout: CardLayout = { ...empty };
+
+  // ── sourate et verset : une ligne, réduite si elle est plus large que sa boîte ──
+  if (input.showRef !== false && input.refLabel.trim()) {
+    const style = input.styles.ref;
+    const box = rectOf(input.layout.ref);
+    const pad = padFor(style, scale, box);
+    const requested = textPixelSize("ref", style.size, width, height);
+    const build = (fit: number) => {
+      const size = Math.max(MIN_REF_PX, requested * fit);
+      return {
+        size,
+        width: measureRef(input.refLabel, size),
+        height: size * REF_LINE_HEIGHT,
+      };
+    };
+    const { fit, built, overflow } = fitBlock(
+      build,
+      Math.max(1, box.width - pad * 2),
+      Math.max(1, box.height),
+      style.fill,
+    );
+    const top = contentTopOf(style, box, built.height, pad);
+    layout.ref = {
+      text: input.refLabel,
+      size: built.size,
+      y: top + built.height / 2,
+      box,
+      centerX: box.x + box.width / 2,
+      panel: panelRect(style, box, built.width, built.height, top, pad),
+      ...report(fit, overflow),
+    };
   }
 
-  const position = Math.min(1, Math.max(0, input.position ?? 0.5));
-  const blockTop = top + (zoneHeight - current.height) * position;
-  let y = blockTop;
-  const refY = y + (current.refSize * 1.4) / 2;
-  y += current.refSize * 1.4 + current.gapRef;
-
-  const arabicLines: ArabicLine[] = current.arabic.map((line) => {
-    const lineHeight = current.arabicSize * ARABIC_LINE_HEIGHT;
-    const entry: ArabicLine = {
-      width: line.width,
-      y: y + lineHeight / 2,
-      parts: [],
+  // ── texte arabe : lignes de droite à gauche, centrées dans la boîte ──
+  if (input.parts.some((part) => part.word !== null)) {
+    const style = input.styles.arabic;
+    const box = rectOf(input.layout.arabic);
+    const pad = padFor(style, scale, box);
+    const availWidth = Math.max(1, box.width - pad * 2);
+    const requested = textPixelSize("arabic", style.size, width, height);
+    const build = (fit: number) => {
+      const size = requested * fit;
+      const lines = wrapArabic(
+        input.parts,
+        availWidth,
+        size,
+        input.measureArabic,
+      );
+      return {
+        size,
+        lines,
+        width: Math.max(0, ...lines.map((l) => l.width)),
+        height: lines.length * size * ARABIC_LINE_HEIGHT,
+      };
     };
-    let x = (width + line.width) / 2; // bord droit : l'arabe se lit de droite à gauche
-    for (const part of line.parts) {
-      x -= part.width;
-      entry.parts.push({ ...part, x });
-    }
-    y += lineHeight;
-    return entry;
-  });
-  y += current.gapArabic;
+    const { fit, built, overflow } = fitBlock(
+      build,
+      availWidth,
+      Math.max(1, box.height),
+      style.fill,
+    );
+    const centerX = box.x + box.width / 2;
+    const lineHeight = built.size * ARABIC_LINE_HEIGHT;
+    const top = contentTopOf(style, box, built.height, pad);
+    let y = top;
+    const lines: ArabicLine[] = built.lines.map((line) => {
+      const entry: ArabicLine = {
+        width: line.width,
+        y: y + lineHeight / 2,
+        parts: [],
+      };
+      let x = centerX + line.width / 2; // bord droit : l'arabe se lit de droite à gauche
+      for (const part of line.parts) {
+        x -= part.width;
+        entry.parts.push({ ...part, x });
+      }
+      y += lineHeight;
+      return entry;
+    });
+    layout.arabic = {
+      size: built.size,
+      lines,
+      box,
+      centerX,
+      panel: panelRect(style, box, built.width, built.height, top, pad),
+      ...report(fit, overflow),
+    };
+  }
 
-  const translationLines: TranslationLine[] = current.translation.map(
-    (text) => {
-      const lineHeight = current.translationSize * TRANSLATION_LINE_HEIGHT;
+  // ── traduction (et son attribution, collée dessous) ──
+  const translation = input.translation?.trim();
+  if (translation) {
+    const style = input.styles.translation;
+    const box = rectOf(input.layout.translation);
+    const pad = padFor(style, scale, box);
+    const availWidth = Math.max(1, box.width - pad * 2);
+    const requested = textPixelSize("translation", style.size, width, height);
+    const attributionText = input.attribution?.trim() || null;
+    const build = (fit: number) => {
+      const size = requested * fit;
+      const lines = wrapTranslation(
+        translation,
+        availWidth,
+        size,
+        input.measureTranslation,
+      );
+      const attributionSize = size * ATTRIBUTION_RATIO;
+      const attributionLines = attributionText
+        ? wrapTranslation(
+            attributionText,
+            availWidth,
+            attributionSize,
+            input.measureTranslation,
+          )
+        : [];
+      const gap = attributionLines.length ? size * ATTRIBUTION_GAP : 0;
+      const widest = Math.max(
+        0,
+        ...lines.map((l) => input.measureTranslation(l, size)),
+        ...attributionLines.map((l) =>
+          input.measureTranslation(l, attributionSize),
+        ),
+      );
+      return {
+        size,
+        lines,
+        attributionSize,
+        attributionLines,
+        gap,
+        width: widest,
+        height:
+          lines.length * size * TRANSLATION_LINE_HEIGHT +
+          gap +
+          attributionLines.length * attributionSize * ATTRIBUTION_LINE_HEIGHT,
+      };
+    };
+    const { fit, built, overflow } = fitBlock(
+      build,
+      availWidth,
+      Math.max(1, box.height),
+      style.fill,
+    );
+    const lineHeight = built.size * TRANSLATION_LINE_HEIGHT;
+    const top = contentTopOf(style, box, built.height, pad);
+    let y = top;
+    const lines: TranslationLine[] = built.lines.map((text) => {
       const entry = { text, y: y + lineHeight / 2 };
       y += lineHeight;
       return entry;
-    },
-  );
+    });
+    y += built.gap;
+    const attributionLineHeight =
+      built.attributionSize * ATTRIBUTION_LINE_HEIGHT;
+    layout.translation = {
+      size: built.size,
+      lines,
+      attribution: built.attributionLines.length
+        ? {
+            lines: built.attributionLines,
+            y: y + attributionLineHeight / 2,
+            size: built.attributionSize,
+            lineHeight: attributionLineHeight,
+          }
+        : null,
+      box,
+      centerX: box.x + box.width / 2,
+      panel: panelRect(style, box, built.width, built.height, top, pad),
+      ...report(fit, overflow),
+    };
+  }
 
-  const widest = Math.max(
-    0,
-    ...arabicLines.map((l) => l.width),
-    ...current.translation.map((t) =>
-      input.measureTranslation(t, current.translationSize),
-    ),
-  );
-  const refWidth = current.refSize * 8;
-  const panelWidth = Math.min(width, Math.max(widest, refWidth) + pad * 2);
-  const panel: Rect = {
-    x: (width - panelWidth) / 2,
-    y: Math.max(0, blockTop - pad),
-    width: panelWidth,
-    height: Math.min(height, current.height + pad * 2),
-  };
-
-  return {
-    refY,
-    refSize: current.refSize,
-    arabicSize: current.arabicSize,
-    arabicLines,
-    translationSize: current.translationSize,
-    translationLines,
-    panel,
-    textBottom,
-    fit,
-  };
+  if (input.showWave !== false) layout.wave = rectOf(input.layout.wave);
+  return layout;
 }

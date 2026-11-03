@@ -18,9 +18,14 @@ import type {
 export type LoadedBackground = {
   image: CanvasImageSource | null;
   gradient: GradientBackground | null;
-  /** Fond photo ou vidéo : le texte reçoit un support de lisibilité. */
+  /** Fond photo ou vidéo : un voile sombre est posé sous l'onde (lisibilité de l'onde). */
   scrim: boolean;
   video: HTMLVideoElement | null;
+  /**
+   * Vrai pour une vidéo de fond CHOISIE (muette, sa propre durée : `vtime` la cale sur la récitation) ;
+   * faux pour la vidéo d'origine de la session, dont le temps est celui de la récitation.
+   */
+  clip: boolean;
   close: () => void;
 };
 
@@ -86,6 +91,74 @@ export async function loadSourceVideo(
   }
 }
 
+/** Dépendances du chargement d'une vidéo de fond (injectées : testable sans navigateur). */
+export type ClipDeps = {
+  createVideo: () => HTMLVideoElement;
+  createObjectUrl: (blob: Blob) => string;
+  revokeObjectUrl: (url: string) => void;
+  /** Attente maximale des métadonnées (ms). */
+  timeoutMs: number;
+};
+
+const browserClipDeps = (): ClipDeps => ({
+  createVideo: () => document.createElement("video"),
+  createObjectUrl: (blob) => URL.createObjectURL(blob),
+  revokeObjectUrl: (url) => URL.revokeObjectURL(url),
+  timeoutMs: 20_000,
+});
+
+export type LoadedClip = {
+  video: HTMLVideoElement;
+  /** Durée de la vidéo de fond (s). */
+  duration: number;
+  close: () => void;
+};
+
+/**
+ * Charge la vidéo de fond choisie par l'utilisateur : MUETTE (jamais de son dans l'export, seul celui de
+ * la récitation est mixé), lue sur place, métadonnées attendues. `null` si le navigateur ne la lit pas,
+ * si elle n'a pas d'image (son seul), pas de durée finie, ou ne répond pas à temps ; le fichier est alors
+ * libéré. Le fichier reste sur l'appareil : rien n'est envoyé.
+ */
+export async function loadClipVideo(
+  file: Blob,
+  deps: ClipDeps = browserClipDeps(),
+): Promise<LoadedClip | null> {
+  const url = deps.createObjectUrl(file);
+  const video = deps.createVideo();
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  const release = () => {
+    video.removeAttribute("src");
+    video.load();
+    deps.revokeObjectUrl(url);
+  };
+  const ready = await new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(false), deps.timeoutMs);
+    const finish = (ok: boolean) => {
+      clearTimeout(timer);
+      resolve(ok);
+    };
+    video.addEventListener("loadedmetadata", () => finish(true), {
+      once: true,
+    });
+    video.addEventListener("error", () => finish(false), { once: true });
+    video.src = url;
+  });
+  const usable =
+    ready &&
+    Number.isFinite(video.duration) &&
+    video.duration > 0 &&
+    video.videoWidth > 0;
+  if (!usable) {
+    release();
+    return null;
+  }
+  return { video, duration: video.duration, close: release };
+}
+
 /** Positionne la vidéo sur l'instant t (rendu hors ligne, image par image). */
 export function videoSeeker(
   video: HTMLVideoElement,
@@ -111,11 +184,13 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Charge le fond choisi. Un échec de chargement retombe sur le dégradé par défaut. */
+/** Charge le fond choisi. Un échec de chargement retombe sur le dégradé par défaut (sauf image ou vidéo que l'on a choisies : l'erreur est dite). */
 export async function loadBackground(
   choice: BackgroundChoice,
   context: {
     upload: File | null;
+    /** Vidéo de fond choisie par l'utilisateur (muette). */
+    clip?: File | null;
     sessionId: string;
     fallback: GradientBackground;
   },
@@ -125,9 +200,25 @@ export async function loadBackground(
     gradient: context.fallback,
     scrim: false,
     video: null,
+    clip: false,
     close: () => undefined,
   });
   try {
+    if (choice.kind === "video" && context.clip) {
+      const clip = await loadClipVideo(context.clip);
+      if (!clip)
+        throw new Error(
+          "Vidéo de fond illisible : ce navigateur ne la lit pas, ou elle n'a pas d'image. Choisis un fichier MP4 ou WebM.",
+        );
+      return {
+        image: clip.video,
+        gradient: null,
+        scrim: true,
+        video: clip.video,
+        clip: true,
+        close: clip.close,
+      };
+    }
     if (choice.kind === "upload" && context.upload) {
       const bitmap = await createImageBitmap(context.upload).catch(() => null);
       if (!bitmap) throw new Error("Image de fond illisible (PNG ou JPEG).");
@@ -136,6 +227,7 @@ export async function loadBackground(
         gradient: null,
         scrim: true,
         video: null,
+        clip: false,
         close: () => bitmap.close(),
       };
     }
@@ -147,6 +239,7 @@ export async function loadBackground(
         gradient: null,
         scrim: true,
         video,
+        clip: false,
         close: () => {
           video.removeAttribute("src");
           video.load();
@@ -160,6 +253,7 @@ export async function loadBackground(
           gradient: choice.preset,
           scrim: false,
           video: null,
+          clip: false,
           close: () => undefined,
         };
       const image = await loadImage(choice.preset.src);
@@ -168,11 +262,12 @@ export async function loadBackground(
         gradient: null,
         scrim: true,
         video: null,
+        clip: false,
         close: () => undefined,
       };
     }
   } catch (error) {
-    if (choice.kind === "upload") throw error;
+    if (choice.kind === "upload" || choice.kind === "video") throw error;
   }
   return choice.kind === "color" ? { ...none(), gradient: null } : none();
 }

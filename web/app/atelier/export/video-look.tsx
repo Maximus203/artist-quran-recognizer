@@ -7,27 +7,37 @@ import {
   PHOTO_BACKGROUNDS,
   SOURCE_BACKGROUND_ID,
 } from "@/lib/export-video-backgrounds";
+import { sizePercent, stepSize } from "@/lib/export-video-edit";
 import {
-  ARABIC_SIZE_PRESETS,
-  TRANSLATION_SIZE_PRESETS,
-  type VideoPrefs,
-} from "@/lib/export-video-prefs";
+  currentTextPosition,
+  moveAllTextStacks,
+  SIZE_LIMITS,
+  type TextBlockId,
+} from "@/lib/export-video-model";
+import type { VideoPrefs } from "@/lib/export-video-prefs";
 import { AccentDialog } from "./accent-dialog";
 import { XIcon } from "./export-icons";
 import { rovingKeys, Segmented, Switch } from "./export-ui";
 
 /**
  * « À quoi elle ressemble » : format (tuiles avec silhouette), fond (bande défilante), taille de
- * l'arabe et place du texte (contrôles segmentés), traduction et onde ; le fin est replié
- * (tailles au point près, hauteur exacte, remplir, couleur d'accent).
+ * l'arabe (boutons − / +) et place du texte (contrôle segmenté), traduction et onde ; le fin est replié
+ * (tailles au pourcent près, hauteur exacte, remplir, couleur d'accent).
+ *
+ * Écran de TRANSITION : les éditeurs interactifs (plateau, table de montage, pas à pas) le remplacent.
+ * Il ne règle que ce que l'ancien formulaire réglait, sur le modèle à blocs : un geste ici déplace ou
+ * dimensionne les mêmes boîtes que les éditeurs.
  */
 export const POSITIONS = [
   { id: "top", label: "Haut", value: 12 },
   { id: "middle", label: "Centre", value: 50 },
   { id: "bottom", label: "Bas", value: 88 },
 ] as const;
-const ARABIC_RANGE = { min: 40, max: 240 };
-const TRANSLATION_RANGE = { min: 16, max: 140 };
+/** Bornes des curseurs de taille, en pourcents de la taille par défaut. */
+const SIZE_PERCENT = {
+  min: Math.round(SIZE_LIMITS.min * 100),
+  max: Math.round(SIZE_LIMITS.max * 100),
+};
 
 export const FORMATS = [
   { id: "16:9", label: "Horizontal", hint: "YouTube, écran", w: 36, h: 20 },
@@ -51,10 +61,52 @@ export function backgroundName(id: string, hasUpload: boolean): string {
   );
 }
 
-export function sizeName(size: number): string {
+/** Taille d'un texte en pourcentage de sa taille par défaut (« 106 % »). */
+export function sizeLabel(size: number): string {
+  return `${sizePercent(size)} %`;
+}
+
+/** Boutons − / + (≈ 6 % par appui) : la taille relative d'un texte ; le pourcentage remet à 100 %. */
+function SizeStepper({
+  label,
+  size,
+  onChange,
+  testId,
+}: {
+  label: string;
+  size: number;
+  onChange: (size: number) => void;
+  testId: string;
+}) {
   return (
-    ARABIC_SIZE_PRESETS.find((p) => p.size === size)?.label.toLowerCase() ??
-    `${size} pt`
+    <div className="xr-seg xr-seg--full" role="group" aria-label={label}>
+      <button
+        type="button"
+        aria-label={`${label} : plus petit`}
+        data-testid={`${testId}-down`}
+        disabled={size <= SIZE_LIMITS.min}
+        onClick={() => onChange(stepSize(size, -1))}
+      >
+        −
+      </button>
+      <button
+        type="button"
+        aria-label={`${label} : ${sizeLabel(size)}. Remettre à 100 %`}
+        data-testid={`${testId}-value`}
+        onClick={() => onChange(1)}
+      >
+        {sizeLabel(size)}
+      </button>
+      <button
+        type="button"
+        aria-label={`${label} : plus grand`}
+        data-testid={`${testId}-up`}
+        disabled={size >= SIZE_LIMITS.max}
+        onClick={() => onChange(stepSize(size, 1))}
+      >
+        +
+      </button>
+    </div>
   );
 }
 
@@ -85,6 +137,29 @@ export function VideoLook({
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [accentOpen, setAccentOpen] = useState(false);
+  const { styles } = prefs;
+  const setStyle = (
+    block: TextBlockId,
+    change: Partial<(typeof styles)[TextBlockId]>,
+  ) =>
+    patch({ styles: { ...styles, [block]: { ...styles[block], ...change } } });
+  /** La taille de l'arabe entraîne celle de la référence (comme avant le modèle à blocs). */
+  const setArabicSize = (size: number) =>
+    patch({
+      styles: {
+        ...styles,
+        arabic: { ...styles.arabic, size },
+        ref: { ...styles.ref, size },
+      },
+    });
+  const position = Math.round(
+    currentTextPosition(prefs.layouts, prefs.orientation, prefs.showWave) * 100,
+  );
+  const setPosition = (value: number) =>
+    patch({
+      layouts: moveAllTextStacks(prefs.layouts, value / 100, prefs.showWave),
+    });
+  const fillAll = styles.arabic.fill && styles.translation.fill;
   const formats = [
     ...FORMATS,
     ...(isVideo
@@ -295,16 +370,10 @@ export function VideoLook({
       <div className="xr-two">
         <div className="xr-field">
           <span className="xr-cap">Taille de l’arabe</span>
-          <Segmented
+          <SizeStepper
             label="Taille de l’arabe"
-            full
-            items={ARABIC_SIZE_PRESETS.map((p) => ({
-              value: p.size,
-              label: p.label,
-              id: p.id,
-            }))}
-            value={prefs.arabicSize}
-            onPick={(size) => patch({ arabicSize: size })}
+            size={styles.arabic.size}
+            onChange={setArabicSize}
             testId="video-arabic"
           />
         </div>
@@ -318,8 +387,8 @@ export function VideoLook({
               label: p.label,
               id: p.id,
             }))}
-            value={prefs.textPosition}
-            onPick={(value) => patch({ textPosition: value })}
+            value={position}
+            onPick={setPosition}
             testId="video-position"
           />
         </div>
@@ -365,67 +434,70 @@ export function VideoLook({
         <div>
           <div className="xr-field">
             <span className="xr-cap">Taille de la traduction</span>
-            <Segmented
+            <SizeStepper
               label="Taille de la traduction"
-              full
-              items={TRANSLATION_SIZE_PRESETS.map((p) => ({
-                value: p.size,
-                label: p.label,
-                id: p.id,
-              }))}
-              value={prefs.translationSize}
-              onPick={(size) => patch({ translationSize: size })}
+              size={styles.translation.size}
+              onChange={(size) => setStyle("translation", { size })}
               testId="video-translation"
             />
           </div>
           <label className="xr-rng">
             <span>
-              Arabe <b className="mono">{prefs.arabicSize}</b>
+              Arabe <b className="mono">{sizeLabel(styles.arabic.size)}</b>
             </span>
             <input
               type="range"
-              min={ARABIC_RANGE.min}
-              max={ARABIC_RANGE.max}
-              step={2}
-              value={prefs.arabicSize}
+              min={SIZE_PERCENT.min}
+              max={SIZE_PERCENT.max}
+              step={1}
+              value={sizePercent(styles.arabic.size)}
               data-testid="video-arabic-size"
-              onChange={(e) => patch({ arabicSize: Number(e.target.value) })}
+              onChange={(e) => setArabicSize(Number(e.target.value) / 100)}
             />
           </label>
           <label className="xr-rng">
             <span>
-              Traduction <b className="mono">{prefs.translationSize}</b>
+              Traduction{" "}
+              <b className="mono">{sizeLabel(styles.translation.size)}</b>
             </span>
             <input
               type="range"
-              min={TRANSLATION_RANGE.min}
-              max={TRANSLATION_RANGE.max}
+              min={SIZE_PERCENT.min}
+              max={SIZE_PERCENT.max}
               step={1}
-              value={prefs.translationSize}
+              value={sizePercent(styles.translation.size)}
               data-testid="video-translation-size"
               onChange={(e) =>
-                patch({ translationSize: Number(e.target.value) })
+                setStyle("translation", { size: Number(e.target.value) / 100 })
               }
             />
           </label>
           <label className="xr-rng">
             <span>
-              Hauteur du texte <b className="mono">{prefs.textPosition} %</b>
+              Hauteur du texte <b className="mono">{position} %</b>
             </span>
             <input
               type="range"
               min={0}
               max={100}
               step={1}
-              value={prefs.textPosition}
+              value={position}
               data-testid="video-position-fine"
-              onChange={(e) => patch({ textPosition: Number(e.target.value) })}
+              onChange={(e) => setPosition(Number(e.target.value))}
             />
           </label>
           <Switch
-            checked={prefs.fill}
+            checked={fillAll}
             testId="video-fill"
-            onChange={(v) => patch({ fill: v })}
+            onChange={(v) =>
+              patch({
+                styles: {
+                  ...styles,
+                  arabic: { ...styles.arabic, fill: v },
+                  translation: { ...styles.translation, fill: v },
+                },
+              })
+            }
             label="Remplir tout l’espace"
             hint="Les écritures grandissent jusqu’à occuper la vidéo ; un verset trop long est réduit, jamais coupé."
           />
