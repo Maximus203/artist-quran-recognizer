@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — L'écho de l'écoute se règle depuis le lecteur
+Étiquettes : utilisateur, technique
+PR : #183
+
+**Ce qui change.** Un curseur « Écho » à côté du volume du lecteur (et dans les préférences du compte, pour le téléphone) ajoute une réverbération à l'écoute, pour les récitateurs qui veulent l'augmenter. Elle ne change ni l'analyse ni la vidéo exportée. Correctif au passage : la page d'export d'un récitant ne reste plus vide quand le contrôle échoue, l'erreur et « Réessayer » s'affichent.
+
+**Pourquoi / décision.** L'écho est un montage Web Audio (son direct plus convolution avec une salle synthétique), créé au premier réglage non nul pour ne rien changer à la lecture tant qu'on n'y touche pas (`web/app/atelier/echo-graph.ts`, dosage testé dans `web/lib/audio-echo.ts`). Préférence `echo`, de 0 à 1.
+
 ## 2026-11-03 — L'administrateur supprime un compte
 Étiquettes : utilisateur, technique
 PR : #182
