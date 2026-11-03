@@ -1,5 +1,20 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-03 — La table de montage : chronologie sur l'axe de toute la session (ADR-0023)
+- **Quoi** : éditeur mobile « table de montage » (aperçu, chronologie, rail d'outils). Chronologie : règle, passages, onde, piste du
+  fond, tête de lecture (glisser, boutons, clavier, lecture de l'aperçu), zoom avec défilement propre. Le fond vidéo se règle dessus :
+  raccords ⟲ cliquables, bande qu'on glisse. Onde et vignettes factorisées. Aucune dépendance ajoutée.
+- **Patterns** : Observer (la tête de lecture, magasin observable), Strategy (comportement de fin de vidéo), Registry (une ligne au
+  registre), Adapter (`BackgroundVideoLayout` : la section du fond s'adapte à la chronologie), Composite (panneaux faits des sections
+  partagées), Flyweight (vignettes lues une fois par fichier).
+- **Choix pris seul** : (1) l'axe est celui de toute la session et non des plages mises bout à bout (une plage = une vidéo) ;
+  (2) la tête commence sur le verset le plus long ; (3) pas de vignettes pour la « vidéo d'origine » (teinte neutre) ; (4) le choix
+  du comportement s'ouvre en place, sous la chronologie, plutôt que dans le panneau Fond ; (5) l'aide du premier affichage est un
+  texte qui reste jusqu'à « Compris » (6 s ne suffisent pas à lire trois phrases) ; (6) l'aperçu animé part de la tête de lecture.
+- **Mesures** : 99 contrôles au navigateur (360, 390 et 430 px, tactile, thèmes sombre et clair). Export réel d'une vidéo de 3 s
+  sous 20 s : l'image à 3,5 s est celle de la seconde 0,5 (écart 2,5 contre 12,1 avec 1,5 s). Export d'une vidéo de 45 s, départ 12 s :
+  l'image à 2 s porte le compteur 00:00:14.000 de la source.
+
 ## 2026-11-03 — Éditeur « Pas à pas » de la vidéo d'export (ADR-0022)
 - **Quoi** : trois étapes (Le cadre, Les textes, Exporter) pour le téléphone, éditeur du rôle récitateur ; encart « déjà prête,
   exporter maintenant », pastilles, Précédent / Suivant, gros bouton ; progression mémorisée par récitation ; aperçu verrouillé

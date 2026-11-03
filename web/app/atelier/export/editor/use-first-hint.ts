@@ -14,9 +14,13 @@ export function useFirstHint(
   key: string = FIRST_HINT_KEY,
   /** Faux : l'aide attend (le pas à pas ne la montre qu'en arrivant à l'étape des textes). */
   enabled: boolean = true,
+  /** `null` : l'aide reste jusqu'à ce qu'on la ferme (un texte à lire, pas une main qui touche). */
+  hideAfterMs: number | null = FIRST_HINT_MS,
 ): {
   show: boolean;
   dismiss: () => void;
+  /** Rouvrir l'aide à la demande (bouton « ? »). */
+  reopen: () => void;
 } {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -31,10 +35,12 @@ export function useFirstHint(
     }
     if (!seen) {
       setShow(true);
-      timer = window.setTimeout(() => setShow(false), FIRST_HINT_MS);
+      if (hideAfterMs !== null)
+        timer = window.setTimeout(() => setShow(false), hideAfterMs);
     }
     return () => window.clearTimeout(timer);
-  }, [key, enabled]);
+  }, [key, enabled, hideAfterMs]);
   const dismiss = useCallback(() => setShow(false), []);
-  return { show, dismiss };
+  const reopen = useCallback(() => setShow(true), []);
+  return { show, dismiss, reopen };
 }

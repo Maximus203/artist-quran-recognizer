@@ -434,6 +434,13 @@
     "summary": "Accepté le 2026-11-03 : trois étapes (le cadre, les textes, exporter) pour le récitateur, logique pure testée sans DOM (garde de navigation, progression mémorisée par récitation), aperçu verrouillé hors de l'étape des textes, étape du cadre gardée montée pour ne pas couper l'envoi d'une vidéo de fond, sections de réglages partagées avec le plateau et le bureau."
   },
   {
+    "slug": "adr-0023-table-de-montage-chronologie",
+    "title": "ADR-0023 — La table de montage : une chronologie sur l'axe de toute la session",
+    "section": "Décisions",
+    "file": "docs/adr/0023-table-de-montage-chronologie.md",
+    "summary": "Accepté le 2026-11-03 : chronologie (règle, passages, onde, fond, tête de lecture) sur l'axe de toute la session, la vidéo de fond recommençant ou glissant sous chaque plage depuis son début, logique pure testée (zoom, tête, blocs, fond), tête de lecture dans un magasin observable, onde et vignettes factorisées, trois états lisibles, aide du premier affichage."
+  },
+  {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
     "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
     "section": "Décisions",

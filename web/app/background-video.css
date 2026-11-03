@@ -556,3 +556,47 @@
     outline: 2px solid Highlight;
   }
 }
+
+/* ── à côté de la chronologie de la table de montage : elle porte la bande et la fenêtre ───── */
+.bvs-note {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+/* Raccord en bouton (chronologie de la table de montage) : 44 px de cible, le rond de 28 px reste dessiné dedans. */
+.bvs-seam--btn {
+  width: var(--hit);
+  height: var(--hit);
+  margin: calc(var(--hit) / -2) 0 0 calc(var(--hit) / -2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--action-fg);
+  cursor: pointer;
+  z-index: 1;
+}
+.bvs-seam--btn::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--action-bg);
+  box-shadow: 0 0 0 2px var(--surface-2);
+}
+.bvs-seam--btn .bvs-i {
+  position: relative;
+}
+.bvs-seam--btn:hover::before {
+  background: var(--action-bg-hover);
+}
+.bvs-seam--btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bvs-seam--btn:active::before {
+    transform: scale(0.9);
+  }
+}

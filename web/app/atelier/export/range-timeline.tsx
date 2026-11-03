@@ -28,12 +28,14 @@ import {
   type View,
 } from "@/lib/export-timeline";
 import { verseAt, type PlanRange } from "@/lib/export-video-plan";
+import { drawWaveBars, peakColumns, type WavePeaks } from "@/lib/export-wave";
 import type { Silence, SuggestTiming } from "@/lib/export-video-suggest";
 import { formatDurationFr } from "@/lib/format";
 import { useStoreValue } from "../hooks";
 import type { PlayerState } from "../use-player";
 import type { Store } from "@/lib/mini-store";
 import { XIcon } from "./export-icons";
+import { tokenColor, useThemeTick } from "./use-theme-tick";
 
 /**
  * La frise d'export (« le rouleau ») : vue d'ensemble de TOUT l'audio avec sa fenêtre, loupe
@@ -68,7 +70,7 @@ function Playhead({
     <i className="xr-playhead" style={{ left: timeToX(time, view, width) }} />
   );
 }
-type Peaks = { per_second: number; duration: number; peaks: readonly number[] };
+type Peaks = WavePeaks;
 
 type Colors = Record<
   | "accent"
@@ -84,10 +86,7 @@ type Colors = Record<
 >;
 
 function readColors(probe: HTMLElement): Colors {
-  const get = (name: string) => {
-    probe.style.color = `var(${name})`;
-    return getComputedStyle(probe).color;
-  };
+  const get = (name: string) => tokenColor(probe, name);
   return {
     accent: get("--accent"),
     warn: get("--warn-edge"),
@@ -137,15 +136,6 @@ function pattern(
   }
   return g.createPattern(p, "repeat") ?? color;
 }
-
-const maxPeak = (peaks: Peaks, t0: number, t1: number): number => {
-  const v = peaks.peaks;
-  let m = 0;
-  const k1 = Math.min(v.length - 1, Math.ceil(t1 * peaks.per_second));
-  for (let k = Math.max(0, Math.floor(t0 * peaks.per_second)); k <= k1; k++)
-    if (v[k] > m) m = v[k];
-  return m;
-};
 
 type Drag = {
   id: number;
@@ -222,7 +212,6 @@ export function RangeTimeline({
   const [precision, setPrecision] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
   const [pop, setPop] = useState<{ t: number; x: number } | null>(null);
-  const [themeTick, setThemeTick] = useState(0);
   const drag = useRef<Drag | null>(null);
   const pan = useRef<Pan | null>(null);
   const pointers = useRef(new Map<number, number>());
@@ -250,20 +239,7 @@ export function RangeTimeline({
   }, []);
 
   // Thème clair/sombre : les couleurs du canvas viennent des tokens, relues au changement.
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const bump = () => setThemeTick((n) => n + 1);
-    media.addEventListener("change", bump);
-    const observer = new MutationObserver(bump);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme", "class"],
-    });
-    return () => {
-      media.removeEventListener("change", bump);
-      observer.disconnect();
-    };
-  }, []);
+  const themeTick = useThemeTick();
 
   const inRanges = useMemo(
     () => (t: number) => ranges.some((r) => t >= r.start && t <= r.end),
@@ -368,17 +344,17 @@ export function RangeTimeline({
     }
     g.textBaseline = "alphabetic";
     y = topWave;
-    if (peaks) {
-      const mid = y + waveH / 2;
-      const amp = waveH / 2 - 2;
-      for (let x = 0; x < width; x += 2) {
-        const t0 = T(x);
-        const m = maxPeak(peaks, t0, T(x + 2));
-        g.fillStyle = inRanges(t0) ? C.played : C.wave;
-        const h = Math.max(1, m * amp);
-        g.fillRect(x, mid - h, 1.4, h * 2);
-      }
-    }
+    if (peaks)
+      drawWaveBars(g, {
+        peaks,
+        view,
+        width,
+        step: 2,
+        barWidth: 1.4,
+        mid: y + waveH / 2,
+        amp: waveH / 2 - 2,
+        colorAt: (t) => (inRanges(t) ? C.played : C.wave),
+      });
     if (magnet && span < TL.silenceMarksMaxSpan) {
       g.fillStyle = C.ok;
       for (const s of silences) {
@@ -412,14 +388,7 @@ export function RangeTimeline({
   // Vue d'ensemble : onde de tout l'audio (maxima par pixel, calculés une fois par largeur).
   const miniColumns = useMemo(() => {
     if (!peaks || miniWidth === 0) return null;
-    const out = new Float32Array(miniWidth);
-    for (let px = 0; px < miniWidth; px++)
-      out[px] = maxPeak(
-        peaks,
-        (px / miniWidth) * duration,
-        ((px + 1) / miniWidth) * duration,
-      );
-    return out;
+    return peakColumns(peaks, 0, duration, miniWidth);
   }, [peaks, miniWidth, duration]);
   useEffect(() => {
     const canvas = miniRef.current;

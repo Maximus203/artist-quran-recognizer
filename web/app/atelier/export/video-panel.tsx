@@ -1101,6 +1101,7 @@ export function VideoPanel({
           advanced={advanced}
           exportAction={exportAction}
           onLeave={onLeave}
+          montage={{ ranges, longest, clip, onClip: changeClip }}
         />
       )}
 

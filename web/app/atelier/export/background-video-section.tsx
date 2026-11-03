@@ -31,6 +31,7 @@ import {
   type BackgroundVideoValue,
   type OffsetSource,
 } from "./background-video-view";
+import { useFilmFrames } from "./use-film-frames";
 
 export type { BackgroundVideoValue } from "./background-video-view";
 
@@ -83,9 +84,6 @@ const DEFAULT_SERVICES: BackgroundVideoServices = {
   fetchPrepared: fetchPreparedClip,
 };
 
-/** Nombre de vignettes de la bande « film ». */
-const FRAME_COUNT = 12;
-
 /** Ce que le parent range dans ses réglages (`backgroundVideo`) : nom, départ, comportement — jamais le fichier. */
 export function backgroundVideoPrefs(
   value: BackgroundVideoValue,
@@ -115,7 +113,6 @@ export function BackgroundVideoSection(props: BackgroundVideoSectionProps) {
     value ? ({ phase: "ready" } as Flow) : IDLE,
   );
   const [limits, setLimits] = useState<ClipLimits>(DEFAULT_CLIP_LIMITS);
-  const [frames, setFrames] = useState<Array<string | null>>([]);
   const [announcement, setAnnouncement] = useState("");
   const control = useRef<AbortController | null>(null);
   const facts = useRef<VideoFacts | null>(null);
@@ -140,27 +137,8 @@ export function BackgroundVideoSection(props: BackgroundVideoSectionProps) {
     if (!value && flow.phase === "ready") dispatch({ type: "cancel" });
   }, [value, flow.phase]);
 
-  // Vignettes de la bande « film » : une fois par fichier, sans bloquer l'écran, arrêtées si on change de vidéo.
-  const file = value?.file ?? null;
-  useEffect(() => {
-    setFrames([]);
-    if (!file) return;
-    const stop = new AbortController();
-    const found: Array<string | null> = Array.from(
-      { length: FRAME_COUNT },
-      () => null,
-    );
-    void svc.current
-      .captureFrames(file, FRAME_COUNT, {
-        signal: stop.signal,
-        onFrame: (index, url) => {
-          found[index] = url;
-          if (!stop.signal.aborted) setFrames([...found]);
-        },
-      })
-      .catch(() => undefined);
-    return () => stop.abort();
-  }, [file]);
+  // Vignettes de la bande « film » : une lecture par fichier, partagée avec la chronologie de la table de montage.
+  const frames = useFilmFrames(value?.file ?? null, svc.current.captureFrames);
 
   // Quitter l'écran arrête l'envoi en cours (le serveur supprime ce qu'il avait reçu).
   useEffect(() => () => control.current?.abort(), []);

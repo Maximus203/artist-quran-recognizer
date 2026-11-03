@@ -1,6 +1,6 @@
 "use client";
 import type { BlockId } from "@/lib/export-video-model";
-import { VideoPreview } from "../video-preview";
+import { VideoPreview, type ClipRange } from "../video-preview";
 import { EditOverlay } from "./edit-overlay";
 import type { PreviewSource } from "./editor-types";
 import type { EditorController } from "./use-editor-controller";
@@ -20,6 +20,10 @@ export function EditableStage({
   coach = null,
   interactive = true,
   onPlayingChange,
+  playFrom,
+  onTime,
+  clipRange,
+  stopToken,
 }: {
   sessionId: string;
   source: PreviewSource;
@@ -29,6 +33,11 @@ export function EditableStage({
   /** Faux : l'aperçu se regarde sans se manipuler (pas à pas, hors de l'étape des textes). */
   interactive?: boolean;
   onPlayingChange?: (playing: boolean) => void;
+  /** La table de montage : l'aperçu animé part de la tête de lecture, la lui rend, et suit la plage sous elle. */
+  playFrom?: number | null;
+  onTime?: (t: number) => void;
+  clipRange?: ClipRange | null;
+  stopToken?: number;
 }) {
   return (
     <VideoPreview
@@ -43,6 +52,10 @@ export function EditableStage({
       at={source.at}
       onLayout={controller.reportLayout}
       onPlayingChange={onPlayingChange}
+      playFrom={playFrom}
+      onTime={onTime}
+      clipRange={clipRange}
+      stopToken={stopToken}
     >
       {interactive ? (
         <EditOverlay {...controller.overlay} coach={coach} />

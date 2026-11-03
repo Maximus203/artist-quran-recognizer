@@ -2,6 +2,7 @@ import { DEFAULT_EDITOR_MODE } from "./editor-types";
 import type { EditorComponent, EditorMode } from "./editor-types";
 import { PlateauEditor } from "./plateau-mobile";
 import { StepEditor } from "./step-editor";
+import { TableEditor } from "./table-editor";
 
 /**
  * LE REGISTRE des éditeurs de la vue téléphone : une ligne par éditeur. Les phases suivantes ajoutent la
@@ -15,6 +16,7 @@ import { StepEditor } from "./step-editor";
  */
 export const EDITORS: Partial<Record<EditorMode, EditorComponent>> = {
   plateau: PlateauEditor,
+  table: TableEditor,
   pas: StepEditor,
 };
 
