@@ -127,6 +127,8 @@ export default function ReviewApp() {
     volume: prefs.volume,
     onRate: (playbackRate) => update({ playbackRate }),
     onVolume: (volume) => update({ volume }),
+    echo: prefs.echo,
+    onEcho: (echo) => update({ echo }),
   });
   const playerDuration = useStoreValue(player.store, (s) => s.duration);
   const duration =

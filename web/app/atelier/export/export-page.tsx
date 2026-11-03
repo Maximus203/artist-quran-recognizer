@@ -389,7 +389,8 @@ function ExportView({
       />
       <div
         className="ex-xp"
-        data-tab={tab}
+        // En échec, la colonne d'erreur (celle de « Vérifier ») s'affiche, quel que soit l'onglet courant.
+        data-tab={failed ? "verifier" : tab}
         data-failed={failed ? "" : undefined}
         data-testid="export-page"
       >
@@ -558,7 +559,7 @@ function ExportView({
           role="tabpanel"
           aria-labelledby="ex-tab-verifier"
           aria-busy={ready.loading}
-          hidden={recitant || (tab !== "verifier" && !failed)}
+          hidden={!failed && (recitant || tab !== "verifier")}
         >
           {ready.error && !data ? (
             <ErrorPanel

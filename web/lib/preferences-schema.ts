@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ECHO } from "./audio-echo";
 import { AUDIO_OFFSET } from "./audio-offset";
 import { QURAN_FONTS, type QuranFontId } from "./quran-fonts";
 import { ENGINE_FILTERS, SCOPES, SORTS, STATE_FILTERS } from "./session-query";
@@ -55,6 +56,8 @@ export const preferencesShape = {
   sessionsFilter: sessionsFilterSchema,
   playbackRate: z.number().min(0.25).max(3),
   volume: z.number().min(0).max(1),
+  /** Écho de l'écoute (réverbération), de 0 (aucun) à 1. Bornes dans `audio-echo.ts`. */
+  echo: z.number().min(ECHO.min).max(ECHO.max),
   shortcutsEnabled: z.boolean(),
   reviewTab: z.enum(REVIEW_TABS),
   defaultVisibility: z.enum(["global", "private"]),
@@ -80,6 +83,7 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   sessionsFilter: { scope: "all", state: "all", engine: "all", sort: "recent" },
   playbackRate: 1,
   volume: 1,
+  echo: ECHO.defaultValue,
   shortcutsEnabled: true,
   reviewTab: "sig",
   defaultVisibility: "private",

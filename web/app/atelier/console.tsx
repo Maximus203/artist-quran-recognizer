@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import { formatClockLength, formatTenths } from "@/lib/format";
 import { formatTime, type Interval } from "@/lib/recognition";
 import { ZOOM_SPANS } from "@/lib/timeline";
+import { ECHO } from "@/lib/audio-echo";
 import { Icon } from "./icons";
 import type { ReviewController } from "./use-review";
 import { useClock, useStoreValue } from "./hooks";
@@ -291,6 +292,21 @@ export function Console(props: Props) {
             aria-label="Volume"
             style={{ "--p": `${player.volume * 100}%` } as React.CSSProperties}
             onChange={(event) => player.setVolume(Number(event.target.value))}
+          />
+        </label>
+        <label className="hide-sm" data-testid="echo-control">
+          Écho
+          <input
+            className="vol"
+            type="range"
+            min={ECHO.min}
+            max={ECHO.max}
+            step={ECHO.step}
+            value={player.echo}
+            aria-label="Écho de l’écoute"
+            data-testid="echo"
+            style={{ "--p": `${player.echo * 100}%` } as React.CSSProperties}
+            onChange={(event) => player.setEcho(Number(event.target.value))}
           />
         </label>
       </div>

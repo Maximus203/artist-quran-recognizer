@@ -177,6 +177,7 @@ export function UsersView(props: UsersViewProps) {
                         </button>
                         <select
                           className="input"
+                          style={{ width: "auto" }}
                           aria-label={`Rôle de ${u.username}`}
                           disabled={busy}
                           value={u.role}
