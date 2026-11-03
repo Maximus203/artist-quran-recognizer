@@ -23,6 +23,7 @@ import {
   serializeCache,
   type SyncStatus,
 } from "@/lib/prefs-sync";
+import { forgetDeviceExportPrefs } from "@/lib/export-prefs";
 import { resolveQuranFont, type QuranFontId } from "@/lib/quran-fonts";
 import { Icon, IconSprite } from "./icons";
 
@@ -127,6 +128,11 @@ export function ShellProvider(props: Props) {
   // Au montage : on reprend ce qui n'avait pas pu partir lors d'une session précédente.
   useEffect(() => {
     setMounted(true);
+    try {
+      forgetDeviceExportPrefs(window.localStorage);
+    } catch {
+      /* stockage bloqué : rien à nettoyer */
+    }
     const cached = parseCache(readStorage(), user.id);
     if (cached && Object.keys(cached.pending).length > 0) {
       const next = applyPatch(prefsRef.current, cached.pending);

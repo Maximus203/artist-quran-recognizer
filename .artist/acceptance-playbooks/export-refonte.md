@@ -11,7 +11,7 @@
 > aucune requête en échec non gérée, aucun défilement horizontal de page à 375 px.
 
 ## Préconditions
-- [WEB] Connecté avec le compte de test ; préférences d'export effacées (`localStorage.removeItem("aqr.ui.v1.export-video")`).
+- [WEB] Connecté avec le compte de test ; préférences d'export effacées (`DELETE /api/me/preferences?key=videoPrefs` et `?key=exportOptions`).
 - [API] `ffprobe` disponible pour contrôler les MP4.
 
 ## Parcours humain

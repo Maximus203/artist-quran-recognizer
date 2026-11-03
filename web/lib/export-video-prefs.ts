@@ -12,9 +12,8 @@ import {
 } from "./export-video-format";
 
 /**
- * Réglages de l'export vidéo, mémorisés dans le navigateur (`aqr.ui.v1.export-video`)
- * comme les réglages de sous-titres : un confort par appareil, jamais un état qui compte.
- * Les tailles d'écriture et le format par défaut s'y sauvegardent dès qu'on les change.
+ * Réglages de l'export vidéo. Ils sont enregistrés sur le compte (`videoPrefs`, `preferences-schema.ts`) :
+ * ce module ne porte que le schéma, les défauts et les bornes.
  */
 
 export const VIDEO_ORIENTATIONS_WITH_SOURCE = [
@@ -25,8 +24,6 @@ export const VIDEO_ORIENTATIONS_WITH_SOURCE = [
 ] as const;
 export type VideoPrefsOrientation =
   (typeof VIDEO_ORIENTATIONS_WITH_SOURCE)[number];
-
-export const VIDEO_PREFS_KEY = "aqr.ui.v1.export-video";
 
 /** Couleur d'accent personnalisée : teinte, intensité (saturation), luminosité, opacité. */
 export const accentSchema = z
@@ -122,42 +119,6 @@ export const DEFAULT_VIDEO_PREFS: VideoPrefs = {
   paddingAfter: DEFAULT_TAIL_OUT,
   snapToSilence: true,
 };
-
-type Reader = Pick<Storage, "getItem">;
-type Writer = Pick<Storage, "setItem">;
-
-function browserStorage(): Storage | null {
-  try {
-    return typeof localStorage === "undefined" ? null : localStorage;
-  } catch {
-    return null;
-  }
-}
-
-/** Réglages mémorisés, sinon défauts ; contenu illisible ou périmé = défauts. */
-export function loadVideoPrefs(
-  storage: Reader | null = browserStorage(),
-): VideoPrefs {
-  try {
-    const raw = storage?.getItem(VIDEO_PREFS_KEY);
-    if (!raw) return DEFAULT_VIDEO_PREFS;
-    const parsed = videoPrefsSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : DEFAULT_VIDEO_PREFS;
-  } catch {
-    return DEFAULT_VIDEO_PREFS;
-  }
-}
-
-export function saveVideoPrefs(
-  prefs: VideoPrefs,
-  storage: Writer | null = browserStorage(),
-): void {
-  try {
-    storage?.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs));
-  } catch {
-    /* stockage plein ou bloqué : le réglage vaut pour cette page seulement */
-  }
-}
 
 /** Orientation effective : « source » se résout au moment de l'export (vidéo source). */
 export function resolveOrientation(

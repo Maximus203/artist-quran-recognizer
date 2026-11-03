@@ -12,10 +12,11 @@ import {
 import {
   DEFAULT_EXPORT_OPTIONS,
   exportFileName,
+  fromStoredExportOptions,
   type ExportOptions,
   type ExportPolicy,
+  toStoredExportOptions,
 } from "@/lib/export-options";
-import { loadExportOptions, saveExportOptions } from "@/lib/export-prefs";
 import { bytesFr, plural } from "@/lib/export-text";
 import type {
   DecisionsView,
@@ -109,14 +110,19 @@ function ExportView({
   sessionId: string;
   initial: ExportOptions;
 }) {
+  const { update } = useShell();
   const [options, setOptions] = useState<ExportOptions>(initial);
-  const patch = useCallback((change: Partial<ExportOptions>) => {
-    setOptions((current) => {
-      const next = { ...current, ...change };
-      saveExportOptions(next);
-      return next;
-    });
-  }, []);
+  const optionsRef = useRef(options);
+  // Enregistré sur le compte (serveur), pas sur l’appareil : chaque personne garde ses réglages.
+  const patch = useCallback(
+    (change: Partial<ExportOptions>) => {
+      const next = { ...optionsRef.current, ...change };
+      optionsRef.current = next;
+      setOptions(next);
+      update({ exportOptions: toStoredExportOptions(next) });
+    },
+    [update],
+  );
   const [type, setType] = useState<ItemType | null>(null);
   const [page, setPage] = useState(0);
   // La vérification est une porte : on ouvre dessus (badge « n à valider » ou « Prêt »).
@@ -964,22 +970,12 @@ function OrphansNotice({
 
 /** La page « Exporter » : une porte (Vérifier) puis deux livrables (Sous-titres, Vidéo). */
 export function ExportPage({ sessionId }: { sessionId: string }) {
-  const [initial, setInitial] = useState<ExportOptions | null>(null);
-  useEffect(() => setInitial(loadExportOptions()), []);
+  const { prefs } = useShell();
+  const initial = fromStoredExportOptions(prefs.exportOptions);
   return (
     <div className="ex-xp-page">
       <div className="ex-xp-wrap">
-        {initial ? (
-          <ExportView sessionId={sessionId} initial={initial} />
-        ) : (
-          <>
-            <Crumb sessionId={sessionId} />
-            <div className="ex-skel" aria-hidden="true">
-              <i />
-              <i />
-            </div>
-          </>
-        )}
+        <ExportView sessionId={sessionId} initial={initial} />
       </div>
     </div>
   );
