@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import { ECHO } from "@/lib/audio-echo";
 import { formatClockLength } from "@/lib/format";
+import type { Interval } from "@/lib/recognition";
 import {
   createQueue,
   currentId,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/playlist-queue";
 import { applyEcho } from "./echo-graph";
 import { Icon } from "./icons";
+import { PlaylistVerse } from "./playlist-verse";
 import { useShell } from "./shell";
 
 type Item = {
@@ -59,6 +61,12 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
   const [duration, setDuration] = useState(0);
   const [notice, setNotice] = useState("");
   const [renaming, setRenaming] = useState<string | null>(null);
+  /** Les versets de l'audio en cours, pour afficher leur traduction en haut du lecteur. */
+  const [verses, setVerses] = useState<{
+    id: string;
+    status: "loading" | "ready" | "error";
+    intervals: Interval[];
+  }>({ id: "", status: "loading", intervals: [] });
 
   /* ── chargement ── */
   const apply = useCallback((next: Detail, keepId?: string | null) => {
@@ -113,6 +121,30 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
     setDuration(0);
     if (wantPlay.current) play();
   }, [current, play]);
+
+  useEffect(() => {
+    if (!current) return;
+    let cancelled = false;
+    setVerses({ id: current, status: "loading", intervals: [] });
+    api<{ result: { intervals?: Interval[] } | null }>(
+      `/api/sessions/${current}`,
+    )
+      .then((data) => {
+        if (cancelled) return;
+        setVerses({
+          id: current,
+          status: "ready",
+          intervals: data.result?.intervals ?? [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled)
+          setVerses({ id: current, status: "error", intervals: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [current]);
 
   /* ── volume, vitesse et écho du compte ── */
   useEffect(() => {
@@ -365,6 +397,13 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
       ) : (
         <section className="pl-card" aria-label="Lecteur">
           <audio ref={audioRef} preload="metadata" />
+          <PlaylistVerse
+            status={verses.id === current ? verses.status : "loading"}
+            intervals={verses.id === current ? verses.intervals : []}
+            time={time}
+            playing={playing}
+            offsetMs={prefs.audioOffsetMs}
+          />
           <p className="pl-now" data-testid="pl-now" aria-live="polite">
             <span className="eyebrow">En lecture</span>
             <b>{currentItem?.name ?? "—"}</b>
