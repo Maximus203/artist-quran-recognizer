@@ -10,9 +10,15 @@ import { useCallback, useEffect, useState } from "react";
 export const FIRST_HINT_KEY = "aqr.export-editor.hint.v1";
 export const FIRST_HINT_MS = 6000;
 
-export function useFirstHint(key: string = FIRST_HINT_KEY): {
+export function useFirstHint(
+  key: string = FIRST_HINT_KEY,
+  /** `null` : l'aide reste jusqu'à ce qu'on la ferme (un texte à lire, pas une main qui touche). */
+  hideAfterMs: number | null = FIRST_HINT_MS,
+): {
   show: boolean;
   dismiss: () => void;
+  /** Rouvrir l'aide à la demande (bouton « ? »). */
+  reopen: () => void;
 } {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -26,10 +32,12 @@ export function useFirstHint(key: string = FIRST_HINT_KEY): {
     }
     if (!seen) {
       setShow(true);
-      timer = window.setTimeout(() => setShow(false), FIRST_HINT_MS);
+      if (hideAfterMs !== null)
+        timer = window.setTimeout(() => setShow(false), hideAfterMs);
     }
     return () => window.clearTimeout(timer);
-  }, [key]);
+  }, [key, hideAfterMs]);
   const dismiss = useCallback(() => setShow(false), []);
-  return { show, dismiss };
+  const reopen = useCallback(() => setShow(true), []);
+  return { show, dismiss, reopen };
 }

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  filmPill,
   filmSegments,
   MAX_PX_PER_SECOND,
+  MAX_TRACK_PX,
   movePlayhead,
   offsetFromFilmDrag,
   passageBlocks,
@@ -29,6 +31,11 @@ describe("zoom : de « tout voir » à une seconde lisible", () => {
       expect((360 * zoom) / 72).toBeLessThanOrEqual(MAX_PX_PER_SECOND);
     // un cran de plus dépasserait la limite
     expect((360 * 32) / 72).toBeGreaterThan(MAX_PX_PER_SECOND);
+  });
+  it("un audio très long ne donne jamais une piste plus large que la limite", () => {
+    const levels = zoomLevels(360, 3600);
+    expect(levels).toEqual([1, 2, 4, 8, 16]);
+    expect(360 * levels[levels.length - 1]).toBeLessThanOrEqual(MAX_TRACK_PX);
   });
   it("un audio très court ou nul garde au moins « tout voir »", () => {
     expect(zoomLevels(360, 0)).toEqual([1]);
@@ -309,6 +316,35 @@ describe("piste « Fond » : ce que la vidéo fait sous chaque plage", () => {
     expect(filmSegments([], { duration: 12, offset: 0, mode: "loop" })).toEqual(
       [],
     );
+  });
+});
+
+describe("pastille de la piste « Fond » : ce que la vidéo fait, en quelques mots", () => {
+  const pill = (
+    duration: number,
+    mode: "loop" | "pingpong" | "freeze" | "slow",
+  ) => {
+    const [segment] = filmSegments([{ id: 1, start: 0, end: 30 }], {
+      duration,
+      offset: 0,
+      mode,
+    });
+    return filmPill(segment, { duration, mode });
+  };
+  it("plus courte : la boucle dit combien de fois", () => {
+    expect(pill(12, "loop")).toBe("en boucle ×2,5");
+    expect(pill(12, "pingpong")).toBe("aller-retour ×2,5");
+  });
+  it("plus courte : arrêt sur la dernière image, ou ralenti", () => {
+    expect(pill(12, "freeze")).toBe("puis image figée");
+    expect(pill(12, "slow")).toBe("ralentie à 40 %");
+  });
+  it("plus longue : on glisse pour choisir la partie", () => {
+    expect(pill(65, "loop")).toBe("glisse pour choisir la partie");
+  });
+  it("même durée et durée inconnue", () => {
+    expect(pill(30, "loop")).toBe("même durée");
+    expect(pill(0, "loop")).toBe("durée inconnue");
   });
 });
 

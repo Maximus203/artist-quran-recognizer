@@ -35,6 +35,7 @@ import { useStoreValue } from "../hooks";
 import type { PlayerState } from "../use-player";
 import type { Store } from "@/lib/mini-store";
 import { XIcon } from "./export-icons";
+import { tokenColor, useThemeTick } from "./use-theme-tick";
 
 /**
  * La frise d'export (« le rouleau ») : vue d'ensemble de TOUT l'audio avec sa fenêtre, loupe
@@ -85,10 +86,7 @@ type Colors = Record<
 >;
 
 function readColors(probe: HTMLElement): Colors {
-  const get = (name: string) => {
-    probe.style.color = `var(${name})`;
-    return getComputedStyle(probe).color;
-  };
+  const get = (name: string) => tokenColor(probe, name);
   return {
     accent: get("--accent"),
     warn: get("--warn-edge"),
@@ -214,7 +212,6 @@ export function RangeTimeline({
   const [precision, setPrecision] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
   const [pop, setPop] = useState<{ t: number; x: number } | null>(null);
-  const [themeTick, setThemeTick] = useState(0);
   const drag = useRef<Drag | null>(null);
   const pan = useRef<Pan | null>(null);
   const pointers = useRef(new Map<number, number>());
@@ -242,20 +239,7 @@ export function RangeTimeline({
   }, []);
 
   // Thème clair/sombre : les couleurs du canvas viennent des tokens, relues au changement.
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const bump = () => setThemeTick((n) => n + 1);
-    media.addEventListener("change", bump);
-    const observer = new MutationObserver(bump);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme", "class"],
-    });
-    return () => {
-      media.removeEventListener("change", bump);
-      observer.disconnect();
-    };
-  }, []);
+  const themeTick = useThemeTick();
 
   const inRanges = useMemo(
     () => (t: number) => ranges.some((r) => t >= r.start && t <= r.end),

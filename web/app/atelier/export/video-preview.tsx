@@ -76,18 +76,22 @@ export function worstCase(
   return { card: best, t };
 }
 
+/** La plage exportée sous laquelle la vidéo de fond recommence ou glisse (secondes de la session). */
+export type ClipRange = { start: number; length: number };
+
 /** L'instant de la vidéo à montrer : la vidéo d'origine suit la récitation, une vidéo de fond est calée par `vtime`. */
 function backgroundTime(
   background: LoadedBackground,
   prefs: VideoPrefs,
   t: number,
   duration: number,
+  range: ClipRange | null,
 ): number {
   return backgroundVideoTimeAt({
     clip: background.clip,
     t,
-    rangeStart: 0,
-    rangeLength: duration,
+    rangeStart: range?.start ?? 0,
+    rangeLength: range?.length ?? duration,
     videoDuration: background.video?.duration ?? 0,
     offset: prefs.backgroundVideo.offset,
     mode: prefs.backgroundVideo.mode,
@@ -114,6 +118,20 @@ export type PreviewInputs = {
   onLayout?: (layout: CardLayout | null) => void;
   /** Dit si l'aperçu animé joue (le calque se met en retrait pendant la lecture). */
   onPlayingChange?: (playing: boolean) => void;
+  /**
+   * D'où part l'aperçu animé (secondes de la session) : la tête de lecture de la table de montage. Absent = un
+   * peu avant le verset le plus long, comme avant.
+   */
+  playFrom?: number | null;
+  /** Dit l'instant lu à chaque image de l'aperçu animé, et une dernière fois à son arrêt. */
+  onTime?: (t: number) => void;
+  /**
+   * La plage exportée sous la tête de lecture : la vidéo de fond compte depuis SON début (comme à l'export, où
+   * chaque plage est une vidéo). Absent = toute la session, comme avant.
+   */
+  clipRange?: ClipRange | null;
+  /** Un jeton qui change = arrêter l'aperçu animé (la tête de lecture vient d'être déplacée à la main). */
+  stopToken?: number;
 };
 
 /** Dimensions du canevas : le cadre choisi, à la taille de l'aperçu (côté long de 640 px). */
@@ -235,6 +253,12 @@ export function VideoPreview(inputs: PreviewInputs) {
   layoutCallback.current = onLayout;
   const playingCallback = useRef(onPlayingChange);
   playingCallback.current = onPlayingChange;
+  const timeCallback = useRef(inputs.onTime);
+  timeCallback.current = inputs.onTime;
+  const playFromRef = useRef(inputs.playFrom);
+  playFromRef.current = inputs.playFrom;
+  const clipRangeRef = useRef(inputs.clipRange ?? null);
+  clipRangeRef.current = inputs.clipRange ?? null;
 
   // Les cartes ne dépendent que du résultat et des écritures affichées : pas du glisser.
   const cards = useMemo(
@@ -324,6 +348,7 @@ export function VideoPreview(inputs: PreviewInputs) {
             current,
             state.t,
             peaks.duration,
+            clipRangeRef.current,
           ),
         );
       if (state.cancelled()) return;
@@ -372,10 +397,24 @@ export function VideoPreview(inputs: PreviewInputs) {
       cancelled = true;
       cancelAnimationFrame(frame);
     };
-  }, [draw, playing, resources, colors, pick, inputs.at, prefs, fitted]);
+  }, [
+    draw,
+    playing,
+    resources,
+    colors,
+    pick,
+    inputs.at,
+    inputs.clipRange,
+    prefs,
+    fitted,
+  ]);
 
   const stop = useCallback(() => stopRef.current?.(), []);
   useEffect(() => () => stopRef.current?.(), []);
+  const stopToken = inputs.stopToken;
+  useEffect(() => {
+    if (stopToken) stop();
+  }, [stopToken, stop]);
   useEffect(() => {
     playingCallback.current?.(playing);
   }, [playing]);
@@ -389,17 +428,23 @@ export function VideoPreview(inputs: PreviewInputs) {
     let audio: HTMLAudioElement | null = null;
     let frame = 0;
     let stopped = false;
+    let lastTime: number | null = null;
     const finish = () => {
       stopped = true;
       cancelAnimationFrame(frame);
       audio?.pause();
       background.video?.pause();
       stopRef.current = null;
+      if (lastTime !== null) timeCallback.current?.(lastTime);
       setPlaying(false);
     };
     stopRef.current = finish;
     try {
-      const start = Math.max(0, (pick?.card.card.start ?? 0) - 0.4);
+      const from = playFromRef.current;
+      const start =
+        from !== null && from !== undefined && Number.isFinite(from)
+          ? Math.min(Math.max(0, from), Math.max(0, peaks.duration - 0.5))
+          : Math.max(0, (pick?.card.card.start ?? 0) - 0.4);
       const end = Math.min(peaks.duration, start + PREVIEW_SECONDS);
       audio = new Audio(`/api/sessions/${sessionId}/audio`);
       audio.currentTime = start;
@@ -409,6 +454,7 @@ export function VideoPreview(inputs: PreviewInputs) {
           prefsRef.current,
           start,
           peaks.duration,
+          clipRangeRef.current,
         );
         void background.video.play().catch(() => undefined);
       }
@@ -416,6 +462,8 @@ export function VideoPreview(inputs: PreviewInputs) {
       const tick = () => {
         if (!audio || stopped) return;
         const t = audio.currentTime;
+        lastTime = t;
+        timeCallback.current?.(t);
         // Une vidéo de fond suit `vtime` (boucle, portion…) : on la recale quand elle s'en écarte.
         if (background.clip && background.video) {
           const want = backgroundTime(
@@ -423,6 +471,7 @@ export function VideoPreview(inputs: PreviewInputs) {
             prefsRef.current,
             t,
             peaks.duration,
+            clipRangeRef.current,
           );
           if (Math.abs(background.video.currentTime - want) > 0.3)
             background.video.currentTime = want;

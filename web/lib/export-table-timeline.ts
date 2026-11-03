@@ -26,13 +26,17 @@ const clamp = (value: number, min: number, max: number): number =>
 /** Au-delà, une seconde occupe trop de place : on n'agrandit plus (pixels par seconde). */
 export const MAX_PX_PER_SECOND = 90;
 
+/** La piste ne dépasse jamais cette largeur : un canevas n'est pas fait pour des dizaines de milliers de pixels. */
+export const MAX_TRACK_PX = 8000;
+
 /** Les niveaux de zoom : 1 = tout l'audio dans la largeur de l'écran, puis le double, le quadruple… */
 export function zoomLevels(viewport: number, duration: number): number[] {
   const levels = [1];
   if (!(viewport > 0) || !(duration > 0)) return levels;
   for (
     let zoom = 2;
-    (viewport * zoom) / duration <= MAX_PX_PER_SECOND;
+    (viewport * zoom) / duration <= MAX_PX_PER_SECOND &&
+    viewport * zoom <= MAX_TRACK_PX;
     zoom *= 2
   )
     levels.push(zoom);
@@ -299,6 +303,31 @@ export function filmSegments(
       portion,
     };
   });
+}
+
+const frNumber = (value: number): string => String(value).replace(".", ",");
+
+/** Ce que la vidéo fait sous une plage, en quelques mots, pour la pastille de la piste « Fond ». */
+export function filmPill(
+  segment: Pick<FilmSegment, "fit" | "start" | "end">,
+  clip: Pick<FilmClip, "duration" | "mode">,
+): string {
+  const { situation, repeats } = segment.fit;
+  if (situation === "unknown") return "durée inconnue";
+  if (situation === "same") return "même durée";
+  if (situation === "longer") return "glisse pour choisir la partie";
+  switch (clip.mode) {
+    case "pingpong":
+      return `aller-retour ×${frNumber(repeats ?? 1)}`;
+    case "freeze":
+      return "puis image figée";
+    case "slow": {
+      const length = segment.end - segment.start;
+      return `ralentie à ${Math.round((clip.duration / length) * 100)} %`;
+    }
+    default:
+      return `en boucle ×${frNumber(repeats ?? 1)}`;
+  }
 }
 
 /**

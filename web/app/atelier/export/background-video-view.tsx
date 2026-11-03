@@ -1,6 +1,8 @@
 "use client";
 import "../../background-video.css";
 import {
+  createContext,
+  useContext,
   useRef,
   type ChangeEvent,
   type CSSProperties,
@@ -54,6 +56,15 @@ export type BackgroundVideoValue = {
 };
 
 export type OffsetSource = "slider" | "pointer" | "button";
+
+/**
+ * Où la vue est posée. Seule (défaut), elle dessine sa bande « film » et sa fenêtre de portion. À côté de la
+ * chronologie de la table de montage (`timeline`), c'est la chronologie qui les porte : la vue ne les redessine
+ * pas (les mêmes gestes, au même endroit, sans doublon) et garde les mots, les choix et les boutons précis.
+ */
+export type BackgroundVideoLayoutKind = "standalone" | "timeline";
+export const BackgroundVideoLayout =
+  createContext<BackgroundVideoLayoutKind>("standalone");
 
 export type BackgroundVideoViewProps = {
   flow: Flow;
@@ -122,7 +133,7 @@ const PATHS = {
   ),
 } satisfies Record<string, ReactNode>;
 
-function Glyph({ name }: { name: keyof typeof PATHS }) {
+export function Glyph({ name }: { name: keyof typeof PATHS }) {
   return (
     <svg
       className="bvs-i"
@@ -175,7 +186,9 @@ function FilePicker({
 
 // ── bande « film » ────────────────────────────────────────────────────────────────────────────
 
-const frameVars = (frames: ReadonlyArray<string | null>): CSSProperties => {
+export const frameVars = (
+  frames: ReadonlyArray<string | null>,
+): CSSProperties => {
   const vars: Record<string, string> = {};
   frames.forEach((url, i) => {
     if (url) vars[`--f${i}`] = `url("${url}")`;
@@ -184,7 +197,7 @@ const frameVars = (frames: ReadonlyArray<string | null>): CSSProperties => {
 };
 
 /** Les cases d'une tuile : les vignettes dans l'ordre de la vidéo, ou une case hachurée tant qu'il n'y en a pas. */
-function Cells({ frames }: { frames: ReadonlyArray<string | null> }) {
+export function Cells({ frames }: { frames: ReadonlyArray<string | null> }) {
   const count = Math.max(1, frames.length);
   return (
     <>
@@ -198,19 +211,29 @@ function Cells({ frames }: { frames: ReadonlyArray<string | null> }) {
   );
 }
 
-function FilmBand({
+/** Les raccords en boutons (sur la chronologie de la table de montage : toucher = changer le comportement). */
+export type SeamButtons = {
+  /** Le pictogramme du raccord : boucle, aller-retour ou arrêt. */
+  glyph: "loop" | "pingpong" | "freeze";
+  label: (index: number) => string;
+  onPress: (index: number) => void;
+};
+
+export function FilmBand({
   view,
   frames,
   label,
+  seamButtons,
 }: {
   view: FilmView;
   frames: ReadonlyArray<string | null>;
   label: string;
+  seamButtons?: SeamButtons;
 }) {
   return (
     <div
       className="bvs-film"
-      role="img"
+      role={seamButtons ? "group" : "img"}
       aria-label={label}
       style={frameVars(frames)}
       data-testid="bvs-film"
@@ -242,16 +265,30 @@ function FilmBand({
           Image figée
         </i>
       ) : null}
-      {view.seams.map((seam, i) => (
-        <b
-          key={i}
-          className="bvs-seam"
-          style={{ left: `${seam}%` }}
-          aria-hidden="true"
-        >
-          <Glyph name="loop" />
-        </b>
-      ))}
+      {view.seams.map((seam, i) =>
+        seamButtons ? (
+          <button
+            key={i}
+            type="button"
+            className="bvs-seam bvs-seam--btn"
+            style={{ left: `${seam}%` }}
+            aria-label={seamButtons.label(i)}
+            data-testid="bvs-seam"
+            onClick={() => seamButtons.onPress(i)}
+          >
+            <Glyph name={seamButtons.glyph} />
+          </button>
+        ) : (
+          <b
+            key={i}
+            className="bvs-seam"
+            style={{ left: `${seam}%` }}
+            aria-hidden="true"
+          >
+            <Glyph name="loop" />
+          </b>
+        ),
+      )}
     </div>
   );
 }
@@ -294,11 +331,14 @@ function PortionEditor({
   recitationSeconds,
   frames,
   onOffset,
+  compact = false,
 }: {
   value: BackgroundVideoValue;
   recitationSeconds: number;
   frames: ReadonlyArray<string | null>;
   onOffset: (offset: number, source: OffsetSource) => void;
+  /** La chronologie porte déjà la bande et la fenêtre : on ne garde que les valeurs, les boutons et les raccourcis. */
+  compact?: boolean;
 }) {
   const span = {
     videoDuration: value.duration,
@@ -363,66 +403,80 @@ function PortionEditor({
           Fin <b>{formatClockTenths(view.to)}</b>
         </span>
       </div>
-      <div
-        ref={strip}
-        className="bvs-strip"
-        style={frameVars(frames)}
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-        data-testid="bvs-strip"
-      >
-        <div className="bvs-cells" aria-hidden="true">
-          {Array.from({ length: cells }, (_, i) => (
-            <u
-              key={i}
-              style={
-                frames[i] ? { backgroundImage: `var(--f${i})` } : undefined
-              }
+      {compact ? (
+        <p className="bvs-note" data-testid="bvs-on-timeline">
+          Pour choisir la partie à l’œil, fais glisser la bande « Fond » sur la
+          chronologie.
+        </p>
+      ) : null}
+      {compact ? null : (
+        <>
+          <div
+            ref={strip}
+            className="bvs-strip"
+            style={frameVars(frames)}
+            onPointerDown={down}
+            onPointerMove={move}
+            onPointerUp={up}
+            onPointerCancel={up}
+            data-testid="bvs-strip"
+          >
+            <div className="bvs-cells" aria-hidden="true">
+              {Array.from({ length: cells }, (_, i) => (
+                <u
+                  key={i}
+                  style={
+                    frames[i] ? { backgroundImage: `var(--f${i})` } : undefined
+                  }
+                />
+              ))}
+            </div>
+            <div
+              className="bvs-window"
+              role="slider"
+              tabIndex={0}
+              aria-label="Début de la portion choisie"
+              aria-valuemin={0}
+              aria-valuemax={view.max}
+              aria-valuenow={view.from}
+              aria-valuetext={view.valueText}
+              data-narrow={view.narrow || undefined}
+              data-right={view.leftPct > 60 || undefined}
+              style={{ left: `${view.leftPct}%`, width: `${view.widthPct}%` }}
+              onKeyDown={key}
+              data-testid="bvs-window"
+            >
+              <span className="bvs-window-tag">
+                {formatClockTenths(view.from)}
+              </span>
+            </div>
+          </div>
+          <p className="bvs-scale" aria-hidden="true">
+            <span>0:00</span>
+            <span>{formatClockTenths(value.duration)}</span>
+          </p>
+          <svg
+            className="bvs-link"
+            viewBox="0 0 100 30"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d={`M${view.leftPct} 0 L${view.leftPct + view.widthPct} 0 L100 30 L0 30 Z`}
             />
-          ))}
-        </div>
-        <div
-          className="bvs-window"
-          role="slider"
-          tabIndex={0}
-          aria-label="Début de la portion choisie"
-          aria-valuemin={0}
-          aria-valuemax={view.max}
-          aria-valuenow={view.from}
-          aria-valuetext={view.valueText}
-          data-narrow={view.narrow || undefined}
-          data-right={view.leftPct > 60 || undefined}
-          style={{ left: `${view.leftPct}%`, width: `${view.widthPct}%` }}
-          onKeyDown={key}
-          data-testid="bvs-window"
-        >
-          <span className="bvs-window-tag">{formatClockTenths(view.from)}</span>
-        </div>
-      </div>
-      <p className="bvs-scale" aria-hidden="true">
-        <span>0:00</span>
-        <span>{formatClockTenths(value.duration)}</span>
-      </p>
-      <svg
-        className="bvs-link"
-        viewBox="0 0 100 30"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path
-          d={`M${view.leftPct} 0 L${view.leftPct + view.widthPct} 0 L100 30 L0 30 Z`}
-        />
-      </svg>
-      <div className="bvs-recit" aria-hidden="true">
-        <i />
-      </div>
-      <p className="bvs-scale">
-        <span>Ta récitation</span>
-        <span>{formatClockTenths(recitationSeconds)} · du début à la fin</span>
-      </p>
+          </svg>
+          <div className="bvs-recit" aria-hidden="true">
+            <i />
+          </div>
+          <p className="bvs-scale">
+            <span>Ta récitation</span>
+            <span>
+              {formatClockTenths(recitationSeconds)} · du début à la fin
+            </span>
+          </p>
+        </>
+      )}
       <div className="bvs-nudges" role="group" aria-label="Décaler la portion">
         {nudges.map((n) => (
           <button
@@ -474,6 +528,7 @@ export function BackgroundVideoView(props: BackgroundVideoViewProps) {
     mode: value?.mode ?? ("loop" as const),
   };
   const fit = describeFit(input);
+  const onTimeline = useContext(BackgroundVideoLayout) === "timeline";
 
   return (
     <section
@@ -616,9 +671,16 @@ export function BackgroundVideoView(props: BackgroundVideoViewProps) {
             {" · "}Récitation : {formatSeconds(recitationSeconds)}
           </p>
 
-          {fit.situation === "shorter" ||
-          fit.situation === "same" ||
-          fit.situation === "unknown" ? (
+          {onTimeline && fit.situation === "shorter" ? (
+            <p className="bvs-note" data-testid="bvs-on-timeline">
+              La bande de la vidéo est sur la chronologie : les repères ⟲ y
+              montrent où elle recommence.
+            </p>
+          ) : null}
+          {!onTimeline &&
+          (fit.situation === "shorter" ||
+            fit.situation === "same" ||
+            fit.situation === "unknown") ? (
             <>
               {fit.situation !== "unknown" ? (
                 <>
@@ -683,6 +745,7 @@ export function BackgroundVideoView(props: BackgroundVideoViewProps) {
               recitationSeconds={recitationSeconds}
               frames={frames}
               onOffset={props.onOffset}
+              compact={onTimeline}
             />
           ) : null}
         </>

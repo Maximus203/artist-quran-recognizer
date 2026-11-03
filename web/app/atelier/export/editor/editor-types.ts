@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
 import type { ListeningPeaks } from "@/lib/listening";
 import type { Interval } from "@/lib/recognition";
+import type { BackgroundVideoValue } from "../background-video-view";
 
 /**
  * Les trois éditeurs de la vidéo d'export (vue téléphone ; au bureau, une seule vue unifiée sert tous les
@@ -99,6 +100,24 @@ export type EditorProps = {
   exportAction: ExportAction;
   /** Quitter l'éditeur (retour à la page d'avant) ; absent = pas de bouton retour. */
   onLeave?: () => void;
+  /** Ce que la table de montage lit en plus (plages exportées, vidéo de fond choisie) ; absent = sans chronologie du fond. */
+  montage?: MontageData;
+};
+
+/**
+ * Ce que la chronologie de la table de montage lit en plus de l'aperçu : les plages exportées (une vidéo
+ * chacune), et la vidéo de fond choisie (sa durée, son départ, son comportement, son fichier pour les
+ * vignettes) avec de quoi la changer. Les autres éditeurs n'en ont pas besoin.
+ */
+export type MontageData = {
+  /** Les plages exportées, en secondes de la session. */
+  ranges: ReadonlyArray<{ id: number; start: number; end: number }>;
+  /** La plus longue (s) : borne le départ de la vidéo de fond, comme la section « Vidéo de fond ». */
+  longest: number;
+  /** La vidéo de fond choisie, prête sur le serveur, ou `null` (image, dégradé, couleur ou vidéo d'origine). */
+  clip: BackgroundVideoValue | null;
+  /** Change la vidéo de fond (départ, comportement) : même chemin que la section « Vidéo de fond ». */
+  onClip: (value: BackgroundVideoValue | null) => void;
 };
 
 /**

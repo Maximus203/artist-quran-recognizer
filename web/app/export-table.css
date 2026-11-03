@@ -1,0 +1,586 @@
+/*
+ * La table de montage (éditeur du téléphone, direction « B ») — composants `.xt-`. Elle réutilise la coque du
+ * plateau (`.xe-plateau`, `.xe-stage-area`, `.xe-dock`, `.xe-sheet`, `.xe-tool`) : même grille, mêmes feuilles,
+ * mêmes réglages. Tout vient de tokens.css ; aucune valeur de couleur ici. Toutes les cibles font 44 px sur le
+ * bouton lui-même (`--hit`). Les états `:focus-visible`, le curseur et `prefers-reduced-motion` sont posés une
+ * fois dans tokens.css.
+ */
+
+.xt-dock {
+  position: relative;
+}
+
+/* ── Aide du premier affichage (un texte qui reste jusqu'à « Compris ») ──────────────── */
+.xt-help {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 10px);
+  z-index: 6;
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+}
+.xt-help::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+.xt-help h2 {
+  margin: 0;
+  font: 400 var(--fs-xl) / 1.15 var(--font-display);
+}
+.xt-help ul {
+  margin: 0;
+  padding-left: 1.1em;
+  list-style: disc;
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+  color: var(--text-2);
+}
+.xt-help b {
+  color: var(--text);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .xt-help {
+    animation: xe-rise var(--dur-3) var(--ease-out);
+  }
+}
+
+/* ── Chronologie ─────────────────────────────────────────────────────────────────────── */
+.xt-tl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 2px var(--gutter) 6px;
+  min-width: 0;
+}
+.xt-tl[data-compact] {
+  padding-top: 8px;
+}
+.xt-tl-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--hit);
+  min-width: 0;
+}
+.xt-tl-head h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: 400 var(--fs-xl) / 1.1 var(--font-display);
+}
+.xt-icon {
+  flex: none;
+  width: var(--hit);
+  height: var(--hit);
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  color: var(--text-2);
+  touch-action: manipulation;
+}
+.xt-icon:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.xt-icon:disabled {
+  opacity: 0.4;
+}
+.xt-zoom {
+  display: flex;
+  align-items: center;
+}
+.xt-zoom-val {
+  min-width: var(--hit);
+  height: var(--hit);
+  padding: 0 4px;
+  border-radius: var(--r-md);
+  font: 700 var(--fs-sm) / 1 var(--font-mono);
+  color: var(--text);
+  touch-action: manipulation;
+}
+.xt-zoom-val:disabled {
+  color: var(--text-3);
+}
+
+/* La zone qui défile : les pistes sont plus larges que l'écran quand on zoome, la PAGE ne défile jamais. */
+.xt-scroll {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.xt-scroll[data-fade] {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 calc(100% - 28px),
+    transparent
+  );
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+.xt-tracks {
+  --head: 0px;
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding-bottom: 3px;
+  min-width: 100%;
+}
+.xt-track {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+/* Le nom de la piste reste collé à gauche quand on défile ; il ne capte jamais le doigt. */
+.xt-lab {
+  position: sticky;
+  left: 6px;
+  z-index: 3;
+  flex: none;
+  max-width: min(62vw, 260px);
+  margin: 5px 0 0 6px;
+  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  color: var(--text-2);
+  font: 600 11px / 1.5 var(--font-ui);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.xt-lab > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xt-lab .bvs-i {
+  width: 14px;
+  height: 14px;
+}
+.xt-lab--film {
+  background: var(--action-bg);
+  color: var(--action-fg);
+}
+
+/* Règle de temps : on y glisse la tête de lecture. */
+.xt-ruler {
+  touch-action: none;
+  cursor: ew-resize;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.xt-tick {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 6px;
+  background: var(--border-strong);
+}
+.xt-tick[data-major] {
+  height: 12px;
+  background: var(--text-3);
+}
+.xt-tick-lab {
+  position: absolute;
+  top: 3px;
+  transform: translateX(4px);
+  font: 600 11px / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
+.xt-bubble {
+  position: absolute;
+  top: 2px;
+  left: var(--head);
+  z-index: 4;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--action-bg);
+  color: var(--action-fg);
+  font: 700 11px / 1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.xt-tracks[data-side="right"] .xt-bubble {
+  transform: translateX(10px);
+}
+.xt-tracks[data-side="left"] .xt-bubble {
+  transform: translateX(calc(-100% - 10px));
+}
+
+/* Passages : un bloc par verset, éteint quand il n'est pas dans la vidéo. */
+.xt-blk {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+  overflow: hidden;
+  border: 1.5px solid var(--seg-recognized-edge);
+  border-radius: var(--r-xs);
+  background: var(--seg-recognized-fill);
+  color: var(--text);
+  font: 700 11px / 1 var(--font-mono);
+}
+.xt-blk[data-status="inferred"] {
+  background: var(--seg-inferred-fill);
+  border-style: dashed;
+}
+.xt-blk[data-status="uncertain"] {
+  border-color: var(--seg-uncertain-edge);
+  background: var(--seg-uncertain-fill);
+  border-style: dotted;
+}
+.xt-blk:not([data-included]) {
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-3);
+  opacity: 0.55;
+}
+.xt-blk[aria-current="true"] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+/* Un défilement du doigt sur les passages fait défiler la piste. */
+.xt-pass,
+.xt-film {
+  touch-action: pan-x;
+}
+
+/* Onde : toute en gris, puis la partie déjà lue en couleur, rognée jusqu'à la tête de lecture. */
+.xt-wave {
+  touch-action: none;
+  cursor: ew-resize;
+  overflow: hidden;
+}
+.xt-wave-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+.xt-played {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(0 calc(100% - var(--head)) 0 0);
+}
+
+/* Fond : l'image fixe, ou la vidéo (répétitions et raccords, ou bande qui glisse). */
+.xt-film {
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--hatch);
+}
+.xt-film-still {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-3));
+}
+.xt-film-clip {
+  position: absolute;
+  inset: 0;
+}
+.xt-seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+.xt-seg .bvs-film {
+  height: 100%;
+  border-radius: 0;
+}
+.xt-film-plain {
+  position: absolute;
+  inset: 0;
+  background: var(--hatch);
+}
+.xt-slide {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: grab;
+}
+.xt-slide:active {
+  cursor: grabbing;
+}
+.xt-slide:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -3px;
+}
+.xt-slide-film {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  border-radius: 0;
+}
+
+/* La tête de lecture : une ligne, et une poignée de 44 px pour la saisir. */
+.xt-head {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  z-index: 5;
+  pointer-events: none;
+  transform: translateX(var(--head));
+  will-change: transform;
+}
+.xt-head-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1px;
+  width: 2px;
+  background: var(--playhead);
+  box-shadow: 0 0 0 1px var(--surface-2);
+}
+.xt-knob {
+  position: absolute;
+  top: 0;
+  left: calc(var(--hit) / -2);
+  width: var(--hit);
+  height: var(--hit);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: ew-resize;
+}
+.xt-knob i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--playhead);
+  border: 3px solid var(--surface-2);
+  box-shadow: 0 0 0 1px var(--playhead);
+}
+.xt-knob:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+}
+
+.xt-scroll-note {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  line-height: var(--lh-ui);
+}
+
+/* Boutons de la tête de lecture et de la portion. */
+.xt-ctl {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(var(--hit), 1fr));
+  gap: 4px;
+}
+.xt-nudges {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(var(--hit), 1fr));
+  gap: 4px;
+}
+.xt-btn {
+  min-width: var(--hit);
+  min-height: var(--hit);
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 600 var(--fs-xs) / 1 var(--font-mono);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.xt-btn:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.xt-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.xt-btn .bvs-i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Pied : ce que fait la vidéo de fond, en clair, et de quoi la régler. */
+.xt-foot {
+  display: grid;
+  gap: 6px;
+}
+.xt-foot-text {
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-ui);
+  color: var(--text-2);
+}
+.xt-foot-text b {
+  color: var(--text);
+  font-weight: 700;
+}
+.xt-foot-text .bvs-i {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+.xt-map {
+  position: relative;
+  display: block;
+  max-width: 160px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+}
+.xt-map i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.xt-modes {
+  display: grid;
+  gap: 6px;
+}
+.xt-modes-q {
+  margin: 0;
+  font: 600 var(--fs-sm) / 1.3 var(--font-ui);
+}
+.xt-modes-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.xt-mode {
+  min-height: var(--hit);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 600 var(--fs-sm) / 1.2 var(--font-ui);
+  text-align: left;
+}
+.xt-mode:hover {
+  background: var(--surface-3);
+}
+.xt-mode[aria-checked="true"] {
+  background: var(--action-bg);
+  color: var(--action-fg);
+  border-color: transparent;
+}
+
+/* ── Panneau : un seul à la fois, sous la chronologie (cadre) ou à sa place (élément) ── */
+.xt-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: var(--xt-panel-max, var(--xe-sheet-max));
+}
+.xt[data-mode="compact"] .xt-panel {
+  --xt-panel-max: min(34dvh, 300px);
+}
+.xt-panel-head h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: 400 var(--fs-xl) / 1.15 var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xt-back {
+  flex: none;
+  min-height: var(--hit);
+  padding: 0 12px 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 600 var(--fs-sm) / 1 var(--font-ui);
+}
+.xt-back:hover {
+  background: var(--surface-3);
+}
+.xt-intro {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.xt-intro-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.xt-intro-text p {
+  margin: 0;
+}
+
+/* ── Rail d'outils ───────────────────────────────────────────────────────────────────── */
+.xt-rail {
+  padding: 2px var(--gutter) 6px;
+  border-top: 1px solid var(--border-subtle);
+  min-width: 0;
+}
+.xt-rail .xe-tb {
+  gap: 2px;
+}
+.xt-rail .xe-tool[aria-pressed="true"] {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+.xt-rail .xe-tool[data-off] {
+  color: var(--text-3);
+}
+
+@media (forced-colors: active) {
+  .xt-blk {
+    border-color: CanvasText;
+  }
+  .xt-knob i,
+  .xt-head-line {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+  .xt-rail .xe-tool[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+  }
+}
