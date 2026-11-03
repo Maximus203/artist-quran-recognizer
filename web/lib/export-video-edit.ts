@@ -28,6 +28,8 @@ export const NUDGE_STEP = 0.01;
 export const NUDGE_STEP_BIG = 0.05;
 /** Aimant par défaut, en pixels d'écran : se convertit en fraction avec `snapThreshold`. */
 export const SNAP_PX = 10;
+/** Zone tactile d'une poignée (px) : WCAG 2.5.5, comme les autres cibles de l'atelier. */
+export const HANDLE_HIT = 44;
 
 export type Guide = {
   /** `x` : trait vertical à la fraction `at` de la largeur ; `y` : trait horizontal. */
@@ -148,6 +150,56 @@ export function moveBox(
 }
 
 export type Handle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
+/** Ordre des poignées : les coins et les milieux des côtés. */
+export const HANDLES: readonly Handle[] = [
+  "nw",
+  "n",
+  "ne",
+  "w",
+  "e",
+  "sw",
+  "s",
+  "se",
+];
+
+export type HandlePlacement = {
+  handle: Handle;
+  /** Position du centre sur la boîte, en % de sa largeur et de sa hauteur (0, 50 ou 100). */
+  left: number;
+  top: number;
+  /** Décalage vers l'extérieur (px) : une boîte plus petite que deux poignées les écarte. */
+  dx: number;
+  dy: number;
+};
+
+/**
+ * Où poser les poignées de la boîte d'un élément choisi, dans un cadre de `frame` px. Chaque poignée a une
+ * zone tactile de `HANDLE_HIT` px, posée à l'EXTÉRIEUR : sur une boîte plus étroite ou plus basse que deux
+ * poignées, celles du même côté s'écartent vers l'extérieur, et les poignées du milieu qui n'ont plus de
+ * place sont retirées (les coins changent déjà la zone). Jamais deux cibles l'une sur l'autre.
+ */
+export function handlePlacements(
+  box: Box,
+  frame: { width: number; height: number },
+  hit: number = HANDLE_HIT,
+): HandlePlacement[] {
+  const widthPx = Math.max(0, box.w * frame.width);
+  const heightPx = Math.max(0, box.h * frame.height);
+  const pushX = Math.max(0, (hit - widthPx) / 2);
+  const pushY = Math.max(0, (hit - heightPx) / 2);
+  return HANDLES.filter((handle) => {
+    if (heightPx < hit * 2 && (handle === "w" || handle === "e")) return false;
+    if (widthPx < hit * 2 && (handle === "n" || handle === "s")) return false;
+    return true;
+  }).map((handle) => ({
+    handle,
+    left: handle.includes("w") ? 0 : handle.includes("e") ? 100 : 50,
+    top: handle.includes("n") ? 0 : handle.includes("s") ? 100 : 50,
+    dx: handle.includes("w") ? -pushX || 0 : handle.includes("e") ? pushX : 0,
+    dy: handle.includes("n") ? -pushY || 0 : handle.includes("s") ? pushY : 0,
+  }));
+}
 
 /**
  * Redimensionne une boîte en tirant une poignée (coins et milieux des côtés) de `delta` : le côté

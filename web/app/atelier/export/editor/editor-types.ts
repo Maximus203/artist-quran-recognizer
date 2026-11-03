@@ -87,6 +87,8 @@ export type EditorProps = {
   passages: {
     /** « Tout l'audio · 8 s », « 3 plages · 25 s ». */
     summary: string;
+    /** La version courte pour un bouton (« Tout l'audio », « 3 plages »). */
+    short: string;
     /** Contenu de la fenêtre « Passages » (frise, liste, souffle) : fournie par le panneau. */
     content: ReactNode;
     /** Nombre de vidéos qui sortiront (une par plage). */

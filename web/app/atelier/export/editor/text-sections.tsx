@@ -275,22 +275,26 @@ export function PanelSection({
   block,
   panel,
   onChange,
+  heading = true,
 }: {
   block: TextBlockId;
   panel: PanelStyle;
   onChange: (change: Partial<PanelStyle>) => void;
+  /** Faux dans la feuille du téléphone : son titre dit déjà « Fond derrière le texte ». */
+  heading?: boolean;
 }) {
   const transparency = Math.round((1 - panel.opacity) * 100);
+  const tiles = (
+    <Tiles
+      label={`Fond derrière le texte : ${BLOCK_LABEL[block].toLowerCase()}`}
+      options={PANEL_OPTIONS}
+      value={panel.kind}
+      onPick={(kind) => onChange({ kind })}
+    />
+  );
   return (
     <>
-      <Field title="Fond derrière le texte">
-        <Tiles
-          label={`Fond derrière le texte : ${BLOCK_LABEL[block].toLowerCase()}`}
-          options={PANEL_OPTIONS}
-          value={panel.kind}
-          onPick={(kind) => onChange({ kind })}
-        />
-      </Field>
+      {heading ? <Field title="Fond derrière le texte">{tiles}</Field> : tiles}
       {panel.kind === "none" ? (
         <Field title="Pour rester lisible">
           <Choice

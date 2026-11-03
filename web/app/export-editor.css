@@ -318,16 +318,16 @@
   pointer-events: none;
   color: var(--xe-sel);
   filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.7));
-  transform: translate(-50%, -20%);
+  transform: translate(-20%, 10%);
   animation: xe-tap 1.5s var(--ease) infinite;
 }
 @keyframes xe-tap {
   0%,
   100% {
-    transform: translate(-50%, -20%) scale(1);
+    transform: translate(-20%, 10%) scale(1);
   }
   45% {
-    transform: translate(-50%, -2%) scale(0.9);
+    transform: translate(-20%, 28%) scale(0.9);
   }
 }
 
@@ -400,7 +400,18 @@
 }
 .xe-tb .xe-step {
   flex: none;
-  width: 168px;
+  grid-template-columns: 48px 76px 48px;
+  gap: 4px;
+}
+/* Une rangée qui défile : un fondu à droite dit qu'il y a de la suite (posé par `overflowFade`). */
+.xe-chips[data-fade],
+.xe-tb[data-fade] {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 calc(100% - 36px),
+    transparent
+  );
+  mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
 }
 .xe-vsep {
   flex: none;
@@ -442,24 +453,28 @@
   white-space: nowrap;
 }
 .xe-ready {
-  display: grid;
-  gap: var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
   border: 1px dashed var(--border-strong);
   border-radius: var(--r-md);
 }
 .xe-ready p {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  display: flex;
-  gap: var(--sp-2);
-  align-items: flex-start;
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-}
-.xe-ready p svg {
-  flex: none;
-  margin-top: 2px;
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
+}
+.xe-ready p b {
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+.xe-ready .btn {
+  flex: none;
 }
 
 /* La feuille : accrochée sous l'aperçu, qui reste visible pendant qu'on règle (pas de voile). */
@@ -636,6 +651,8 @@
   background: var(--surface-2);
 }
 .xe-step-btn {
+  display: grid;
+  place-items: center;
   font-size: 26px;
   font-weight: 500;
   line-height: 1;
@@ -663,6 +680,7 @@
   font-size: var(--fs-lg);
   font-family: var(--font-mono);
   line-height: 1.2;
+  white-space: nowrap;
 }
 .xe-step-val small {
   font-size: 11px;

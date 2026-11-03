@@ -1016,6 +1016,7 @@ export function VideoPanel({
           }}
           passages={{
             summary: whatSummary,
+            short: whole ? "Tout l’audio" : `${ranges.length} plages`,
             content: passagesContent,
             count: ranges.length,
           }}

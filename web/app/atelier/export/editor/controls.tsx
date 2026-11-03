@@ -2,9 +2,7 @@
 import {
   useCallback,
   useEffect,
-  useId,
   useRef,
-  type KeyboardEvent,
   type PointerEvent,
   type MouseEvent,
   type ReactNode,
@@ -25,7 +23,6 @@ import { rovingKeys } from "../export-ui";
 export type HoldHandlers = {
   onPointerDown: (event: PointerEvent<HTMLButtonElement>) => void;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
-  onKeyUp: (event: KeyboardEvent<HTMLButtonElement>) => void;
   onBlur: () => void;
   onContextMenu: (event: MouseEvent<HTMLButtonElement>) => void;
 };
@@ -79,9 +76,38 @@ export function useHoldRepeat(action: () => boolean | void): HoldHandlers {
     onClick(event) {
       if (event.detail === 0) latest.current();
     },
-    onKeyUp() {},
     onBlur: stop,
     onContextMenu: (event) => event.preventDefault(),
+  };
+}
+
+// ── rangée qui défile ───────────────────────────────────────────────────────
+
+/**
+ * Pour une rangée qui défile à l'horizontale (pastilles, barre d'outils) : pose `data-fade` quand une partie
+ * est cachée à droite, pour que le CSS la fonde et dise « il y a de la suite ». À donner tel quel en `ref`
+ * (React 19 appelle le nettoyage renvoyé au démontage de l'élément, que la rangée soit remontée ou non).
+ */
+export function overflowFade(node: HTMLElement | null): (() => void) | void {
+  if (!node) return;
+  const update = () => {
+    const hidden = node.scrollWidth - node.clientWidth - node.scrollLeft > 4;
+    node.toggleAttribute("data-fade", hidden);
+  };
+  update();
+  node.addEventListener("scroll", update, { passive: true });
+  const resize = new ResizeObserver(update);
+  resize.observe(node);
+  const mutation = new MutationObserver(update);
+  mutation.observe(node, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+  return () => {
+    node.removeEventListener("scroll", update);
+    resize.disconnect();
+    mutation.disconnect();
   };
 }
 
@@ -199,7 +225,6 @@ export function Tiles<T extends string>({
   columns?: number;
   className?: string;
 }) {
-  const id = useId();
   return (
     <div
       className={`xe-tiles${className ? ` ${className}` : ""}`}
@@ -207,7 +232,6 @@ export function Tiles<T extends string>({
       aria-label={label}
       data-count={columns ?? options.length}
       onKeyDown={rovingKeys}
-      id={id}
     >
       {options.map((option) => (
         <button

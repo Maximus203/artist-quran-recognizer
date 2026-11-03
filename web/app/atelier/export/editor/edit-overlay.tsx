@@ -11,6 +11,7 @@ import {
 import {
   blocksAt,
   cycleBlock,
+  handlePlacements,
   overlappingBlocks,
   stepSize,
   type FrameRect,
@@ -83,20 +84,6 @@ export type EditOverlayProps = {
   /** Hors service (lecture de l'aperçu animé en cours, export…) : les zones n'attrapent plus rien. */
   disabled?: boolean;
 };
-
-const HANDLES: readonly Handle[] = [
-  "nw",
-  "n",
-  "ne",
-  "w",
-  "e",
-  "sw",
-  "s",
-  "se",
-] as const;
-
-/** Zone tactile d'une poignée (px) : WCAG 2.5.5. */
-const HANDLE_HIT = 44;
 
 const percentStyle = (box: Box): CSSProperties => ({
   left: `${box.x * 100}%`,
@@ -411,7 +398,7 @@ export function EditOverlay(props: EditOverlayProps) {
   );
 }
 
-/** Le cadre de l'élément choisi : étiquette et huit poignées de 44 px, posées à l'extérieur. */
+/** Le cadre de l'élément choisi : étiquette et poignées de 44 px, posées à l'extérieur (`handlePlacements`). */
 function SelectionFrame({
   id,
   box,
@@ -425,24 +412,6 @@ function SelectionFrame({
   note: string | null;
   overflow: boolean;
 }) {
-  const widthPx = box.w * frame.width;
-  const heightPx = box.h * frame.height;
-  // Une boîte plus étroite que deux poignées les écarte vers l'extérieur : jamais deux poignées l'une sur l'autre.
-  const pushX = Math.max(0, (HANDLE_HIT - widthPx) / 2);
-  const pushY = Math.max(0, (HANDLE_HIT - heightPx) / 2);
-  const hideMiddleY = heightPx < HANDLE_HIT * 2; // « w » et « e » trop proches des coins
-  const hideMiddleX = widthPx < HANDLE_HIT * 2; // « n » et « s » trop proches des coins
-  const place = (handle: Handle): CSSProperties => {
-    const left = handle.includes("w") ? 0 : handle.includes("e") ? 100 : 50;
-    const top = handle.includes("n") ? 0 : handle.includes("s") ? 100 : 50;
-    const dx = handle.includes("w") ? -pushX : handle.includes("e") ? pushX : 0;
-    const dy = handle.includes("n") ? -pushY : handle.includes("s") ? pushY : 0;
-    return {
-      left: `${left}%`,
-      top: `${top}%`,
-      transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-    };
-  };
   return (
     <div
       className="xe-sel"
@@ -460,18 +429,18 @@ function SelectionFrame({
           <em> · {note}</em>
         ) : null}
       </span>
-      {HANDLES.filter((handle) => {
-        if (hideMiddleY && (handle === "w" || handle === "e")) return false;
-        if (hideMiddleX && (handle === "n" || handle === "s")) return false;
-        return true;
-      }).map((handle) => (
+      {handlePlacements(box, frame).map((place) => (
         <i
-          key={handle}
+          key={place.handle}
           className="xe-h"
-          data-handle={handle}
+          data-handle={place.handle}
           data-block={id}
-          data-testid={`handle-${handle}`}
-          style={place(handle)}
+          data-testid={`handle-${place.handle}`}
+          style={{
+            left: `${place.left}%`,
+            top: `${place.top}%`,
+            transform: `translate(calc(-50% + ${place.dx}px), calc(-50% + ${place.dy}px))`,
+          }}
           aria-hidden="true"
         />
       ))}

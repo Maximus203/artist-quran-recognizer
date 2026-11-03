@@ -4,7 +4,7 @@ import { BLOCK_LABEL, BLOCK_SHORT } from "@/lib/export-video-edit-text";
 import { waveLimits } from "@/lib/export-video-editor";
 import { PANEL_KINDS, type BlockId } from "@/lib/export-video-model";
 import { XIcon } from "../export-icons";
-import { SizeStepper, sizeBounds } from "./controls";
+import { SizeStepper, overflowFade, sizeBounds } from "./controls";
 import { EditableStage } from "./editable-stage";
 import { BLOCK_ICON, EIcon, type EditorIconName } from "./editor-icons";
 import { EditorTopBar } from "./editor-chrome";
@@ -137,7 +137,7 @@ export function PlateauEditor(editor: EditorProps) {
   const frameSubs: Record<FrameToolKey, string> = {
     format: formatName(editor.prefs.orientation),
     fond: backgroundName(editor.frame.selectedBg, editor.frame.upload !== null),
-    passages: editor.passages.summary,
+    passages: editor.passages.short,
     avance: `${editor.prefs.resolution}p · ${editor.prefs.fps}`,
   };
 
@@ -218,6 +218,7 @@ export function PlateauEditor(editor: EditorProps) {
         ) : (
           <>
             <div
+              ref={overflowFade}
               className="xe-chips"
               role="group"
               aria-label="Choisir un élément"
@@ -267,7 +268,7 @@ export function PlateauEditor(editor: EditorProps) {
               data-testid="editor-toolbar"
             >
               {selected !== null ? (
-                <div className="xe-tb">
+                <div className="xe-tb" ref={overflowFade}>
                   {selected === "wave" ? (
                     <WaveStep controller={controller} />
                   ) : (
@@ -310,7 +311,7 @@ export function PlateauEditor(editor: EditorProps) {
                 </div>
               ) : (
                 <>
-                  <div className="xe-tb">
+                  <div className="xe-tb" ref={overflowFade}>
                     {FRAME_TOOLS.map((t) => (
                       <button
                         key={t.key}
@@ -329,11 +330,10 @@ export function PlateauEditor(editor: EditorProps) {
                   </div>
                   <div className="xe-ready" data-testid="editor-ready">
                     <p>
-                      <EIcon name="hand" size={20} />
+                      <b>Déjà prête</b>
                       <span>
-                        Touche un texte dans l’aperçu pour le déplacer,
-                        l’agrandir ou changer son fond. La vidéo est déjà prête
-                        avec nos réglages conseillés.
+                        Avec nos réglages conseillés. Touche un texte pour le
+                        modifier.
                       </span>
                     </p>
                     <button

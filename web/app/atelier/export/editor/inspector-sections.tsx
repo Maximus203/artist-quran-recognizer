@@ -92,6 +92,7 @@ export function ElementSections({
             block={id}
             panel={controller.styles[id].panel}
             onChange={(change) => controller.setPanel(id, change)}
+            heading={all}
           />
         </section>
       ) : null}
