@@ -399,10 +399,12 @@ export function TableTimeline(props: TimelineProps) {
     const action = playheadKey(event.key, event.shiftKey);
     if (!action) return;
     event.preventDefault();
+    const before = head.get();
     if ("delta" in action) props.onNudge(action.delta);
     else if ("to" in action) props.onSeek(action.to === "start" ? 0 : duration);
     else props.onJump(action.jump);
-    soon(`Tête de lecture : ${spokenTime(head.get())}.`);
+    if (head.get() !== before)
+      soon(`Tête de lecture : ${spokenTime(head.get())}.`);
   };
 
   // Les pas de la tête : un appui fait le pas, tenu il se répète jusqu'à la borne.
@@ -417,10 +419,13 @@ export function TableTimeline(props: TimelineProps) {
   const fwd01 = useHoldRepeat(() => step(0.1));
   const fwd1 = useHoldRepeat(() => step(1));
   const jump = (direction: -1 | 1) => {
+    const before = head.get();
     props.onJump(direction);
-    soon(
-      `Passage ${direction < 0 ? "précédent" : "suivant"} : ${spokenTime(head.get())}.`,
-    );
+    // Pas de passage dans ce sens : l'éditeur l'annonce lui-même, on ne le recouvre pas.
+    if (head.get() !== before)
+      soon(
+        `Passage ${direction < 0 ? "précédent" : "suivant"} : ${spokenTime(head.get())}.`,
+      );
   };
 
   const onOffset = (offset: number, announce: boolean) => {
