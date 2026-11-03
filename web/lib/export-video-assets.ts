@@ -36,6 +36,32 @@ const VIDEO_EXTENSIONS = new Set([
 export const isVideoExtension = (extension: string): boolean =>
   VIDEO_EXTENSIONS.has(extension.toLowerCase());
 
+/** Ce que le SERVEUR sait de la vidéo d'origine (voir `/api/sessions/:id/video-info`). */
+export type SourceVideoInfo =
+  | { has_video: false; reason: "audio" | "audio_only" | "unreadable" }
+  | {
+      has_video: true;
+      width: number;
+      height: number;
+      codec: string;
+      browser_ready: boolean;
+    };
+
+/** La session a-t-elle une image ? Réponse du serveur ; `null` si la demande échoue (hors ligne…). */
+export async function fetchVideoInfo(
+  sessionId: string,
+): Promise<SourceVideoInfo | null> {
+  try {
+    const response = await fetch(`/api/sessions/${sessionId}/video-info`, {
+      credentials: "same-origin",
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as SourceVideoInfo;
+  } catch {
+    return null;
+  }
+}
+
 /** Charge la vidéo originale et attend ses métadonnées ; null si le navigateur ne la lit pas. */
 export async function loadSourceVideo(
   sessionId: string,

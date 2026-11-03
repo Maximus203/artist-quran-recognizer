@@ -64,6 +64,7 @@ export function VideoLook({
   isVideo,
   sourceSize,
   sourceUnreadable,
+  previewUnavailable,
   selectedBg,
   upload,
   uploadThumb,
@@ -75,6 +76,7 @@ export function VideoLook({
   isVideo: boolean;
   sourceSize: { width: number; height: number } | null;
   sourceUnreadable: boolean;
+  previewUnavailable: boolean;
   selectedBg: string;
   upload: File | null;
   uploadThumb: string | null;
@@ -148,9 +150,14 @@ export function VideoLook({
         </span>
         {sourceUnreadable ? (
           <p className="xr-lead" data-testid="video-source-unreadable">
-            La vidéo d’origine n’a pas pu servir de fond (ce navigateur ne la
-            lit pas, ou elle ne contient que du son) : choisis un fond
-            ci-dessous.
+            Cet enregistrement n’a pas d’image (il ne contient que du son) :
+            choisis un fond ci-dessous.
+          </p>
+        ) : null}
+        {previewUnavailable ? (
+          <p className="xr-lead" data-testid="video-preview-unavailable">
+            Ton appareil n’affiche pas l’image de la vidéo dans l’aperçu, mais
+            l’export la reprendra bien : elle est fabriquée sur le serveur.
           </p>
         ) : null}
         <div
