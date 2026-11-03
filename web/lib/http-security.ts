@@ -121,6 +121,14 @@ export function classify(method: string, pathname: string): Family {
     // Envoi par morceaux : un morceau est une requête à part (plafond et corps propres).
     if (m === "PUT" && /^\/api\/uploads\/[^/]+\/chunks\/[^/]+$/.test(pathname))
       return "chunk";
+    // Vidéo de fond choisie : mêmes morceaux, rattachés à la session.
+    if (
+      m === "PUT" &&
+      /^\/api\/(v1\/recordings|sessions)\/[^/]+\/background-videos\/[^/]+\/chunks\/[^/]+$/.test(
+        pathname,
+      )
+    )
+      return "chunk";
     // Vidéo encodée par le navigateur : envoyée par morceaux de 4 Mio (`lib/export-video-pieces.ts`).
     if (
       m === "POST" &&

@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { purgeClips } from "@/lib/background-video-store";
 import { publicUser } from "@/lib/auth-response";
 import { apiError, json, notFound, readJson, safe } from "@/lib/http";
+import { log } from "@/lib/log";
 import { unlockAccount } from "@/lib/auth";
 import { authDeps, requireAdmin } from "@/lib/route-guard";
 import { audit } from "@/lib/audit";
@@ -87,6 +89,14 @@ async function handleDELETE(
       return apiError(409, error.message, { code: "last_admin" });
     throw error;
   }
+  // Ses vidéos de fond (envoyées pour ses exports) partent avec le compte ; ses sessions, elles, restent.
+  await purgeClips({ ownerId: id }).catch((error) =>
+    log.error(
+      "api",
+      "vidéos de fond d'un compte supprimé : retrait en échec",
+      error,
+    ),
+  );
   audit("account.deleted", { userId: id, reason: `by:${auth.user.id}` });
   return new Response(null, { status: 204 });
 }

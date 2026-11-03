@@ -1,0 +1,551 @@
+/*
+ * Section « Vidéo de fond » de l'export (composant `BackgroundVideoSection`). Tout vient de tokens.css :
+ * l'action principale est à l'ENCRE, le lapis reste la voix du moteur (avancement, raccords), la couleur n'est
+ * jamais seule à porter un état. Mobile-first : conçu à 375 px, cibles de 44 px sur le bouton lui-même.
+ */
+.bvs {
+  --bvs-film-h: 56px;
+  --bvs-strip-h: 64px;
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  min-width: 0;
+}
+.bvs *,
+.bvs *::before,
+.bvs *::after {
+  box-sizing: border-box;
+}
+.bvs-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+}
+.bvs p {
+  margin: 0;
+  line-height: var(--lh-ui);
+}
+.bvs-lead,
+.bvs-limits,
+.bvs-numbers {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.bvs-limits {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.bvs-sr,
+.bvs-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.bvs-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── boutons : cible de 44 px sur le bouton lui-même ────────────────────────────────────── */
+.bvs-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--hit);
+  min-width: var(--hit);
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.bvs-btn:hover {
+  background: var(--surface-3);
+}
+.bvs-btn:active {
+  transform: translateY(1px);
+}
+.bvs-btn:focus-visible,
+.bvs-btn:has(.bvs-file-input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.bvs-btn:disabled,
+.bvs-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bvs-btn--primary {
+  background: var(--action-bg);
+  color: var(--action-fg);
+  border-color: transparent;
+}
+.bvs-btn--primary:hover {
+  background: var(--action-bg-hover);
+}
+.bvs-btn--plain {
+  background: transparent;
+}
+.bvs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.bvs-i {
+  flex: none;
+}
+
+/* ── fichier choisi ───────────────────────────────────────────────────────────────────────── */
+.bvs-file {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+@media (max-width: 479px) {
+  .bvs-file {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .bvs-file > .bvs-btn {
+    grid-column: span 1;
+  }
+}
+.bvs-file-ic {
+  display: grid;
+  place-items: center;
+  width: var(--hit);
+  height: var(--hit);
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.bvs-file-meta {
+  display: grid;
+  min-width: 0;
+}
+.bvs-file-meta b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-md);
+}
+.bvs-file-meta small {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.bvs-mute {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.bvs-mute .bvs-i {
+  margin-top: 1px;
+}
+.bvs-status {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+/* ── envoi, préparation ───────────────────────────────────────────────────────────────────── */
+.bvs-busy {
+  display: grid;
+  gap: var(--sp-2);
+}
+.bvs-name {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  min-width: 0;
+}
+.bvs-name b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bvs-bar {
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.bvs-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--r-pill);
+  transition: width var(--dur-2) var(--ease);
+}
+.bvs-progress {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── erreur ───────────────────────────────────────────────────────────────────────────────── */
+.bvs-error {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-2));
+}
+.bvs-error-title {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  color: var(--danger);
+}
+.bvs-error-text {
+  font-size: var(--fs-sm);
+}
+
+/* ── bande « film » : la vidéo sur la durée de la récitation ──────────────────────────────── */
+.bvs-film {
+  position: relative;
+  height: var(--bvs-film-h);
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.bvs-tile {
+  position: absolute;
+  inset-block: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1px;
+  overflow: hidden;
+  background: var(--hatch);
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--bg) 70%, transparent);
+}
+.bvs-tile[data-flip="true"] {
+  transform: scaleX(-1);
+}
+.bvs-tile > u,
+.bvs-cells > u {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  text-decoration: none;
+}
+.bvs-tile--dense {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--surface-3) 0 calc(var(--tile) - 1px),
+    var(--text-3) calc(var(--tile) - 1px) var(--tile)
+  );
+  box-shadow: none;
+}
+.bvs-frozen {
+  position: absolute;
+  inset-block: 0;
+  display: grid;
+  place-items: center;
+  background: var(--hatch);
+  font-style: normal;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+}
+.bvs-seam {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  background: var(--action-bg);
+  color: var(--action-fg);
+  box-shadow: 0 0 0 2px var(--surface-2);
+}
+.bvs-seam .bvs-i {
+  width: 16px;
+  height: 16px;
+}
+.bvs-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── comportements (vidéo plus courte) ────────────────────────────────────────────────────── */
+.bvs-field {
+  display: grid;
+  gap: var(--sp-2);
+}
+.bvs-label {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+.bvs-modes {
+  display: grid;
+  gap: var(--sp-2);
+}
+.bvs-mode {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "ic title"
+    "ic hint"
+    "dia dia";
+  align-items: center;
+  justify-content: stretch;
+  gap: 2px var(--sp-3);
+  padding: var(--sp-3);
+  text-align: left;
+  font-weight: 400;
+}
+.bvs-mode-ic {
+  grid-area: ic;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+}
+.bvs-mode b {
+  grid-area: title;
+  font-size: var(--fs-md);
+}
+.bvs-mode small {
+  grid-area: hint;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-ui);
+}
+.bvs-mode[aria-checked="true"] {
+  border-color: var(--action-bg);
+  box-shadow: inset 0 0 0 1px var(--action-bg);
+  background: var(--surface-2);
+}
+.bvs-mode[aria-checked="true"] .bvs-mode-ic {
+  background: var(--action-bg);
+  color: var(--action-fg);
+}
+.bvs-diagram {
+  grid-area: dia;
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  margin-top: var(--sp-2);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.bvs-diagram i {
+  display: block;
+  min-width: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.bvs-diagram i[data-kind="flip"] {
+  opacity: 0.55;
+}
+.bvs-diagram i[data-kind="frozen"] {
+  background: var(--hatch);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* ── portion (vidéo plus longue) ──────────────────────────────────────────────────────────── */
+.bvs-portion {
+  display: grid;
+  gap: var(--sp-2);
+}
+.bvs-times {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.bvs-times b {
+  margin-left: var(--sp-1);
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+.bvs-strip {
+  position: relative;
+  height: var(--bvs-strip-h);
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+.bvs-cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1px;
+  background: var(--hatch);
+}
+.bvs-window {
+  position: absolute;
+  inset-block: 0;
+  min-width: 44px;
+  border-radius: var(--r-sm);
+  /* fenêtre éclairée : le reste est éteint */
+  box-shadow:
+    inset 0 0 0 3px var(--text),
+    0 0 0 9999px color-mix(in srgb, #080a0e 55%, transparent);
+  cursor: grab;
+  touch-action: none;
+}
+.bvs-window:active {
+  cursor: grabbing;
+}
+.bvs-window:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.bvs-window::before,
+.bvs-window::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 24px;
+  margin-top: -12px;
+  border-radius: 3px;
+  background: var(--bg);
+}
+.bvs-window::before {
+  left: 9px;
+}
+.bvs-window::after {
+  right: 9px;
+}
+.bvs-window[data-narrow="true"]::before,
+.bvs-window[data-narrow="true"]::after {
+  display: none;
+}
+.bvs-window-tag {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  color: var(--bg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bvs-window[data-narrow="true"] .bvs-window-tag {
+  left: calc(100% + 8px);
+  top: 50%;
+  margin-top: -10px;
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+.bvs-window[data-narrow="true"][data-right="true"] .bvs-window-tag {
+  left: auto;
+  right: calc(100% + 8px);
+}
+.bvs-link {
+  display: block;
+  width: 100%;
+  height: 22px;
+}
+.bvs-link path {
+  fill: color-mix(in srgb, var(--accent) 16%, transparent);
+  stroke: var(--accent);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+.bvs-recit {
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.bvs-recit i {
+  display: block;
+  height: 100%;
+  background: var(--seg-recognized-fill);
+  box-shadow: inset 0 0 0 1px var(--seg-recognized-edge);
+  border-radius: var(--r-pill);
+}
+.bvs-nudges {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.bvs-nudges .bvs-btn {
+  padding: 0 var(--sp-1);
+}
+.bvs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.bvs-chip {
+  border-radius: var(--r-pill);
+}
+.bvs-chip[aria-pressed="true"] {
+  background: var(--action-bg);
+  color: var(--action-fg);
+  border-color: transparent;
+}
+
+@media (min-width: 640px) {
+  .bvs-modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mouvement : la barre d'avancement et les retours de survol seulement ; rien ne bouge si on le demande. */
+@media (prefers-reduced-motion: reduce) {
+  .bvs-bar i,
+  .bvs-btn {
+    transition: none;
+  }
+  .bvs-btn:active {
+    transform: none;
+  }
+}
+@media (forced-colors: active) {
+  .bvs-mode[aria-checked="true"],
+  .bvs-chip[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+  }
+}

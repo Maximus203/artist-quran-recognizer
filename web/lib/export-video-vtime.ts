@@ -132,7 +132,7 @@ function frNumber(value: number, decimals: number): string {
 }
 
 /** Durée lisible : « 12 s », « 3,5 s », « 1 min 05 s ». */
-function formatSeconds(seconds: number): string {
+export function formatSeconds(seconds: number): string {
   const total = Math.round(Math.max(0, seconds) * 10) / 10;
   if (total < 60) return `${frNumber(total, 1)} s`;
   const minutes = Math.floor(total / 60);

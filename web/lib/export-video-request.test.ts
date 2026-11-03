@@ -230,14 +230,65 @@ describe("ce que l'API ne sait pas encore exprimer", () => {
     expect(apiDifferences(custom)).toEqual([]);
   });
 
-  it("signale la vidéo de fond : son fichier ne part pas encore au serveur", () => {
-    const video = {
-      ...base,
-      background: "video",
-      backgroundVideo: { file: "dunes.mp4", offset: 3, mode: "loop" as const },
-    };
+  const video = {
+    ...base,
+    background: "video",
+    backgroundVideo: { file: "dunes.mp4", offset: 3, mode: "loop" as const },
+  };
+
+  it("signale la vidéo de fond tant qu'elle n'est pas arrivée sur le serveur", () => {
     expect(apiDifferences(video)).toEqual([
-      expect.stringContaining("vidéo de fond"),
+      expect.stringContaining("pas encore envoyée"),
     ]);
+  });
+
+  it("n'a plus rien à signaler une fois la vidéo envoyée : l'API la reçoit par son identifiant", () => {
+    expect(
+      apiDifferences(video, { backgroundVideoUploadId: "a".repeat(32) }),
+    ).toEqual([]);
+  });
+});
+
+describe("vidéo de fond envoyée : le JSON de l'API la désigne", () => {
+  const upload = "a".repeat(32);
+  const prefs: VideoPrefs = {
+    ...videoPrefsFromOptions({}, false),
+    background: "video",
+    backgroundVideo: { file: "dunes.mp4", offset: 3.5, mode: "pingpong" },
+  };
+
+  it("écrit background.video avec le départ et le comportement choisis, accepté tel quel par l'API", () => {
+    const body = exportVideoRequest(prefs, [], 60, undefined, {
+      backgroundVideoUploadId: upload,
+    });
+    expect(body.background).toEqual({
+      video: { upload_id: upload, offset: 3.5, mode: "pingpong" },
+    });
+    expect(videoJobOptionsSchema.safeParse(body).success).toBe(true);
+  });
+
+  it("le rendu serveur retrouve le même départ et le même comportement", () => {
+    const body = exportVideoRequest(prefs, [], 60, undefined, {
+      backgroundVideoUploadId: upload,
+    });
+    const back = videoPrefsFromOptions(body, false);
+    expect(back.background).toBe("video");
+    expect(back.backgroundVideo).toMatchObject({
+      offset: 3.5,
+      mode: "pingpong",
+    });
+  });
+
+  it("sans identifiant d'envoi, rien n'est écrit : le JSON ne promet pas une vidéo que le serveur n'a pas", () => {
+    expect(exportVideoRequest(prefs, [], 60).background).toBeUndefined();
+  });
+
+  it("un autre fond n'écrit jamais d'objet, même si un identifiant traîne", () => {
+    const other = { ...prefs, background: "desert-dunes" };
+    expect(
+      exportVideoRequest(other, [], 60, undefined, {
+        backgroundVideoUploadId: upload,
+      }).background,
+    ).toBe("desert-dunes");
   });
 });

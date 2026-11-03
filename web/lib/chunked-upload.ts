@@ -1,11 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
-import { createReadStream } from "node:fs";
 import {
   mkdir,
   open,
   readFile,
   readdir,
-  rename,
   rm,
   stat,
   writeFile,
@@ -13,7 +11,17 @@ import {
 import path from "node:path";
 import { Readable } from "node:stream";
 import type { Visibility } from "./access";
-import { DISK_FULL_MESSAGE } from "./disk-space";
+import {
+  chunkBytes,
+  chunkStream,
+  DEFAULT_CHUNK_BYTES,
+  diskError,
+  MAX_CHUNK_BYTES,
+  planChunks,
+  receivedIndexes,
+  writeChunk,
+  type ChunkPlan,
+} from "./chunk-staging";
 import { formatBytesFr } from "./format";
 import {
   ImportError,
@@ -35,28 +43,13 @@ import { reviewRoot, type Session } from "./store";
  * l'assemblage subit EXACTEMENT les mêmes contrôles que l'envoi en une requête (type réel, plafonds, quota,
  * place disque, sonde du média). Un envoi n'est visible que par son propriétaire (404 sinon, jamais 403).
  */
-export const DEFAULT_CHUNK_BYTES = 4 * 1024 * 1024;
-export const MAX_CHUNK_BYTES = 8 * 1024 * 1024;
-const MIN_CHUNK_BYTES = 256 * 1024;
+export { chunkBytes, DEFAULT_CHUNK_BYTES, MAX_CHUNK_BYTES };
 export const MAX_ACTIVE_UPLOADS = 3;
 export const UPLOAD_TTL_S = 24 * 3600;
 const ID_RE = /^[0-9a-f]{32}$/;
 
-/** Taille d'un morceau : 4 Mio par défaut, entre 256 Kio et 8 Mio (`AQR_UPLOAD_CHUNK_BYTES`). */
-export function chunkBytes(env: NodeJS.ProcessEnv = process.env): number {
-  const floor = Math.min(
-    MIN_CHUNK_BYTES,
-    Number(env.AQR_MIN_UPLOAD_CHUNK_BYTES) || MIN_CHUNK_BYTES,
-  );
-  const value = Number(env.AQR_UPLOAD_CHUNK_BYTES);
-  return Number.isInteger(value) && value >= floor && value <= MAX_CHUNK_BYTES
-    ? value
-    : DEFAULT_CHUNK_BYTES;
-}
-
 const stagingRoot = () => path.join(reviewRoot(), "uploads-staging");
 const dirOf = (id: string) => path.join(stagingRoot(), id);
-const partName = (index: number) => `chunk-${index}.part`;
 const unknown = () => new ImportError(404, "Envoi inconnu ou expiré.");
 
 type Meta = {
@@ -94,10 +87,7 @@ export type Created = {
   expiresInS: number;
 };
 
-const expectedLength = (meta: Meta, index: number) =>
-  index === meta.chunks - 1
-    ? meta.size - (meta.chunks - 1) * meta.chunkSize
-    : meta.chunkSize;
+const planOf = (meta: Meta): ChunkPlan => planChunks(meta.size, meta.chunkSize);
 
 async function readMeta(id: string, ownerId: number): Promise<Meta> {
   if (!ID_RE.test(id)) throw unknown();
@@ -189,7 +179,7 @@ export async function createUpload(input: CreateUpload): Promise<Created> {
     extension,
     size,
     chunkSize,
-    chunks: Math.ceil(size / chunkSize),
+    chunks: planChunks(size, chunkSize).chunks,
     sourceKind: input.sourceKind === "microphone" ? "microphone" : "file",
     visibility: input.visibility,
     name: input.name,
@@ -212,12 +202,6 @@ export async function createUpload(input: CreateUpload): Promise<Created> {
   };
 }
 
-function diskError(error: unknown): ImportError {
-  return (error as NodeJS.ErrnoException)?.code === "ENOSPC"
-    ? new ImportError(507, DISK_FULL_MESSAGE)
-    : new ImportError(500, "Envoi impossible pour l'instant.");
-}
-
 export async function receiveChunk(input: {
   id: string;
   ownerId: number;
@@ -225,42 +209,12 @@ export async function receiveChunk(input: {
   body: Buffer;
 }): Promise<{ received: number; chunks: number }> {
   const meta = await readMeta(input.id, input.ownerId);
-  const { index, body } = input;
-  if (!Number.isInteger(index) || index < 0 || index >= meta.chunks)
-    throw new ImportError(400, "Numéro de morceau hors limites.");
-  const expected = expectedLength(meta, index);
-  if (body.length > expected)
-    throw new ImportError(413, "Morceau plus grand que prévu.");
-  if (body.length !== expected)
-    throw new ImportError(400, "Morceau incomplet : taille inattendue.");
-  const target = path.join(dirOf(input.id), partName(index));
-  const temp = `${target}.${randomBytes(4).toString("hex")}.tmp`;
-  try {
-    await writeFile(temp, body);
-    await rename(temp, target); // atomique : un morceau est entier ou absent
-  } catch (error) {
-    await rm(temp, { force: true });
-    throw diskError(error);
-  }
+  const dir = dirOf(meta.id);
+  await writeChunk(dir, planOf(meta), input.index, input.body);
   return {
-    received: (await receivedIndexes(meta)).length,
+    received: (await receivedIndexes(dir, planOf(meta))).length,
     chunks: meta.chunks,
   };
-}
-
-async function receivedIndexes(meta: Meta): Promise<number[]> {
-  const found: number[] = [];
-  for (const entry of await readdir(dirOf(meta.id)).catch(() => [])) {
-    const match = /^chunk-(\d+)\.part$/.exec(entry);
-    if (!match) continue;
-    const index = Number(match[1]);
-    if (index >= meta.chunks) continue;
-    const { size } = await stat(path.join(dirOf(meta.id), entry)).catch(() => ({
-      size: -1,
-    }));
-    if (size === expectedLength(meta, index)) found.push(index);
-  }
-  return found.sort((a, b) => a - b);
 }
 
 export async function uploadStatus(id: string, ownerId: number) {
@@ -270,21 +224,13 @@ export async function uploadStatus(id: string, ownerId: number) {
     size: meta.size,
     chunkSize: meta.chunkSize,
     chunks: meta.chunks,
-    received: await receivedIndexes(meta),
+    received: await receivedIndexes(dirOf(meta.id), planOf(meta)),
   };
 }
 
 export async function abortUpload(id: string, ownerId: number): Promise<void> {
   const meta = await readMeta(id, ownerId);
   await rm(dirOf(meta.id), { recursive: true, force: true });
-}
-
-async function* chunkFiles(meta: Meta): AsyncGenerator<Buffer> {
-  for (let i = 0; i < meta.chunks; i++)
-    for await (const piece of createReadStream(
-      path.join(dirOf(meta.id), partName(i)),
-    ))
-      yield piece as Buffer;
 }
 
 /** Assemble les morceaux et crée la session, avec les contrôles de l'envoi unique. */
@@ -306,7 +252,7 @@ export async function completeUpload(
     throw new ImportError(409, "Assemblage déjà en cours.");
   }
   const release = () => rm(marker, { force: true });
-  const present = await receivedIndexes(meta);
+  const present = await receivedIndexes(dir, planOf(meta));
   if (present.length !== meta.chunks) {
     await release();
     throw new ImportError(
@@ -316,7 +262,8 @@ export async function completeUpload(
   }
   if (options.sha256) {
     const hash = createHash("sha256");
-    for await (const piece of chunkFiles(meta)) hash.update(piece);
+    for await (const piece of chunkStream(dir, planOf(meta)))
+      hash.update(piece);
     if (hash.digest("hex") !== options.sha256.toLowerCase()) {
       await rm(dir, { recursive: true, force: true });
       throw new ImportError(
@@ -329,7 +276,7 @@ export async function completeUpload(
     const session = await importFromStream(
       {
         stream: Readable.toWeb(
-          Readable.from(chunkFiles(meta)),
+          Readable.from(chunkStream(dir, planOf(meta))),
         ) as unknown as ReadableStream<Uint8Array>,
         filename: encodeURIComponent(meta.filename),
         sourceKind: meta.sourceKind,

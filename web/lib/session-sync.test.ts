@@ -232,6 +232,34 @@ describe("suivi des écritures de session.json", () => {
     expect(getMeta(getDb(), id(1))).toBeNull();
   });
 
+  it("la suppression d'une session retire ses vidéos de fond, pas celles des autres sessions", async () => {
+    await onDisk(session(1));
+    await onDisk(session(2));
+    installSessionHooks();
+    await importLegacySessions();
+    const { createClip } = await import("./background-video-store");
+    const deps = {
+      sniff: async () => ({ ok: true as const, family: "isobmff" }),
+      probe: async () => ({ duration: 1, width: 1, height: 1, codec: "h264" }),
+      normalize: async () => undefined,
+      freeBytes: async () => null,
+      now: () => Date.now(),
+    };
+    const mine = await createClip(
+      { sessionId: id(1), ownerId: 1, filename: "a.mp4", size: 100 },
+      deps,
+    );
+    const theirs = await createClip(
+      { sessionId: id(2), ownerId: 1, filename: "b.mp4", size: 100 },
+      deps,
+    );
+    await deleteSession(id(1));
+    const { readdir } = await import("node:fs/promises");
+    const left = await readdir(path.join(root, "background-videos"));
+    expect(left).toContain(theirs.id);
+    expect(left).not.toContain(mine.id);
+  });
+
   it("un crochet qui échoue ne fait pas échouer l'écriture", async () => {
     await onDisk(session(1));
     sessionHooks.saved = () => {

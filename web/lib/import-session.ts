@@ -76,7 +76,7 @@ export type ImportDeps = {
 };
 
 /** Premiers octets d'un fichier, pour en reconnaître le type. */
-async function sniffFile(file: string): Promise<Sniff> {
+export async function sniffFile(file: string): Promise<Sniff> {
   const handle = await open(file, "r");
   try {
     const head = Buffer.alloc(SNIFF_BYTES);
@@ -121,8 +121,18 @@ const tooLarge = (extension: string) =>
     }).`,
   );
 
-/** Nom de fichier sûr (sans chemin, 255 caractères au plus) et extension reconnue. */
-export function sanitizeName(raw: string): { name: string; extension: string } {
+const FORMAT_REFUSAL =
+  "Format non accepté : choisis un audio (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC, WebM) ou une vidéo (MP4, MKV, MOV, AVI, M4V).";
+
+/**
+ * Nom de fichier sûr (sans chemin, 255 caractères au plus) et extension reconnue. `accepted` et `refusal`
+ * permettent à un autre usage (la vidéo de fond) de garder CE nettoyage avec ses propres formats.
+ */
+export function sanitizeName(
+  raw: string,
+  accepted: ReadonlySet<string> = acceptedMediaExtensions,
+  refusal: string = FORMAT_REFUSAL,
+): { name: string; extension: string } {
   const base = path
     .basename(raw.replaceAll("\\", "/"))
     .replace(/[\u0000-\u001f\u007f]/g, "")
@@ -134,11 +144,7 @@ export function sanitizeName(raw: string): { name: string; extension: string } {
     .trim();
   const dot = base.lastIndexOf(".");
   const extension = dot >= 0 ? base.slice(dot).toLowerCase() : "";
-  if (!acceptedMediaExtensions.has(extension))
-    throw new ImportError(
-      400,
-      "Format non accepté : choisis un audio (MP3, M4A, WAV, OGG, OPUS, FLAC, AAC, WebM) ou une vidéo (MP4, MKV, MOV, AVI, M4V).",
-    );
+  if (!accepted.has(extension)) throw new ImportError(400, refusal);
   const stem = base.slice(0, dot).trim();
   if (stem === "")
     throw new ImportError(

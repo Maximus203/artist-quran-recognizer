@@ -21,6 +21,13 @@ export async function register(): Promise<void> {
   const { getDb } = await import("./lib/db");
   const { reconcileAllExports } = await import("./lib/export-index");
   await reconcileAllExports(getDb()).catch(() => 0);
+  // Vidéos de fond expirées (envois abandonnés, vidéos non utilisées) : retirées au démarrage puis chaque heure.
+  const { cleanupExpiredClips } = await import("./lib/background-video-store");
+  await cleanupExpiredClips().catch(() => 0);
+  setInterval(
+    () => void cleanupExpiredClips().catch(() => 0),
+    60 * 60 * 1000,
+  ).unref();
   const { ensureQueueRecovered } = await import("./lib/jobs");
   await ensureQueueRecovered().catch(() => []);
 }

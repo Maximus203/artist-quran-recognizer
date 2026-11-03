@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, link, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { jobQueue } from "./jobs";
 import { log } from "./log";
@@ -52,6 +52,13 @@ export type VideoJob = {
   file: string | null;
   files: { name: string; path: string }[];
   background: string | null;
+  /**
+   * Vidéo de fond choisie (muette) : un lien (ou une copie) dans le dossier du job. L'exportation reste faisable
+   * même si l'utilisateur retire sa vidéo ou si elle expire pendant le rendu.
+   */
+  backgroundVideo: string | null;
+  /** Identité de cette vidéo (empreinte de l'original) : elle entre dans la clé de réutilisation d'un export identique. */
+  backgroundVideoId: string | null;
   /** Identifiants de l'appelant, gardés en mémoire le temps du rendu seulement. */
   credential: Credential | null;
   /** Vidéo identique déjà gardée : récupérée sans être refaite (défaut). */
@@ -67,6 +74,8 @@ export type PublicVideoJob = Omit<
   | "file"
   | "files"
   | "background"
+  | "backgroundVideo"
+  | "backgroundVideoId"
   | "credential"
   | "origin"
   | "userId"
@@ -130,6 +139,8 @@ export function publicJob(job: VideoJob): PublicVideoJob {
     file,
     files,
     background,
+    backgroundVideo,
+    backgroundVideoId,
     credential,
     origin,
     userId,
@@ -139,6 +150,8 @@ export function publicJob(job: VideoJob): PublicVideoJob {
   void cancelRequested;
   void dir;
   void background;
+  void backgroundVideo;
+  void backgroundVideoId;
   void credential;
   void origin;
   void userId;
@@ -242,6 +255,8 @@ export async function startVideoJob(input: {
   userId: number;
   options: VideoJobOptions;
   background: { bytes: Buffer; type: string } | null;
+  /** Vidéo de fond choisie, prête sur le serveur (déjà contrôlée : propriétaire, session, état). */
+  clip?: { path: string; sha256: string } | null;
   credential: Credential;
   origin: string;
   reuse?: boolean;
@@ -269,6 +284,14 @@ export async function startVideoJob(input: {
     background = path.join(dir, "background");
     await writeFile(background, input.background.bytes);
   }
+  let backgroundVideo: string | null = null;
+  if (input.clip) {
+    backgroundVideo = path.join(dir, "background-video.mp4");
+    // Un lien dur ne coûte aucune place ; sinon (autre volume) une copie.
+    await link(input.clip.path, backgroundVideo).catch(() =>
+      copyFile(input.clip!.path, backgroundVideo!),
+    );
+  }
   const job: VideoJob = {
     id,
     sessionId: input.sessionId,
@@ -286,6 +309,8 @@ export async function startVideoJob(input: {
     file: null,
     files: [],
     background,
+    backgroundVideo,
+    backgroundVideoId: input.clip?.sha256 ?? null,
     credential: input.credential,
     origin: input.origin,
     reuse: input.reuse !== false,
@@ -430,6 +455,28 @@ export function cookiesOf(
     });
 }
 
+/**
+ * Ce que la page technique de rendu reçoit (`window.__AQR_RENDER`) : les réglages, les plages, et ce qui l'attend
+ * côté serveur (image de fond, vidéo de fond muette). Pure : testable sans navigateur.
+ */
+export function renderPayload(job: VideoJob) {
+  return {
+    sessionId: job.sessionId,
+    jobId: job.id,
+    fileName: job.options.file_name,
+    ranges: job.options.ranges,
+    perVerse: job.options.per_verse === true,
+    suggest: job.options.suggest,
+    margins: suggestOptionsOf(job.options),
+    padRanges: job.options.pad_ranges === true,
+    prefs: videoPrefsFromOptions(job.options, job.background !== null),
+    hasBackground: job.background !== null,
+    hasBackgroundVideo: job.backgroundVideo !== null,
+    backgroundVideoId: job.backgroundVideoId,
+    reuse: job.reuse,
+  };
+}
+
 /** Rendu réel : page technique `/render/video` dans Chrome/Edge sans interface. */
 async function renderInBrowser(
   job: VideoJob,
@@ -465,25 +512,9 @@ async function renderInBrowser(
       await context.addCookies(cookiesOf(credential.cookie, job.origin));
     const page = await context.newPage();
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
-    const prefs = videoPrefsFromOptions(job.options, job.background !== null);
-    await page.addInitScript(
-      (payload) => {
-        (window as unknown as { __AQR_RENDER: unknown }).__AQR_RENDER = payload;
-      },
-      {
-        sessionId: job.sessionId,
-        jobId: job.id,
-        fileName: job.options.file_name,
-        ranges: job.options.ranges,
-        perVerse: job.options.per_verse === true,
-        suggest: job.options.suggest,
-        margins: suggestOptionsOf(job.options),
-        padRanges: job.options.pad_ranges === true,
-        prefs,
-        hasBackground: job.background !== null,
-        reuse: job.reuse,
-      },
-    );
+    await page.addInitScript((payload) => {
+      (window as unknown as { __AQR_RENDER: unknown }).__AQR_RENDER = payload;
+    }, renderPayload(job));
     // Chaque MP4 produit (un par plage) arrive comme un téléchargement : on les enregistre au fil de l'eau.
     const saves: Promise<void>[] = [];
     page.on("download", (file) => {
