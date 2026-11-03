@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  type CSSProperties,
   type PointerEvent,
   type MouseEvent,
   type ReactNode,
@@ -296,8 +297,9 @@ export function ColorField({
         className="xe-swatch xe-swatch--free"
         data-checked={!known || undefined}
         title="Une autre couleur"
+        style={{ "--xe-free": value } as CSSProperties}
       >
-        <i style={{ background: value }} aria-hidden="true" />
+        <i aria-hidden="true" />
         <input
           type="color"
           value={value}

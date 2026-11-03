@@ -374,18 +374,23 @@ export function PassagesDialog({
 /** La qualité, la fluidité et le poids : rangés à part, jamais en première ligne. */
 export function AdvancedSection({
   children,
-  defaultOpen = false,
+  bare = false,
 }: {
   children: ReactNode;
-  /** Ouvert d'emblée (dans la feuille « Avancé » du téléphone, où c'est tout ce qu'on voit). */
-  defaultOpen?: boolean;
+  /**
+   * Sans le repli : dans la feuille « Avancé » du téléphone, dont le titre dit déjà « Réglages avancés », le
+   * contenu est tout ce qu'on voit.
+   */
+  bare?: boolean;
 }) {
+  if (bare)
+    return (
+      <div className="xr-fine-body xe-advanced" data-testid="video-advanced">
+        {children}
+      </div>
+    );
   return (
-    <details
-      className="xr-fine xe-advanced"
-      data-testid="video-advanced"
-      open={defaultOpen}
-    >
+    <details className="xr-fine xe-advanced" data-testid="video-advanced">
       <summary>
         <XIcon name="chev-r" />
         Réglages avancés : qualité, fluidité, poids

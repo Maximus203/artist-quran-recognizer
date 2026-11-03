@@ -454,6 +454,7 @@
 }
 .xe-ready {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
@@ -461,7 +462,7 @@
   border-radius: var(--r-md);
 }
 .xe-ready p {
-  flex: 1;
+  flex: 1 1 170px;
   min-width: 0;
   margin: 0;
   display: grid;
@@ -474,7 +475,7 @@
   color: var(--text);
 }
 .xe-ready .btn {
-  flex: none;
+  flex: 1 1 auto;
 }
 
 /* La feuille : accrochée sous l'aperçu, qui reste visible pendant qu'on règle (pas de voile). */
@@ -832,6 +833,14 @@ button.xe-step-val:hover {
     0 0 0 2px var(--surface-2),
     0 0 0 4px var(--x-sel-edge);
 }
+/* La couleur libre : un rond en pointillés avec un « + » ; une fois choisie, il prend la couleur. */
+.xe-swatch--free i {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 2px var(--border-strong);
+}
+.xe-swatch--free[data-checked] i {
+  background: var(--xe-free, transparent) !important;
+}
 .xe-swatch--free input {
   position: absolute;
   inset: 0;
@@ -846,9 +855,11 @@ button.xe-step-val:hover {
   position: absolute;
   font-weight: 700;
   font-size: 18px;
-  color: var(--text);
-  mix-blend-mode: difference;
+  color: var(--text-2);
   pointer-events: none;
+}
+.xe-swatch--free[data-checked]::after {
+  content: none;
 }
 .xe-range {
   display: grid;
@@ -996,7 +1007,9 @@ button.xe-step-val:hover {
   color: var(--text-3);
   font-size: var(--fs-xs);
 }
-.xe-advanced > div {
+.xe-advanced > div,
+.xe-advanced.xr-fine-body {
+  display: grid;
   gap: var(--sp-4);
 }
 

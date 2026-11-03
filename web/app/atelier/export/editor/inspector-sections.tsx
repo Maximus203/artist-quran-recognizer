@@ -187,9 +187,7 @@ export function FrameSections({
       ) : null}
       {all || only === "avance" ? (
         <section className="xe-sec" aria-label="Réglages avancés">
-          <AdvancedSection defaultOpen={only === "avance"}>
-            {advanced}
-          </AdvancedSection>
+          <AdvancedSection bare={only === "avance"}>{advanced}</AdvancedSection>
         </section>
       ) : null}
     </>
