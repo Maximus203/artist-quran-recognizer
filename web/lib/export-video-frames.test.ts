@@ -117,6 +117,24 @@ describe("playedBarCount / waveBarGeometry / frameCountFor", () => {
     expect(g.zoneW).toBe(1536);
   });
 
+  it("à toute résolution l'onde a le même nombre de barres : l'aperçu montre la même onde que l'export", () => {
+    const full = waveBarGeometry({ x: 0, y: 0, width: 1920, height: 200 }, 1);
+    const hd = waveBarGeometry(
+      { x: 0, y: 0, width: 1280, height: 133 },
+      1280 / 1920,
+    );
+    const preview = waveBarGeometry(
+      { x: 0, y: 0, width: 640, height: 66 },
+      640 / 1920,
+    );
+    expect(Math.abs(hd.bars - full.bars)).toBeLessThanOrEqual(1);
+    expect(Math.abs(preview.bars - full.bars)).toBeLessThanOrEqual(1);
+    // Sans échelle donnée (1080 de référence), rien ne change.
+    expect(waveBarGeometry({ x: 0, y: 0, width: 1920, height: 200 }).bars).toBe(
+      full.bars,
+    );
+  });
+
   it("une boîte d'onde minuscule garde au moins une barre", () => {
     expect(waveBarGeometry({ x: 0, y: 0, width: 1, height: 1 }).bars).toBe(1);
   });

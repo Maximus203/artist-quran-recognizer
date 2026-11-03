@@ -1,10 +1,9 @@
 "use client";
-import { useId, type KeyboardEvent, type ReactNode } from "react";
-import { XIcon } from "./export-icons";
+import type { KeyboardEvent, ReactNode } from "react";
 
 /**
- * Briques de l'écran d'export (direction « Le rouleau et les signets ») : chapitre repliable qui
- * affiche sa valeur courante, contrôle segmenté (radiogroup aux flèches), interrupteur, pas-à-pas.
+ * Briques de l'écran d'export (direction « Le rouleau et les signets ») : contrôle segmenté (radiogroup
+ * aux flèches), interrupteur, pas-à-pas.
  */
 
 /** Flèches dans un radiogroup : passe au bouton voisin, le coche et le met au point. */
@@ -22,60 +21,6 @@ export function rovingKeys(event: KeyboardEvent<HTMLElement>): void {
   const next = radios[(i + (forward ? 1 : radios.length - 1)) % radios.length];
   next.focus();
   next.click();
-}
-
-export function Chapter({
-  n,
-  title,
-  summary,
-  open,
-  onToggle,
-  children,
-  testId,
-}: {
-  n: number;
-  title: string;
-  summary: ReactNode;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-  testId?: string;
-}) {
-  const id = useId();
-  return (
-    <section
-      className="xr-chap"
-      data-open={open}
-      aria-labelledby={`${id}-h`}
-      data-testid={testId}
-    >
-      <header>
-        <span className="n" aria-hidden="true">
-          {n}
-        </span>
-        <h2 id={`${id}-h`}>{title}</h2>
-        <span
-          className="sum"
-          data-testid={testId ? `${testId}-sum` : undefined}
-        >
-          {summary}
-        </span>
-        <button
-          type="button"
-          className="tog"
-          aria-expanded={open}
-          aria-controls={`${id}-b`}
-          aria-label={open ? `Replier « ${title} »` : `Déplier « ${title} »`}
-          onClick={onToggle}
-        >
-          <XIcon name="down" />
-        </button>
-      </header>
-      <div className="body" id={`${id}-b`} hidden={!open}>
-        {children}
-      </div>
-    </section>
-  );
 }
 
 export function Segmented<T extends string | number>({

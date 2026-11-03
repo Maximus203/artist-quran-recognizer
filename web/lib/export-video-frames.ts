@@ -117,10 +117,15 @@ export type WaveGeometry = {
   barWidth: number;
 };
 
-/** Barres de l'onde dans le rectangle `zone` (pixels) : celui de la boîte « onde » de la mise en page. */
-export function waveBarGeometry(zone: Rect): WaveGeometry {
+/**
+ * Barres de l'onde dans le rectangle `zone` (pixels) : celui de la boîte « onde » de la mise en page.
+ * L'espacement suit l'échelle de la vidéo (`sizeScale`, 1 = la référence de 1080 px) comme la largeur des
+ * barres : l'onde a le même nombre de barres dans l'aperçu et dans l'export, à toute résolution.
+ */
+export function waveBarGeometry(zone: Rect, scale = 1): WaveGeometry {
   const zoneH = Math.round(zone.height);
-  const bars = Math.max(1, Math.floor(zone.width / BAR_PITCH));
+  const pitch = BAR_PITCH * (scale > 0 ? scale : 1);
+  const bars = Math.max(1, Math.floor(zone.width / pitch));
   return {
     zoneX: zone.x,
     zoneY: Math.round(zone.y),
@@ -430,7 +435,7 @@ export function drawFrame(
   if (!prefs.showWave) return;
   const zone = waveRectOf(layoutFor(prefs, width, height), width, height);
   if (state.scrim) paintWaveScrim(ctx, zone);
-  const geometry = waveBarGeometry(zone);
+  const geometry = waveBarGeometry(zone, scale);
   const windowSec = Math.min(duration, WAVE_WINDOW_SECONDS);
   const t0 = Math.max(0, Math.min(duration - windowSec, t - windowSec / 2));
   const norm = peakNorm(peaks.peaks);

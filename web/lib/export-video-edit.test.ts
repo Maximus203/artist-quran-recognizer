@@ -3,16 +3,24 @@ import {
   NUDGE_STEP,
   NUDGE_STEP_BIG,
   SNAP_MARGIN,
+  activeLayoutKey,
   blocksAt,
+  boxFields,
   boxToPx,
+  centerBox,
   clampBox,
+  cycleBlock,
+  defaultBox,
   deltaToFraction,
   moveBox,
   nudgeBox,
   pinchSize,
   pointToFraction,
   pxToBox,
+  overlappingBlocks,
+  repeatDelay,
   resizeBox,
+  setBoxField,
   sizePercent,
   snapThreshold,
   stepSize,
@@ -357,5 +365,158 @@ describe("blocksAt (choisir un élément en le touchant)", () => {
 
   it("l'onde se touche aussi", () => {
     expect(blocksAt(layout, { x: 0.5, y: 0.9 })).toEqual(["wave"]);
+  });
+});
+
+describe("blocksAt avec des éléments masqués", () => {
+  const layout = DEFAULT_LAYOUTS["16:9"];
+
+  it("ne renvoie pas un bloc masqué : il n'est plus dans l'aperçu", () => {
+    expect(blocksAt(layout, { x: 0.5, y: 0.9 }, { wave: false })).toEqual([]);
+    expect(blocksAt(layout, { x: 0.5, y: 0.3 }, { wave: false })).toEqual([
+      "arabic",
+    ]);
+  });
+
+  it("un bloc absent de la liste compte comme visible", () => {
+    expect(blocksAt(layout, { x: 0.5, y: 0.9 }, {})).toEqual(["wave"]);
+  });
+});
+
+describe("overlappingBlocks (pastilles quand les éléments se chevauchent)", () => {
+  const layout = DEFAULT_LAYOUTS["16:9"];
+
+  it("la mise en page par défaut ne se chevauche pas : les boîtes se touchent seulement", () => {
+    expect(overlappingBlocks(layout)).toEqual([]);
+    expect(overlappingBlocks(DEFAULT_LAYOUTS["9:16"])).toEqual([]);
+    expect(overlappingBlocks(DEFAULT_LAYOUTS["1:1"])).toEqual([]);
+  });
+
+  it("nomme les deux blocs qui se recouvrent, dans l'ordre des blocs", () => {
+    const stacked = {
+      ...layout,
+      translation: { x: 0.08, y: 0.5, w: 0.84, h: 0.2 },
+    };
+    expect(overlappingBlocks(stacked)).toEqual(["arabic", "translation"]);
+  });
+
+  it("un bloc masqué ne chevauche personne", () => {
+    const stacked = {
+      ...layout,
+      translation: { x: 0.08, y: 0.5, w: 0.84, h: 0.2 },
+    };
+    expect(overlappingBlocks(stacked, { translation: false })).toEqual([]);
+  });
+});
+
+describe("cycleBlock (toucher encore au même endroit)", () => {
+  it("sans sélection, prend le premier (le plus petit)", () => {
+    expect(cycleBlock(["ref", "arabic"], null)).toBe("ref");
+  });
+
+  it("déjà choisi : passe au suivant, puis revient au début", () => {
+    expect(cycleBlock(["ref", "arabic"], "ref")).toBe("arabic");
+    expect(cycleBlock(["ref", "arabic"], "arabic")).toBe("ref");
+  });
+
+  it("l'élément choisi n'est pas sous le doigt : prend le premier", () => {
+    expect(cycleBlock(["ref", "arabic"], "wave")).toBe("ref");
+  });
+
+  it("rien sous le doigt : null", () => {
+    expect(cycleBlock([], "ref")).toBeNull();
+  });
+});
+
+describe("boxFields et setBoxField (Gauche, Haut, Largeur, Hauteur)", () => {
+  it("lit la boîte en pourcents, à 0,1 % près", () => {
+    expect(boxFields({ x: 0.2, y: 0.3, w: 0.4, h: 0.2 })).toEqual({
+      left: 20,
+      top: 30,
+      width: 40,
+      height: 20,
+    });
+    expect(boxFields({ x: 0.1234, y: 0, w: 0.5, h: 0.0449 }).left).toBe(12.3);
+  });
+
+  it("Gauche et Haut déplacent sans changer la taille, bornés au cadre", () => {
+    const moved = setBoxField(box, "left", 70);
+    expect(moved).toEqual({ ...box, x: 0.6 });
+    expect(setBoxField(box, "top", -5).y).toBe(0);
+    expect(setBoxField(box, "top", 95).y).toBeCloseTo(0.8, 6);
+  });
+
+  it("Largeur et Hauteur changent la zone, le coin haut-gauche reste", () => {
+    const wider = setBoxField(box, "width", 50);
+    expect(wider).toEqual({ ...box, w: 0.5 });
+    expect(setBoxField(box, "height", 90).h).toBeCloseTo(0.7, 6);
+  });
+
+  it("jamais plus petit que le minimum ni hors du cadre", () => {
+    expect(setBoxField(box, "width", 0).w).toBe(MIN_BOX.w);
+    expect(setBoxField(box, "height", 0).h).toBe(MIN_BOX.h);
+    expect(setBoxField(box, "width", 400).w).toBeCloseTo(0.8, 6);
+    inFrame(setBoxField(box, "width", 400));
+  });
+
+  it("une saisie invalide laisse la boîte telle quelle", () => {
+    expect(setBoxField(box, "left", Number.NaN)).toEqual(box);
+    expect(setBoxField(box, "width", Infinity)).toEqual(box);
+  });
+});
+
+describe("centerBox", () => {
+  it("centre à l'horizontale, à la verticale ou les deux, taille inchangée", () => {
+    expect(centerBox(box, "x")).toEqual({ ...box, x: 0.3 });
+    expect(centerBox(box, "y")).toEqual({ ...box, y: 0.4 });
+    expect(centerBox(box, "both")).toEqual({ ...box, x: 0.3, y: 0.4 });
+  });
+});
+
+describe("defaultBox (remettre à la place d'origine)", () => {
+  it("rend une COPIE de la boîte par défaut du format", () => {
+    const original = defaultBox("9:16", "wave");
+    expect(original).toEqual(DEFAULT_LAYOUTS["9:16"].wave);
+    original.x = 0.9;
+    expect(DEFAULT_LAYOUTS["9:16"].wave.x).toBe(0);
+  });
+});
+
+describe("activeLayoutKey (quelle mise en page l'éditeur modifie)", () => {
+  it("un format choisi garde sa mise en page", () => {
+    expect(activeLayoutKey("9:16", null)).toBe("9:16");
+    expect(activeLayoutKey("1:1", { width: 1920, height: 1080 })).toBe("1:1");
+  });
+
+  it("« comme la vidéo » suit la forme de la vidéo d'origine", () => {
+    expect(activeLayoutKey("source", { width: 1920, height: 1080 })).toBe(
+      "16:9",
+    );
+    expect(activeLayoutKey("source", { width: 1080, height: 1920 })).toBe(
+      "9:16",
+    );
+    expect(activeLayoutKey("source", { width: 1000, height: 1000 })).toBe(
+      "1:1",
+    );
+  });
+
+  it("« comme la vidéo » sans dimensions connues : paysage", () => {
+    expect(activeLayoutKey("source", null)).toBe("16:9");
+  });
+});
+
+describe("repeatDelay (appui long qui répète)", () => {
+  it("attend avant le premier tour, puis accélère sans jamais descendre sous le plancher", () => {
+    const delays = Array.from({ length: 30 }, (_, i) => repeatDelay(i));
+    expect(delays[0]).toBeGreaterThanOrEqual(300);
+    for (let i = 1; i < delays.length; i++)
+      expect(delays[i]).toBeLessThanOrEqual(delays[i - 1]);
+    expect(Math.min(...delays)).toBeGreaterThanOrEqual(50);
+    expect(delays[delays.length - 1]).toBe(Math.min(...delays));
+  });
+
+  it("un compteur invalide repart du début", () => {
+    expect(repeatDelay(-3)).toBe(repeatDelay(0));
+    expect(repeatDelay(Number.NaN)).toBe(repeatDelay(0));
   });
 });

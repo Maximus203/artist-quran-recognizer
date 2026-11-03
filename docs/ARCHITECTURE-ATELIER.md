@@ -310,16 +310,35 @@ mémorisé, les segments et le MP4 temporaires sont supprimés dans tous les cas
 
 **L'écran (refonte 2026-10-29, direction « Le rouleau et les signets », `docs/design/export-refonte/SPEC.md`).**
 La page s'ouvre sur l'onglet **Vérifier** (une porte, badge « n à valider » ou « Prêt », frise d'ensemble en lecture
-seule) ; **Sous-titres** et **Vidéo** sont deux livrables. L'onglet Vidéo (`video-panel.tsx`, orchestrateur mince)
-suit l'ordre de la décision : 1. ce qu'on exporte (`range-timeline.tsx` : vue d'ensemble + loupe sur canvas, plages en
-DOM avec poignées `role=slider` ; `range-list.tsx` : liste nommée et souffle), 2. l'apparence (`video-look.tsx`),
-3. la qualité et le poids (`video-quality.tsx`) ; l'aperçu (`video-preview.tsx`, image à la position de la poignée) et
-le bordereau (`video-bordereau.tsx` : récapitulatif, progression par fichier, dock et feuille sur téléphone) restent
-visibles. Toute la logique est pure et testée : géométrie et gestes (`lib/export-timeline.ts`), composition des plages
+seule) ; **Sous-titres** et **Vidéo** sont deux livrables. L'onglet Vidéo (`video-panel.tsx`) garde les données (résultat, onde, vidéo d'origine, imagettes), les passages
+(`range-timeline.tsx` : vue d'ensemble + loupe sur canvas, plages en DOM avec poignées `role=slider` ; `range-list.tsx` :
+liste nommée et souffle), la qualité et le poids (`video-quality.tsx`), le rendu confié au serveur et son suivi, et le
+bordereau (`video-bordereau.tsx` : récapitulatif, progression par fichier, feuille ouverte par le bouton « Exporter ») ;
+tout ce qui se voit et se règle est dans **l'éditeur** (`web/app/atelier/export/editor/`, ADR-0020). Toute la logique
+est pure et testée : géométrie et gestes de la frise (`lib/export-timeline.ts`), composition des plages
 (`lib/export-video-plan.ts`, marges toujours issues de `suggestRanges`), poids et durée de rendu
 (`lib/export-video-weight.ts`), JSON `export_video` équivalent (`lib/export-video-request.ts`), avancement par fichier
-(`lib/export-video-progress.ts`). Seuils et réglages des gestes : une seule configuration, `lib/export-video-config.ts`.
-Styles : `web/app/export-refonte.css` (jetons `--x-*`, composants `.xr-*`).
+(`lib/export-video-progress.ts`). Seuils et réglages des gestes de la frise : une seule configuration,
+`lib/export-video-config.ts`.
+
+**L'éditeur de la vidéo (ADR-0020 ; `web/app/atelier/export/editor/`).** L'aperçu (`video-preview.tsx`, la vraie
+`drawFrame`, redessinée à chaque réglage sans recharger polices ni fond) reçoit PAR-DESSUS un calque de zones DOM
+transparentes (`edit-overlay.tsx`) : choisir (toucher, clic, Entrée), glisser avec aimants et repères, huit poignées de 44 px,
+pincement à deux doigts, clavier, annonces `aria-live`. Le calque est partagé : il ne connaît ni le plateau ni le bureau, rend
+des événements (`onSelect`, `onBox`, `onSize`) et n'écrit rien. Ses gestes sont une machine à états sans DOM
+(`lib/export-video-gesture.ts` : effets `live` / `end` / `cancel`) ; ses calculs sont ceux du noyau
+(`lib/export-video-edit.ts` : aimants par axe, `handlePlacements`, `hitLayout`, champs de la zone, `cycleBlock`) ; ses
+changements de réglages sont des fonctions pures (`lib/export-video-editor.ts`) ; ses phrases annoncées et noms sont dans
+`lib/export-video-edit-text.ts`. `use-editor-controller.ts` garde l'élément choisi et le brouillon du geste et rend chaque
+changement (`patch` accepte une fonction qui part des réglages les plus récents). `text-sections.tsx` et
+`frame-sections.tsx` sont les sections de réglages (taille, fond du texte, position, réglages ; format, fond, passages,
+avancé), composées par `inspector-sections.tsx` : UNE à la fois dans la feuille du téléphone (`plateau-mobile.tsx`), TOUTES
+dans l'inspecteur du bureau (`desktop-editor.tsx`, vue unifiée dès 1024 px). `ExportEditor({ mode, …EditorProps })`
+(`export-editor.tsx`) choisit la vue ; le registre `editor-registry.tsx` porte une ligne par éditeur mobile (`plateau` ;
+`table` et `pas` retombent sur lui tant qu'ils n'existent pas) ; `EditorMode`, `EditorProps` et le contrat d'intégration sont
+dans `editor-types.ts`. Le fond vidéo occupe l'emplacement `frame.backgroundVideo` (`BackgroundVideoSection`, ADR-0019) ; la feuille « Fond » et le volet « Cadre » restent montés une fois ouverts, car la section arrête son envoi à son démontage. Styles : `web/app/export-editor.css`
+(composants `.xe-`).
+Styles : `web/app/export-refonte.css` (jetons `--x-*`, composants `.xr-*`) ; l'éditeur a les siens (voir ci-dessus).
 
 ## 8. Stockage sur disque
 

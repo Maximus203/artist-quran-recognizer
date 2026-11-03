@@ -1898,31 +1898,6 @@ fieldset {
   min-width: 0;
 }
 
-.ex-video-preview {
-  position: sticky;
-  inset-block-start: var(--header-h);
-  z-index: 2;
-  margin: 0;
-  padding-block: var(--sp-2);
-  display: grid;
-  justify-items: center;
-  gap: var(--sp-2);
-  background: var(--surface-1);
-}
-.ex-video-canvas {
-  display: block;
-  max-inline-size: 100%;
-  max-block-size: min(34vh, 340px);
-  inline-size: auto;
-  block-size: auto;
-  border-radius: var(--radius, 8px);
-  border: 1px solid var(--border);
-  background: #0d1b2a;
-}
-.ex-video-preview-bar {
-  display: flex;
-  justify-content: center;
-}
 .ex-accent {
   inline-size: min(420px, calc(100vw - 32px));
   max-block-size: calc(100dvh - 32px);

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "@/lib/api-client";
 import type { ItemType } from "@/lib/decisions";
@@ -131,6 +132,7 @@ function ExportView({
   // Le récitateur n'exporte que la vidéo : pas de vérification, pas de sous-titres.
   const recitant = useShell().user.role === "recitant";
   const [tab, setTab] = useState<Tab>(recitant ? "video" : "verifier");
+  const router = useRouter();
   const [fileName, setFileName] = useState("");
   const [live, setLive] = useState("");
   const announce = useCallback((message: string) => {
@@ -386,9 +388,12 @@ function ExportView({
       </>
     );
 
+  // L'éditeur de la vidéo occupe tout l'écran sous la barre de l'atelier : il a sa propre barre (retour,
+  // nom de la session, Exporter) ; le fil d'Ariane et l'en-tête de la page lui céderaient de la place.
+  const editing = tab === "video" && !failed;
   return (
     <>
-      <Crumb sessionId={sessionId} name={session?.name} />
+      {editing ? null : <Crumb sessionId={sessionId} name={session?.name} />}
       <audio
         ref={player.attach}
         src={`/api/sessions/${sessionId}/audio`}
@@ -750,6 +755,11 @@ function ExportView({
               player={player}
               onError={toast.show}
               onGoVerify={recitant ? undefined : () => setTab("verifier")}
+              onLeave={
+                recitant
+                  ? () => router.push("/sessions")
+                  : () => setTab("verifier")
+              }
               announce={announce}
               existingVideos={saved.videos}
               reuseVideos={reuseVideo}
