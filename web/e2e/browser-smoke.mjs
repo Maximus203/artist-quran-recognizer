@@ -376,11 +376,13 @@ try {
   });
   await page.getByTestId("tab-video").click();
   await page.getByTestId("video-panel").waitFor({ timeout: 15_000 });
+  // Le plateau : rien de choisi, les réglages du cadre ; l'outil « Format » ouvre la feuille des formats.
+  await page.getByTestId("tool-format").click({ timeout: 15_000 });
   await page.getByTestId("video-orientation-9:16").waitFor({ timeout: 15_000 });
   const videoStatus = (
     await page.getByTestId("video-export").innerText()
   ).trim();
-  // Sur téléphone, l'action vit dans le dock bas (« Exporter ») ; au bureau, dans le bordereau.
+  // L'unique bouton « Exporter » est dans la barre du haut de l'éditeur : il ouvre la fenêtre-résumé.
   assert(/^Exporter/.test(videoStatus), `bouton vidéo : ${videoStatus}`);
   ok("export vidéo : onglet et panneau affichés, export proposé");
 

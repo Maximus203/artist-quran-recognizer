@@ -363,97 +363,48 @@ function IdleBordereau(props: BordereauProps) {
   );
 }
 
-/** Barre basse sur téléphone : le résumé (ouvre la feuille) et l'action. */
-export function ExportDock({
-  props,
-  onOpenSheet,
-}: {
-  props: BordereauProps;
-  onOpenSheet: () => void;
-}) {
+/**
+ * Le résumé en deux lignes de l'export (titre, précision) : la barre du haut de l'éditeur l'affiche pendant
+ * et après le rendu ; avant, il dit ce qui va sortir (« 2 vidéos · ≈ 8 Mo »).
+ */
+export function exportSummary(props: BordereauProps): {
+  title: string;
+  hint: string;
+} {
   const { phase, count, files, failure } = props;
   const counts = progressCounts(files);
   const running = files.findIndex((f) => f.state === "run");
-  const summary =
-    phase === "loading"
-      ? { title: "Chargement…", hint: "" }
-      : phase === "empty"
-        ? { title: "Rien à exporter", hint: "" }
-        : phase === "render"
+  return phase === "loading"
+    ? { title: "Chargement…", hint: "" }
+    : phase === "empty"
+      ? { title: "Rien à exporter", hint: "" }
+      : phase === "render"
+        ? {
+            title: `Vidéo ${running < 0 ? counts.done : running + 1} sur ${files.length || count}${running >= 0 ? ` · ${Math.round(files[running].ratio * 100)} %` : ""}`,
+            hint: "Sur le serveur : tu peux quitter la page",
+          }
+        : phase === "done"
           ? {
-              title: `Vidéo ${running < 0 ? counts.done : running + 1} sur ${files.length || count}${running >= 0 ? ` · ${Math.round(files[running].ratio * 100)} %` : ""}`,
-              hint: "Sur le serveur : tu peux quitter la page",
+              title:
+                counts.done < files.length
+                  ? `${counts.done} sur ${files.length} vidéos prêtes`
+                  : `${plural(counts.done, "vidéo prête", "vidéos prêtes")}`,
+              hint:
+                counts.done < files.length
+                  ? "Arrêt demandé : finis les autres dans le récapitulatif"
+                  : "Téléchargées",
             }
-          : phase === "done"
+          : phase === "error" && failure
             ? {
-                title:
-                  counts.done < files.length
-                    ? `${counts.done} sur ${files.length} vidéos prêtes`
-                    : `${plural(counts.done, "vidéo prête", "vidéos prêtes")}`,
-                hint:
-                  counts.done < files.length
-                    ? "Arrêt demandé : finis les autres dans le récapitulatif"
-                    : "Téléchargées",
+                title: `La vidéo ${failure.index + 1} a échoué`,
+                hint: failure.memory
+                  ? "Mémoire du navigateur insuffisante"
+                  : "Voir le détail",
               }
-            : phase === "error" && failure
-              ? {
-                  title: `La vidéo ${failure.index + 1} a échoué`,
-                  hint: failure.memory
-                    ? "Mémoire du navigateur insuffisante"
-                    : "Voir le détail",
-                }
-              : {
-                  title: `${plural(count, "vidéo", "vidéos")} · ≈ ${megabytesFr(props.weight.totalMb)}`,
-                  hint: `${props.height}p · ${props.fps} im/s · ${formatDurationFr(props.seconds)}${props.level === "ok" ? "" : ` · ${LEVEL_LABEL[props.level]}`}`,
-                };
-  return (
-    <div className="xr-dock" data-testid="video-dock">
-      <button
-        type="button"
-        className="sumbtn"
-        aria-haspopup="dialog"
-        data-testid="dock-summary"
-        onClick={onOpenSheet}
-      >
-        <b>{summary.title}</b>
-        {summary.hint ? (
-          <small
-            className={props.level !== "ok" && phase === "idle" ? "warn" : ""}
-          >
-            {summary.hint}
-          </small>
-        ) : null}
-      </button>
-      {phase === "idle" || phase === "empty" || phase === "loading" ? (
-        <button
-          type="button"
-          className="btn btn--primary btn--lg"
-          data-testid={props.primaryTestId}
-          disabled={phase !== "idle" || count === 0}
-          onClick={props.onExport}
-        >
-          Exporter
-        </button>
-      ) : phase === "render" && files.length > 1 ? (
-        <button
-          type="button"
-          className="btn btn--secondary btn--lg"
-          disabled={props.stopRequested}
-          onClick={props.onStop}
-        >
-          Arrêter
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="btn btn--primary btn--lg"
-          onClick={onOpenSheet}
-        >
-          Voir
-        </button>
-      )}
-    </div>
-  );
+            : {
+                title: `${plural(count, "vidéo", "vidéos")} · ≈ ${megabytesFr(props.weight.totalMb)}`,
+                hint: `${props.height}p · ${props.fps} im/s · ${formatDurationFr(props.seconds)}${props.level === "ok" ? "" : ` · ${LEVEL_LABEL[props.level]}`}`,
+              };
 }
 
 /** Feuille récapitulative (téléphone) : le même bordereau, au-dessus d'un voile ; Échap ferme. */

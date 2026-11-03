@@ -64,30 +64,37 @@ import { fitView, formatClock, type View } from "@/lib/export-timeline";
 import { formatDurationFr } from "@/lib/format";
 import type { ListeningPeaks } from "@/lib/listening";
 import type { Interval, Recognition } from "@/lib/recognition";
-import { useMedia, useStoreValue } from "../hooks";
+import { useStoreValue } from "../hooks";
 import type { usePlayer } from "../use-player";
+import { ExportEditor } from "./editor/export-editor";
+import {
+  DEFAULT_EDITOR_MODE,
+  type EditorMode,
+  type ExportAction,
+  type PatchPrefs,
+} from "./editor/editor-types";
+import { formatName } from "./editor/frame-sections";
 import { XIcon } from "./export-icons";
-import { Chapter } from "./export-ui";
 import { BreathSettings, RangeList } from "./range-list";
 import { RangeTimeline, type Thumbs } from "./range-timeline";
 import {
   Bordereau,
-  ExportDock,
   ExportSheet,
+  exportSummary,
   type BordereauProps,
   type ExportFailure,
   type ExportPhase,
 } from "./video-bordereau";
-import { backgroundName, formatName, sizeLabel, VideoLook } from "./video-look";
-import { VideoPreview } from "./video-preview";
 import { useShell } from "../shell";
 import { CustomQuality, QualityTiers, WeightGauge } from "./video-quality";
 
 /**
- * Onglet « Vidéo » de l'export, direction « Le rouleau et les signets » : 1. ce que tu exportes
- * (frise + plages + souffle), 2. à quoi elle ressemble, 3. qualité et poids ; l'aperçu et le
- * bordereau restent visibles (colonne collante au bureau, bandeau + dock sur téléphone). Les
- * réglages se mémorisent sur le compte (préférence `videoPrefs`).
+ * Onglet « Vidéo » de l'export. Le panneau garde ce qui est à lui : les données (résultat, onde, vidéo
+ * d'origine), les passages à exporter (frise, liste, souffle), la qualité et le poids, le rendu confié au
+ * serveur et son suivi. Tout ce qui se VOIT et se règle est dans l'éditeur (`editor/`) : l'aperçu est
+ * l'éditeur (plateau sur téléphone, vue unifiée au bureau). Les passages, eux, vivent dans leur fenêtre et la
+ * qualité sous « Réglages avancés » : jamais en tête d'écran. Les réglages se mémorisent sur le compte
+ * (préférence `videoPrefs`).
  */
 type Player = ReturnType<typeof usePlayer>;
 const TL = EXPORT_VIDEO_CONFIG.timeline;
@@ -128,6 +135,8 @@ export function VideoPanel({
   announce,
   existingVideos,
   reuseVideos,
+  editorMode = DEFAULT_EDITOR_MODE,
+  onLeave,
 }: {
   sessionId: string;
   player: Player;
@@ -138,10 +147,13 @@ export function VideoPanel({
   /** Vidéos déjà gardées sur le serveur et réutilisation d'une vidéo identique. */
   existingVideos: SavedVideo[];
   reuseVideos: boolean;
+  /** L'éditeur du téléphone ; la préférence du compte le pose (phase « choix du format »), le plateau d'ici là. */
+  editorMode?: EditorMode;
+  /** Quitter l'éditeur (bouton retour de sa barre du haut). */
+  onLeave?: () => void;
 }) {
   const savedRef = useRef({ existingVideos, reuseVideos });
   savedRef.current = { existingVideos, reuseVideos };
-  const wide = useMedia("(min-width: 1024px)");
   // Réglages du compte (pas de l’appareil) : déjà chargés avec la page, donc aucun clignotement.
   const { prefs: accountPrefs, update } = useShell();
   const [prefs, setPrefs] = useState<VideoPrefs>(accountPrefs.videoPrefs);
@@ -168,7 +180,6 @@ export function VideoPanel({
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [view, setView] = useState<View>({ a: 0, b: 1 });
   const [previewAt, setPreviewAt] = useState<number | null>(null);
-  const [open, setOpen] = useState({ what: true, look: true, quality: true });
   const [phase, setPhase] = useState<"idle" | "render" | "done" | "error">(
     "idle",
   );
@@ -176,12 +187,10 @@ export function VideoPanel({
   const [failure, setFailure] = useState<ExportFailure | null>(null);
   const [stopRequested, setStopRequested] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [miniShown, setMiniShown] = useState(false);
   const nextId = useRef(1);
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
   const thumbUrl = useRef<string | null>(null);
-  const stageWrap = useRef<HTMLDivElement>(null);
   const playing = useStoreValue(player.store, (s) => s.playing);
   const [playingRange, setPlayingRange] = useState<number | null>(null);
   useEffect(() => {
@@ -284,8 +293,11 @@ export function VideoPanel({
     setPrefs(next);
   }, [isVideo]);
 
-  const patch = useCallback(
-    (next: Partial<VideoPrefs>) => {
+  const patch = useCallback<PatchPrefs>(
+    (change) => {
+      // Une fonction part des réglages LES PLUS RÉCENTS : deux pas rapprochés d'un appui long ne se perdent pas.
+      const next =
+        typeof change === "function" ? change(prefsRef.current) : change;
       const value = { ...prefsRef.current, ...next };
       prefsRef.current = value;
       setPrefs(value);
@@ -685,17 +697,6 @@ export function VideoPanel({
     }
   };
 
-  // --- aperçu réduit sur téléphone --------------------------------------------------------------
-  useEffect(() => {
-    const node = stageWrap.current;
-    if (!node || wide) return;
-    const observer = new IntersectionObserver(([entry]) =>
-      setMiniShown(!entry.isIntersecting && entry.boundingClientRect.top < 0),
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [wide]);
-
   const loading = !prefsReady || (!loadFailed && (!intervals || !peaks));
   const empty = !loading && cardCount === 0;
   const bordPhase: ExportPhase = loading
@@ -703,10 +704,6 @@ export function VideoPanel({
     : empty || loadFailed
       ? "empty"
       : phase;
-  const caption =
-    selected && previewAt !== null
-      ? `Image à ${formatClock(previewAt)} · plage ${selectedIndex + 1} · le texte vient toujours du corpus`
-      : undefined;
   const bordProps: BordereauProps = {
     phase: bordPhase,
     count: ranges.length,
@@ -750,320 +747,287 @@ export function VideoPanel({
     onGoVerify,
   };
 
+  // --- ce que l'éditeur reçoit ------------------------------------------------------------------
+  /** Le bouton « Exporter » ouvre la fenêtre-résumé ; pendant et après le rendu il en montre l'état. */
+  const summary = exportSummary(bordProps);
+  const exportAction: ExportAction = {
+    label:
+      bordPhase === "render"
+        ? "En cours…"
+        : bordPhase === "done"
+          ? "Voir les vidéos"
+          : bordPhase === "error"
+            ? "Voir l’erreur"
+            : ranges.length > 1
+              ? `Exporter ${ranges.length} vidéos`
+              : "Exporter",
+    summary: summary.title,
+    status:
+      bordPhase === "render" || bordPhase === "done" || bordPhase === "error"
+        ? [summary.title, summary.hint].filter(Boolean).join(" · ")
+        : null,
+    disabled:
+      bordPhase === "loading" ||
+      bordPhase === "empty" ||
+      (bordPhase === "idle" && ranges.length === 0),
+    onOpen: () => setSheet(true),
+  };
+
+  /** Les passages : chips de raccourci, frise, liste des plages, souffle — dans leur propre fenêtre. */
+  const passagesContent = (
+    <>
+      <div className="xr-quick">
+        <button
+          type="button"
+          className="xr-chip"
+          aria-pressed={whole}
+          data-testid="quick-all"
+          onClick={allAudio}
+        >
+          <XIcon name="wave" />
+          Tout l’audio
+        </button>
+        <button
+          type="button"
+          className="xr-chip"
+          data-testid="quick-verses"
+          disabled={proposed.length === 0}
+          onClick={perVerse}
+        >
+          <XIcon name="brackets" />
+          Un verset = une vidéo
+        </button>
+        <button
+          type="button"
+          className="xr-chip"
+          data-testid="quick-add"
+          disabled={proposed.length === 0 || ranges.length >= 50}
+          onClick={addNearCenter}
+        >
+          <XIcon name="plus" />
+          Ajouter une plage
+        </button>
+      </div>
+      <RangeTimeline
+        duration={duration}
+        peaks={peaks}
+        intervals={intervals ?? []}
+        ranges={ranges}
+        selectedId={selectedId}
+        view={view}
+        onView={setView}
+        onSelect={select}
+        onChange={changeRange}
+        onGestureEnd={(id, at) => {
+          setSelectedId(id);
+          setPreviewAt(at);
+        }}
+        onRemove={remove}
+        onAddVerse={addAt}
+        targets={targets}
+        silences={silences}
+        magnet={prefs.snapToSilence}
+        thumbs={thumbs}
+        playing={playingRange !== null}
+        clock={player.store}
+        onTogglePlay={togglePlay}
+        announce={announce}
+      />
+      <RangeList
+        ranges={ranges}
+        selectedId={selectedId}
+        intervals={intervals ?? []}
+        duration={duration}
+        onSelect={select}
+        onChange={(id, next) => {
+          changeRange(id, next);
+          setPreviewAt(next.start);
+        }}
+        onRename={(id, name) =>
+          setRanges((list) =>
+            list.map((r) => (r.id === id ? { ...r, name } : r)),
+          )
+        }
+        onUp={(id) => {
+          setRanges((list) => moveUp(list, id));
+          announce("Plage montée.");
+        }}
+        onDown={(id) => {
+          setRanges((list) => moveDown(list, id));
+          announce("Plage descendue.");
+        }}
+        onRemove={remove}
+      />
+      <BreathSettings
+        before={prefs.paddingBefore}
+        after={prefs.paddingAfter}
+        snap={prefs.snapToSilence}
+        onChange={(next) =>
+          patch({
+            ...(next.before !== undefined
+              ? { paddingBefore: next.before }
+              : {}),
+            ...(next.after !== undefined ? { paddingAfter: next.after } : {}),
+            ...(next.snap !== undefined ? { snapToSilence: next.snap } : {}),
+          })
+        }
+      />
+    </>
+  );
+
+  /** La qualité, la fluidité et le poids : rangés sous « Réglages avancés » du cadre. */
+  const advanced = (
+    <>
+      <QualityTiers
+        resolution={prefs.resolution}
+        fps={prefs.fps}
+        weightFor={weightFor}
+        onPick={(resolution, fps) => patch({ resolution, fps })}
+      />
+      <WeightGauge
+        weight={weight}
+        level={level}
+        seconds={seconds}
+        width={frameSize.width}
+        height={frameSize.height}
+        fps={prefs.fps}
+      />
+      <CustomQuality
+        resolution={prefs.resolution}
+        fps={prefs.fps}
+        onResolution={(resolution) => patch({ resolution })}
+        onFps={(fps) => patch({ fps })}
+      />
+    </>
+  );
+
   const whatSummary = whole
     ? `Tout l’audio · ${formatDurationFr(seconds)}`
     : `${ranges.length} plage${ranges.length > 1 ? "s" : ""} · ${formatDurationFr(seconds)}`;
-  const lookSummary = `${formatName(prefs.orientation)} · ${backgroundName(selectedBg, bgFile !== null)} · arabe ${sizeLabel(prefs.styles.arabic.size)}`;
-  const qualitySummary = `${prefs.resolution}p · ${prefs.fps} im/s · ≈ ${megabytesFr(weight.totalMb)}`;
+  const attribution = useMemo(
+    () =>
+      (intervals
+        ? videoCardInputs(intervals).find((card) => card.attribution)
+            ?.attribution
+        : null) ?? null,
+    [intervals],
+  );
 
   return (
-    <div className="xr-grid" data-testid="video-panel">
-      <div className="xr-main">
-        <Chapter
-          n={1}
-          title="Ce que tu exportes"
-          summary={loading ? "…" : whatSummary}
-          open={open.what}
-          onToggle={() => setOpen((o) => ({ ...o, what: !o.what }))}
-          testId="chap-what"
-        >
-          {loading ? (
-            <div aria-busy="true">
-              <div className="xr-skel" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </div>
-              <p className="xr-lead" role="status">
-                Lecture de la forme d’onde…
-              </p>
-            </div>
-          ) : loadFailed ? (
-            <div
-              className="xr-empty"
-              role="alert"
-              data-testid="video-load-failed"
-            >
-              <p>
-                <b>La forme d’onde n’a pas pu être lue.</b> Sans elle, la frise
-                ne peut pas se dessiner et la vidéo ne peut pas se fabriquer.
-                Recharge la page ; si cela continue, la copie d’écoute de cette
-                session est peut-être indisponible sur ce serveur.
-              </p>
-              <button
-                type="button"
-                className="btn btn--secondary"
-                onClick={() => window.location.reload()}
-              >
-                Recharger
-              </button>
-            </div>
-          ) : empty ? (
-            <div className="xr-empty" data-testid="video-empty">
-              <svg viewBox="0 0 120 60" aria-hidden="true">
-                <path d="M4 30h112" />
-                {[14, 30, 48, 70, 90, 104].map((x, i) => (
-                  <rect
-                    key={x}
-                    x={x}
-                    y={22 - (i % 3) * 3}
-                    width="10"
-                    height={16 + (i % 3) * 6}
-                    rx="2"
-                  />
-                ))}
-              </svg>
-              <p>
-                <b>Aucun passage coranique avec du texte.</b> Cet enregistrement
-                ne contient que des passages non coraniques ou incertains : la
-                vidéo n’aurait rien à afficher. Vérifie d’abord les passages
-                ambigus.
-              </p>
-              {onGoVerify ? (
-                <button
-                  type="button"
-                  className="btn btn--secondary"
-                  onClick={onGoVerify}
-                >
-                  Aller à Vérifier
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <>
-              <div className="xr-quick">
-                <button
-                  type="button"
-                  className="xr-chip"
-                  aria-pressed={whole}
-                  data-testid="quick-all"
-                  onClick={allAudio}
-                >
-                  <XIcon name="wave" />
-                  Tout l’audio
-                </button>
-                <button
-                  type="button"
-                  className="xr-chip"
-                  data-testid="quick-verses"
-                  disabled={proposed.length === 0}
-                  onClick={perVerse}
-                >
-                  <XIcon name="brackets" />
-                  Un verset = une vidéo
-                </button>
-                <button
-                  type="button"
-                  className="xr-chip"
-                  data-testid="quick-add"
-                  disabled={proposed.length === 0 || ranges.length >= 50}
-                  onClick={addNearCenter}
-                >
-                  <XIcon name="plus" />
-                  Ajouter une plage
-                </button>
-              </div>
-              <RangeTimeline
-                duration={duration}
-                peaks={peaks}
-                intervals={intervals ?? []}
-                ranges={ranges}
-                selectedId={selectedId}
-                view={view}
-                onView={setView}
-                onSelect={select}
-                onChange={changeRange}
-                onGestureEnd={(id, at) => {
-                  setSelectedId(id);
-                  setPreviewAt(at);
-                }}
-                onRemove={remove}
-                onAddVerse={addAt}
-                targets={targets}
-                silences={silences}
-                magnet={prefs.snapToSilence}
-                thumbs={thumbs}
-                playing={playingRange !== null}
-                clock={player.store}
-                onTogglePlay={togglePlay}
-                announce={announce}
-              />
-              <RangeList
-                ranges={ranges}
-                selectedId={selectedId}
-                intervals={intervals ?? []}
-                duration={duration}
-                onSelect={select}
-                onChange={(id, next) => {
-                  changeRange(id, next);
-                  setPreviewAt(next.start);
-                }}
-                onRename={(id, name) =>
-                  setRanges((list) =>
-                    list.map((r) => (r.id === id ? { ...r, name } : r)),
-                  )
-                }
-                onUp={(id) => {
-                  setRanges((list) => moveUp(list, id));
-                  announce("Plage montée.");
-                }}
-                onDown={(id) => {
-                  setRanges((list) => moveDown(list, id));
-                  announce("Plage descendue.");
-                }}
-                onRemove={remove}
-              />
-              <BreathSettings
-                before={prefs.paddingBefore}
-                after={prefs.paddingAfter}
-                snap={prefs.snapToSilence}
-                onChange={(next) =>
-                  patch({
-                    ...(next.before !== undefined
-                      ? { paddingBefore: next.before }
-                      : {}),
-                    ...(next.after !== undefined
-                      ? { paddingAfter: next.after }
-                      : {}),
-                    ...(next.snap !== undefined
-                      ? { snapToSilence: next.snap }
-                      : {}),
-                  })
-                }
-              />
-            </>
-          )}
-        </Chapter>
-
-        <Chapter
-          n={2}
-          title="À quoi elle ressemble"
-          summary={lookSummary}
-          open={open.look}
-          onToggle={() => setOpen((o) => ({ ...o, look: !o.look }))}
-          testId="chap-look"
-        >
-          <VideoLook
-            prefs={prefs}
-            patch={patch}
-            isVideo={isVideo}
-            sourceSize={sourceSize}
-            sourceUnreadable={videoCandidate && videoChecked && !isVideo}
-            previewUnavailable={isVideo && !previewReadable}
-            selectedBg={selectedBg}
-            upload={bgFile}
-            uploadThumb={bgThumb}
-            onUpload={pickUpload}
-            onChooseBg={(id) => {
-              pickUpload(null);
-              patch({
-                background: id,
-                styles: applyBackgroundPanels(
-                  prefs.styles,
-                  prefs.background,
-                  id,
-                ),
-              });
-            }}
-          />
-        </Chapter>
-
-        <Chapter
-          n={3}
-          title="Qualité et poids"
-          summary={qualitySummary}
-          open={open.quality}
-          onToggle={() => setOpen((o) => ({ ...o, quality: !o.quality }))}
-          testId="chap-quality"
-        >
-          <QualityTiers
-            resolution={prefs.resolution}
-            fps={prefs.fps}
-            weightFor={weightFor}
-            onPick={(resolution, fps) => patch({ resolution, fps })}
-          />
-          <WeightGauge
-            weight={weight}
-            level={level}
-            seconds={seconds}
-            width={frameSize.width}
-            height={frameSize.height}
-            fps={prefs.fps}
-          />
-          <CustomQuality
-            resolution={prefs.resolution}
-            fps={prefs.fps}
-            onResolution={(resolution) => patch({ resolution })}
-            onFps={(fps) => patch({ fps })}
-          />
-        </Chapter>
-      </div>
-
-      <aside className="xr-side" aria-label="Aperçu et récapitulatif">
-        <div ref={stageWrap} className="xr-stage-wrap">
-          <VideoPreview
-            sessionId={sessionId}
-            intervals={intervals}
-            peaks={peaks}
-            prefs={prefs}
-            upload={bgFile}
-            isVideo={isVideo}
-            sourceSize={sourceSize}
-            at={previewAt}
-            caption={caption}
-          />
+    <div className="xe-panel" data-testid="video-panel">
+      {loading ? (
+        <div className="xe-state" aria-busy="true">
+          <div className="xr-skel" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </div>
+          <p className="xr-lead" role="status">
+            Lecture de la forme d’onde…
+          </p>
         </div>
-        {wide ? (
-          <Bordereau {...bordProps} primaryTestId="video-export" />
-        ) : null}
-      </aside>
-
-      {!wide ? (
-        <>
-          <div
-            className="xr-ministage"
-            data-show={miniShown || undefined}
-            aria-hidden={!miniShown}
+      ) : loadFailed ? (
+        <div
+          className="xr-empty xe-state"
+          role="alert"
+          data-testid="video-load-failed"
+        >
+          <p>
+            <b>La forme d’onde n’a pas pu être lue.</b> Sans elle, la frise ne
+            peut pas se dessiner et la vidéo ne peut pas se fabriquer. Recharge
+            la page ; si cela continue, la copie d’écoute de cette session est
+            peut-être indisponible sur ce serveur.
+          </p>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={() => window.location.reload()}
           >
-            <p>
-              <b>Aperçu</b>
-              {selected ? (
-                <>
-                  {" "}
-                  · plage {selectedIndex + 1} ·{" "}
-                  <span className="mono">
-                    {formatClock(previewAt ?? selected.start)}
-                  </span>
-                </>
-              ) : null}
-            </p>
+            Recharger
+          </button>
+        </div>
+      ) : empty ? (
+        <div className="xr-empty xe-state" data-testid="video-empty">
+          <svg viewBox="0 0 120 60" aria-hidden="true">
+            <path d="M4 30h112" />
+            {[14, 30, 48, 70, 90, 104].map((x, i) => (
+              <rect
+                key={x}
+                x={x}
+                y={22 - (i % 3) * 3}
+                width="10"
+                height={16 + (i % 3) * 6}
+                rx="2"
+              />
+            ))}
+          </svg>
+          <p>
+            <b>Aucun passage coranique avec du texte.</b> Cet enregistrement ne
+            contient que des passages non coraniques ou incertains : la vidéo
+            n’aurait rien à afficher. Vérifie d’abord les passages ambigus.
+          </p>
+          {onGoVerify ? (
             <button
               type="button"
-              className="btn btn--ghost"
-              tabIndex={miniShown ? 0 : -1}
-              onClick={() =>
-                stageWrap.current?.scrollIntoView({
-                  behavior: window.matchMedia(
-                    "(prefers-reduced-motion: reduce)",
-                  ).matches
-                    ? "auto"
-                    : "smooth",
-                  block: "start",
-                })
-              }
+              className="btn btn--secondary"
+              onClick={onGoVerify}
             >
-              Voir
+              Aller à Vérifier
             </button>
-          </div>
-          <ExportDock
-            props={{ ...bordProps, primaryTestId: "video-export" }}
-            onOpenSheet={() => setSheet(true)}
-          />
-          <ExportSheet open={sheet} onClose={() => setSheet(false)}>
-            <Bordereau {...bordProps} primaryTestId="video-export-sheet" />
-          </ExportSheet>
-        </>
-      ) : null}
+          ) : null}
+        </div>
+      ) : (
+        <ExportEditor
+          mode={editorMode}
+          sessionId={sessionId}
+          title={sessionName || "Vidéo de la récitation"}
+          subtitle={`${cardCount ?? 0} passage${(cardCount ?? 0) > 1 ? "s" : ""} · ${formatDurationFr(duration)}`}
+          prefs={prefs}
+          patch={patch}
+          preview={{
+            intervals,
+            peaks,
+            upload: bgFile,
+            isVideo,
+            sourceSize,
+            at: previewAt,
+            attribution,
+          }}
+          frame={{
+            isVideo,
+            sourceSize,
+            sourceUnreadable: videoCandidate && videoChecked && !isVideo,
+            previewUnavailable: isVideo && !previewReadable,
+            selectedBg,
+            upload: bgFile,
+            uploadThumb: bgThumb,
+            onUpload: pickUpload,
+            onChooseBg: (id) => {
+              pickUpload(null);
+              patch((current) => ({
+                background: id,
+                styles: applyBackgroundPanels(
+                  current.styles,
+                  current.background,
+                  id,
+                ),
+              }));
+            },
+          }}
+          passages={{
+            summary: whatSummary,
+            content: passagesContent,
+            count: ranges.length,
+          }}
+          advanced={advanced}
+          exportAction={exportAction}
+          onLeave={onLeave}
+        />
+      )}
+
+      <ExportSheet open={sheet} onClose={() => setSheet(false)}>
+        <Bordereau {...bordProps} primaryTestId="video-export-sheet" />
+      </ExportSheet>
     </div>
   );
 }
