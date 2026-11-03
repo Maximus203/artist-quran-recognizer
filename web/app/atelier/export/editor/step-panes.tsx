@@ -25,11 +25,27 @@ import type { EditorController } from "./use-editor-controller";
  * changement passe par le contrôleur de l'éditeur. Langage courant, une seule chose à faire par écran.
  */
 
-/** Le titre d'une étape et sa phrase d'aide. Le titre reçoit le focus quand on change d'étape. */
-export function PaneHead({ title, lead }: { title: string; lead: ReactNode }) {
+/**
+ * Le titre d'une étape et sa phrase d'aide. Le titre reçoit le focus quand on change d'étape. `compact` : à
+ * l'étape des textes la place manque (l'aperçu se manipule et prend du champ) ; la pastille dit déjà le nom de
+ * l'étape, le titre n'est alors lu que par les lecteurs d'écran et la phrase d'aide se réduit.
+ */
+export function PaneHead({
+  title,
+  lead,
+  compact = false,
+}: {
+  title: string;
+  lead: ReactNode;
+  compact?: boolean;
+}) {
   return (
-    <div className="xp-head">
-      <h2 tabIndex={-1} data-testid="pas-title">
+    <div className="xp-head" data-compact={compact || undefined}>
+      <h2
+        className={compact ? "sr" : undefined}
+        tabIndex={-1}
+        data-testid="pas-title"
+      >
         {title}
       </h2>
       <p>{lead}</p>
@@ -157,6 +173,7 @@ export function TextsPane({
   return (
     <>
       <PaneHead
+        compact
         title="Les textes"
         lead={
           <>

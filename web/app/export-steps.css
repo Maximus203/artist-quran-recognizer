@@ -25,7 +25,7 @@
   background: var(--bg);
 }
 .xp-stage[data-step="textes"] {
-  height: clamp(250px, 44dvh, 440px);
+  height: clamp(240px, 40dvh, 420px);
 }
 
 /* L'étape, dessous : un panneau qui monte sous l'aperçu. */
@@ -146,6 +146,11 @@
   color: var(--text-2);
 }
 
+.xp-head[data-compact] p {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
 /* L'encart d'ouverture : déjà prête, exporter maintenant. */
 .xp-ready {
   display: grid;
@@ -257,6 +262,14 @@
   color: var(--text-2);
 }
 
+/* La fenêtre des passages (partagée par tous les éditeurs) : le numéro d'une plage et son nom se touchent au pouce. */
+.xe-dialog .xr-pitem .pnum {
+  min-width: var(--hit);
+}
+.xe-dialog .xr-pitem .pname {
+  min-height: var(--hit);
+}
+
 /* ── Précédent / Suivant, toujours sous le pouce ─────────────────────────────────────── */
 .xp-foot {
   display: grid;
@@ -277,4 +290,18 @@
 }
 .xp-ready .xp-btn {
   min-height: var(--hit);
+}
+
+/* Une tablette (700 à 1023 px) garde le pas à pas : le contenu reste lisible, au centre. */
+@media (min-width: 700px) {
+  .xp-steps,
+  .xp-body,
+  .xp-foot {
+    width: 100%;
+    max-width: 640px;
+    justify-self: center;
+  }
+  .xp-foot {
+    padding-inline: var(--sp-4);
+  }
 }
