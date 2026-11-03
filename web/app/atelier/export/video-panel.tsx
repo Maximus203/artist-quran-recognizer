@@ -30,6 +30,7 @@ import {
   type PlanContext,
   type PlanRange,
 } from "@/lib/export-video-plan";
+import { applyBackgroundPanels } from "@/lib/export-video-model";
 import { resolveOrientation, type VideoPrefs } from "@/lib/export-video-prefs";
 import {
   applyFileProgress,
@@ -955,7 +956,14 @@ export function VideoPanel({
             onUpload={pickUpload}
             onChooseBg={(id) => {
               pickUpload(null);
-              patch({ background: id });
+              patch({
+                background: id,
+                styles: applyBackgroundPanels(
+                  prefs.styles,
+                  prefs.background,
+                  id,
+                ),
+              });
             }}
           />
         </Chapter>

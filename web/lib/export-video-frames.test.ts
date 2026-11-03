@@ -339,6 +339,113 @@ describe("drawFrame : un fond et une carte", () => {
   });
 });
 
+describe("drawFrame : fond flou et décor", () => {
+  const blurAll = () => {
+    const styles = structuredClone(DEFAULT_STYLES);
+    for (const block of ["ref", "arabic", "translation"] as const)
+      styles[block].panel.kind = "blur";
+    return styles;
+  };
+  const photo = (live = false) => {
+    const source = (live
+      ? { videoWidth: 4000, videoHeight: 2000, tag: "video" }
+      : {
+          naturalWidth: 4000,
+          naturalHeight: 2000,
+          tag: "photo",
+        }) as unknown as CanvasImageSource;
+    return source;
+  };
+  const scratchLog = () => {
+    const made: { w: number; h: number; sources: unknown[] }[] = [];
+    const scratch = (w: number, h: number) => {
+      const entry = { w, h, sources: [] as unknown[] };
+      made.push(entry);
+      return {
+        canvas: { width: w, height: h } as unknown as CanvasImageSource,
+        ctx: new Proxy({} as Record<string, unknown>, {
+          get(t, prop: string) {
+            if (prop in t) return t[prop];
+            return (...args: unknown[]) => {
+              if (prop === "drawImage") entry.sources.push(args);
+            };
+          },
+          set(t, prop: string, value) {
+            t[prop] = value;
+            return true;
+          },
+        }) as unknown as CanvasRenderingContext2D,
+      };
+    };
+    return { made, scratch };
+  };
+
+  it("floute le décor lui-même, à la zone des textes, pas le canevas en cours de dessin", () => {
+    const { made, scratch } = scratchLog();
+    const f = fakeCanvas();
+    drawFrame(
+      f.ctx,
+      frameState(
+        { styles: blurAll(), showWave: false },
+        {
+          background: { color: "#000", image: photo() },
+          panelDeps: { scratch, fresh: scratch },
+        },
+      ),
+    );
+    // Un petit canevas par fond de texte, nourri par la photo (4000×2000, affichée sur 2160×1080).
+    const copies = made.flatMap((m) => m.sources);
+    // Chaque petit canevas lit la PHOTO, jamais le canevas principal ; les pièces agrandies lisent le petit.
+    const fromPhoto = copies.filter(
+      (args) => (args as { tag?: string }[])[0].tag === "photo",
+    );
+    expect(fromPhoto.length).toBeGreaterThanOrEqual(3);
+    for (const args of copies)
+      expect((args as { tag?: string }[])[0]).not.toBe(f.canvas);
+    expect(
+      f.calls.filter((c) => c.name === "drawImage").length,
+    ).toBeGreaterThan(1);
+  });
+
+  it("décor uni ou dégradé : le flou n'est qu'une teinte (aucun canevas de travail)", () => {
+    const { made, scratch } = scratchLog();
+    drawFrame(
+      fakeCanvas().ctx,
+      frameState(
+        { styles: blurAll(), showWave: false },
+        { panelDeps: { scratch, fresh: scratch } },
+      ),
+    );
+    expect(made).toHaveLength(0);
+  });
+
+  it("une vidéo de fond est reflouée à chaque image ; une photo, une seule fois", () => {
+    const countFor = (source: CanvasImageSource, frames: number) => {
+      const { made, scratch } = scratchLog();
+      const deps = { scratch, fresh: scratch };
+      for (let i = 0; i < frames; i++)
+        drawFrame(
+          fakeCanvas().ctx,
+          frameState(
+            { styles: blurAll(), showWave: false },
+            {
+              t: 12 + i / 30,
+              background: { color: "#000", image: source },
+              panelDeps: deps,
+            },
+          ),
+        );
+      return made.length;
+    };
+    // Une photo par mesure : la mémoire des pièces floues est propre à chaque décor.
+    const stillOnce = countFor(photo(), 1);
+    expect(stillOnce).toBeGreaterThan(0);
+    expect(countFor(photo(), 5)).toBe(stillOnce); // mémorisé
+    // Une vidéo : le petit canevas est refait à chaque image, pour chacun des trois fonds.
+    expect(countFor(photo(true), 5)).toBe(5 * 3);
+  });
+});
+
 describe("cardLayoutFor : mémoire", () => {
   it("rend le même objet tant que les réglages sont les mêmes", () => {
     const state = frameState();

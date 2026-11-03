@@ -2,33 +2,64 @@
  * Fond du texte de la vidéo d'export : `paintPanel` dessine, selon le choix, un fond transparent (voile
  * teinté aux bords adoucis), flou (le décor derrière le texte, flouté) ou plein (opaque) ; sans fond,
  * `drawLegibleText` rend le texte lisible par une ombre douce ou un contour. Aucune dépendance au
- * DOM : le contexte 2D et le canevas de travail du flou sont injectés (tests à froid).
+ * DOM : le contexte 2D et les canevas de travail sont injectés (tests à froid).
  *
- * FLOU. Le flou est calculé en BASSE RÉSOLUTION : la zone du décor est copiée vers un petit canevas
- * (réduction par `k`), puis agrandie dans le rectangle arrondi. C'est le même coût quelle que soit la
- * force du flou, sans dépendre de `ctx.filter` (absent de certains navigateurs). Mesures : voir
- * `.artist/decision-log.md` (« Fond flouté »).
+ * FLOU. Le flou se calcule en BASSE RÉSOLUTION, à partir du décor lui-même (image ou vidéo), jamais en
+ * relisant le canevas en cours de dessin :
+ *  1. la zone du décor est copiée vers un petit canevas (réduction par `k` proche de la force du flou) ;
+ *  2. la teinte et les angles arrondis sont « cuits » dans ce petit canevas ;
+ *  3. il est agrandi dans le rectangle, sans rognage, en qualité BASSE (bilinéaire).
+ * Décor FIXE (photo) : le résultat pleine taille est mis en cache, une image ne coûte plus qu'un dessin 1:1.
+ * Décor qui BOUGE (vidéo) : on refait 1–3 à chaque image (réduction presque gratuite, agrandissement
+ * ∝ surface du fond). Dégradé ou couleur unie : le flou d'un décor lisse est le décor ; on ne fait que
+ * teinter. Mesures au navigateur (1080p) : `.artist/decision-log.md`, « Fond flouté ».
  */
 import type { PanelStyle } from "./export-video-model";
 
 /** Un rectangle en pixels. */
-export type PanelRect = { x: number; y: number; width: number; height: number };
+export type PanelRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
-/** Canevas de travail du flou : une image et son contexte 2D. */
+/** Canevas de travail : une image et son contexte 2D. */
 export type ScratchCanvas = {
   canvas: CanvasImageSource;
   ctx: CanvasRenderingContext2D;
 };
-/** Fabrique du canevas de travail ; `null` si le navigateur n'en offre pas. */
+/** Fabrique de canevas ; `null` si le navigateur n'en offre pas. */
 export type Scratch = (width: number, height: number) => ScratchCanvas | null;
 
-export type PanelDeps = { scratch?: Scratch };
+/** Le décor derrière le texte, tel qu'il est dessiné dans le cadre. */
+export type Backdrop = {
+  /** Image (photo) ou vidéo de fond. */
+  source: CanvasImageSource;
+  /** Où elle est dessinée dans le cadre (px) : elle le couvre, rognée. */
+  dest: PanelRect;
+  /** Taille propre de la source (px). */
+  size: { width: number; height: number };
+  /** Vidéo : le décor change à chaque image, rien n'est mis en cache. */
+  live: boolean;
+};
+
+export type PanelDeps = {
+  /** Canevas de travail RÉUTILISÉ d'un appel à l'autre (le petit canevas du flou). */
+  scratch?: Scratch;
+  /** Canevas NEUF à chaque appel (pièces mises en cache). */
+  fresh?: Scratch;
+  /** Décor à flouter ; absent = décor uni ou dégradé (teinte seule). */
+  backdrop?: Backdrop;
+};
 
 /** Force du flou, en px de la vidéo de référence (1080 px de côté court). */
 export const BLUR_PX = 16;
 /** Couches du voile « transparent » : leur opacité cumulée est celle demandée. */
 const SOFT_LAYERS = 14;
 const FALLBACK_COLOR: [number, number, number] = [6, 8, 12];
+/** Pièces floues gardées en mémoire par décor fixe. */
+const CACHE_ENTRIES = 8;
 
 /** `#rrggbb` → [r, g, b] ; un code invalide donne le noir bleuté du produit. */
 export function hexToRgb(hex: string): [number, number, number] {
@@ -86,82 +117,178 @@ function paintSoft(
   ctx.restore();
 }
 
-/** Canevas de travail réel (DOM ou OffscreenCanvas), réutilisé d'une image à l'autre. */
-let sharedScratch: {
+/** Rectangle arrondi teinté, sans flou (fond « flou » sur un décor uni, ou canevas de travail absent). */
+function paintTint(
+  ctx: CanvasRenderingContext2D,
+  rect: PanelRect,
+  style: PanelStyle,
+  scale: number,
+): void {
+  ctx.save();
+  ctx.fillStyle = rgba(style.color, style.opacity);
+  ctx.beginPath();
+  ctx.roundRect(rect.x, rect.y, rect.width, rect.height, style.radius * scale);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Canevas réels (DOM ou OffscreenCanvas). */
+function makeCanvas(
+  width: number,
+  height: number,
+): {
   canvas: HTMLCanvasElement | OffscreenCanvas;
   ctx: CanvasRenderingContext2D;
-} | null = null;
-const domScratch: Scratch = (width, height) => {
+} | null {
   try {
-    if (!sharedScratch) {
-      const canvas =
-        typeof document !== "undefined"
-          ? document.createElement("canvas")
-          : typeof OffscreenCanvas !== "undefined"
-            ? new OffscreenCanvas(width, height)
-            : null;
-      const ctx = canvas?.getContext("2d") as CanvasRenderingContext2D | null;
-      if (!canvas || !ctx) return null;
-      sharedScratch = { canvas, ctx };
-    }
-    // Ne redimensionne que si la taille change : réaffecter width/height vide le canevas.
-    if (
-      sharedScratch.canvas.width !== width ||
-      sharedScratch.canvas.height !== height
-    ) {
-      sharedScratch.canvas.width = width;
-      sharedScratch.canvas.height = height;
-    }
-    return {
-      canvas: sharedScratch.canvas as CanvasImageSource,
-      ctx: sharedScratch.ctx,
-    };
+    const canvas =
+      typeof document !== "undefined"
+        ? document.createElement("canvas")
+        : typeof OffscreenCanvas !== "undefined"
+          ? new OffscreenCanvas(width, height)
+          : null;
+    if (!canvas) return null;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | null;
+    return ctx ? { canvas, ctx } : null;
   } catch {
     return null;
   }
+}
+
+const domFresh: Scratch = (width, height) => {
+  const made = makeCanvas(width, height);
+  return made && { canvas: made.canvas as CanvasImageSource, ctx: made.ctx };
 };
 
-/** Le décor derrière le rectangle, flou, rogné au rectangle arrondi, puis teinté. */
+/** Un seul canevas de travail, réutilisé : redimensionné seulement si la taille change (cela le vide). */
+let sharedScratch: ReturnType<typeof makeCanvas> = null;
+const domScratch: Scratch = (width, height) => {
+  if (!sharedScratch) sharedScratch = makeCanvas(width, height);
+  if (!sharedScratch) return null;
+  const { canvas } = sharedScratch;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  return {
+    canvas: canvas as CanvasImageSource,
+    ctx: sharedScratch.ctx,
+  };
+};
+
+/** Pièces floues en cache, par décor fixe (clé : zone, force, couleur…). */
+const patchCache = new WeakMap<object, Map<string, ScratchCanvas>>();
+
+/**
+ * Le décor derrière `rect`, réduit puis teinté et arrondi dans le petit canevas ; null si la source ou le
+ * canevas de travail manquent. La zone du décor se déduit de la façon dont il est dessiné dans le cadre.
+ */
+function buildSmall(
+  rect: PanelRect,
+  style: PanelStyle,
+  scale: number,
+  backdrop: Backdrop,
+  scratch: Scratch,
+  k: number,
+): { work: ScratchCanvas; width: number; height: number } | null {
+  const { dest, size } = backdrop;
+  if (
+    !(dest.width > 0) ||
+    !(dest.height > 0) ||
+    !(size.width > 0) ||
+    !(size.height > 0)
+  )
+    return null;
+  const fx = size.width / dest.width;
+  const fy = size.height / dest.height;
+  const sx = Math.max(0, (rect.x - dest.x) * fx);
+  const sy = Math.max(0, (rect.y - dest.y) * fy);
+  const sw = Math.min(size.width - sx, rect.width * fx);
+  const sh = Math.min(size.height - sy, rect.height * fy);
+  if (!(sw > 0) || !(sh > 0)) return null;
+  const width = Math.max(1, Math.ceil(rect.width / k));
+  const height = Math.max(1, Math.ceil(rect.height / k));
+  const work = scratch(width, height);
+  if (!work) return null;
+  const w = work.ctx;
+  w.globalCompositeOperation = "source-over";
+  w.clearRect(0, 0, width, height);
+  w.imageSmoothingEnabled = true;
+  w.imageSmoothingQuality = "high";
+  w.drawImage(backdrop.source, sx, sy, sw, sh, 0, 0, width, height);
+  // La teinte et les angles arrondis sont cuits ici : plus de rognage à faire sur le grand canevas.
+  w.fillStyle = rgba(style.color, style.opacity);
+  w.fillRect(0, 0, width, height);
+  w.globalCompositeOperation = "destination-in";
+  w.fillStyle = "#000";
+  w.beginPath();
+  w.roundRect(0, 0, width, height, (style.radius * scale) / k);
+  w.fill();
+  w.globalCompositeOperation = "source-over";
+  return { work, width, height };
+}
+
+/** Le décor flouté (basse résolution), teinté, dans `rect`. */
 function paintBlur(
   ctx: CanvasRenderingContext2D,
   rect: PanelRect,
   style: PanelStyle,
   scale: number,
-  scratch: Scratch,
+  deps: PanelDeps,
 ): void {
-  const radius = style.radius * scale;
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(rect.x, rect.y, rect.width, rect.height, radius);
-  ctx.clip();
-  // Réduction d'un facteur proche de la force du flou : réduire puis agrandir EST le flou.
+  const backdrop = deps.backdrop;
+  if (!backdrop) return paintTint(ctx, rect, style, scale);
+  // Réduction proche de la force du flou : réduire puis agrandir EST le flou.
   const k = Math.max(2, Math.round((BLUR_PX * scale) / 2));
-  const sw = Math.max(1, Math.ceil(rect.width / k));
-  const sh = Math.max(1, Math.ceil(rect.height / k));
-  const work = scratch(sw, sh);
-  if (work) {
-    work.ctx.clearRect(0, 0, sw, sh);
-    work.ctx.imageSmoothingEnabled = true;
-    work.ctx.imageSmoothingQuality = "high";
-    work.ctx.drawImage(
-      ctx.canvas as CanvasImageSource,
-      rect.x,
-      rect.y,
-      rect.width,
-      rect.height,
-      0,
-      0,
-      sw,
-      sh,
-    );
+  const scratch = deps.scratch ?? domScratch;
+
+  if (backdrop.live) {
+    // Décor qui bouge : tout se refait à chaque image, sur le petit canevas réutilisé.
+    const small = buildSmall(rect, style, scale, backdrop, scratch, k);
+    if (!small) return paintTint(ctx, rect, style, scale);
+    ctx.save();
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(work.canvas, rect.x, rect.y, rect.width, rect.height);
+    ctx.imageSmoothingQuality = "low";
+    ctx.drawImage(small.work.canvas, rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+    return;
   }
-  // Le tracé du rectangle arrondi est toujours là (le rognage ne le consomme pas) : on le remplit.
-  ctx.fillStyle = rgba(style.color, style.opacity);
-  ctx.fill();
-  ctx.restore();
+
+  // Décor fixe : la pièce pleine taille est calculée une fois, puis simplement posée.
+  const key = [
+    rect.x,
+    rect.y,
+    rect.width,
+    rect.height,
+    k,
+    style.radius * scale,
+    style.color,
+    style.opacity,
+  ].join("|");
+  let patches = patchCache.get(backdrop.source);
+  if (!patches) patchCache.set(backdrop.source, (patches = new Map()));
+  let patch = patches.get(key);
+  if (!patch) {
+    const small = buildSmall(rect, style, scale, backdrop, scratch, k);
+    const full =
+      small &&
+      (deps.fresh ?? domFresh)(
+        Math.max(1, Math.ceil(rect.width)),
+        Math.max(1, Math.ceil(rect.height)),
+      );
+    if (!small || !full) return paintTint(ctx, rect, style, scale);
+    full.ctx.imageSmoothingEnabled = true;
+    full.ctx.imageSmoothingQuality = "high";
+    full.ctx.drawImage(small.work.canvas, 0, 0, rect.width, rect.height);
+    patch = full;
+    patches.set(key, patch);
+    // Plus ancienne d'abord : on ne garde que les dernières pièces (une par passage affiché).
+    while (patches.size > CACHE_ENTRIES)
+      patches.delete(patches.keys().next().value as string);
+  }
+  ctx.drawImage(patch.canvas, rect.x, rect.y);
 }
 
 /**
@@ -177,8 +304,7 @@ export function paintPanel(
 ): void {
   if (style.kind === "none" || !validRect(rect)) return;
   if (style.kind === "transparent") return paintSoft(ctx, rect, style, scale);
-  if (style.kind === "blur")
-    return paintBlur(ctx, rect, style, scale, deps.scratch ?? domScratch);
+  if (style.kind === "blur") return paintBlur(ctx, rect, style, scale, deps);
   // Plein : toujours opaque.
   ctx.save();
   ctx.fillStyle = rgba(style.color, 1);

@@ -18,6 +18,7 @@ import { z } from "zod";
 import {
   BACKGROUND_PRESETS,
   CLIP_BACKGROUND_ID,
+  GRADIENT_BACKGROUNDS,
 } from "./export-video-backgrounds";
 
 // ── boîtes ──────────────────────────────────────────────────────────────────
@@ -381,4 +382,42 @@ export function backgroundOf(prefs: {
       ? { type: "photo", id: preset.id }
       : { type: "gradient", id: preset.id };
   return { type: "auto", id: null };
+}
+
+/**
+ * Le fond de texte « automatique » d'un fond de vidéo : un voile transparent sur une photo ou une
+ * vidéo (le texte reste lisible), aucun sur un dégradé ou une couleur unie (déjà unis). C'était le
+ * comportement implicite d'avant le modèle à blocs ; l'éditeur l'applique maintenant à la demande.
+ */
+export function autoPanelKind(background: string | null): PanelKind {
+  const plain =
+    background === "color" ||
+    GRADIENT_BACKGROUNDS.some((gradient) => gradient.id === background);
+  return plain ? "none" : "transparent";
+}
+
+/**
+ * Au changement de fond, adapte les fonds de texte restés « automatiques » (celui du fond quitté) à la
+ * nature du nouveau fond ; un fond choisi par l'utilisateur n'est jamais touché. Renvoie le MÊME objet
+ * quand rien ne change.
+ */
+export function applyBackgroundPanels(
+  styles: TextStyles,
+  from: string | null,
+  to: string | null,
+): TextStyles {
+  const was = autoPanelKind(from);
+  const now = autoPanelKind(to);
+  if (was === now) return styles;
+  let changed = false;
+  const next = { ...styles };
+  for (const block of TEXT_BLOCK_IDS)
+    if (styles[block].panel.kind === was) {
+      next[block] = {
+        ...styles[block],
+        panel: { ...styles[block].panel, kind: now },
+      };
+      changed = true;
+    }
+  return changed ? next : styles;
 }

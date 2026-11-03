@@ -195,7 +195,10 @@ function fitBlock<B extends Built>(
   availHeight: number,
   fill: boolean,
 ): { fit: number; built: B; overflow: boolean } {
-  const fits = (b: Built) =>
+  // « Tient » est strict : le texte ne sort jamais de sa boîte. Seul le signal de débordement est tolérant
+  // (un demi-pixel de reste de calcul n'est pas une zone trop petite).
+  const fits = (b: Built) => b.height <= availHeight && b.width <= availWidth;
+  const fitsLoosely = (b: Built) =>
     b.height <= availHeight + FIT_TOLERANCE &&
     b.width <= availWidth + FIT_TOLERANCE;
   let fit = 1;
@@ -214,7 +217,10 @@ function fitBlock<B extends Built>(
       }
     }
   }
+  // Trop grand : on réduit d'un facteur proportionnel au dépassement…
+  let tooBig = fit;
   for (let i = 0; i < 12 && !fits(built) && fit > MIN_FIT; i++) {
+    tooBig = fit;
     const ratio = Math.min(
       availHeight / Math.max(1e-6, built.height),
       availWidth / Math.max(1e-6, built.width),
@@ -222,7 +228,23 @@ function fitBlock<B extends Built>(
     fit = Math.max(MIN_FIT, fit * Math.max(0.5, ratio * 0.98));
     built = build(fit);
   }
-  return { fit, built, overflow: !fits(built) };
+  // … puis on remonte : réduire change le nombre de lignes (moins de lignes quand les mots rapetissent),
+  // le premier facteur qui tient peut donc être bien plus petit que nécessaire. Dichotomie entre le
+  // dernier facteur qui tient et le dernier qui ne tenait pas.
+  if (fits(built) && fit < tooBig) {
+    let low = fit;
+    let high = tooBig;
+    for (let i = 0; i < 10; i++) {
+      const middle = (low + high) / 2;
+      const candidate = build(middle);
+      if (fits(candidate)) {
+        low = middle;
+        built = candidate;
+      } else high = middle;
+    }
+    fit = low;
+  }
+  return { fit, built, overflow: !fitsLoosely(built) };
 }
 
 const toRect = (box: Box, width: number, height: number): Rect => ({
@@ -323,7 +345,7 @@ export function layoutCard(input: LayoutInput): CardLayout {
     };
     const { fit, built, overflow } = fitBlock(
       build,
-      Math.max(1, box.width - pad * 2),
+      Math.max(1, box.width),
       Math.max(1, box.height),
       style.fill,
     );
@@ -344,7 +366,7 @@ export function layoutCard(input: LayoutInput): CardLayout {
     const style = input.styles.arabic;
     const box = rectOf(input.layout.arabic);
     const pad = padFor(style, scale, box);
-    const availWidth = Math.max(1, box.width - pad * 2);
+    const availWidth = Math.max(1, box.width);
     const requested = textPixelSize("arabic", style.size, width, height);
     const build = (fit: number) => {
       const size = requested * fit;
@@ -401,7 +423,7 @@ export function layoutCard(input: LayoutInput): CardLayout {
     const style = input.styles.translation;
     const box = rectOf(input.layout.translation);
     const pad = padFor(style, scale, box);
-    const availWidth = Math.max(1, box.width - pad * 2);
+    const availWidth = Math.max(1, box.width);
     const requested = textPixelSize("translation", style.size, width, height);
     const attributionText = input.attribution?.trim() || null;
     const build = (fit: number) => {

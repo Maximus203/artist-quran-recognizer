@@ -4,6 +4,8 @@ import {
   DEFAULT_STYLES,
   LAYOUT_KEYS,
   TEXT_BASE_SIZE,
+  applyBackgroundPanels,
+  autoPanelKind,
   backgroundOf,
   exportLayoutSchema,
   layoutKeyFor,
@@ -265,5 +267,57 @@ describe("backgroundOf", () => {
 
   it("un identifiant inconnu retombe sur le fond automatique", () => {
     expect(backgroundOf({ ...base, background: "inconnu" }).type).toBe("auto");
+  });
+});
+
+describe("fond de texte selon le fond de la vidéo", () => {
+  it("sur une photo ou une vidéo, un voile transparent ; sur un dégradé ou une couleur, aucun fond", () => {
+    expect(autoPanelKind("desert-dunes")).toBe("transparent");
+    expect(autoPanelKind("source")).toBe("transparent");
+    expect(autoPanelKind("video")).toBe("transparent");
+    expect(autoPanelKind("upload")).toBe("transparent");
+    expect(autoPanelKind(null)).toBe("transparent");
+    expect(autoPanelKind("nuit-doree")).toBe("none");
+    expect(autoPanelKind("color")).toBe("none");
+  });
+
+  it("changer de fond adapte les fonds restés « automatiques », pas ceux que l'on a choisis", () => {
+    const styles = structuredClone(DEFAULT_STYLES);
+    styles.arabic.panel.kind = "blur"; // choix de l'utilisateur
+    const toGradient = applyBackgroundPanels(
+      styles,
+      "desert-dunes",
+      "nuit-doree",
+    );
+    expect(toGradient.arabic.panel.kind).toBe("blur");
+    expect(toGradient.translation.panel.kind).toBe("none");
+    expect(toGradient.ref.panel.kind).toBe("none");
+    const back = applyBackgroundPanels(
+      toGradient,
+      "nuit-doree",
+      "desert-dunes",
+    );
+    expect(back.translation.panel.kind).toBe("transparent");
+    expect(back.arabic.panel.kind).toBe("blur");
+  });
+
+  it("deux fonds de même nature : rien ne change (même objet)", () => {
+    expect(
+      applyBackgroundPanels(DEFAULT_STYLES, "desert-dunes", "foret-brume"),
+    ).toBe(DEFAULT_STYLES);
+    expect(
+      applyBackgroundPanels(DEFAULT_STYLES, "nuit-doree", "emeraude"),
+    ).toBe(DEFAULT_STYLES);
+  });
+
+  it("ne modifie pas l'original et ne touche que le type de fond", () => {
+    const copy = structuredClone(DEFAULT_STYLES);
+    const next = applyBackgroundPanels(DEFAULT_STYLES, null, "color");
+    expect(DEFAULT_STYLES).toEqual(copy);
+    expect(next.arabic.panel).toEqual({
+      ...DEFAULT_STYLES.arabic.panel,
+      kind: "none",
+    });
+    expect(next.arabic.size).toBe(DEFAULT_STYLES.arabic.size);
   });
 });

@@ -27,7 +27,12 @@ import { layoutFor, type VideoPrefs } from "./export-video-prefs";
 import { clampBox } from "./export-video-edit";
 import { layoutCard, type CardLayout, type Rect } from "./export-video-layout";
 import { sizeScale, type ExportLayout } from "./export-video-model";
-import { drawLegibleText, paintPanel } from "./export-video-panels";
+import {
+  drawLegibleText,
+  paintPanel,
+  type Backdrop,
+  type PanelDeps,
+} from "./export-video-panels";
 import {
   paintGradientBackground,
   type GradientBackground,
@@ -181,15 +186,19 @@ export type FrameState = {
   fontFamily: string;
   /** Police de la référence et de la traduction (interface). */
   translationFontFamily: string;
+  /** Canevas de travail du flou ; absent = ceux du navigateur (injectés dans les tests). */
+  panelDeps?: Pick<PanelDeps, "scratch" | "fresh">;
 };
 
-/** Couvre le canvas avec la source (image ou vidéo), en rognant l'excédent. */
-function paintCover(
-  ctx: CanvasRenderingContext2D,
+/**
+ * Comment une source (image ou vidéo) couvre le cadre, en rognant l'excédent : son rectangle dans le
+ * cadre et sa taille propre.
+ */
+export function coverRect(
   source: CanvasImageSource,
   width: number,
   height: number,
-): void {
+): { dest: Rect; size: { width: number; height: number } } {
   const any = source as {
     videoWidth?: number;
     videoHeight?: number;
@@ -203,8 +212,15 @@ function paintCover(
   const scale = Math.max(width / sw, height / sh);
   const dw = sw * scale;
   const dh = sh * scale;
-  ctx.drawImage(source, (width - dw) / 2, (height - dh) / 2, dw, dh);
+  return {
+    dest: { x: (width - dw) / 2, y: (height - dh) / 2, width: dw, height: dh },
+    size: { width: sw, height: sh },
+  };
 }
+
+/** Le décor bouge-t-il d'une image à l'autre ? Une vidéo, oui ; une photo, non. */
+const isLiveSource = (source: CanvasImageSource): boolean =>
+  "videoWidth" in (source as object);
 
 /** Voile sombre sous l'onde : l'onde reste lisible sur n'importe quelle image. */
 function paintWaveScrim(ctx: CanvasRenderingContext2D, zone: Rect): void {
@@ -301,8 +317,18 @@ export function drawFrame(
 
   // Fond.
   const bg = state.background;
+  // Le décor que les fonds « flou » doivent flouter : l'image ou la vidéo (un dégradé ou une couleur
+  // unie se passent de flou : le flou d'un décor lisse est le décor).
+  let backdrop: Backdrop | undefined;
   if (bg.image) {
-    paintCover(ctx, bg.image, width, height);
+    const { dest, size } = coverRect(bg.image, width, height);
+    ctx.drawImage(bg.image, dest.x, dest.y, dest.width, dest.height);
+    backdrop = {
+      source: bg.image,
+      dest,
+      size,
+      live: isLiveSource(bg.image),
+    };
   } else if (bg.gradient) {
     paintGradientBackground(ctx, bg.gradient, width, height);
   } else {
@@ -317,11 +343,12 @@ export function drawFrame(
     const { ref, arabic, translation } = layout;
     const styles = prefs.styles;
 
-    // Les fonds d'abord (le flou lit le décor seul), puis les textes par-dessus.
-    if (ref) paintPanel(ctx, ref.panel, styles.ref.panel, scale);
-    if (arabic) paintPanel(ctx, arabic.panel, styles.arabic.panel, scale);
+    // Les fonds d'abord, puis les textes par-dessus.
+    const deps = { ...state.panelDeps, backdrop };
+    if (ref) paintPanel(ctx, ref.panel, styles.ref.panel, scale, deps);
+    if (arabic) paintPanel(ctx, arabic.panel, styles.arabic.panel, scale, deps);
     if (translation)
-      paintPanel(ctx, translation.panel, styles.translation.panel, scale);
+      paintPanel(ctx, translation.panel, styles.translation.panel, scale, deps);
 
     ctx.direction = "ltr";
     ctx.textBaseline = "middle";

@@ -276,6 +276,32 @@ describe("taille, réduction et remplissage par bloc", () => {
     expect(l.translation!.note).toBeNull();
   });
 
+  it("ne réduit pas plus que nécessaire : la taille trouvée est la plus grande qui tient", () => {
+    for (const words of [6, 9, 12, 16, 20, 26, 33]) {
+      const arabic = Array.from({ length: words }, () => "كلمةطويلة").join(" ");
+      const l = layoutCard(input(1920, 1080, {}, arabic, "x"));
+      const block = l.arabic!;
+      const parts = layoutArabicWords(arabic).parts;
+      // Cherche, par balayage, le plus grand facteur qui tient dans la boîte.
+      let best = 0.4;
+      for (let fit = 1; fit >= 0.4; fit -= 0.002) {
+        const size = TEXT_BASE_SIZE.arabic * fit;
+        const lines = wrapArabic(parts, block.box.width, size, measure);
+        const height = lines.length * size * 1.75;
+        const widest = Math.max(...lines.map((x) => x.width));
+        if (
+          height <= block.box.height + 0.5 &&
+          widest <= block.box.width + 0.5
+        ) {
+          best = fit;
+          break;
+        }
+      }
+      expect(block.fit).toBeLessThanOrEqual(1);
+      expect(block.fit).toBeGreaterThanOrEqual(best - 0.015);
+    }
+  });
+
   it("le pourcentage annoncé est celui de la réduction réelle", () => {
     const l = layoutCard(input(1920, 1080, {}, LONG_AR, LONG_FR));
     const block = l.translation!;

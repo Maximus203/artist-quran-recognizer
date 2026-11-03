@@ -9,6 +9,7 @@ import {
 } from "@/lib/export-video-backgrounds";
 import { sizePercent, stepSize } from "@/lib/export-video-edit";
 import {
+  applyBackgroundPanels,
   currentTextPosition,
   moveAllTextStacks,
   SIZE_LIMITS,
@@ -316,11 +317,26 @@ export function VideoLook({
                 data-testid="video-color-bg"
                 onChange={(e) => {
                   onUpload(null);
-                  patch({ bg: e.target.value, background: "color" });
+                  patch({
+                    bg: e.target.value,
+                    background: "color",
+                    styles: applyBackgroundPanels(
+                      styles,
+                      prefs.background,
+                      "color",
+                    ),
+                  });
                 }}
                 onClick={() => {
                   onUpload(null);
-                  patch({ background: "color" });
+                  patch({
+                    background: "color",
+                    styles: applyBackgroundPanels(
+                      styles,
+                      prefs.background,
+                      "color",
+                    ),
+                  });
                 }}
               />
             </span>

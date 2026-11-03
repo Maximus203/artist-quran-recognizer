@@ -5,6 +5,8 @@ import {
   hexToRgb,
   paintPanel,
   rgba,
+  type Backdrop,
+  type PanelDeps,
   type Scratch,
 } from "./export-video-panels";
 import { DEFAULT_STYLES, type PanelStyle } from "./export-video-model";
@@ -41,27 +43,41 @@ function fakeCtx() {
   };
 }
 
+/** Fabrique de faux canevas de travail : note leur taille et tous les appels reçus par leur contexte. */
 function fakeScratch() {
-  const made: { w: number; h: number; drawn: unknown[][] }[] = [];
+  const made: { w: number; h: number; calls: Call[]; canvas: object }[] = [];
   const scratch: Scratch = (w, h) => {
-    const entry = { w, h, drawn: [] as unknown[][] };
-    made.push(entry);
-    return {
-      canvas: {
-        width: w,
-        height: h,
-        tag: "scratch",
-      } as unknown as CanvasImageSource,
-      ctx: {
-        drawImage: (...a: unknown[]) => entry.drawn.push(a),
-        clearRect: () => undefined,
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: "high",
-        filter: "none",
-      } as unknown as CanvasRenderingContext2D,
-    };
+    const calls: Call[] = [];
+    const canvas = { width: w, height: h, tag: "scratch" };
+    made.push({ w, h, calls, canvas });
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get(t, prop: string) {
+        if (prop in t) return t[prop];
+        return (...args: unknown[]) => {
+          calls.push({ name: prop, args });
+        };
+      },
+      set(t, prop: string, value) {
+        t[prop] = value;
+        calls.push({ name: `set:${prop}`, args: [value] });
+        return true;
+      },
+    }) as unknown as CanvasRenderingContext2D;
+    return { canvas: canvas as unknown as CanvasImageSource, ctx };
   };
   return { scratch, made };
+}
+
+/** Décor de test : une photo 3000×2000 qui couvre le cadre 1920×1080 (rognée en haut et en bas). */
+function backdrop(live = false): Backdrop {
+  const scale = 1920 / 3000;
+  const height = 2000 * scale;
+  return {
+    source: { tag: "photo" } as unknown as CanvasImageSource,
+    dest: { x: 0, y: (1080 - height) / 2, width: 1920, height },
+    size: { width: 3000, height: 2000 },
+    live,
+  };
 }
 
 const rect = { x: 100, y: 200, width: 600, height: 300 };
@@ -70,6 +86,8 @@ const panel = (patch: Partial<PanelStyle>): PanelStyle => ({
   ...patch,
 });
 const names = (calls: Call[]) => calls.map((c) => c.name);
+const fillStyleOf = (call: Call) =>
+  (call.args.at(-1) as { fillStyle: string }).fillStyle;
 
 describe("couleurs", () => {
   it("lit un code #rrggbb, sinon revient au noir bleuté du produit", () => {
@@ -112,9 +130,7 @@ describe("paintPanel", () => {
       2,
     );
     const fill = calls.find((c) => c.name === "fill")!;
-    expect((fill.args.at(-1) as { fillStyle: string }).fillStyle).toBe(
-      "rgba(51, 102, 153, 1)",
-    );
+    expect(fillStyleOf(fill)).toBe("rgba(51, 102, 153, 1)");
     const rr = calls.find((c) => c.name === "roundRect")!;
     expect(rr.args.slice(0, 4)).toEqual([100, 200, 600, 300]);
     expect(rr.args[4]).toBe(40); // rayon 20 × échelle 2
@@ -130,11 +146,7 @@ describe("paintPanel", () => {
     );
     const fills = calls.filter((c) => c.name === "fill");
     expect(fills.length).toBe(14);
-    const alpha = Number(
-      /, ([\d.]+)\)$/.exec(
-        (fills[0].args.at(-1) as { fillStyle: string }).fillStyle,
-      )![1],
-    );
+    const alpha = Number(/, ([\d.]+)\)$/.exec(fillStyleOf(fills[0]))![1]);
     expect(1 - Math.pow(1 - alpha, 14)).toBeCloseTo(0.66, 2);
   });
 
@@ -148,9 +160,7 @@ describe("paintPanel", () => {
     );
     const fills = calls.filter((c) => c.name === "fill");
     expect(fills).toHaveLength(1);
-    expect((fills[0].args.at(-1) as { fillStyle: string }).fillStyle).toBe(
-      "rgba(6, 8, 12, 0.4)",
-    );
+    expect(fillStyleOf(fills[0])).toBe("rgba(6, 8, 12, 0.4)");
   });
 
   it("transparent à 0 % : rien à voir, rien dessiné", () => {
@@ -159,83 +169,236 @@ describe("paintPanel", () => {
     expect(calls.filter((c) => c.name === "fill")).toEqual([]);
   });
 
-  it("flou : redessine le fond flouté dans le rectangle (rogné) puis le teinte", () => {
-    const { ctx, calls, canvas } = fakeCtx();
-    const { scratch, made } = fakeScratch();
-    paintPanel(
-      ctx,
-      rect,
-      panel({ kind: "blur", opacity: 0.4, radius: 18 }),
-      1,
-      { scratch },
-    );
-    const order = names(calls);
-    expect(order.indexOf("save")).toBeLessThan(order.indexOf("clip"));
-    expect(order.indexOf("clip")).toBeLessThan(order.indexOf("drawImage"));
-    expect(order.indexOf("drawImage")).toBeLessThan(order.indexOf("fill"));
-    expect(order.at(-1)).toBe("restore");
-    // La zone d'écran est copiée vers un petit canevas (flou en basse résolution), pas en pleine taille.
-    expect(made).toHaveLength(1);
-    expect(made[0].w).toBeLessThan(rect.width);
-    expect(made[0].h).toBeLessThan(rect.height);
-    const copied = made[0].drawn[0];
-    expect(copied[0]).toBe(canvas);
-    expect(copied.slice(1, 5)).toEqual([100, 200, 600, 300]);
-    // Puis agrandi dans le rectangle.
-    const back = calls.find((c) => c.name === "drawImage")!;
-    expect(back.args.slice(1, 5)).toEqual([100, 200, 600, 300]);
-    const tint = calls.filter((c) => c.name === "fill").at(-1)!;
-    expect((tint.args.at(-1) as { fillStyle: string }).fillStyle).toBe(
-      "rgba(6, 8, 12, 0.4)",
-    );
-  });
-
-  it("flou : la force suit la taille de la vidéo (image deux fois plus grande, flou deux fois plus large)", () => {
-    expect(BLUR_PX).toBeGreaterThan(0);
-    const small = fakeScratch();
-    const big = fakeScratch();
-    paintPanel(fakeCtx().ctx, rect, panel({ kind: "blur" }), 1, {
-      scratch: small.scratch,
-    });
-    paintPanel(fakeCtx().ctx, rect, panel({ kind: "blur" }), 2, {
-      scratch: big.scratch,
-    });
-    // Même rectangle en pixels : plus fort = réduit davantage = canevas de travail plus petit.
-    expect(big.made[0].w).toBeLessThan(small.made[0].w);
-  });
-
-  it("flou : un rectangle minuscule ne plante pas", () => {
-    const { ctx } = fakeCtx();
-    const { scratch, made } = fakeScratch();
-    paintPanel(
-      ctx,
-      { x: 5, y: 5, width: 1, height: 1 },
-      panel({ kind: "blur" }),
-      1,
-      { scratch },
-    );
-    expect(made[0].w).toBeGreaterThanOrEqual(1);
-    expect(made[0].h).toBeGreaterThanOrEqual(1);
-  });
-
-  it("flou : sans canevas de travail disponible, retombe sur un voile teinté (pas de plantage)", () => {
+  it("flou sans décor (dégradé ou couleur unie) : une teinte arrondie, aucun calcul de flou", () => {
     const { ctx, calls } = fakeCtx();
-    paintPanel(ctx, rect, panel({ kind: "blur", opacity: 0.5 }), 1, {
-      scratch: () => null,
+    const { scratch, made } = fakeScratch();
+    paintPanel(ctx, rect, panel({ kind: "blur", opacity: 0.5, radius: 20 }), 1, {
+      scratch,
     });
+    expect(made).toHaveLength(0);
     expect(calls.some((c) => c.name === "drawImage")).toBe(false);
-    expect(calls.some((c) => c.name === "fill")).toBe(true);
+    expect(fillStyleOf(calls.find((c) => c.name === "fill")!)).toBe(
+      "rgba(6, 8, 12, 0.5)",
+    );
+    expect(calls.find((c) => c.name === "roundRect")!.args[4]).toBe(20);
   });
 
-  it("restaure toujours l'état du canevas (clip, filtre)", () => {
-    for (const kind of ["transparent", "blur", "solid"] as const) {
-      const { ctx, calls } = fakeCtx();
-      paintPanel(ctx, rect, panel({ kind }), 1, {
-        scratch: fakeScratch().scratch,
-      });
-      expect(calls.filter((c) => c.name === "save").length).toBe(
-        calls.filter((c) => c.name === "restore").length,
+  describe("flou d'un décor fixe (photo)", () => {
+    const run = (
+      over: Partial<PanelDeps> = {},
+      style: Partial<PanelStyle> = {},
+      scale = 1,
+      r = rect,
+    ) => {
+      const f = fakeCtx();
+      const s = fakeScratch();
+      const fresh = fakeScratch();
+      paintPanel(
+        f.ctx,
+        r,
+        panel({ kind: "blur", opacity: 0.4, radius: 18, ...style }),
+        scale,
+        {
+          scratch: s.scratch,
+          fresh: fresh.scratch,
+          backdrop: backdrop(),
+          ...over,
+        },
       );
+      return { ...f, s, fresh };
+    };
+
+    it("lit le décor lui-même (jamais le canevas en cours de dessin), réduit, à la bonne zone", () => {
+      const { s, canvas } = run();
+      expect(s.made).toHaveLength(1);
+      expect(s.made[0].w).toBeLessThan(rect.width / 4);
+      expect(s.made[0].h).toBeLessThan(rect.height / 4);
+      const copy = s.made[0].calls.find((c) => c.name === "drawImage")!;
+      expect(copy.args[0]).not.toBe(canvas);
+      expect((copy.args[0] as { tag: string }).tag).toBe("photo");
+      // La photo (3000 px de large) est affichée à 64 % : on lit la zone correspondante de la photo.
+      const [, sx, sy, sw, sh] = copy.args as number[];
+      const k = 3000 / 1920;
+      expect(sx).toBeCloseTo(100 * k, 6);
+      expect(sw).toBeCloseTo(600 * k, 6);
+      expect(sh).toBeCloseTo(300 * k, 6);
+      expect(sy).toBeCloseTo((200 - (1080 - 1280) / 2) * k, 6);
+    });
+
+    it("cuit la teinte puis les angles arrondis dans le petit canevas", () => {
+      const { s } = run();
+      const names = s.made[0].calls.map(
+        (c) =>
+          c.name +
+          (c.name === "set:globalCompositeOperation" ? `=${c.args[0]}` : ""),
+      );
+      expect(names.indexOf("drawImage")).toBeLessThan(
+        names.indexOf("fillRect"),
+      );
+      expect(names.indexOf("fillRect")).toBeLessThan(
+        names.indexOf("set:globalCompositeOperation=destination-in"),
+      );
+      expect(
+        names.indexOf("set:globalCompositeOperation=destination-in"),
+      ).toBeLessThan(names.indexOf("roundRect"));
+      expect(names.at(-1)).toBe("set:globalCompositeOperation=source-over");
+      const tint = s.made[0].calls.filter((c) => c.name === "set:fillStyle")[0];
+      expect(tint.args[0]).toBe("rgba(6, 8, 12, 0.4)");
+    });
+
+    it("pose la pièce agrandie 1:1 dans le cadre, sans rognage ni filtre", () => {
+      const { calls, fresh } = run();
+      expect(fresh.made).toHaveLength(1);
+      expect(fresh.made[0].w).toBe(600);
+      expect(fresh.made[0].h).toBe(300);
+      const up = fresh.made[0].calls.find((c) => c.name === "drawImage")!;
+      expect(up.args.slice(1, 5)).toEqual([0, 0, 600, 300]);
+      const put = calls.find((c) => c.name === "drawImage")!;
+      expect(put.args.slice(1, 3)).toEqual([100, 200]);
+      expect(calls.some((c) => c.name === "clip")).toBe(false);
+      expect(calls.some((c) => c.name === "set:filter")).toBe(false);
+    });
+
+    it("mémorise la pièce : la deuxième image ne recalcule rien", () => {
+      const f = fakeCtx();
+      const s = fakeScratch();
+      const fresh = fakeScratch();
+      const deps = {
+        scratch: s.scratch,
+        fresh: fresh.scratch,
+        backdrop: backdrop(),
+      };
+      const style = panel({ kind: "blur", opacity: 0.4, radius: 18 });
+      paintPanel(f.ctx, rect, style, 1, deps);
+      paintPanel(f.ctx, rect, style, 1, deps);
+      paintPanel(f.ctx, rect, style, 1, deps);
+      expect(s.made).toHaveLength(1);
+      expect(fresh.made).toHaveLength(1);
+      expect(f.calls.filter((c) => c.name === "drawImage")).toHaveLength(3);
+    });
+
+    it("une autre zone, une autre force ou une autre teinte : une autre pièce", () => {
+      const f = fakeCtx();
+      const s = fakeScratch();
+      const fresh = fakeScratch();
+      const deps = {
+        scratch: s.scratch,
+        fresh: fresh.scratch,
+        backdrop: backdrop(),
+      };
+      const style = panel({ kind: "blur", opacity: 0.4, radius: 18 });
+      paintPanel(f.ctx, rect, style, 1, deps);
+      paintPanel(f.ctx, { ...rect, y: 260 }, style, 1, deps);
+      paintPanel(f.ctx, rect, { ...style, opacity: 0.6 }, 1, deps);
+      paintPanel(f.ctx, rect, { ...style, color: "#223344" }, 1, deps);
+      paintPanel(f.ctx, rect, style, 2, deps);
+      expect(fresh.made).toHaveLength(5);
+    });
+
+    it("ne garde que les dernières pièces (mémoire bornée)", () => {
+      const f = fakeCtx();
+      const s = fakeScratch();
+      const fresh = fakeScratch();
+      const deps = {
+        scratch: s.scratch,
+        fresh: fresh.scratch,
+        backdrop: backdrop(),
+      };
+      const style = panel({ kind: "blur" });
+      for (let i = 0; i < 12; i++)
+        paintPanel(f.ctx, { ...rect, y: 100 + i * 10 }, style, 1, deps);
+      expect(fresh.made).toHaveLength(12);
+      // La toute première a été oubliée : on la refait.
+      paintPanel(f.ctx, { ...rect, y: 100 }, style, 1, deps);
+      expect(fresh.made).toHaveLength(13);
+      // La plus récente est encore là.
+      paintPanel(f.ctx, { ...rect, y: 210 }, style, 1, deps);
+      expect(fresh.made).toHaveLength(13);
+    });
+
+    it("la force suit la taille de la vidéo (image deux fois plus grande, flou deux fois plus large)", () => {
+      expect(BLUR_PX).toBeGreaterThan(0);
+      expect(run({}, {}, 2).s.made[0].w).toBeLessThan(
+        run({}, {}, 1).s.made[0].w,
+      );
+    });
+
+    it("un rectangle minuscule ne plante pas", () => {
+      const { s } = run({}, {}, 1, { x: 5, y: 5, width: 1, height: 1 });
+      expect(s.made[0].w).toBeGreaterThanOrEqual(1);
+      expect(s.made[0].h).toBeGreaterThanOrEqual(1);
+    });
+
+    it("sans canevas de travail, ou décor sans taille : retombe sur une teinte, sans plantage", () => {
+      for (const deps of [
+        { scratch: () => null },
+        { fresh: () => null },
+        { backdrop: { ...backdrop(), size: { width: 0, height: 0 } } },
+        {
+          backdrop: {
+            ...backdrop(),
+            dest: { x: 0, y: 0, width: 0, height: 0 },
+          },
+        },
+      ]) {
+        const { calls } = run(deps);
+        expect(calls.some((c) => c.name === "fill")).toBe(true);
+      }
+    });
+  });
+
+  describe("flou d'un décor qui bouge (vidéo)", () => {
+    const frame = (n: number) => {
+      const f = fakeCtx();
+      const s = fakeScratch();
+      const fresh = fakeScratch();
+      const deps = {
+        scratch: s.scratch,
+        fresh: fresh.scratch,
+        backdrop: backdrop(true),
+      };
+      const style = panel({ kind: "blur", opacity: 0.4, radius: 18 });
+      for (let i = 0; i < n; i++) paintPanel(f.ctx, rect, style, 1, deps);
+      return { ...f, s, fresh };
+    };
+
+    it("refait le flou à chaque image, sans rien mettre en cache", () => {
+      const { s, fresh } = frame(3);
+      expect(s.made).toHaveLength(3);
+      expect(fresh.made).toHaveLength(0);
+    });
+
+    it("agrandit le petit canevas dans la zone en qualité basse, sans rognage ni filtre", () => {
+      const { calls, s } = frame(1);
+      const up = calls.find((c) => c.name === "drawImage")!;
+      expect(up.args[0]).toBe(s.made[0].canvas);
+      expect(up.args.slice(1, 5)).toEqual([100, 200, 600, 300]);
+      const order = calls.map(
+        (c) =>
+          c.name +
+          (c.name === "set:imageSmoothingQuality" ? `=${c.args[0]}` : ""),
+      );
+      expect(order.indexOf("set:imageSmoothingQuality=low")).toBeLessThan(
+        order.indexOf("drawImage"),
+      );
+      expect(calls.some((c) => c.name === "clip")).toBe(false);
+      expect(calls.some((c) => c.name === "set:filter")).toBe(false);
+    });
+  });
+
+  it("restaure toujours l'état du canevas", () => {
+    for (const kind of ["transparent", "blur", "solid"] as const) {
+      for (const live of [false, true]) {
+        const { ctx, calls } = fakeCtx();
+        paintPanel(ctx, rect, panel({ kind }), 1, {
+          scratch: fakeScratch().scratch,
+          fresh: fakeScratch().scratch,
+          backdrop: backdrop(live),
+        });
+        expect(calls.filter((c) => c.name === "save").length).toBe(
+          calls.filter((c) => c.name === "restore").length,
+        );
+      }
     }
   });
 });

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { VideoOrientation } from "./export-video-args";
-import { GRADIENT_BACKGROUNDS } from "./export-video-backgrounds";
 import { EXPORT_VIDEO_CONFIG } from "./export-video-config";
 import { DEFAULT_LEAD_IN, DEFAULT_TAIL_OUT } from "./export-video-suggest";
 import {
@@ -21,6 +20,7 @@ import {
   SIZE_LIMITS,
   TEXT_BASE_SIZE,
   TEXT_BLOCK_IDS,
+  autoPanelKind,
   backgroundVideoSchema,
   boxSchema,
   layoutKeyFor,
@@ -200,9 +200,7 @@ function migrateLegacy(raw: Plain): Plain {
   );
   const fill = lenient(boolField, raw.fill, false);
   const background = lenient(backgroundField, raw.background, null);
-  const noVeil =
-    background === "color" ||
-    GRADIENT_BACKGROUNDS.some((gradient) => gradient.id === background);
+  const noVeil = autoPanelKind(background) === "none";
 
   const style = (
     block: keyof TextStyles,
@@ -294,7 +292,11 @@ function sanitizeStyles(raw: unknown): TextStyles {
     out[block] = {
       size: lenient(textStyleSchema.shape.size, style.size, fallback.size),
       fill: lenient(textStyleSchema.shape.fill, style.fill, fallback.fill),
-      valign: lenient(textStyleSchema.shape.valign, style.valign, fallback.valign),
+      valign: lenient(
+        textStyleSchema.shape.valign,
+        style.valign,
+        fallback.valign,
+      ),
       panel: {
         kind: lenient(shape.kind, panel.kind, fallback.panel.kind),
         color: lenient(shape.color, panel.color, fallback.panel.color),
