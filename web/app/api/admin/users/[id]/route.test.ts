@@ -96,3 +96,43 @@ describe("rôle récitateur", () => {
     expect((await call(adminCookie, { role: "user" })).status).toBe(200);
   });
 });
+
+describe("suppression d'un compte", () => {
+  const remove = async (cookie: string, id: number) => {
+    const { DELETE } = await import("./route");
+    return DELETE(
+      new Request(`http://127.0.0.1:3000/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: { cookie: `aqr_session=${cookie}` },
+      }),
+      { params: Promise.resolve({ id: String(id) }) },
+    );
+  };
+  const make = async (name: string) => {
+    const { getDb } = await import("@/lib/db");
+    const { createUser } = await import("@/lib/users");
+    return createUser(getDb(), { username: name, passwordHash: "x" }).id;
+  };
+
+  it("un administrateur supprime un compte ; un testeur ne le peut pas", async () => {
+    const id = await make("aSupprimer");
+    expect((await remove(userCookie, id)).status).toBe(403);
+    expect((await remove(adminCookie, id)).status).toBe(204);
+    const { getUser } = await import("@/lib/users");
+    const { getDb } = await import("@/lib/db");
+    expect(getUser(getDb(), id)).toBeNull();
+    expect((await remove(adminCookie, id)).status).toBe(404);
+  });
+
+  it("refuse de supprimer son propre compte", async () => {
+    const { getDb } = await import("@/lib/db");
+    const me = (
+      getDb()
+        .prepare("SELECT id FROM users WHERE username = 'admin1'")
+        .get() as { id: number }
+    ).id;
+    const res = await remove(adminCookie, me);
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("self");
+  });
+});
