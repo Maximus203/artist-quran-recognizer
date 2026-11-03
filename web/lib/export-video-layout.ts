@@ -101,7 +101,11 @@ const MAX_FIT = 4;
 const ARABIC_LINE_HEIGHT = 1.75;
 const TRANSLATION_LINE_HEIGHT = 1.4;
 const REF_LINE_HEIGHT = 1.4;
-/** Plus petite référence lisible (px), quelle que soit la taille de la vidéo. */
+/**
+ * Plus petite référence lisible, dans la vidéo de référence de 1080 px de côté court (comme toutes les
+ * tailles : le plancher suit l'échelle, sinon l'aperçu, plus petit que l'export, montrerait la référence
+ * plus grande que la vidéo ne la sortira).
+ */
 const MIN_REF_PX = 14;
 const ATTRIBUTION_RATIO = 0.6;
 const ATTRIBUTION_LINE_HEIGHT = 1.3;
@@ -336,7 +340,7 @@ export function layoutCard(input: LayoutInput): CardLayout {
     const pad = padFor(style, scale, box);
     const requested = textPixelSize("ref", style.size, width, height);
     const build = (fit: number) => {
-      const size = Math.max(MIN_REF_PX, requested * fit);
+      const size = Math.max(MIN_REF_PX * scale, requested * fit);
       return {
         size,
         width: measureRef(input.refLabel, size),

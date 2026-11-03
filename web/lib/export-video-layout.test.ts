@@ -577,8 +577,25 @@ describe("cas limites", () => {
     }
   });
 
-  it("la référence garde une taille lisible au minimum", () => {
-    const l = layoutCard(input(640, 360));
+  it("la référence garde une taille lisible au minimum : 14 px dans la vidéo de référence de 1080 px", () => {
+    const tiny = {
+      styles: {
+        ...DEFAULT_STYLES,
+        ref: { ...DEFAULT_STYLES.ref, size: 0.4 },
+      },
+    };
+    const l = layoutCard(input(1920, 1080, tiny));
     expect(l.ref!.size).toBeGreaterThanOrEqual(14);
+    // Le plancher suit l'échelle : la même demande à 720p donne le même plancher, proportionnellement.
+    const small = layoutCard(input(1280, 720, tiny));
+    expect(small.ref!.size / 720).toBeCloseTo(l.ref!.size / 1080, 3);
+  });
+
+  it("l'aperçu et l'export montrent la référence à la MÊME taille relative (ce qu'on voit est ce qui sort)", () => {
+    const preview = layoutCard(input(640, 360));
+    const full = layoutCard(input(1920, 1080));
+    const hd = layoutCard(input(1280, 720));
+    expect(preview.ref!.size / 360).toBeCloseTo(full.ref!.size / 1080, 4);
+    expect(hd.ref!.size / 720).toBeCloseTo(full.ref!.size / 1080, 4);
   });
 });
