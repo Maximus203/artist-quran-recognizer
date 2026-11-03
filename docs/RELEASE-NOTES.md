@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-03 — Lecture et récitations pour tous, menus déroulants
 Étiquettes : utilisateur, technique
-PR : #0
+PR : #195
 
 **Ce qui change.** « Revue » devient « Lecture » et « Sessions » devient « Récitations » dans toute l'interface. Le récitateur a désormais la lecture complète (écoute de la source, onde, retour en arrière, passage actif, intervalles, renommer, archiver, exporter) et ses playlists ; après un enregistrement il reste sur la lecture au lieu d'être renvoyé vers l'export vidéo. Il n'a ni revue humaine, ni marquage, ni piste « Revue » sur l'onde. Le testeur garde tout cela en plus. Le passage actif passe au-dessus de l'écoute de la source ; la tuile « Intervalles » se replie. La barre de gauche affiche 5, 8, 10, 15, 20 ou 30 récitations récentes, au choix. La barre du haut range les pages en menus déroulants : « Récitations » (liste et playlists) et « Administration » (Moteur, Comptes, Invitations, pour l'administrateur).
 
