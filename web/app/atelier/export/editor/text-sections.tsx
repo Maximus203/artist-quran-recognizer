@@ -434,7 +434,6 @@ export function PositionSection({
   onField,
   onCenter,
   onReset,
-  showFields = true,
 }: {
   box: Box;
   onNudge: (
@@ -444,8 +443,6 @@ export function PositionSection({
   onField: (field: BoxField, percent: number) => void;
   onCenter: () => void;
   onReset: () => void;
-  /** Les champs exacts se rangent sous « Avancé » sur le bureau. */
-  showFields?: boolean;
 }) {
   return (
     <>
@@ -460,7 +457,7 @@ export function PositionSection({
           <Arrow arrow={ARROWS[3]} onNudge={(key) => onNudge(key, {})} />
         </div>
       </Field>
-      {showFields ? <PositionFields box={box} onField={onField} /> : null}
+      <PositionFields box={box} onField={onField} />
       <div className="xe-actions">
         <button
           type="button"

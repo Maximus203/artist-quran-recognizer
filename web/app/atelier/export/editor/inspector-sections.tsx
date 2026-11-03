@@ -4,7 +4,6 @@ import { ElementHeader } from "./text-sections";
 import {
   ArabicLockNote,
   PanelSection,
-  PositionFields,
   PositionSection,
   SizeSection,
   TextAdvancedSection,
@@ -48,10 +47,9 @@ export function ElementSections({
     key: string,
     modifiers: { shift?: boolean; ctrl?: boolean },
   ) => controller.nudge(id, key, modifiers);
-  const position = (showFields: boolean) => (
+  const position = (
     <PositionSection
       box={box}
-      showFields={showFields}
       onNudge={onNudge}
       onField={(field, percent) => controller.setField(id, field, percent)}
       onCenter={() => controller.center(id)}
@@ -98,7 +96,7 @@ export function ElementSections({
       ) : null}
       {all || only === "position" ? (
         <section className="xe-sec" aria-label="Position">
-          {position(!all)}
+          {position}
         </section>
       ) : null}
       {isText(id) && only === "reglages" ? (
@@ -121,14 +119,8 @@ export function ElementSections({
       ) : null}
       {all ? (
         <details className="xr-fine xe-advanced" data-testid="element-advanced">
-          <summary>Avancé : zone exacte, remplissage</summary>
+          <summary>Avancé : remplissage, place du texte, fond</summary>
           <div>
-            <PositionFields
-              box={box}
-              onField={(field, percent) =>
-                controller.setField(id, field, percent)
-              }
-            />
             {isText(id) ? (
               <TextAdvancedSection
                 block={id}
