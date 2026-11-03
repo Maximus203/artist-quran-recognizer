@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — L'administrateur supprime un compte
+Étiquettes : utilisateur, technique
+PR : #182
+
+**Ce qui change.** Sur la page des comptes, l'administrateur peut supprimer un compte (bouton « Supprimer », avec confirmation). Il ne peut pas supprimer son propre compte ni le dernier administrateur actif. Les connexions, préférences et favoris du compte disparaissent ; ses sessions restent, sans propriétaire.
+
+**Pourquoi / décision.** La page permettait de réinitialiser, désactiver et changer le rôle, mais pas de supprimer. Les invitations et agents du moteur créés par le compte supprimé sont rattachés à l'administrateur qui supprime, pour ne pas perdre leur historique (`web/lib/users.ts`, `deleteUser`).
+
 ## 2026-11-03 — Un rôle récitateur : enregistrer et exporter la vidéo, sans le reste
 Étiquettes : utilisateur, technique
 PR : #181
