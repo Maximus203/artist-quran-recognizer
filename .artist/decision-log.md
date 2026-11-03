@@ -1,5 +1,52 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-03 — La table de montage : chronologie sur l'axe de toute la session (ADR-0023)
+- **Quoi** : éditeur mobile « table de montage » (aperçu, chronologie, rail d'outils). Chronologie : règle, passages, onde, piste du
+  fond, tête de lecture (glisser, boutons, clavier, lecture de l'aperçu), zoom avec défilement propre. Le fond vidéo se règle dessus :
+  raccords ⟲ cliquables, bande qu'on glisse. Onde et vignettes factorisées. Aucune dépendance ajoutée.
+- **Patterns** : Observer (la tête de lecture, magasin observable), Strategy (comportement de fin de vidéo), Registry (une ligne au
+  registre), Adapter (`BackgroundVideoLayout` : la section du fond s'adapte à la chronologie), Composite (panneaux faits des sections
+  partagées), Flyweight (vignettes lues une fois par fichier).
+- **Choix pris seul** : (1) l'axe est celui de toute la session et non des plages mises bout à bout (une plage = une vidéo) ;
+  (2) la tête commence sur le verset le plus long ; (3) pas de vignettes pour la « vidéo d'origine » (teinte neutre) ; (4) le choix
+  du comportement s'ouvre en place, sous la chronologie, plutôt que dans le panneau Fond ; (5) l'aide du premier affichage est un
+  texte qui reste jusqu'à « Compris » (6 s ne suffisent pas à lire trois phrases) ; (6) l'aperçu animé part de la tête de lecture.
+- **Mesures** : 99 contrôles au navigateur (360, 390 et 430 px, tactile, thèmes sombre et clair). Export réel d'une vidéo de 3 s
+  sous 20 s : l'image à 3,5 s est celle de la seconde 0,5 (écart 2,5 contre 12,1 avec 1,5 s). Export d'une vidéo de 45 s, départ 12 s :
+  l'image à 2 s porte le compteur 00:00:14.000 de la source.
+
+## 2026-11-03 — Éditeur « Pas à pas » de la vidéo d'export (ADR-0022)
+- **Quoi** : trois étapes (Le cadre, Les textes, Exporter) pour le téléphone, éditeur du rôle récitateur ; encart « déjà prête,
+  exporter maintenant », pastilles, Précédent / Suivant, gros bouton ; progression mémorisée par récitation ; aperçu verrouillé
+  hors de l'étape des textes. Aucune dépendance ajoutée.
+- **Patterns** : State (progression `moveTo`, pure), Registry (une ligne au registre des éditeurs), Composite (les sections de
+  réglages partagées composées en étapes), Adapter (stockage de l'onglet derrière `StepsStorage`, absent ou bloqué sans casse).
+- **Choix pris seul** : « Précédent / Suivant » plutôt que « Retour / Continuer » (Retour = la flèche qui quitte l'éditeur) ;
+  mémoire dans l'onglet (`sessionStorage`) et non sur le compte ; étape du cadre toujours montée (cachée) pour ne pas couper
+  l'envoi d'une vidéo de fond ; titre de l'étape des textes lu seulement par les lecteurs d'écran ; fenêtre des passages à cibles
+  de 44 px pour tous les éditeurs ; l'aperçu des sous-titres n'est plus demandé au récitateur (403 à chaque ouverture de la page
+  d'export : défaut réel, appel inutile, corrigé).
+- **Méthode** : logique des étapes en TDD strict (test rouge vérifié avant le code) ; tests de composant écrits après le
+  composant (rendu statique), puis vérifiés par mutation (retrait de `hidden` et du verrouillage : trois tests échouent).
+- **Non fait / à suivre** : lecteur d'écran non testé. Le défaut du rôle `recitant` et le choix du format sont l'ADR-0021 (phase 4, fusionnée).
+
+## 2026-11-03 — Choix du format d'éditeur d'export sur téléphone (ADR-0021)
+- **Quoi** : règle pure par rôle (`lib/export-editor-mode.ts`), préférence `editorMode` sur le compte, fenêtre de la première ouverture
+  (trois cartes, explication, animation SVG/CSS, images fixes sans mouvement), section des paramètres qui réutilise les mêmes cartes,
+  porte `ExportEditorGate` devant `ExportEditor`. Le récitateur : pas à pas, aucune question. Bureau : jamais de question.
+- **Patterns** : Strategy (table de politique par rôle), Facade (`editorChoiceFor` : une décision), Registry (inchangé : le mode choisit
+  une ligne du registre), Adapter (stockage de séance injecté : testable sans navigateur), composant partagé fenêtre / paramètres.
+- **Choix pris seul** : (1) « Choisir plus tard » = plateau pour la séance du navigateur (`sessionStorage`), on redemande à la visite
+  suivante, jamais sur le compte, et Échap vaut « plus tard » ; (2) un geste par carte (le bouton nomme son format) plutôt que cocher
+  puis valider, rien coché d'avance ; (3) le défaut du récitateur n'est pas écrit sur son compte ; (4) bouton de pause des animations
+  (WCAG 2.2.2) en plus du mouvement réduit ; (5) la fenêtre remplace l'éditeur au lieu de se poser par-dessus (rien n'est monté
+  derrière, donc pas d'éditeur qui clignote avant le choix) ; (6) `VideoPanel` perd sa propriété `editorMode` ; (7) `parseCache` ne jette
+  plus un cache auquel il manque une clé (ses modifications en attente survivaient mal à l'ajout d'une préférence) ; (8) pas de nouvel
+  appel à Sofia : les maquettes du brief sont sa direction, les animations en reprennent l'esprit (phone, finger, jetons existants).
+- **Non fait / à suivre** : lecteur d'écran non testé ; table de montage et pas à pas retombent sur le plateau dans le registre tant
+  que leurs PR ne sont pas dans `develop` (le choix est déjà enregistré) ; le coffre Obsidian est injoignable : pas de rappel
+  d'expérience lu ni de trace écrite (G-7), à reprendre.
+
 ## 2026-11-03 — Éditeur de la vidéo d'export : calque partagé, plateau, vue bureau (ADR-0020)
 - **Quoi** : calque d'édition partagé sur l'aperçu (toucher, glisser avec aimants par axe, huit poignées de 44 px, pincement,
   clavier, `aria-live`), contrôleur et sections de réglages communs à la feuille du téléphone et à l'inspecteur du bureau,

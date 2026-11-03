@@ -413,11 +413,32 @@
     "summary": "Accepté le 2026-11-03 : quatre blocs (sourate et verset, arabe, traduction, onde) dans leurs boîtes par forme de cadre, style par texte (taille relative, fond aucun, transparent, flou ou plein), fond vidéo muet calé par vtime, anciens réglages convertis ; capacité des boîtes par défaut identique à l'ancien rendu, flou mesuré à ≈ +3,6 ms par image en 1080p."
   },
   {
+    "slug": "adr-0021-choix-du-format-d-editeur",
+    "title": "ADR-0021 — Le choix du format d'éditeur d'export (téléphone)",
+    "section": "Décisions",
+    "file": "docs/adr/0021-choix-du-format-d-editeur.md",
+    "summary": "Accepté le 2026-11-03 : une règle pure par rôle (qui est interrogé, quel éditeur sans choix), la préférence editorMode sur le compte, une fenêtre modale avec trois cartes, explication et animation SVG/CSS (images fixes sans mouvement), « choisir plus tard » valable pour la séance, le récitateur en pas à pas sans question, la même présentation dans les paramètres."
+  },
+  {
     "slug": "adr-0020-editeur-d-export-calque-partage",
     "title": "ADR-0020 — L'éditeur de la vidéo d'export",
     "section": "Décisions",
     "file": "docs/adr/0020-editeur-d-export-calque-partage.md",
     "summary": "Accepté le 2026-11-03 : l'aperçu garde la vraie fonction de dessin et reçoit un calque de zones transparentes partagé (toucher, glisser avec aimants, poignées de 44 px, pincement, clavier, annonces) ; gestes en machine à états sans DOM, brouillon pendant le geste, sections de réglages communes à la feuille du téléphone et à l'inspecteur du bureau, registre des éditeurs, un seul bouton Exporter."
+  },
+  {
+    "slug": "adr-0022-editeur-pas-a-pas",
+    "title": "ADR-0022 — L'éditeur « Pas à pas » de la vidéo d'export",
+    "section": "Décisions",
+    "file": "docs/adr/0022-editeur-pas-a-pas.md",
+    "summary": "Accepté le 2026-11-03 : trois étapes (le cadre, les textes, exporter) pour le récitateur, logique pure testée sans DOM (garde de navigation, progression mémorisée par récitation), aperçu verrouillé hors de l'étape des textes, étape du cadre gardée montée pour ne pas couper l'envoi d'une vidéo de fond, sections de réglages partagées avec le plateau et le bureau."
+  },
+  {
+    "slug": "adr-0023-table-de-montage-chronologie",
+    "title": "ADR-0023 — La table de montage : une chronologie sur l'axe de toute la session",
+    "section": "Décisions",
+    "file": "docs/adr/0023-table-de-montage-chronologie.md",
+    "summary": "Accepté le 2026-11-03 : chronologie (règle, passages, onde, fond, tête de lecture) sur l'axe de toute la session, la vidéo de fond recommençant ou glissant sous chaque plage depuis son début, logique pure testée (zoom, tête, blocs, fond), tête de lecture dans un magasin observable, onde et vignettes factorisées, trois états lisibles, aide du premier affichage."
   },
   {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",

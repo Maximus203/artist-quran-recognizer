@@ -16,7 +16,7 @@ export const DESKTOP_QUERY = "(min-width: 1024px)";
  * dans le HTML du serveur), et un premier rendu « téléphone » sur un grand écran monterait pour rien l'éditeur du
  * téléphone (et userait son aide du premier affichage).
  */
-function useScreen(query: string): boolean {
+export function useScreen(query: string): boolean {
   const [matches, setMatches] = useState(
     () => typeof window !== "undefined" && window.matchMedia(query).matches,
   );

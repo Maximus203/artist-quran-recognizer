@@ -12,6 +12,8 @@ export const FIRST_HINT_MS = 6000;
 
 export function useFirstHint(
   key: string = FIRST_HINT_KEY,
+  /** Faux : l'aide attend (le pas à pas ne la montre qu'en arrivant à l'étape des textes). */
+  enabled: boolean = true,
   /** `null` : l'aide reste jusqu'à ce qu'on la ferme (un texte à lire, pas une main qui touche). */
   hideAfterMs: number | null = FIRST_HINT_MS,
 ): {
@@ -22,6 +24,7 @@ export function useFirstHint(
 } {
   const [show, setShow] = useState(false);
   useEffect(() => {
+    if (!enabled) return;
     let timer: number | undefined;
     let seen = false;
     try {
@@ -36,7 +39,7 @@ export function useFirstHint(
         timer = window.setTimeout(() => setShow(false), hideAfterMs);
     }
     return () => window.clearTimeout(timer);
-  }, [key, hideAfterMs]);
+  }, [key, enabled, hideAfterMs]);
   const dismiss = useCallback(() => setShow(false), []);
   const reopen = useCallback(() => setShow(true), []);
   return { show, dismiss, reopen };

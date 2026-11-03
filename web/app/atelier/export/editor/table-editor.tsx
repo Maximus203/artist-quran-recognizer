@@ -59,7 +59,7 @@ export function TableEditor(editor: EditorProps) {
     patch: editor.patch,
     sourceSize: editor.preview.sourceSize,
   });
-  const hint = useFirstHint(TABLE_HINT_KEY, null);
+  const hint = useFirstHint(TABLE_HINT_KEY, true, null);
   const { selected } = controller;
   const { peaks, intervals } = editor.preview;
   const duration = peaks?.duration ?? 0;

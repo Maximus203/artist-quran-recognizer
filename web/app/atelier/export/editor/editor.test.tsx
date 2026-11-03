@@ -17,6 +17,7 @@ import {
 import { ExportEditor } from "./export-editor";
 import { BackgroundSection } from "./frame-sections";
 import { PlateauEditor } from "./plateau-mobile";
+import { StepEditor } from "./step-editor";
 import { TableEditor } from "./table-editor";
 import {
   ArabicLockNote,
@@ -63,11 +64,11 @@ describe("les éditeurs et leur registre", () => {
     expect(isEditorMode(undefined)).toBe(false);
   });
 
-  it("le plateau est enregistré ; un mode sans éditeur retombe sur lui", () => {
+  it("le plateau est enregistré ; un mode sans éditeur (la table) retombe sur lui", () => {
     expect(EDITORS.plateau).toBe(PlateauEditor);
     expect(editorFor("plateau")).toBe(PlateauEditor);
     expect(editorFor("table")).toBe(TableEditor);
-    expect(editorFor("pas")).toBe(PlateauEditor);
+    expect(editorFor("pas")).toBe(StepEditor);
   });
 });
 
@@ -377,10 +378,13 @@ describe("ExportEditor (le contrat d'intégration)", () => {
     expect(html).toContain("Récitation du vendredi");
   });
 
-  it("un mode sans éditeur (pas) montre le plateau", () => {
+  it("chaque mode monte son éditeur : la table de montage et le pas à pas", () => {
+    expect(
+      renderToStaticMarkup(<ExportEditor {...props()} mode="table" />),
+    ).toContain('data-testid="editor-table"');
     expect(
       renderToStaticMarkup(<ExportEditor {...props()} mode="pas" />),
-    ).toContain('data-testid="editor-plateau"');
+    ).not.toContain('data-testid="editor-plateau"');
   });
 
   it("l'export désactivé l'est sur le bouton", () => {

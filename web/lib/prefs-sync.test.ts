@@ -70,6 +70,20 @@ describe("cache local", () => {
     expect(parseCache(raw, 7)).toEqual({ prefs, pending: { volume: 0.4 } });
   });
 
+  it("un cache écrit avant l'arrivée d'une clé garde ses modifications en attente", () => {
+    const { editorMode: _added, ...old } = PREFERENCE_DEFAULTS;
+    const raw = JSON.stringify({
+      v: 1,
+      user: 4,
+      prefs: old,
+      pending: { theme: "dark" },
+    });
+    const cache = parseCache(raw, 4);
+    expect(cache).not.toBeNull();
+    expect(cache?.pending).toEqual({ theme: "dark" });
+    expect(cache?.prefs.editorMode).toBeNull();
+  });
+
   it("refuse le cache d'un AUTRE compte (partage d'un navigateur)", () => {
     const raw = serializeCache(7, PREFERENCE_DEFAULTS, {});
     expect(parseCache(raw, 8)).toBeNull();

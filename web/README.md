@@ -238,6 +238,7 @@ Plusieurs testeurs utilisent le même atelier. Chacun a un **compte** (pseudonym
 | `shortcutsEnabled` | booléen | `true` |
 | `reviewTab` | `sig` · `list` · `truth` | `sig` |
 | `defaultVisibility` | `global` · `private` : portée proposée à l'import et à l'enregistrement | `global` |
+| `editorMode` | `plateau` · `table` · `pas` · `null` : format de l'éditeur de la vidéo d'export sur téléphone (ADR-0021). Un autre texte est refusé (`400`) ; `null` = jamais choisi (le récitateur a alors le pas à pas, les autres sont interrogés à la première ouverture) | `null` |
 
 Appliquer les préférences : le serveur les lit dans `app/layout.tsx` et les pose sur `<html>` (thème, police, taille) ; le navigateur les reçoit en props (`ShellProvider`, `app/atelier/shell.tsx`) et écrit par `PATCH` groupé au changement (anti-rebond 600 ms, reprise après échec). `localStorage` (`aqr.prefs.v2`) ne sert que de cache pour la page de connexion et pour les changements qui n'ont pas pu partir ; le serveur fait foi.
 

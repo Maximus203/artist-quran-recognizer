@@ -1,0 +1,307 @@
+/*
+ * Éditeur « Pas à pas » de la vidéo d'export (téléphone) — composants `.xp-`. Spécification : maquette « Le pas à
+ * pas » (direction C), docs/adr/0022-editeur-pas-a-pas.md. Les couleurs, espacements, rayons et mouvements viennent
+ * de tokens.css ; les réglages eux-mêmes réutilisent les composants `.xe-` de export-editor.css. Toutes les cibles
+ * mesurent 44 px au moins sur le bouton lui-même (`--hit`) ; les mouvements passent sous la règle globale
+ * `prefers-reduced-motion` de tokens.css.
+ */
+
+.xp-root {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: calc(100dvh - var(--header-h));
+  min-height: 520px;
+  margin-inline: calc(var(--gutter) * -1);
+  background: var(--bg);
+  min-width: 0;
+}
+
+/* L'aperçu reste en haut ; un peu plus grand à l'étape des textes, où on le manipule. */
+.xp-stage {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  height: clamp(230px, 38dvh, 380px);
+  background: var(--bg);
+}
+.xp-stage[data-step="textes"] {
+  height: clamp(240px, 40dvh, 420px);
+}
+
+/* L'étape, dessous : un panneau qui monte sous l'aperçu. */
+.xp-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+/* ── Les pastilles ───────────────────────────────────────────────────────────────────── */
+.xp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 10px var(--gutter) 4px;
+  list-style: none;
+}
+.xp-step {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--hit);
+  padding: 0;
+  text-align: left;
+  border-radius: var(--r-sm);
+}
+.xp-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  transition: background var(--dur-2) var(--ease);
+}
+.xp-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-3);
+}
+.xp-name i {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 12px;
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.xp-step:hover .xp-name {
+  color: var(--text);
+}
+.xp-step:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.xp-step[aria-current="step"] .xp-bar {
+  background: var(--accent);
+}
+.xp-step[aria-current="step"] .xp-name {
+  color: var(--text);
+}
+.xp-step[aria-current="step"] .xp-name i {
+  background: var(--text);
+  color: var(--bg);
+}
+.xp-step[data-done] .xp-bar {
+  background: var(--text-3);
+}
+.xp-step[data-done] .xp-name i {
+  background: var(--ok);
+  color: var(--bg);
+}
+
+/* ── Le contenu de l'étape ───────────────────────────────────────────────────────────── */
+.xp-body {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px var(--gutter) var(--sp-5);
+  overscroll-behavior: contain;
+}
+.xp-pane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-content: start;
+  min-width: 0;
+  animation: xp-in var(--dur-3) var(--ease-out);
+}
+.xp-pane[hidden] {
+  display: none;
+}
+@keyframes xp-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+.xp-head h2 {
+  margin: 0;
+  font: 400 var(--fs-2xl) / 1.1 var(--font-display);
+  outline: none;
+}
+.xp-head p {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-md);
+  color: var(--text-2);
+}
+
+.xp-head[data-compact] p {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+/* L'encart d'ouverture : déjà prête, exporter maintenant. */
+.xp-ready {
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: start;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.xp-ready p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.xp-ready .xp-ready-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 700;
+  color: var(--ok);
+}
+.xp-ready[data-state="blocked"] .xp-ready-title {
+  color: var(--text);
+}
+
+/* Une carte par élément réglé. */
+.xp-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  min-width: 0;
+}
+.xp-card-title {
+  margin: 0;
+  font: 400 var(--fs-xl) / 1.1 var(--font-display);
+}
+.xp-source {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  margin: 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.xp-source svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--text-3);
+}
+.xp-source b {
+  color: var(--text);
+}
+.xp-off {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+/* Les onglets des éléments : le nom, et un œil barré si l'élément est masqué. */
+.xp-pane .xr-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Le résumé de l'étape « Exporter ». */
+.xp-sum {
+  margin: 0;
+  display: grid;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.xp-sum > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-3);
+  min-height: var(--hit);
+  padding: var(--sp-2) 0;
+}
+.xp-sum > div + div {
+  border-top: 1px solid var(--border-subtle);
+}
+.xp-sum dt {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.xp-sum dd {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.xp-state {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+/* La fenêtre des passages (partagée par tous les éditeurs) : le numéro d'une plage et son nom se touchent au pouce. */
+.xe-dialog .xr-pitem .pnum {
+  min-width: var(--hit);
+}
+.xe-dialog .xr-pitem .pname {
+  min-height: var(--hit);
+}
+
+/* ── Précédent / Suivant, toujours sous le pouce ─────────────────────────────────────── */
+.xp-foot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--gutter)
+    calc(var(--sp-2) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+}
+.xp-foot[data-single] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.xp-btn {
+  min-height: 52px;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+}
+.xp-ready .xp-btn {
+  min-height: var(--hit);
+}
+
+/* Une tablette (700 à 1023 px) garde le pas à pas : le contenu reste lisible, au centre. */
+@media (min-width: 700px) {
+  .xp-steps,
+  .xp-body,
+  .xp-foot {
+    width: 100%;
+    max-width: 640px;
+    justify-self: center;
+  }
+  .xp-foot {
+    padding-inline: var(--sp-4);
+  }
+}
