@@ -73,6 +73,20 @@ PR : #181
 
 **Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
 
+## 2026-11-03 — Le 1080p est la résolution maximale de l'export vidéo
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Les formats « Grand écran » (1440p) et « Maximum » (4K) disparaissent de l'export vidéo, ainsi que
+1440p et 2160p dans « Sur mesure ». Il reste Léger (720p), Standard (1080p, 30 im/s) et Fluide (1080p, 60 im/s), et les
+résolutions de 360p à 1080p. Un réglage enregistré en 1440p ou 4K passe à 1080p sans rien perdre d'autre. L'API et
+l'outil MCP `export_video` refusent `resolution` 1440 et 2160 (400 avec la liste des valeurs acceptées).
+
+**Pourquoi / décision.** Le rendu tourne sur le serveur d'Alpha, partagé avec d'autres projets et limité à 2 cœurs et
+2 Go : une 4K coûte beaucoup de temps et de mémoire pour un gain invisible sur un écran de téléphone ou de partage.
+Décision du mainteneur, pour la santé du serveur. Le palier de poids « toujours lourd en 2160p à 60 im/s » disparaît
+avec elle.
+
 ## 2026-11-03 — L'export avec la vidéo d'origine en fond ne prend plus des heures
 Étiquettes : utilisateur, technique, décision
 PR : -

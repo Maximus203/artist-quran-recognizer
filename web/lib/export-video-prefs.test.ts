@@ -59,3 +59,28 @@ describe("nouveaux réglages (remplir, position, onde, accent)", () => {
     ).toBe(false);
   });
 });
+
+describe("plafond de résolution : 1080p", () => {
+  it("ramène un ancien réglage 1440p ou 4K à 1080p au lieu de le refuser", () => {
+    for (const resolution of [1440, 2160]) {
+      const parsed = videoPrefsSchema.safeParse({
+        ...DEFAULT_VIDEO_PREFS,
+        resolution,
+      });
+      expect(parsed.success).toBe(true);
+      expect(parsed.success && parsed.data.resolution).toBe(1080);
+    }
+  });
+
+  it("garde les résolutions inférieures et refuse une valeur inconnue", () => {
+    for (const resolution of [360, 480, 720, 1080])
+      expect(
+        videoPrefsSchema.parse({ ...DEFAULT_VIDEO_PREFS, resolution })
+          .resolution,
+      ).toBe(resolution);
+    expect(
+      videoPrefsSchema.safeParse({ ...DEFAULT_VIDEO_PREFS, resolution: 999 })
+        .success,
+    ).toBe(false);
+  });
+});

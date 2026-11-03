@@ -76,7 +76,7 @@ export const videoJobOptionsSchema = z
         },
       )
       .optional(),
-    /** Résolution : côté court de l'image en pixels (360, 480, 720, 1080, 1440 ou 2160). */
+    /** Résolution : côté court de l'image en pixels (360, 480, 720 ou 1080 : le 1080p est le maximum). */
     resolution: z
       .number()
       .refine(

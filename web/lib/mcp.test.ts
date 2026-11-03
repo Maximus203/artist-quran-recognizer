@@ -184,7 +184,7 @@ describe("outils d'export vidéo et de gestion", () => {
       {
         id: ID,
         fps: 60,
-        resolution: 2160,
+        resolution: 1080,
         ranges: [{ start: 1, end: 9, name: "2:255" }],
         per_verse: false,
         orientation: "9:16",
@@ -199,7 +199,7 @@ describe("outils d'export vidéo et de gestion", () => {
           options: {
             orientation: "9:16",
             fps: 60,
-            resolution: 2160,
+            resolution: 1080,
             ranges: [{ start: 1, end: 9, name: "2:255" }],
             per_verse: false,
           },
