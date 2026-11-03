@@ -63,6 +63,8 @@ export const videoJobOptionsSchema = z
       .union([z.number().int().min(16).max(140), sizeName])
       .optional(),
     show_translation: z.boolean().optional(),
+    /** Écriture arabe affichée (défaut oui) ; sans elle, la vidéo ne montre que la traduction. */
+    show_arabic: z.boolean().optional(),
     /** Images par seconde : 30 ou 60 (plus fluide, plus lourd). */
     fps: z
       .number()
@@ -146,6 +148,11 @@ export const videoJobOptionsSchema = z
     message:
       "per_verse / suggest et ranges s'excluent : choisis une découpe automatique ou tes propres plages",
     path: ["suggest"],
+  })
+  .refine((o) => !(o.show_arabic === false && o.show_translation === false), {
+    message:
+      "show_arabic et show_translation ne peuvent pas être tous les deux à false : garde au moins une écriture",
+    path: ["show_arabic"],
   });
 
 export type VideoJobOptions = z.infer<typeof videoJobOptionsSchema>;
@@ -186,6 +193,7 @@ export function videoPrefsFromOptions(
     ),
     showTranslation:
       options.show_translation ?? DEFAULT_VIDEO_PREFS.showTranslation,
+    showArabic: options.show_arabic ?? DEFAULT_VIDEO_PREFS.showArabic,
     resolution: options.resolution ?? DEFAULT_VIDEO_PREFS.resolution,
     fps: options.fps ?? DEFAULT_VIDEO_PREFS.fps,
     fill: options.fill ?? DEFAULT_VIDEO_PREFS.fill,
@@ -232,6 +240,8 @@ export function videoOptionsCatalog() {
       ),
     },
     show_translation: "boolean",
+    show_arabic:
+      "boolean (défaut true) : false = la vidéo n'affiche que la traduction ; show_arabic et show_translation ne peuvent pas être tous les deux à false.",
     fps: {
       values: VIDEO_FPS_CHOICES,
       notes: "60 = plus fluide, fichier environ deux fois plus lourd.",
@@ -296,6 +306,7 @@ export function videoOptionsCatalog() {
       arabic_size: DEFAULT_VIDEO_PREFS.arabicSize,
       translation_size: DEFAULT_VIDEO_PREFS.translationSize,
       show_translation: DEFAULT_VIDEO_PREFS.showTranslation,
+      show_arabic: DEFAULT_VIDEO_PREFS.showArabic,
       fps: DEFAULT_VIDEO_FPS,
       resolution: DEFAULT_VIDEO_RESOLUTION,
       fill: DEFAULT_VIDEO_PREFS.fill,

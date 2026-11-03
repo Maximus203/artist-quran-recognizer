@@ -116,7 +116,11 @@ export function VideoPreview(inputs: PreviewInputs) {
     let cancelled = false;
     let close: (() => void) | undefined;
     (async () => {
-      const cards = frameCards(intervals, prefs.showTranslation);
+      const cards = frameCards(
+        intervals,
+        prefs.showTranslation,
+        prefs.showArabic,
+      );
       const pick = worstCase(cards);
       const { width, height } = previewSize(prefs, sourceSize);
       canvas.width = width;
@@ -200,7 +204,11 @@ export function VideoPreview(inputs: PreviewInputs) {
     };
     stopRef.current = finish;
     try {
-      const cards = frameCards(intervals, prefs.showTranslation);
+      const cards = frameCards(
+        intervals,
+        prefs.showTranslation,
+        prefs.showArabic,
+      );
       const pick = worstCase(cards);
       const { width, height } = previewSize(prefs, sourceSize);
       canvas.width = width;

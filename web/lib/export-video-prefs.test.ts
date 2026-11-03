@@ -8,6 +8,11 @@ describe("videoPrefsSchema", () => {
     );
   });
 
+  it("affiche l'arabe quand le réglage mémorisé est antérieur à l'option", () => {
+    const { showArabic: _omitted, ...previous } = DEFAULT_VIDEO_PREFS;
+    expect(videoPrefsSchema.parse(previous).showArabic).toBe(true);
+  });
+
   it("refuse une taille d'arabe hors bornes", () => {
     expect(
       videoPrefsSchema.safeParse({ ...DEFAULT_VIDEO_PREFS, arabicSize: 10 })

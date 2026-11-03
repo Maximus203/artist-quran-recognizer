@@ -125,19 +125,22 @@ export function Switch({
   label,
   hint,
   testId,
+  disabled = false,
 }: {
   checked: boolean;
   onChange: (value: boolean) => void;
   label: ReactNode;
   hint?: ReactNode;
   testId?: string;
+  disabled?: boolean;
 }) {
   return (
-    <label className="xr-sw">
+    <label className="xr-sw" data-disabled={disabled || undefined}>
       <input
         type="checkbox"
         role="switch"
         checked={checked}
+        disabled={disabled}
         data-testid={testId}
         onChange={(event) => onChange(event.target.checked)}
       />

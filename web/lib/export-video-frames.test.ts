@@ -51,6 +51,18 @@ describe("frameCards", () => {
     expect(cards[0].card.translation).toBeNull();
   });
 
+  it("honore showArabic : pas d'arabe, la référence et la traduction restent", () => {
+    const [card] = frameCards([verse()], true, false);
+    expect(card.card.arabic).toBe("");
+    expect(card.card.translation).not.toBeNull();
+    expect(card.card.refLabel).toContain("2:153");
+  });
+
+  it("garde l'arabe par défaut", () => {
+    const [card] = frameCards([verse()], false);
+    expect(card.card.arabic).toBe("يَا أَيُّهَا الَّذِينَ آمَنُوا");
+  });
+
   it("retombe sur un surlignage nul quand les temps de mots sont absents", () => {
     const cards = frameCards([verse({ word_times: undefined })], true);
     expect(cards[0].live).toBeNull();

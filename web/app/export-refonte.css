@@ -399,6 +399,10 @@
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+.xr-sw input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .xr-sw span {
   font-size: var(--fs-sm);
 }

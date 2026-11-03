@@ -184,7 +184,25 @@ describe("options de l'export vidéo par l'API", () => {
     expect(prefs.translationSize).toBe(24);
     expect(prefs.orientation).toBe("16:9");
     expect(prefs.showTranslation).toBe(true);
+    expect(prefs.showArabic).toBe(true);
     expect(prefs.background).toBeNull();
+  });
+
+  it("show_arabic à false : une vidéo sans écriture arabe, traduction gardée", () => {
+    const options = videoJobOptionsSchema.parse({ show_arabic: false });
+    expect(videoPrefsFromOptions(options, false).showArabic).toBe(false);
+    expect(videoPrefsFromOptions(options, false).showTranslation).toBe(true);
+  });
+
+  it("refuse les deux écritures coupées à la fois", () => {
+    const result = videoJobOptionsSchema.safeParse({
+      show_arabic: false,
+      show_translation: false,
+    });
+    expect(result.success).toBe(false);
+    expect(
+      videoJobOptionsSchema.safeParse({ show_arabic: false }).success,
+    ).toBe(true);
   });
 
   it("couvre les options de remplissage, de hauteur, d'onde, d'accent et de nom", () => {

@@ -17,6 +17,14 @@ PR : #195
 
 **Pourquoi / décision.** Décision du mainteneur : le récitateur doit pouvoir réécouter et se placer dans l'audio, pas seulement exporter ; les règles de sécurité du serveur ne changent pas (le récitateur n'a toujours pas la revue ni les sous-titres, `web/lib/access.ts`). Le direct reste masqué pour le récitateur tant qu'il n'est pas optimal.
 
+## 2026-11-03 — L'écriture arabe se retire de la vidéo exportée
+Étiquettes : utilisateur, technique
+PR : #194
+
+**Ce qui change.** Dans l'export vidéo, un interrupteur « Afficher l’écriture arabe » s'ajoute à « Afficher la traduction ». Une vidéo peut ainsi ne montrer que la référence et la traduction en français. Les deux écritures ne peuvent pas être coupées ensemble. L'API et l'outil MCP `export_video` acceptent `show_arabic` (défaut : oui) ; `show_arabic` et `show_translation` à `false` sont refusés.
+
+**Pourquoi / décision.** Demande du mainteneur : pouvoir exporter une vidéo en français seul, sans écriture arabe. Le texte arabe reste celui du corpus (I1) ; la traduction est rendue sans modification (I2).
+
 ## 2026-11-03 — Playlist : la liste des audios passe à côté du lecteur
 Étiquettes : utilisateur
 PR : #192
@@ -64,6 +72,19 @@ PR : #181
 **Ce qui change.** Un troisième rôle, **récitateur**, pour celles et ceux qui ne font qu'enregistrer des récitations. Son interface se réduit à sa liste de sessions, à l'enregistrement (« Nouvel essai », sans écoute en direct) et à l'export **vidéo** seul, sans vérification ni sous-titres. Le serveur lui refuse la revue et les sous-titres. Le rôle se choisit sur l'invitation et se change dans la gestion des comptes.
 
 **Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
+
+## 2026-11-03 — Plus de double barre de défilement sur l'accueil
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** Sur un écran de bureau peu haut, la page d'accueil avait deux barres de défilement et un fond qui
+s'arrêtait en cours de page (le panneau des sessions finissait au milieu de l'écran, avec du vide dessous). Il n'y a
+plus qu'un seul défilement, celui de la zone centrale.
+
+**Pourquoi / décision.** Un champ masqué (`.sr`, en `position: absolute`) dans la zone centrale s'accrochait au
+document : il échappait au défilement de la zone et allongeait la page de plusieurs centaines de pixels. La zone
+centrale (`.center`) est maintenant le bloc contenant de ses éléments absolus. Mesuré sur toutes les pages à
+plusieurs tailles d'écran (bureau 1534 × 700 et 1280 × 720, 1100 px, téléphone) : un seul défilement actif partout.
 
 ## 2026-11-03 — Une vidéo envoyée ressort telle quelle, avec la traduction par-dessus
 Étiquettes : utilisateur, technique, décision
