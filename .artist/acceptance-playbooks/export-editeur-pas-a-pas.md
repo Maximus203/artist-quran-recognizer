@@ -1,13 +1,13 @@
 # Export vidéo — l'éditeur « Pas à pas » (phase 3b)
 > Surfaces : [WEB] (mobile 360 / 390 / 430 px tactile d'abord ; thèmes sombre et clair) · [CALC] (fonctions pures)
-> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-pas-a-pas` @ aa5bfea (PR #204) · ADR-0022
+> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-pas-a-pas` fusionnée avec `origin/develop` @ a8a7974 (PR #204) · ADR-0022
 > Périmètre : trois étapes (Le cadre, Les textes, Exporter), encart « déjà prête », pastilles, Précédent / Suivant, progression
 > mémorisée, aperçu verrouillé hors de l'étape des textes, étape du cadre gardée montée, sortie de l'éditeur ; correctif du 403 du
-> récitateur sur `/export/subtitles` ; cibles de 44 px dans la fenêtre des passages. Hors périmètre : défaut du rôle récitateur et
-> choix du format (phase 4), table de montage (phase 3a).
-> Environnement : atelier construit dans un worktree jetable avec UN commit temporaire local (`editorMode="pas"` pour tous, jamais
-> poussé : la phase 4 posera le défaut du rôle), base jetable (`harness/h.mjs`), session d'essai avec le texte du corpus (sourate
-> 112) et traductions d'essai, comptes `admin_test` et `recitant_test`. Jamais d'audio de personne.
+> récitateur sur `/export/subtitles` ; cibles de 44 px dans la fenêtre des passages ; intégration avec le choix du format (ADR-0021).
+> Hors périmètre : table de montage (phase 3a).
+> Environnement : atelier construit dans un worktree jetable depuis la branche fusionnée avec develop (aucun commit temporaire :
+> le récitateur arrive sur le pas à pas par la règle du rôle de la phase 4), base jetable (`harness/h.mjs`), session d'essai avec le
+> texte du corpus (sourate 112) et traductions d'essai, comptes `admin_test` et `recitant_test`. Jamais d'audio de personne.
 > Gestes : Chrome piloté par Playwright ; au toucher, `Input.dispatchTouchEvent`. Script rejouable : `harness/proof-pas.mjs`.
 > Critère d'arrêt : tous les must-pass ✅, tous les must-fail bloqués, console et réseau propres (hors `/favicon.ico`, existant),
 > aucun défilement horizontal.
@@ -24,10 +24,10 @@ réglages conseillés » et « Exporter maintenant » actif, aperçu sans calque
 
 ### P.2 — [WEB] Trois touchers pour une belle vidéo, sans rien régler
 **Priorité** : critique · **Technique** : parcours le plus court
-**Action** : compte récitateur : « Exporter maintenant » → « Exporter » (fenêtre-résumé) → « Retélécharger ».
-**Attendu** : un MP4 non vide, dont l'image ressemble à l'aperçu ; la fenêtre-résumé reste ouverte pendant le rendu.
-**Preuve** : `proof-pas.mjs --role recitant --export 1` (le parcours part du gros bouton de l'étape 3 ; le chemin court de l'encart
-ouvre la même fenêtre : `pas-ready-export` → `video-sheet`) ; export réel, image et comparaison dans `shots-pas/recitant-390-dark/`.
+**Action** : compte récitateur, vrais touchers : « Exporter maintenant » → « Exporter » (fenêtre-résumé) → « Retélécharger ».
+**Attendu** : un MP4 non vide, dont l'image ressemble à l'aperçu ; aucune erreur en console ni 403.
+**Preuve** : `proof-pas-short.mjs` (trois touchers, MP4, `ffprobe`, image) ; en plus `proof-pas.mjs --export 1` (export depuis le gros
+bouton de l'étape 3, image comparée à l'aperçu : écart moyen de niveaux de gris 1,41 / 255).
 
 ### P.3 — [WEB] Étape 2 : l'aperçu se manipule, un onglet par élément
 **Priorité** : critique · **Technique** : transition-état
@@ -80,6 +80,12 @@ administrateur → l'onglet « Vérifier ». Aucune erreur 403 en console pour l
 **Preuve** : `proof-pas.mjs` (« sortie (onLeave)… », « console et réseau… »), `11-sortie-mes-recitations.png`.
 
 ## Must-fail
+
+### P.10 — [WEB] Intégration avec le choix du format
+**Priorité** : critique · **Technique** : partition (rôle)
+**Attendu** : le récitateur arrive directement sur le pas à pas, aucune fenêtre de choix, aucune préférence enregistrée ; un administrateur
+qui ouvre l'export pour la première fois voit la fenêtre de choix, prend « Pas à pas », puis le retrouve sans question.
+**Preuve** : `proof-gate.mjs` (10 contrôles), `shots-gate/recitant-1-ouverture.png`, `admin-1-fenetre-de-choix.png`, `admin-2-pas-a-pas.png`.
 
 ### F.1 — [WEB] Aucune étape verrouillée, aucune étape inconnue
 **Attendu** : `moveTo` refuse (même objet) une étape inconnue ou la même ; une valeur mémorisée abîmée redonne l'étape 1 sans erreur.
