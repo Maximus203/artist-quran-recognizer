@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — La traduction s'affiche dans le lecteur de playlist
+Étiquettes : utilisateur
+PR : #0
+
+**Ce qui change.** Le lecteur de playlist affiche en haut, au-dessus des commandes, le verset entendu à cet instant : texte arabe, référence et traduction avec sa source. Il suit la lecture, passe au verset suivant et garde son emplacement au changement d'audio.
+
+**Pourquoi / décision.** La traduction est ce que l'application met en avant ; elle manquait dans la vue playlist. Le texte arabe vient du résultat (corpus), la traduction est rendue sans modification (I1, I2) ; un passage incertain, déduit ou non coranique n'affiche aucun verset (I3, I5).
+
 ## 2026-11-03 — Des playlists pour écouter des audios à la suite
 Étiquettes : utilisateur, technique
 PR : #184

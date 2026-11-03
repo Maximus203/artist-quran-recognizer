@@ -196,3 +196,39 @@
   grid-template-columns: 1fr auto;
   gap: var(--sp-2);
 }
+
+/* La traduction, tout en haut du lecteur : c'est ce que l'application met en avant */
+.pl-verse {
+  display: grid;
+  gap: var(--sp-3);
+  min-height: 11rem;
+  align-content: start;
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.pl-verse--wait {
+  align-content: center;
+}
+.pl-arabic {
+  margin: 0;
+  text-align: center;
+}
+.pl-ref {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted, inherit);
+}
+.pl-verse .translation {
+  margin: 0;
+}
+.pl-verse-blank {
+  min-height: 8rem;
+}
+@media (max-width: 640px) {
+  .pl-verse {
+    padding: var(--sp-3);
+    min-height: 9rem;
+  }
+}
