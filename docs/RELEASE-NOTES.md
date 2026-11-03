@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-03 — La traduction s'affiche dans le lecteur de playlist
 Étiquettes : utilisateur
-PR : #0
+PR : #191
 
 **Ce qui change.** Le lecteur de playlist affiche en haut, au-dessus des commandes, le verset entendu à cet instant : texte arabe, référence et traduction avec sa source. Il suit la lecture, passe au verset suivant et garde son emplacement au changement d'audio.
 
