@@ -492,6 +492,16 @@
     opacity: 0;
   }
 }
+/* Un volet qu'on cache sans le démonter. */
+.xe-pane {
+  display: contents;
+}
+.xe-pane[hidden] {
+  display: none;
+}
+.xe-sheet[hidden] {
+  display: none;
+}
 .xe-sheet-grab {
   width: 36px;
   height: 4px;

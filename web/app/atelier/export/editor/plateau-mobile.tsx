@@ -102,6 +102,14 @@ export function PlateauEditor(editor: EditorProps) {
 
   const { selected } = controller;
   const tool = sheet && sheet.owner === selected ? sheet.key : null;
+  const fondOpen = selected === null && tool === "fond";
+  // La feuille « Fond » héberge l'envoi de la vidéo de fond : une fois ouverte, elle reste montée (cachée) pour que
+  // fermer la feuille ou choisir un élément n'arrête pas l'envoi.
+  const [fondKept, setFondKept] = useState(false);
+  const keepFond = fondKept || fondOpen;
+  useEffect(() => {
+    if (fondOpen) setFondKept(true);
+  }, [fondOpen]);
 
   const openTool = (key: string, button: HTMLElement) => {
     opener.current = button;
@@ -168,10 +176,11 @@ export function PlateauEditor(editor: EditorProps) {
       </div>
 
       <div className="xe-dock" data-testid="editor-dock">
-        {tool ? (
+        {keepFond || tool ? (
           <div
             ref={sheetRef}
             className="xe-sheet"
+            hidden={!tool}
             role="region"
             aria-label={sheetTitle}
             tabIndex={-1}
@@ -199,7 +208,16 @@ export function PlateauEditor(editor: EditorProps) {
               </button>
             </header>
             <div className="xe-sheet-body">
-              {selected === null ? (
+              {keepFond ? (
+                <div className="xe-pane" hidden={!fondOpen}>
+                  <FrameSections
+                    editor={editor}
+                    only="fond"
+                    onOpenPassages={() => setPassagesOpen(true)}
+                  />
+                </div>
+              ) : null}
+              {!tool || fondOpen ? null : selected === null ? (
                 <FrameSections
                   editor={editor}
                   only={tool as FrameToolKey}
@@ -215,7 +233,8 @@ export function PlateauEditor(editor: EditorProps) {
               )}
             </div>
           </div>
-        ) : (
+        ) : null}
+        {tool ? null : (
           <>
             <div
               ref={overflowFade}

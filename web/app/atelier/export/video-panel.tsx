@@ -6,8 +6,10 @@ import {
   isVideoExtension,
   loadSourceVideo,
 } from "@/lib/export-video-assets";
+import { ensureClipOnServer } from "@/lib/background-video-client";
 import {
   chooseBackground,
+  CLIP_BACKGROUND_ID,
   SOURCE_BACKGROUND_ID,
 } from "@/lib/export-video-backgrounds";
 import { videoCardInputs } from "@/lib/export-video-cards";
@@ -65,6 +67,12 @@ import type { ListeningPeaks } from "@/lib/listening";
 import type { Interval, Recognition } from "@/lib/recognition";
 import { useStoreValue } from "../hooks";
 import type { usePlayer } from "../use-player";
+import {
+  BackgroundVideoSection,
+  backgroundVideoPrefs,
+  backgroundVideoRequest,
+  type BackgroundVideoValue,
+} from "./background-video-section";
 import { ExportEditor } from "./editor/export-editor";
 import {
   DEFAULT_EDITOR_MODE,
@@ -175,6 +183,9 @@ export function VideoPanel({
   const [thumbs, setThumbs] = useState<Thumbs | null>(null);
   const [bgFile, setBgFile] = useState<File | null>(null);
   const [bgThumb, setBgThumb] = useState<string | null>(null);
+  // La vidéo de fond choisie (prête sur le serveur, fichier gardé pour l'aperçu et pour un renvoi éventuel).
+  const [clip, setClip] = useState<BackgroundVideoValue | null>(null);
+  const clipRef = useRef<BackgroundVideoValue | null>(null);
   const [ranges, setRanges] = useState<PlanRange[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [view, setView] = useState<View>({ a: 0, b: 1 });
@@ -473,6 +484,7 @@ export function VideoPanel({
   );
   const choice = chooseBackground(prefs.background, {
     hasUpload: bgFile !== null,
+    hasVideoUpload: clip !== null,
     isVideo,
   });
   const selectedBg =
@@ -536,7 +548,16 @@ export function VideoPanel({
   const apiJson = useMemo(
     () =>
       JSON.stringify(
-        { id: sessionId, ...exportVideoRequest(prefs, ranges, duration) },
+        {
+          id: sessionId,
+          ...exportVideoRequest(
+            prefs,
+            ranges,
+            duration,
+            undefined,
+            backgroundVideoRequest(clip),
+          ),
+        },
         null,
         2,
       ),
@@ -609,6 +630,39 @@ export function VideoPanel({
     [announce, onError, sessionId],
   );
 
+  /** Un changement de la vidéo de fond (choisie, mode, départ, retirée) : la valeur ET les réglages du compte. */
+  const changeClip = useCallback(
+    (value: BackgroundVideoValue | null) => {
+      clipRef.current = value;
+      setClip(value);
+      if (value) {
+        pickUpload(null);
+        patch((current) => ({
+          background: CLIP_BACKGROUND_ID,
+          backgroundVideo: backgroundVideoPrefs(value),
+          styles: applyBackgroundPanels(
+            current.styles,
+            current.background,
+            CLIP_BACKGROUND_ID,
+          ),
+        }));
+      } else
+        patch((current) =>
+          current.background === CLIP_BACKGROUND_ID
+            ? {
+                background: null,
+                styles: applyBackgroundPanels(
+                  current.styles,
+                  current.background,
+                  null,
+                ),
+              }
+            : {},
+        );
+    },
+    [patch, pickUpload],
+  );
+
   const run = useCallback(
     async (subset: PlanRange[], offset: number, useWhole: boolean) => {
       setPhase("render");
@@ -627,12 +681,24 @@ export function VideoPanel({
             ),
       );
       try {
+        // Ma vidéo : toujours prête sur le serveur juste avant le rendu (expirée ou perdue : renvoyée d'ici).
+        const chosen = clipRef.current;
+        if (prefsRef.current.background === CLIP_BACKGROUND_ID && chosen) {
+          const ready = await ensureClipOnServer(sessionId, {
+            uploadId: chosen.uploadId,
+            file: chosen.file,
+          });
+          if (ready.id !== chosen.uploadId)
+            changeClip({ ...chosen, uploadId: ready.id });
+        }
         const job = await startServerExport(
           sessionId,
           exportVideoRequest(
             prefsRef.current,
             useWhole ? [] : subset,
             duration,
+            undefined,
+            backgroundVideoRequest(clipRef.current),
           ),
           bgFile,
           savedRef.current.reuseVideos,
@@ -650,7 +716,16 @@ export function VideoPanel({
         onError(message);
       }
     },
-    [bgFile, duration, follow, onError, ranges.length, sessionId, sessionName],
+    [
+      bgFile,
+      changeClip,
+      duration,
+      follow,
+      onError,
+      ranges.length,
+      sessionId,
+      sessionName,
+    ],
   );
 
   // Retour sur la page : un export encore en file ou en cours reprend son affichage.
@@ -899,6 +974,10 @@ export function VideoPanel({
     </>
   );
 
+  /** La plus longue des récitations exportées : de quoi dire à la vidéo de fond si elle est plus courte ou plus longue. */
+  const longest = ranges.length
+    ? Math.max(...ranges.map((r) => r.end - r.start))
+    : duration;
   const whatSummary = whole
     ? `Tout l’audio · ${formatDurationFr(seconds)}`
     : `${ranges.length} plage${ranges.length > 1 ? "s" : ""} · ${formatDurationFr(seconds)}`;
@@ -986,6 +1065,7 @@ export function VideoPanel({
             intervals,
             peaks,
             upload: bgFile,
+            clip: clip?.file ?? null,
             isVideo,
             sourceSize,
             at: previewAt,
@@ -1000,6 +1080,15 @@ export function VideoPanel({
             upload: bgFile,
             uploadThumb: bgThumb,
             onUpload: pickUpload,
+            backgroundVideo: (
+              <BackgroundVideoSection
+                sessionId={sessionId}
+                recitationSeconds={longest}
+                parts={ranges.length}
+                value={clip}
+                onChange={changeClip}
+              />
+            ),
             onChooseBg: (id) => {
               pickUpload(null);
               patch((current) => ({

@@ -15,6 +15,7 @@ import {
   type EditorProps,
 } from "./editor-types";
 import { ExportEditor } from "./export-editor";
+import { BackgroundSection } from "./frame-sections";
 import { PlateauEditor } from "./plateau-mobile";
 import {
   ArabicLockNote,
@@ -284,6 +285,40 @@ describe("les sections de réglages", () => {
     expect(html).toContain("Largeur");
     expect(html).toContain("Centrer dans l’image");
     expect(html).toContain("Remettre à la place d’origine");
+  });
+});
+
+describe("l'emplacement du fond vidéo", () => {
+  const frame = {
+    isVideo: false,
+    sourceSize: null,
+    sourceUnreadable: false,
+    previewUnavailable: false,
+    selectedBg: "auto",
+    upload: null,
+    uploadThumb: null,
+    onUpload: noop,
+    onChooseBg: noop,
+  };
+  it("la section Fond y montre ce que la phase du fond vidéo lui donne", () => {
+    const html = renderToStaticMarkup(
+      <BackgroundSection
+        prefs={DEFAULT_VIDEO_PREFS}
+        patch={noop}
+        frame={{ ...frame, backgroundVideo: <p data-testid="slot">vidéo</p> }}
+      />,
+    );
+    expect(html).toContain('data-testid="slot"');
+  });
+  it("sans elle, rien n'est affiché à la place", () => {
+    const html = renderToStaticMarkup(
+      <BackgroundSection
+        prefs={DEFAULT_VIDEO_PREFS}
+        patch={noop}
+        frame={frame}
+      />,
+    );
+    expect(html).not.toContain('data-testid="slot"');
   });
 });
 

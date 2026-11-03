@@ -129,29 +129,31 @@ export function DesktopEditor(editor: EditorProps) {
           }
           data-testid="editor-inspector"
         >
-          {selected ? (
-            <ElementSections
-              controller={controller}
-              id={selected}
-              attribution={editor.preview.attribution}
-            />
-          ) : (
-            <>
-              <header className="xe-eh">
-                <span className="xe-eh-icon" aria-hidden="true">
-                  <EIcon name="layers" size={22} />
-                </span>
-                <div className="xe-eh-text">
-                  <h2>Cadre et fond</h2>
-                  <p>Ce qui concerne toute la vidéo</p>
-                </div>
-              </header>
-              <FrameSections
-                editor={editor}
-                onOpenPassages={() => setPassagesOpen(true)}
+          {/* Les deux volets restent montés (l'envoi d'une vidéo de fond vit dans celui du cadre) : un seul se voit. */}
+          <div className="xe-pane" hidden={selected === null}>
+            {selected ? (
+              <ElementSections
+                controller={controller}
+                id={selected}
+                attribution={editor.preview.attribution}
               />
-            </>
-          )}
+            ) : null}
+          </div>
+          <div className="xe-pane" hidden={selected !== null}>
+            <header className="xe-eh">
+              <span className="xe-eh-icon" aria-hidden="true">
+                <EIcon name="layers" size={22} />
+              </span>
+              <div className="xe-eh-text">
+                <h2>Cadre et fond</h2>
+                <p>Ce qui concerne toute la vidéo</p>
+              </div>
+            </header>
+            <FrameSections
+              editor={editor}
+              onOpenPassages={() => setPassagesOpen(true)}
+            />
+          </div>
         </aside>
       </div>
       <PassagesDialog
