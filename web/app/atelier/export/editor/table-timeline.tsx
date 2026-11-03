@@ -22,6 +22,7 @@ import {
   trackWidth,
   zoomLevels,
   type PassageBlock,
+  type StillStyle,
 } from "@/lib/export-table-timeline";
 import { MODE_CHOICES } from "@/lib/background-video-view";
 import { formatClock, spokenTime } from "@/lib/export-timeline";
@@ -57,6 +58,13 @@ export const WAVE_H = 48;
 export const FILM_H = 48;
 /** Écart visé entre deux repères principaux de la règle (px). */
 const RULER_TARGET_PX = 64;
+/**
+ * Marge de chaque côté des pistes (px) : la poignée de la tête de lecture mesure 44 px et déborde de la moitié
+ * aux deux extrémités. Égale à `--hit / 2` (voir `export-table.css`).
+ */
+const SCROLL_PAD = 22;
+/** Place qu'une étiquette de la règle demande à droite de son repère : au-delà, elle passe à gauche. */
+const TICK_LABEL_PX = 40;
 /** Marge gardée entre la tête de lecture et le bord de l'écran quand la piste défile (px). */
 const FOLLOW_MARGIN = 28;
 /** Le texte annoncé après une série de pas : attendre que l'appui long s'arrête. */
@@ -67,7 +75,13 @@ const MODE_NAME = Object.fromEntries(
 ) as Record<BackgroundVideoMode, string>;
 
 export type FilmTrackData =
-  | { kind: "still"; label: string; source: boolean }
+  | {
+      kind: "still";
+      label: string;
+      source: boolean;
+      /** Ce que la piste dessine pour cette image, ce dégradé ou cette couleur ; absent : une teinte neutre. */
+      style?: StillStyle | null;
+    }
   | {
       kind: "clip";
       clip: BackgroundVideoValue;
@@ -100,17 +114,21 @@ export type TimelineProps = {
   announce: (message: string) => void;
 };
 
-function useElementWidth(ref: RefObject<HTMLElement | null>): number {
+/** La largeur utile d'un élément, déduction faite de `inset` px de chaque côté (la marge où déborde la poignée). */
+function useElementWidth(
+  ref: RefObject<HTMLElement | null>,
+  inset: number,
+): number {
   const [width, setWidth] = useState(0);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const read = () => setWidth(node.clientWidth);
+    const read = () => setWidth(Math.max(0, node.clientWidth - 2 * inset));
     read();
     const observer = new ResizeObserver(read);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [ref]);
+  }, [ref, inset]);
   return width;
 }
 
@@ -250,7 +268,7 @@ export function TableTimeline(props: TimelineProps) {
   const [modesOpen, setModesOpen] = useState(false);
   const soon = useSoon(props.announce);
 
-  const viewport = useElementWidth(scrollRef);
+  const viewport = useElementWidth(scrollRef, SCROLL_PAD);
   const levels = useMemo(
     () => zoomLevels(viewport, duration),
     [viewport, duration],
@@ -283,19 +301,23 @@ export function TableTimeline(props: TimelineProps) {
     const tracks = tracksRef.current;
     const scroller = scrollRef.current;
     if (!tracks || !scroller || !(width > 0)) return;
+    // Abscisse de la tête dans la zone qui défile (la marge de gauche comprise).
+    const inScroller = () => SCROLL_PAD + timeToPx(head.get(), duration, width);
     const side = () => {
-      const x = timeToPx(head.get(), duration, width) - scroller.scrollLeft;
+      const x = inScroller() - scroller.scrollLeft;
       tracks.dataset.side =
-        x < 44 ? "right" : x > scroller.clientWidth - 44 ? "left" : "center";
+        x < 64 ? "right" : x > scroller.clientWidth - 64 ? "left" : "center";
     };
     const place = () => {
-      const x = timeToPx(head.get(), duration, width);
-      tracks.style.setProperty("--head", `${x}px`);
+      tracks.style.setProperty(
+        "--head",
+        `${timeToPx(head.get(), duration, width)}px`,
+      );
       if (!scrubbing.current) {
         const next = scrollToReveal(
           scroller.scrollLeft,
           scroller.clientWidth,
-          x,
+          inScroller(),
           FOLLOW_MARGIN,
         );
         if (Math.abs(next - scroller.scrollLeft) > 0.5)
@@ -514,7 +536,7 @@ export function TableTimeline(props: TimelineProps) {
                     {mark.major ? (
                       <b
                         className="xt-tick-lab"
-                        data-first={mark.t === 0 || undefined}
+                        data-flip={x + TICK_LABEL_PX > width || undefined}
                         style={{ left: x }}
                       >
                         {mark.label}
@@ -587,7 +609,11 @@ export function TableTimeline(props: TimelineProps) {
                 onOffset={onOffset}
               />
             ) : (
-              <div className="xt-film-still" aria-hidden="true" />
+              <div
+                className="xt-film-still"
+                aria-hidden="true"
+                style={film.style ?? undefined}
+              />
             )}
           </div>
           <div className="xt-head">

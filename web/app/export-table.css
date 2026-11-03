@@ -121,6 +121,8 @@
 /* La zone qui défile : les pistes sont plus larges que l'écran quand on zoome, la PAGE ne défile jamais. */
 .xt-scroll {
   position: relative;
+  /* La poignée de la tête de lecture déborde de la moitié de sa largeur aux deux bouts : de la place pour elle. */
+  padding-inline: calc(var(--hit) / 2);
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -188,6 +190,7 @@
 .xt-ruler {
   touch-action: none;
   cursor: ew-resize;
+  overflow: hidden;
   border-bottom: 1px solid var(--border-subtle);
 }
 .xt-tick {
@@ -208,6 +211,9 @@
   font: 600 11px / 1 var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
+}
+.xt-tick-lab[data-flip] {
+  transform: translateX(calc(-100% - 4px));
 }
 .xt-bubble {
   position: absolute;
@@ -237,7 +243,8 @@
   bottom: 3px;
   display: flex;
   align-items: center;
-  padding-left: 5px;
+  justify-content: flex-end;
+  padding-right: 5px;
   overflow: hidden;
   border: 1.5px solid var(--seg-recognized-edge);
   border-radius: var(--r-xs);
@@ -297,7 +304,7 @@
 .xt-film-still {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface-3));
+  background-color: color-mix(in srgb, var(--accent) 10%, var(--surface-3));
 }
 .xt-film-clip {
   position: absolute;

@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { passageBlocks } from "@/lib/export-table-timeline";
+import { passageBlocks, stillTrackStyle } from "@/lib/export-table-timeline";
 import { BLOCK_LABEL, BLOCK_SHORT } from "@/lib/export-video-edit-text";
 import { frameCards } from "@/lib/export-video-frames";
 import { SOURCE_BACKGROUND_ID } from "@/lib/export-video-backgrounds";
@@ -133,6 +133,11 @@ export function TableEditor(editor: EditorProps) {
           kind: "still",
           label: `Fond · ${backgroundName(editor.frame.selectedBg, editor.frame.upload !== null)}`,
           source: editor.frame.selectedBg === SOURCE_BACKGROUND_ID,
+          style: stillTrackStyle(
+            editor.frame.selectedBg,
+            editor.prefs.bg,
+            editor.frame.uploadThumb,
+          ),
         };
 
   // La plage sous la tête de lecture : la vidéo de fond compte depuis SON début, comme à l'export.

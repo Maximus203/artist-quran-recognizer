@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { drawWaveBars, type WavePeaks } from "@/lib/export-wave";
+import { peakNorm } from "@/lib/waveform";
 import { tokenColor, useThemeTick } from "./use-theme-tick";
 
 /**
@@ -57,6 +58,8 @@ export function WaveCanvas({
     const inside = tokenColor(probe, TOKENS.inside);
     const outside = tokenColor(probe, TOKENS.outside);
     const played = tokenColor(probe, TOKENS.played);
+    // Une récitation enregistrée bas doit se voir autant qu'une autre : le plus haut pic remplit la piste.
+    const norm = peaks ? peakNorm(peaks.peaks) : 1;
     drawWaveBars(g, {
       peaks,
       view: { a: 0, b: duration },
@@ -64,7 +67,7 @@ export function WaveCanvas({
       step: 4,
       barWidth: 2.4,
       mid: height / 2,
-      amp: height / 2 - 3,
+      amp: (height / 2 - 3) / norm,
       colorAt: (t) =>
         layer === "played" ? played : included(t) ? inside : outside,
     });

@@ -13,6 +13,7 @@ import {
   scrollAfterZoom,
   scrollToReveal,
   stepZoom,
+  stillTrackStyle,
   timeToPx,
   trackWidth,
   zoomLevels,
@@ -345,6 +346,37 @@ describe("pastille de la piste « Fond » : ce que la vidéo fait, en quelques m
   it("même durée et durée inconnue", () => {
     expect(pill(30, "loop")).toBe("même durée");
     expect(pill(0, "loop")).toBe("durée inconnue");
+  });
+});
+
+describe("piste « Fond » : l'image fixe montrée sur la piste", () => {
+  it("une photo proposée : sa vignette, qui couvre la piste", () => {
+    const style = stillTrackStyle("desert-dunes", "#000000", null);
+    expect(style?.backgroundImage).toBe(
+      "url(/backgrounds/thumb-desert-dunes.jpg)",
+    );
+    expect(style?.backgroundSize).toBe("cover");
+  });
+  it("un dégradé : ses deux couleurs, de gauche à droite", () => {
+    const style = stillTrackStyle("nuit-doree", "#000000", null);
+    expect(style?.backgroundImage).toBe(
+      "linear-gradient(90deg, #0d1b2a, #16263a)",
+    );
+  });
+  it("une couleur unie : cette couleur", () => {
+    expect(stillTrackStyle("color", "#336699", null)).toEqual({
+      backgroundColor: "#336699",
+    });
+  });
+  it("ma propre image : sa vignette ; sans vignette, rien", () => {
+    expect(stillTrackStyle("upload", "#000", "blob:abc")?.backgroundImage).toBe(
+      'url("blob:abc")',
+    );
+    expect(stillTrackStyle("upload", "#000", null)).toBeNull();
+  });
+  it("la vidéo d'origine ou un identifiant inconnu : rien à dessiner", () => {
+    expect(stillTrackStyle("source", "#000", null)).toBeNull();
+    expect(stillTrackStyle("inconnu", "#000", null)).toBeNull();
   });
 });
 

@@ -9,6 +9,7 @@
  * `background-video-view.ts` : rien n'est recalculé ici.
  */
 import { filmView, nudgeOffset, type FilmView } from "./background-video-view";
+import { findBackground } from "./export-video-backgrounds";
 import type { BackgroundVideoMode } from "./export-video-model";
 import { rulerStep, formatTick, round3 } from "./export-timeline";
 import {
@@ -303,6 +304,38 @@ export function filmSegments(
       portion,
     };
   });
+}
+
+/** Ce que la piste « Fond » dessine pour une image, un dégradé ou une couleur (style en ligne, jamais une valeur fixe). */
+export type StillStyle = {
+  backgroundImage?: string;
+  backgroundColor?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+};
+
+/**
+ * Le fond choisi, vu sur la piste : la vignette de la photo, les deux couleurs du dégradé, la couleur unie, ma
+ * propre image. `null` pour la vidéo d'origine (on ne la dessine pas ici) ou un identifiant inconnu.
+ */
+export function stillTrackStyle(
+  id: string,
+  color: string,
+  uploadThumb: string | null,
+): StillStyle | null {
+  const cover = { backgroundSize: "cover", backgroundPosition: "center" };
+  if (id === "upload")
+    return uploadThumb
+      ? { backgroundImage: `url("${uploadThumb}")`, ...cover }
+      : null;
+  if (id === "color") return { backgroundColor: color };
+  const preset = findBackground(id);
+  if (!preset) return null;
+  return preset.kind === "photo"
+    ? { backgroundImage: `url(${preset.thumb})`, ...cover }
+    : {
+        backgroundImage: `linear-gradient(90deg, ${preset.from}, ${preset.to})`,
+      };
 }
 
 const frNumber = (value: number): string => String(value).replace(".", ",");
