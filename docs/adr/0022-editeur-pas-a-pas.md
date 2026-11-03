@@ -1,4 +1,4 @@
-# ADR-0021 — L'éditeur « Pas à pas » de la vidéo d'export
+# ADR-0022 — L'éditeur « Pas à pas » de la vidéo d'export
 
 - Statut : **accepté** — phase 3b de la refonte de l'export vidéo en éditeur interactif (décisions du mainteneur du
   2026-11-03, brief commun du chantier, maquette « Le pas à pas », direction C). Se branche sur l'ADR-0020 (calque
@@ -51,7 +51,8 @@ répondent ; les réglages eux-mêmes existent déjà (sections partagées de l'
 
 ## Conséquences
 
-- Le défaut du rôle `recitant` (mode `pas`) et le choix du format sont posés par la phase 4 ; tant qu'elle n'est pas là,
-  `editorMode` vaut `plateau` et le pas à pas n'est atteint que par `ExportEditor mode="pas"`.
+- Le défaut du rôle `recitant` (mode `pas`, aucune question) et le choix du format pour les autres rôles sont posés par l'ADR-0021
+  (`ExportEditorGate`, `lib/export-editor-mode.ts`) : le récitateur arrive directement sur ce `StepEditor`, un administrateur ou
+  un testeur peut le choisir à la première ouverture ou dans ses paramètres.
 - Hors périmètre : lecteur d'écran non testé avec NVDA ou VoiceOver ; pas de barre de position dans l'aperçu animé (limite de
   la phase 2).

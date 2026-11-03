@@ -22,6 +22,7 @@ import "./playlists.css";
 import "./export-refonte.css";
 import "./export-editor.css";
 import "./export-steps.css";
+import "./editor-mode.css";
 
 export const metadata: Metadata = {
   title: "Quran TR",

@@ -1,6 +1,6 @@
 /*
  * Éditeur « Pas à pas » de la vidéo d'export (téléphone) — composants `.xp-`. Spécification : maquette « Le pas à
- * pas » (direction C), docs/adr/0021-editeur-pas-a-pas.md. Les couleurs, espacements, rayons et mouvements viennent
+ * pas » (direction C), docs/adr/0022-editeur-pas-a-pas.md. Les couleurs, espacements, rayons et mouvements viennent
  * de tokens.css ; les réglages eux-mêmes réutilisent les composants `.xe-` de export-editor.css. Toutes les cibles
  * mesurent 44 px au moins sur le bouton lui-même (`--hit`) ; les mouvements passent sous la règle globale
  * `prefers-reduced-motion` de tokens.css.

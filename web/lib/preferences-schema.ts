@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ECHO } from "./audio-echo";
 import { AUDIO_OFFSET } from "./audio-offset";
+import { EDITOR_MODES } from "./export-editor-mode";
 import {
   storedExportOptionsSchema,
   toStoredExportOptions,
@@ -86,6 +87,11 @@ export const preferencesShape = {
   exportOptions: storedExportOptionsSchema,
   /** Réglages de la vidéo d'export : sur le compte, pas sur l'appareil. */
   videoPrefs: videoPrefsSchema,
+  /**
+   * Format de l'éditeur de la vidéo d'export sur téléphone : `null` = jamais choisi (le défaut du rôle
+   * s'applique, et un testeur est interrogé à la première ouverture ; règle dans `export-editor-mode.ts`).
+   */
+  editorMode: z.enum(EDITOR_MODES).nullable(),
 } as const;
 
 export type Preferences = {
@@ -115,6 +121,7 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   defaultVisibility: "private",
   exportOptions: toStoredExportOptions(DEFAULT_EXPORT_OPTIONS),
   videoPrefs: DEFAULT_VIDEO_PREFS,
+  editorMode: null,
 };
 
 export const PREFERENCE_KEYS = Object.keys(preferencesShape) as PreferenceKey[];

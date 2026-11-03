@@ -49,6 +49,7 @@ describe("préférences : défauts centralisés", () => {
         "defaultVisibility",
         "exportOptions",
         "videoPrefs",
+        "editorMode",
       ].sort(),
     );
   });
@@ -146,6 +147,67 @@ describe("préférences : fusion partielle", () => {
     expect(view.preferences.theme).toBe("system");
     expect(view.preferences.volume).toBe(1);
     expect(view.updated_at).toEqual({});
+  });
+});
+
+describe("préférences : le format de l'éditeur d'export (téléphone)", () => {
+  const stored = (value: string) =>
+    db
+      .prepare(
+        "INSERT INTO preferences (user_id, key, value, updated_at) VALUES (?, 'editorMode', ?, '2026-11-03T10:00:00.000Z')",
+      )
+      .run(userId, value);
+
+  it("jamais choisi par défaut : null, sans horodatage", () => {
+    const view = readPreferences(db, userId);
+    expect(view.preferences.editorMode).toBeNull();
+    expect(PREFERENCE_DEFAULTS.editorMode).toBeNull();
+    expect(view.updated_at.editorMode).toBeUndefined();
+  });
+
+  it("chacun des trois formats s'enregistre, avec son horodatage", () => {
+    for (const mode of ["plateau", "table", "pas"] as const) {
+      const view = patchPreferences(
+        db,
+        userId,
+        { editorMode: mode },
+        "2026-11-03T12:00:00.000Z",
+      );
+      expect(view.preferences.editorMode).toBe(mode);
+      expect(view.updated_at.editorMode).toBe("2026-11-03T12:00:00.000Z");
+    }
+  });
+
+  it("refuse un format inconnu, et ne touche à rien d'autre", () => {
+    for (const bad of ["carrousel", "", 1, true, ["pas"]])
+      expect(
+        preferencesPatchSchema.safeParse({ editorMode: bad }).success,
+      ).toBe(false);
+    expect(preferencesPatchSchema.safeParse({ editorMode: null }).success).toBe(
+      true,
+    );
+  });
+
+  it("un ancien client qui n'envoie pas la clé ne l'efface pas", () => {
+    patchPreferences(db, userId, { editorMode: "table" });
+    const view = patchPreferences(db, userId, { theme: "dark" });
+    expect(view.preferences.editorMode).toBe("table");
+  });
+
+  it("une valeur d'un futur format (ou abîmée) en base : retombe sur « jamais choisi », le reste est lu", () => {
+    patchPreferences(db, userId, { volume: 0.3 });
+    stored('"carrousel"');
+    const view = readPreferences(db, userId);
+    expect(view.preferences.editorMode).toBeNull();
+    expect(view.preferences.volume).toBe(0.3);
+    expect(view.updated_at.editorMode).toBeUndefined();
+  });
+
+  it("remettre la clé à zéro redemande le choix", () => {
+    patchPreferences(db, userId, { editorMode: "pas" });
+    expect(
+      resetPreferences(db, userId, "editorMode").preferences.editorMode,
+    ).toBeNull();
   });
 });
 

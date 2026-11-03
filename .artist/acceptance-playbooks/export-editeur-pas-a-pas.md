@@ -1,6 +1,6 @@
 # Export vidéo — l'éditeur « Pas à pas » (phase 3b)
 > Surfaces : [WEB] (mobile 360 / 390 / 430 px tactile d'abord ; thèmes sombre et clair) · [CALC] (fonctions pures)
-> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-pas-a-pas` @ aa5bfea (PR #204) · ADR-0021
+> Statut : ✅ (voir « Preuves ») · Build : `feat/export-editeur-pas-a-pas` @ aa5bfea (PR #204) · ADR-0022
 > Périmètre : trois étapes (Le cadre, Les textes, Exporter), encart « déjà prête », pastilles, Précédent / Suivant, progression
 > mémorisée, aperçu verrouillé hors de l'étape des textes, étape du cadre gardée montée, sortie de l'éditeur ; correctif du 403 du
 > récitateur sur `/export/subtitles` ; cibles de 44 px dans la fenêtre des passages. Hors périmètre : défaut du rôle récitateur et
