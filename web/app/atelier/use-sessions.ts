@@ -206,7 +206,8 @@ export function useSessionFeed(filter: SessionsFilter, pageSize = 20) {
 
 export const SIDEBAR_RECENT = 8;
 export const SIDEBAR_FAVORITES = 6;
-const SIDEBAR_FETCH = 18;
+/** Marge de lecture : les épinglées et la file sont retirées des récentes. */
+const SIDEBAR_MARGIN = 10;
 
 export type Sidebar = {
   loaded: boolean;
@@ -232,7 +233,7 @@ const EMPTY_SIDEBAR: Sidebar = {
 };
 
 /** Ce que la barre de gauche montre : quelques favoris, la file, les plus récentes. Jamais toute la liste. */
-export function useSidebarSessions() {
+export function useSidebarSessions(recentCount: number = SIDEBAR_RECENT) {
   const [data, setData] = useState<Sidebar>(EMPTY_SIDEBAR);
   const visible = usePageVisible();
   const request = useRef(0);
@@ -240,7 +241,7 @@ export function useSidebarSessions() {
     const mine = ++request.current;
     try {
       const [recent, favorites] = await Promise.all([
-        fetchPage(`scope=all&limit=${SIDEBAR_FETCH}`),
+        fetchPage(`scope=all&limit=${recentCount + SIDEBAR_MARGIN}`),
         fetchPage(`scope=favorites&limit=${SIDEBAR_FAVORITES}`),
       ]);
       const active =
@@ -262,7 +263,7 @@ export function useSidebarSessions() {
         queue,
         recent: recent.items
           .filter((s) => !pinned.has(s.id) && !queued.has(s.id))
-          .slice(0, SIDEBAR_RECENT),
+          .slice(0, recentCount),
         counts: recent.counts,
         total: recent.total,
       });
@@ -274,7 +275,7 @@ export function useSidebarSessions() {
           error: e instanceof Error ? e.message : "Liste indisponible",
         }));
     }
-  }, []);
+  }, [recentCount]);
   const interval = pollInterval(visible, data.queue.length > 0);
   useEffect(() => {
     void refresh();

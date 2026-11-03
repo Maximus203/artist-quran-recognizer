@@ -124,7 +124,7 @@ export function NameEditor({
         className={className ?? "title-input"}
         value={value}
         maxLength={120}
-        aria-label="Nom de la session"
+        aria-label="Nom de la récitation"
         data-testid="name-input"
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
@@ -199,7 +199,7 @@ export function InlineName({
           type="button"
           className="rename-btn"
           data-testid="rename"
-          aria-label="Renommer la session"
+          aria-label="Renommer la récitation"
           data-tip="Renommer"
           onClick={() => setEditing(true)}
         >

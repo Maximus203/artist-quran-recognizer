@@ -392,8 +392,8 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
         {detail.items.length === 0 ? (
           <p className="notice" data-testid="pl-empty">
             Cette playlist est vide. Ajoute des audios depuis la{" "}
-            <Link href="/sessions">liste des sessions</Link> : menu d’une ligne,
-            « Ajouter à une playlist ».
+            <Link href="/sessions">liste des récitations</Link> : menu d’une
+            ligne, « Ajouter à une playlist ».
           </p>
         ) : (
           <section className="pl-card" aria-label="Lecteur">

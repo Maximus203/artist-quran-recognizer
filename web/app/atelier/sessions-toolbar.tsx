@@ -22,7 +22,7 @@ import { useDismiss } from "./session-bits";
 
 const SCOPES_UI: { id: Scope; label: string; icon?: IconName }[] = [
   { id: "all", label: "Toutes" },
-  { id: "mine", label: "Mes sessions" },
+  { id: "mine", label: "Mes récitations" },
   { id: "shared", label: "Partagées" },
   { id: "favorites", label: "Favoris", icon: "star" },
   { id: "archived", label: "Archivées", icon: "archive" },
@@ -176,7 +176,7 @@ export function SessionsToolbar({
     <div
       className="toolbar"
       role="search"
-      aria-label="Rechercher et filtrer les sessions"
+      aria-label="Rechercher et filtrer les récitations"
     >
       <div className="tb-row">
         <div className="search">
@@ -186,7 +186,7 @@ export function SessionsToolbar({
             type="search"
             data-testid="search"
             placeholder="Rechercher…"
-            aria-label="Rechercher une session par nom"
+            aria-label="Rechercher une récitation par nom"
             autoComplete="off"
             enterKeyHint="search"
             value={text}
@@ -222,7 +222,7 @@ export function SessionsToolbar({
           <div
             className="seg-ctl"
             role="group"
-            aria-label="Portée des sessions"
+            aria-label="Portée des récitations"
           >
             {SCOPES_UI.map((scope) => (
               <button

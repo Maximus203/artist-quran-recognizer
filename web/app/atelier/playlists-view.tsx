@@ -85,7 +85,7 @@ export function PlaylistsView(props: PlaylistsViewProps) {
         ) : playlists.length === 0 ? (
           <p className="mini">
             Aucune playlist pour le moment. Crée-en une ci-dessus, puis ajoute
-            des audios depuis la page Sessions.
+            des audios depuis la page Récitations.
           </p>
         ) : (
           <ul className="api-tokens">

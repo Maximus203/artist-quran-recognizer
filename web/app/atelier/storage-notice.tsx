@@ -37,5 +37,5 @@ export function storageMessage(quota: Quota, full: boolean): string {
   const limit = quota.limit_bytes ? formatBytesFr(quota.limit_bytes) : "—";
   if (full)
     return `Espace plein (${used} sur ${limit}) : les imports sont bloqués. Supprime des sessions ou des vidéos gardées pour continuer.`;
-  return `Espace presque plein (${used} sur ${limit}). Supprime les sessions et vidéos dont tu n’as plus besoin avant d’importer.`;
+  return `Espace presque plein (${used} sur ${limit}). Supprime les récitations et vidéos dont tu n’as plus besoin avant d’importer.`;
 }

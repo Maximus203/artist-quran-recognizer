@@ -73,6 +73,8 @@ type Props = {
   follow: boolean;
   onUserMove: () => void;
   annotations: readonly Annotation[];
+  /** Faux (récitateur) : la piste « Revue » (signalements) n'est pas montrée. */
+  showReview?: boolean;
   selectedAnnotationId: string | null;
   draftId: string | null;
   mark: number | null;
@@ -772,7 +774,15 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
     ));
 
     return (
-      <div className="timeline" data-testid="timeline">
+      <div
+        className="timeline"
+        data-testid="timeline"
+        style={
+          props.showReview === false
+            ? ({ "--lanes": 2 } as React.CSSProperties)
+            : undefined
+        }
+      >
         <div className="tl-grid">
           <div className="tl-names" aria-hidden="true">
             <div className="tl-name" data-short="Onde">
@@ -785,9 +795,11 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
             <div className="tl-name" data-short="Hypoth.">
               <b>Hypothèses</b>
             </div>
-            <div className="tl-name" data-short="Revue">
-              <b>Revue</b>
-            </div>
+            {props.showReview === false ? null : (
+              <div className="tl-name" data-short="Revue">
+                <b>Revue</b>
+              </div>
+            )}
             <div />
           </div>
           <div
@@ -879,9 +891,11 @@ export const Timeline = forwardRef<TimelineHandle, Props>(
               <div className="tl-row tl-lane" data-testid="lane-inferred">
                 {segments(layers.inferred, "lane-seg")}
               </div>
-              <div className="tl-row tl-lane" data-testid="lane-review">
-                {humans}
-              </div>
+              {props.showReview === false ? null : (
+                <div className="tl-row tl-lane" data-testid="lane-review">
+                  {humans}
+                </div>
+              )}
               <div className="tl-ticks" aria-hidden="true">
                 {tickMarks}
               </div>

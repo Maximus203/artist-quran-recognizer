@@ -28,6 +28,8 @@ const fontIds = QURAN_FONTS.map((font) => font.id) as [
 ];
 
 export const VISIBLE_SPANS = [600, 120, 30, 10] as const;
+/** Nombre de récitations récentes montrées dans la barre de gauche. */
+export const SIDEBAR_RECENT_COUNTS = [5, 8, 10, 15, 20, 30] as const;
 export const REVIEW_TABS = ["sig", "list", "truth"] as const;
 
 export const sessionsFilterSchema = z
@@ -58,6 +60,15 @@ export const preferencesShape = {
     .nullable(),
   followPlayback: z.boolean(),
   leftPanelOpen: z.boolean().nullable(),
+  /** Combien de récitations récentes la barre de gauche montre. */
+  sidebarRecent: z.union([
+    z.literal(5),
+    z.literal(8),
+    z.literal(10),
+    z.literal(15),
+    z.literal(20),
+    z.literal(30),
+  ]),
   rightPanelOpen: z.boolean().nullable(),
   sessionsFilter: sessionsFilterSchema,
   playbackRate: z.number().min(0.25).max(3),
@@ -89,6 +100,7 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   visibleSpanSeconds: null,
   followPlayback: true,
   leftPanelOpen: null,
+  sidebarRecent: 8,
   rightPanelOpen: null,
   sessionsFilter: { scope: "all", state: "all", engine: "all", sort: "recent" },
   playbackRate: 1,

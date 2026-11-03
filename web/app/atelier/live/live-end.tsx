@@ -110,7 +110,7 @@ export const EndCard = forwardRef<HTMLHeadingElement, Props>(function EndCard(
           </p>
           <div className="end-acts">
             <Link className="btn btn--primary" href="/sessions">
-              Ouvrir mes sessions
+              Ouvrir mes récitations
             </Link>
             <button
               type="button"

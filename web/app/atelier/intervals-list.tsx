@@ -27,6 +27,7 @@ import {
   type RowRange,
 } from "@/lib/virtual-list";
 import { useClock, useStoreValue } from "./hooks";
+import { Icon } from "./icons";
 import type { PlayerState } from "./use-player";
 
 const FILTERS: { id: string; label: string }[] = [
@@ -130,7 +131,7 @@ type Props = {
  * clavier : une seule ligne porte la tabulation (celle qu'on a focalisée, sinon la ligne choisie, sinon
  * la ligne en cours) et les flèches, Début, Fin, Page précédente/suivante déplacent le focus.
  */
-export function IntervalsList(props: Props) {
+function IntervalsListBody(props: Props & { onCollapse: () => void }) {
   const [filter, setFilter] = useState("all");
   const list = useRef<HTMLDivElement>(null);
   const rows = useMemo(
@@ -278,6 +279,16 @@ export function IntervalsList(props: Props) {
             {props.intervals.length} · repère commun{" "}
             <CommonMark store={props.store} />
           </span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            data-testid="intervals-collapse"
+            aria-expanded="true"
+            onClick={props.onCollapse}
+          >
+            <Icon name="chevron-d" className="i-flip" />
+            Replier
+          </button>
         </div>
         <div
           className="seg-filters"
@@ -347,4 +358,55 @@ export function IntervalsList(props: Props) {
       </div>
     </section>
   );
+}
+
+const COLLAPSED_KEY = "aqr.intervals.collapsed";
+
+/** La tuile se replie : on la consulte peu, elle ne doit pas prendre la place de l'onde et du verset. */
+export function IntervalsList(props: Props) {
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSED_KEY) === "1");
+    } catch {
+      /* stockage indisponible : la tuile reste ouverte */
+    }
+  }, []);
+  const change = (next: boolean) => {
+    setCollapsed(next);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+    } catch {
+      /* préférence d'affichage seulement */
+    }
+  };
+  if (collapsed)
+    return (
+      <section
+        className="card o-intervals"
+        aria-label="Intervalles"
+        data-testid="intervals"
+        data-collapsed="true"
+      >
+        <div className="card-pad">
+          <div className="sec-title">
+            <h2>Intervalles</h2>
+            <span className="muted mono" style={{ fontSize: "var(--fs-sm)" }}>
+              {props.intervals.length}
+            </span>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              data-testid="intervals-expand"
+              aria-expanded="false"
+              onClick={() => change(false)}
+            >
+              <Icon name="chevron-d" />
+              Déplier
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  return <IntervalsListBody {...props} onCollapse={() => change(true)} />;
 }

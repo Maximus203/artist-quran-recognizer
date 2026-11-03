@@ -68,10 +68,12 @@ function ErrorPanel({
   if (error.status === 404)
     return (
       <div className="ex-state" role="alert" data-testid="state-missing">
-        <h3>Session introuvable</h3>
-        <p>Cette session n’existe pas, ou tu n’as pas le droit de la voir.</p>
+        <h3>Récitation introuvable</h3>
+        <p>
+          Cette récitation n’existe pas, ou tu n’as pas le droit de la voir.
+        </p>
         <Link className="btn btn--secondary" href="/sessions">
-          Voir mes sessions
+          Voir mes récitations
         </Link>
       </div>
     );
@@ -80,11 +82,11 @@ function ErrorPanel({
       <div className="ex-state" role="status" data-testid="state-not-ready">
         <h3>L’analyse n’est pas terminée</h3>
         <p>
-          Il n’y a pas encore de résultat à exporter. Reviens à la session : tu
-          y suis la progression.
+          Il n’y a pas encore de résultat à exporter. Reviens à la récitation :
+          tu y suis la progression.
         </p>
         <Link className="btn btn--primary" href={`/?session=${sessionId}`}>
-          Voir la session
+          Voir la récitation
         </Link>
       </div>
     );
@@ -829,7 +831,7 @@ function Crumb({ sessionId, name }: { sessionId: string; name?: string }) {
     <nav className="ex-crumb" aria-label="Fil d’Ariane">
       <Link href={recitant ? "/sessions" : `/?session=${sessionId}`}>
         <XIcon name="chev-l" size={16} />
-        {recitant ? "Mes sessions" : "Retour à la session"}
+        {recitant ? "Mes récitations" : "Retour à la récitation"}
       </Link>
       {name ? (
         <>

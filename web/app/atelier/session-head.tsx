@@ -73,9 +73,9 @@ function ScopePicker({
         <div
           className="scope-pop"
           role="dialog"
-          aria-label="Portée de la session"
+          aria-label="Portée de la récitation"
         >
-          <p className="eyebrow">Qui peut voir cette session ?</p>
+          <p className="eyebrow">Qui peut voir cette récitation ?</p>
           <button
             className="radio-card"
             type="button"

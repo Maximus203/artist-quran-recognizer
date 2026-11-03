@@ -477,8 +477,8 @@ export function PerfView({ initialMine = false }: { initialMine?: boolean }) {
           <h2>Dernières analyses</h2>
         </div>
         <p className="hint" style={{ marginBottom: "var(--sp-3)" }}>
-          Seules les sessions globales sont nommées ici ; les privées d’un autre
-          testeur ne sont ni visibles ni comptées.
+          Seules les récitations globales sont nommées ici ; les privées d’un
+          autre testeur ne sont ni visibles ni comptées.
         </p>
         {!loaded ? (
           <p className="hint" role="status">

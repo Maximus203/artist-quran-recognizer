@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireTesterPage } from "@/lib/page-auth";
+import { requirePageUser } from "@/lib/page-auth";
 import { PageFrame } from "../../../atelier/page-frame";
 import { PlaylistPlayer } from "../../../atelier/playlist-player";
 
@@ -16,7 +16,7 @@ export default async function Page({
   const { id: raw } = await params;
   const id = Number(raw);
   if (!Number.isInteger(id) || id < 1) notFound();
-  await requireTesterPage(`/playlists/${id}`);
+  await requirePageUser(`/playlists/${id}`);
   return (
     <PageFrame active="playlists">
       <PlaylistPlayer playlistId={id} />

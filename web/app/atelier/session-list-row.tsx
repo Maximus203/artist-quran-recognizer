@@ -321,7 +321,7 @@ export function SessionListRow({
             <>
               <Link role="menuitem" className="menu-item" href={href}>
                 <Icon name="wave" />
-                {user.role === "recitant" ? "Exporter la vidéo" : "Ouvrir"}
+                Ouvrir
               </Link>
               {s.can_edit
                 ? item("edit", "Renommer", () => {

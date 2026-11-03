@@ -140,7 +140,9 @@
 }
 .tl-names {
   display: grid;
-  grid-template-rows: var(--h-wave) repeat(3, var(--h-lane)) var(--h-ticks);
+  grid-template-rows: var(--h-wave) repeat(var(--lanes, 3), var(--h-lane)) var(
+      --h-ticks
+    );
 }
 .tl-name {
   display: flex;
