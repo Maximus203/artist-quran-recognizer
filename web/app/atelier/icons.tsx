@@ -67,7 +67,13 @@ export type IconName =
   | "link-off"
   | "live"
   | "jump"
-  | "keep";
+  | "keep"
+  | "shuffle"
+  | "repeat"
+  | "repeat-one"
+  | "skip-next"
+  | "skip-prev"
+  | "playlist";
 
 export function IconSprite() {
   return (
@@ -265,6 +271,33 @@ export function IconSprite() {
       </symbol>
       <symbol id="i-undo" viewBox="0 0 24 24">
         <path d="M9 7L5 11l4 4M5 11h9a5 5 0 0 1 0 10h-3" />
+      </symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24">
+        <path d="M3.5 7h3c3.5 0 5 10 8.5 10h5M3.5 17h3c1.2 0 2.1-.9 2.9-2M13.2 9.2c.5-.9 1.2-2.2 2.5-2.2h4.3" />
+        <path d="M17.5 4.5L20 7l-2.5 2.5M17.5 14.5L20 17l-2.5 2.5" />
+      </symbol>
+      <symbol id="i-repeat" viewBox="0 0 24 24">
+        <path d="M4 12V10a3 3 0 0 1 3-3h12M20 12v2a3 3 0 0 1-3 3H5" />
+        <path d="M16.5 4L19.5 7l-3 3M7.5 20L4.5 17l3-3" />
+      </symbol>
+      <symbol id="i-repeat-one" viewBox="0 0 24 24">
+        <path d="M4 12V10a3 3 0 0 1 3-3h12M20 12v2a3 3 0 0 1-3 3H5" />
+        <path d="M16.5 4L19.5 7l-3 3M7.5 20L4.5 17l3-3" />
+        <path d="M11 10.5l1.5-1v6" />
+      </symbol>
+      <symbol id="i-skip-next" viewBox="0 0 24 24">
+        <path d="M6.5 5.7v12.6a.5.5 0 0 0 .8.4l8-6.3a.5.5 0 0 0 0-.8l-8-6.3a.5.5 0 0 0-.8.4z" />
+        <path d="M18 5.5v13" />
+      </symbol>
+      <symbol id="i-skip-prev" viewBox="0 0 24 24">
+        <g transform="translate(24 0) scale(-1 1)">
+          <path d="M6.5 5.7v12.6a.5.5 0 0 0 .8.4l8-6.3a.5.5 0 0 0 0-.8l-8-6.3a.5.5 0 0 0-.8.4z" />
+          <path d="M18 5.5v13" />
+        </g>
+      </symbol>
+      <symbol id="i-playlist" viewBox="0 0 24 24">
+        <path d="M4 6.5h12M4 11h12M4 15.5h7" />
+        <path d="M16 14.2v5l4-2.5z" />
       </symbol>
       <symbol id="i-list" viewBox="0 0 24 24">
         <path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01" />

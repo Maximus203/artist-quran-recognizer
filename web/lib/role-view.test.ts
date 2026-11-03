@@ -13,14 +13,21 @@ import {
  */
 describe("interface par rôle", () => {
   it("le récitateur n'a que la page Sessions dans la navigation", () => {
-    for (const page of ["revue", "perf", "live", "docs"] as const)
+    for (const page of ["revue", "perf", "live", "docs", "playlists"] as const)
       expect(pageVisibleTo("recitant", page)).toBe(false);
     expect(pageVisibleTo("recitant", "sessions")).toBe(true);
   });
 
   it("testeur et administrateur gardent toute la navigation", () => {
     for (const role of ["user", "admin"] as const)
-      for (const page of ["revue", "sessions", "perf", "live", "docs"] as const)
+      for (const page of [
+        "revue",
+        "sessions",
+        "perf",
+        "live",
+        "docs",
+        "playlists",
+      ] as const)
         expect(pageVisibleTo(role, page)).toBe(true);
   });
 

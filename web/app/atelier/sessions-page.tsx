@@ -17,6 +17,7 @@ import {
 } from "@/lib/sessions-filter";
 import { HeroWave } from "./hero-wave";
 import { Icon } from "./icons";
+import { AddToPlaylistDialog } from "./add-to-playlist";
 import { SelectionBar } from "./selection-bar";
 import { SessionListRow, type RowActions } from "./session-list-row";
 import { SessionsToolbar, SORT_OPTIONS } from "./sessions-toolbar";
@@ -56,6 +57,8 @@ export function SessionsPage({ search }: { search: string }) {
   const feed = useSessionFeed(listFilter, PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
+  /** Audios en cours d'ajout à une playlist (dialogue ouvert), ou null. */
+  const [playlistFor, setPlaylistFor] = useState<string[] | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const { show, node: toastNode } = useToast();
   const now = Date.now();
@@ -333,6 +336,7 @@ export function SessionsPage({ search }: { search: string }) {
     onVisibility: (s, v) => void setVisibility([s.id], v),
     onArchive: (s, archived) => void archive([s.id], archived),
     onDelete: (s) => void remove([s]),
+    onAddToPlaylist: recitant ? undefined : (s) => setPlaylistFor([s.id]),
   };
 
   /* ── rendu ── */
@@ -678,10 +682,24 @@ export function SessionsPage({ search }: { search: string }) {
           archivedScope={archivedScope}
           canDelete={deletable}
           onFavorite={() => void bulkFavorite(!allFavorite)}
+          onAddToPlaylist={
+            recitant ? undefined : () => setPlaylistFor([...selected])
+          }
           onArchive={() => void archive([...selected], !archivedScope)}
           onVisibility={(v) => void setVisibility([...selected], v)}
           onDelete={() => void remove(chosen)}
           onCancel={() => setSelected(new Set())}
+        />
+      ) : null}
+
+      {playlistFor ? (
+        <AddToPlaylistDialog
+          ids={playlistFor}
+          onClose={() => setPlaylistFor(null)}
+          onDone={(message) => {
+            show(message);
+            setSelected(new Set());
+          }}
         />
       ) : null}
 

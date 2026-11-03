@@ -21,6 +21,8 @@ export type RowActions = {
   onVisibility: (s: ApiSession, visibility: "global" | "private") => void;
   onArchive: (s: ApiSession, archived: boolean) => void;
   onDelete: (s: ApiSession) => void;
+  /** Absent : pas de playlist (le récitateur n'en a pas). */
+  onAddToPlaylist?: (s: ApiSession) => void;
 };
 
 /**
@@ -335,6 +337,12 @@ export function SessionListRow({
                   actions.onFavorite(s);
                 },
               )}
+              {actions.onAddToPlaylist && user.role !== "recitant"
+                ? item("playlist", "Ajouter à une playlist", () => {
+                    close();
+                    actions.onAddToPlaylist?.(s);
+                  })
+                : null}
               {s.can_edit
                 ? s.visibility === "global"
                   ? item("lock", "Rendre privé", () => {

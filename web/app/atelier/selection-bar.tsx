@@ -13,6 +13,8 @@ type Props = {
   /** Suppression possible : dans Archivées, sur ses propres sessions. */
   canDelete: boolean;
   onFavorite: () => void;
+  /** Absent : pas de playlist (le récitateur n'en a pas). */
+  onAddToPlaylist?: () => void;
   onArchive: () => void;
   onVisibility: (visibility: "global" | "private") => void;
   onDelete: () => void;
@@ -86,6 +88,17 @@ export function SelectionBar(props: Props) {
               {props.allFavorite ? "" : " : ajouter la sélection aux favoris"}
             </span>
           </button>
+          {props.onAddToPlaylist ? (
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              data-testid="bulk-playlist"
+              onClick={props.onAddToPlaylist}
+            >
+              <Icon name="playlist" />
+              <span className="txt">Playlist</span>
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn btn--secondary btn--sm"
