@@ -58,10 +58,9 @@ export function parseCache(
   if (record.v !== CACHE_VERSION || record.user !== userId) return null;
   const prefs = preferencesPatchSchema.safeParse(record.prefs);
   if (!prefs.success) return null;
-  // Le cache complet doit porter toutes les clés : sinon on le jette (le serveur reste la source).
+  // Un cache écrit par une version plus ancienne n'a pas les clés ajoutées depuis : elles prennent leur défaut
+  // (le serveur reste la source) et les modifications en attente ne sont pas perdues pour autant.
   const full = applyPatch(PREFERENCE_DEFAULTS, prefs.data);
-  if (Object.keys(prefs.data).length !== Object.keys(preferencesShape).length)
-    return null;
   // Une modification en attente invalide est écartée clé par clé ; les valides sont gardées.
   const pending: PreferencesPatch = {};
   if (typeof record.pending === "object" && record.pending !== null) {

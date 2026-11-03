@@ -73,13 +73,8 @@ import {
   backgroundVideoRequest,
   type BackgroundVideoValue,
 } from "./background-video-section";
-import { ExportEditor } from "./editor/export-editor";
-import {
-  DEFAULT_EDITOR_MODE,
-  type EditorMode,
-  type ExportAction,
-  type PatchPrefs,
-} from "./editor/editor-types";
+import { ExportEditorGate } from "./editor/export-editor-gate";
+import type { ExportAction, PatchPrefs } from "./editor/editor-types";
 import { formatName } from "./editor/frame-sections";
 import { XIcon } from "./export-icons";
 import { BreathSettings, RangeList } from "./range-list";
@@ -142,7 +137,6 @@ export function VideoPanel({
   announce,
   existingVideos,
   reuseVideos,
-  editorMode = DEFAULT_EDITOR_MODE,
   onLeave,
 }: {
   sessionId: string;
@@ -154,8 +148,6 @@ export function VideoPanel({
   /** Vidéos déjà gardées sur le serveur et réutilisation d'une vidéo identique. */
   existingVideos: SavedVideo[];
   reuseVideos: boolean;
-  /** L'éditeur du téléphone ; la préférence du compte le pose (phase « choix du format »), le plateau d'ici là. */
-  editorMode?: EditorMode;
   /** Quitter l'éditeur (bouton retour de sa barre du haut). */
   onLeave?: () => void;
 }) {
@@ -1054,8 +1046,7 @@ export function VideoPanel({
           ) : null}
         </div>
       ) : (
-        <ExportEditor
-          mode={editorMode}
+        <ExportEditorGate
           sessionId={sessionId}
           title={sessionName || "Vidéo de la récitation"}
           subtitle={`${cardCount ?? 0} passage${(cardCount ?? 0) > 1 ? "s" : ""} · ${formatDurationFr(duration)}`}

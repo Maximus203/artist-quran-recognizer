@@ -5,22 +5,15 @@ import type { Interval } from "@/lib/recognition";
 
 /**
  * Les trois éditeurs de la vidéo d'export (vue téléphone ; au bureau, une seule vue unifiée sert tous les
- * rôles). Le choix de l'éditeur se fait ailleurs (préférence du compte, phase « choix du format ») : ce
- * module ne fait que NOMMER les éditeurs et décrire ce que chacun reçoit.
- *
- *  - `plateau` : l'aperçu est l'éditeur ; on touche un élément, sa barre d'outils apparaît.
- *  - `table`   : la table de montage (aperçu, chronologie, rail d'outils).
- *  - `pas`     : le pas à pas en trois étapes.
+ * rôles). Les modes, leur repli et la règle « qui choisit quoi » vivent dans `lib/export-editor-mode.ts`
+ * (pur, partagé avec le schéma des préférences) ; ce module les ré-exporte et décrit ce que chaque éditeur reçoit.
  */
-export const EDITOR_MODES = ["plateau", "table", "pas"] as const;
-export type EditorMode = (typeof EDITOR_MODES)[number];
-
-/** L'éditeur d'avant tout choix (la préférence arrive avec la phase « choix du format »). */
-export const DEFAULT_EDITOR_MODE: EditorMode = "plateau";
-
-export const isEditorMode = (value: unknown): value is EditorMode =>
-  typeof value === "string" &&
-  (EDITOR_MODES as readonly string[]).includes(value);
+export {
+  DEFAULT_EDITOR_MODE,
+  EDITOR_MODES,
+  isEditorMode,
+  type EditorMode,
+} from "@/lib/export-editor-mode";
 
 /** D'où viennent l'image et le son de l'aperçu : ce que `VideoPreview` lit, sans les réglages. */
 export type PreviewSource = {
