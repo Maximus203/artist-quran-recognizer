@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Le bouton Exporter se voit : aplat d'accent, en haut à droite
+Étiquettes : utilisateur
+PR : #200
+
+**Ce qui change.** Dans l'en-tête d'un enregistrement, le bouton « Exporter » quitte la rangée des informations : il se place en haut à droite, juste après l'étoile des favoris, sur un fond de la couleur d'accent. Sur téléphone, il passe à la ligne sous le titre, toujours calé à droite.
+
+**Pourquoi / décision.** Il se perdait parmi les autres informations. Le texte du bouton reprend la couleur prévue pour l'accent (sombre en thème sombre, blanc en thème clair) : du blanc sur le bleu clair du thème sombre serait illisible.
+
 ## 2026-11-03 — Un seul lecteur qui continue entre les pages ; playlist avec l'écoute de la source
 Étiquettes : utilisateur, technique
 PR : #199

@@ -45,7 +45,7 @@ export function ExportEntry({
     return (
       <button
         type="button"
-        className="btn btn--ghost btn--sm"
+        className="btn btn--ghost export-entry"
         data-testid="export-entry"
         disabled
         title="L’analyse n’est pas terminée"
@@ -56,7 +56,7 @@ export function ExportEntry({
     );
   return (
     <Link
-      className="btn btn--secondary btn--sm"
+      className="btn btn--accent export-entry"
       href={`/s/${sessionId}/exporter`}
       data-testid="export-entry"
     >
