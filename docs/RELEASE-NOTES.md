@@ -57,6 +57,19 @@ PR : #181
 
 **Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
 
+## 2026-11-03 — Plus de double barre de défilement sur l'accueil
+Étiquettes : utilisateur, technique
+PR : -
+
+**Ce qui change.** Sur un écran de bureau peu haut, la page d'accueil avait deux barres de défilement et un fond qui
+s'arrêtait en cours de page (le panneau des sessions finissait au milieu de l'écran, avec du vide dessous). Il n'y a
+plus qu'un seul défilement, celui de la zone centrale.
+
+**Pourquoi / décision.** Un champ masqué (`.sr`, en `position: absolute`) dans la zone centrale s'accrochait au
+document : il échappait au défilement de la zone et allongeait la page de plusieurs centaines de pixels. La zone
+centrale (`.center`) est maintenant le bloc contenant de ses éléments absolus. Mesuré sur toutes les pages à
+plusieurs tailles d'écran (bureau 1534 × 700 et 1280 × 720, 1100 px, téléphone) : un seul défilement actif partout.
+
 ## 2026-11-03 — Une vidéo envoyée ressort telle quelle, avec la traduction par-dessus
 Étiquettes : utilisateur, technique, décision
 PR : -
