@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-03 — Un rôle récitateur : enregistrer et exporter la vidéo, sans le reste
+Étiquettes : utilisateur, technique
+PR : #181
+
+**Ce qui change.** Un troisième rôle, **récitateur**, pour celles et ceux qui ne font qu'enregistrer des récitations. Son interface se réduit à sa liste de sessions, à l'enregistrement (« Nouvel essai », sans écoute en direct) et à l'export **vidéo** seul, sans vérification ni sous-titres. Le serveur lui refuse la revue et les sous-titres. Le rôle se choisit sur l'invitation et se change dans la gestion des comptes.
+
+**Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
+
 ## 2026-11-03 — Un enregistrement audio seul ne bloque plus l'export vidéo
 Étiquettes : utilisateur, technique
 PR : #180

@@ -166,3 +166,39 @@ describe("migrations versionnées", () => {
     db.close();
   });
 });
+
+describe("migration 010 : rôle récitateur", () => {
+  it("élargit le rôle sans supprimer comptes, connexions ni préférences", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    const all = loadMigrations(migrationsDir());
+    applyMigrations(
+      db,
+      all.filter((m) => m.version < 10),
+    );
+    db.exec(
+      `INSERT INTO users (id, username, username_key, password_hash, role, created_at)
+         VALUES (1, 'admin', 'admin', 'x', 'admin', '2026-11-01T00:00:00.000Z'),
+                (2, 'elève', 'eleve', 'x', 'user', '2026-11-01T00:00:00.000Z');
+       INSERT INTO auth_sessions (token_hash, user_id, created_at, last_seen_at, expires_at)
+         VALUES ('h', 2, '2026-11-01T00:00:00.000Z', '2026-11-01T00:00:00.000Z', '2026-12-01T00:00:00.000Z');
+       INSERT INTO preferences (user_id, key, value, updated_at)
+         VALUES (2, 'theme', '"dark"', '2026-11-01T00:00:00.000Z');`,
+    );
+    applyMigrations(db, all);
+    const count = (table: string) =>
+      (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number })
+        .n;
+    expect(count("users")).toBe(2);
+    expect(count("auth_sessions")).toBe(1);
+    expect(count("preferences")).toBe(1);
+    db.prepare(
+      "UPDATE users SET role = 'recitant' WHERE username_key = 'eleve'",
+    ).run();
+    expect(() =>
+      db.prepare("UPDATE users SET role = 'inconnu' WHERE id = 2").run(),
+    ).toThrow();
+    expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    db.close();
+  });
+});

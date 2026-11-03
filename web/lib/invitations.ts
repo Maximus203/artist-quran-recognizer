@@ -27,7 +27,10 @@ export type InvitationRow = {
   uses: number;
   last_used_at: string | null;
   revoked_at: string | null;
+  /** Rôle du compte créé avec cette invitation : testeur, ou récitateur (enregistre et exporte, interface réduite). */
+  role: InvitationRole;
 };
+export type InvitationRole = "user" | "recitant";
 export { invitationState, type InvitationState } from "./invitation-state";
 import { invitationState, type InvitationState } from "./invitation-state";
 
@@ -41,7 +44,7 @@ export class InvitationLimitError extends Error {
 }
 
 const COLUMNS =
-  "id, label, prefix, created_by, created_at, expires_at, max_uses, uses, last_used_at, revoked_at";
+  "id, label, prefix, created_by, created_at, expires_at, max_uses, uses, last_used_at, revoked_at, role";
 const hash = (token: string): string =>
   createHash("sha256").update(token).digest("hex");
 
@@ -71,6 +74,7 @@ export function createInvitation(
     createdBy: number;
     expiresInDays?: number;
     maxUses?: number;
+    role?: InvitationRole;
   },
   now = new Date(),
 ): { token: string; row: InvitationRow } {
@@ -84,8 +88,8 @@ export function createInvitation(
   const token = INVITATION_PREFIX + randomBytes(16).toString("base64url");
   const info = db
     .prepare(
-      `INSERT INTO invitations (label, token_hash, prefix, created_by, created_at, expires_at, max_uses)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO invitations (label, token_hash, prefix, created_by, created_at, expires_at, max_uses, role)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.label,
@@ -95,6 +99,7 @@ export function createInvitation(
       now.toISOString(),
       new Date(now.getTime() + days * 86_400_000).toISOString(),
       clamp(input.maxUses, 1, MAX_USES, 1),
+      input.role === "recitant" ? "recitant" : "user",
     );
   const row = db
     .prepare(`SELECT ${COLUMNS} FROM invitations WHERE id = ?`)
@@ -164,4 +169,17 @@ export function revokeInvitation(
     )
     .run(now.toISOString(), id);
   return Number(info.changes) > 0;
+}
+
+/** Rôle que l'invitation accorde, si elle est encore utilisable (active) ; sinon null. Lecture seule. */
+export function invitationRole(
+  db: Db,
+  token: unknown,
+  now = new Date(),
+): InvitationRole | null {
+  if (!looksLikeInvitation(token)) return null;
+  const row = db
+    .prepare(`SELECT ${COLUMNS} FROM invitations WHERE token_hash = ?`)
+    .get(hash(token)) as InvitationRow | undefined;
+  return row && invitationState(row, now) === "active" ? row.role : null;
 }

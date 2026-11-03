@@ -17,6 +17,8 @@ export type InvitationRowView = {
   uses: number;
   last_used_at: string | null;
   revoked_at: string | null;
+  /** Rôle du compte créé avec ce lien. */
+  role: "user" | "recitant";
 };
 
 export type InvitationsViewProps = {
@@ -27,10 +29,12 @@ export type InvitationsViewProps = {
   label: string;
   days: string;
   maxUses: string;
+  role: "user" | "recitant";
   pending: boolean;
   onLabel: (value: string) => void;
   onDays: (value: string) => void;
   onMaxUses: (value: string) => void;
+  onRole: (value: "user" | "recitant") => void;
   onCreate: (event: React.FormEvent) => void;
   onRevoke: (invitation: InvitationRowView) => void;
   onCopy: (text: string) => void;
@@ -49,6 +53,10 @@ const STATE_LABEL: Record<InvitationState, string> = {
 
 const DAYS = ["7", "14", "30", "90"];
 const USES = ["1", "2", "5", "10"];
+const ROLES = [
+  { value: "user", label: "Testeur" },
+  { value: "recitant", label: "Récitateur" },
+] as const;
 
 const dateFr = (iso: string): string =>
   new Date(iso).toLocaleDateString("fr-FR", {
@@ -174,6 +182,23 @@ export function InvitationsView(props: InvitationsViewProps) {
             </select>
           </label>
           <label className="field">
+            <span>Rôle du compte</span>
+            <select
+              className="input"
+              value={props.role}
+              data-testid="invitation-role"
+              onChange={(event) =>
+                props.onRole(event.target.value as "user" | "recitant")
+              }
+            >
+              {ROLES.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
             <span>Comptes que ce lien peut créer</span>
             <select
               className="input"
@@ -222,6 +247,9 @@ export function InvitationsView(props: InvitationsViewProps) {
                     <li key={inv.id} data-state={opens ? "active" : "revoked"}>
                       <div>
                         <b>{inv.label}</b>{" "}
+                        <span className="badge badge--plain badge--outline">
+                          {inv.role === "recitant" ? "Récitateur" : "Testeur"}
+                        </span>{" "}
                         <span
                           className="badge badge--plain badge--outline"
                           data-testid={`invitation-state-${inv.id}`}

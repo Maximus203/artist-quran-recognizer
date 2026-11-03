@@ -253,7 +253,9 @@ export async function sessionAccess(
       response: forbidden(
         ability === "truth"
           ? "La vérité terrain est réservée aux administrateurs."
-          : "Seul le propriétaire (ou un administrateur) peut faire cela.",
+          : ability === "export_subtitles"
+            ? "Les sous-titres ne sont pas ouverts à ce rôle : seule la vidéo l'est."
+            : "Seul le propriétaire (ou un administrateur) peut faire cela.",
       ),
     };
   return { ...auth, id, meta };

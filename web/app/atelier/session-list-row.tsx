@@ -9,9 +9,11 @@ import {
   formatListDate,
   isVideoSession,
 } from "@/lib/session-list";
+import { sessionHref } from "@/lib/role-view";
 import { useOwnerPerson, PersonChip } from "./avatar";
 import { Icon, SessionGlyph, type IconName } from "./icons";
 import { FavButton, NameEditor, ScopeBadge, useDismiss } from "./session-bits";
+import { useShell } from "./shell";
 
 export type RowActions = {
   onFavorite: (s: ApiSession) => void;
@@ -65,6 +67,8 @@ export function SessionListRow({
 }: Props) {
   const row = buildRow(s, now);
   const video = isVideoSession(s);
+  const { user } = useShell();
+  const href = sessionHref(user.role, s.id);
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState<null | "global" | "delete">(null);
   const [renaming, setRenaming] = useState(false);
@@ -164,11 +168,7 @@ export function SessionListRow({
           />
         </div>
       ) : (
-        <Link
-          className="sname"
-          href={`/?session=${s.id}`}
-          data-testid="open-session"
-        >
+        <Link className="sname" href={href} data-testid="open-session">
           <b>
             {s.visibility === "private" ? (
               <>
@@ -317,13 +317,9 @@ export function SessionListRow({
             </div>
           ) : (
             <>
-              <Link
-                role="menuitem"
-                className="menu-item"
-                href={`/?session=${s.id}`}
-              >
+              <Link role="menuitem" className="menu-item" href={href}>
                 <Icon name="wave" />
-                Ouvrir
+                {user.role === "recitant" ? "Exporter la vidéo" : "Ouvrir"}
               </Link>
               {s.can_edit
                 ? item("edit", "Renommer", () => {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requirePageUser } from "@/lib/page-auth";
+import { requireTesterPage } from "@/lib/page-auth";
 import { PageFrame } from "../../atelier/page-frame";
 import { PerfView } from "../../atelier/perf-view";
 
@@ -12,7 +12,7 @@ export default async function PerformancePage({
   searchParams: Promise<{ vue?: string }>;
 }) {
   const { vue } = await searchParams;
-  await requirePageUser(
+  await requireTesterPage(
     vue === "moi" ? "/performance?vue=moi" : "/performance",
   );
   return (

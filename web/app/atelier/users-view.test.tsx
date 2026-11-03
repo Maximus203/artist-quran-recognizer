@@ -26,7 +26,7 @@ const props = (over: Partial<UsersViewProps> = {}): UsersViewProps => ({
   busyId: null,
   onReset: vi.fn(),
   onToggleDisabled: vi.fn(),
-  onToggleRole: vi.fn(),
+  onChangeRole: vi.fn(),
   onDismissReveal: vi.fn(),
   ...over,
 });
@@ -79,29 +79,35 @@ describe("actions", () => {
     expect(text(out)).toContain("toi");
   });
 
-  it("un testeur : réinitialiser, désactiver, promouvoir", () => {
+  it("un testeur : réinitialiser, désactiver, choisir son rôle", () => {
     const out = html();
     expect(out).toContain('data-testid="user-reset-2"');
     expect(out).toContain('data-testid="user-toggle-2"');
     expect(out).toContain('data-testid="user-role-2"');
-    expect(text(out)).toContain("Promouvoir");
   });
 
-  it("un autre administrateur : rétrograder", () => {
+  it("le rôle se choisit parmi les trois : testeur, récitateur, administrateur", () => {
     const out = html({
-      users: [user({ id: 3, username: "Aminata", role: "admin" })],
+      users: [user({ id: 3, username: "Aminata", role: "recitant" })],
     });
-    expect(text(out)).toContain("Rétrograder");
+    const select = out.slice(out.indexOf('data-testid="user-role-3"'));
+    for (const value of ["user", "recitant", "admin"])
+      expect(select).toContain(`value="${value}"`);
+    expect(text(out)).toContain("Récitateur");
   });
 
   it("une action en cours désactive les boutons de la ligne", () => {
     const out = html({ busyId: 2 });
-    for (const kind of ["reset", "toggle", "role"]) {
+    for (const kind of ["reset", "toggle"]) {
       const button = new RegExp(
         `<button[^>]*data-testid="user-${kind}-2"[^>]*>`,
       ).exec(out)?.[0];
       expect(button, kind).toContain("disabled");
     }
+    const role = new RegExp(`<select[^>]*data-testid="user-role-2"[^>]*>`).exec(
+      out,
+    )?.[0];
+    expect(role, "role").toContain("disabled");
   });
 });
 

@@ -1,5 +1,6 @@
 import { seenLabel } from "@/lib/agent-status";
 import { formatBytesFr } from "@/lib/format";
+import type { Role } from "@/lib/users";
 import { Icon } from "./icons";
 
 /**
@@ -7,12 +8,23 @@ import { Icon } from "./icons";
  * (mot de passe temporaire, désactivation, rôle). Composant d'AFFICHAGE : les appels réseau vivent dans `UsersPane`.
  */
 
+const ROLE_LABEL: Record<Role, string> = {
+  user: "Testeur",
+  admin: "Administrateur",
+  recitant: "Récitateur",
+};
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: "user", label: "Testeur" },
+  { value: "recitant", label: "Récitateur" },
+  { value: "admin", label: "Administrateur" },
+];
+
 /** Une seule colonne : `.srow2` est une grille « libellé / contrôle » par défaut. */
 const ROW = { gridTemplateColumns: "1fr" } as const;
 export type UserRowView = {
   id: number;
   username: string;
-  role: "user" | "admin";
+  role: Role;
   disabled: boolean;
   created_at: string;
   last_login_at: string | null;
@@ -34,7 +46,7 @@ export type UsersViewProps = {
   busyId: number | null;
   onReset: (user: UserRowView) => void;
   onToggleDisabled: (user: UserRowView) => void;
-  onToggleRole: (user: UserRowView) => void;
+  onChangeRole: (user: UserRowView, role: Role) => void;
   onDismissReveal: () => void;
 };
 
@@ -121,7 +133,7 @@ export function UsersView(props: UsersViewProps) {
                     <div>
                       <b>{u.username}</b>{" "}
                       <span className="badge badge--plain badge--outline">
-                        {u.role === "admin" ? "Administrateur" : "Testeur"}
+                        {ROLE_LABEL[u.role]}
                       </span>{" "}
                       {u.disabled ? (
                         <span className="badge badge--plain badge--outline">
@@ -162,15 +174,22 @@ export function UsersView(props: UsersViewProps) {
                         >
                           Mot de passe
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn--ghost btn--sm"
+                        <select
+                          className="input"
+                          aria-label={`Rôle de ${u.username}`}
                           disabled={busy}
+                          value={u.role}
                           data-testid={`user-role-${u.id}`}
-                          onClick={() => props.onToggleRole(u)}
+                          onChange={(event) =>
+                            props.onChangeRole(u, event.target.value as Role)
+                          }
                         >
-                          {u.role === "admin" ? "Rétrograder" : "Promouvoir"}
-                        </button>
+                          {ROLE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                         <button
                           type="button"
                           className="btn btn--ghost btn--sm"

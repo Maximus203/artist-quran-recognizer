@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 const patch = z
   .object({
-    role: z.enum(["user", "admin"]),
+    role: z.enum(["user", "admin", "recitant"]),
     disabled: z.boolean(),
     /** Lève le verrou de connexion « par compte » (attaque répartie). */
     unlock: z.literal(true),
@@ -34,7 +34,7 @@ async function handlePATCH(
   if (!parsed.success)
     return apiError(
       400,
-      'Corps attendu : { role?: "user"|"admin", disabled?: boolean, unlock?: true }.',
+      'Corps attendu : { role?: "user"|"admin"|"recitant", disabled?: boolean, unlock?: true }.',
       {
         code: "invalid",
       },

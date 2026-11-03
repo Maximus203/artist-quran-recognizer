@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { buildLinkMap } from "@/lib/docs-view";
 import { loadDocsIndex, summarize } from "@/lib/docs";
-import { requirePageUser } from "@/lib/page-auth";
+import { requireTesterPage } from "@/lib/page-auth";
 import { DocsShell } from "../../atelier/docs-shell";
 import { PageFrame } from "../../atelier/page-frame";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DocsHome() {
-  await requirePageUser("/docs");
+  await requireTesterPage("/docs");
   const entries = await loadDocsIndex();
   return (
     <PageFrame active="docs">

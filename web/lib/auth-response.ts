@@ -6,13 +6,13 @@ import {
   type AuthResult,
 } from "./auth";
 import { isSecure } from "./route-guard";
-import type { User } from "./users";
+import type { Role, User } from "./users";
 
 /** Ce que l'API dit d'un compte : jamais d'empreinte, jamais d'état interne. */
 export type PublicUser = {
   id: number;
   username: string;
-  role: "user" | "admin";
+  role: Role;
   created_at: string;
   last_login_at: string | null;
   /** Empreinte de la photo de profil (adresse de l'image : `avatarUrl`), ou null = initiale. */

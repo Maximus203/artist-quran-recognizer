@@ -30,7 +30,7 @@ async function handlePOST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const access = await sessionAccess(request, params, "view", {
+  const access = await sessionAccess(request, params, "export_subtitles", {
     mutation: true,
   });
   if (!access.ok) return access.response;

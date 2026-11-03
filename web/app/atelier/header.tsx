@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 import { useEffectiveTheme } from "./hooks";
 import { Icon } from "./icons";
 import { AccountMenu } from "./account-menu";
+import { pageVisibleTo, type PageId } from "@/lib/role-view";
 import { useShell } from "./shell";
 
 export type NavId = "revue" | "sessions" | "perf" | "live" | "docs" | "account";
@@ -27,7 +28,7 @@ type Props = {
   onNew?: () => void;
 };
 
-const NAV: { id: NavId; href: string; label: string }[] = [
+const NAV: { id: PageId; href: string; label: string }[] = [
   { id: "revue", href: "/", label: "Revue" },
   { id: "sessions", href: "/sessions", label: "Sessions" },
   { id: "perf", href: "/performance", label: "Performance" },
@@ -37,7 +38,7 @@ const NAV: { id: NavId; href: string; label: string }[] = [
 
 /** Barre du haut commune à toutes les pages connectées. */
 export function Header({ active, left, right, onRevue, onNew }: Props) {
-  const { prefs, update } = useShell();
+  const { prefs, update, user } = useShell();
   const dark = useEffectiveTheme(prefs.theme) === "dark";
   return (
     <header className="header">
@@ -87,7 +88,7 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
         </b>
       </Link>
       <nav className="nav" aria-label="Pages">
-        {NAV.map((item) => (
+        {NAV.filter((item) => pageVisibleTo(user.role, item.id)).map((item) => (
           <Link
             key={item.id}
             href={item.href}
@@ -108,15 +109,17 @@ export function Header({ active, left, right, onRevue, onNew }: Props) {
         ))}
       </nav>
       <span className="spacer" />
-      <Link
-        className="btn btn--secondary btn--icon btn--sm live-link"
-        data-testid="nav-live-icon"
-        href="/direct"
-        aria-label="En direct"
-        aria-current={active === "live" ? "page" : undefined}
-      >
-        <Icon name="live" />
-      </Link>
+      {pageVisibleTo(user.role, "live") ? (
+        <Link
+          className="btn btn--secondary btn--icon btn--sm live-link"
+          data-testid="nav-live-icon"
+          href="/direct"
+          aria-label="En direct"
+          aria-current={active === "live" ? "page" : undefined}
+        >
+          <Icon name="live" />
+        </Link>
+      ) : null}
       {onNew ? (
         <button
           type="button"

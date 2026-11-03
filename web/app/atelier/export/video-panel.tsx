@@ -132,7 +132,8 @@ export function VideoPanel({
   sessionId: string;
   player: Player;
   onError: (message: string) => void;
-  onGoVerify: () => void;
+  /** Absent pour le récitateur : pas de vérification à lui proposer. */
+  onGoVerify?: () => void;
   announce: (message: string) => void;
   /** Vidéos déjà gardées sur le serveur et réutilisation d'une vidéo identique. */
   existingVideos: SavedVideo[];
@@ -775,13 +776,15 @@ export function VideoPanel({
                 vidéo n’aurait rien à afficher. Vérifie d’abord les passages
                 ambigus.
               </p>
-              <button
-                type="button"
-                className="btn btn--secondary"
-                onClick={onGoVerify}
-              >
-                Aller à Vérifier
-              </button>
+              {onGoVerify ? (
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={onGoVerify}
+                >
+                  Aller à Vérifier
+                </button>
+              ) : null}
             </div>
           ) : (
             <>

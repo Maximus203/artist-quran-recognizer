@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bindMediaDrop, isVideoName } from "@/lib/audio-upload";
 import { listenWindow } from "@/lib/marking";
 import { activeIndex, intervalLabel, intervalStateLabel } from "@/lib/passage";
+import { sessionHref } from "@/lib/role-view";
 import type { Preferences } from "@/lib/preferences-schema";
 import { canModifyAnnotation } from "@/lib/review-access";
 import type { Annotation } from "@/lib/review";
@@ -64,6 +65,7 @@ export default function ReviewApp() {
   const visible = usePageVisible();
   const sidebar = useSidebarSessions();
   const admin = user.role === "admin";
+  const recitant = user.role === "recitant";
   const me = useMemo(
     () => ({ username: user.username, admin }),
     [user.username, admin],
@@ -164,6 +166,11 @@ export default function ReviewApp() {
   /* ── ouverture d'une session ── */
   const open = useCallback(
     (id: string) => {
+      // Le récitateur n'ouvre pas la revue : une session qu'il choisit part vers son export vidéo.
+      if (recitant) {
+        window.location.assign(sessionHref("recitant", id));
+        return;
+      }
       setCurrentId(id);
       setView("revue");
       setSelectedIndex(null);
@@ -172,7 +179,7 @@ export default function ReviewApp() {
       setDrawer(null);
       history.replaceState(null, "", `?session=${id}`);
     },
-    [prefs.followPlayback],
+    [prefs.followPlayback, recitant],
   );
   const showNew = useCallback(() => {
     setView("new");
@@ -642,12 +649,16 @@ export default function ReviewApp() {
           buttonRef: leftButton,
           attention,
         }}
-        right={{
-          open: rightOpen,
-          onToggle: toggleRight,
-          buttonRef: rightButton,
-          available: rightAvailable,
-        }}
+        right={
+          recitant
+            ? undefined
+            : {
+                open: rightOpen,
+                onToggle: toggleRight,
+                buttonRef: rightButton,
+                available: rightAvailable,
+              }
+        }
       />
       <div
         className="workspace"

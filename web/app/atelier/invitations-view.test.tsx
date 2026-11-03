@@ -19,6 +19,7 @@ const row = (over: Partial<InvitationRowView> = {}): InvitationRowView => ({
   uses: 0,
   last_used_at: null,
   revoked_at: null,
+  role: "user",
   ...over,
 });
 const props = (
@@ -31,6 +32,8 @@ const props = (
   label: "",
   days: "14",
   maxUses: "1",
+  role: "user",
+  onRole: vi.fn(),
   pending: false,
   onLabel: vi.fn(),
   onDays: vi.fn(),
@@ -148,5 +151,22 @@ describe("création et lien montré une seule fois", () => {
       html({ pending: true }),
     )?.[0];
     expect(button).toContain("disabled");
+  });
+});
+
+describe("rôle accordé par l'invitation", () => {
+  it("le formulaire choisit le rôle du compte : testeur ou récitateur", () => {
+    const out = renderToStaticMarkup(<InvitationsView {...props()} />);
+    expect(out).toContain('data-testid="invitation-role"');
+    expect(out).toContain('value="recitant"');
+  });
+
+  it("chaque invitation affiche le rôle qu'elle accorde", () => {
+    const out = renderToStaticMarkup(
+      <InvitationsView
+        {...props({ invitations: [row({ role: "recitant" })] })}
+      />,
+    );
+    expect(out).toContain("Récitateur");
   });
 });

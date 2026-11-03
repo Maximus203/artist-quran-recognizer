@@ -40,6 +40,7 @@ import { ForceDialog } from "./force-dialog";
 import { useSavedVideos } from "./use-saved-videos";
 import { VideoLibrary } from "./video-library";
 import { VideoPanel } from "./video-panel";
+import { useShell } from "../shell";
 import { VerifyOverview } from "./verify-overview";
 import { NonQuranLine, VerdictCard } from "./readiness-card";
 import { Filters, ReadinessList, type RowActions } from "./readiness-list";
@@ -119,7 +120,9 @@ function ExportView({
   const [type, setType] = useState<ItemType | null>(null);
   const [page, setPage] = useState(0);
   // La vérification est une porte : on ouvre dessus (badge « n à valider » ou « Prêt »).
-  const [tab, setTab] = useState<Tab>("verifier");
+  // Le récitateur n'exporte que la vidéo : pas de vérification, pas de sous-titres.
+  const recitant = useShell().user.role === "recitant";
+  const [tab, setTab] = useState<Tab>(recitant ? "video" : "verifier");
   const [fileName, setFileName] = useState("");
   const [live, setLive] = useState("");
   const announce = useCallback((message: string) => {
@@ -452,7 +455,7 @@ function ExportView({
             className="xr-rail"
             role="tablist"
             aria-label="Étapes de l’export"
-            hidden={failed}
+            hidden={failed || recitant}
             onKeyDown={(event) => {
               const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
               if (!keys.includes(event.key)) return;
@@ -555,7 +558,7 @@ function ExportView({
           role="tabpanel"
           aria-labelledby="ex-tab-verifier"
           aria-busy={ready.loading}
-          hidden={tab !== "verifier" && !failed}
+          hidden={recitant || (tab !== "verifier" && !failed)}
         >
           {ready.error && !data ? (
             <ErrorPanel
@@ -654,7 +657,7 @@ function ExportView({
           id="ex-panel-soustitres"
           role="tabpanel"
           aria-labelledby="ex-tab-soustitres"
-          hidden={failed || tab !== "soustitres"}
+          hidden={recitant || failed || tab !== "soustitres"}
         >
           <form
             className="xr-main"
@@ -737,7 +740,7 @@ function ExportView({
               sessionId={sessionId}
               player={player}
               onError={toast.show}
-              onGoVerify={() => setTab("verifier")}
+              onGoVerify={recitant ? undefined : () => setTab("verifier")}
               announce={announce}
               existingVideos={saved.videos}
               reuseVideos={reuseVideo}
@@ -813,11 +816,13 @@ function ExportView({
 }
 
 function Crumb({ sessionId, name }: { sessionId: string; name?: string }) {
+  // Le récitateur n'a pas la revue : son retour mène à la liste de ses sessions.
+  const recitant = useShell().user.role === "recitant";
   return (
     <nav className="ex-crumb" aria-label="Fil d’Ariane">
-      <Link href={`/?session=${sessionId}`}>
+      <Link href={recitant ? "/sessions" : `/?session=${sessionId}`}>
         <XIcon name="chev-l" size={16} />
-        Retour à la session
+        {recitant ? "Mes sessions" : "Retour à la session"}
       </Link>
       {name ? (
         <>

@@ -11,6 +11,7 @@ import { audit } from "./audit";
 import {
   canRegister,
   consumeInvitation,
+  invitationRole,
   looksLikeInvitation,
 } from "./invitations";
 import { DbFailureStore } from "./failure-store";
@@ -354,11 +355,14 @@ export async function registerAccount(
     };
 
   const passwordHash = await hashPassword(password.value);
+  // Le rôle est celui de l'invitation (testeur par défaut) ; le premier compte reste administrateur.
+  const grantedRole =
+    (invited && invitationRole(deps.db, invitation, new Date(now))) || "user";
   try {
     const user = transaction(deps.db, () => {
       const created = createUser(
         deps.db,
-        { username: name.value, passwordHash },
+        { username: name.value, passwordHash, role: grantedRole },
         iso(now),
       );
       touchLogin(deps.db, created.id, iso(now));

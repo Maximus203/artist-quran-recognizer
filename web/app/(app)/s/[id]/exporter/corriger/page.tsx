@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { requirePageUser } from "@/lib/page-auth";
+import { requireTesterPage } from "@/lib/page-auth";
 import { isSessionId } from "@/lib/session-id";
 import { CorrectPage } from "../../../../../atelier/export/correct-item";
 import { PageFrame } from "../../../../../atelier/page-frame";
@@ -25,7 +25,7 @@ export default async function CorrectRoute({
   if (!isSessionId(id)) notFound();
   const { item } = await searchParams;
   const key = typeof item === "string" ? item : "";
-  await requirePageUser(
+  await requireTesterPage(
     `/s/${id}/exporter/corriger${key ? `?item=${encodeURIComponent(key)}` : ""}`,
   );
   if (!ITEM_KEY.test(key)) redirect(`/s/${id}/exporter`);

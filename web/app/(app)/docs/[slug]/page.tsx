@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { buildLinkMap } from "@/lib/docs-view";
 import { SLUG, loadDocsIndex, readDoc, summarize } from "@/lib/docs";
-import { requirePageUser } from "@/lib/page-auth";
+import { requireTesterPage } from "@/lib/page-auth";
 import { DocsShell } from "../../../atelier/docs-shell";
 import { PageFrame } from "../../../atelier/page-frame";
 
@@ -21,7 +21,7 @@ export default async function DocPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  await requirePageUser(`/docs/${encodeURIComponent(slug)}`);
+  await requireTesterPage(`/docs/${encodeURIComponent(slug)}`);
   if (!SLUG.test(slug)) notFound();
   const entries = await loadDocsIndex();
   const entry = entries.find((item) => item.slug === slug);

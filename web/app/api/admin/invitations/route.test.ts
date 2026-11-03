@@ -97,6 +97,21 @@ describe("création et liste", () => {
     expect(listing).not.toContain("token_hash");
   });
 
+  it("invitation de récitateur : le rôle est porté par l'invitation, testeur par défaut", async () => {
+    const { invitation } = await (
+      await list.POST(req("POST", "admin", { label: "Imam", role: "recitant" }))
+    ).json();
+    expect(invitation.role).toBe("recitant");
+    const plain = await (
+      await list.POST(req("POST", "admin", { label: "Ali" }))
+    ).json();
+    expect(plain.invitation.role).toBe("user");
+    expect(
+      (await list.POST(req("POST", "admin", { label: "x", role: "admin" })))
+        .status,
+    ).toBe(400);
+  });
+
   it("valeurs par défaut sans les champs facultatifs", async () => {
     const { invitation } = await (
       await list.POST(req("POST", "admin", { label: "Fatou" }))

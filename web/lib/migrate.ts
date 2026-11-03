@@ -49,6 +49,14 @@ export function applyMigrations(
   );
   const applied: number[] = [];
   for (const migration of migrations) {
+    // Une reconstruction de table (DROP puis RENAME) ne peut pas se faire clés étrangères actives :
+    // PRAGMA foreign_keys est sans effet dans une transaction, donc il se coupe AVANT, et se contrôle APRÈS.
+    const fkOff = FOREIGN_KEYS_OFF.test(migration.sql);
+    const fkWas = fkOff
+      ? (db.prepare("PRAGMA foreign_keys").get() as { foreign_keys: number })
+          .foreign_keys
+      : 0;
+    if (fkOff) db.exec("PRAGMA foreign_keys = OFF");
     db.exec("BEGIN IMMEDIATE");
     try {
       const done = db
@@ -62,6 +70,13 @@ export function applyMigrations(
           );
       } else {
         db.exec(migration.sql);
+        if (fkOff) {
+          const broken = db.prepare("PRAGMA foreign_key_check").all();
+          if (broken.length > 0)
+            throw new Error(
+              `La migration ${migration.version}_${migration.name} laisse ${broken.length} clé(s) étrangère(s) cassée(s).`,
+            );
+        }
         db.prepare(
           "INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)",
         ).run(migration.version, migration.name, sum, now());
@@ -71,7 +86,12 @@ export function applyMigrations(
     } catch (error) {
       db.exec("ROLLBACK");
       throw error;
+    } finally {
+      if (fkOff && fkWas) db.exec("PRAGMA foreign_keys = ON");
     }
   }
   return applied;
 }
+
+/** Marqueur d'une migration qui reconstruit une table référencée : clés étrangères coupées le temps de son exécution. */
+const FOREIGN_KEYS_OFF = /^-- @foreign_keys_off\s*$/m;
