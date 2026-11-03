@@ -47,10 +47,14 @@ export type FrameCard = {
   live: LiveWords | null;
 };
 
-/** Les cartes d'une session, ordonnées par temps de début (le résultat l'est déjà). */
+/**
+ * Les cartes d'une session, ordonnées par temps de début (le résultat l'est déjà). Sans écriture
+ * arabe, la carte ne garde que la référence et la traduction (le texte arabe n'est pas dessiné).
+ */
 export function frameCards(
   intervals: readonly Interval[],
   showTranslation: boolean,
+  showArabic = true,
 ): FrameCard[] {
   return videoCardInputs(intervals)
     .map((card, index) => ({ card, interval: cardIntervals(intervals)[index] }))
@@ -58,6 +62,7 @@ export function frameCards(
     .map((entry) => ({
       card: {
         ...entry.card,
+        arabic: showArabic ? entry.card.arabic : "",
         translation: showTranslation ? entry.card.translation : null,
         attribution: null,
       },

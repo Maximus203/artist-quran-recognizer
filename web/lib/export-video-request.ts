@@ -28,6 +28,7 @@ export function exportVideoRequest(
     arabic_size: prefs.arabicSize,
     translation_size: prefs.translationSize,
     show_translation: prefs.showTranslation,
+    show_arabic: prefs.showArabic,
     show_wave: prefs.showWave,
     text_position: prefs.textPosition,
     fill: prefs.fill,

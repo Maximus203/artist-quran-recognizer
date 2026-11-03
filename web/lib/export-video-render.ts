@@ -166,7 +166,11 @@ export async function renderSessionVideo(
   if (!(duration > 0))
     throw new Error("Copie d'écoute illisible : durée absente.");
 
-  const cards = frameCards(result.intervals, prefs.showTranslation);
+  const cards = frameCards(
+    result.intervals,
+    prefs.showTranslation,
+    prefs.showArabic,
+  );
   if (cards.length === 0)
     throw new Error("Aucun passage coranique avec texte : rien à montrer.");
   const mode = inputs.suggest ?? (inputs.perVerse ? "verse" : undefined);
