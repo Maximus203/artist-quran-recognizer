@@ -12,6 +12,7 @@ import {
   blocksAt,
   cycleBlock,
   handlePlacements,
+  hitLayout,
   overlappingBlocks,
   stepSize,
   type FrameRect,
@@ -135,7 +136,11 @@ export function EditOverlay(props: EditOverlayProps) {
           case "tap": {
             // Toucher encore l'élément déjà choisi : passe à celui d'en dessous s'il y en a plusieurs.
             if (!pressedSelected.current) break;
-            const under = blocksAt(p.layout, effect.point, p.visible);
+            const under = blocksAt(
+              hitLayout(p.layout, frameRectOf(rootRef.current)),
+              effect.point,
+              p.visible,
+            );
             if (under.length > 1) {
               const next = cycleBlock(under, effect.id);
               if (next && next !== effect.id) {
@@ -213,7 +218,7 @@ export function EditOverlay(props: EditOverlayProps) {
       x: (event.clientX - rect.left) / rect.width,
       y: (event.clientY - rect.top) / rect.height,
     };
-    const under = blocksAt(p.layout, point, p.visible);
+    const under = blocksAt(hitLayout(p.layout, rect), point, p.visible);
     // Glisser un élément déjà choisi le déplace, même si un plus petit se trouve dessous.
     const id = p.selected && under.includes(p.selected) ? p.selected : under[0];
     return id ? { kind: "block", id } : { kind: "background" };
@@ -295,6 +300,8 @@ export function EditOverlay(props: EditOverlayProps) {
 
   const shown = BLOCK_IDS.filter((id) => visible[id] !== false);
   const overlapping = overlappingBlocks(layout, visible);
+  // Les zones qu'on attrape ont 44 px au moins (une ligne de sourate n'en fait que 11) ; le cadre de sélection, lui, garde la vraie boîte.
+  const hits = hitLayout(layout, frame);
   const selectedBox =
     selected && visible[selected] !== false ? layout[selected] : null;
 
@@ -333,7 +340,7 @@ export function EditOverlay(props: EditOverlayProps) {
           data-selected={selected === id || undefined}
           data-overlap={overlapping.includes(id) || undefined}
           data-testid={`zone-${id}`}
-          style={percentStyle(layout[id])}
+          style={percentStyle(hits[id])}
           onKeyDown={(event) => onKeyDown(event, id)}
           onFocus={() => {
             if (latest.current.selected !== id) latest.current.onSelect(id);

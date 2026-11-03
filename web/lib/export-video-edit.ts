@@ -429,6 +429,35 @@ export function blocksAt(
   }).sort((a, b) => layout[a].w * layout[a].h - layout[b].w * layout[b].h);
 }
 
+/**
+ * La mise en page de quoi ATTRAPER les éléments du doigt : chaque boîte plus petite que `hit` px (la ligne de
+ * la sourate, une onde basse) est agrandie autour de son centre jusqu'à `hit` px, sans sortir du cadre ; les
+ * autres sont inchangées. Ce n'est qu'une zone d'appui : le cadre de sélection et les réglages gardent la
+ * vraie boîte. Un cadre sans taille (pas encore mesuré) rend la mise en page telle quelle.
+ */
+export function hitLayout(
+  layout: ExportLayout,
+  frame: { width: number; height: number },
+  hit: number = HANDLE_HIT,
+): ExportLayout {
+  if (!(frame.width > 0) || !(frame.height > 0)) return layout;
+  const grow = (start: number, size: number, framePx: number) => {
+    const wanted = Math.min(1, hit / framePx);
+    if (size >= wanted) return { start, size };
+    const next = wanted;
+    const centred = start + size / 2 - next / 2;
+    return { start: Math.min(1 - next, Math.max(0, centred)), size: next };
+  };
+  const next = {} as ExportLayout;
+  for (const id of BLOCK_IDS) {
+    const b = layout[id];
+    const x = grow(b.x, b.w, frame.width);
+    const y = grow(b.y, b.h, frame.height);
+    next[id] = { x: x.start, y: y.start, w: x.size, h: y.size };
+  }
+  return next;
+}
+
 /** Deux boîtes se recouvrent-elles (des boîtes qui se touchent seulement ne se recouvrent pas) ? */
 const overlap = (a: Box, b: Box): boolean =>
   Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 1e-6 &&
