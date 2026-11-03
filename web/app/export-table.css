@@ -428,6 +428,7 @@
   background: var(--surface-2);
   color: var(--text);
   font: 600 var(--fs-xs) / 1 var(--font-mono);
+  white-space: nowrap;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
