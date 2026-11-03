@@ -53,7 +53,7 @@ export function describeVisibility(id: BlockId, shown: boolean): string {
 }
 
 /** L'onde n'a pas de texte : ni taille en pourcents, ni pincement. */
-export const sizeLockedBlock = (id: BlockId): boolean => id === "wave";
+export const sizeLockedBlock = (id: BlockId): id is "wave" => id === "wave";
 
 export type FitEntry = Pick<BlockFit, "note" | "overflow">;
 export type FitReport = Partial<Record<TextBlockId, FitEntry>>;

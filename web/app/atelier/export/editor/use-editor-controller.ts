@@ -8,7 +8,11 @@ import {
   stepSize,
   type BoxField,
 } from "@/lib/export-video-edit";
-import { fitReport, type FitReport } from "@/lib/export-video-edit-text";
+import {
+  describeVisibility,
+  fitReport,
+  type FitReport,
+} from "@/lib/export-video-edit-text";
 import {
   canHide,
   isVisible,
@@ -69,6 +73,8 @@ export type EditorController = {
   sizes: Record<TextBlockId, number>;
   /** Ce que l'ajustement du texte à sa zone a fait : « réduit à 87 % ». */
   fit: FitReport;
+  /** La dernière phrase à annoncer aux lecteurs d'écran (élément masqué ou affiché) ; l'éditeur la pose dans une région `aria-live`. */
+  status: string;
   reportLayout: (card: CardLayout | null) => void;
   /** Tout ce que `EditOverlay` attend. */
   overlay: Pick<
@@ -107,6 +113,8 @@ export type EditorController = {
   setAccent: (accent: VideoPrefs["accent"]) => void;
 };
 
+/** Caractère invisible ajouté pour qu'une même phrase soit annoncée deux fois de suite. */
+const REPEAT_MARK = String.fromCharCode(0x200b);
 const sameReport = (a: FitReport, b: FitReport): boolean =>
   JSON.stringify(a) === JSON.stringify(b);
 const sameBox = (a: Box, b: Box): boolean =>
@@ -124,6 +132,7 @@ export function useEditorController({
   const [rawSelected, setSelected] = useState<BlockId | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [fit, setFit] = useState<FitReport>({});
+  const [status, setStatus] = useState("");
 
   const layoutKey = activeLayoutKey(committed.orientation, sourceSize);
   const latest = useRef({ committed, layoutKey });
@@ -235,6 +244,7 @@ export function useEditorController({
     select,
     sizes,
     fit,
+    status,
     reportLayout,
     overlay,
     setBox: commitBox,
@@ -312,6 +322,12 @@ export function useEditorController({
       if (!change) return false;
       patch(change);
       if (!shown) setSelected((old) => (old === id ? null : old));
+      // Le même texte deux fois de suite doit être annoncé deux fois : un caractère invisible l'alterne.
+      setStatus(
+        (old) =>
+          describeVisibility(id, shown) +
+          (old.endsWith(REPEAT_MARK) ? "" : REPEAT_MARK),
+      );
       return true;
     },
     canHide: (id) => canHide(committed, id),

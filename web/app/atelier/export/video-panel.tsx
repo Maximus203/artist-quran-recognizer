@@ -55,12 +55,11 @@ import {
 import { exportVideoRequest } from "@/lib/export-video-request";
 import { findSilences } from "@/lib/export-video-suggest";
 import {
-  megabytesFr,
   rangesWeight,
   renderTimeFr,
   weightLevel,
 } from "@/lib/export-video-weight";
-import { fitView, formatClock, type View } from "@/lib/export-timeline";
+import { fitView, type View } from "@/lib/export-timeline";
 import { formatDurationFr } from "@/lib/format";
 import type { ListeningPeaks } from "@/lib/listening";
 import type { Interval, Recognition } from "@/lib/recognition";
@@ -356,7 +355,6 @@ export function VideoPanel({
   }, [ctx]);
 
   const selected = ranges.find((r) => r.id === selectedId) ?? null;
-  const selectedIndex = selected ? ranges.indexOf(selected) : -1;
   const select = useCallback(
     (id: number) => {
       setSelectedId(id);

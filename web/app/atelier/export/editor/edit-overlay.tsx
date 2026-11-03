@@ -25,6 +25,7 @@ import {
   BLOCK_SHORT,
   describePlacement,
   describeSize,
+  sizeLockedBlock,
   type FitReport,
 } from "@/lib/export-video-edit-text";
 import {
@@ -106,7 +107,7 @@ const zoneHint = (id: BlockId): string =>
     : "Flèches : déplacer. Ctrl et flèches : changer la zone. Plus et moins : taille du texte. Échap : désélectionner.";
 
 export function EditOverlay(props: EditOverlayProps) {
-  const { layout, visible, selected, sizes, fit, disabled } = props;
+  const { layout, visible, selected, fit, disabled } = props;
   const rootRef = useRef<HTMLDivElement>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [message, setMessage] = useState("");
@@ -171,7 +172,8 @@ export function EditOverlay(props: EditOverlayProps) {
     gesture.current = createGesture({
       frame: () => frameRectOf(rootRef.current),
       box: (id) => latest.current.layout[id],
-      size: (id) => (id === "wave" ? null : (latest.current.sizes[id] ?? null)),
+      size: (id) =>
+        sizeLockedBlock(id) ? null : (latest.current.sizes[id] ?? null),
       selected: () => latest.current.selected,
     });
 
@@ -266,7 +268,7 @@ export function EditOverlay(props: EditOverlayProps) {
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>, id: BlockId) {
     const p = latest.current;
-    const size = id === "wave" ? null : (p.sizes[id] ?? null);
+    const size = sizeLockedBlock(id) ? null : (p.sizes[id] ?? null);
     const action = keyAction(
       event.key,
       { shift: event.shiftKey, ctrl: event.ctrlKey, meta: event.metaKey },
@@ -282,7 +284,7 @@ export function EditOverlay(props: EditOverlayProps) {
         announce(describePlacement(id, action.box));
         break;
       case "size": {
-        if (size === null || id === "wave") break;
+        if (size === null || sizeLockedBlock(id)) break;
         const next = stepSize(size, action.direction);
         p.onSize(id, next, "end");
         announce(describeSize(id, next));
