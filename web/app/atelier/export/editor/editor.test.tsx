@@ -62,11 +62,10 @@ describe("les éditeurs et leur registre", () => {
     expect(isEditorMode(undefined)).toBe(false);
   });
 
-  it("le plateau est enregistré ; un mode sans éditeur retombe sur lui", () => {
+  it("le plateau est enregistré ; un mode sans éditeur (la table) retombe sur lui", () => {
     expect(EDITORS.plateau).toBe(PlateauEditor);
     expect(editorFor("plateau")).toBe(PlateauEditor);
     expect(editorFor("table")).toBe(PlateauEditor);
-    expect(editorFor("pas")).toBe(PlateauEditor);
   });
 });
 
@@ -376,12 +375,9 @@ describe("ExportEditor (le contrat d'intégration)", () => {
     expect(html).toContain("Récitation du vendredi");
   });
 
-  it("un mode sans éditeur (table, pas) montre le plateau", () => {
+  it("un mode sans éditeur (table) montre le plateau", () => {
     expect(
       renderToStaticMarkup(<ExportEditor {...props()} mode="table" />),
-    ).toContain('data-testid="editor-plateau"');
-    expect(
-      renderToStaticMarkup(<ExportEditor {...props()} mode="pas" />),
     ).toContain('data-testid="editor-plateau"');
   });
 
