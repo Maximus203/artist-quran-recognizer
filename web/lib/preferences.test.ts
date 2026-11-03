@@ -46,6 +46,8 @@ describe("préférences : défauts centralisés", () => {
         "shortcutsEnabled",
         "reviewTab",
         "defaultVisibility",
+        "exportOptions",
+        "videoPrefs",
       ].sort(),
     );
   });

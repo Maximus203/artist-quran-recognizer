@@ -267,8 +267,8 @@ réel (la même fonction de dessin que l'export, sur le verset le plus long de l
 La police arabe est préchargée (`document.fonts`) : la marque U+06DA y est rendue
 comme dans le DOM. I1/I2 tenus : corpus source unique, traduction sans modification, et
 l'attribution QuranEnc n'est pas incrustée (choix du mainteneur). Réglages (format, tailles
-d'écriture, fond, traduction) mémorisés dans le navigateur (`aqr.ui.v1.export-video`,
-même convention que les réglages de sous-titres). Encodage navigateur requis : WebCodecs
+d'écriture, fond, traduction) enregistrés SUR LE COMPTE (préférence serveur `videoPrefs`, comme
+les réglages de sous-titres `exportOptions`) : chaque personne retrouve les siens, sur tout appareil. Encodage navigateur requis : WebCodecs
 H.264 (Chrome, Edge) ; sinon message explicite. Un export est un acte : rien n'est
 mémorisé, les segments et le MP4 temporaires sont supprimés dans tous les cas.
 

@@ -26,13 +26,7 @@ import {
   type PlanContext,
   type PlanRange,
 } from "@/lib/export-video-plan";
-import {
-  DEFAULT_VIDEO_PREFS,
-  loadVideoPrefs,
-  resolveOrientation,
-  saveVideoPrefs,
-  type VideoPrefs,
-} from "@/lib/export-video-prefs";
+import { resolveOrientation, type VideoPrefs } from "@/lib/export-video-prefs";
 import {
   applyFileProgress,
   failFile,
@@ -81,13 +75,14 @@ import {
 } from "./video-bordereau";
 import { backgroundName, formatName, sizeName, VideoLook } from "./video-look";
 import { VideoPreview } from "./video-preview";
+import { useShell } from "../shell";
 import { CustomQuality, QualityTiers, WeightGauge } from "./video-quality";
 
 /**
  * Onglet « Vidéo » de l'export, direction « Le rouleau et les signets » : 1. ce que tu exportes
  * (frise + plages + souffle), 2. à quoi elle ressemble, 3. qualité et poids ; l'aperçu et le
  * bordereau restent visibles (colonne collante au bureau, bandeau + dock sur téléphone). Les
- * réglages se mémorisent (`aqr.ui.v1.export-video`).
+ * réglages se mémorisent sur le compte (préférence `videoPrefs`).
  */
 type Player = ReturnType<typeof usePlayer>;
 const TL = EXPORT_VIDEO_CONFIG.timeline;
@@ -142,7 +137,9 @@ export function VideoPanel({
   const savedRef = useRef({ existingVideos, reuseVideos });
   savedRef.current = { existingVideos, reuseVideos };
   const wide = useMedia("(min-width: 1024px)");
-  const [prefs, setPrefs] = useState<VideoPrefs>(DEFAULT_VIDEO_PREFS);
+  // Réglages du compte (pas de l’appareil) : déjà chargés avec la page, donc aucun clignotement.
+  const { prefs: accountPrefs, update } = useShell();
+  const [prefs, setPrefs] = useState<VideoPrefs>(accountPrefs.videoPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
   const [sessionName, setSessionName] = useState("");
   const [intervals, setIntervals] = useState<readonly Interval[] | null>(null);
@@ -184,7 +181,6 @@ export function VideoPanel({
 
   // --- données : résultat, crêtes, vidéo d'origine, imagettes ------------------------------
   useEffect(() => {
-    setPrefs(loadVideoPrefs());
     setPrefsReady(true);
     let cancelled = false;
     Promise.all([
@@ -246,13 +242,15 @@ export function VideoPanel({
     };
   }, [isVideo, duration, sessionId]);
 
-  const patch = useCallback((next: Partial<VideoPrefs>) => {
-    setPrefs((current) => {
-      const value = { ...current, ...next };
-      saveVideoPrefs(value);
-      return value;
-    });
-  }, []);
+  const patch = useCallback(
+    (next: Partial<VideoPrefs>) => {
+      const value = { ...prefsRef.current, ...next };
+      prefsRef.current = value;
+      setPrefs(value);
+      update({ videoPrefs: value });
+    },
+    [update],
+  );
 
   const ctx: PlanContext | null = useMemo(
     () =>

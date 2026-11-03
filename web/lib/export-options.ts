@@ -96,6 +96,31 @@ export function resolveExportOptions(input: unknown): ExportOptions {
   return options;
 }
 
+/**
+ * Ce qui se mémorise sur le compte. Jamais le forçage ni la politique : forcer est un choix à refaire
+ * à chaque export, en connaissance de cause.
+ */
+export const storedExportOptionsSchema = exportOptionsSchema
+  .omit({ allow_unresolved: true, policy: true })
+  .required();
+export type StoredExportOptions = z.infer<typeof storedExportOptionsSchema>;
+
+export function toStoredExportOptions(
+  options: ExportOptions,
+): StoredExportOptions {
+  const { allow_unresolved: _allow, policy: _policy, ...kept } = options;
+  return kept;
+}
+
+/** Réglages du compte, complétés par les défauts ; une durée incohérente revient aux défauts. */
+export function fromStoredExportOptions(
+  stored: StoredExportOptions,
+): ExportOptions {
+  const options = { ...DEFAULT_EXPORT_OPTIONS, ...stored };
+  if (options.max_s < options.min_s) return { ...DEFAULT_EXPORT_OPTIONS };
+  return { ...options, allow_unresolved: false, policy: "omit" };
+}
+
 const FILE_EXTENSION: Record<ExportFormat, string> = {
   srt: "srt",
   vtt: "vtt",

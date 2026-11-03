@@ -41,6 +41,21 @@ PR : #181
 
 **Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
 
+## 2026-11-03 — Les réglages d'export sont ceux de chaque compte
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Les réglages des sous-titres et de la vidéo (format, tailles, fond, traduction, qualité…)
+sont enregistrés sur ton compte, plus sur l'appareil : un navigateur partagé par l'administrateur et un testeur
+ne mêle plus leurs réglages, et tu retrouves les tiens sur n'importe quel appareil. Les brouillons de décisions
+hors ligne sont rangés par compte. Une seule fois, les anciens réglages de l'appareil sont retirés : chacun repart
+des valeurs par défaut et les refait une fois.
+
+**Pourquoi / décision.** Les réglages vivaient dans le `localStorage` sous une clé fixe, partagée par tous les
+comptes d'un même navigateur. Ils rejoignent les préférences de compte existantes (`preferences-schema.ts`, clés
+`exportOptions` et `videoPrefs`) : même synchronisation, même validation serveur. Le forçage et la politique
+d'export ne sont toujours pas mémorisés (choix à refaire à chaque export).
+
 ## 2026-11-03 — Un enregistrement audio seul ne bloque plus l'export vidéo
 Étiquettes : utilisateur, technique
 PR : #180

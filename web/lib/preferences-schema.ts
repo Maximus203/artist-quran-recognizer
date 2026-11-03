@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { ECHO } from "./audio-echo";
 import { AUDIO_OFFSET } from "./audio-offset";
+import {
+  storedExportOptionsSchema,
+  toStoredExportOptions,
+  DEFAULT_EXPORT_OPTIONS,
+} from "./export-options";
+import { DEFAULT_VIDEO_PREFS, videoPrefsSchema } from "./export-video-prefs";
 import { QURAN_FONTS, type QuranFontId } from "./quran-fonts";
 import { ENGINE_FILTERS, SCOPES, SORTS, STATE_FILTERS } from "./session-query";
 
@@ -61,6 +67,10 @@ export const preferencesShape = {
   shortcutsEnabled: z.boolean(),
   reviewTab: z.enum(REVIEW_TABS),
   defaultVisibility: z.enum(["global", "private"]),
+  /** Réglages des sous-titres exportés : sur le compte, pas sur l'appareil. */
+  exportOptions: storedExportOptionsSchema,
+  /** Réglages de la vidéo d'export : sur le compte, pas sur l'appareil. */
+  videoPrefs: videoPrefsSchema,
 } as const;
 
 export type Preferences = {
@@ -87,6 +97,8 @@ export const PREFERENCE_DEFAULTS: Preferences = {
   shortcutsEnabled: true,
   reviewTab: "sig",
   defaultVisibility: "private",
+  exportOptions: toStoredExportOptions(DEFAULT_EXPORT_OPTIONS),
+  videoPrefs: DEFAULT_VIDEO_PREFS,
 };
 
 export const PREFERENCE_KEYS = Object.keys(preferencesShape) as PreferenceKey[];

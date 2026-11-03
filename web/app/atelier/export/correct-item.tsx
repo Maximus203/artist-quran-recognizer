@@ -18,8 +18,11 @@ import {
 import { clearOps, pendingOps, queueOps } from "@/lib/export-draft";
 import { ListenMeter } from "@/lib/export-listen";
 import { neighbours } from "@/lib/export-neighbours";
-import type { ExportOptions } from "@/lib/export-options";
-import { loadExportOptions } from "@/lib/export-prefs";
+import {
+  type ExportOptions,
+  fromStoredExportOptions,
+} from "@/lib/export-options";
+import { useShell } from "../shell";
 import {
   IMPACT_LABEL,
   TYPE_LABEL,
@@ -142,6 +145,7 @@ function CorrectForm({
   setDecisions: (view: DecisionsView) => void;
   reload: () => void;
 }) {
+  const viewerId = useShell().user.id;
   const router = useRouter();
   const toast = useToast();
   const [live, setLive] = useState("");
@@ -287,10 +291,10 @@ function CorrectForm({
       setOffline(false);
       try {
         let view = await saveDecisions(sessionId, [
-          ...pendingOps(sessionId),
+          ...pendingOps(viewerId, sessionId),
           ...ops,
         ]);
-        clearOps(sessionId);
+        clearOps(viewerId, sessionId);
         setDecisions(view);
         // Une décision enregistrée avec l'accord par défaut ; l'interrupteur peut la retirer, décision par décision.
         const fresh = view.decisions.find(
@@ -319,7 +323,7 @@ function CorrectForm({
         after();
       } catch (error) {
         if (error instanceof ApiError && error.status === 0) {
-          queueOps(sessionId, ops);
+          queueOps(viewerId, sessionId, ops);
           setOffline(true);
           announce("Hors ligne : ta décision est gardée sur cet appareil.");
         } else
@@ -332,7 +336,17 @@ function CorrectForm({
         setSaving(false);
       }
     },
-    [announce, item, owner, reload, sessionId, setDecisions, toast, train],
+    [
+      announce,
+      item,
+      owner,
+      reload,
+      sessionId,
+      setDecisions,
+      toast,
+      train,
+      viewerId,
+    ],
   );
 
   const validate = useCallback(() => {
@@ -1133,8 +1147,12 @@ export function CorrectPage({
   sessionId: string;
   itemKey: string;
 }) {
-  const [options, setOptions] = useState<ExportOptions | null>(null);
-  useEffect(() => setOptions(loadExportOptions()), []);
+  // Réglages du compte (pas de l’appareil) : chaque personne garde les siens.
+  const { prefs } = useShell();
+  const options = useMemo(
+    () => fromStoredExportOptions(prefs.exportOptions),
+    [prefs.exportOptions],
+  );
   return (
     <div className="ex-xp-page">
       <div className="ex-xp-wrap">
@@ -1172,15 +1190,16 @@ function CorrectLoader({
   itemKey: string;
   options: ExportOptions;
 }) {
+  const viewerId = useShell().user.id;
   const data = useCorrection(sessionId, options);
   // Les décisions gardées hors ligne repartent dès que la page s'ouvre ou que le réseau revient.
   useEffect(() => {
     const flush = () => {
-      const pending = pendingOps(sessionId);
+      const pending = pendingOps(viewerId, sessionId);
       if (!pending.length) return;
       void saveDecisions(sessionId, pending).then(
         () => {
-          clearOps(sessionId);
+          clearOps(viewerId, sessionId);
           data.reload();
         },
         () => undefined,
@@ -1190,7 +1209,7 @@ function CorrectLoader({
     window.addEventListener("online", flush);
     return () => window.removeEventListener("online", flush);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, viewerId]);
   const item = data.items.find((i) => i.key === itemKey) ?? null;
   if (data.error)
     return (

@@ -2,8 +2,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchReadiness } from "@/lib/export-client";
-import { loadExportOptions } from "@/lib/export-prefs";
+import { fromStoredExportOptions } from "@/lib/export-options";
 import { Icon } from "../icons";
+import { useShell } from "../shell";
 
 /**
  * « Exporter » dans l'en-tête d'une session : le geste vers la page d'export, avec l'état en une
@@ -21,6 +22,7 @@ export function ExportEntry({
   decisionsVersion?: number;
 }) {
   const done = state === "done";
+  const { prefs } = useShell();
   const [verdict, setVerdict] = useState<{
     unresolved: number;
     ready: boolean;
@@ -30,7 +32,7 @@ export function ExportEntry({
     const controller = new AbortController();
     void fetchReadiness(
       sessionId,
-      loadExportOptions(),
+      fromStoredExportOptions(prefs.exportOptions),
       { size: 0 },
       controller.signal,
     ).then(
@@ -38,7 +40,7 @@ export function ExportEntry({
       () => undefined,
     );
     return () => controller.abort();
-  }, [done, sessionId, decisionsVersion]);
+  }, [done, sessionId, decisionsVersion, prefs.exportOptions]);
   if (!done)
     return (
       <button
