@@ -55,7 +55,7 @@ import { TIcon } from "./table-icons";
 export const RULER_H = 30;
 export const PASS_H = 34;
 export const WAVE_H = 48;
-export const FILM_H = 48;
+export const FILM_H = 56;
 /** Écart visé entre deux repères principaux de la règle (px). */
 const RULER_TARGET_PX = 64;
 /**

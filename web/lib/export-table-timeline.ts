@@ -348,7 +348,7 @@ export function filmPill(
   const { situation, repeats } = segment.fit;
   if (situation === "unknown") return "durée inconnue";
   if (situation === "same") return "même durée";
-  if (situation === "longer") return "glisse pour choisir la partie";
+  if (situation === "longer") return "glisse pour choisir";
   switch (clip.mode) {
     case "pingpong":
       return `aller-retour ×${frNumber(repeats ?? 1)}`;

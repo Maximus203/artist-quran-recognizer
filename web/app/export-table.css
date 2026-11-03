@@ -320,6 +320,10 @@
   height: 100%;
   border-radius: 0;
 }
+/* Les raccords se posent dans la moitié basse de la piste : la pastille du nom reste lisible au-dessus. */
+.xt-seg .bvs-seam--btn {
+  top: calc(100% - 22px);
+}
 .xt-film-plain {
   position: absolute;
   inset: 0;

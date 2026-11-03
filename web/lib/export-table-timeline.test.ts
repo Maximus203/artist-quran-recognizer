@@ -340,8 +340,8 @@ describe("pastille de la piste « Fond » : ce que la vidéo fait, en quelques m
     expect(pill(12, "freeze")).toBe("puis image figée");
     expect(pill(12, "slow")).toBe("ralentie à 40 %");
   });
-  it("plus longue : on glisse pour choisir la partie", () => {
-    expect(pill(65, "loop")).toBe("glisse pour choisir la partie");
+  it("plus longue : on glisse pour choisir", () => {
+    expect(pill(65, "loop")).toBe("glisse pour choisir");
   });
   it("même durée et durée inconnue", () => {
     expect(pill(30, "loop")).toBe("même durée");
