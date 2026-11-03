@@ -960,6 +960,26 @@ button.xe-step-val:hover {
   display: grid;
   gap: var(--sp-2);
 }
+.xe-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.xe-link {
+  min-height: var(--hit);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.xe-link:hover {
+  background: var(--surface-3);
+}
 .xe-formats .xr-fmt {
   min-height: 96px;
 }

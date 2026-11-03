@@ -255,30 +255,32 @@ export function BackgroundSection({
         }}
       />
       <p className="xr-lead xr-small">
-        Photos libres de droits (Pexels, crédits dans le dépôt). Plus de choix :
-        {FREE_IMAGE_SITES.map((site, i) => (
-          <span key={site.name}>
-            {i === 0 ? " " : " · "}
-            <a href={site.url} target="_blank" rel="noopener noreferrer">
-              {site.name}
-            </a>
-          </span>
-        ))}
-        , puis « Ma propre image ».
-        {frame.upload ? (
-          <>
-            {" "}
-            <button
-              type="button"
-              className="xr-link"
-              data-testid="video-bg-remove"
-              onClick={() => frame.onUpload(null)}
-            >
-              Retirer mon image
-            </button>
-          </>
-        ) : null}
+        Photos libres de droits (Pexels, crédits dans le dépôt). Pour d’autres
+        photos, ouvre un de ces sites puis choisis « Ma propre image ».
       </p>
+      <div className="xe-links">
+        {FREE_IMAGE_SITES.map((site) => (
+          <a
+            key={site.name}
+            className="xe-link"
+            href={site.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {site.name}
+          </a>
+        ))}
+        {frame.upload ? (
+          <button
+            type="button"
+            className="xr-link"
+            data-testid="video-bg-remove"
+            onClick={() => frame.onUpload(null)}
+          >
+            Retirer mon image
+          </button>
+        ) : null}
+      </div>
       {/* EMPLACEMENT — fond vidéo (phase « transport du fond vidéo ») : `frame.backgroundVideo`. */}
       {frame.backgroundVideo ?? null}
     </Field>

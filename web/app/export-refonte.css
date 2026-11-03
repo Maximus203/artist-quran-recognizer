@@ -327,7 +327,7 @@
   width: 100%;
 }
 .xr-seg button {
-  min-height: calc(var(--hit) - 4px);
+  min-height: var(--hit);
   padding: 0 var(--sp-2);
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
