@@ -235,14 +235,7 @@ export function TableEditor(editor: EditorProps) {
             compact={mode === "compact"}
             onSeek={playhead.seek}
             onNudge={playhead.nudge}
-            onJump={(direction) => {
-              if (playhead.jump(direction) === null)
-                announce(
-                  direction < 0
-                    ? "Pas de passage avant la tête de lecture."
-                    : "Pas de passage après la tête de lecture.",
-                );
-            }}
+            onJump={(direction) => playhead.jump(direction) !== null}
             parts={ranges.length}
             onClip={(next) => montage.onClip(next)}
             onHelp={hint.show ? hint.dismiss : hint.reopen}

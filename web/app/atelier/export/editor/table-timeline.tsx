@@ -106,7 +106,8 @@ export type TimelineProps = {
   compact: boolean;
   onSeek: (t: number) => void;
   onNudge: (delta: number) => void;
-  onJump: (direction: -1 | 1) => void;
+  /** Saute au passage voisin ; `false` s'il n'y en a pas dans ce sens. */
+  onJump: (direction: -1 | 1) => boolean;
   /** Nombre de plages exportées : un seul départ de la vidéo de fond vaut pour toutes. */
   parts: number;
   onClip: (clip: BackgroundVideoValue) => void;
@@ -399,10 +400,10 @@ export function TableTimeline(props: TimelineProps) {
     const action = playheadKey(event.key, event.shiftKey);
     if (!action) return;
     event.preventDefault();
+    if ("jump" in action) return jump(action.jump);
     const before = head.get();
     if ("delta" in action) props.onNudge(action.delta);
-    else if ("to" in action) props.onSeek(action.to === "start" ? 0 : duration);
-    else props.onJump(action.jump);
+    else props.onSeek(action.to === "start" ? 0 : duration);
     if (head.get() !== before)
       soon(`Tête de lecture : ${spokenTime(head.get())}.`);
   };
@@ -419,13 +420,12 @@ export function TableTimeline(props: TimelineProps) {
   const fwd01 = useHoldRepeat(() => step(0.1));
   const fwd1 = useHoldRepeat(() => step(1));
   const jump = (direction: -1 | 1) => {
-    const before = head.get();
-    props.onJump(direction);
-    // Pas de passage dans ce sens : l'éditeur l'annonce lui-même, on ne le recouvre pas.
-    if (head.get() !== before)
-      soon(
-        `Passage ${direction < 0 ? "précédent" : "suivant"} : ${spokenTime(head.get())}.`,
-      );
+    const moved = props.onJump(direction);
+    soon(
+      moved
+        ? `Passage ${direction < 0 ? "précédent" : "suivant"} : ${spokenTime(head.get())}.`
+        : `Pas de passage ${direction < 0 ? "avant" : "après"} la tête de lecture.`,
+    );
   };
 
   const onOffset = (offset: number, announce: boolean) => {
