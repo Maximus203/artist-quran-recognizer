@@ -8,12 +8,15 @@
  */
 import {
   BLOCK_IDS,
+  DEFAULT_LAYOUTS,
   MIN_BOX,
   SIZE_LIMITS,
   SIZE_STEP_RATIO,
+  layoutKeyFor,
   type BlockId,
   type Box,
   type ExportLayout,
+  type LayoutKey,
 } from "./export-video-model";
 
 // ── constantes ──────────────────────────────────────────────────────────────
@@ -37,6 +40,11 @@ export type Guide = {
 export type SnapOptions = {
   /** Seuil de l'aimant en fraction du cadre ; 0 (ou moins) = aimant coupé. */
   snap?: number;
+  /**
+   * Seuil de l'axe vertical quand il diffère de l'horizontal (un cadre n'est pas carré : 10 px d'écran
+   * valent des fractions différentes en largeur et en hauteur). Absent : `snap` sert aux deux axes.
+   */
+  snapY?: number;
   /** Marge visée (défaut `SNAP_MARGIN`). */
   margin?: number;
 };
@@ -119,6 +127,7 @@ export function moveBox(
 ): EditResult {
   const margin = options.margin ?? SNAP_MARGIN;
   const threshold = options.snap ?? 0;
+  const thresholdY = options.snapY ?? threshold;
   let next = clampBox({
     ...box,
     x: box.x + finite(delta.dx, 0),
@@ -130,7 +139,7 @@ export function moveBox(
     next = clampBox({ ...next, x: next.x + sx.offset });
     guides.push({ axis: "x", at: sx.target.at, kind: sx.target.kind });
   }
-  const sy = snapMove(next.y, next.h, threshold, margin);
+  const sy = snapMove(next.y, next.h, thresholdY, margin);
   if (sy) {
     next = clampBox({ ...next, y: next.y + sy.offset });
     guides.push({ axis: "y", at: sy.target.at, kind: sy.target.kind });
@@ -153,6 +162,7 @@ export function resizeBox(
 ): EditResult {
   const margin = options.margin ?? SNAP_MARGIN;
   const threshold = options.snap ?? 0;
+  const thresholdY = options.snapY ?? threshold;
   const dx = finite(delta.dx, 0);
   const dy = finite(delta.dy, 0);
   let left = box.x;
@@ -169,7 +179,7 @@ export function resizeBox(
         value: v,
         target,
       })),
-      threshold,
+      axis === "x" ? threshold : thresholdY,
     );
     if (!hit) return v;
     guides.push({ axis, at: hit.target.at, kind: hit.target.kind });
@@ -343,12 +353,20 @@ export function pinchSize(
 
 // ── toucher ─────────────────────────────────────────────────────────────────
 
-/** Les blocs sous un point (fractions du cadre), le plus petit d'abord : il est celui qu'on vise. */
+/** Quels blocs sont affichés dans l'aperçu ; un bloc absent de la liste compte comme affiché. */
+export type Visibility = Partial<Record<BlockId, boolean>>;
+
+/**
+ * Les blocs affichés sous un point (fractions du cadre), le plus petit d'abord : il est celui qu'on
+ * vise. Un bloc masqué n'est plus dans l'aperçu : on ne peut pas le toucher.
+ */
 export function blocksAt(
   layout: ExportLayout,
   point: { x: number; y: number },
+  visible: Visibility = {},
 ): BlockId[] {
   return BLOCK_IDS.filter((id) => {
+    if (visible[id] === false) return false;
     const b = layout[id];
     return (
       point.x >= b.x &&
@@ -357,4 +375,122 @@ export function blocksAt(
       point.y <= b.y + b.h
     );
   }).sort((a, b) => layout[a].w * layout[a].h - layout[b].w * layout[b].h);
+}
+
+/** Deux boîtes se recouvrent-elles (des boîtes qui se touchent seulement ne se recouvrent pas) ? */
+const overlap = (a: Box, b: Box): boolean =>
+  Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 1e-6 &&
+  Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > 1e-6;
+
+/**
+ * Les blocs affichés qui en recouvrent un autre, dans l'ordre des blocs : quand il y en a, le toucher
+ * seul ne suffit pas à viser le bon, l'interface le dit et propose les pastilles de choix.
+ */
+export function overlappingBlocks(
+  layout: ExportLayout,
+  visible: Visibility = {},
+): BlockId[] {
+  const shown = BLOCK_IDS.filter((id) => visible[id] !== false);
+  return shown.filter((id) =>
+    shown.some((other) => other !== id && overlap(layout[id], layout[other])),
+  );
+}
+
+/**
+ * Toucher encore au même endroit : passe au bloc suivant parmi ceux qui sont sous le doigt (le plus
+ * petit d'abord), puis revient au premier. L'élément choisi n'est pas sous le doigt : le premier.
+ */
+export function cycleBlock(
+  candidates: readonly BlockId[],
+  current: BlockId | null,
+): BlockId | null {
+  if (candidates.length === 0) return null;
+  const at = current === null ? -1 : candidates.indexOf(current);
+  return candidates[(at + 1) % candidates.length];
+}
+
+// ── champs Gauche, Haut, Largeur, Hauteur ───────────────────────────────────
+
+export type BoxField = "left" | "top" | "width" | "height";
+export const BOX_FIELDS: readonly BoxField[] = [
+  "left",
+  "top",
+  "width",
+  "height",
+];
+
+const round1 = (value: number): number => Math.round(value * 10) / 10;
+
+/** La boîte en pourcents du cadre, à 0,1 % près : ce que les champs affichent. */
+export function boxFields(box: Box): Record<BoxField, number> {
+  return {
+    left: round1(box.x * 100),
+    top: round1(box.y * 100),
+    width: round1(box.w * 100),
+    height: round1(box.h * 100),
+  };
+}
+
+/**
+ * Change un champ de la boîte (pourcents du cadre). Gauche et Haut déplacent sans changer la taille ;
+ * Largeur et Hauteur changent la zone, le coin haut-gauche reste. Bornes du cadre et taille minimale
+ * respectées ; une saisie qui n'est pas un nombre fini laisse la boîte telle quelle.
+ */
+export function setBoxField(box: Box, field: BoxField, percent: number): Box {
+  if (!Number.isFinite(percent)) return box;
+  const value = percent / 100;
+  switch (field) {
+    case "left":
+      return clampBox({ ...box, x: value });
+    case "top":
+      return clampBox({ ...box, y: value });
+    case "width":
+      return clampBox({ ...box, w: clamp(value, MIN_BOX.w, 1 - box.x) });
+    case "height":
+      return clampBox({ ...box, h: clamp(value, MIN_BOX.h, 1 - box.y) });
+  }
+}
+
+/** Centre la boîte dans le cadre (horizontalement, verticalement ou les deux), taille inchangée. */
+export function centerBox(box: Box, axis: "x" | "y" | "both"): Box {
+  return clampBox({
+    ...box,
+    x: axis === "y" ? box.x : (1 - box.w) / 2,
+    y: axis === "x" ? box.y : (1 - box.h) / 2,
+  });
+}
+
+/** La boîte d'origine d'un bloc pour un format : une copie, jamais l'objet partagé. */
+export function defaultBox(key: LayoutKey, id: BlockId): Box {
+  return { ...DEFAULT_LAYOUTS[key][id] };
+}
+
+/**
+ * La mise en page que l'éditeur modifie : celle du format choisi ; « comme la vidéo » suit la forme de
+ * la vidéo d'origine (paysage tant qu'on ne la connaît pas).
+ */
+export function activeLayoutKey(
+  orientation: LayoutKey | "source",
+  sourceSize: { width: number; height: number } | null,
+): LayoutKey {
+  if (orientation !== "source") return orientation;
+  return sourceSize
+    ? layoutKeyFor(sourceSize.width, sourceSize.height)
+    : "16:9";
+}
+
+// ── appui long ──────────────────────────────────────────────────────────────
+
+/** Attente avant le premier tour d'un appui long (ms), puis cadence de départ et plancher. */
+const REPEAT_FIRST_MS = 420;
+const REPEAT_START_MS = 150;
+const REPEAT_FLOOR_MS = 55;
+
+/**
+ * Délai (ms) avant le tour `count` d'un appui long sur − / + ou sur une flèche : une pause avant le
+ * premier tour, puis une cadence qui accélère jusqu'à un plancher. Un compteur invalide repart du début.
+ */
+export function repeatDelay(count: number): number {
+  if (!Number.isFinite(count) || count <= 0) return REPEAT_FIRST_MS;
+  return Math.max(REPEAT_FLOOR_MS, REPEAT_START_MS - (count - 1) * 12);
 }
