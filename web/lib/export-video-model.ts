@@ -12,7 +12,7 @@
  *
  * INVARIANT I1 : ce modèle ne porte AUCUN texte coranique ; il ne décrit que des boîtes et des styles.
  * Les valeurs par défaut reproduisent l'ancien comportement (bloc centré dans la zone au-dessus de
- * l'onde, mêmes marges) : voir `docs/adr/0017-mise-en-page-par-blocs.md`.
+ * l'onde, mêmes marges) : voir `docs/adr/0018-mise-en-page-par-blocs.md`.
  */
 import { z } from "zod";
 import {
@@ -85,9 +85,9 @@ export type ExportLayouts = z.infer<typeof layoutsSchema>;
  */
 export const DEFAULT_LAYOUTS: ExportLayouts = {
   "16:9": {
-    ref: { x: 0.25, y: 0.0725, w: 0.5, h: 0.06 },
-    arabic: { x: 0.08, y: 0.1325, w: 0.84, h: 0.44 },
-    translation: { x: 0.08, y: 0.5725, w: 0.84, h: 0.16 },
+    ref: { x: 0.25, y: 0.0575, w: 0.5, h: 0.06 },
+    arabic: { x: 0.08, y: 0.1175, w: 0.84, h: 0.47 },
+    translation: { x: 0.08, y: 0.5875, w: 0.84, h: 0.16 },
     wave: { x: 0, y: 0.78, w: 1, h: 0.22 },
   },
   "9:16": {

@@ -404,5 +404,12 @@
     "section": "Décisions",
     "file": "docs/adr/0017-moteur-d-analyse-a-distance.md",
     "summary": "L'agent du moteur appelle l'atelier (baux, jetons d'agent, résultat unique vérifié) ; il tourne sur Atlas, relié à Alpha par un second WireGuard."
+  },
+  {
+    "slug": "adr-0018-mise-en-page-par-blocs",
+    "title": "ADR-0018 — Mise en page de la vidéo par blocs",
+    "section": "Décisions",
+    "file": "docs/adr/0018-mise-en-page-par-blocs.md",
+    "summary": "Accepté le 2026-11-03 : quatre blocs (sourate et verset, arabe, traduction, onde) dans leurs boîtes par forme de cadre, style par texte (taille relative, fond aucun, transparent, flou ou plein), fond vidéo muet calé par vtime, anciens réglages convertis ; capacité des boîtes par défaut identique à l'ancien rendu, flou mesuré à ≈ +3,6 ms par image en 1080p."
   }
 ]

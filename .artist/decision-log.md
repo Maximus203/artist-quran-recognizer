@@ -1,5 +1,52 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-03 — Export vidéo : noyau de la mise en page par blocs (ADR-0018), fond flouté mesuré
+- **Quoi** : quatre blocs (sourate et verset, arabe, traduction, onde) dans leurs boîtes, par forme de cadre ; style par texte
+  (taille relative, remplir, place dans la boîte, fond aucun / transparent / flou / plein) ; fond vidéo (`vtime`) ; préférences
+  converties de l'ancien format à plat ; aides à l'édition pures. Aucune interface d'éditeur (phases 2 à 4).
+- **Patterns** : Strategy (4 fonds de texte, 4 comportements de fond vidéo), Adapter (canevas de travail du flou et chargement
+  de la vidéo de fond injectés, testables sans navigateur), Factory (mises en page et styles par défaut), Repository inchangé
+  (préférences serveur), migration en `z.preprocess` (un seul endroit lit l'ancien format).
+- **Fond flouté — mesures** (banc jetable non versionné ; Chrome 156 piloté par Playwright, Intel Core Ultra 9 275HX, Windows,
+  1920×1080, 300 images, lecture du canevas comprise, **encodage non compris** ; un « ×4 » = ralentissement du processeur à 4×
+  par le protocole de débogage, pour approcher un téléphone) :
+  - *Où passe le temps* (deux fonds 1595×475 et 1595×175, fond de l'image ≈ 4,5 ms) : relire le **canevas** en cours de dessin
+    coûte en moyenne +14,8 ms (médiane +2,3, p95 +65 : saccadé) ; relire l'**image** du décor +0,04 ms ; agrandir le petit
+    canevas en qualité haute +12,4 ms, en qualité basse +3,7 ms ; `ctx.filter = blur(16px)` pleine résolution +15,4 ms.
+  - *Parade livrée* : le flou est calculé en **basse résolution depuis le décor** (réduction ≈ force du flou), agrandi en
+    qualité basse dans le rectangle arrondi, puis teinté ; pas de `ctx.filter` (absent de certains navigateurs). Décor fixe :
+    petit canevas mis en cache. Une pièce pleine taille mise en cache, essayée, coûtait plus cher à reposer (+3,6 ms par grand
+    fond) que d'agrandir le petit canevas : abandonnée.
+  - *Rendu complet, 300 images* (moyenne [médiane] en ms) : **develop avant** photo 6,6 [6,4], vidéo simulée 16,7 [16,1] ;
+    **après, voile doux par défaut** photo 5,9 [5,8], vidéo 13,1 [12,0] (pas de régression, bruit ≈ ±1 ms) ; plein 3,8 ;
+    « aucun » avec ombre 10,3 (l'ombre de ~50 mots coûte ≈ +4,5 ms) ; **flou** photo 11,8 [9,4], vidéo 12,8 [12,3].
+    Avec processeur ×4 : voile photo 40,6, flou photo 47,1 ; voile vidéo 69,7, flou vidéo 80,7.
+  - *Lecture* : le flou ajoute ≈ 3,6 ms par image (médiane, photo) et ≈ 0 à 1 ms sur fond vidéo à 1080p ; à ×4, +6,5 / +11 ms.
+    Une minute à 30 im/s (1 800 images) : +6 s sur ce poste, +20 s à ×4. **Non mesuré** : l'encodage H.264, un vrai téléphone,
+    une vraie vidéo décodée (la vidéo est simulée par une image qui glisse), la lecture en GPU matériel (ce navigateur sans
+    interface rasterise sans doute en logiciel).
+- **Rendu avant/après** (4 cadres de référence : paysage photo court, portrait photo long, paysage dégradé long, carré dégradé
+  court ; banc jetable) : la **capacité** est identique (mêmes nombres de lignes, 1 / 7 / 4 / 1 d'arabe, tailles à 100 %).
+  Les positions diffèrent par construction (des boîtes fixes ne peuvent pas reproduire une pile qui s'adapte à chaque verset) ;
+  l'écart de pixels n'est donc pas un signal de dérive. Dérives connues : trois fonds de texte au lieu d'un voile ; un verset
+  court laisse de l'air entre les blocs ; un compte sans fond choisi sur une session audio (dégradé par défaut) voit un voile
+  doux là où il n'y en avait pas (un compte converti avec un dégradé ou une couleur choisis reçoit « aucun »).
+- **Défaut tranché seul** : styles partagés par les trois formats (une taille réglée en 16:9 s'ajuste en 9:16 par la réduction ;
+  variante : un style par format) ; le fond d'un texte épouse le texte (jamais plus grand que sa boîte), variante « toute la
+  boîte » disponible ; la place du texte dans sa boîte est un réglage (`valign`) : référence en bas, arabe au milieu, traduction
+  en haut de la leur ; la marge du fond n'enlève rien à la boîte (le texte peut la remplir, le fond reste dedans) ; tailles de
+  0,4 à 5 fois la taille par défaut (les anciens 40–240 pt et 16–140 pt tiennent dedans).
+- **Bug de conception trouvé par la comparaison d'images** : la réduction ne remontait pas après avoir changé le nombre de lignes
+  (un verset long tombait à 74 % alors que 94 % tenait) ; dichotomie ajoutée et testée par balayage. Idem pour la marge du
+  fond qui rognait la capacité (3 marges au lieu d'une).
+- **Constat à signaler** : l'export lancé depuis l'atelier est rendu **sur le serveur** par le JSON de l'API ; sans transport
+  des nouveaux réglages, un export aurait ignoré les zones, les fonds et la sourate masquée. `layouts`, `styles`, `show_ref` sont
+  ajoutés à l'API (facultatifs). **Reste** : le fichier de la vidéo de fond n'est pas envoyé au serveur (rendu sans interface :
+  il ne peut pas lire un fichier resté sur l'appareil) ; `apiDifferences` le dit. Une phase d'interface qui propose « Ma vidéo »
+  doit d'abord régler cet envoi (téléversement en flux, plafond de taille, nettoyage).
+- **Preuve** : `web/lib/export-video-{model,edit,vtime,layout,panels,frames,prefs,request,assets}.test.ts`,
+  `preferences.test.ts`, `prefs-sync.test.ts`, `video-jobs.test.ts` ; suite complète 2 609 tests (209 fichiers) verts, `tsc` propre.
+
 ## 2026-10-29 — Export : refonte de l'écran et sélecteur de plage visuel (PR #122)
 - **Direction** : « Le rouleau et les signets » (`docs/design/export-refonte/SPEC.md`), prolonge Encre & lapis sans police
   ni couleur nouvelle. La sélection est un geste humain (encre), le lapis reste la voix du moteur, le statut est un motif.

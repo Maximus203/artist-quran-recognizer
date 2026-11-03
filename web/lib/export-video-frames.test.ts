@@ -171,7 +171,7 @@ function fakeCanvas() {
       return true;
     },
   }) as unknown as CanvasRenderingContext2D;
-  return { ctx, calls };
+  return { ctx, calls, canvas: target.canvas };
 }
 
 const peaks = {

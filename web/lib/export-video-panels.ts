@@ -7,12 +7,13 @@
  * FLOU. Le flou se calcule en BASSE RÉSOLUTION, à partir du décor lui-même (image ou vidéo), jamais en
  * relisant le canevas en cours de dessin :
  *  1. la zone du décor est copiée vers un petit canevas (réduction par `k` proche de la force du flou) ;
- *  2. la teinte et les angles arrondis sont « cuits » dans ce petit canevas ;
- *  3. il est agrandi dans le rectangle, sans rognage, en qualité BASSE (bilinéaire).
- * Décor FIXE (photo) : le résultat pleine taille est mis en cache, une image ne coûte plus qu'un dessin 1:1.
- * Décor qui BOUGE (vidéo) : on refait 1–3 à chaque image (réduction presque gratuite, agrandissement
- * ∝ surface du fond). Dégradé ou couleur unie : le flou d'un décor lisse est le décor ; on ne fait que
- * teinter. Mesures au navigateur (1080p) : `.artist/decision-log.md`, « Fond flouté ».
+ *  2. il est agrandi dans le rectangle, en qualité BASSE (bilinéaire) ;
+ *  3. rogné au rectangle arrondi et teinté, au dessin (la pièce floue reste opaque : c'est ce qui coûte peu).
+ * Décor FIXE (photo) : le petit canevas (quelques ko) est mis en cache, une image ne refait que 2 et 3.
+ * Décor qui BOUGE (vidéo) : on refait 1 à 3 à chaque image (la réduction est presque gratuite). On ne met
+ * JAMAIS en cache la pièce pleine taille : la reposer coûtait plus cher que d'agrandir le petit canevas.
+ * Dégradé ou couleur unie : le flou d'un décor lisse est le décor ; on ne fait que teinter. Mesures au
+ * navigateur (1080p) : `.artist/decision-log.md`, « Fond flouté ».
  */
 import type { PanelStyle } from "./export-video-model";
 
@@ -178,21 +179,19 @@ const domScratch: Scratch = (width, height) => {
   };
 };
 
-/** Pièces floues en cache, par décor fixe (clé : zone, force, couleur…). */
-const patchCache = new WeakMap<object, Map<string, ScratchCanvas>>();
+/** Petits canevas flous en cache, par décor fixe (clé : zone et réduction). */
+const smallCache = new WeakMap<object, Map<string, ScratchCanvas>>();
 
 /**
- * Le décor derrière `rect`, réduit puis teinté et arrondi dans le petit canevas ; null si la source ou le
- * canevas de travail manquent. La zone du décor se déduit de la façon dont il est dessiné dans le cadre.
+ * Le décor derrière `rect`, réduit dans un petit canevas ; null si la source ou le canevas de travail
+ * manquent. La zone du décor se déduit de la façon dont il est dessiné dans le cadre.
  */
 function buildSmall(
   rect: PanelRect,
-  style: PanelStyle,
-  scale: number,
   backdrop: Backdrop,
   scratch: Scratch,
   k: number,
-): { work: ScratchCanvas; width: number; height: number } | null {
+): ScratchCanvas | null {
   const { dest, size } = backdrop;
   if (
     !(dest.width > 0) ||
@@ -218,16 +217,30 @@ function buildSmall(
   w.imageSmoothingEnabled = true;
   w.imageSmoothingQuality = "high";
   w.drawImage(backdrop.source, sx, sy, sw, sh, 0, 0, width, height);
-  // La teinte et les angles arrondis sont cuits ici : plus de rognage à faire sur le grand canevas.
-  w.fillStyle = rgba(style.color, style.opacity);
-  w.fillRect(0, 0, width, height);
-  w.globalCompositeOperation = "destination-in";
-  w.fillStyle = "#000";
-  w.beginPath();
-  w.roundRect(0, 0, width, height, (style.radius * scale) / k);
-  w.fill();
-  w.globalCompositeOperation = "source-over";
-  return { work, width, height };
+  return work;
+}
+
+/**
+ * Pose un décor flouté dans le rectangle arrondi, puis le teinte. La pièce reste OPAQUE (le rognage
+ * arrondi et la teinte se font ici, au dessin) : une pièce à bords transparents coûtait trois fois plus
+ * cher à poser qu'une pièce opaque rognée (mesuré, voir le journal des décisions).
+ */
+function blit(
+  ctx: CanvasRenderingContext2D,
+  rect: PanelRect,
+  style: PanelStyle,
+  scale: number,
+  draw: () => void,
+): void {
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(rect.x, rect.y, rect.width, rect.height, style.radius * scale);
+  ctx.clip();
+  draw();
+  // Le tracé du rectangle arrondi est toujours là (le rognage ne le consomme pas) : on le remplit.
+  ctx.fillStyle = rgba(style.color, style.opacity);
+  ctx.fill();
+  ctx.restore();
 }
 
 /** Le décor flouté (basse résolution), teinté, dans `rect`. */
@@ -242,53 +255,32 @@ function paintBlur(
   if (!backdrop) return paintTint(ctx, rect, style, scale);
   // Réduction proche de la force du flou : réduire puis agrandir EST le flou.
   const k = Math.max(2, Math.round((BLUR_PX * scale) / 2));
-  const scratch = deps.scratch ?? domScratch;
-
+  let small: ScratchCanvas | null;
   if (backdrop.live) {
-    // Décor qui bouge : tout se refait à chaque image, sur le petit canevas réutilisé.
-    const small = buildSmall(rect, style, scale, backdrop, scratch, k);
-    if (!small) return paintTint(ctx, rect, style, scale);
-    ctx.save();
+    // Décor qui bouge : on relit le décor à chaque image, dans le petit canevas réutilisé.
+    small = buildSmall(rect, backdrop, deps.scratch ?? domScratch, k);
+  } else {
+    // Décor fixe : le petit canevas (quelques ko) est calculé une fois par zone, puis réutilisé.
+    const key = [rect.x, rect.y, rect.width, rect.height, k].join("|");
+    let cached = smallCache.get(backdrop.source);
+    if (!cached) smallCache.set(backdrop.source, (cached = new Map()));
+    small = cached.get(key) ?? null;
+    if (!small) {
+      small = buildSmall(rect, backdrop, deps.fresh ?? domFresh, k);
+      if (small) cached.set(key, small);
+      // Plus ancien d'abord : on ne garde que les derniers (un par bloc de texte du passage affiché).
+      while (cached.size > CACHE_ENTRIES)
+        cached.delete(cached.keys().next().value as string);
+    }
+  }
+  if (!small) return paintTint(ctx, rect, style, scale);
+  const source = small.canvas;
+  // Agrandi en qualité BASSE (bilinéaire) : la haute qualité coûtait quatre fois plus pour le même flou.
+  blit(ctx, rect, style, scale, () => {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "low";
-    ctx.drawImage(small.work.canvas, rect.x, rect.y, rect.width, rect.height);
-    ctx.restore();
-    return;
-  }
-
-  // Décor fixe : la pièce pleine taille est calculée une fois, puis simplement posée.
-  const key = [
-    rect.x,
-    rect.y,
-    rect.width,
-    rect.height,
-    k,
-    style.radius * scale,
-    style.color,
-    style.opacity,
-  ].join("|");
-  let patches = patchCache.get(backdrop.source);
-  if (!patches) patchCache.set(backdrop.source, (patches = new Map()));
-  let patch = patches.get(key);
-  if (!patch) {
-    const small = buildSmall(rect, style, scale, backdrop, scratch, k);
-    const full =
-      small &&
-      (deps.fresh ?? domFresh)(
-        Math.max(1, Math.ceil(rect.width)),
-        Math.max(1, Math.ceil(rect.height)),
-      );
-    if (!small || !full) return paintTint(ctx, rect, style, scale);
-    full.ctx.imageSmoothingEnabled = true;
-    full.ctx.imageSmoothingQuality = "high";
-    full.ctx.drawImage(small.work.canvas, 0, 0, rect.width, rect.height);
-    patch = full;
-    patches.set(key, patch);
-    // Plus ancienne d'abord : on ne garde que les dernières pièces (une par passage affiché).
-    while (patches.size > CACHE_ENTRIES)
-      patches.delete(patches.keys().next().value as string);
-  }
-  ctx.drawImage(patch.canvas, rect.x, rect.y);
+    ctx.drawImage(source, rect.x, rect.y, rect.width, rect.height);
+  });
 }
 
 /**
