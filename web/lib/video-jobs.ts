@@ -38,6 +38,8 @@ export type VideoJob = {
   progress: string;
   /** Avancement réel de la vidéo en cours de rendu, de 0 à 1. */
   ratio: number;
+  /** Part de la barre prise par la préparation de la vidéo d'origine (0 quand la copie était déjà prête). */
+  prepare_share?: number;
   /** Vidéos déjà produites et nombre attendu (connu une fois les plages calculées). */
   files_done: number;
   files_total: number | null;
@@ -312,10 +314,16 @@ export async function startVideoJob(input: {
           session = null; // session illisible : le rendu tentera sa chance sans copie
         }
         if (session && isVideoContainer(session.extension)) {
-          job.progress = "Préparation de la vidéo pour le navigateur";
+          job.progress = "Préparation de la vidéo d'origine";
           await prepareBrowserFile(
             job.sessionId,
             await audioPath(job.sessionId),
+            (ratio) => {
+              // La copie 1080p se fabrique une fois (minutes pour une 4K) : la barre avance pendant ce temps.
+              job.prepare_share = PREPARE_SHARE;
+              job.ratio = ratio * PREPARE_SHARE;
+              job.progress = `Préparation de la vidéo d'origine : ${Math.round(ratio * 100)} %`;
+            },
           );
         }
         await Promise.race([
@@ -368,6 +376,9 @@ export async function startVideoJob(input: {
   return job;
 }
 
+/** Part de la barre de progression donnée à la préparation de la vidéo d'origine. */
+const PREPARE_SHARE = 0.3;
+
 /** État publié par la page de rendu (`window.__AQR_STATE`). */
 export type RenderPageState = {
   progress?: string;
@@ -382,7 +393,10 @@ export function applyRenderState(job: VideoJob, state: RenderPageState): void {
   if (typeof state.files_total === "number")
     job.files_total = state.files_total;
   if (typeof state.files_done === "number") job.files_done = state.files_done;
-  if (typeof state.ratio === "number") job.ratio = state.ratio;
+  if (typeof state.ratio === "number") {
+    const share = job.prepare_share ?? 0;
+    job.ratio = share + state.ratio * (1 - share);
+  }
 }
 
 /**

@@ -156,8 +156,9 @@ export function VideoLook({
         ) : null}
         {previewUnavailable ? (
           <p className="xr-lead" data-testid="video-preview-unavailable">
-            Ton appareil n’affiche pas l’image de la vidéo dans l’aperçu, mais
-            l’export la reprendra bien : elle est fabriquée sur le serveur.
+            L’aperçu n’affiche pas encore l’image de la vidéo (ton appareil ne
+            la lit pas, ou elle est en préparation sur le serveur), mais
+            l’export la reprendra bien.
           </p>
         ) : null}
         <div

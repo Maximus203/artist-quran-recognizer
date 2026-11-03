@@ -57,6 +57,21 @@ PR : #181
 
 **Pourquoi / décision.** Les personnes qui ne font que réciter voyaient toute l'interface de testeur. Le rôle est porté par la migration 010 : la table `users` est reconstruite pour élargir le rôle, sans perte de comptes, de sessions ni de préférences (vérifié sur la base réelle). Limite connue : la visibilité des sessions partagées reste celle des testeurs côté données ; seule l'interface est réduite (`docs/ARCHITECTURE-ATELIER.md`, ligne « Rôles »).
 
+## 2026-11-03 — L'export avec la vidéo d'origine en fond ne prend plus des heures
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** L'export d'une vidéo envoyée avec « Vidéo d'origine » en fond (le choix par défaut) était trop lent
+sur le serveur : une vidéo 4K de 2 minutes mettait plus d'une heure et occupait deux cœurs du serveur partagé. Le
+serveur fabrique maintenant, une seule fois par vidéo, une copie de travail en 1080p au plus ; l'export s'appuie
+dessus. La barre de progression avance pendant cette préparation (première fois seulement), au lieu de rester à 0 %.
+
+**Pourquoi / décision.** Le rendu se positionne dans la vidéo image par image : mesuré avec le navigateur du rendu,
+une source 4K à images clés espacées donne 0,9 image par seconde, la copie 1080p avec une image clé toutes les 8
+images environ 16 (×17), pour un fichier modéré. Une seule copie se fabrique à la fois (plusieurs 4K en parallèle
+saturaient les 2 Go du conteneur) et ffmpeg est borné à 2 fils. Les anciennes copies (pleine taille) sont ignorées et
+supprimées.
+
 ## 2026-11-03 — Plus de double barre de défilement sur l'accueil
 Étiquettes : utilisateur, technique
 PR : -
