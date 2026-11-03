@@ -135,6 +135,15 @@ a.btn {
 .btn--primary:hover:not(:disabled) {
   background: var(--action-bg-hover);
 }
+/* L'action qu'on cherche des yeux (ex. « Exporter ») : aplat d'accent, texte --on-accent (contraste mesuré
+ * dans les deux thèmes ; du blanc sur le lapis clair du thème sombre tomberait sous 3:1). */
+.btn--accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn--accent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, var(--on-accent));
+}
 .btn--secondary {
   border-color: var(--border-strong);
   color: var(--text);
