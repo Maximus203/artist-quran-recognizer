@@ -408,6 +408,30 @@ export function PreferencesPane() {
           </div>
         </Setting>
         <Setting
+          id="lab-echo"
+          label="Écho"
+          help="Ajoute une réverbération à l’écoute, comme dans une salle. N’affecte ni l’analyse ni la vidéo exportée."
+        >
+          <div className="slider-line">
+            <input
+              type="range"
+              data-testid="pref-echo"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(prefs.echo * 100)}
+              aria-labelledby="lab-echo"
+              style={{ "--p": `${prefs.echo * 100}%` } as React.CSSProperties}
+              onChange={(event) =>
+                update({ echo: Number(event.target.value) / 100 })
+              }
+            />
+            <output htmlFor="pref-echo">
+              {Math.round(prefs.echo * 100)} %
+            </output>
+          </div>
+        </Setting>
+        <Setting
           id="lab-keys"
           label="Raccourcis à une touche"
           help="M, P, L et Espace dans l’atelier. Désactivables (accessibilité)."

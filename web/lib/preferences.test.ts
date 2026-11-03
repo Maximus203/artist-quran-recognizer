@@ -42,6 +42,7 @@ describe("préférences : défauts centralisés", () => {
         "sessionsFilter",
         "playbackRate",
         "volume",
+        "echo",
         "shortcutsEnabled",
         "reviewTab",
         "defaultVisibility",

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dueForPublish } from "@/lib/clock";
 import { createStore } from "@/lib/mini-store";
+import { applyEcho } from "./echo-graph";
 
 export type PlayerState = { time: number; duration: number; playing: boolean };
 
@@ -30,6 +31,9 @@ export function usePlayer(
     volume: number;
     onRate: (rate: number) => void;
     onVolume: (volume: number) => void;
+    /** Écho de l'écoute (0 à 1), lui aussi une préférence du compte. Absent : pas d'écho. */
+    echo?: number;
+    onEcho?: (echo: number) => void;
   },
 ) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -60,6 +64,11 @@ export function usePlayer(
     (value: number) => events.current.onVolume(value),
     [],
   );
+  const echo = handlers.echo ?? 0;
+  const setEcho = useCallback(
+    (value: number) => events.current.onEcho?.(value),
+    [],
+  );
 
   useEffect(() => {
     store.set({ time: 0, duration: 0, playing: false });
@@ -73,6 +82,10 @@ export function usePlayer(
     node.volume = volume;
     node.playbackRate = rate;
   }, [node, volume, rate]);
+
+  useEffect(() => {
+    if (node) applyEcho(node, echo);
+  }, [node, echo]);
 
   useEffect(() => {
     if (!node) return;
@@ -242,6 +255,8 @@ export function usePlayer(
     setRate,
     volume,
     setVolume,
+    echo,
+    setEcho,
     toggle,
     seek,
     skip,
