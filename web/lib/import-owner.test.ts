@@ -31,6 +31,7 @@ const deps = (): ImportDeps => ({
   sniff: async () => ({ ok: true, family: "mp3" }),
   freeBytes: async () => null,
   claim: (meta) => void claimed.push(meta),
+  verifyResult: async () => ({ status: "ok" }),
   release: (id) => void released.push(id),
 });
 const owner = (over: Partial<ImportOwner> = {}): ImportOwner => ({

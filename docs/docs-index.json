@@ -441,6 +441,13 @@
     "summary": "Accepté le 2026-11-03 : chronologie (règle, passages, onde, fond, tête de lecture) sur l'axe de toute la session, la vidéo de fond recommençant ou glissant sous chaque plage depuis son début, logique pure testée (zoom, tête, blocs, fond), tête de lecture dans un magasin observable, onde et vignettes factorisées, trois états lisibles, aide du premier affichage."
   },
   {
+    "slug": "adr-0024-resultat-importe-relu-dans-le-corpus",
+    "title": "ADR-0024 — Un résultat importé est relu dans le corpus avant d'être conservé",
+    "section": "Décisions",
+    "file": "docs/adr/0024-resultat-importe-relu-dans-le-corpus.md",
+    "summary": "Accepté le 2026-11-04 : un résultat joint à l'import n'est jamais cru sur parole ; l'arabe est relu dans le corpus par référence de verset (I1) et la traduction dans QuranEnc, identifiant, version et attribution compris (I2), par `aqr verify-recognition`. Refus entier et explicite (422) plutôt que remplacement silencieux, 503 si le contrôle n'a pas pu avoir lieu, fichier conservé à l'octet près ; décisions et revue ne portent aucun texte."
+  },
+  {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
     "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
     "section": "Décisions",

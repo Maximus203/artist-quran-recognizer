@@ -5,7 +5,8 @@
  * - `importFromStream` : le fichier arrive en flux brut (en-tête `x-aqr-filename`) et va
  *   directement sur le disque, empreinte calculée au vol. C'est le seul moyen raisonnable pour une
  *   vidéo de plusieurs centaines de Mo : le formulaire multipart, lui, est lu entièrement en mémoire ;
- * - `importFromBytes` : audio reçu par formulaire, avec un résultat `aqr.recognition/1` facultatif.
+ * - `importFromBytes` : audio reçu par formulaire, avec un résultat `aqr.recognition/1` facultatif,
+ *   relu dans le corpus et QuranEnc avant d'être conservé (`verifyResult`, I1/I2).
  *
  * Dans les deux cas le fichier est sondé (ffprobe) : une vidéo sans piste audio est refusée (422) et
  * rien n'est conservé ; la durée de l'audio est consignée pour estimer le temps de traitement.
@@ -20,11 +21,17 @@ import type { Visibility } from "./access";
 import { acceptedMediaExtensions, isVideoName } from "./audio-upload";
 import { getDb } from "./db";
 import { formatBytesFr } from "./format";
+import { ImportError } from "./import-error";
 import { ensureListening } from "./listening";
 import { DISK_FULL_MESSAGE, freeBytes, wouldFillDisk } from "./disk-space";
 import { inspectUpload, MediaRejected } from "./media-probe";
 import { SNIFF_BYTES, sniffMedia, type Sniff } from "./media-sniff";
 import { parseRecognition, type Recognition } from "./recognition";
+import {
+  refusalOf,
+  verifyResultFile,
+  type ResultVerdict,
+} from "./result-check";
 import { createMeta, deleteMeta, type NewMeta } from "./session-index";
 import { engineFromLabel } from "./session-meta";
 import { cleanUserName, defaultSessionName } from "./session-name";
@@ -39,15 +46,7 @@ import {
   type Session,
 } from "./store";
 
-/** Refus d'import avec son code HTTP et un message lisible (jamais une trace technique). */
-export class ImportError extends Error {
-  readonly status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "ImportError";
-    this.status = status;
-  }
-}
+export { ImportError };
 
 /** Propriétaire d'un import : qui, quelle portée, quel nom choisi, et le quota restant. */
 export type ImportOwner = {
@@ -73,6 +72,12 @@ export type ImportDeps = {
   sniff: (file: string) => Promise<Sniff>;
   /** Octets libres sur le volume des sessions (`null` : inconnu). */
   freeBytes: (dir: string) => Promise<number | null>;
+  /**
+   * Relit le résultat joint (fichier posé sur le disque) dans le corpus et dans QuranEnc : l'arabe
+   * du Mushaf, la traduction sans modification (I1, I2). Obligatoire : un résultat n'est jamais
+   * conservé sans ce contrôle.
+   */
+  verifyResult: (file: string) => Promise<ResultVerdict>;
 };
 
 /** Premiers octets d'un fichier, pour en reconnaître le type. */
@@ -96,6 +101,7 @@ export const defaultImportDeps: ImportDeps = {
   probe: (file, extension) => inspectUpload(file, extension),
   sniff: sniffFile,
   freeBytes,
+  verifyResult: (file) => verifyResultFile(file),
   prepareListening: (dir, extension) => {
     void ensureListening(dir, path.join(dir, `source${extension}`)).catch(
       () => {},
@@ -230,10 +236,18 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
           400,
           "Le SHA-256 du résultat ne correspond pas à l’audio.",
         );
-      await writeFile(
-        path.join(landed.dir, "prediction.recognition.json"),
-        landed.prediction,
-      );
+      const file = path.join(landed.dir, "prediction.recognition.json");
+      await writeFile(file, landed.prediction);
+      // Jamais de confiance au texte reçu : l'arabe est relu dans le corpus, la traduction dans
+      // QuranEnc. Un résultat contredit, ou qu'on n'a pas pu contrôler, n'est pas conservé.
+      let verdict: ResultVerdict;
+      try {
+        verdict = await deps.verifyResult(file);
+      } catch {
+        verdict = { status: "unavailable", reason: "contrôle interrompu" };
+      }
+      const refusal = refusalOf(verdict);
+      if (refusal) throw refusal;
     }
     let probed: { duration_s: number | null };
     try {
