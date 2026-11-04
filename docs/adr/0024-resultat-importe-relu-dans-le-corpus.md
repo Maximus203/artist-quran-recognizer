@@ -54,3 +54,53 @@ L'éditeur, lui, ne permet jamais de modifier l'arabe : la faille est uniquement
   désormais utiliser la vraie traduction, ou aucune.
 - Validé sur 17 602 intervalles rendus par le vrai moteur de rendu (tous les versets, entiers et plages partielles, 5 074
   fragments de traduction, cache QuranEnc réel) : 0 constat, 0 traduction invérifiable.
+
+## Addendum 2026-11-04 — champs libres, fichiers illisibles, journal (seconde recette QA : N6, N7, N10)
+
+La seconde recette a rejoué 72 cas : 23 résultats légitimes sur 23 acceptés, 48 falsifications sur 49 refusées (la 49e, des clés
+JSON dupliquées où le dernier gagne, montre le vrai texte). Elle a trouvé trois restes, corrigés ici sans changer la décision.
+
+**N6 — les champs libres que l'interface affiche aussi.** Le contrôle relisait `text`, `translation` et `label_ar`, pas
+`riwaya`, `engine.*`, `warnings` ni le libellé `label` d'une zone non coranique : un faux verset glissé dans `riwaya.assumed`
+s'affichait dans l'en-tête de la session (« Riwaya … supposée · non vérifiée »). Deux étages, parce que les deux se complètent :
+1. **À l'import, refus** (`verify_recognition`, même rapport, même `422 result_contradicts_corpus`). Liste blanche ou forme
+   bornée, jamais d'écriture arabe : `riwaya.assumed` ∈ {`hafs`, `warsh`} (`Riwaya`) ; `riwaya.notice` ≤ 1 000 signes ;
+   `engine.asr|segmenter|matcher|decoder|corpus|acoustic` ≤ 300 signes, une ligne ; ni caractère de contrôle ni de mise en forme
+   (retournement du sens d'écriture, largeur nulle) ; `label` d'une zone non coranique = une catégorie `NonQuranKind` (même
+   simplification que `formulaFromLabel` côté web : `[isti'adha]` passe) ; `warnings` = liste d'au plus 200 textes de 2 000 signes.
+2. **À la lecture, neutralisation** (`web/lib/recognition.ts`, qui ne rend jamais un résultat illisible) : pour un résultat déjà
+   conservé avant ce correctif ou venu d'un moteur distant (non contrôlé par cette décision), l'arabe de ces champs est masqué
+   (« [texte arabe masqué] »), les caractères de contrôle retirés, la taille bornée, et une riwaya inconnue n'est pas montrée.
+Choix : **les avertissements ne sont pas refusés pour leur arabe**, seulement bornés, puis masqués à la lecture. Ce sont des
+phrases du moteur qui citent des chemins ou le message d'une exception ; un système en arabe (dossier utilisateur, message d'erreur
+localisé) en produit légitimement, et la règle est qu'un vrai résultat du moteur n'est jamais refusé. Les noms de moteur, la
+riwaya et les libellés, eux, ne contiennent jamais d'arabe : refus. Non-régression : valeurs exactes des constantes du moteur
+(`RIWAYA_NOTICE`, `SILERO_WARNING`, cascade…), la sortie réelle de `build_json` pour chaque catégorie de zone non coranique et les
+résultats réels expurgés de `docs/evaluation/` passent sans constat. Limite : une translittération latine d'un verset (« Qul huwa
+Allahu ahad ») passerait par un champ libre ; ce n'est pas le texte arabe du Mushaf (I1) et l'interface l'affiche sous
+l'étiquette du champ.
+
+**N7 — ce que l'analyseur ne sait pas lire n'est pas une panne.**
+- **JSON très imbriqué** (20 000 niveaux, scénario QA) : le plantage de la pile de Python était lu comme « contrôle indisponible »
+  (503, « corpus ou moteur introuvable »), faux. L'import mesure maintenant la profondeur sur les octets avant tout autre travail
+  (sans récursion, textes et échappements ignorés) et refuse au-delà de 32 niveaux (un vrai résultat en a une dizaine) :
+  `422 result_too_deep`. `aqr verify-recognition` attrape aussi `RecursionError` et le dit en une ligne (code 1).
+- **BOM UTF-8** (outils Windows) : **accepté, retiré**. Hypothèse tranchée : refuser un fichier légitime pour trois octets ne
+  protège de rien, et ce retrait est sans perte et déterministe. Il a lieu une seule fois, à l'entrée, avant le contrôle, la
+  lecture et l'empreinte : zod, le contrôle Python et l'export lisent donc tous le même fichier, et `prediction_sha256` est celle du
+  fichier conservé. C'est l'unique écart à « le fichier conservé est celui reçu à l'octet près » (§ Décision 2), qui visait la
+  correction d'un contenu, pas un octet de codage. **UTF-16** (`>` de PowerShell 5) : refusé, `400 result_encoding`, avec la marche
+  à suivre (« enregistre-le en UTF-8 ») ; le convertir serait réécrire le fichier.
+- **Cause d'une traduction invérifiable** : le message disait toujours « QuranEnc n'est pas joignable ». Le rapport porte
+  maintenant `cause` (`offline`, `local_copy`, `no_source`) et le message nomme la vraie ; une cause inconnue (autre moteur) donne
+  une phrase générique, jamais une fausse précision.
+
+**N10 — les refus d'import sont journalisés.** Un `503 result_check_unavailable` passait inaperçu sans plainte d'un utilisateur.
+Chaque refus d'un résultat joint (JSON illisible, autre audio, encodage, imbrication, 422, 503) écrit un événement
+`import.result_refused` par l'unique porte de sortie (`log.event`, scope `import`) : code, statut HTTP, propriétaire (identifiant
+opaque), issue, rang de l'intervalle, verset, champ du premier écart, champs distincts, total ; `error` pour l'indisponibilité
+(avec la raison du moteur, une ligne bornée), `warn` pour le reste. Jamais le message ni le contenu reçu : un verset ne figure que
+s'il a la forme `sourate:verset`, un champ que s'il a la forme d'un nom de champ du rapport (`describeVerdict`).
+
+**Toujours hors contrôle** (inchangé) : un résultat de moteur distant authentifié ou du moteur local ; `source.file` n'est restitué
+nulle part dans l'interface ni dans l'export (examiné, non contrôlé) ; `PUT …/decisions` ne porte ni arabe ni traduction.

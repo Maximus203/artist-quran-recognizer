@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-04 — Import : champs libres contrôlés, fichiers illisibles expliqués, refus journalisés
+Étiquettes : utilisateur, technique, décision
+PR : #209
+
+**Ce qui change.** Importer un audio avec son résultat d'analyse refuse désormais aussi un faux texte glissé dans les champs que l'interface affiche à côté des versets : la riwaya « supposée » (seules « hafs » et « warsh » existent), les noms de moteur, la notice de riwaya et le libellé d'une zone non coranique. Un fichier enregistré avec un BOM UTF-8 (Bloc-notes, PowerShell) est accepté tel quel ; un fichier UTF-16 est refusé en disant d'enregistrer en UTF-8 ; un JSON démesurément imbriqué est refusé en 422 « trop imbriqué » au lieu d'un faux « contrôle indisponible ». Quand la traduction ne peut pas être vérifiée, le message dit la vraie cause (QuranEnc injoignable, copie locale illisible, aucune source). Les résultats déjà conservés sont lus avec l'arabe de ces champs masqué. Chaque refus d'import est écrit dans le journal du serveur (code, rang, verset, champ — jamais le texte reçu).
+
+**Pourquoi / décision.** Seconde recette QA de l'éditeur d'export, points N6, N7 et N10 : 23 résultats légitimes sur 23 acceptés, 48 falsifications sur 49 refusées, restaient des champs libres affichés sans contrôle, un 503 trompeur et des refus invisibles. Refuser à l'import ce que le moteur n'écrit jamais, neutraliser à la lecture le reste, ne jamais refuser un vrai résultat du moteur (valeurs exactes de ses constantes et résultats réels relus sans constat). Les avertissements du moteur, qui citent chemins et messages d'erreur, sont bornés et masqués, pas refusés. Le BOM est retiré plutôt que refusé : sans perte, une seule fois à l'entrée. Détail et limites : addendum de l'ADR-0024.
+
 ## 2026-11-04 — Export vidéo : corrections de la recette indépendante de l'éditeur
 Étiquettes : utilisateur, technique, décision
 PR : #208

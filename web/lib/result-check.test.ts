@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ImportError } from "./import-session";
 import type { PythonRun, PythonRunner } from "./python";
-import { refusalOf, verifyResultFile } from "./result-check";
+import { describeVerdict, refusalOf, verifyResultFile } from "./result-check";
 
 const run =
   (result: Partial<PythonRun>): PythonRunner =>
@@ -144,6 +144,34 @@ describe("refusalOf — le refus montré à la personne", () => {
     expect(error.message).toMatch(/QuranEnc/);
     expect(error.message).toMatch(/sans traduction/);
   });
+  it.each([
+    ["offline", /QuranEnc n'est pas joignable/],
+    ["local_copy", /copie locale.*illisible/],
+    ["no_source", /aucune source de traduction/],
+  ])(
+    "unverifiable (%s) : le message nomme la vraie cause (scénario QA N7)",
+    (cause, expected) => {
+      const error = refusalOf({
+        status: "unverifiable",
+        findings: [finding({ field: "translation", cause })],
+        total: 1,
+      }) as ImportError;
+      expect(error.status).toBe(503);
+      expect(error.code).toBe("result_unverifiable");
+      expect(error.message).toMatch(expected);
+      expect(error.message).toMatch(/Rien n'a été importé/);
+      expect(error.message).toMatch(/sans traduction/);
+    },
+  );
+  it("unverifiable : une cause d'un autre moteur ne devient jamais un mensonge, texte générique", () => {
+    const error = refusalOf({
+      status: "unverifiable",
+      findings: [finding({ field: "translation", cause: "inconnue" })],
+      total: 1,
+    }) as ImportError;
+    expect(error.message).toMatch(/n'a pas pu être vérifiée/);
+    expect(error.message).not.toMatch(/QuranEnc n'est pas joignable/);
+  });
   it("unavailable : 503, le contrôle n'a pas pu avoir lieu", () => {
     const error = refusalOf({
       status: "unavailable",
@@ -152,5 +180,81 @@ describe("refusalOf — le refus montré à la personne", () => {
     expect(error.status).toBe(503);
     expect(error.code).toBe("result_check_unavailable");
     expect(error.message).toMatch(/Rien n'a été importé/);
+  });
+});
+
+describe("describeVerdict — ce que le journal garde d'un refus (N10)", () => {
+  it("ok : rien d'autre que l'issue", () => {
+    expect(describeVerdict({ status: "ok" })).toEqual({ verdict: "ok" });
+  });
+  it("invalid : rang (à partir de 1), verset, champ du premier écart, champs distincts, total", () => {
+    expect(
+      describeVerdict({
+        status: "invalid",
+        findings: [
+          finding({ index: 2, ref: "112:1", field: "text" }),
+          finding({ index: 4, ref: "2:255", field: "words" }),
+          finding({ index: 5, ref: "2:256", field: "text" }),
+        ],
+        total: 9,
+      }),
+    ).toEqual({
+      verdict: "invalid",
+      total: 9,
+      rank: 3,
+      ref: "112:1",
+      field: "text",
+      fields: "text,words",
+    });
+  });
+  it("un écart du document entier n'a ni rang ni verset", () => {
+    expect(
+      describeVerdict({
+        status: "invalid",
+        findings: [
+          finding({ index: null, ref: null, field: "riwaya.assumed" }),
+        ],
+        total: 1,
+      }),
+    ).toMatchObject({ rank: null, ref: null, field: "riwaya.assumed" });
+  });
+  it("jamais le message, jamais une référence qui n'a pas la forme sourate:verset", () => {
+    const fields = describeVerdict({
+      status: "invalid",
+      findings: [
+        finding({
+          ref: "قل هو الله أحد",
+          message: "نص مزيف لا يوجد في القرآن",
+          field: "قل",
+        }),
+      ],
+      total: 1,
+    });
+    expect(JSON.stringify(fields)).not.toMatch(/[؀-ۿ]/);
+    expect(fields.ref).toBeNull();
+    expect(fields.field).toBe("autre");
+  });
+  it("unverifiable : la cause du premier écart", () => {
+    expect(
+      describeVerdict({
+        status: "unverifiable",
+        findings: [finding({ field: "translation", cause: "offline" })],
+        total: 4,
+      }),
+    ).toMatchObject({
+      verdict: "unverifiable",
+      total: 4,
+      cause: "offline",
+      rank: 1,
+    });
+  });
+  it("unavailable : la raison du moteur, une ligne, bornée à 200 signes", () => {
+    const fields = describeVerdict({
+      status: "unavailable",
+      reason: `ERREUR ${"x".repeat(500)}\nautre ligne`,
+    });
+    expect(fields.verdict).toBe("unavailable");
+    expect(String(fields.reason).length).toBeLessThanOrEqual(200);
+    expect(String(fields.reason)).not.toMatch(/\n/);
   });
 });

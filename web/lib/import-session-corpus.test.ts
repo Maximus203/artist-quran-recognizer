@@ -145,5 +145,92 @@ describe.skipIf(!ready)(
       expect(error.status).toBe(422);
       expect(await sessionIds()).toEqual([]);
     });
+
+    // --- champs libres (N6), BOM et imbrication (N7), avec le vrai contrôle ---
+    const FAKE = "قل هو الله أحد فلان بن فلان نص مزيف";
+    const withFields = (over: object) =>
+      Buffer.from(
+        JSON.stringify({
+          ...JSON.parse(result(interval({ text: VERSE_112_1 })).toString()),
+          ...over,
+        }),
+      );
+    it("scénario QA N6 : une riwaya « supposée » faite d'un faux verset est refusée", async () => {
+      const error = await attempt(
+        withFields({
+          riwaya: { assumed: FAKE, verified: false, notice: `N ${FAKE}` },
+        }),
+      ).catch((e) => e);
+      expect(error.status).toBe(422);
+      expect(error.code).toBe("result_contradicts_corpus");
+      expect(error.message).toMatch(/riwaya/i);
+      expect(error.message).not.toContain("مزيف");
+      expect(await sessionIds()).toEqual([]);
+    });
+    it("un faux verset dans le nom du moteur est refusé", async () => {
+      const error = await attempt(
+        withFields({
+          engine: {
+            asr: FAKE,
+            segmenter: "s",
+            matcher: "m",
+            decoder: "d",
+            constrained: false,
+            corpus: "c",
+          },
+        }),
+      ).catch((e) => e);
+      expect(error.status).toBe(422);
+      expect(error.message).toMatch(/nom de moteur/);
+    });
+    it("la riwaya et les avertissements que le moteur écrit passent (jamais refuser un vrai résultat)", async () => {
+      const session = await attempt(
+        withFields({
+          riwaya: {
+            assumed: "hafs",
+            verified: false,
+            notice:
+              "Riwaya supposée Hafs, non vérifiée : le corpus et le modèle sont en Hafs.",
+          },
+          warnings: [
+            "segmenteur Silero VAD utilisé : non fiable par défaut sur la récitation à pauses longues (docs/evaluation/silero-fallback.md)",
+          ],
+        }),
+      );
+      expect(session.state).toBe("done");
+    });
+    it("un fichier avec BOM UTF-8 est accepté (le contrôle lit le fichier sans BOM)", async () => {
+      const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+      const session = await attempt(
+        Buffer.concat([bom, result(interval({ text: VERSE_112_1 }))]),
+      );
+      expect(session.state).toBe("done");
+    });
+    it("scénario QA N7 : 20 000 niveaux d'imbrication = 422 clair, pas 503 « indisponible »", async () => {
+      const nested = Buffer.from(
+        withFields({})
+          .toString()
+          .replace(/}$/, `,"x":${"[".repeat(20000)}${"]".repeat(20000)}}`),
+      );
+      const error = await attempt(nested).catch((e) => e);
+      expect(error.status).toBe(422);
+      expect(error.code).toBe("result_too_deep");
+      expect(await sessionIds()).toEqual([]);
+    });
+    it("les vrais résultats expurgés du moteur ne sont jamais refusés sur leurs champs libres", async () => {
+      const dir = path.resolve(REPO, "docs/evaluation/trials/cli");
+      for (const name of await readdir(dir)) {
+        if (!name.endsWith(".redacted.json")) continue;
+        const verdict = await verifyResultFile(path.join(dir, name));
+        const fields =
+          verdict.status === "invalid"
+            ? verdict.findings.map((f) => f.field)
+            : [];
+        expect(
+          fields.filter((f) => /^(riwaya|engine|warnings|label)/.test(f)),
+          name,
+        ).toEqual([]);
+      }
+    });
   },
 );

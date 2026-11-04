@@ -23,11 +23,14 @@ import { getDb } from "./db";
 import { formatBytesFr } from "./format";
 import { ImportError } from "./import-error";
 import { ensureListening } from "./listening";
+import { log } from "./log";
+import { preparePrediction } from "./prediction-bytes";
 import { DISK_FULL_MESSAGE, freeBytes, wouldFillDisk } from "./disk-space";
 import { inspectUpload, MediaRejected } from "./media-probe";
 import { SNIFF_BYTES, sniffMedia, type Sniff } from "./media-sniff";
 import { parseRecognition, type Recognition } from "./recognition";
 import {
+  describeVerdict,
   refusalOf,
   verifyResultFile,
   type ResultVerdict,
@@ -210,6 +213,31 @@ type Landed = {
   owner?: ImportOwner;
 };
 
+/**
+ * Journalise le refus d'un résultat joint (la seule porte de sortie, `log`) puis rend l'erreur à lever.
+ * Un refus que personne n'a signalé — surtout un contrôle indisponible — ne doit pas passer inaperçu.
+ * Rien du contenu reçu : le code, le statut, le propriétaire (identifiant opaque) et ce que
+ * `describeVerdict` retient (rang, verset, champ).
+ */
+function refused(
+  error: ImportError,
+  owner: ImportOwner | undefined,
+  detail: Record<string, string | number | null> = {},
+): ImportError {
+  log.event(
+    "import",
+    "import.result_refused",
+    {
+      code: error.code ?? "invalid",
+      http: error.status,
+      owner: owner?.ownerId ?? null,
+      ...detail,
+    },
+    error.code === "result_check_unavailable" ? "error" : "warn",
+  );
+  return error;
+}
+
 /** Sonde le fichier posé sur le disque, puis écrit la session ; supprime tout en cas de refus. */
 async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
   try {
@@ -226,15 +254,21 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
         );
       } catch {
         // Ni la trace de l'analyseur JSON, ni le tableau d'erreurs de zod : l'utilisateur n'en fait rien.
-        throw new ImportError(
-          400,
-          "Le résultat joint n'est pas un JSON aqr.recognition/1 valide.",
+        throw refused(
+          new ImportError(
+            400,
+            "Le résultat joint n'est pas un JSON aqr.recognition/1 valide.",
+          ),
+          landed.owner,
         );
       }
       if (parsed.source.sha256.toLowerCase() !== landed.hash)
-        throw new ImportError(
-          400,
-          "Le SHA-256 du résultat ne correspond pas à l’audio.",
+        throw refused(
+          new ImportError(
+            400,
+            "Le SHA-256 du résultat ne correspond pas à l’audio.",
+          ),
+          landed.owner,
         );
       const file = path.join(landed.dir, "prediction.recognition.json");
       await writeFile(file, landed.prediction);
@@ -247,7 +281,8 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
         verdict = { status: "unavailable", reason: "contrôle interrompu" };
       }
       const refusal = refusalOf(verdict);
-      if (refusal) throw refusal;
+      if (refusal)
+        throw refused(refusal, landed.owner, describeVerdict(verdict));
     }
     let probed: { duration_s: number | null };
     try {
@@ -438,6 +473,15 @@ export async function importFromBytes(
       413,
       `Le résultat joint est trop volumineux (maximum ${mb(MAX_PREDICTION_BYTES)}).`,
     );
+  // BOM retiré, UTF-16 et imbrication démesurée refusés avec leur vraie raison, avant d'écrire quoi que ce soit.
+  let prediction = input.prediction;
+  if (prediction) {
+    try {
+      prediction = preparePrediction(prediction);
+    } catch (error) {
+      throw error instanceof ImportError ? refused(error, input.owner) : error;
+    }
+  }
   if (wouldFillDisk(await deps.freeBytes(reviewRoot()), input.bytes.length))
     throw new ImportError(507, DISK_FULL_MESSAGE);
   if (input.owner?.quota && input.bytes.length > remainingBytes(input.owner))
@@ -462,7 +506,7 @@ export async function importFromBytes(
       hash: sha(input.bytes),
       size: input.bytes.length,
       sourceKind,
-      prediction: input.prediction,
+      prediction,
       owner: input.owner,
     },
     deps,

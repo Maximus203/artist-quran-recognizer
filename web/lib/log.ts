@@ -5,6 +5,7 @@ import {
   type Stream,
   DEFAULT_RETENTION,
 } from "./log-files";
+import { maskArabic } from "./arabic-script";
 import { currentRequestId } from "./request-context";
 
 /**
@@ -27,12 +28,11 @@ const SECRETS: RegExp[] = [
   // une longue suite base64url ou hexadécimale ressemble à un secret, pas à un identifiant de session
   /(?<![0-9a-f-])[A-Za-z0-9_-]{40,}(?![0-9a-f-])/g,
 ];
-const ARABIC = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]+/g;
 
 export function redact(text: string): string {
   let out = text;
   for (const pattern of SECRETS) out = out.replace(pattern, OMITTED);
-  return out.replace(ARABIC, OMITTED).replace(/[\r\n]+/g, " ");
+  return maskArabic(out, OMITTED).replace(/[\r\n]+/g, " ");
 }
 
 const SECURITY = new Set([
