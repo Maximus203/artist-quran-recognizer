@@ -81,6 +81,10 @@ function chosenOptions(
  * `?autorun=1` met l'analyse en file dès l'import ; `?visibility=global|private` (défaut `global`) ;
  * `?name=…` (ou en-tête `x-aqr-name`) donne un nom ; sans lui, un nom par défaut est dérivé du fichier.
  * `413` si le fichier dépasse le plafond d'envoi ou le quota de l'utilisateur.
+ * Le `result` joint n'est jamais cru sur parole : l'arabe est relu dans le corpus et la traduction dans
+ * QuranEnc (I1, I2). `422` (`result_contradicts_corpus`) s'ils sont contredits ou si une référence n'existe
+ * pas ; `503` (`result_unverifiable`, `result_check_unavailable`) si le contrôle n'a pas pu avoir lieu.
+ * Dans tous les cas rien n'est conservé.
  */
 async function handlePOST(request: NextRequest) {
   const auth = await requireUser(request, { mutation: true });
@@ -145,7 +149,7 @@ async function handlePOST(request: NextRequest) {
   } catch (e) {
     if (e instanceof ImportError)
       return apiError(e.status, e.message, {
-        code: e.status === 413 ? "too_large" : "invalid",
+        code: e.code ?? (e.status === 413 ? "too_large" : "invalid"),
       });
     return apiError(400, e instanceof Error ? e.message : "Import impossible");
   }

@@ -1,5 +1,21 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-04 — Un résultat importé est relu dans le corpus avant d'être conservé (ADR-0024, PR #207)
+- **Quoi** : `aqr verify-recognition` relit chaque intervalle d'un résultat joint à `POST /api/sessions` (verset, plage de mots,
+  arabe, basmala, libellés de formule, traduction QuranEnc, segments, fragment, candidats) ; l'import refuse un résultat contredit
+  (422) ou non contrôlable (503). Aucune dépendance ajoutée.
+- **Patterns** : Port/Adapter (le contrôle ne connaît que `CorpusRepository` et `TranslationRepository`), Strategy (la dépendance
+  `ImportDeps.verifyResult`, remplaçable en test), Adapter (traduction du code de sortie du moteur en verdict), Fail-closed (un
+  contrôle qui n'a pas eu lieu refuse).
+- **Choix pris seul** : (1) refuser en entier plutôt que remplacer par le texte du corpus : le fichier garde ses empreintes et
+  l'auteur apprend l'erreur (recommandation du brief, I3) ; (2) traduction invérifiable (QuranEnc injoignable) = 503, pas
+  d'acceptation « sous réserve » ; (3) un texte absent n'est pas une falsification (copie expurgée acceptée) ; (4) pas de
+  contrôle du résultat d'un moteur distant (agent authentifié), consigné dans l'ADR ; (5) les messages ne recopient jamais le
+  contenu reçu ; (6) le contrôle tourne en processus Python, jamais en TypeScript (le serveur n'a pas le corpus, deux contrôles
+  divergeraient).
+- **Mesures** : 17 602 intervalles du vrai moteur de rendu (6 236 versets, 5 074 fragments) : 0 faux refus. Scénario QA s32 rejoué
+  sur un build de production : tous les cas falsifiés refusés (422), résultat du moteur accepté et relu identique.
+
 ## 2026-11-03 — La table de montage : chronologie sur l'axe de toute la session (ADR-0023)
 - **Quoi** : éditeur mobile « table de montage » (aperçu, chronologie, rail d'outils). Chronologie : règle, passages, onde, piste du
   fond, tête de lecture (glisser, boutons, clavier, lecture de l'aperçu), zoom avec défilement propre. Le fond vidéo se règle dessus :

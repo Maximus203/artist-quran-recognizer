@@ -37,6 +37,7 @@ const deps = (over: Partial<ImportDeps> = {}): ImportDeps => ({
   freeBytes: async () => null,
   prepareListening: (dir) => void prepared.push(dir),
   claim: (meta) => void claimed.push(meta),
+  verifyResult: async () => ({ status: "ok" }),
   release: (id) => void released.push(id),
   ...over,
 });

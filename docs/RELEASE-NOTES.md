@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-04 — Import : un résultat joint est relu dans le corpus avant d'être conservé
+Étiquettes : utilisateur, technique, décision
+PR : #207
+
+**Ce qui change.** Quand on importe un audio avec son résultat d'analyse (`POST /api/sessions`, champ `result`), l'atelier ne croit plus le texte reçu : il relit chaque passage dans le corpus et dans QuranEnc avant de rien conserver. Un verset qui n'existe pas, une plage de mots hors du verset, un texte arabe qui n'est pas celui du Mushaf pour ce verset, une basmala ou un libellé de formule inventés, une traduction dont le texte, la version, l'attribution ou l'identifiant ont changé : le résultat est refusé en entier (`422`, `result_contradicts_corpus`), avec un message en français qui dit quel passage et quel verset sont en cause, sans recopier le faux texte, et rien n'est enregistré. Si QuranEnc est injoignable ou si le contrôle ne peut pas tourner, le résultat est refusé aussi (`503`, `result_unverifiable` ou `result_check_unavailable`) : on réessaie plus tard, ou on envoie le résultat sans traduction. Un résultat fidèle est conservé tel quel, à l'octet près. Une copie sans texte ni traduction reste acceptée. Nouvelle commande `aqr verify-recognition RÉSULTAT` (codes de sortie 0 fidèle, 1 contredit, 4 traduction invérifiable).
+
+**Pourquoi / décision.** Rapport QA de l'éditeur d'export, point M2 : un faux texte arabe pour 112:1 ou une traduction retouchée était accepté (`201`), affiché dans l'éditeur puis gravé dans la vidéo, contre les invariants I1 et I2. Refuser plutôt que remplacer en silence : le fichier reste celui reçu (ses empreintes ne changent pas) et l'auteur sait ce qui est faux. Vérifié sur un build de production de la branche (scénario QA s32 rejoué : faux arabe, traduction altérée, verset inexistant, attribution, fragment et identifiant modifiés refusés ; résultat rendu par le vrai moteur accepté et relu identique) et sur 17 602 passages rendus par le vrai moteur de rendu (tous les versets, entiers et plages, 5 074 fragments) sans aucun faux refus. Les décisions humaines et la revue ne portent aucun texte : pas concernées. Limites : le résultat d'un moteur distant n'est pas contrôlé par cette décision (agent authentifié) ; un résultat honnête issu d'un autre corpus est refusé. `docs/adr/0024-resultat-importe-relu-dans-le-corpus.md`.
+
 ## 2026-11-03 — Export vidéo : la table de montage, éditeur mobile à chronologie
 Étiquettes : utilisateur, technique, décision
 PR : #206

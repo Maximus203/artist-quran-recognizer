@@ -38,6 +38,7 @@ const deps = (over: Partial<ImportDeps> = {}): ImportDeps => ({
   freeBytes: async () => null,
   prepareListening: () => undefined,
   claim: (meta) => void claimed.push(meta),
+  verifyResult: async () => ({ status: "ok" }),
   release: () => undefined,
   ...over,
 });

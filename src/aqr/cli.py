@@ -8,12 +8,14 @@ dépôt) puis `<audio_dir>/manifest.yaml`.
 
 Codes de sortie : 0 succès · 1 erreur sur les données (fiche, étiquettes, cas inconnu, fichier
 absent ou déjà écrit) · 2 utilisation impossible (variable manquante, moteur ou option
-indisponible) · 3 `export-subtitles` : des passages ambigus restent à corriger (voir ADR-0014).
+indisponible) · 3 `export-subtitles` : des passages ambigus restent à corriger (voir ADR-0014) ·
+4 `verify-recognition` : une traduction n'a pas pu être vérifiée (source QuranEnc injoignable).
 
 `aqr export-subtitles PREDICTION` (SRT, WebVTT, ASS, JSON), `aqr export-readiness PREDICTION` (le
 contrôle « prêt à exporter ? ») et `aqr corpus-verse REF` (un verset lu dans le corpus) servent
 l'atelier et la ligne de commande : voir `docs/DECISIONS.md` et
-`docs/design/export-sous-titres.md`.
+`docs/design/export-sous-titres.md`. `aqr verify-recognition RÉSULTAT` relit un résultat reçu de
+l'extérieur dans le corpus et dans QuranEnc avant l'import (ADR-0017).
 """
 
 from __future__ import annotations
@@ -396,6 +398,18 @@ def _add_export_commands(commands: argparse._SubParsersAction[argparse.ArgumentP
     verse.add_argument("--words", help="plage de mots « début-fin »")
     common(verse)
 
+    verify = commands.add_parser(
+        "verify-recognition",
+        help="contrôle un résultat reçu : arabe du corpus (I1), traduction QuranEnc intacte (I2)",
+    )
+    verify.add_argument("prediction", type=Path, help="<fichier>.recognition.json")
+    verify.add_argument("--corpus-dir", type=Path, default=Path("data/corpus"))
+    verify.add_argument(
+        "--no-translations",
+        action="store_true",
+        help="ne lire ni le cache ni l'API QuranEnc : toute traduction devient invérifiable",
+    )
+
 
 def _resolve_paths(args: argparse.Namespace, env: Mapping[str, str]) -> tuple[Path, Path] | None:
     audio = args.audio_dir or (Path(env["AQR_AUDIO_DIR"]) if env.get("AQR_AUDIO_DIR") else None)
@@ -749,6 +763,59 @@ def _corpus_verse(
     return 0 if payload.get("ok") else 1
 
 
+_MAX_REPORTED = 50
+"""Constats listés au plus : un fichier entièrement faux n'a pas à produire des mégaoctets."""
+
+EXIT_UNVERIFIABLE = 4
+
+
+def _verify_recognition(
+    args: argparse.Namespace, env: Mapping[str, str], out: TextIO, err: TextIO
+) -> int:
+    """Code 0 : fidèle · 1 : contredit le corpus ou QuranEnc (ou fichier illisible) · 4 : traduction
+    invérifiable (source injoignable). Le JSON de sortie ne recopie jamais le contenu reçu."""
+    from aqr.adapters.quranenc import TRANSLATION_METADATA, QuranEncTranslationRepository
+    from aqr.corpus.tanzil_repository import TanzilCorpusRepository
+    from aqr.rendering.verify_recognition import Finding, verify_recognition
+
+    try:
+        document = json.loads(args.prediction.read_text(encoding="utf-8"))
+        environment = _export_environment(args, env)
+        corpus = TanzilCorpusRepository(environment.corpus_dir)
+    except (OSError, ValueError, CorpusChecksumError) as exc:
+        print(f"ERREUR {exc}", file=err)
+        return 1
+    translations = (
+        None
+        if environment.cache_dir is None
+        else QuranEncTranslationRepository(environment.cache_dir, environment.fetcher)
+    )
+    result = verify_recognition(
+        document, corpus, translations, known_translation_ids=frozenset(TRANSLATION_METADATA)
+    )
+
+    def listed(findings: tuple[Finding, ...]) -> list[dict[str, object]]:
+        return [
+            {"index": f.index, "ref": f.ref, "field": f.field, "message": f.message}
+            for f in findings[:_MAX_REPORTED]
+        ]
+
+    _print_json(
+        {
+            "status": result.status,
+            "checked": result.checked,
+            "findings": listed(result.findings),
+            "findings_total": len(result.findings),
+            "unverifiable": listed(result.unverifiable),
+            "unverifiable_total": len(result.unverifiable),
+        },
+        out,
+    )
+    if result.findings:
+        return 1
+    return EXIT_UNVERIFIABLE if result.unverifiable else 0
+
+
 def _plan_alignment(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
     try:
         prediction = json.loads(args.prediction.read_text(encoding="utf-8"))
@@ -821,6 +888,8 @@ def main(
         return _export_readiness(args, env, out, err)
     if args.command == "corpus-verse":
         return _corpus_verse(args, env, out, err)
+    if args.command == "verify-recognition":
+        return _verify_recognition(args, env, out, err)
     if args.command != "data":
         parser.print_help(out)
         return 0
