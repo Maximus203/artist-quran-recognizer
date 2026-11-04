@@ -782,6 +782,14 @@ def _verify_recognition(
         document = json.loads(args.prediction.read_text(encoding="utf-8"))
         environment = _export_environment(args, env)
         corpus = TanzilCorpusRepository(environment.corpus_dir)
+    except RecursionError:
+        # Un JSON de milliers de niveaux dépasse la pile de l'analyseur : un fichier qui n'est
+        # pas un résultat, pas une panne du moteur (le serveur web le refuse avant : 422
+        # `result_too_deep`).
+        print(
+            "ERREUR le fichier est trop imbriqué pour être un résultat aqr.recognition/1", file=err
+        )
+        return 1
     except (OSError, ValueError, CorpusChecksumError) as exc:
         print(f"ERREUR {exc}", file=err)
         return 1
@@ -794,11 +802,19 @@ def _verify_recognition(
         document, corpus, translations, known_translation_ids=frozenset(TRANSLATION_METADATA)
     )
 
+    def one(f: Finding) -> dict[str, object]:
+        entry: dict[str, object] = {
+            "index": f.index,
+            "ref": f.ref,
+            "field": f.field,
+            "message": f.message,
+        }
+        if f.cause is not None:  # traduction invérifiable : hors ligne, copie locale, aucune source
+            entry["cause"] = f.cause
+        return entry
+
     def listed(findings: tuple[Finding, ...]) -> list[dict[str, object]]:
-        return [
-            {"index": f.index, "ref": f.ref, "field": f.field, "message": f.message}
-            for f in findings[:_MAX_REPORTED]
-        ]
+        return [one(f) for f in findings[:_MAX_REPORTED]]
 
     _print_json(
         {

@@ -280,6 +280,96 @@ describe("contrat recognition", () => {
     expect(formatTime(59.999)).toBe("00:59.999");
     expect(formatTime(60)).toBe("01:00.000");
   });
+  describe("champs libres : jamais d'arabe inventé à l'écran (N6)", () => {
+    const FAKE = "قل هو الله أحد فلان بن فلان نص مزيف";
+    const MASK = "[texte arabe masqué]";
+    const parse = (over: object) => parseRecognition({ ...base, ...over });
+
+    it("la riwaya supposée du moteur est lue telle quelle", () => {
+      const riwaya = {
+        assumed: "hafs",
+        verified: false,
+        notice: "Riwaya supposée Hafs, non vérifiée.",
+      };
+      expect(parse({ riwaya }).riwaya).toEqual(riwaya);
+      expect(
+        parse({ riwaya: { ...riwaya, assumed: "warsh" } }).riwaya?.assumed,
+      ).toBe("warsh");
+    });
+    it("une riwaya inconnue (même d'un résultat déjà conservé) n'est pas affichée : le résultat reste lisible", () => {
+      for (const assumed of [FAKE, "Qul huwa", ""]) {
+        const parsed = parse({
+          riwaya: { assumed, verified: false, notice: "ok" },
+        });
+        expect(parsed.riwaya).toBeUndefined();
+        expect(parsed.intervals.length).toBe(base.intervals.length);
+      }
+    });
+    it("l'arabe d'une notice est masqué, la notice est bornée", () => {
+      const parsed = parse({
+        riwaya: {
+          assumed: "hafs",
+          verified: false,
+          notice: `Voir ${FAKE} ${"x".repeat(2000)}`,
+        },
+      });
+      expect(parsed.riwaya?.notice).not.toMatch(/[؀-ۿ]/);
+      expect(parsed.riwaya?.notice).toContain(MASK);
+      expect(parsed.riwaya?.notice.length).toBeLessThanOrEqual(1000);
+    });
+    it("les noms de moteur sont masqués, bornés et sans caractère de mise en forme", () => {
+      const parsed = parse({
+        engine: {
+          ...base.engine,
+          asr: `${FAKE}@abc`,
+          segmenter: "x".repeat(900),
+          matcher: "a\u202eb\u200bc\u0000d",
+        },
+      });
+      expect(parsed.engine.asr).toBe(`${MASK}@abc`);
+      expect(parsed.engine.segmenter).toHaveLength(300);
+      expect(parsed.engine.matcher).toBe("abcd");
+    });
+    it("les noms du vrai moteur ne changent pas d'un signe", () => {
+      const real = {
+        asr: "cascade(fastconformer-quran@b33af7936f9a -> whisper-base-quran@5c3c53fdf927/times-estimated)",
+        segmenter: "silero-vad (non fiable par défaut)",
+        matcher: "flow-matcher (ADR-0004)",
+        decoder: "viterbi-decoder-v2",
+        constrained: false,
+        corpus: "tanzil.net hafs (2026-09-25T09:01:58.990153+00:00)",
+      };
+      expect(parse({ engine: real }).engine).toEqual(real);
+    });
+    it("les avertissements gardent leurs sauts de ligne, perdent l'arabe, sont bornés en nombre et en taille", () => {
+      const parsed = parse({
+        warnings: [
+          "repli Silero\nligne 2",
+          `poids absents de C:\\Users\\${FAKE}\\models`,
+          "x".repeat(5000),
+          ...Array.from({ length: 300 }, () => "ok"),
+        ],
+      });
+      expect(parsed.warnings[0]).toBe("repli Silero\nligne 2");
+      expect(parsed.warnings[1]).toBe(
+        `poids absents de C:\\Users\\${MASK}\\models`,
+      );
+      expect(parsed.warnings[2]).toHaveLength(2000);
+      expect(parsed.warnings).toHaveLength(200);
+    });
+    it("le libellé d'une zone non coranique perd son arabe, un libellé du moteur reste intact", () => {
+      const zone = (label: string) => ({
+        kind: "non_quran",
+        label,
+        t: [0, 1],
+      });
+      const parsed = parse({ intervals: [zone(FAKE), zone("arabic_speech")] });
+      const labels = parsed.intervals.map((i) =>
+        i.kind === "non_quran" ? i.label : null,
+      );
+      expect(labels).toEqual([MASK, "arabic_speech"]);
+    });
+  });
   it("lit une vraie sortie expurgée du moteur sans inventer de texte", () => {
     const file = path.resolve(
       process.cwd(),

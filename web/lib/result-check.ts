@@ -17,6 +17,8 @@ export type ResultFinding = {
   ref: string | null;
   field: string;
   message: string;
+  /** Traduction invérifiable seulement : `offline`, `local_copy` ou `no_source` (message choisi selon elle). */
+  cause?: string;
 };
 
 export type ResultVerdict =
@@ -58,7 +60,8 @@ const isFinding = (value: unknown): value is ResultFinding => {
     (f.index === null || typeof f.index === "number") &&
     (f.ref === null || typeof f.ref === "string") &&
     typeof f.field === "string" &&
-    typeof f.message === "string"
+    typeof f.message === "string" &&
+    (f.cause === undefined || typeof f.cause === "string")
   );
 };
 const findingsOf = (value: unknown): ResultFinding[] =>
@@ -107,6 +110,18 @@ export async function verifyResultFile(
   return { status: "unavailable", reason: lastError(result) };
 }
 
+/** Pourquoi la traduction n'a pas pu être vérifiée : la phrase suit la vraie cause (jamais « QuranEnc injoignable » pour une copie locale illisible). */
+const UNVERIFIABLE_REASON: Record<string, string> = {
+  offline:
+    "Impossible de vérifier la traduction jointe : QuranEnc n'est pas joignable pour l'instant.",
+  local_copy:
+    "Impossible de vérifier la traduction jointe : la copie locale des traductions QuranEnc est illisible sur ce serveur.",
+  no_source:
+    "Impossible de vérifier la traduction jointe : aucune source de traduction n'est configurée sur ce serveur.",
+  unknown:
+    "La traduction jointe n'a pas pu être vérifiée auprès de la source QuranEnc.",
+};
+
 /** Une référence n'est recopiée dans un message que si elle a la forme sourate:verset. */
 const SAFE_REF = /^\d{1,3}:\d{1,3}$/;
 const where = (f: ResultFinding): string =>
@@ -138,12 +153,21 @@ export function refusalOf(verdict: ResultVerdict): ImportError | null {
         "result_contradicts_corpus",
       );
     }
-    case "unverifiable":
+    case "unverifiable": {
+      const cause = verdict.findings[0]?.cause ?? "";
+      const reason = Object.hasOwn(UNVERIFIABLE_REASON, cause)
+        ? UNVERIFIABLE_REASON[cause]
+        : UNVERIFIABLE_REASON.unknown;
+      const next =
+        cause === "local_copy"
+          ? "signale-le à l'administrateur"
+          : "réessaie plus tard";
       return new ImportError(
         503,
-        "Impossible de vérifier la traduction jointe : QuranEnc n'est pas joignable pour l'instant. Rien n'a été importé ; réessaie plus tard, ou envoie le résultat sans traduction.",
+        `${reason} Rien n'a été importé ; ${next}, ou envoie le résultat sans traduction.`,
         "result_unverifiable",
       );
+    }
     case "unavailable":
       return new ImportError(
         503,
@@ -151,4 +175,42 @@ export function refusalOf(verdict: ResultVerdict): ImportError | null {
         "result_check_unavailable",
       );
   }
+}
+
+/** Un nom de champ du rapport (`translation.text`, `riwaya.assumed`…) ; tout autre est écrit « autre ». */
+const SAFE_FIELD = /^[a-z_]+(\.[a-z_]+)*$/;
+const safeField = (field: string): string =>
+  SAFE_FIELD.test(field) ? field : "autre";
+const MAX_REASON = 200;
+const MAX_FIELDS_LOGGED = 5;
+
+/**
+ * Ce que le journal serveur garde d'un refus : l'issue, le rang de l'intervalle (à partir de 1), le
+ * verset, le champ en cause, jamais le message ni le contenu reçu. Un 503 « indisponible » garde la
+ * raison du moteur (une ligne bornée) : c'est la panne qu'on cherchera.
+ */
+export function describeVerdict(
+  verdict: ResultVerdict,
+): Record<string, string | number | null> {
+  if (verdict.status === "ok") return { verdict: "ok" };
+  if (verdict.status === "unavailable")
+    return {
+      verdict: "unavailable",
+      reason: verdict.reason.replace(/\s+/g, " ").trim().slice(0, MAX_REASON),
+    };
+  const first = verdict.findings[0];
+  const fields = [
+    ...new Set(verdict.findings.map((f) => safeField(f.field))),
+  ].slice(0, MAX_FIELDS_LOGGED);
+  return {
+    verdict: verdict.status,
+    total: verdict.total,
+    rank: first?.index == null ? null : first.index + 1,
+    ref: first?.ref && SAFE_REF.test(first.ref) ? first.ref : null,
+    field: first ? safeField(first.field) : null,
+    fields: fields.join(","),
+    ...(first?.cause && SAFE_FIELD.test(first.cause)
+      ? { cause: first.cause }
+      : {}),
+  };
 }

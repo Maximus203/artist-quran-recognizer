@@ -9,8 +9,15 @@ import {
   type ImportDeps,
   type ImportOwner,
 } from "./import-session";
+import { log } from "./log";
 import type { NewMeta } from "./session-index";
 import { sessionDir } from "./store";
+
+// Le journal est la seule porte de sortie : on regarde ce qu'on lui confie, sans rien écrire.
+vi.mock("./log", async (original) => {
+  const actual = await original<typeof import("./log")>();
+  return { ...actual, log: { ...actual.log, event: vi.fn() } };
+});
 
 /**
  * Un résultat `aqr.recognition/1` joint à l'import est relu dans le corpus avant d'être conservé :
@@ -208,5 +215,177 @@ describe("import d'un résultat — contrôle du corpus", () => {
       () => undefined,
     );
     expect(calls).toBe(0);
+  });
+});
+
+describe("import d'un résultat — fichiers que l'analyseur ne sait pas lire (N7)", () => {
+  const BOM = Buffer.from([0xef, 0xbb, 0xbf]);
+  it("un BOM UTF-8 est accepté : le fichier conservé est le même, sans ses trois octets", async () => {
+    const prediction = recognition([verse("texte du corpus")]);
+    const seen: string[] = [];
+    const session = await attempt(Buffer.concat([BOM, prediction]), {
+      verifyResult: async (file) => {
+        seen.push((await readFile(file)).toString("utf8").slice(0, 1));
+        return { status: "ok" };
+      },
+    });
+    expect(session.state).toBe("done");
+    expect(seen).toEqual(["{"]); // le contrôle lit le fichier sans BOM
+    const kept = await readFile(
+      path.join(sessionDir(session.id), "prediction.recognition.json"),
+    );
+    expect(kept.equals(prediction)).toBe(true);
+    expect(session.prediction_sha256).toBe(sha(prediction));
+  });
+  it("un fichier UTF-16 est refusé en 400 avec la marche à suivre, avant tout contrôle", async () => {
+    let calls = 0;
+    const error = await attempt(
+      Buffer.concat([
+        Buffer.from([0xff, 0xfe]),
+        Buffer.from("{\0}\0", "binary"),
+      ]),
+      {
+        verifyResult: async () => {
+          calls += 1;
+          return { status: "ok" };
+        },
+      },
+    ).catch((e) => e);
+    expect(error).toBeInstanceOf(ImportError);
+    expect(error.status).toBe(400);
+    expect(error.code).toBe("result_encoding");
+    expect(error.message).toMatch(/UTF-8/);
+    expect(calls).toBe(0);
+    expect(await sessionIds()).toEqual([]);
+  });
+  it("un JSON de 20 000 niveaux est un 422 « trop imbriqué », jamais un 503 « indisponible »", async () => {
+    let calls = 0;
+    const deep = Buffer.from(`{"x":${"[".repeat(20000)}${"]".repeat(20000)}}`);
+    const error = await attempt(deep, {
+      verifyResult: async () => {
+        calls += 1;
+        return { status: "ok" };
+      },
+    }).catch((e) => e);
+    expect(error.status).toBe(422);
+    expect(error.code).toBe("result_too_deep");
+    expect(error.message).not.toMatch(/indisponible/);
+    expect(calls).toBe(0);
+    expect(await sessionIds()).toEqual([]);
+  });
+});
+
+describe("import d'un résultat — les refus sont journalisés (N10)", () => {
+  const events = () =>
+    vi
+      .mocked(log.event)
+      .mock.calls.filter(([, name]) => name === "import.result_refused");
+  beforeEach(() => vi.mocked(log.event).mockClear());
+
+  it("un résultat qui contredit le corpus : rang, verset, champ, code ; jamais le faux texte", async () => {
+    await attempt(
+      recognition([verse(FORGED)]),
+      {
+        verifyResult: async () => ({
+          status: "invalid",
+          findings: [
+            {
+              index: 0,
+              ref: "112:1",
+              field: "text",
+              message: `Le texte ${FORGED} ne correspond pas`,
+            },
+          ],
+          total: 1,
+        }),
+      },
+      owner,
+    ).catch(() => undefined);
+    expect(events()).toHaveLength(1);
+    const [scope, name, fields, level] = events()[0];
+    expect(scope).toBe("import");
+    expect(name).toBe("import.result_refused");
+    expect(level).toBe("warn");
+    expect(fields).toMatchObject({
+      code: "result_contradicts_corpus",
+      http: 422,
+      owner: 7,
+      verdict: "invalid",
+      rank: 1,
+      ref: "112:1",
+      field: "text",
+      total: 1,
+    });
+    expect(JSON.stringify(fields)).not.toContain(FORGED);
+  });
+  it("le contrôle indisponible est une erreur (la panne qu'on doit voir), avec sa raison", async () => {
+    await attempt(recognition(), {
+      verifyResult: async () => ({
+        status: "unavailable",
+        reason: "ERREUR LOCK.json introuvable",
+      }),
+    }).catch(() => undefined);
+    const [, , fields, level] = events()[0];
+    expect(level).toBe("error");
+    expect(fields).toMatchObject({
+      code: "result_check_unavailable",
+      http: 503,
+      verdict: "unavailable",
+      reason: "ERREUR LOCK.json introuvable",
+      owner: null,
+    });
+  });
+  it("un contrôle qui plante est journalisé comme indisponible, sans la trace", async () => {
+    await attempt(recognition(), {
+      verifyResult: async () => {
+        throw new Error("boom interne");
+      },
+    }).catch(() => undefined);
+    const [, , fields, level] = events()[0];
+    expect(level).toBe("error");
+    expect(fields).toMatchObject({ verdict: "unavailable" });
+    expect(JSON.stringify(fields)).not.toMatch(/boom/);
+  });
+  it("une traduction invérifiable : avertissement avec la cause", async () => {
+    await attempt(recognition([verse("x")]), {
+      verifyResult: async () => ({
+        status: "unverifiable",
+        findings: [
+          {
+            index: 0,
+            ref: "112:1",
+            field: "translation",
+            message: "x",
+            cause: "offline",
+          },
+        ],
+        total: 1,
+      }),
+    }).catch(() => undefined);
+    const [, , fields, level] = events()[0];
+    expect(level).toBe("warn");
+    expect(fields).toMatchObject({
+      code: "result_unverifiable",
+      http: 503,
+      cause: "offline",
+    });
+  });
+  it("les refus d'avant le contrôle (JSON, empreinte, encodage, imbrication) le sont aussi", async () => {
+    const none: Partial<ImportDeps> = {};
+    await attempt(Buffer.from("{ pas du json"), none).catch(() => undefined);
+    await attempt(recognition([], "b".repeat(64)), none).catch(() => undefined);
+    await attempt(Buffer.from([0xff, 0xfe, 0x7b, 0x00]), none).catch(
+      () => undefined,
+    );
+    await attempt(Buffer.from("[".repeat(100) + "]".repeat(100)), none).catch(
+      () => undefined,
+    );
+    expect(
+      events().map(([, , fields]) => (fields as { code: string }).code),
+    ).toEqual(["invalid", "invalid", "result_encoding", "result_too_deep"]);
+  });
+  it("un import qui réussit ne journalise aucun refus", async () => {
+    await attempt(recognition([verse("texte du corpus")]), {});
+    expect(events()).toEqual([]);
   });
 });

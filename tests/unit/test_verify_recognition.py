@@ -252,6 +252,17 @@ def test_cache_de_traduction_corrompu_est_invérifiable_pas_accepte(corpus, rend
     assert not result.ok and len(result.unverifiable) == 1
 
 
+def test_la_cause_d_une_traduction_invérifiable_est_nommee(corpus, renderer):
+    """Hors ligne, copie locale illisible, aucune source : trois causes, trois messages."""
+    doc = document(honest_verse(renderer, "112:1", (0, 3)))
+    offline = check(doc, corpus, FakeTranslations(error=OSError("réseau coupé")))
+    assert [f.cause for f in offline.unverifiable] == ["offline"]
+    local = check(doc, corpus, FakeTranslations(error=CorpusChecksumError("cache corrompu")))
+    assert [f.cause for f in local.unverifiable] == ["local_copy"]
+    none = verify_recognition(doc, corpus, None)
+    assert [f.cause for f in none.unverifiable] == ["no_source"]
+
+
 def test_une_falsification_prime_sur_l_invérifiable(corpus, renderer):
     doc = document(honest_verse(renderer, "112:1", (0, 3)))
     doc["intervals"][0]["text"] = FORGED_AR
@@ -265,6 +276,183 @@ def test_un_document_mal_forme_ne_plante_pas(corpus):
     bad = document(verse("112:1", (1, 4), (0, 3)))
     bad["intervals"].append("n'importe quoi")
     assert [f.field for f in verify_recognition(bad, corpus, None).findings] == ["interval"]
+
+
+# --- champs libres : affichés à l'écran, jamais du Coran inventé (N6) ----------------------------
+
+FREE_FIELDS = ("riwaya", "engine", "warnings", "label")
+FREE_FIELD_DOC = document(verse("112:1", (1, 4), (0, 3)))
+
+
+def free_findings(result) -> list[str]:
+    return sorted(f.field for f in result.findings)
+
+
+def with_free(doc: dict[str, Any], **changes: Any) -> dict[str, Any]:
+    out = copy.deepcopy(doc)
+    out.update(changes)
+    return out
+
+
+def messages(result) -> str:
+    return json.dumps([f.message for f in result.findings], ensure_ascii=False)
+
+
+def test_les_champs_libres_du_vrai_moteur_passent(corpus, renderer):
+    """Les valeurs EXACTES que le moteur écrit (constantes de `output` et de `factory`) ne sont
+    jamais refusées : cascade, repli Silero, vérification acoustique indisponible…"""
+    from aqr.pipeline.factory import ACOUSTIC_UNAVAILABLE, CONSTRAINED_UNAVAILABLE, SILERO_WARNING
+    from aqr.pipeline.output import RIWAYA_NOTICE
+
+    doc = document(honest_verse(renderer, "112:1", (0, 3)), formula("istiadha", (3, 4)))
+    doc["engine"] = {
+        "asr": "cascade(fastconformer-quran@b33af7936f9a -> whisper-base-quran@5c3c53fdf927/"
+        "times-estimated, muno-streaming@0123456789ab/ctc-q8)",
+        "segmenter": "silero-vad (non fiable par défaut)",
+        "matcher": "flow-matcher (ADR-0004)",
+        "decoder": "viterbi-decoder-v2",
+        "constrained": False,
+        "corpus": "tanzil.net hafs (2026-09-25T09:01:58.990153+00:00)",
+        "acoustic": "fastconformer-quran@b33af7936f9a",
+    }
+    doc["riwaya"] = {"assumed": "hafs", "verified": False, "notice": RIWAYA_NOTICE}
+    doc["warnings"] = [
+        SILERO_WARNING,
+        "repli Silero autorisé : " + SILERO_WARNING,
+        f"{ACOUSTIC_UNAVAILABLE} : poids du FastConformer absents de D:\\models ; preuve textuelle",
+        CONSTRAINED_UNAVAILABLE,
+        "cascade : moteur whisper absent (whisper-base-quran), réécoute sans lui",
+        "le segmenteur principal a échoué, repli Silero utilisé (CUDA out of memory)\nligne 2",
+    ]
+    result = check(doc, corpus)
+    assert result.ok, result.findings
+
+
+def test_la_sortie_reelle_de_build_json_passe_pour_chaque_categorie_non_coranique(corpus, renderer):
+    """Non-régression : ce que `aqr recognize` écrit VRAIMENT (`build_json`, toutes les catégories
+    de zone non coranique, riwaya, moteur) est accepté sans le moindre constat."""
+    from aqr.domain.models import Detection, NonQuranSpan, Status, TimeSpan, WordSpan
+    from aqr.pipeline.output import build_json
+    from aqr.pipeline.result import EngineInfo, RecognitionResult
+
+    kinds = [NonQuranSpan(TimeSpan(i, i + 1.0), kind) for i, kind in enumerate(NonQuranKind)]
+    span = WordSpan(VerseRef(112, 1), 1, len(corpus.words(VerseRef(112, 1))))
+    result = RecognitionResult(
+        source_file="récitation 01.mp3",
+        duration_s=60.0,
+        intervals=(*kinds, Detection(span, TimeSpan(20.0, 24.0), Status.RECOGNIZED, 0.95)),
+        engine=EngineInfo(
+            "fastconformer-quran@b33af7936f9a",
+            "recitation-segmenter-v2@5ee90364e709",
+            "flow-matcher (ADR-0004)",
+            "viterbi-decoder-v2",
+            corpus="tanzil.net hafs (2026-09-25T09:01:58.990153+00:00)",
+            acoustic="fastconformer-quran@b33af7936f9a",
+        ),
+        timing={"total_s": 5.0},
+        decoder_config={"min_recognized_score": 0.75},
+        windows=4,
+        warnings=("repli Silero autorisé : segmenteur Silero VAD utilisé",),
+    )
+    doc = build_json(result, renderer, TID, source_sha256="ab" * 32)
+    verdict = check(json.loads(json.dumps(doc)), corpus)
+    assert verdict.ok, verdict.findings
+    assert verdict.checked == len(kinds) + 1
+
+
+REAL_RESULTS = sorted(
+    (Path(__file__).resolve().parents[2] / "docs" / "evaluation").glob("**/*.redacted.json")
+)
+
+
+@pytest.mark.parametrize("path", REAL_RESULTS, ids=lambda p: p.name)
+def test_les_vrais_resultats_du_moteur_n_ont_aucun_constat_sur_les_champs_libres(corpus, path):
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    if doc.get("schema") != "aqr.recognition/1":
+        pytest.skip("pas un résultat aqr.recognition/1")
+    result = verify_recognition(doc, corpus, None, known_translation_ids={TID})
+    assert [f for f in result.findings if f.field.split(".")[0] in FREE_FIELDS] == []
+
+
+@pytest.mark.parametrize(
+    "assumed", [FORGED_AR, "Qul huwa Allahu ahad", "", "HAFS", 3, None, ["hafs"]]
+)
+def test_une_riwaya_supposee_inconnue_est_refusee(corpus, assumed):
+    doc = with_free(FREE_FIELD_DOC, riwaya={"assumed": assumed, "verified": False, "notice": "ok"})
+    result = check(doc, corpus)
+    assert free_findings(result) == ["riwaya.assumed"]
+    assert FORGED_AR not in messages(result)
+
+
+@pytest.mark.parametrize("assumed", ["hafs", "warsh"])
+def test_les_riwayas_connues_passent(corpus, assumed):
+    doc = with_free(
+        FREE_FIELD_DOC,
+        riwaya={"assumed": assumed, "verified": False, "notice": "Riwaya supposée."},
+    )
+    assert check(doc, corpus).ok
+
+
+@pytest.mark.parametrize(
+    "notice", [FORGED_AR, "Riwaya " + FORGED_AR, "x" * 1001, "a\x00b", "a\u202eb", 5, None]
+)
+def test_une_notice_de_riwaya_inventee_est_refusee(corpus, notice):
+    doc = with_free(FREE_FIELD_DOC, riwaya={"assumed": "hafs", "verified": False, "notice": notice})
+    result = check(doc, corpus)
+    assert free_findings(result) == ["riwaya.notice"]
+    assert FORGED_AR not in messages(result)
+
+
+@pytest.mark.parametrize("riwaya", ["hafs", ["x"], 3])
+def test_une_riwaya_qui_n_est_pas_un_objet_est_refusee(corpus, riwaya):
+    assert free_findings(check(with_free(FREE_FIELD_DOC, riwaya=riwaya), corpus)) == ["riwaya"]
+
+
+@pytest.mark.parametrize("key", ["asr", "segmenter", "matcher", "decoder", "corpus", "acoustic"])
+@pytest.mark.parametrize(
+    "value", [FORGED_AR, "moteur " + FORGED_AR, "x" * 301, "a\x00b", "a\u202eb", "a\u200bb", 7]
+)
+def test_un_champ_texte_du_moteur_invente_est_refuse(corpus, key, value):
+    doc = copy.deepcopy(FREE_FIELD_DOC)
+    doc["engine"][key] = value
+    result = check(doc, corpus)
+    assert free_findings(result) == [f"engine.{key}"]
+    assert FORGED_AR not in messages(result)
+
+
+def test_un_moteur_qui_n_est_pas_un_objet_est_refuse(corpus):
+    assert free_findings(check(with_free(FREE_FIELD_DOC, engine="whisper"), corpus)) == ["engine"]
+
+
+@pytest.mark.parametrize(
+    "warnings", ["un seul", {"a": "b"}, [1], [None], ["ok"] * 201, ["x" * 2001]]
+)
+def test_des_avertissements_mal_formes_ou_demesures_sont_refuses(corpus, warnings):
+    assert free_findings(check(with_free(FREE_FIELD_DOC, warnings=warnings), corpus)) == [
+        "warnings"
+    ]
+
+
+def test_un_avertissement_peut_citer_un_chemin_arabe_il_est_masque_a_la_lecture(corpus):
+    """Un message d'erreur d'un système en arabe n'est pas une falsification : l'import passe, le
+    texte arabe n'est jamais montré (masqué par la lecture, `recognition.ts`)."""
+    doc = with_free(FREE_FIELD_DOC, warnings=["poids absents de C:\\Users\\محمد\\models"])
+    assert check(doc, corpus).ok
+
+
+@pytest.mark.parametrize("label", [FORGED_AR, "parole libre", "frenchh", "", 4, None])
+def test_un_libelle_de_zone_non_coranique_inconnu_est_refuse(corpus, label):
+    result = check(document(formula(label, (0, 2))), corpus)
+    assert free_findings(result) == ["label"]
+    assert FORGED_AR not in messages(result)
+
+
+@pytest.mark.parametrize(
+    "label",
+    [k.value for k in NonQuranKind if k is not NonQuranKind.BASMALA] + ["[isti'adha]", "âmîn"],
+)
+def test_les_libelles_connus_passent(corpus, label):
+    assert check(document(formula(label, (0, 2))), corpus).ok
 
 
 # --- ligne de commande ---------------------------------------------------------------------------
@@ -343,3 +531,25 @@ def test_cli_fichier_illisible_code_1(tmp_path):
         ["verify-recognition", str(path), "--corpus-dir", str(CORPUS_DIR)], env={}, out=out, err=err
     )
     assert code == 1 and "ERREUR" in err.getvalue()
+
+
+def test_cli_json_tres_imbrique_est_un_fichier_illisible_pas_un_plantage(tmp_path):
+    """20 000 niveaux : l'analyseur JSON de Python dépasse sa pile (RecursionError). Le contrôle
+    le dit en une ligne et sort avec 1, au lieu d'une trace qui ressemblait à une panne."""
+    path = tmp_path / "x.json"
+    path.write_text("[" * 20000 + "]" * 20000, encoding="utf-8")
+    out, err = io.StringIO(), io.StringIO()
+    code = main(
+        ["verify-recognition", str(path), "--corpus-dir", str(CORPUS_DIR)], env={}, out=out, err=err
+    )
+    assert code == 1
+    assert err.getvalue().startswith("ERREUR") and "imbriqué" in err.getvalue()
+
+
+def test_cli_la_cause_d_une_traduction_invérifiable_est_dans_le_rapport(tmp_path, renderer):
+    path = write(tmp_path, document(honest_verse(renderer, "112:1", (0, 3))))
+    code, payload, _ = run_cli(
+        str(path), "--corpus-dir", str(CORPUS_DIR), "--no-translations", cache=tmp_path / "vide"
+    )
+    assert code == 4
+    assert payload["unverifiable"][0]["cause"] == "no_source"

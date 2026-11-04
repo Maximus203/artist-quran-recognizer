@@ -17,29 +17,53 @@ Deux sortes de problèmes, jamais confondues :
 
 Un texte ou une traduction absents ne sont pas une falsification (copie expurgée) : seul ce qui est
 présent est contrôlé. Les messages ne recopient jamais le contenu reçu.
+
+Les champs libres que l'interface affiche aussi (riwaya supposée, noms des moteurs, libellé d'une
+zone non coranique) ne passent pas non plus sur parole : une liste blanche ou une forme bornée, sans
+aucune écriture arabe, car le moteur n'y écrit jamais d'arabe. Un faux verset glissé là
+s'afficherait sous une étiquette (« Riwaya … supposée ») qui lui donnerait du crédit (ADR-0024, N6).
 """
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from aqr.corpus.checksums import CorpusChecksumError
-from aqr.domain.models import NonQuranKind, VerseRef
+from aqr.domain.models import NonQuranKind, Riwaya, VerseRef
 from aqr.domain.ports import CorpusRepository, Translation, TranslationRepository
 from aqr.rendering.formula_labels import FORMULA_LABELS_AR
 from aqr.rendering.home_renderer import BASMALA_REF, HomeRenderer
 
+ARABIC_SCRIPT = re.compile("[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]")
+"""Écritures arabes (lettres, signes, formes de présentation) : jamais dans un champ libre."""
+
+ENGINE_TEXT_FIELDS = ("asr", "segmenter", "matcher", "decoder", "corpus", "acoustic")
+MAX_ENGINE_TEXT = 300
+"""Un nom de moteur tient en une ligne (le plus long : une cascade de trois moteurs, ~180)."""
+MAX_RIWAYA_NOTICE = 1000
+"""La notice du moteur fait ~270 signes ; marge pour une reformulation future."""
+MAX_WARNINGS = 200
+MAX_WARNING_LENGTH = 2000
+"""Un avertissement peut citer un chemin ou le message d'une exception : pas un roman."""
+
 
 @dataclass(frozen=True)
 class Finding:
-    """Un écart : intervalle (rang dans `intervals`, None = tout le document), verset, champ."""
+    """Un écart : intervalle (rang dans `intervals`, None = tout le document), verset, champ.
+
+    `cause` (traductions invérifiables seulement) : `offline` (QuranEnc injoignable), `local_copy`
+    (copie locale illisible) ou `no_source` (aucune source configurée) ; elle choisit le message
+    montré à l'utilisateur."""
 
     index: int | None
     ref: str | None
     field: str
     message: str
+    cause: str | None = None
 
 
 @dataclass(frozen=True)
@@ -85,8 +109,73 @@ class _Check:
     def found(self, index: int | None, ref: str | None, field: str, message: str) -> None:
         self.findings.append(Finding(index, ref, field, message))
 
-    def unproven(self, index: int, ref: str, message: str) -> None:
-        self.unverifiable.append(Finding(index, ref, "translation", message))
+    def unproven(self, index: int, ref: str, message: str, cause: str) -> None:
+        self.unverifiable.append(Finding(index, ref, "translation", message, cause))
+
+    # --- champs libres du document ---------------------------------------------------------------
+
+    def free_fields(self, document: object) -> None:
+        if not isinstance(document, Mapping):
+            return
+        self.riwaya(document.get("riwaya"))
+        self.engine(document.get("engine"))
+        self.warnings(document.get("warnings"))
+
+    def riwaya(self, value: object) -> None:
+        if value is None:
+            return  # les anciens résultats n'ont pas ce champ
+        if not isinstance(value, Mapping):
+            self.found(
+                None, None, "riwaya", "La riwaya annoncée est illisible : un objet est attendu."
+            )
+            return
+        assumed = value.get("assumed")
+        if not isinstance(assumed, str) or assumed not in {r.value for r in Riwaya}:
+            self.found(
+                None,
+                None,
+                "riwaya.assumed",
+                "La riwaya supposée n'est pas une riwaya connue (hafs ou warsh).",
+            )
+        if not _plain(value.get("notice"), MAX_RIWAYA_NOTICE):
+            self.found(
+                None,
+                None,
+                "riwaya.notice",
+                "La notice de riwaya n'est pas un court texte sans écriture arabe.",
+            )
+
+    def engine(self, value: object) -> None:
+        if value is None:
+            return
+        if not isinstance(value, Mapping):
+            self.found(None, None, "engine", "La description du moteur est illisible.")
+            return
+        for key in ENGINE_TEXT_FIELDS:
+            if key in value and not _plain(value[key], MAX_ENGINE_TEXT):
+                self.found(
+                    None,
+                    None,
+                    f"engine.{key}",
+                    "Un nom de moteur est une ligne courte sans écriture arabe.",
+                )
+
+    def warnings(self, value: object) -> None:
+        """Texte libre du moteur (chemins, messages d'erreur) : borné, pas filtré. L'arabe d'un
+        message d'un système en arabe n'est pas une falsification ; la lecture le masque."""
+        if value is None:
+            return
+        if (
+            not isinstance(value, list)
+            or len(value) > MAX_WARNINGS
+            or any(not isinstance(w, str) or len(w) > MAX_WARNING_LENGTH for w in value)
+        ):
+            self.found(
+                None,
+                None,
+                "warnings",
+                f"Les avertissements sont une liste d'au plus {MAX_WARNINGS} courts textes.",
+            )
 
     # --- intervalles ---------------------------------------------------------------------------
 
@@ -132,6 +221,13 @@ class _Check:
 
     def non_quran(self, index: int, item: Mapping[str, Any]) -> None:
         text, translation = item.get("text"), item.get("translation")
+        if not _known_label(item.get("label")):
+            self.found(
+                index,
+                None,
+                "label",
+                "Le libellé de la zone n'est pas une catégorie non coranique connue.",
+            )
         if item.get("basmala") is True:
             ref = BASMALA_REF
             if _present(text) and text != self.corpus.text(ref):
@@ -213,18 +309,35 @@ class _Check:
                 "Cette traduction n'est pas une traduction QuranEnc connue.",
             )
             return
-        if self.translations is None or self.offline:
-            self.unproven(index, shown, "Traduction non vérifiée : aucune source QuranEnc lisible.")
+        if self.translations is None:
+            self.unproven(
+                index,
+                shown,
+                "Traduction non vérifiée : aucune source QuranEnc lisible.",
+                "no_source",
+            )
+            return
+        if self.offline:
+            self.unproven(
+                index, shown, "Traduction non vérifiée : QuranEnc est injoignable.", "offline"
+            )
             return
         try:
             official = self.translations.get(ref, identifier)
         except OSError:
             # Le premier échec réseau coupe les suivants : pas un délai par passage.
             self.offline = True
-            self.unproven(index, shown, "Traduction non vérifiée : QuranEnc est injoignable.")
+            self.unproven(
+                index, shown, "Traduction non vérifiée : QuranEnc est injoignable.", "offline"
+            )
             return
         except (CorpusChecksumError, ValueError, KeyError, RuntimeError):
-            self.unproven(index, shown, "Traduction non vérifiée : la copie locale est illisible.")
+            self.unproven(
+                index,
+                shown,
+                "Traduction non vérifiée : la copie locale est illisible.",
+                "local_copy",
+            )
             return
         self.compare(index, shown, value, official)
 
@@ -271,6 +384,32 @@ def _present(value: object) -> bool:
     return value is not None and value != ""
 
 
+def _plain(value: object, limit: int) -> bool:
+    """Une chaîne courte d'une ligne : ni contrôle, ni caractère de mise en forme (retournement du
+    sens d'écriture, largeur nulle), ni écriture arabe. Vide : permis (`engine.acoustic` vide)."""
+    return (
+        isinstance(value, str)
+        and len(value) <= limit
+        and not ARABIC_SCRIPT.search(value)
+        and all(unicodedata.category(c) not in ("Cc", "Cf") for c in value)
+    )
+
+
+def _simple(label: str) -> str:
+    """Comme `formulaFromLabel` côté web : minuscules, sans accent ni ponctuation."""
+    folded = unicodedata.normalize("NFD", label)
+    return re.sub(r"[^a-z]", "", "".join(c for c in folded if not unicodedata.combining(c)).lower())
+
+
+_KNOWN_LABELS = frozenset(_simple(kind.value) for kind in NonQuranKind)
+
+
+def _known_label(label: object) -> bool:
+    """Le libellé d'une zone non coranique est une catégorie du moteur : l'interface l'affiche tel
+    quel pour une parole non coranique, jamais un texte libre."""
+    return isinstance(label, str) and _simple(label) in _KNOWN_LABELS
+
+
 def _formula_label(label: object) -> str | None:
     if not isinstance(label, str):
         return None
@@ -313,6 +452,7 @@ def verify_recognition(
     `known_translation_ids` : identifiants QuranEnc acceptés (None = ceux que la source accepte).
     """
     check = _Check(corpus, translations, known_translation_ids)
+    check.free_fields(document)
     intervals = document.get("intervals") if isinstance(document, Mapping) else None
     if not isinstance(intervals, list):
         check.found(None, None, "intervals", "Le résultat ne contient pas de liste d'intervalles.")

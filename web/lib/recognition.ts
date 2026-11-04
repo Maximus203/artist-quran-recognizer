@@ -1,4 +1,30 @@
 import { z } from "zod";
+import { maskArabic } from "./arabic-script";
+
+/**
+ * Champs libres du résultat (noms de moteur, riwaya supposée, avertissements, libellé d'une zone non
+ * coranique) : l'interface les affiche, jamais comme du Coran. À l'import, `aqr verify-recognition` les
+ * REFUSE s'ils ne ressemblent pas à ce que le moteur écrit ; ici, pour tout résultat déjà conservé ou
+ * venu d'un moteur distant, on les NEUTRALISE à la lecture sans jamais rendre le résultat illisible :
+ * l'arabe est masqué, les caractères de contrôle et de mise en forme (retournement du sens d'écriture,
+ * largeur nulle) retirés, la taille bornée.
+ */
+const ARABIC_MASK = "[texte arabe masqué]";
+const MAX_LINE = 300;
+const MAX_NOTICE = 1000;
+const MAX_LABEL = 64;
+const MAX_WARNING = 2000;
+const MAX_WARNINGS = 200;
+const FORMAT = /[\p{Cc}\p{Cf}]/gu;
+const FORMAT_KEEPING_LINES = /(?![\n\t])[\p{Cc}\p{Cf}]/gu;
+const plain = (max: number, keepLines = false) =>
+  z.string().transform((text) =>
+    maskArabic(
+      // Borné avant de masquer : un champ de 25 Mio n'a pas à être parcouru en entier.
+      text.slice(0, max).replace(keepLines ? FORMAT_KEEPING_LINES : FORMAT, ""),
+      ARABIC_MASK,
+    ).slice(0, max),
+  );
 
 const finite = z.number().finite();
 const hash = z.string().regex(/^[a-f0-9]{64}$/i);
@@ -78,7 +104,7 @@ const verse = z
 const nonQuran = z
   .object({
     kind: z.literal("non_quran"),
-    label: z.string(),
+    label: plain(MAX_LABEL),
     t: span,
     basmala: z.boolean().optional(),
     ref: ref.optional(),
@@ -117,25 +143,29 @@ export const recognitionSchema = z
       duration_s: finite.positive(),
     }),
     engine: z.object({
-      asr: z.string(),
-      segmenter: z.string(),
-      matcher: z.string(),
-      decoder: z.string(),
+      asr: plain(MAX_LINE),
+      segmenter: plain(MAX_LINE),
+      matcher: plain(MAX_LINE),
+      decoder: plain(MAX_LINE),
       constrained: z.boolean(),
-      corpus: z.string(),
+      corpus: plain(MAX_LINE),
     }),
     decoder: z.record(z.string(), finite),
     timing: z.record(z.string(), finite),
     windows: z.number().int().nonnegative(),
     // Riwaya SUPPOSÉE par le moteur (jamais vérifiée dans l'audio) ; absente des anciens résultats.
+    // Une valeur inconnue n'est pas montrée (le résultat reste lisible, sans bandeau de riwaya).
     riwaya: z
       .object({
-        assumed: z.string(),
+        assumed: z.enum(["hafs", "warsh"]),
         verified: z.boolean(),
-        notice: z.string(),
+        notice: plain(MAX_NOTICE),
       })
-      .optional(),
-    warnings: z.array(z.string()),
+      .optional()
+      .catch(undefined),
+    warnings: z
+      .array(plain(MAX_WARNING, true))
+      .transform((all) => all.slice(0, MAX_WARNINGS)),
     intervals: z.array(interval),
   })
   .superRefine((doc, ctx) => {

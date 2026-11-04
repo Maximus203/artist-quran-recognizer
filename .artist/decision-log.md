@@ -18,6 +18,21 @@
   ouvert, 360 et 390 px, paysage 667 × 375) ; `web/app/atelier/mini-reserve.test.ts`, `lib/back-close.test.ts`,
   `lib/export-tab.test.ts`, `lib/export-video-follow.test.ts`.
 
+## 2026-11-04 — Import : champs libres, fichiers illisibles, refus journalisés (ADR-0024, addendum, PR #209)
+- **Quoi** : N6 `verify_recognition` refuse riwaya hors {hafs, warsh}, noms de moteur et notice avec de l'arabe, libellé de zone
+  non coranique hors `NonQuranKind`, avertissements démesurés ; `recognition.ts` masque l'arabe de ces champs à la lecture.
+  N7 `prediction-bytes.ts` : BOM retiré, UTF-16 refusé (400), imbrication > 32 niveaux refusée (422 `result_too_deep`) ; cause
+  (`offline`, `local_copy`, `no_source`) dans les traductions invérifiables. N10 événement `import.result_refused` via `log.event`.
+- **Choix pris seul** : (1) BOM accepté et retiré plutôt que refusé (sans perte, avant tout contrôle et toute empreinte ; seul écart
+  à « fichier conservé = fichier reçu ») ; (2) avertissements bornés et masqués à la lecture, pas refusés (chemins et messages d'un
+  système en arabe sont légitimes : un vrai résultat n'est jamais refusé) ; (3) deux étages, refus à l'import et neutralisation à
+  la lecture, car un résultat conservé avant ce correctif ou venu d'un moteur distant n'est pas contrôlé ; (4) profondeur mesurée
+  sur les octets en TypeScript, pas par le moteur Python (qui plante avant) ; (5) niveau `error` pour une panne du contrôle,
+  `warn` pour une falsification ou une traduction invérifiable.
+- **Limites connues** : une translittération latine d'un verset passe par un champ libre ; `source.file` n'est pas contrôlé
+  (jamais restitué) ; moteur distant authentifié toujours non relu.
+- **Preuve** : `tests/unit/test_verify_recognition.py`, `web/lib/{prediction-bytes,result-check,recognition,import-session-verify,import-session-corpus}.test.ts`.
+
 ## 2026-11-04 — Un résultat importé est relu dans le corpus avant d'être conservé (ADR-0024, PR #207)
 - **Quoi** : `aqr verify-recognition` relit chaque intervalle d'un résultat joint à `POST /api/sessions` (verset, plage de mots,
   arabe, basmala, libellés de formule, traduction QuranEnc, segments, fragment, candidats) ; l'import refuse un résultat contredit
