@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-04 — Export vidéo : corrections de la recette indépendante de l'éditeur
 Étiquettes : utilisateur, technique, décision
-PR : #207
+PR : #208
 
 **Ce qui change.** Sur téléphone, le petit lecteur qui flotte en bas de l'écran (il apparaît quand on arrive à l'export depuis la lecture d'une session) ne recouvre plus les commandes des trois éditeurs : avant, toucher « Réglages » ou « Suivant » ouvrait la session et faisait quitter l'éditeur. Dans le plateau, le texte arabe affiche son cadenas (« jamais le modifier ») et la traduction son attribution, comme dans les autres éditeurs ; l'aperçu ne descend plus de 60 px la première fois qu'on touche un texte. Le bouton Retour du navigateur ferme d'abord la feuille ouverte (réglages, passages) avant de quitter l'export. Recharger la page d'export garde l'onglet où l'on était (l'adresse porte `?onglet=`) ; le bouton « Exporter » ouvre toujours sur « Vérifier ». Sur un écran étroit (360 px), les outils passent à la ligne au lieu de défiler de côté ; en paysage, l'aperçu est à gauche et les commandes à droite. Si le réseau se coupe pendant le rendu, la page le dit (« Connexion perdue. Le rendu continue sur le serveur… ») et rattrape la progression toute seule. Une vidéo de fond refusée n'est plus supprimée deux fois (plus d'erreur 404 en console).
 
