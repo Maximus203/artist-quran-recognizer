@@ -253,6 +253,11 @@
   --w-right: 360px; /* panneaux repliables (bureau) */
   --w-drawer: min(92vw, 380px); /* tiroirs mobiles */
   --header-h: 56px;
+  /* Le lecteur réduit (fixe, en bas de toute page connectée) : sa hauteur est écrite ICI, une fois ; la réserve est
+     nulle tant qu'il n'est pas là, et chaque page « plein écran » la retire de sa hauteur (voir mini-reserve.ts). */
+  --mini-h: calc(var(--hit) + 2 * var(--sp-2) + 2px);
+  --mini-gap: var(--sp-4);
+  --mini-reserve: 0px;
 
   /* ── Mouvement : transform/opacity seulement ──────────────────────────────── */
   --ease: cubic-bezier(0.2, 0, 0, 1);
@@ -260,6 +265,9 @@
   --dur-1: 120ms;
   --dur-2: 200ms;
   --dur-3: 320ms;
+}
+:root[data-mini-player] {
+  --mini-reserve: calc(var(--mini-h) + var(--mini-gap) + var(--sp-2));
 }
 @media (min-width: 768px) {
   :root {

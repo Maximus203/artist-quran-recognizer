@@ -245,6 +245,41 @@ describe("refus du serveur : dits en clair, jamais un code brut", () => {
     expect(error.message).toContain("pas accepté");
   });
 
+  it.each([
+    [415, "format"],
+    [422, "unreadable"],
+    [413, "too_long"],
+    [400, "interrupted"],
+  ])(
+    "refus à l'assemblage (%i %s) : le serveur a déjà supprimé la vidéo, le client ne redemande pas (pas de 404 en console)",
+    async (status, code) => {
+      server.rules.push((c) =>
+        c.url.endsWith("/complete") ? refuse(status, code, "Refusée.")() : null,
+      );
+      await expect(
+        uploadBackgroundVideo(SESSION, clip(2000), io()),
+      ).rejects.toMatchObject({ code });
+      expect(server.deletes()).toEqual([]);
+    },
+  );
+
+  it.each([
+    [409, "not_ready"],
+    [503, "server"],
+    [507, "disk_full"],
+  ])(
+    "échec à l'assemblage (%i %s) : la vidéo peut rester sur le serveur, le client la retire",
+    async (status, code) => {
+      server.rules.push((c) =>
+        c.url.endsWith("/complete") ? refuse(status, code, "Échec.")() : null,
+      );
+      await expect(
+        uploadBackgroundVideo(SESSION, clip(2000), io()),
+      ).rejects.toMatchObject({ code });
+      expect(server.deletes()).toHaveLength(1);
+    },
+  );
+
   it("préparation échouée : l'état « échec » devient une erreur expliquée, et la vidéo est retirée du serveur", async () => {
     server.states = [
       {

@@ -23,6 +23,7 @@ import "./export-refonte.css";
 import "./export-editor.css";
 import "./export-table.css";
 import "./export-steps.css";
+import "./export-compact.css";
 import "./editor-mode.css";
 
 export const metadata: Metadata = {

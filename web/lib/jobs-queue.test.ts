@@ -201,7 +201,10 @@ describe("file FIFO : une analyse à la fois", () => {
       expect(stamped[i] > stamped[i - 1]).toBe(true);
     for (const id of ids) await release(id);
     for (const id of ids) await finished(id);
-  });
+    // Huit faux moteurs (des processus node) se suivent un à un : ≈ 0,9 s chacun sous Windows, donc ≈ 7 s, soit plus
+    // que les 5 s par défaut. La logique est juste, c'est le délai qui manquait (recette QA, m8) : 20 s, avec marge
+    // pour une machine chargée.
+  }, 20_000);
 
   it("jamais deux moteurs en même temps, démarrage dans l'ordre, chacun fini avant le suivant", async () => {
     await seed(A);

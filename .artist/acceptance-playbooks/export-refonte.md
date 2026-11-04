@@ -109,18 +109,18 @@
 ### XR.11 — [WEB] Qualité et poids
 **Priorité** : critique
 **Technique** : valeurs-limites
-**Action** : Choisir chaque palier ; « Sur mesure » 2160p à 60 im/s ; « Tout l'audio ».
-**Attendu** : chaque palier affiche le poids des plages choisies ; 2160p·60 est toujours « lourd » (motif hachuré + libellé, jamais la couleur seule) ; au-delà de 800 Mo ou d'un fichier de 500 Mo : « très lourd » (points) ; le bordereau propose « Passer en 1080p · 30 im/s » qui ramène la qualité.
+**Action** : Choisir chaque palier ; « Sur mesure » 1080p à 60 im/s (1080p est la résolution maximale, PR #198) ; « Tout l'audio ».
+**Attendu** : chaque palier affiche le poids des plages choisies ; aucune résolution au-dessus de 1080p n'est proposée ; 1080p·60 affiche son poids estimé et son niveau (motif + libellé, jamais la couleur seule) ; au-delà de 800 Mo ou d'un fichier de 500 Mo : « très lourd » (points) ; le bordereau propose « Passer en 1080p · 30 im/s » qui ramène la qualité.
 **Observé** : _(à remplir)_
 **Verdict** : ⬜
 **Issue** : —
 
-### XR.12 — [WEB] Export réel : plusieurs plages, 60 im/s, résolution > 1080
+### XR.12 — [WEB] Export réel : plusieurs plages, 60 im/s, 1080p
 **Priorité** : critique
 **Technique** : nominal
-**Action** : Deux plages, 1440p à 60 im/s, « Exporter 2 vidéos » ; observer le bordereau pendant le rendu ; puis « Retélécharger tout ».
+**Action** : Deux plages, 1080p à 60 im/s, « Exporter 2 vidéos » ; observer le bordereau pendant le rendu ; puis « Retélécharger tout ».
 **Attendu** : « 1 vidéo en cours sur 2 », une ligne par fichier (✓ + poids / barre % / en attente) ; à la fin « 2 vidéos prêtes » ; les MP4 sont téléchargés dès qu'ils sont prêts.
-**Vérif [BE]** : `ffprobe` sur chaque fichier : h264 2560×1440 (16:9), `r_frame_rate=60/1`, piste aac, durée = durée de la plage.
+**Vérif [BE]** : `ffprobe` sur chaque fichier : h264 1920×1080 (16:9), `r_frame_rate=60/1`, piste aac, durée = durée de la plage.
 **Observé** : _(à remplir)_
 **Verdict** : ⬜
 **Issue** : —
@@ -173,12 +173,12 @@
 **Verdict** : ⬜
 **Issue** : —
 
-### XR.A2 — [API] Découpe protégée par verset, 60 im/s, 1440p, vertical
+### XR.A2 — [API] Découpe protégée par verset, 60 im/s, 1080p, vertical (et 1440 / 2160 refusés)
 **Priorité** : critique
 **Technique** : nominal
-**Action** : `{"options":{"suggest":"verse","fps":60,"resolution":1440,"orientation":"9:16"}}`, suivre le job toutes les 6 s.
-**Attendu** : `progress` lisible (« Vidéo 2/5 : rendu 40 % »), `files_done` qui monte jusqu'à `files_total` = 5 ; 5 téléchargements nommés « … — 91.1.mp4 » à « … — 91.5.mp4 ».
-**Vérif [BE]** : `ffprobe` : 1440×2560, 60/1, durées = `end − start` de `GET …/export/suggestions`.
+**Action** : `{"options":{"suggest":"verse","fps":60,"resolution":1080,"orientation":"9:16"}}`, suivre le job toutes les 6 s. Puis (must-fail) la même requête avec `"resolution":1440`, puis `2160`.
+**Attendu** : `progress` lisible (« Vidéo 2/5 : rendu 40 % »), `files_done` qui monte jusqu'à `files_total` = 5 ; 5 téléchargements nommés « … — 91.1.mp4 » à « … — 91.5.mp4 ». Résolution 1440 ou 2160 : 400 « resolution : 360, 480, 720, 1080 » (aucun job créé) ; 1080 à 60 im/s : 202.
+**Vérif [BE]** : `ffprobe` : 1080×1920, 60/1, durées = `end − start` de `GET …/export/suggestions`.
 **Observé** : _(à remplir)_
 **Verdict** : ⬜
 **Issue** : —

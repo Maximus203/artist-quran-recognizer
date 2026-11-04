@@ -41,6 +41,7 @@ import {
   renderErrorText,
   type FileRow,
 } from "@/lib/export-video-progress";
+import { followJob } from "@/lib/export-video-follow";
 import {
   cancelServerJob,
   fetchServerJob,
@@ -104,7 +105,8 @@ const THUMBS = EXPORT_VIDEO_CONFIG.thumbnails;
 
 /** Intervalle de suivi d'un export confié au serveur. */
 const FOLLOW_MS = 1200;
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Lignes de fichiers d'un job : terminé, en cours (la vidéo à `files_done`), en attente. */
 function rowsOf(names: readonly string[], job: ServerJob): FileRow[] {
@@ -188,6 +190,8 @@ export function VideoPanel({
   const [files, setFiles] = useState<FileRow[]>([]);
   const [failure, setFailure] = useState<ExportFailure | null>(null);
   const [stopRequested, setStopRequested] = useState(false);
+  // Le réseau est coupé pendant le rendu : le rendu continue sur le serveur, la page le dit et rattrape seule.
+  const [connectionLost, setConnectionLost] = useState(false);
   const [sheet, setSheet] = useState(false);
   const nextId = useRef(1);
   const prefsRef = useRef(prefs);
@@ -572,51 +576,47 @@ export function VideoPanel({
   const follow = useCallback(
     async (jobId: string, names: string[], offset: number) => {
       jobRef.current = jobId;
-      for (;;) {
-        let job: ServerJob;
-        try {
-          job = await fetchServerJob(sessionId, jobId);
-        } catch {
-          // Réseau coupé ou page en transition : le rendu continue côté serveur, on réessaie.
-          await sleep(FOLLOW_MS);
-          if (!aliveRef.current) return;
-          continue;
-        }
-        if (!aliveRef.current) return;
-        setFiles((rows) => [...rows.slice(0, offset), ...rowsOf(names, job)]);
-        if (isActiveJob(job)) {
-          await sleep(FOLLOW_MS);
-          if (!aliveRef.current) return;
-          continue;
-        }
-        jobRef.current = null;
-        if (job.state === "done") {
-          links.current = job.downloads.map((d) => ({
-            name: d.name,
-            url: serverJobFileUrl(sessionId, job.id, d.index),
-          }));
-          setPhase("done");
-          setStopRequested(false);
-          announceVideosChanged();
-          announce(
-            `${job.downloads.length} vidéo(s) prête(s), gardée(s) sur le serveur.`,
-          );
-        } else if (job.error === "Export annulé.") {
-          setPhase("done");
-          setStopRequested(false);
-          announceVideosChanged();
-          announce(
-            `Export arrêté : ${job.files_done + offset} vidéo(s) prête(s).`,
-          );
-        } else {
-          const message = job.error ?? "La vidéo n’a pas pu être fabriquée.";
-          const index = job.files_done + offset;
-          setFiles((rows) => failFile(rows, index));
-          setFailure({ message, index, memory: false });
-          setPhase("error");
-          onError(message);
-        }
-        return;
+      // Une coupure de réseau ne perd rien (le rendu continue sur le serveur) : on la dit, et on rattrape seul.
+      const job = await followJob({
+        fetchJob: () => fetchServerJob(sessionId, jobId),
+        sleep,
+        alive: () => aliveRef.current,
+        onJob: (latest) =>
+          setFiles((rows) => [
+            ...rows.slice(0, offset),
+            ...rowsOf(names, latest),
+          ]),
+        onConnection: (online) => setConnectionLost(!online),
+        interval: FOLLOW_MS,
+      });
+      if (!job) return;
+      setConnectionLost(false);
+      jobRef.current = null;
+      if (job.state === "done") {
+        links.current = job.downloads.map((d) => ({
+          name: d.name,
+          url: serverJobFileUrl(sessionId, job.id, d.index),
+        }));
+        setPhase("done");
+        setStopRequested(false);
+        announceVideosChanged();
+        announce(
+          `${job.downloads.length} vidéo(s) prête(s), gardée(s) sur le serveur.`,
+        );
+      } else if (job.error === "Export annulé.") {
+        setPhase("done");
+        setStopRequested(false);
+        announceVideosChanged();
+        announce(
+          `Export arrêté : ${job.files_done + offset} vidéo(s) prête(s).`,
+        );
+      } else {
+        const message = job.error ?? "La vidéo n’a pas pu être fabriquée.";
+        const index = job.files_done + offset;
+        setFiles((rows) => failFile(rows, index));
+        setFailure({ message, index, memory: false });
+        setPhase("error");
+        onError(message);
       }
     },
     [announce, onError, sessionId],
@@ -786,6 +786,7 @@ export function VideoPanel({
     files,
     failure,
     stopRequested,
+    connectionLost,
     canLighten: prefs.resolution > 1080 || prefs.fps > 30,
     onExport: exportNow,
     onStop: () => {

@@ -335,7 +335,7 @@
 .xe-plateau {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  height: calc(100dvh - var(--header-h));
+  height: calc(100dvh - var(--header-h) - var(--mini-reserve));
   min-height: 520px;
   margin-inline: calc(var(--gutter) * -1);
   background: var(--bg);
@@ -476,6 +476,26 @@
 }
 .xe-ready .btn {
   flex: 1 1 auto;
+}
+/* L'encart « déjà prête » et la note de l'élément choisi se partagent UNE case : sa hauteur est celle du plus haut des
+   deux, donc la scène ne bouge pas quand on touche un élément (recette QA, m4). Le contenu inactif reste dans la
+   case, invisible (et `inert` côté balisage). */
+.xe-below {
+  display: grid;
+  min-width: 0;
+}
+.xe-below > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.xe-below > [data-off] {
+  visibility: hidden;
+}
+.xe-below .xe-lock {
+  align-self: start;
+}
+.xe-lock--plain {
+  align-items: center;
 }
 
 /* La feuille : accrochée sous l'aperçu, qui reste visible pendant qu'on règle (pas de voile). */
@@ -1077,7 +1097,7 @@ dialog.xe-dialog::backdrop {
   .xe-desk {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    height: calc(100dvh - var(--header-h) - var(--sp-4));
+    height: calc(100dvh - var(--header-h) - var(--sp-4) - var(--mini-reserve));
     min-height: 560px;
     border: 1px solid var(--border);
     border-radius: var(--r-lg);

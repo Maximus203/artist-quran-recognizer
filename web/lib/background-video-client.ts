@@ -97,6 +97,8 @@ const KNOWN_CODES = new Set<string>([
   "interrupted",
   "server",
 ]);
+/** Les réponses de l'assemblage qui disent « refusée » : le serveur a supprimé la vidéo avant de répondre. */
+const SERVER_REMOVES: ReadonlySet<number> = new Set([400, 413, 415, 422]);
 const POLL_MISSES = 5;
 const MAX_WAIT_MS = 30 * 60_000;
 
@@ -270,6 +272,7 @@ export async function uploadBackgroundVideo(
     );
 
   let id: string | null = io.resumeId ?? null;
+  let removedByServer = false;
   let sender: ChunkSender | null = null;
   const sending = {
     ...io,
@@ -315,14 +318,23 @@ export async function uploadBackgroundVideo(
           (i) => !have.has(i),
         ),
       );
-      await sender.complete({});
+      try {
+        await sender.complete({});
+      } catch (error) {
+        // Un refus à l'assemblage (400, 413, 415, 422) : le serveur a DÉJÀ supprimé la vidéo. Redemander sa
+        // suppression ne ferait qu'une 404 de plus en console. Un échec du serveur (409, 5xx) la laisse en place.
+        if (error instanceof ApiError && SERVER_REMOVES.has(error.status))
+          removedByServer = true;
+        throw error;
+      }
       io.onProgress?.({ phase: "sending", ratio: 1 });
     }
     return await waitReady(own, io, sleep);
   } catch (error) {
     const known = failure(error, id);
     // Une coupure garde l'envoi pour reprendre ; tout le reste le supprime du serveur.
-    if (id && !resumable(known)) await removeBackgroundVideo(sessionId, id);
+    if (id && !resumable(known) && !removedByServer)
+      await removeBackgroundVideo(sessionId, id);
     throw known;
   }
 }

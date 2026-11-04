@@ -1,0 +1,141 @@
+/*
+ * Les éditeurs de la vidéo d'export sur PETITS écrans (recette QA, m6) : un téléphone de 360 px de large, un téléphone
+ * tenu en paysage (667 × 375). Deux règles :
+ *   1. aucune commande n'est cachée derrière un défilement horizontal : les rangées d'outils passent à la ligne ;
+ *   2. en paysage, l'aperçu est à gauche et les commandes à droite, toutes dans l'écran (la rangée d'outils reste collée
+ *      en bas de sa colonne), au lieu d'une page de 2500 px qu'il faut parcourir.
+ * Les tailles viennent de tokens.css ; ce fichier ne pose aucune couleur. Chargé APRÈS export-editor, export-table et
+ * export-steps : il en corrige la mise en page, à largeur ou hauteur réduite seulement.
+ */
+
+:root {
+  /* Hauteur de la rangée d'outils d'un élément quand elle passe sur deux lignes (le pas, puis les outils). */
+  --xe-tools-h-narrow: 122px;
+}
+
+/* ── Largeur réduite (ou colonne étroite du paysage) : les outils passent à la ligne ───── */
+@media (max-width: 519px),
+  (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+  .xe-tools .xe-tb,
+  .xt-rail .xe-tb {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    gap: 6px;
+    overflow: visible;
+  }
+  .xt-rail .xe-tb {
+    gap: 2px;
+  }
+  /* Le pas « − 100 % + » prend sa ligne ; les outils (Fond, Position, Réglages, Masquer) se partagent la suivante. */
+  .xe-tools .xe-tb .xe-step {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+  .xe-tools .xe-vsep {
+    display: none;
+  }
+  .xe-tools .xe-tool,
+  .xt-rail .xe-tool {
+    min-width: 0;
+  }
+}
+/* L'état « rien de choisi » (outils du cadre) garde la même hauteur que celui d'un élément : la scène ne bouge pas. */
+@media (max-width: 519px) {
+  .xe-tools {
+    min-height: var(--xe-tools-h-narrow);
+  }
+}
+
+/* ── Paysage sur téléphone : l'aperçu à gauche, les commandes à droite ───────────────── */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+  .xe-plateau,
+  .xp-root {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+  .xe-plateau > .xe-top,
+  .xp-root > .xe-top {
+    grid-column: 1 / -1;
+  }
+  /* L'aperçu : toute la colonne de gauche. */
+  .xe-plateau > .xe-stage-area,
+  .xp-root > .xp-stage {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+    min-height: 0;
+  }
+  /* Les commandes : la colonne de droite, qui défile toute seule si besoin. */
+  .xe-plateau > .xe-dock,
+  .xp-root > .xp-panel {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+  }
+  .xe-plateau > .xe-dock {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* Rangées resserrées : les pastilles (une ligne d'icônes) puis les outils tiennent dans la hauteur de la colonne. */
+  .xe-chips {
+    padding-bottom: 0;
+  }
+  .xe-ctx {
+    padding-top: 2px;
+    padding-bottom: 4px;
+  }
+  /* Les pastilles d'éléments : des icônes seules (leur nom reste lu aux lecteurs d'écran), sur une seule rangée qui
+     tient dans la colonne. */
+  .xe-chips {
+    overflow: visible;
+    padding-top: 2px;
+  }
+  .xe-chip-btn {
+    min-width: var(--hit);
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+  /* La scène est seule dans sa colonne : rien à réserver sous les outils, l'encart inactif ne prend pas de place. */
+  .xe-below > [data-off] {
+    display: none;
+  }
+  /* Une feuille ouverte remplit la colonne ; son corps défile. */
+  .xe-plateau > .xe-dock > .xe-sheet {
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  /* La rangée d'outils de la table reste collée en bas de sa colonne. */
+  .xt-rail {
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
+    background: var(--surface-1);
+  }
+  /* Rien à réserver au pied : la rangée des outils tient dans la colonne. */
+  .xe-tools {
+    min-height: 0;
+  }
+  /* La table : sa chronologie, plus étroite, défile avec la colonne ; l'aide du premier affichage se range en tête de
+     la colonne (posée au-dessus de la barre, elle serait coupée par le défilement). */
+  .xt-help {
+    position: static;
+    order: 5;
+    margin: var(--sp-2) var(--gutter) 0;
+  }
+  .xt-rail {
+    order: 9;
+    margin-top: auto;
+  }
+  .xt-help::after {
+    display: none;
+  }
+}

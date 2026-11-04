@@ -19,6 +19,12 @@ import {
   toStoredExportOptions,
 } from "@/lib/export-options";
 import { bytesFr, plural } from "@/lib/export-text";
+import {
+  EXPORT_TABS,
+  resolveExportTab,
+  withExportTab,
+  type ExportTab,
+} from "@/lib/export-tab";
 import type {
   DecisionsView,
   ExportFile,
@@ -50,8 +56,8 @@ import { usePreview, useReadiness } from "./use-export-data";
 
 const PAGE_SIZE = 10;
 
-type Tab = "verifier" | "soustitres" | "video";
-const TABS: Tab[] = ["verifier", "soustitres", "video"];
+type Tab = ExportTab;
+const TABS: readonly Tab[] = EXPORT_TABS;
 
 export const correctionHref = (sessionId: string, key: string): string =>
   `/s/${sessionId}/exporter/corriger?item=${encodeURIComponent(key)}`;
@@ -109,9 +115,12 @@ function ErrorPanel({
 function ExportView({
   sessionId,
   initial,
+  initialTab,
 }: {
   sessionId: string;
   initial: ExportOptions;
+  /** L'onglet demandé par l'adresse (`?onglet=`), déjà résolu ; absent : la porte « Vérifier ». */
+  initialTab?: ExportTab;
 }) {
   const { update } = useShell();
   const [options, setOptions] = useState<ExportOptions>(initial);
@@ -131,7 +140,20 @@ function ExportView({
   // La vérification est une porte : on ouvre dessus (badge « n à valider » ou « Prêt »).
   // Le récitateur n'exporte que la vidéo : pas de vérification, pas de sous-titres.
   const recitant = useShell().user.role === "recitant";
-  const [tab, setTab] = useState<Tab>(recitant ? "video" : "verifier");
+  const [tab, setTabState] = useState<Tab>(
+    resolveExportTab(initialTab, recitant),
+  );
+  // L'onglet vit dans l'adresse, sans entrée d'historique : recharger ramène sur le même onglet, et Retour ne
+  // repasse pas par chaque onglet visité. Arriver par le bouton « Exporter » (adresse nue) ouvre sur la porte.
+  const setTab = useCallback((next: Tab) => {
+    setTabState(next);
+    const { pathname, search, hash } = window.location;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      withExportTab(pathname, search, next) + hash,
+    );
+  }, []);
   const router = useRouter();
   const [fileName, setFileName] = useState("");
   const [live, setLive] = useState("");
@@ -983,13 +1005,24 @@ function OrphansNotice({
 }
 
 /** La page « Exporter » : une porte (Vérifier) puis deux livrables (Sous-titres, Vidéo). */
-export function ExportPage({ sessionId }: { sessionId: string }) {
-  const { prefs } = useShell();
+export function ExportPage({
+  sessionId,
+  tab,
+}: {
+  sessionId: string;
+  /** Valeur brute de `?onglet=` (la page serveur la donne telle quelle). */
+  tab?: string | readonly string[];
+}) {
+  const { prefs, user } = useShell();
   const initial = fromStoredExportOptions(prefs.exportOptions);
   return (
     <div className="ex-xp-page">
       <div className="ex-xp-wrap">
-        <ExportView sessionId={sessionId} initial={initial} />
+        <ExportView
+          sessionId={sessionId}
+          initial={initial}
+          initialTab={resolveExportTab(tab, user.role === "recitant")}
+        />
       </div>
     </div>
   );

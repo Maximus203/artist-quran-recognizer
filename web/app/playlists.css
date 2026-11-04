@@ -210,11 +210,12 @@
 .mini-player {
   position: fixed;
   left: 50%;
-  bottom: var(--sp-4);
+  bottom: var(--mini-gap);
   z-index: 40;
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  min-height: var(--mini-h);
   width: min(560px, calc(100vw - 2 * var(--gutter)));
   padding: var(--sp-2) var(--sp-3);
   transform: translateX(-50%);

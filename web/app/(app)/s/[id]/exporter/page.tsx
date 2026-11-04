@@ -16,15 +16,18 @@ export const metadata: Metadata = {
  */
 export default async function ExportRoute({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ onglet?: string | string[] }>;
 }) {
   const { id } = await params;
+  const { onglet } = await searchParams;
   if (!isSessionId(id)) notFound();
   await requirePageUser(`/s/${id}/exporter`);
   return (
     <PageFrame active="revue">
-      <ExportPage sessionId={id} />
+      <ExportPage sessionId={id} tab={onglet} />
     </PageFrame>
   );
 }
