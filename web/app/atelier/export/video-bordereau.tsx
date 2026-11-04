@@ -43,6 +43,8 @@ export type BordereauProps = {
   files: FileRow[];
   failure: ExportFailure | null;
   stopRequested: boolean;
+  /** Le réseau est coupé pendant le rendu : il continue sur le serveur, la progression se rattrape au retour. */
+  connectionLost?: boolean;
   canLighten: boolean;
   onExport: () => void;
   onStop: () => void;
@@ -167,6 +169,21 @@ export function Bordereau(props: BordereauProps) {
           <span>vidéo en cours sur {files.length || count}</span>
         </div>
         <FileList files={files} />
+        {props.connectionLost ? (
+          <p
+            className="xr-note xr-note--warn"
+            role="status"
+            aria-live="polite"
+            data-testid="bord-offline"
+          >
+            <XIcon name="alert" />
+            <span>
+              <b>Connexion perdue.</b> Le rendu continue sur le serveur : la
+              progression se mettra à jour toute seule dès que le réseau
+              revient.
+            </span>
+          </p>
+        ) : null}
         <p className="xr-note">
           <XIcon name="alert" />
           <span>

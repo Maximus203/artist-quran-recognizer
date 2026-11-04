@@ -25,6 +25,7 @@ import {
 import { TableHelp } from "./table-help";
 import { TIcon } from "./table-icons";
 import { TableTimeline, type FilmTrackData } from "./table-timeline";
+import { useBackClose } from "./use-back-close";
 import { useEditorController } from "./use-editor-controller";
 import { useFirstHint } from "./use-first-hint";
 import { usePlayhead } from "./use-playhead";
@@ -171,6 +172,8 @@ export function TableEditor(editor: EditorProps) {
   useEffect(() => {
     if (tool) panelRef.current?.focus({ preventScroll: true });
   }, [tool]);
+  // Retour du navigateur : ferme le panneau ouvert au lieu de quitter l'éditeur (recette QA, m3).
+  useBackClose(tool !== null, closePanel);
 
   // Toucher un élément de l'aperçu ouvre ses réglages ; toucher à côté ferme tout.
   const overlay = {

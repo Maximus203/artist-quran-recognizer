@@ -12,6 +12,7 @@ import { XIcon } from "../export-icons";
 import { rovingKeys } from "../export-ui";
 import type { FrameControls, PatchPrefs } from "./editor-types";
 import { Field } from "./text-sections";
+import { useBackClose } from "./use-back-close";
 
 /**
  * Les sections du CADRE (ce qui concerne toute la vidéo, quand aucun élément n'est choisi) : Format, Fond,
@@ -340,6 +341,8 @@ export function PassagesDialog({
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
   }, [open]);
+  // Retour du navigateur : ferme la fenêtre au lieu de quitter l'éditeur.
+  useBackClose(open, onClose);
   return (
     <dialog
       ref={ref}
