@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-04 — Un long verset s'affiche en plusieurs temps, aux pauses du récitant
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Quand le récitant s'arrête, l'affichage change aussi : le verset arabe et sa traduction ne montrent que ce qui vient d'être dit, puis la suite. Un verset très long n'est plus posé d'un bloc dans la vidéo exportée, et les sous-titres (SRT, WebVTT, ASS) suivent la même règle. Quand il n'y a pas de pause mesurable, la coupe se fait à la durée maximale (7 s), de préférence après un signe d'arrêt du Mushaf. Le surlignage mot à mot de chaque carte ne porte que ses mots. Nouvelles options d'export `pause_split` (vrai) et `pause_s` (0,6 s).
+
+**Pourquoi / décision.** Les temps au mot sont contigus (le silence appartient au mot qui précède) : une pause se lit comme un mot anormalement long, d'où un seuil à régler et un madd long parfois pris pour un arrêt (coût esthétique, jamais textuel, I1 et I2 tenus). Même règle en Python et en TypeScript, vérifiée par des cas communs. Voir ADR-0025.
+
 ## 2026-11-04 — Un nouveau compte est récitateur par défaut
 Étiquettes : utilisateur, décision
 PR : #211

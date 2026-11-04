@@ -34,6 +34,10 @@ export type ExportOptions = {
   repetitions: (typeof EXPORT_REPETITIONS)[number];
   min_s: number;
   max_s: number;
+  /** Coupe un verset aux pauses du récitant (moteur : vrai par défaut). Pas mémorisé sur le compte. */
+  pause_split?: boolean;
+  /** Silence (s) d'où part la coupe (moteur : 0,6). Pas mémorisé sur le compte. */
+  pause_s?: number;
   line_chars: number;
   offset_ms: number;
   rtl: boolean;
@@ -73,6 +77,8 @@ export const exportOptionsSchema = z
     repetitions: z.enum(EXPORT_REPETITIONS),
     min_s: z.number().min(0).max(30),
     max_s: z.number().min(0.5).max(60),
+    pause_split: z.boolean(),
+    pause_s: z.number().min(0.2).max(5),
     line_chars: z.number().int().min(10).max(200),
     offset_ms: z.number().int().min(-5000).max(5000),
     rtl: z.boolean(),
@@ -101,14 +107,25 @@ export function resolveExportOptions(input: unknown): ExportOptions {
  * à chaque export, en connaissance de cause.
  */
 export const storedExportOptionsSchema = exportOptionsSchema
-  .omit({ allow_unresolved: true, policy: true })
+  .omit({
+    allow_unresolved: true,
+    policy: true,
+    pause_split: true,
+    pause_s: true,
+  })
   .required();
 export type StoredExportOptions = z.infer<typeof storedExportOptionsSchema>;
 
 export function toStoredExportOptions(
   options: ExportOptions,
 ): StoredExportOptions {
-  const { allow_unresolved: _allow, policy: _policy, ...kept } = options;
+  const {
+    allow_unresolved: _allow,
+    policy: _policy,
+    pause_split: _split,
+    pause_s: _pause,
+    ...kept
+  } = options;
   return kept;
 }
 

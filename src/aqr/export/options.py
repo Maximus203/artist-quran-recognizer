@@ -34,6 +34,11 @@ class ExportOptions:
     repetitions: str = "keep"
     min_s: float = 1.0
     max_s: float = 7.0
+    pause_split: bool = True
+    """Coupe un verset là où le récitant s'arrête (temps mesurés) et, au plafond `max_s`, de
+    préférence à un signe d'arrêt du Mushaf."""
+    pause_s: float = 0.6
+    """Silence (trou, ou allongement d'un mot au-delà de son débit) d'où part une coupe."""
     line_chars: int = 42
     offset_ms: int = 0
     rtl: bool = True
@@ -100,6 +105,8 @@ def parse_options(raw: Mapping[str, Any] | None) -> ExportOptions:
         repetitions=_choice(data, "repetitions", REPETITIONS, base.repetitions),
         min_s=min_s,
         max_s=max_s,
+        pause_split=_flag(data, "pause_split", base.pause_split),
+        pause_s=_number(data, "pause_s", base.pause_s, 0.2, 5.0),
         line_chars=int(_number(data, "line_chars", base.line_chars, 10, 200)),
         offset_ms=int(_number(data, "offset_ms", base.offset_ms, -5000, 5000)),
         rtl=_flag(data, "rtl", base.rtl),

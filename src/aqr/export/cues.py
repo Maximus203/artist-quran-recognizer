@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import Any
+from statistics import median
+from typing import Any, Final
 
 from aqr.corpus.normalize import normalize_arabic
 from aqr.domain.models import TimeSpan, VerseRef
@@ -64,25 +65,92 @@ def _word_times(entry: Entry) -> list[tuple[float, float]]:
     return [(s.start_s, s.end_s) for s in spans]
 
 
+STOP_SIGNS: Final = frozenset("ۗۘۚۛ")
+"""Signes du Mushaf où l'on peut s'arrêter : qalā ۗ, lāzim ۘ, jā'iz ۚ, mu'ānaqa ۛ. Ni ۙ (ne pas
+s'arrêter) ni ۖ (mieux vaut continuer)."""
+
+MIN_CAP_SHARE: Final = 0.5
+"""Au plafond, un signe d'arrêt n'est préféré que si le morceau couvre au moins cette part de
+`max_s` : sinon on afficherait un tout petit morceau pour rien."""
+
+
+def pause_after(
+    words: Sequence[str], times: Sequence[tuple[float, float]], pause_s: float
+) -> frozenset[int]:
+    """Indices (0-based) des mots après lesquels le récitant s'arrête, d'après les temps mesurés.
+
+    Les temps au mot sont contigus (le silence qui suit un mot lui est compté, ADR-0006) : une
+    pause se voit donc à l'allongement d'un mot au-delà de son débit. Le débit est la médiane des
+    secondes par lettre du verset (robuste à quelques pauses) ; le silence d'un mot est son
+    excédent sur ce débit plus le trou éventuel qui le sépare du suivant. Un madd long peut
+    dépasser le seuil : la coupe n'est qu'un changement d'affichage, jamais de texte (I1)."""
+    if len(words) < 3 or len(times) != len(words):
+        return frozenset()
+    weights = [max(1, len(normalize_arabic(w).replace(" ", ""))) for w in words]
+    rate = median((end - start) / w for (start, end), w in zip(times, weights, strict=True))
+    out: set[int] = set()
+    for k in range(len(words) - 1):
+        start, end = times[k]
+        excess = max(0.0, (end - start) - rate * weights[k])
+        gap = max(0.0, times[k + 1][0] - end)
+        if excess + gap >= pause_s:
+            out.add(k)
+    return frozenset(out)
+
+
+def sign_stops(words: Sequence[str]) -> frozenset[int]:
+    """Indices des mots suivis d'un signe d'arrêt permis (pas le dernier : le verset finit)."""
+    return frozenset(k for k, word in enumerate(words[:-1]) if any(ch in STOP_SIGNS for ch in word))
+
+
 def _chunks(
-    times: Sequence[tuple[float, float]], start_s: float, max_s: float, min_s: float
+    times: Sequence[tuple[float, float]],
+    start_s: float,
+    max_s: float,
+    min_s: float,
+    pauses: frozenset[int] = frozenset(),
+    stops: frozenset[int] = frozenset(),
 ) -> list[tuple[int, int]]:
-    """Plages de mots `[i, j)` d'au plus `max_s` chacune (un mot seul peut dépasser) ; une dernière
-    plage plus courte que `min_s` est rattachée à la précédente."""
+    """Plages de mots `[i, j)` : coupées après chaque mot de `pauses`, et d'au plus `max_s`
+    chacune (un mot seul peut dépasser). Au plafond, on coupe de préférence après un mot de
+    `stops` si le morceau couvre au moins la moitié de `max_s`. Une plage plus courte que `min_s`
+    est rattachée à sa voisine (la précédente, sinon la suivante)."""
     out: list[tuple[int, int]] = []
     i = 0
     while i < len(times):
         begin = start_s if not out else times[i][0]
         j = i + 1
-        while j < len(times) and times[j][1] - begin <= max_s:
+        while j < len(times) and (j - 1) not in pauses and times[j][1] - begin <= max_s:
             j += 1
+        if j < len(times) and (j - 1) not in pauses:  # coupé par le plafond
+            fitting = [
+                k + 1
+                for k in stops
+                if i < k + 1 < j and times[k][1] - begin >= MIN_CAP_SHARE * max_s
+            ]
+            if fitting:
+                j = max(fitting)
         out.append((i, j))
         i = j
-    if len(out) > 1:
-        last_start, last_end = out[-1]
-        if times[last_end - 1][1] - times[last_start][0] < min_s:
-            previous = out.pop(-2)
-            out[-1] = (previous[0], last_end)
+    return _absorb_short(out, times, min_s)
+
+
+def _absorb_short(
+    chunks: list[tuple[int, int]], times: Sequence[tuple[float, float]], min_s: float
+) -> list[tuple[int, int]]:
+    """Rattache chaque plage plus courte que `min_s` à la précédente (la 1re, à la suivante)."""
+    out = list(chunks)
+    k = 0
+    while len(out) > 1 and k < len(out):
+        first, last = out[k]
+        if times[last - 1][1] - times[first][0] >= min_s:
+            k += 1
+            continue
+        if k == 0:
+            out[0:2] = [(first, out[1][1])]
+        else:
+            out[k - 1 : k + 1] = [(out[k - 1][0], last)]
+            k -= 1
     return out
 
 
@@ -175,7 +243,14 @@ def _cues_for(entry: Entry, ctx: Context, warnings: list[str]) -> list[Cue]:
             )
         ]
     times = _word_times(entry)
-    ranges = _chunks(times, entry.start_s, options.max_s, options.min_s)
+    split_on_pauses = options.pause_split and entry.kind == "verse"
+    pauses = (
+        pause_after(entry.arabic_words, times, options.pause_s)
+        if split_on_pauses and entry.measured
+        else frozenset()
+    )
+    stops = sign_stops(entry.arabic_words) if split_on_pauses else frozenset()
+    ranges = _chunks(times, entry.start_s, options.max_s, options.min_s, pauses, stops)
     pieces = _split_translation(entry, ranges, ctx, warnings) if options.with_translation else []
     cues: list[Cue] = []
     for k, (i, j) in enumerate(ranges):

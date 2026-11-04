@@ -7,6 +7,11 @@
  * est rendue sans modification. L'attribution n'est PAS incrustée dans la vidéo (choix du
  * mainteneur, 2026-10-27) : le champ reste dans le modèle pour l'API, non dessiné.
  */
+import {
+  DEFAULT_SPLIT,
+  splitVerse,
+  type SplitOptions,
+} from "./export-video-split";
 import type { Interval } from "./recognition";
 import { surahName } from "./surahs";
 
@@ -17,6 +22,10 @@ export type VideoCardInput = {
   arabic: string;
   translation: string | null;
   attribution: string | null;
+  /** Rang et nombre de cartes du verset quand il est affiché en plusieurs temps (pause du récitant, durée). */
+  part?: [number, number];
+  /** Vrai si la traduction de cette carte a été coupée au prorata des mots, pas par QuranEnc. */
+  approximate?: boolean;
 };
 
 export type VideoOverlay = { start: number; end: number; png: string };
@@ -30,29 +39,50 @@ export function refLabelOf(ref: string): string {
   return name ? `${name} ${ref}` : ref;
 }
 
-/** Les cartes d'un export vidéo : les versets avec texte, temps et traduction du résultat. */
-export function videoCardInputs(
+/** Une carte et d'où elle vient : le verset, et les mots de ce verset qu'elle affiche (`null` : tous). */
+export type CardSource = {
+  card: VideoCardInput;
+  interval: Interval;
+  range: [number, number] | null;
+};
+
+/**
+ * Les cartes d'un export vidéo, chacune avec son verset d'origine : les versets avec texte, temps et
+ * traduction du résultat. Un verset est affiché en plusieurs temps quand le récitant s'arrête ou
+ * quand il dépasse la durée maximale (`splitVerse`) : le texte ne dépasse jamais ce qui vient d'être dit.
+ */
+export function videoCardSources(
   intervals: readonly Interval[],
-): VideoCardInput[] {
-  const cards: VideoCardInput[] = [];
+  split: SplitOptions = DEFAULT_SPLIT,
+): CardSource[] {
+  const out: CardSource[] = [];
   for (const item of intervals) {
     if (item.kind !== "verse" || !item.t || !item.ref) continue;
     if (!item.text || EMPTY.test(item.text)) continue;
-    const translation = item.translation ?? undefined;
-    const fragment =
-      translation?.scope === "fragment" ? translation.fragment : undefined;
-    const text =
-      fragment && !EMPTY.test(fragment.text)
-        ? fragment.text
-        : translation?.text;
-    cards.push({
-      start: item.t[0],
-      end: item.t[1],
-      refLabel: refLabelOf(item.ref),
-      arabic: item.text,
-      translation: text && !EMPTY.test(text) ? text : null,
-      attribution: translation?.attribution ?? null,
-    });
+    const attribution = item.translation?.attribution ?? null;
+    const refLabel = refLabelOf(item.ref);
+    for (const piece of splitVerse(item, split))
+      out.push({
+        interval: item,
+        range: piece.range ?? null,
+        card: {
+          start: piece.start,
+          end: piece.end,
+          refLabel,
+          arabic: piece.arabic,
+          translation: piece.translation,
+          attribution,
+          ...(piece.part ? { part: piece.part } : {}),
+          ...(piece.approximate ? { approximate: true } : {}),
+        },
+      });
   }
-  return cards;
+  return out;
+}
+
+export function videoCardInputs(
+  intervals: readonly Interval[],
+  split: SplitOptions = DEFAULT_SPLIT,
+): VideoCardInput[] {
+  return videoCardSources(intervals, split).map((source) => source.card);
 }

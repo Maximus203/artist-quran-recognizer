@@ -1882,3 +1882,12 @@ compacte (m4, m6) avaient rendu les commandes atteignables au prix de l'aperçu 
   interdit la forme dans tout `app/` et `lib/`.
 - **Non fait, signalé** : m1 / N8 (deux onglets, un réglage perdu : demande un changement de contrat de l'API des préférences) ;
   N6, N7, N10 (import, autre agent) ; suggestions S1 à S5.
+
+## 2026-11-04 — Découpage des versets aux pauses (ADR-0025)
+Contexte : la vidéo posait un long verset d'un bloc (réduction jusqu'au plancher de 40 %), les sous-titres ne coupaient qu'à `max_s`.
+- **Constat décisif** : les temps au mot sont contigus (`forced.py::_timed`), une pause = un mot trop long, pas un trou. Détection par
+  l'excédent sur le débit médian (seuil `pause_s` 0,6 s, provisoire, à calibrer sur des récitations annotées).
+- **Décision** : mêmes règles en Python (sous-titres) et TypeScript (vidéo), cas communs `tests/fixtures/export-pauses/cases.json`.
+  Option écartée : publier une fin de mot distincte dans `aqr.recognition` (mesure exacte par l'énergie) : changement de contrat, lot suivant.
+- **Piège relevé** : l'arrondi de Python (moitié au pair) diffère de `Math.round` ; reproduit en TypeScript pour la coupe de traduction au prorata.
+- **Non vérifié** : rendu de la vidéo au navigateur sur un vrai long verset (tests unitaires seulement).

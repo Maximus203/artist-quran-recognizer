@@ -448,6 +448,13 @@
     "summary": "Accepté le 2026-11-04 : un résultat joint à l'import n'est jamais cru sur parole ; l'arabe est relu dans le corpus par référence de verset (I1) et la traduction dans QuranEnc, identifiant, version et attribution compris (I2), par `aqr verify-recognition`. Refus entier et explicite (422) plutôt que remplacement silencieux, 503 si le contrôle n'a pas pu avoir lieu, fichier conservé à l'octet près ; décisions et revue ne portent aucun texte."
   },
   {
+    "slug": "adr-0025-decoupage-des-versets-aux-pauses",
+    "title": "ADR-0025 — Un verset s'affiche en plusieurs temps, là où le récitant s'arrête",
+    "section": "Décisions",
+    "file": "docs/adr/0025-decoupage-des-versets-aux-pauses.md",
+    "summary": "Accepté le 2026-11-04 : un long verset est coupé aux pauses du récitant (mot anormalement long sur des temps mesurés) puis au plafond de durée, de préférence après un signe d'arrêt du Mushaf ; arabe et traduction ne sont que découpés (I1, I2). Mêmes cas en Python (sous-titres) et en TypeScript (vidéo). Limites : madd long, seuil provisoire, temps au mot contigus."
+  },
+  {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
     "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
     "section": "Décisions",

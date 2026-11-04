@@ -57,7 +57,7 @@ Un passage **ignoré** suit la même politique mais sort du compteur. Le résum�
 
 `format` srt · `content` ar_fr · `formulas` [basmala] (basmala = verset 1:1 du corpus ; les autres formules
 sont des libellés arabes entre crochets, exportés seulement avec l'arabe) · `repetitions` keep|merge ·
-`min_s` 1,0 · `max_s` 7,0 (un verset plus long est coupé aux temps mesurés des mots, sinon au prorata des
+`min_s` 1,0 · `pause_split` vrai · `pause_s` 0,6 (un verset est coupé là où le récitant s'arrête, d'après les temps mesurés : un mot anormalement long ; ADR-0025) · `max_s` 7,0 (un verset plus long est coupé aux temps mesurés des mots, sinon au prorata des
 mots avec un avertissement ; la traduction suit les tranches `segments` de QuranEnc, sinon une coupe
 proportionnelle) · `line_chars` 42 · `offset_ms` 0 · `rtl` vrai (U+202B…U+202C autour de l'arabe, SRT et WebVTT)
 · `strip_notes` faux (retire les renvois `[1]` : écart assumé à I2) · `show_ref` faux · `bom` faux ·

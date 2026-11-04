@@ -21,7 +21,8 @@ import {
 } from "./live-highlight";
 import type { Interval } from "./recognition";
 import { barHeights, peakNorm } from "./waveform";
-import { videoCardInputs, type VideoCardInput } from "./export-video-cards";
+import { videoCardSources, type VideoCardInput } from "./export-video-cards";
+import { DEFAULT_SPLIT, type SplitOptions } from "./export-video-split";
 import type { ListeningPeaks } from "./listening";
 import { layoutFor, type VideoPrefs } from "./export-video-prefs";
 import { clampBox } from "./export-video-edit";
@@ -59,30 +60,42 @@ export function frameCards(
   intervals: readonly Interval[],
   showTranslation: boolean,
   showArabic = true,
+  split: SplitOptions = DEFAULT_SPLIT,
 ): FrameCard[] {
-  return videoCardInputs(intervals)
-    .map((card, index) => ({ card, interval: cardIntervals(intervals)[index] }))
-    .filter((entry) => entry.interval !== undefined)
-    .map((entry) => ({
+  return videoCardSources(intervals, split).map(
+    ({ card, interval, range }) => ({
       card: {
-        ...entry.card,
-        arabic: showArabic ? entry.card.arabic : "",
-        translation: showTranslation ? entry.card.translation : null,
+        ...card,
+        arabic: showArabic ? card.arabic : "",
+        translation: showTranslation ? card.translation : null,
         attribution: null,
       },
-      live: liveWords(entry.interval),
-    }));
+      live: liveWordsOf(interval, range),
+    }),
+  );
 }
 
-/** Intervalle d'origine de chaque carte (même filtre que videoCardInputs). */
-function cardIntervals(intervals: readonly Interval[]): Interval[] {
-  const kept: Interval[] = [];
-  for (const item of intervals) {
-    if (item.kind !== "verse" || !item.t || !item.ref) continue;
-    if (!item.text || !item.text.trim()) continue;
-    kept.push(item);
-  }
-  return kept;
+/** Les mots surlignables d'une carte : ceux du verset, restreints aux mots que la carte affiche. */
+function liveWordsOf(
+  interval: Interval,
+  range: readonly [number, number] | null,
+): LiveWords | null {
+  const live = liveWords(interval);
+  if (!live || !range) return live;
+  const [from, to] = range;
+  const { parts, wordCount } = layoutArabicWords(
+    live.parts
+      .filter((p) => p.word !== null && p.word >= from && p.word < to)
+      .map((p) => p.text)
+      .join(" "),
+  );
+  if (wordCount !== to - from) return null;
+  return {
+    parts,
+    times: live.times.slice(from, to),
+    first: live.first + from,
+    source: live.source,
+  };
 }
 
 /** La carte affichée à l'instant t (null : écran neutre, fond + onde seulement). */
