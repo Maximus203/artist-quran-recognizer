@@ -3,6 +3,7 @@ import {
   DEFAULT_EXPORT_OPTIONS,
   exportFileName,
   resolveExportOptions,
+  toStoredExportOptions,
 } from "./export-options";
 
 describe("options d'export", () => {
@@ -36,6 +37,24 @@ describe("options d'export", () => {
   ])("refuse %j", (bad) => {
     expect(() => resolveExportOptions(bad)).toThrow();
   });
+  it("accepte la coupe aux pauses sans l'imposer ni la mémoriser sur le compte", () => {
+    expect(resolveExportOptions({})).not.toHaveProperty("pause_split");
+    expect(
+      resolveExportOptions({ pause_split: false, pause_s: 1.2 }),
+    ).toMatchObject({
+      pause_split: false,
+      pause_s: 1.2,
+    });
+    expect(
+      toStoredExportOptions(resolveExportOptions({ pause_s: 1 })),
+    ).not.toHaveProperty("pause_s");
+  });
+  it.each([[{ pause_s: 0.05 }], [{ pause_s: 9 }], [{ pause_split: "oui" }]])(
+    "refuse la coupe aux pauses mal réglée %j",
+    (bad) => {
+      expect(() => resolveExportOptions(bad)).toThrow();
+    },
+  );
   it("refuse une durée maximale plus courte que la minimale", () => {
     expect(() => resolveExportOptions({ min_s: 5, max_s: 2 })).toThrow(
       /minimale/,

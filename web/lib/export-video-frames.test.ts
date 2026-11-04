@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Interval } from "./recognition";
+import { DEFAULT_SPLIT } from "./export-video-split";
 import {
   VIDEO_FPS,
   activeCardAt,
@@ -26,7 +27,7 @@ const verse = (over: Partial<Interval> = {}): Interval =>
     words: [1, 4],
     partial: false,
     status: "recognized",
-    t: [10, 20],
+    t: [10, 16],
     time_interpolated: false,
     confidence: 0.9,
     candidates: [],
@@ -40,10 +41,10 @@ const verse = (over: Partial<Interval> = {}): Interval =>
       scope: "whole",
     },
     word_times: [
-      [10, 12],
-      [12, 14],
-      [14, 17],
-      [17, 20],
+      [10, 11.5],
+      [11.5, 13],
+      [13, 14.5],
+      [14.5, 16],
     ],
     ...over,
   }) as Interval;
@@ -76,6 +77,48 @@ describe("frameCards", () => {
   it("retombe sur un surlignage nul quand les temps de mots sont absents", () => {
     const cards = frameCards([verse({ word_times: undefined })], true);
     expect(cards[0].live).toBeNull();
+  });
+
+  it("un verset coupé à une pause donne une carte par temps, chacune avec ses mots surlignables", () => {
+    const paused = verse({
+      t: [10, 20],
+      word_times: [
+        [10, 11],
+        [11, 15],
+        [15, 16],
+        [16, 20],
+      ],
+      word_times_source: "ctc-alignment",
+      translation: null,
+    } as Partial<Interval>);
+    const cards = frameCards([paused], false, true, {
+      ...DEFAULT_SPLIT,
+      maxS: 60,
+      pauseS: 1,
+    });
+    expect(cards.map((c) => c.card.part)).toEqual([
+      [1, 2],
+      [2, 2],
+    ]);
+    expect(cards.map((c) => c.card.arabic).join(" ")).toBe(
+      "يَا أَيُّهَا الَّذِينَ آمَنُوا",
+    );
+    // La 2e carte ne surligne que ses mots, numérotés dans le verset.
+    expect(cards[1].live?.times).toEqual([
+      [15, 16],
+      [16, 20],
+    ]);
+    expect(cards[1].live?.first).toBe(3);
+    expect(activeCardAt(cards, 12)?.card.part).toEqual([1, 2]);
+    expect(activeCardAt(cards, 18)?.card.part).toEqual([2, 2]);
+  });
+
+  it("désactivée, la coupe laisse une carte par verset comme avant", () => {
+    const long = verse({ t: [10, 40], word_times: undefined });
+    expect(frameCards([long], true)).toHaveLength(4); // 4 mots, 30 s : le plafond de 7 s coupe à chaque mot
+    expect(
+      frameCards([long], true, true, { ...DEFAULT_SPLIT, enabled: false }),
+    ).toHaveLength(1);
   });
 });
 
