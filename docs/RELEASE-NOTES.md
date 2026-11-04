@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-04 — Un nouveau compte est récitateur par défaut
+Étiquettes : utilisateur, décision
+PR : #211
+
+**Ce qui change.** Une personne qui s'inscrit (avec une invitation sans rôle précisé, un code ou en inscription ouverte) devient récitateur, et non plus testeur. Les invitations créées sans choix de rôle donnent aussi le rôle récitateur, et le formulaire d'invitation le propose d'abord. L'administrateur promeut un compte en testeur ou en administrateur sur la page des comptes. Le tout premier compte reste administrateur ; les comptes existants ne changent pas.
+
+**Pourquoi / décision.** Décision du mainteneur : le rôle le plus restreint (sans revue humaine) est le point de départ, et les droits de testeur s'accordent à la main. Le serveur refuse déjà la revue et les sous-titres au récitateur (`web/lib/access.ts`).
+
 ## 2026-11-04 — Export vidéo : l'aperçu garde sa taille sur les écrans courts, Retour revient où il faut
 Étiquettes : utilisateur, technique, décision
 PR : #210

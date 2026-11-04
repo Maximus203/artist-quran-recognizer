@@ -67,11 +67,11 @@ describe("configuration", () => {
 });
 
 describe("inscription", () => {
-  it("le premier compte est administrateur, les suivants non", async () => {
+  it("le premier compte est administrateur, les suivants sont récitateurs", async () => {
     const first = await register("Cherif");
     const second = await register("Awa");
     expect(first.ok && first.user.role).toBe("admin");
-    expect(second.ok && second.user.role).toBe("user");
+    expect(second.ok && second.user.role).toBe("recitant");
   });
 
   it("refuse un pseudonyme déjà pris, sans tenir compte de la casse", async () => {

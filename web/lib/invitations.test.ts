@@ -192,13 +192,13 @@ describe("état et révocation", () => {
 });
 
 describe("rôle accordé par l'invitation", () => {
-  it("une invitation de testeur accorde le rôle testeur, par défaut", () => {
+  it("une invitation sans rôle précisé accorde le rôle récitateur", () => {
     const { token, row } = createInvitation(db, {
       label: "Testeur",
       createdBy: adminId,
     });
-    expect(row.role).toBe("user");
-    expect(invitationRole(db, token, NOW)).toBe("user");
+    expect(row.role).toBe("recitant");
+    expect(invitationRole(db, token, NOW)).toBe("recitant");
   });
 
   it("une invitation de récitateur accorde le rôle récitateur", () => {
@@ -209,6 +209,16 @@ describe("rôle accordé par l'invitation", () => {
     });
     expect(row.role).toBe("recitant");
     expect(invitationRole(db, token, NOW)).toBe("recitant");
+  });
+
+  it("une invitation de testeur accorde le rôle testeur", () => {
+    const { token, row } = createInvitation(db, {
+      label: "Testeur",
+      createdBy: adminId,
+      role: "user",
+    });
+    expect(row.role).toBe("user");
+    expect(invitationRole(db, token, NOW)).toBe("user");
   });
 
   it("aucun rôle pour un jeton inconnu, révoqué ou épuisé", () => {

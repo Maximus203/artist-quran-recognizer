@@ -60,7 +60,12 @@ describe("mode code", () => {
     const reciter = invite({ role: "recitant" });
     const result = await register("Amina", reciter.token);
     expect(result).toMatchObject({ ok: true, user: { role: "recitant" } });
-    const tester = invite();
+    const plain = invite();
+    expect(await register("Cheikh", plain.token)).toMatchObject({
+      ok: true,
+      user: { role: "recitant" },
+    });
+    const tester = invite({ role: "user" });
     expect(await register("Bintou", tester.token)).toMatchObject({
       ok: true,
       user: { role: "user" },

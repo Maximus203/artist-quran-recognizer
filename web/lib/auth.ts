@@ -355,9 +355,10 @@ export async function registerAccount(
     };
 
   const passwordHash = await hashPassword(password.value);
-  // Le rôle est celui de l'invitation (testeur par défaut) ; le premier compte reste administrateur.
+  // Le rôle est celui de l'invitation (récitateur par défaut : l'administrateur promeut ensuite) ; le premier compte reste administrateur.
   const grantedRole =
-    (invited && invitationRole(deps.db, invitation, new Date(now))) || "user";
+    (invited && invitationRole(deps.db, invitation, new Date(now))) ||
+    "recitant";
   try {
     const user = transaction(deps.db, () => {
       const created = createUser(
