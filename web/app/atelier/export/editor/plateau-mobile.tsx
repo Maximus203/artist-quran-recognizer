@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { BLOCK_LABEL, BLOCK_SHORT } from "@/lib/export-video-edit-text";
 import { waveLimits } from "@/lib/export-video-editor";
 import { PANEL_KINDS, type BlockId } from "@/lib/export-video-model";
-import { XIcon } from "../export-icons";
 import { SizeStepper, overflowFade, sizeBounds } from "./controls";
+import { DockBelow } from "./dock-below";
 import { EditableStage } from "./editable-stage";
 import { BLOCK_ICON, EIcon, type EditorIconName } from "./editor-icons";
 import { EditorTopBar } from "./editor-chrome";
@@ -21,10 +21,12 @@ import {
   FrameSections,
   type ElementToolKey,
 } from "./inspector-sections";
+import { ElementNote } from "./text-sections";
 import {
   useEditorController,
   type EditorController,
 } from "./use-editor-controller";
+import { useBackClose } from "./use-back-close";
 import { useFirstHint } from "./use-first-hint";
 
 /**
@@ -123,6 +125,8 @@ export function PlateauEditor(editor: EditorProps) {
   useEffect(() => {
     if (tool) sheetRef.current?.focus({ preventScroll: true });
   }, [tool]);
+  // Retour du navigateur : ferme la feuille ouverte au lieu de quitter l'éditeur (recette QA, m3).
+  useBackClose(tool !== null, closeTool);
 
   const select = (id: BlockId | null) => {
     hint.dismiss();
@@ -208,6 +212,9 @@ export function PlateauEditor(editor: EditorProps) {
               </button>
             </header>
             <div className="xe-sheet-body">
+              {tool && selected !== null ? (
+                <ElementNote id={selected} attribution={attribution} />
+              ) : null}
               {keepFond ? (
                 <div className="xe-pane" hidden={!fondOpen}>
                   <FrameSections
@@ -280,56 +287,62 @@ export function PlateauEditor(editor: EditorProps) {
               </button>
             </div>
 
-            <div
-              className="xe-ctx"
-              role="toolbar"
-              aria-label="Outils"
-              data-testid="editor-toolbar"
-            >
-              {selected !== null ? (
-                <div className="xe-tb" ref={overflowFade}>
-                  {selected === "wave" ? (
-                    <WaveStep controller={controller} />
-                  ) : (
-                    <TextStep
-                      block={selected}
-                      size={controller.sizes[selected]}
-                      onStep={(d) => controller.stepTextSize(selected, d)}
-                      onReset={() => controller.setSize(selected, 1)}
-                    />
-                  )}
-                  <span className="xe-vsep" aria-hidden="true" />
-                  {elementTools.map((t) => (
+            <div className="xe-ctx">
+              <div
+                className="xe-tools"
+                role="toolbar"
+                aria-label="Outils"
+                data-testid="editor-toolbar"
+              >
+                {selected !== null ? (
+                  <div className="xe-tb" ref={overflowFade}>
+                    {selected === "wave" ? (
+                      <WaveStep controller={controller} />
+                    ) : (
+                      <TextStep
+                        block={selected}
+                        size={controller.sizes[selected]}
+                        onStep={(d) => controller.stepTextSize(selected, d)}
+                        onReset={() => controller.setSize(selected, 1)}
+                      />
+                    )}
+                    <span className="xe-vsep" aria-hidden="true" />
+                    {elementTools.map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        className="xe-tool"
+                        data-testid={`tool-${t.key}`}
+                        onClick={(event) =>
+                          openTool(t.key, event.currentTarget)
+                        }
+                      >
+                        <EIcon name={t.icon} size={22} />
+                        <span>{t.label}</span>
+                        {t.key === "fond" && selected !== "wave" ? (
+                          <small>
+                            {
+                              PANEL_LABEL[
+                                controller.styles[selected].panel.kind
+                              ]
+                            }
+                          </small>
+                        ) : null}
+                      </button>
+                    ))}
                     <button
-                      key={t.key}
                       type="button"
                       className="xe-tool"
-                      data-testid={`tool-${t.key}`}
-                      onClick={(event) => openTool(t.key, event.currentTarget)}
+                      disabled={!controller.canHide(selected)}
+                      aria-label={`Masquer : ${BLOCK_LABEL[selected].toLowerCase()}`}
+                      data-testid="tool-hide"
+                      onClick={() => controller.setVisible(selected, false)}
                     >
-                      <EIcon name={t.icon} size={22} />
-                      <span>{t.label}</span>
-                      {t.key === "fond" && selected !== "wave" ? (
-                        <small>
-                          {PANEL_LABEL[controller.styles[selected].panel.kind]}
-                        </small>
-                      ) : null}
+                      <EIcon name="eye-off" size={22} />
+                      <span>Masquer</span>
                     </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="xe-tool"
-                    disabled={!controller.canHide(selected)}
-                    aria-label={`Masquer : ${BLOCK_LABEL[selected].toLowerCase()}`}
-                    data-testid="tool-hide"
-                    onClick={() => controller.setVisible(selected, false)}
-                  >
-                    <EIcon name="eye-off" size={22} />
-                    <span>Masquer</span>
-                  </button>
-                </div>
-              ) : (
-                <>
+                  </div>
+                ) : (
                   <div className="xe-tb" ref={overflowFade}>
                     {FRAME_TOOLS.map((t) => (
                       <button
@@ -347,27 +360,13 @@ export function PlateauEditor(editor: EditorProps) {
                       </button>
                     ))}
                   </div>
-                  <div className="xe-ready" data-testid="editor-ready">
-                    <p>
-                      <b>Déjà prête</b>
-                      <span>
-                        Avec nos réglages conseillés. Touche un texte pour le
-                        modifier.
-                      </span>
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn--secondary xe-btn"
-                      data-testid="ready-export"
-                      disabled={editor.exportAction.disabled}
-                      onClick={editor.exportAction.onOpen}
-                    >
-                      <XIcon name="download" size={18} />
-                      Exporter maintenant
-                    </button>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
+              <DockBelow
+                selected={selected}
+                attribution={attribution}
+                exportAction={editor.exportAction}
+              />
             </div>
           </>
         )}

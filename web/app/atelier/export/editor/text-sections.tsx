@@ -163,6 +163,37 @@ export function ArabicLockNote() {
   );
 }
 
+/**
+ * Ce qu'il faut savoir de l'élément choisi, en une phrase : le cadenas de l'arabe (I1), l'attribution de la
+ * traduction, collée à elle (I2), le rôle de l'onde et du repère. Utilisé là où l'en-tête d'élément n'a pas la
+ * place (le plateau du téléphone : sous la barre d'outils et en tête de la feuille). L'attribution reste
+ * affichée dans les éditeurs ; la vidéo exportée, elle, n'en porte aucune (décision du 2026-10-27).
+ */
+export function ElementNote({
+  id,
+  attribution,
+}: {
+  id: BlockId;
+  attribution?: string | null;
+}) {
+  if (id === "arabic") return <ArabicLockNote />;
+  if (id === "translation")
+    return (
+      <p className="xe-lock" data-testid="translation-attribution">
+        <XIcon name="lock" size={16} />
+        <span>
+          Traduction restituée telle quelle, avec sa source :{" "}
+          <b>{attribution ?? "QuranEnc.com"}</b>
+        </span>
+      </p>
+    );
+  return (
+    <p className="xe-lock xe-lock--plain" data-testid="element-role">
+      <span>{BLOCK_ROLE[id]}.</span>
+    </p>
+  );
+}
+
 // ── taille ──────────────────────────────────────────────────────────────────
 
 /** La taille d'un texte : « − 100 % + », appui long qui répète ; on peut aussi pincer l'aperçu. */

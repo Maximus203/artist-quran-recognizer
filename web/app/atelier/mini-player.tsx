@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
+import { useLayoutEffect } from "react";
 import { formatClockLength } from "@/lib/format";
 import { useClock, useStoreValue } from "./hooks";
 import { Icon } from "./icons";
+import { announceMiniPlayer } from "./mini-reserve";
 import type { usePlayer } from "./use-player";
 
 /**
@@ -23,6 +25,8 @@ export function MiniPlayer({
   const playing = useStoreValue(player.store, (s) => s.playing);
   const duration = useStoreValue(player.store, (s) => s.duration);
   const time = useClock(player.store);
+  // Tant qu'il est là, il le dit à la racine : les pages « plein écran » lui laissent sa place (`--mini-reserve`).
+  useLayoutEffect(() => announceMiniPlayer(document.documentElement), []);
   return (
     <div
       className="mini-player"

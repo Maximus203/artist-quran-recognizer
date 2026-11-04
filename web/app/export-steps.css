@@ -9,7 +9,7 @@
 .xp-root {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  height: calc(100dvh - var(--header-h));
+  height: calc(100dvh - var(--header-h) - var(--mini-reserve));
   min-height: 520px;
   margin-inline: calc(var(--gutter) * -1);
   background: var(--bg);
