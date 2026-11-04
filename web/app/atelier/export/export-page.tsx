@@ -880,7 +880,12 @@ function Crumb({ sessionId, name }: { sessionId: string; name?: string }) {
 /** Une seule région annoncée aux lecteurs d'écran : « 2 sur 6 résolus. 4 restants. », « Export terminé… ». */
 export function Live({ text }: { text: string }) {
   return (
-    <div className="sr" aria-live="polite" role="status" data-testid="live">
+    <div
+      className="sr sr-live"
+      aria-live="polite"
+      role="status"
+      data-testid="live"
+    >
       {text}
     </div>
   );

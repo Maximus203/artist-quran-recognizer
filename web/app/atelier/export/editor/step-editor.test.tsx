@@ -261,6 +261,21 @@ describe("étape 2 : les textes", () => {
     expect(arabic).not.toMatch(/petit<|moyen|grand</i);
   });
 
+  it("la taille − / + est le PREMIER réglage de la fiche, avant le cadenas et l'interrupteur (QA 3, P2)", () => {
+    for (const who of ["arabic", "translation"] as const) {
+      const html = renderToStaticMarkup(<Texts who={who} />);
+      const size = html.indexOf('aria-label="Texte plus grand"');
+      expect(size, who).toBeGreaterThan(0);
+      expect(size, who).toBeLessThan(html.indexOf('data-testid="pas-show-'));
+      const note = html.indexOf(
+        who === "arabic"
+          ? 'data-testid="arabic-lock"'
+          : 'data-testid="translation-attribution"',
+      );
+      expect(note, who).toBeGreaterThan(size);
+    }
+  });
+
   it("la traduction garde son attribution collée à elle (I2)", () => {
     const translation = renderToStaticMarkup(<Texts who="translation" />);
     expect(translation).toContain('data-testid="translation-attribution"');

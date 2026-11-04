@@ -1441,14 +1441,14 @@ details.xr-api pre {
   position: fixed;
   inset: 0;
   background: var(--scrim);
-  z-index: 30;
+  z-index: var(--z-modal-scrim);
 }
 .xr-sheet {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 31;
+  z-index: var(--z-modal);
   max-height: 86vh;
   overflow: auto;
   border-radius: var(--r-lg) var(--r-lg) 0 0;

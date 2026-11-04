@@ -132,12 +132,20 @@ export default function ReviewApp() {
   useEffect(() => {
     playerHooks.current = {
       onPlay: () => setSelectedIndex(null),
-      onError: setMessage,
+      // Une session absente ou d'un autre compte n'a pas d'audio non plus : « Lecture impossible… » serait un faux titre
+      // (rien n'est illisible) qui masquerait la vraie cause, dite plus bas (recette QA 3, P7).
+      onError: (text) => {
+        if (!notFound) setMessage(text);
+      },
     };
     return () => {
       playerHooks.current = {};
     };
   });
+  // L'erreur de lecture a pu arriver AVANT la réponse « introuvable » (deux requêtes en course) : on l'efface alors.
+  useEffect(() => {
+    if (notFound) setMessage("");
+  }, [notFound]);
   useEffect(() => {
     if (currentId) loadSingle(currentId);
   }, [currentId, loadSingle]);

@@ -242,6 +242,8 @@ export function VideoPreview(inputs: PreviewInputs) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  // Un compteur que « Réessayer » fait avancer : le chargement du fond repart (recette QA 3, P9).
+  const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [resources, setResources] = useState<Resources | null>(null);
   const [colors, setColors] = useState<FrameColors | null>(null);
@@ -310,7 +312,7 @@ export function VideoPreview(inputs: PreviewInputs) {
       loaded?.background.close();
       setResources((current) => (current === loaded ? null : current));
     };
-  }, [ready, sample, upload, clip, isVideo, sessionId, background]);
+  }, [ready, sample, upload, clip, isVideo, sessionId, background, attempt]);
 
   // Couleur d'accent : propre à l'accent choisi et au fond chargé (une vidéo est lue à `ACCENT_SAMPLE_S`
   // AVANT de se placer à t) ; changer l'accent ne recharge pas le fond.
@@ -551,6 +553,22 @@ export function VideoPreview(inputs: PreviewInputs) {
             aria-label="Aperçu de la vidéo avec le verset le plus long de la session"
           />
           {inputs.children}
+          {failed ? (
+            <div className="xe-fail" role="alert" data-testid="preview-failed">
+              <p>{failed}</p>
+              <button
+                type="button"
+                className="btn btn--secondary xe-btn"
+                data-testid="preview-retry"
+                onClick={() => {
+                  setFailed(null);
+                  setAttempt((n) => n + 1);
+                }}
+              >
+                Réessayer
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="xe-transport">
@@ -574,15 +592,10 @@ export function VideoPreview(inputs: PreviewInputs) {
             )}
           </svg>
         </button>
-        <span
-          className="xe-caption"
-          data-failed={failed ? "" : undefined}
-          role={failed ? "alert" : undefined}
-        >
-          {failed ??
-            (playing
-              ? "Lecture de l’aperçu, avec le son"
-              : `Aperçu animé : ${PREVIEW_SECONDS} secondes de la récitation`)}
+        <span className="xe-caption">
+          {playing
+            ? "Lecture de l’aperçu, avec le son"
+            : `Aperçu animé : ${PREVIEW_SECONDS} secondes de la récitation`}
         </span>
       </div>
       <figcaption className="sr">{caption}</figcaption>

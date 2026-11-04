@@ -205,6 +205,24 @@ export function TextsPane({
       />
       <div className="xp-card" data-testid={`pas-card-${who}`}>
         <h3 className="xp-card-title">{BLOCK_LABEL[who]}</h3>
+        {/* La taille d'abord : c'est le contrôle principal de l'étape, il doit être dans la fenêtre au premier regard
+            (recette QA 3, P2) ; le cadenas, l'attribution et l'interrupteur viennent juste après. */}
+        {shown ? (
+          isText(who) ? (
+            <SizeSection
+              block={who}
+              size={controller.sizes[who]}
+              onStep={(direction) => controller.stepTextSize(who, direction)}
+              onReset={() => controller.setSize(who, 1)}
+              hint={false}
+            />
+          ) : (
+            <WaveSizeSection
+              box={box}
+              onStep={(direction) => controller.stepWave(direction)}
+            />
+          )
+        ) : null}
         {who === "arabic" ? <ArabicLockNote /> : null}
         {who === "translation" ? (
           <p className="xp-source" data-testid="translation-attribution">
@@ -227,20 +245,6 @@ export function TextsPane({
         />
         {shown ? (
           <>
-            {isText(who) ? (
-              <SizeSection
-                block={who}
-                size={controller.sizes[who]}
-                onStep={(direction) => controller.stepTextSize(who, direction)}
-                onReset={() => controller.setSize(who, 1)}
-                hint={false}
-              />
-            ) : (
-              <WaveSizeSection
-                box={box}
-                onStep={(direction) => controller.stepWave(direction)}
-              />
-            )}
             {isText(who) ? (
               <PanelSection
                 block={who}

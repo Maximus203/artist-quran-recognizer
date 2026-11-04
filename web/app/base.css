@@ -58,6 +58,12 @@ a {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+/* Une région annoncée (aria-live) posée en pied de page : fixe, pour ne JAMAIS rallonger le document d'un pixel
+   (un `.sr` absolu à sa place naturelle, après tout le contenu, ajoutait 1 px de défilement : recette QA 3, P10). */
+.sr-live {
+  position: fixed;
+  inset: auto auto 0 0;
+}
 svg.i {
   width: 20px;
   height: 20px;

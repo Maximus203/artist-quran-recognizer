@@ -36,8 +36,10 @@ describe("le plancher de l'aperçu", () => {
 
   it("la marge des poignées est la même que celle du cadre (un seul endroit)", () => {
     expect(editor).toMatch(
-      /\.xe-stage-host\s*\{[^}]*padding:\s*var\(--xe-halo\) var\(--xe-halo\) var\(--xe-halo-bottom\)/,
+      /\.xe-stage-host\s*\{[^}]*padding:\s*var\(--xe-halo\) var\(--xe-halo-x\) var\(--xe-halo-bottom\)/,
     );
+    // Les côtés ont leur jeton (égal au haut, sauf sous 340 px : QA 3, P10), la même marge pour tous les éditeurs.
+    expect(editor).toMatch(/--xe-halo-x:\s*var\(--xe-halo\)/);
   });
 
   it("le plateau et la table : la zone d'aperçu a le plancher, les commandes rétrécissent et défilent", () => {

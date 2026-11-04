@@ -259,6 +259,13 @@
   --mini-gap: var(--sp-4);
   --mini-reserve: 0px;
 
+  /* ── Couches : UNE échelle, plus le nombre est grand plus la couche est devant ───────────────────────────────────
+     Le lecteur réduit reste au-dessus des pages ; une fenêtre modale (voile + feuille) passe AU-DESSUS de lui et des
+     en-têtes collants : on ne manipule rien d'autre tant qu'elle est ouverte (recette QA 3, P8). */
+  --z-player: 40;
+  --z-modal-scrim: 60;
+  --z-modal: 61;
+
   /* ── Mouvement : transform/opacity seulement ──────────────────────────────── */
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

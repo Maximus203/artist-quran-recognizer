@@ -29,19 +29,40 @@
      Le plancher se lit en hauteur de CADRE (`--xe-stage-h-min`) : la zone qui le porte y ajoute la marge des poignées
      (posées autour du cadre) et la rangée de lecture. Un cadre 16:9 de 160 px de haut fait 284 px de large. */
   --xe-stage-h-min: 160px;
-  --xe-halo: 26px; /* marge au-dessus et de chaque côté du cadre : les poignées y sont posées */
+  --xe-halo: 26px; /* marge au-dessus du cadre : les poignées y sont posées */
+  --xe-halo-x: var(--xe-halo); /* ... et de chaque côté : plus étroite sous 340 px (voir plus bas) */
   --xe-halo-bottom: 12px;
+  --xe-play: 48px; /* le bouton de lecture */
   --xe-transport-h: calc(
-    48px + var(--sp-2)
+    var(--xe-play) + var(--sp-2)
   ); /* le bouton de lecture + son espace */
   --xe-stage-area-min: calc(
     var(--xe-stage-h-min) + var(--xe-halo) + var(--xe-halo-bottom) +
       var(--xe-transport-h)
   );
   /* La barre du haut de l'éditeur (bouton 44 px, marges, filet). */
-  --xe-top-h: calc(var(--hit) + 2 * var(--sp-2) + 1px);
+  --xe-top-pad: var(--sp-2);
+  --xe-top-h: calc(var(--hit) + 2 * var(--xe-top-pad) + 1px);
   /* Ce que les commandes gardent AU MOINS, même aplaties : les pastilles et la barre d'outils d'un élément. */
   --xe-dock-min: 180px;
+}
+
+/* ── Écran court ou étroit (recette QA 3, P2 / P3 / P10) : l'aperçu garde son plancher, c'est le reste qui se serre ─────
+   Sous 760 px de haut (un téléphone et ses barres : 360 × 640), la barre du haut, la marge des poignées et le bouton de
+   lecture rendent chacun quelques pixels (tous à 44 px de cible au moins) : la place gagnée va à la fenêtre des réglages
+   et à la chronologie, jamais en dessous de ce plancher. Sous 340 px de large (320 px), les poignées se posent plus près
+   du bord : le cadre garde ses 288 × 162 au lieu de 268 × 150. */
+@media (max-width: 1023px) and (max-height: 760px) {
+  :root {
+    --xe-top-pad: var(--sp-1);
+    --xe-halo: 22px; /* la moitié d'une cible de 44 px : les poignées y tiennent encore */
+    --xe-play: var(--hit);
+  }
+}
+@media (max-width: 339px) {
+  :root {
+    --xe-halo-x: 16px;
+  }
 }
 
 .xe-panel {
@@ -70,7 +91,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--gutter);
+  padding: var(--xe-top-pad) var(--gutter);
   background: var(--surface-1);
   border-bottom: 1px solid var(--border);
   min-width: 0;
@@ -129,7 +150,7 @@
   display: grid;
   place-items: center;
   /* De la marge autour : les poignées sont posées à l'extérieur du cadre. */
-  padding: var(--xe-halo) var(--xe-halo) var(--xe-halo-bottom);
+  padding: var(--xe-halo) var(--xe-halo-x) var(--xe-halo-bottom);
 }
 .xe-stage {
   position: relative;
@@ -155,8 +176,8 @@
 }
 .xe-play {
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: var(--xe-play);
+  height: var(--xe-play);
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -184,8 +205,33 @@
   color: var(--text-3);
   min-width: 0;
 }
-.xe-caption[data-failed] {
-  color: var(--danger);
+/* L'aperçu n'a pas pu se préparer (fond qui ne charge pas…) : la phrase et « Réessayer » se posent SUR le cadre, sans
+   rien ajouter à la rangée de lecture (le plancher de l'aperçu ne bouge pas) ; recette QA 3, P9. */
+.xe-fail {
+  position: absolute;
+  inset: auto var(--sp-2) var(--sp-2);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+}
+.xe-fail p {
+  flex: 1 1 12ch;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+}
+.xe-fail .xe-btn {
+  flex: none;
 }
 
 /* ── Le calque d'édition (par-dessus l'aperçu) ───────────────────────────────────────── */
@@ -377,6 +423,9 @@
 /* Les commandes : une colonne qui défile toute seule quand elle est plus haute que sa place. Les feuilles et panneaux
    s'y rétrécissent d'abord (leur corps défile) ; une rangée « collée en bas » (le rail de la table) reste sous le doigt. */
 .xe-dock {
+  /* Positionnée : les éléments absolus qu'elle porte (régions annoncées, champs de fichier cachés) restent DANS son
+     défilement, au lieu de rallonger la page entière (recette QA 3, P1). */
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -595,6 +644,7 @@
   color: var(--text-3);
 }
 .xe-sheet-body {
+  position: relative; /* même raison que `.xe-dock` */
   overflow: auto;
   padding: 14px var(--gutter) 18px;
   display: grid;
@@ -1039,6 +1089,13 @@ button.xe-step-val:hover {
   font-style: normal;
   color: var(--text-3);
 }
+/* La phrase qui dit qu'un texte n'a pas été lu (recette QA 3, P4) : absente, elle ne prend pas de place (ni son espace). */
+.xe-pct-note {
+  color: var(--warn);
+}
+.xe-pct-note:empty {
+  margin-top: calc(var(--sp-2) * -1);
+}
 .xe-actions {
   display: grid;
   gap: var(--sp-2);
@@ -1299,6 +1356,14 @@ dialog.xe-dialog::backdrop {
     border: 1px solid var(--border-strong);
     border-radius: var(--r-lg);
     overflow: hidden;
+  }
+}
+
+/* Bureau étroit (1024 à 1199 px, recette QA 3, P3) : les deux colonnes de côté (240 + 380 px) ne laissaient à l'aperçu que
+   294 × 165 ; un peu plus étroites, il garde ~385 px de large. Les réglages tiennent à 340 px comme sur un téléphone. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .xe-work {
+    grid-template-columns: 208px minmax(0, 1fr) 340px;
   }
 }
 
