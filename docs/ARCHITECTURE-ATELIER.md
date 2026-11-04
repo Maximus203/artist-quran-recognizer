@@ -351,6 +351,33 @@ choix est la préférence `editorMode` du compte (`plateau` · `table` · `pas` 
 plateau pour la séance du navigateur) ; le récitateur a le pas à pas sans aucune question ; le bureau n'est jamais interrogé. La section
 « Éditeur d'export (téléphone) » de `/compte` réutilise les mêmes cartes (`account-editor-mode.tsx`). Styles : `web/app/editor-mode.css`.
 
+**Ce que la recette QA a imposé aux éditeurs du téléphone** (corrections de la recette indépendante, PR « recette QA de l'éditeur d'export »).
+- *Le lecteur réduit n'est jamais au-dessus d'une commande.* Il est posé en bas de toute page connectée (`position: fixed`,
+  `app/atelier/mini-player.tsx`). Sa hauteur est écrite UNE fois (`--mini-h`, `app/tokens.css`) ; tant qu'il est là, la racine
+  porte `data-mini-player` (`app/atelier/mini-reserve.ts`) et `--mini-reserve` passe de 0 à sa hauteur plus ses marges. Chaque
+  hauteur « écran moins l'en-tête » (`.xe-plateau`, `.xp-root`, `.xe-desk`) la retire ; `app/atelier/mini-reserve.test.ts` fait
+  échouer la suite si une nouvelle hauteur plein écran l'oublie. Un nouvel éditeur n'a rien d'autre à savoir.
+- *Retour ferme d'abord ce qui est ouvert.* Une feuille de réglages ou la fenêtre des passages ajoute UNE entrée à l'historique
+  tant qu'elle est ouverte (`lib/back-close.ts`, branché par `editor/use-back-close.ts`) : Retour la retire et ferme la feuille ;
+  « Terminé » retire l'entrée à son tour. La fermeture est différée d'un instant pour qu'un démontage suivi d'un remontage
+  immédiat (mode strict) réutilise l'entrée, et on ne recule jamais si l'application a navigué entre-temps.
+- *L'onglet de la page Exporter est dans l'adresse* (`?onglet=video|soustitres`, `lib/export-tab.ts`, écrit par `replaceState` :
+  pas d'entrée d'historique). Recharger y revient ; le bouton « Exporter » (adresse nue) ouvre toujours sur la porte « Vérifier » ;
+  le récitant n'a que la vidéo.
+- *Aucune commande derrière un défilement horizontal* (`app/export-compact.css`) : sous 520 px, la barre d'outils d'un élément et
+  le rail de la table passent à la ligne ; en paysage sur téléphone, l'aperçu est à gauche et les commandes à droite (outils d'abord,
+  rail collé en bas). Dans le plateau, l'encart « déjà prête » et la note de l'élément choisi (cadenas de l'arabe, attribution
+  de la traduction, `editor/dock-below.tsx`) partagent une seule case : la scène ne bouge plus au premier toucher.
+- *Une coupure de réseau pendant le rendu est dite* (`lib/export-video-follow.ts`, message du bordereau) : le rendu continue sur le
+  serveur, la progression se rattrape seule.
+- **Attribution de la traduction (rappel, décision du 2026-10-27, inchangée).** L'attribution QuranEnc reste affichée dans les trois
+  éditeurs et le bureau, collée à la traduction (I2). La vidéo exportée, elle, n'en porte aucune (`attribution: null` dans
+  `lib/export-video-frames.ts`, choix du mainteneur) ; elle reste dans l'export des sous-titres (JSON, ASS, WebVTT).
+- **Limite connue (recette QA, m1).** Les réglages de la vidéo (`videoPrefs`) sont écrits en entier par l'onglet qui les modifie :
+  avec DEUX onglets ouverts sur le même compte, le dernier écrit l'emporte et peut effacer, sans message, un réglage fait dans
+  l'autre. La corriger proprement demande d'envoyer seulement les champs changés et de les fusionner côté serveur (changement du
+  contrat `PATCH /api/me/preferences`) : non fait ici, à décider.
+
 Styles : `web/app/export-refonte.css` (jetons `--x-*`, composants `.xr-*`) ; l'éditeur a les siens (voir ci-dessus).
 
 ## 8. Stockage sur disque

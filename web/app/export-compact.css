@@ -50,7 +50,7 @@
 @media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
   .xe-plateau,
   .xp-root {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     min-height: 0;
   }

@@ -1,5 +1,23 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-04 — Corrections de la recette QA de l'éditeur d'export (PR #200 à #206)
+- **Quoi** : B1 le lecteur réduit ne recouvre plus les commandes (une variable `--mini-reserve`, un test qui garde toute hauteur
+  plein écran) ; M1 cadenas de l'arabe et attribution dans le plateau (`ElementNote`, `DockBelow`) ; m4 l'encart « déjà prête » et
+  la note de l'élément partagent une case (la scène ne saute plus) ; m3 Retour ferme la feuille (`lib/back-close.ts`) ; m2 l'onglet
+  vit dans `?onglet=` ; m6 outils à la ligne sous 520 px et mise en page paysage ; m7 plus de DELETE sur une vidéo que le serveur
+  a déjà supprimée ; m5 coupure de réseau dite pendant le rendu (`lib/export-video-follow.ts`) ; m8 délai de 20 s.
+- **Décision rappelée, inchangée (M1 / I2)** : l'attribution QuranEnc reste affichée dans les éditeurs ; la vidéo exportée reste SANS
+  attribution (choix du mainteneur du 2026-10-27, `attribution: null` dans `lib/export-video-frames.ts`). La règle du brief
+  (« l'attribution reste ou disparaît avec la traduction ») s'entend donc pour l'interface ; elle n'a jamais été dans l'image.
+- **Choix pris seul** : (1) l'onglet dans l'adresse plutôt que dans le stockage, car il distingue un rechargement (même onglet) d'une
+  arrivée par « Exporter » (porte « Vérifier ») ; (2) Retour : une entrée d'historique par feuille, fermeture différée d'un instant
+  (mode strict) ; (3) paysage : pastilles d'éléments en icônes seules, outils d'abord ; (4) m1 NON fait : fusion champ par champ
+  = changement du contrat `PATCH /api/me/preferences` (champs changés seulement + fusion serveur), documenté comme limite ;
+  (5) m9 (suite sensible à la charge) : rien changé, noté.
+- **Preuve** : navigateur réel (Chrome tactile, build de production, parcours session puis « Exporter » avec le lecteur réduit
+  ouvert, 360 et 390 px, paysage 667 × 375) ; `web/app/atelier/mini-reserve.test.ts`, `lib/back-close.test.ts`,
+  `lib/export-tab.test.ts`, `lib/export-video-follow.test.ts`.
+
 ## 2026-11-04 — Un résultat importé est relu dans le corpus avant d'être conservé (ADR-0024, PR #207)
 - **Quoi** : `aqr verify-recognition` relit chaque intervalle d'un résultat joint à `POST /api/sessions` (verset, plage de mots,
   arabe, basmala, libellés de formule, traduction QuranEnc, segments, fragment, candidats) ; l'import refuse un résultat contredit
@@ -15,6 +33,7 @@
   divergeraient).
 - **Mesures** : 17 602 intervalles du vrai moteur de rendu (6 236 versets, 5 074 fragments) : 0 faux refus. Scénario QA s32 rejoué
   sur un build de production : tous les cas falsifiés refusés (422), résultat du moteur accepté et relu identique.
+
 
 ## 2026-11-03 — La table de montage : chronologie sur l'axe de toute la session (ADR-0023)
 - **Quoi** : éditeur mobile « table de montage » (aperçu, chronologie, rail d'outils). Chronologie : règle, passages, onde, piste du
