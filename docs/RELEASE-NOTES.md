@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-04 — Export vidéo : l'aperçu garde sa taille sur les écrans courts, Retour revient où il faut
+Étiquettes : utilisateur, technique, décision
+PR : #210
+
+**Ce qui change.** Sur téléphone, l'aperçu de la vidéo ne devient plus un timbre-poste : quel que soit l'écran, il garde au moins 160 px de haut (284 × 160 en 16:9 ; 140 px en paysage), et ce sont les réglages qui défilent dans leur colonne, pas lui. Le petit lecteur audio flottant s'efface le temps qu'on est dans l'éditeur (celui-ci joue déjà son propre aperçu avec le son ; la lecture en cours est arrêtée à l'entrée) et revient en le quittant. Les cinq pastilles du plateau tiennent toutes dans l'écran, la fenêtre de contenu du pas à pas fait au moins 160 px, et sur écran court la table de montage cache sa chronologie quand un réglage du cadre est ouvert pour lui laisser la place. Le bouton Retour du navigateur ramène à la session même après un rechargement ou un lien direct, ferme d'abord la fenêtre-résumé de l'export, et la connexion demandée par un lien direct garde l'onglet visé.
+
+**Pourquoi / décision.** Seconde recette QA indépendante de l'éditeur : la réserve de place du lecteur (#208) avait réduit l'aperçu à 56 × 32 px à 360 × 640, 62 × 35 px pour la table à 390 × 844 avec un panneau, et 138 × 78 px en paysage. Mesuré au vrai navigateur après correction (`web/e2e/stage-floor.mjs`, 48 mesures, 0 échec) : 284 × 160 px au plus petit écran, jamais recouvert. Cause du Retour inopérant : `history.replaceState(null, …)` effaçait l'état que Next range dans l'historique ; toute réécriture d'adresse passe désormais par `replaceUrl` (un test interdit l'ancienne forme). Effacer le lecteur dans l'éditeur est réversible en une ligne ; décisions détaillées dans `.artist/decision-log.md`. Non traité ici : le réglage perdu avec deux onglets ouverts (limite documentée, changement de contrat des préférences).
+
 ## 2026-11-04 — Import : champs libres contrôlés, fichiers illisibles expliqués, refus journalisés
 Étiquettes : utilisateur, technique, décision
 PR : #209
