@@ -83,10 +83,22 @@
   .xe-plateau > .xe-dock > .xe-ctx {
     order: -1;
   }
+  /* Les pastilles d'éléments : des icônes seules (leur nom reste lu aux lecteurs d'écran), sur une seule rangée qui
+     tient dans la colonne. */
   .xe-chips {
-    flex-wrap: wrap;
     overflow: visible;
     padding-top: 2px;
+  }
+  .xe-chip-btn {
+    min-width: var(--hit);
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+  /* La scène est seule dans sa colonne : rien à réserver sous les outils, l'encart inactif ne prend pas de place. */
+  .xe-below > [data-off] {
+    display: none;
   }
   /* Une feuille ouverte remplit la colonne ; son corps défile. */
   .xe-plateau > .xe-dock > .xe-sheet {
@@ -109,7 +121,12 @@
      la colonne (posée au-dessus de la barre, elle serait coupée par le défilement). */
   .xt-help {
     position: static;
+    order: 5;
     margin: var(--sp-2) var(--gutter) 0;
+  }
+  .xt-rail {
+    order: 9;
+    margin-top: auto;
   }
   .xt-help::after {
     display: none;
