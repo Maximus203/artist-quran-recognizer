@@ -37,14 +37,13 @@ describe("les éditeurs d'export sur petits écrans", () => {
     );
   });
 
-  it("paysage : aperçu à gauche, commandes à droite, outils d'abord, rail collé en bas", () => {
+  it("paysage : aperçu à gauche, commandes à droite, rail collé en bas", () => {
     expect(css).toMatch(
       /@media \(orientation: landscape\) and \(max-height: 520px\) and \(max-width: 1023px\)/,
     );
     expect(css).toMatch(
       /grid-template-columns:\s*minmax\(0, 5fr\) minmax\(0, 4fr\)/,
     );
-    expect(css).toMatch(/\.xe-ctx\s*\{\s*order:\s*-1/);
     expect(css).toMatch(
       /\.xt-rail\s*\{[^}]*position:\s*sticky[^}]*bottom:\s*0/,
     );

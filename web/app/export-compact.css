@@ -82,9 +82,13 @@
     overflow-y: auto;
     overscroll-behavior: contain;
   }
-  /* Les outils d'abord (ce sont eux qu'on cherche), les pastilles ensuite. */
-  .xe-plateau > .xe-dock > .xe-ctx {
-    order: -1;
+  /* Rangées resserrées : les pastilles (une ligne d'icônes) puis les outils tiennent dans la hauteur de la colonne. */
+  .xe-chips {
+    padding-bottom: 0;
+  }
+  .xe-ctx {
+    padding-top: 2px;
+    padding-bottom: 4px;
   }
   /* Les pastilles d'éléments : des icônes seules (leur nom reste lu aux lecteurs d'écran), sur une seule rangée qui
      tient dans la colonne. */
@@ -113,7 +117,7 @@
   .xt-rail {
     position: sticky;
     bottom: 0;
-    z-index: 2;
+    z-index: 8;
     background: var(--surface-1);
   }
   /* Rien à réserver au pied : la rangée des outils tient dans la colonne. */
