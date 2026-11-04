@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { exportReturnPath } from "@/lib/export-tab";
 import { requirePageUser } from "@/lib/page-auth";
 import { isSessionId } from "@/lib/session-id";
 import { ExportPage } from "../../../../atelier/export/export-page";
@@ -24,7 +25,7 @@ export default async function ExportRoute({
   const { id } = await params;
   const { onglet } = await searchParams;
   if (!isSessionId(id)) notFound();
-  await requirePageUser(`/s/${id}/exporter`);
+  await requirePageUser(exportReturnPath(id, onglet));
   return (
     <PageFrame active="revue">
       <ExportPage sessionId={id} tab={onglet} />

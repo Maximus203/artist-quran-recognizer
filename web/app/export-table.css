@@ -6,36 +6,38 @@
  * fois dans tokens.css.
  */
 
+/* Hauteur du rail d'outils collé en bas de la colonne des commandes (une rangée ; deux quand les outils passent à la
+   ligne, voir export-compact.css). Elle sert de marge de défilement : un contrôle qu'on atteint (au clavier, ou en le
+   faisant défiler) ne reste jamais caché DERRIÈRE le rail. */
+:root {
+  --xt-rail-h: 66px;
+}
+@media (max-width: 519px) {
+  :root {
+    --xt-rail-h: 126px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+  :root {
+    --xt-rail-h: 126px;
+  }
+}
 .xt-dock {
   position: relative;
+  scroll-padding-bottom: var(--xt-rail-h);
 }
 
 /* ── Aide du premier affichage (un texte qui reste jusqu'à « Compris ») ──────────────── */
 .xt-help {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: calc(100% + 10px);
-  z-index: 6;
+  /* Un encart à lire, DANS la colonne des commandes (qui défile) : posé en flottant au-dessus d'elle, il aurait été coupé
+     par ce défilement et aurait masqué l'aperçu (recette QA 2, N1). */
   display: grid;
   gap: var(--sp-3);
+  margin: var(--sp-2) var(--gutter) 0;
   padding: var(--sp-4);
-  background: var(--surface-1);
+  background: var(--surface-2);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-pop);
-}
-.xt-help::after {
-  content: "";
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  background: var(--surface-1);
-  border-right: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border-strong);
-  transform: translateX(-50%) rotate(45deg);
 }
 .xt-help h2 {
   margin: 0;
@@ -570,6 +572,12 @@
   padding: 2px var(--gutter) 6px;
   border-top: 1px solid var(--border-subtle);
   min-width: 0;
+  /* Les outils restent collés au bas de la colonne des commandes, même quand elle défile. */
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  margin-top: auto;
+  background: var(--surface-1);
 }
 .xt-rail .xe-tb {
   gap: 2px;

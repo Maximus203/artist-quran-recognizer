@@ -41,6 +41,7 @@ import {
   useSidebarSessions,
   type Visibility,
 } from "./atelier/use-sessions";
+import { replaceUrl } from "@/lib/history-url";
 
 type View = "revue" | "new";
 const TOAST_MS = 6000;
@@ -190,20 +191,20 @@ export default function ReviewApp() {
       setMessage("");
       setFollow(prefs.followPlayback);
       setDrawer(null);
-      history.replaceState(null, "", `?session=${id}`);
+      replaceUrl(`?session=${id}`);
     },
     [prefs.followPlayback],
   );
   const showNew = useCallback(() => {
     setView("new");
     setDrawer(null);
-    history.replaceState(null, "", "?vue=new");
+    replaceUrl("?vue=new");
   }, []);
   const showReview = useCallback(() => {
     setDrawer(null);
     if (currentId) {
       setView("revue");
-      history.replaceState(null, "", `?session=${currentId}`);
+      replaceUrl(`?session=${currentId}`);
     } else showNew();
   }, [currentId, showNew]);
 

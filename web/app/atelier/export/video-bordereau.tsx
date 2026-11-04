@@ -12,6 +12,7 @@ import {
 import { formatDurationFr } from "@/lib/format";
 import { XIcon } from "./export-icons";
 import { LEVEL_LABEL } from "./video-quality";
+import { useBackClose } from "./editor/use-back-close";
 
 /**
  * Le bordereau : récapitulatif + action, toujours visible (colonne collante au bureau, feuille
@@ -438,6 +439,8 @@ export function ExportSheet({
   // Même piège de focus que les tiroirs de l'atelier : Tab / Maj+Tab restent dans la feuille,
   // Échap la ferme, le focus revient au bouton qui l'a ouverte.
   useFocusTrap(ref, open, onClose);
+  // Retour du navigateur : ferme la fenêtre avant de quitter l'export (recette QA 2, N3).
+  useBackClose(open, onClose);
   if (!open) return null;
   return (
     <>

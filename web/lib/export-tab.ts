@@ -43,3 +43,15 @@ export function withExportTab(
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
+
+/**
+ * L'adresse de la page « Exporter » à rouvrir après une connexion : le chemin, et l'onglet demandé s'il est connu
+ * (jamais une valeur libre : seule une valeur de la liste entre dans l'adresse de retour).
+ */
+export function exportReturnPath(
+  sessionId: string,
+  raw: string | readonly string[] | null | undefined,
+): string {
+  const base = `/s/${sessionId}/exporter`;
+  return withExportTab(base, "", resolveExportTab(raw, false));
+}

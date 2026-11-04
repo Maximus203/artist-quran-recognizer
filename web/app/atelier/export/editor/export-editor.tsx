@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useHideMiniPlayer } from "../../global-player";
 import { DesktopEditor } from "./desktop-editor";
 import { editorFor } from "./editor-registry";
 import {
@@ -40,6 +41,8 @@ export function ExportEditor({
   ...editor
 }: EditorProps & { mode?: EditorMode }) {
   const desktop = useScreen(DESKTOP_QUERY);
+  // Sur téléphone, l'éditeur est plein écran : le lecteur réduit s'efface (voir `useHideMiniPlayer`).
+  useHideMiniPlayer(!desktop);
   const Mobile = editorFor(mode);
   return desktop ? <DesktopEditor {...editor} /> : <Mobile {...editor} />;
 }

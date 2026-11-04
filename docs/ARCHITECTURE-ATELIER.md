@@ -357,10 +357,31 @@ plateau pour la séance du navigateur) ; le récitateur a le pas à pas sans auc
   porte `data-mini-player` (`app/atelier/mini-reserve.ts`) et `--mini-reserve` passe de 0 à sa hauteur plus ses marges. Chaque
   hauteur « écran moins l'en-tête » (`.xe-plateau`, `.xp-root`, `.xe-desk`) la retire ; `app/atelier/mini-reserve.test.ts` fait
   échouer la suite si une nouvelle hauteur plein écran l'oublie. Un nouvel éditeur n'a rien d'autre à savoir.
+- *L'aperçu a un plancher, les commandes défilent* (recette QA 2, N1). Un cadre de 160 px de haut au moins (284 × 160 en 16:9 ;
+  140 px en paysage), plus la marge des poignées et la rangée de lecture : `--xe-stage-h-min` et `--xe-stage-area-min`
+  (`app/export-editor.css`, un seul endroit). La coque du plateau et de la table a trois rangées (barre du haut ; aperçu en
+  `minmax(plancher, 1fr)` ; commandes en `minmax(0, auto)`) : l'aperçu reçoit la place qui reste, jamais l'inverse. La colonne
+  des commandes défile toute seule quand elle est plus haute que sa place (feuilles et panneaux y rétrécissent d'abord, leur
+  corps défile ; le rail de la table est collé en bas, avec une marge de défilement pour qu'un contrôle atteint ne reste pas
+  caché derrière lui). Sous la hauteur qui garde le plancher ET les commandes, la page défile (l'éditeur ne s'écrase pas) ; la
+  place du lecteur réduit est alors ajoutée SOUS l'éditeur. Le pas à pas garde le même plancher et une fenêtre de contenu d'au
+  moins 160 px (`--xp-body-min`), « Suivant » collé au-dessus du lecteur. Les pastilles du plateau tiennent en cinq colonnes
+  sous 520 px (aucun défilement caché). Mesuré au vrai navigateur par `web/e2e/stage-floor.mjs`, gardé par
+  `app/export-stage-floor.test.ts`.
+- *Le lecteur réduit s'efface dans l'éditeur du téléphone* (`useHideMiniPlayer`, `app/atelier/global-player.tsx`, appelé par
+  `export-editor.tsx` hors du bureau) : l'éditeur est plein écran et joue son propre aperçu avec le son ; les 86 px que le
+  lecteur réservait écrasaient l'aperçu des écrans courts. L'audio qu'il jouait est arrêté à l'entrée (jamais deux sons) ; il
+  revient en quittant l'éditeur. La réserve (`--mini-reserve`) reste lue par toutes les hauteurs pleine page : si le lecteur
+  réapparaît ailleurs (bureau), rien ne le recouvre.
 - *Retour ferme d'abord ce qui est ouvert.* Une feuille de réglages ou la fenêtre des passages ajoute UNE entrée à l'historique
   tant qu'elle est ouverte (`lib/back-close.ts`, branché par `editor/use-back-close.ts`) : Retour la retire et ferme la feuille ;
   « Terminé » retire l'entrée à son tour. La fermeture est différée d'un instant pour qu'un démontage suivi d'un remontage
   immédiat (mode strict) réutilise l'entrée, et on ne recule jamais si l'application a navigué entre-temps.
+- *Retour revient toujours à ce qu'on vient de quitter* (recette QA 2, N2 et N3). Toute réécriture d'adresse passe par
+  `lib/history-url.ts` (`replaceUrl`), qui garde l'état que Next range dans l'entrée d'historique : un `replaceState(null, …)`
+  l'effaçait, et après F5 ou un lien direct sur la session, « Exporter » puis Retour changeait l'adresse sans changer l'écran
+  (un test échoue si un `replaceState(null` réapparaît). La fenêtre-résumé de l'export (`ExportSheet`) ferme avec Retour avant
+  de quitter l'export, comme les feuilles. Une connexion demandée par un lien direct garde l'onglet (`exportReturnPath`).
 - *L'onglet de la page Exporter est dans l'adresse* (`?onglet=video|soustitres`, `lib/export-tab.ts`, écrit par `replaceState` :
   pas d'entrée d'historique). Recharger y revient ; le bouton « Exporter » (adresse nue) ouvre toujours sur la porte « Vérifier » ;
   le récitant n'a que la vidéo.

@@ -66,6 +66,25 @@ type PlayerContext = {
 
 const Context = createContext<PlayerContext | null>(null);
 
+/**
+ * L'éditeur de la vidéo d'export sur téléphone prend tout l'écran et joue son propre aperçu (avec le son) : le lecteur
+ * réduit de la coque s'efface le temps qu'on y est, et l'audio qu'il jouait s'arrête (deux sons à la fois, et des
+ * commandes qu'on ne verrait plus, seraient pires). Sans fournisseur de lecteur (tests, rendu serveur) : sans effet.
+ * Recette QA 2, N1 : ses 86 px de réserve écrasaient l'aperçu des écrans courts.
+ */
+export function useHideMiniPlayer(active: boolean): void {
+  const value = useContext(Context);
+  const register = value?.registerFullUi;
+  const stop = value?.player.stopPlayback;
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+  useEffect(() => {
+    if (!active || !register) return;
+    stopRef.current?.();
+    return register();
+  }, [active, register]);
+}
+
 export function useGlobalPlayer(): PlayerContext {
   const value = useContext(Context);
   if (!value)

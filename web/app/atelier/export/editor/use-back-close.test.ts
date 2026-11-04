@@ -21,4 +21,23 @@ describe("Retour ferme la feuille ouverte", () => {
   ])("%s branche useBackClose sur sa feuille", (file, pattern) => {
     expect(read(file)).toMatch(pattern);
   });
+
+  it("la fenêtre-résumé de l'export ferme avec Retour avant de quitter l'export (recette QA 2, N3)", () => {
+    const source = readFileSync(
+      path.join(
+        process.cwd(),
+        "app",
+        "atelier",
+        "export",
+        "video-bordereau.tsx",
+      ),
+      "utf8",
+    );
+    const sheet = source.slice(source.indexOf("export function ExportSheet"));
+    expect(sheet).toMatch(/useBackClose\(\s*open,\s*onClose\s*\)/);
+    // Le crochet est posé AVANT le retour anticipé `if (!open) return null` : l'ordre des crochets ne change pas.
+    expect(sheet.indexOf("useBackClose(")).toBeLessThan(
+      sheet.indexOf("if (!open) return null"),
+    );
+  });
 });

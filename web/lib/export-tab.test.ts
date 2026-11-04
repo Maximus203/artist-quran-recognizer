@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   EXPORT_TAB_PARAM,
   EXPORT_TABS,
+  exportReturnPath,
   resolveExportTab,
   withExportTab,
 } from "./export-tab";
@@ -60,5 +61,29 @@ describe("l'adresse qui garde l'onglet", () => {
     expect(withExportTab("/s/abc/exporter", "", "verifier")).toBe(
       "/s/abc/exporter",
     );
+  });
+});
+
+/** Recette QA 2, N9 : un lien direct vers `?onglet=video`, ouvert déconnecté, perdait l'onglet à la connexion. */
+describe("l'adresse où revenir après la connexion", () => {
+  const id = "0b1f6f0e-9c52-4c0e-9d51-2a3b4c5d6e7f";
+
+  it("garde l'onglet demandé", () => {
+    expect(exportReturnPath(id, "video")).toBe(
+      `/s/${id}/exporter?onglet=video`,
+    );
+    expect(exportReturnPath(id, "soustitres")).toBe(
+      `/s/${id}/exporter?onglet=soustitres`,
+    );
+  });
+
+  it("la porte « Vérifier » est l'adresse nue", () => {
+    expect(exportReturnPath(id, "verifier")).toBe(`/s/${id}/exporter`);
+    expect(exportReturnPath(id, undefined)).toBe(`/s/${id}/exporter`);
+  });
+
+  it("une valeur inconnue ou multiple n'entre jamais dans l'adresse de retour", () => {
+    for (const raw of ["VIDEO", "x&y=1", "//evil.example", ["video", "x"], ""])
+      expect(exportReturnPath(id, raw)).toBe(`/s/${id}/exporter`);
   });
 });

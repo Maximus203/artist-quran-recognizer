@@ -44,7 +44,8 @@ describe("les éditeurs d'export sur petits écrans", () => {
     expect(css).toMatch(
       /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
     );
-    expect(css).toMatch(
+    // Collé en bas pour TOUTES les tailles (la colonne des commandes défile) : la règle vit dans export-table.css.
+    expect(read("export-table.css")).toMatch(
       /\.xt-rail\s*\{[^}]*position:\s*sticky[^}]*bottom:\s*0/,
     );
   });
