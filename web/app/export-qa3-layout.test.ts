@@ -32,7 +32,10 @@ describe("P1 / P10 : la page ne défile jamais plus que son contenu", () => {
 
   it("la région annoncée du pied de page est fixe : elle ne rallonge pas le document d'un pixel", () => {
     expect(rule(base, ".sr-live")).toMatch(/position:\s*fixed/);
-    for (const file of ["atelier/export/export-page.tsx", "atelier/sessions-page.tsx"])
+    for (const file of [
+      "atelier/export/export-page.tsx",
+      "atelier/sessions-page.tsx",
+    ])
       expect(read(file)).toMatch(/className="sr sr-live"/);
   });
 });
@@ -55,10 +58,16 @@ describe("P2 : une fenêtre utile suffisante sur écran court", () => {
     expect(rule(steps, ".xp-btn")).toMatch(/min-height:\s*var\(--xp-btn-h\)/);
     // La fenêtre de contenu garde son plancher de 160 px dans la somme.
     expect(steps).toMatch(
-      /--xp-panel-min:\s*calc\(var\(--xp-steps-h\) \+ var\(--xp-body-min\) \+ var\(--xp-foot-h\)\)/,
+      /--xp-panel-min:\s*calc\(\s*var\(--xp-steps-h\) \+ var\(--xp-body-min\) \+ var\(--xp-foot-h\)\s*\)/,
     );
     // 48 px de bouton : encore au-dessus de la cible tactile de 44 px.
     expect(steps).toMatch(/--xp-btn-h:\s*48px/);
+  });
+
+  it("le titre de la fiche n'est plus que pour les lecteurs d'écran sur écran court (l'onglet le dit déjà)", () => {
+    expect(steps).toMatch(
+      /@media \(max-height: 760px\)\s*\{[^@]*\.xp-card-title\s*\{\s*position:\s*absolute/,
+    );
   });
 
   it("à l'étape des textes la phrase d'aide passe après la fiche (la taille − / + remonte)", () => {

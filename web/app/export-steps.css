@@ -14,7 +14,9 @@
   --xp-foot-h: 72px; /* la barre Précédent / Suivant : sa hauteur sert de marge de défilement au contenu */
   --xp-btn-h: 52px; /* ses boutons */
   --xp-foot-pad: var(--sp-2);
-  --xp-panel-min: calc(var(--xp-steps-h) + var(--xp-body-min) + var(--xp-foot-h));
+  --xp-panel-min: calc(
+    var(--xp-steps-h) + var(--xp-body-min) + var(--xp-foot-h)
+  );
 }
 /* Écran court (recette QA 3, P2) : pastilles et barre se serrent (leurs boutons gardent 44 px de cible au moins) pour que la
    fenêtre de contenu, elle, se lise : à 360 × 640 la barre « Suivant » ne la recouvre plus (avant : 19 px de moins). */
@@ -185,11 +187,20 @@
    reste en tête pour les lecteurs d'écran : seul l'ordre à l'écran change) et les espaces se resserrent. */
 @media (max-height: 760px) {
   .xp-pane {
-    gap: var(--sp-3);
+    gap: var(--sp-2);
   }
   .xp-card {
-    gap: var(--sp-3);
+    gap: var(--sp-2);
     padding: var(--sp-3);
+  }
+  /* L'onglet choisi dit déjà quel élément on règle : le titre de la fiche ne reste que pour les lecteurs d'écran. */
+  .xp-card-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   .xp-head[data-compact] {
     display: contents;
