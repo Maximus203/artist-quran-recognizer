@@ -22,6 +22,26 @@
   --xe-sample-ink: #06080c;
   --xe-sample-text: #f5f1e8;
   --xe-sheet-max: min(46dvh, 420px);
+
+  /* ── Le plancher de l'aperçu (recette QA 2, N1) ──────────────────────────────────────────
+     L'aperçu est ce qu'on manipule : il ne rétrécit JAMAIS sous ce plancher, quelle que soit la place que prennent les
+     commandes. Quand la place manque, ce sont elles qui défilent (le bas de la coque a son propre défilement), pas lui.
+     Le plancher se lit en hauteur de CADRE (`--xe-stage-h-min`) : la zone qui le porte y ajoute la marge des poignées
+     (posées autour du cadre) et la rangée de lecture. Un cadre 16:9 de 160 px de haut fait 284 px de large. */
+  --xe-stage-h-min: 160px;
+  --xe-halo: 26px; /* marge au-dessus et de chaque côté du cadre : les poignées y sont posées */
+  --xe-halo-bottom: 12px;
+  --xe-transport-h: calc(
+    48px + var(--sp-2)
+  ); /* le bouton de lecture + son espace */
+  --xe-stage-area-min: calc(
+    var(--xe-stage-h-min) + var(--xe-halo) + var(--xe-halo-bottom) +
+      var(--xe-transport-h)
+  );
+  /* La barre du haut de l'éditeur (bouton 44 px, marges, filet). */
+  --xe-top-h: calc(var(--hit) + 2 * var(--sp-2) + 1px);
+  /* Ce que les commandes gardent AU MOINS, même aplaties : les pastilles et la barre d'outils d'un élément. */
+  --xe-dock-min: 180px;
 }
 
 .xe-panel {
@@ -40,7 +60,9 @@
 }
 .ex-xp-wrap:has(> .ex-xp[data-tab="video"]:not([data-failed])) {
   padding-top: 0;
-  padding-bottom: var(--sp-6);
+  /* Le lecteur réduit (fixe, en bas) n'est jamais posé sur le pied de l'éditeur, même quand la page défile : la place
+     qu'il prend est ajoutée sous l'éditeur, qui la retire de sa hauteur (page = écran, sans défilement inutile). */
+  padding-bottom: var(--mini-reserve);
 }
 
 /* ── Barre du haut ───────────────────────────────────────────────────────────────────── */
@@ -107,7 +129,7 @@
   display: grid;
   place-items: center;
   /* De la marge autour : les poignées sont posées à l'extérieur du cadre. */
-  padding: 26px 26px 12px;
+  padding: var(--xe-halo) var(--xe-halo) var(--xe-halo-bottom);
 }
 .xe-stage {
   position: relative;
@@ -332,11 +354,17 @@
 }
 
 /* ── Plateau (téléphone) ─────────────────────────────────────────────────────────────── */
+/* Trois rangées : la barre du haut, l'aperçu (jamais sous son plancher), les commandes. Les commandes prennent ce
+   qu'elles demandent, MOINS ce qu'il faut garder à l'aperçu : `minmax(0, auto)` les laisse rétrécir, et leur propre
+   défilement (voir `.xe-dock`) rend le reste atteignable. C'est l'aperçu qui reçoit la place qui reste, jamais l'inverse. */
 .xe-plateau {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(var(--xe-stage-area-min), 1fr) minmax(0, auto);
   height: calc(100dvh - var(--header-h) - var(--mini-reserve));
-  min-height: 520px;
+  /* Sous cette hauteur la page défile (l'éditeur ne s'écrase pas) ; la réserve du lecteur est alors dans le pied de page. */
+  min-height: calc(
+    var(--xe-top-h) + var(--xe-stage-area-min) + var(--xe-dock-min)
+  );
   margin-inline: calc(var(--gutter) * -1);
   background: var(--bg);
   min-width: 0;
@@ -346,11 +374,21 @@
   min-width: 0;
   display: grid;
 }
+/* Les commandes : une colonne qui défile toute seule quand elle est plus haute que sa place. Les feuilles et panneaux
+   s'y rétrécissent d'abord (leur corps défile) ; une rangée « collée en bas » (le rail de la table) reste sous le doigt. */
 .xe-dock {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface-1);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
-  min-width: 0;
+}
+.xe-dock > * {
+  flex: none;
 }
 .xe-chips,
 .xe-tb {
@@ -503,6 +541,10 @@
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   max-height: var(--xe-sheet-max);
+  /* Dans la colonne des commandes, la feuille rétrécit avant que la colonne ne défile : son corps défile, son titre et
+     son bouton « Terminé » restent là. */
+  flex: 0 1 auto;
+  min-height: 0;
   outline: none;
   animation: xe-rise var(--dur-3) var(--ease-out);
 }

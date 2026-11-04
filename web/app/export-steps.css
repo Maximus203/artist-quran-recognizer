@@ -6,11 +6,21 @@
  * `prefers-reduced-motion` de tokens.css.
  */
 
+:root {
+  /* Ce que le panneau d'une étape garde AU MOINS (recette QA 2, N5) : les trois pastilles, une fenêtre de contenu qui se
+     lit (160 px), et la barre Précédent / Suivant. Sous la hauteur qui le permet, la page défile ; la fenêtre ne s'écrase pas. */
+  --xp-body-min: 160px;
+  --xp-foot-h: 72px; /* la barre Précédent / Suivant : sa hauteur sert de marge de défilement au contenu */
+  --xp-panel-min: calc(58px + var(--xp-body-min) + 70px);
+}
+
 .xp-root {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(var(--xp-panel-min), 1fr);
   height: calc(100dvh - var(--header-h) - var(--mini-reserve));
-  min-height: 520px;
+  min-height: calc(
+    var(--xe-top-h) + var(--xe-stage-area-min) + var(--xp-panel-min)
+  );
   margin-inline: calc(var(--gutter) * -1);
   background: var(--bg);
   min-width: 0;
@@ -21,11 +31,11 @@
   display: grid;
   min-width: 0;
   min-height: 0;
-  height: clamp(230px, 38dvh, 380px);
+  height: clamp(var(--xe-stage-area-min), 38dvh, 380px);
   background: var(--bg);
 }
 .xp-stage[data-step="textes"] {
-  height: clamp(240px, 40dvh, 420px);
+  height: clamp(var(--xe-stage-area-min), 40dvh, 420px);
 }
 
 /* L'étape, dessous : un panneau qui monte sous l'aperçu. */
@@ -114,6 +124,9 @@
 .xp-body {
   min-height: 0;
   overflow-y: auto;
+  /* La barre du bas est collée : sur un écran trop court elle recouvre le pied de la fenêtre ; un contrôle qu'on atteint
+     s'arrête AU-DESSUS d'elle. */
+  scroll-padding-bottom: var(--xp-foot-h);
   overflow-x: hidden;
   padding: 6px var(--gutter) var(--sp-5);
   overscroll-behavior: contain;
@@ -279,6 +292,10 @@
     calc(var(--sp-2) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-1);
+  /* Sur un écran trop court pour tout montrer, la page défile mais cette barre reste sous le pouce, au-dessus du lecteur. */
+  position: sticky;
+  bottom: var(--mini-reserve);
+  z-index: 8;
 }
 .xp-foot[data-single] {
   grid-template-columns: minmax(0, 1fr);

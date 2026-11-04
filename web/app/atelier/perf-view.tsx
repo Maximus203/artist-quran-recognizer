@@ -21,6 +21,7 @@ import { storageState } from "@/lib/storage-meter";
 import { SessionGlyph } from "./icons";
 import { usePageVisible } from "./hooks";
 import { MyStats } from "./my-stats";
+import { replaceUrl } from "@/lib/history-url";
 
 const PERIODS: { id: Period; label: string }[] = [
   { id: "7d", label: "7 jours" },
@@ -196,7 +197,7 @@ export function PerfView({ initialMine = false }: { initialMine?: boolean }) {
         aria-pressed={!mine}
         onClick={() => {
           setMine(false);
-          history.replaceState(null, "", "/performance");
+          replaceUrl("/performance");
         }}
       >
         Tous les testeurs
@@ -207,7 +208,7 @@ export function PerfView({ initialMine = false }: { initialMine?: boolean }) {
         aria-pressed={mine}
         onClick={() => {
           setMine(true);
-          history.replaceState(null, "", "/performance?vue=moi");
+          replaceUrl("/performance?vue=moi");
         }}
       >
         Moi

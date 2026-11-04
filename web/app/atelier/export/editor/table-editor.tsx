@@ -197,7 +197,12 @@ export function TableEditor(editor: EditorProps) {
   const panelOpen = tool !== null;
 
   return (
-    <div className="xe-plateau xt" data-testid="editor-table" data-mode={mode}>
+    <div
+      className="xe-plateau xt"
+      data-testid="editor-table"
+      data-mode={mode}
+      data-tool={frameTool ?? undefined}
+    >
       <EditorTopBar
         title={editor.title}
         subtitle={editor.subtitle}

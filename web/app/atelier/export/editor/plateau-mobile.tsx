@@ -271,7 +271,7 @@ export function PlateauEditor(editor: EditorProps) {
                       name={shown ? BLOCK_ICON[id] : "eye-off"}
                       size={18}
                     />
-                    {BLOCK_SHORT[id]}
+                    <span>{BLOCK_SHORT[id]}</span>
                   </button>
                 );
               })}
@@ -279,11 +279,14 @@ export function PlateauEditor(editor: EditorProps) {
                 type="button"
                 className="xe-chip-btn"
                 aria-pressed={selected === null}
+                aria-label="Cadre et fond"
                 data-testid="chip-frame"
                 onClick={() => select(null)}
               >
                 <EIcon name="layers" size={18} />
-                Cadre et fond
+                <span>
+                  Cadre<span className="xe-chip-more"> et fond</span>
+                </span>
               </button>
             </div>
 

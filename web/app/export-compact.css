@@ -44,15 +44,100 @@
   .xe-tools {
     min-height: var(--xe-tools-h-narrow);
   }
+  /* Les pastilles d'éléments (recette QA 2, N4) : cinq colonnes égales, l'icône au-dessus du nom. Rien ne défile,
+     « Verset » et « Cadre » sont dans l'écran dès 320 px. Le nom complet reste celui que lisent les lecteurs d'écran. */
+  .xe-chips {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .xe-chip-btn {
+    min-width: 0;
+    padding: 4px 2px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    border-radius: var(--r-md);
+    font-size: var(--fs-xs);
+    line-height: 1.1;
+  }
+  .xe-chip-more {
+    display: none;
+  }
+  .xe-chip-btn > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 359px) {
+  .xe-chip-btn {
+    font-size: 11px;
+  }
+}
+
+/* ── Écran court (recette QA 2, N1) : un panneau ouvert doit avoir de la place ────────────────────────────────────────
+   Sous 880 px de haut, la colonne des commandes de la table ne peut pas porter à la fois la chronologie réduite, le
+   panneau ET un rail de deux rangées : le panneau tombait à 0 px. Quand un panneau du cadre est ouvert (hors « Fond », qui
+   se règle sur la piste du fond), la chronologie s'efface ; et le rail, dès qu'un panneau est ouvert, passe sur UNE
+   rangée d'icônes (leur nom reste lu aux lecteurs d'écran). Chaque outil garde ses 44 px. */
+@media (max-width: 519px) and (max-height: 880px),
+  (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+  .xt[data-mode="compact"]:not([data-tool="fond"]) .xt-tl {
+    display: none;
+  }
+  .xt:not([data-mode="idle"]) .xt-rail .xe-tb {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .xt:not([data-mode="idle"]) .xt-rail {
+    padding-inline: var(--sp-2);
+  }
+  .xt:not([data-mode="idle"]) .xt-rail .xe-tool {
+    min-height: var(--hit);
+    padding: 4px 0;
+  }
+  .xt:not([data-mode="idle"]) .xt-rail .xe-tool > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  :root {
+    --xt-rail-h-open: 62px;
+  }
+  .xt:not([data-mode="idle"]) {
+    --xt-rail-h: var(--xt-rail-h-open);
+  }
 }
 
 /* ── Paysage sur téléphone : l'aperçu à gauche, les commandes à droite ───────────────── */
 @media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+  /* Le plancher de l'aperçu est un peu plus bas : la colonne de gauche est étroite et la hauteur très courte. */
+  :root {
+    --xe-stage-h-min: 140px;
+    --xp-panel-min-land: calc(58px + 120px + 70px);
+  }
   .xe-plateau,
   .xp-root {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-    min-height: 0;
+    grid-template-rows: auto minmax(var(--xe-stage-area-min), 1fr);
+    min-height: calc(var(--xe-top-h) + var(--xe-stage-area-min));
+  }
+  /* Le pas à pas : la colonne de droite porte les pastilles, une fenêtre de contenu et la barre ; elle ne s'écrase pas. */
+  .xp-root {
+    grid-template-rows: auto minmax(
+        max(var(--xe-stage-area-min), var(--xp-panel-min-land)),
+        1fr
+      );
+    min-height: calc(
+      var(--xe-top-h) + max(var(--xe-stage-area-min), var(--xp-panel-min-land))
+    );
   }
   .xe-plateau > .xe-top,
   .xp-root > .xe-top {
@@ -75,12 +160,6 @@
     border-top: 0;
     border-left: 1px solid var(--border);
     border-radius: 0;
-  }
-  .xe-plateau > .xe-dock {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
   /* Rangées resserrées : les pastilles (une ligne d'icônes) puis les outils tiennent dans la hauteur de la colonne. */
   .xe-chips {
@@ -113,29 +192,15 @@
     flex: 1 1 auto;
     min-height: 0;
   }
-  /* La rangée d'outils de la table reste collée en bas de sa colonne. */
-  .xt-rail {
-    position: sticky;
-    bottom: 0;
-    z-index: 8;
-    background: var(--surface-1);
-  }
   /* Rien à réserver au pied : la rangée des outils tient dans la colonne. */
   .xe-tools {
     min-height: 0;
   }
-  /* La table : sa chronologie, plus étroite, défile avec la colonne ; l'aide du premier affichage se range en tête de
-     la colonne (posée au-dessus de la barre, elle serait coupée par le défilement). */
+  /* La table : sa chronologie, plus étroite, défile avec la colonne ; l'aide du premier affichage se range avant le rail. */
   .xt-help {
-    position: static;
     order: 5;
-    margin: var(--sp-2) var(--gutter) 0;
   }
   .xt-rail {
     order: 9;
-    margin-top: auto;
-  }
-  .xt-help::after {
-    display: none;
   }
 }

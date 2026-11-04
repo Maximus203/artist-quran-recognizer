@@ -31,6 +31,7 @@ import {
   useSessionFeed,
   type BulkAction,
 } from "./use-sessions";
+import { replaceUrl } from "@/lib/history-url";
 
 const PAGE_SIZE = 20;
 const CHUNK = 100;
@@ -74,7 +75,7 @@ export function SessionsPage({ search }: { search: string }) {
   /* ── filtre ↔ adresse de la page ── */
   useEffect(() => {
     const qs = filterToUrl(filter).toString();
-    history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+    replaceUrl(qs ? `?${qs}` : location.pathname);
   }, [filter]);
   const change = useCallback(
     (patch: Partial<SessionsFilter>) => {

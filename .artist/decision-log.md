@@ -1867,3 +1867,18 @@
 - **Preuve** : `.artist/acceptance-playbooks/live-etape4.md`, `docs/evaluation/live-etape4-2026-10-24.md`, `web/lib/live-*.test.ts`,
   `web/e2e/live-browser.mjs` (vrai Chrome, vrai service).
 
+## 2026-11-04 — Éditeur d'export : plancher de l'aperçu, lecteur réduit effacé sur téléphone
+Contexte : seconde recette QA de l'éditeur d'export (#207, #208). Le correctif B1 (réserve du lecteur réduit) et la mise en page
+compacte (m4, m6) avaient rendu les commandes atteignables au prix de l'aperçu : 56 × 32 px à 360 × 640 avec le lecteur,
+62 × 35 px pour la table à 390 × 844 avec un panneau, aperçu masqué par la chronologie à 360 × 740, 138 × 78 px en paysage.
+- **Décision 1 : un plancher, des commandes qui défilent.** Le plancher se lit en hauteur de cadre (160 px, 140 px en paysage) ;
+  les commandes ont leur propre défilement et le rail de la table est collé. Option écartée : réduire encore l'encart « déjà
+  prête » ou la chronologie (il y a toujours un écran plus court) ; option écartée : laisser défiler toute la page (l'aperçu
+  quitte l'écran quand on règle, c'est tout le contraire d'un éditeur).
+- **Décision 2 : le lecteur réduit s'efface dans l'éditeur du téléphone.** Sur un écran de 640 px il prend 86 px (13 %), pour
+  un lecteur dont l'éditeur n'a pas besoin (il joue son propre aperçu, avec le son). L'audio en cours est arrêté à l'entrée.
+  Réversible en une ligne (`useHideMiniPlayer(!desktop)`) ; la mise en page reste juste avec lui (mesurée, lecteur présent).
+- **Décision 3 : `replaceUrl` partout.** Cause racine de N2 : `history.replaceState(null, …)` efface l'état de Next. Un test
+  interdit la forme dans tout `app/` et `lib/`.
+- **Non fait, signalé** : m1 / N8 (deux onglets, un réglage perdu : demande un changement de contrat de l'API des préférences) ;
+  N6, N7, N10 (import, autre agent) ; suggestions S1 à S5.
