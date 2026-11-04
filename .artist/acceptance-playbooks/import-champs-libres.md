@@ -30,7 +30,52 @@ chaque catégorie, résultats réels de `docs/evaluation/`).
 **Attendu** : `201` ; le fichier conservé est le même sans les trois octets ; `prediction_sha256` est celle du fichier conservé.
 **Preuve** : `web/lib/import-session-verify.test.ts`, `web/lib/import-session-corpus.test.ts`, `r17` (cas BOM).
 
+### I.10 — [API] P5/P6 : ce qui est légitime et inhabituel passe
+**Priorité** : critique · **Technique** : partition-équivalence, non-régression
+**Action** : importer (a) un résultat réel du moteur avec `acoustic_checks` de toutes natures (`chain`, `continuation`, `neighbor`,
+`head`, `relisten`, `gap` et ses rôles) et `cascade` ; (b) `source.file` = « سورة الإخلاص.mp3 » ; (c) un champ inconnu fait de lettres
+latines et de chiffres (document, intervalle) ; (d) `engine.acoustic` = `null`, `""` ou absent.
+**Attendu** : `201` pour chacun ; (b) la session s'ouvre, `GET /api/sessions/:id` rend `source.file` masqué (« [texte arabe masqué].mp3 »).
+**Preuve** : `tests/unit/test_verify_recognition.py` (`real_engine_document`, 1 594 résultats réels relus hors test), `web/lib/recognition.test.ts`.
+
 ## Must-fail
+
+### I.11 — [API] P5 : du faux arabe dans un champ que personne ne lit est refusé
+**Priorité** : critique · **Technique** : injection
+**Action** : un résultat légitime avec du faux arabe, tour à tour, dans une valeur de `acoustic_checks` (kind, verses, role, clé, imbriqué),
+dans `cascade`, dans une clé de `decoder`, une valeur de `timing`, `windows`, `source.note`, `engine.constrained`, `riwaya.verified`, un
+champ en trop d'un intervalle (`promoted_by`, `word_times_source`, `note`), d'une zone non coranique, d'une abstention, d'une traduction,
+d'un segment, du fragment, un champ inconnu du document ; un libellé « [isti'adha] » suivi de faux arabe ; `source.file` de 256 signes
+ou avec un caractère de contrôle ; `acoustic_checks` qui n'est pas une liste de relevés ; `cascade` qui n'est pas un objet.
+**Attendu** : `422 result_contradicts_corpus`, rien n'est conservé, le message nomme la partie (`acoustic_checks`, `cascade`,
+`source.file`, `extra_field`, `translation.extra`, `label`) sans recopier aucun signe arabe.
+**Preuve** : `tests/unit/test_verify_recognition.py` (cas paramétrés), scripts QA `t03`, `t06` rejoués.
+
+### I.12 — [API] P6 : chaque refus dit sa vraie raison
+**Priorité** : important · **Technique** : partition-équivalence
+**Action** : `riwaya` sans `notice` ; `notice` = 5 ; `notice` de 1 001 signes ; `notice` arabe ; `notice` avec un caractère de contrôle ;
+`engine.asr` = `null` ; `engine.matcher` arabe ; un champ obligatoire absent (`engine.asr`) ; un intervalle au champ `t` mal formé ; un
+fichier qui n'est pas du JSON.
+**Attendu** : des phrases DIFFÉRENTES — « valeur absente ou nulle », « un texte est attendu », « texte trop long (au plus 1 000 signes) »,
+« écriture arabe », « caractère de contrôle » ; un contrat refusé nomme `engine.asr` ou « intervalle 2, champ « t » » ; un fichier
+illisible est dit « pas du JSON lisible », jamais « pas un résultat aqr.recognition/1 valide ». Un nom d'utilisateur (arabe) n'est
+jamais recopié (« … »).
+**Preuve** : `tests/unit/test_verify_recognition.py` (messages), `web/lib/import-session-verify.test.ts` (P6).
+
+### I.13 — [API] P6 : UTF-16 et UTF-32 sans BOM reçoivent la marche à suivre
+**Priorité** : important · **Technique** : valeur-limite
+**Action** : résultat enregistré en UTF-16 petit-boutiste, gros-boutiste, avec espace ou saut de ligne devant, puis en UTF-32, SANS BOM.
+**Attendu** : `400 result_encoding`, « enregistre-le en UTF-8 … `Out-File -Encoding utf8` … Bloc-notes », jamais « JSON invalide » ; un JSON
+UTF-8 (arabe, accentué, vide, `[]`) n'est jamais pris pour du UTF-16. **Preuve** : `web/lib/prediction-bytes.test.ts`,
+`import-session-verify.test.ts`.
+
+### I.14 — [API] P5 : ce qui est déjà conservé ne ressort pas par l'API de la session
+**Priorité** : important · **Technique** : état obsolète
+**Action** : réécrire sur le disque du serveur de banc le fichier conservé d'une session (faux arabe dans `source.file`, `acoustic_checks`,
+`cascade`, une clé de `decoder`), puis `GET /api/sessions/:id`.
+**Attendu** : la réponse ne contient aucun signe du faux arabe (`source.file` masqué, `decoder` sans la clé) ; la session reste lisible.
+Limite assumée : `GET /api/sessions/:id/export` cite le fichier à l'octet près (son empreinte en dépend).
+**Preuve** : `web/lib/store.test.ts`, `qa/t06-api-leak.mjs`.
 
 ### I.4 — [API] N6 : un faux verset dans un champ libre est refusé
 **Priorité** : critique · **Technique** : injection

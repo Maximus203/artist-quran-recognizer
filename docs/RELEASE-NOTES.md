@@ -25,6 +25,14 @@ PR : #212
 
 **Pourquoi / décision.** Les temps au mot sont contigus (le silence appartient au mot qui précède) : une pause se lit comme un mot anormalement long, d'où un seuil à régler et un madd long parfois pris pour un arrêt (coût esthétique, jamais textuel, I1 et I2 tenus). Même règle en Python et en TypeScript, vérifiée par des cas communs. Voir ADR-0025.
 
+## 2026-11-04 — Import : les champs que personne ne lit sont contrôlés aussi, les refus disent la vraie raison
+Étiquettes : utilisateur, technique, décision
+PR : #213
+
+**Ce qui change.** Importer un résultat d'analyse refuse désormais du faux texte arabe glissé n'importe où ailleurs que dans les textes vérifiés : vérifications acoustiques, cascade de moteurs, réglages, champs ajoutés à un intervalle ou à une traduction. Un moteur plus récent peut toujours ajouter un champ, pourvu qu'il n'y écrive pas d'arabe. Le nom du fichier source peut rester arabe (une récitation s'appelle souvent « الفاتحة.mp3 ») : il est borné et l'interface ne le montre jamais tel quel. Les messages disent la vraie raison : une notice de riwaya absente est dite absente, un fichier enregistré en UTF-16 ou UTF-32, avec ou sans BOM, reçoit la marche à suivre (enregistrer en UTF-8), un résultat que le format refuse nomme l'intervalle et le champ en cause. Un nom de modèle acoustique `null` est accepté comme « aucun ».
+
+**Pourquoi / décision.** Troisième recette QA de l'éditeur d'export (P5, P6) : ces champs n'étaient jamais affichés mais l'API de la session et l'export les rendaient tels quels. Une seule règle remplace les cas particuliers : tout ce que le contrôle ne relit pas dans le corpus ou chez QuranEnc ne contient pas d'écriture arabe. Mesuré sur 1 594 résultats réels du moteur (92 921 intervalles, 1 387 avec vérifications acoustiques, 303 avec cascade) : aucun refus nouveau. L'export cite le fichier importé à l'octet près (son empreinte en dépend) : un fichier conservé avant ce correctif y reste tel quel, limite documentée dans l'addendum de l'ADR-0024.
+
 ## 2026-11-04 — Un nouveau compte est récitateur par défaut
 Étiquettes : utilisateur, décision
 PR : #211

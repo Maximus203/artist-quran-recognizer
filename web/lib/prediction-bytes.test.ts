@@ -45,6 +45,61 @@ describe("preparePrediction — le fichier joint avant d'être lu", () => {
     expect(error.message).toMatch(/UTF-8/);
   });
 
+  describe("UTF-16 ou UTF-32 SANS BOM (P6) : même refus, même marche à suivre", () => {
+    const wide = (
+      text: string,
+      encoding: "utf16le" | "utf16be" | "utf32le",
+    ) => {
+      if (encoding === "utf16le") return Buffer.from(text, "utf16le");
+      if (encoding === "utf16be") return Buffer.from(text, "utf16le").swap16();
+      return Buffer.concat(
+        [...text].map((c) =>
+          Buffer.from([c.charCodeAt(0) & 0xff, c.charCodeAt(0) >> 8, 0, 0]),
+        ),
+      );
+    };
+    const json = '{"schema":"aqr.recognition/1","intervals":[]}';
+    it.each([
+      ["UTF-16 petit-boutiste", wide(json, "utf16le")],
+      ["UTF-16 gros-boutiste", wide(json, "utf16be")],
+      [
+        "UTF-16 petit-boutiste précédé d'un espace",
+        wide(` \n${json}`, "utf16le"),
+      ],
+      [
+        "UTF-16 gros-boutiste précédé d'un saut de ligne",
+        wide(`\n${json}`, "utf16be"),
+      ],
+      ["UTF-32 petit-boutiste", wide(json, "utf32le")],
+    ])("%s : refus en 400 avec la marche à suivre", (_nom, bytes) => {
+      const error = refusal(bytes);
+      expect(error.status).toBe(400);
+      expect(error.code).toBe("result_encoding");
+      expect(error.message).toMatch(/UTF-16/);
+      expect(error.message).toMatch(/UTF-8/);
+      expect(error.message).toMatch(/Out-File|Bloc-notes|Enregistrer sous/);
+      expect(error.message).not.toMatch(/JSON valide/);
+    });
+
+    it("un JSON UTF-8 ordinaire n'est jamais pris pour de l'UTF-16", () => {
+      for (const text of [
+        json,
+        ` \n\t${json}`,
+        '{"a":"سورة الإخلاص"}',
+        '{"a":"é"}',
+        "[]",
+      ]) {
+        const bytes = utf8(text);
+        expect(preparePrediction(bytes).equals(bytes)).toBe(true);
+      }
+    });
+
+    it("un fichier tout petit ou vide n'est pas un faux positif", () => {
+      for (const bytes of [Buffer.alloc(0), utf8("{"), utf8("[]")])
+        expect(() => preparePrediction(bytes)).not.toThrow();
+    });
+  });
+
   it(`${MAX_JSON_DEPTH} niveaux d'imbrication passent, un de plus est un 422 explicite`, () => {
     expect(() => preparePrediction(utf8(nested(MAX_JSON_DEPTH)))).not.toThrow();
     const error = refusal(utf8(nested(MAX_JSON_DEPTH + 1)));

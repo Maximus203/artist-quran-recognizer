@@ -17,6 +17,7 @@ import { mkdir, open, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Transform, Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { z } from "zod";
 import type { Visibility } from "./access";
 import { acceptedMediaExtensions, isVideoName } from "./audio-upload";
 import { getDb } from "./db";
@@ -238,6 +239,47 @@ function refused(
   return error;
 }
 
+/** Un nom du contrat (`engine`, `asr`, `word_times`…) ; tout autre nom — celui d'un utilisateur — n'est jamais recopié. */
+const CONTRACT_NAME = /^[a-z_]{1,40}$/;
+
+/**
+ * Où le contrat `aqr.recognition/1` a refusé le fichier, dit sans jamais recopier ce qu'il contient :
+ * le rang de l'intervalle et le chemin du champ, limité aux noms du contrat (un autre nom devient « … »).
+ * Le message de zod, lui, n'est jamais montré (jargon, et il peut citer la valeur reçue).
+ */
+function contractFault(error: unknown): {
+  text: string;
+  detail: Record<string, string | number | null>;
+} {
+  const path = error instanceof z.ZodError ? (error.issues[0]?.path ?? []) : [];
+  if (path.length === 0) return { text: "", detail: {} };
+  const rank =
+    path[0] === "intervals" && typeof path[1] === "number" ? path[1] + 1 : null;
+  const names = path
+    .slice(rank === null ? 0 : 2)
+    .filter((part) => typeof part !== "number")
+    .map((part) =>
+      typeof part === "string" && CONTRACT_NAME.test(part) ? part : "…",
+    );
+  const field = names.join(".");
+  const unsafeAt = names.indexOf("…");
+  const safe = unsafeAt < 0 ? names : names.slice(0, unsafeAt);
+  const where = [
+    rank === null ? "" : `intervalle ${rank}`,
+    field ? `champ « ${field} »` : "",
+  ].filter(Boolean);
+  return {
+    text:
+      where.length === 0
+        ? ""
+        : ` (${where.join(", ")} ${field ? "absent ou mal formé" : "mal formé"})`,
+    detail: {
+      ...(rank === null ? {} : { rank }),
+      field: safe.length > 0 ? safe.join(".") : null,
+    },
+  };
+}
+
 /** Sonde le fichier posé sur le disque, puis écrit la session ; supprime tout en cas de refus. */
 async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
   try {
@@ -248,18 +290,30 @@ async function register(landed: Landed, deps: ImportDeps): Promise<Session> {
     if (!kind.ok) throw new ImportError(415, kind.message);
     let parsed: Recognition | null = null;
     if (landed.prediction) {
+      let json: unknown;
       try {
-        parsed = parseRecognition(
-          JSON.parse(landed.prediction.toString("utf8")),
-        );
+        json = JSON.parse(landed.prediction.toString("utf8"));
       } catch {
-        // Ni la trace de l'analyseur JSON, ni le tableau d'erreurs de zod : l'utilisateur n'en fait rien.
+        // Ni la trace de l'analyseur JSON : l'utilisateur n'en fait rien.
         throw refused(
           new ImportError(
             400,
-            "Le résultat joint n'est pas un JSON aqr.recognition/1 valide.",
+            "Le résultat joint n'est pas du JSON lisible (fichier tronqué, ou pas un fichier JSON). Rien n'a été importé.",
           ),
           landed.owner,
+        );
+      }
+      try {
+        parsed = parseRecognition(json);
+      } catch (error) {
+        const where = contractFault(error);
+        throw refused(
+          new ImportError(
+            400,
+            `Le résultat joint n'est pas un résultat aqr.recognition/1 valide${where.text}. Rien n'a été importé.`,
+          ),
+          landed.owner,
+          where.detail,
         );
       }
       if (parsed.source.sha256.toLowerCase() !== landed.hash)

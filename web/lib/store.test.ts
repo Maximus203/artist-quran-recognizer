@@ -209,6 +209,25 @@ describe("persistance des sessions", () => {
     expect(await readResult(ID)).toBeNull();
     expect(await readReview(ID)).toBeNull();
   });
+  it("un résultat conservé avant le contrôle des champs libres : la lecture masque ce que l'API rend, le fichier garde l'octet reçu (P5)", async () => {
+    const fake = "قل هو الله أحد نص مزيف";
+    await saveSession(session());
+    const received = {
+      ...recognition("a".repeat(64)),
+      source: { file: `${fake}.mp3`, sha256: "a".repeat(64), duration_s: 5 },
+      acoustic_checks: [{ kind: "chain", verses: fake }],
+      cascade: { secondary: [fake] },
+    };
+    const raw = JSON.stringify(received);
+    await writeFile(
+      path.join(sessionDir(ID), "prediction.recognition.json"),
+      raw,
+    );
+    const result = await readResult(ID);
+    expect(result?.raw.toString("utf8")).toBe(raw);
+    expect(JSON.stringify(result?.parsed)).not.toContain("مزيف");
+    expect(result?.parsed.source.file).toBe("[texte arabe masqué].mp3");
+  });
   it("sha calcule un SHA-256 hexadécimal", () => {
     expect(sha(Buffer.from("abc"))).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",

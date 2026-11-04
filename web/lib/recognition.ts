@@ -15,6 +15,7 @@ const MAX_NOTICE = 1000;
 const MAX_LABEL = 64;
 const MAX_WARNING = 2000;
 const MAX_WARNINGS = 200;
+const MAX_FILE = 255;
 const FORMAT = /[\p{Cc}\p{Cf}]/gu;
 const FORMAT_KEEPING_LINES = /(?![\n\t])[\p{Cc}\p{Cf}]/gu;
 const plain = (max: number, keepLines = false) =>
@@ -27,6 +28,19 @@ const plain = (max: number, keepLines = false) =>
   );
 
 const finite = z.number().finite();
+/**
+ * Réglages et durées nommés (`min_recognized_score`, `total_s`…) : des noms du moteur, jamais de l'arabe.
+ * Une clé arabe (résultat conservé avant le contrôle, ou venu d'un moteur distant) est écartée, pas montrée.
+ */
+const namedNumbers = z
+  .record(z.string(), finite)
+  .transform((all) =>
+    Object.fromEntries(
+      Object.entries(all).filter(
+        ([key]) => key.length <= MAX_LINE && maskArabic(key, "") === key,
+      ),
+    ),
+  );
 const hash = z.string().regex(/^[a-f0-9]{64}$/i);
 const span = z
   .tuple([finite.nonnegative(), finite.nonnegative()])
@@ -138,7 +152,8 @@ export const recognitionSchema = z
   .object({
     schema: z.literal("aqr.recognition/1"),
     source: z.object({
-      file: z.string(),
+      // Le nom du fichier audio de l'utilisateur : un nom arabe est légitime à l'import, jamais montré tel quel.
+      file: plain(MAX_FILE),
       sha256: hash,
       duration_s: finite.positive(),
     }),
@@ -150,8 +165,8 @@ export const recognitionSchema = z
       constrained: z.boolean(),
       corpus: plain(MAX_LINE),
     }),
-    decoder: z.record(z.string(), finite),
-    timing: z.record(z.string(), finite),
+    decoder: namedNumbers,
+    timing: namedNumbers,
     windows: z.number().int().nonnegative(),
     // Riwaya SUPPOSÉE par le moteur (jamais vérifiée dans l'audio) ; absente des anciens résultats.
     // Une valeur inconnue n'est pas montrée (le résultat reste lisible, sans bandeau de riwaya).
