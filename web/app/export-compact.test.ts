@@ -42,7 +42,7 @@ describe("les éditeurs d'export sur petits écrans", () => {
       /@media \(orientation: landscape\) and \(max-height: 520px\) and \(max-width: 1023px\)/,
     );
     expect(css).toMatch(
-      /grid-template-columns:\s*minmax\(0, 5fr\) minmax\(0, 4fr\)/,
+      /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
     );
     expect(css).toMatch(
       /\.xt-rail\s*\{[^}]*position:\s*sticky[^}]*bottom:\s*0/,
