@@ -99,7 +99,7 @@ export function createInvitation(
       now.toISOString(),
       new Date(now.getTime() + days * 86_400_000).toISOString(),
       clamp(input.maxUses, 1, MAX_USES, 1),
-      input.role === "recitant" ? "recitant" : "user",
+      input.role === "user" ? "user" : "recitant",
     );
   const row = db
     .prepare(`SELECT ${COLUMNS} FROM invitations WHERE id = ?`)

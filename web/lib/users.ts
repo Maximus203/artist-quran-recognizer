@@ -96,7 +96,7 @@ export function createUser(
         input.username,
         usernameKey(input.username),
         input.passwordHash,
-        input.role ?? "user",
+        input.role ?? "recitant",
         now,
       );
     return getUser(db, Number(result.lastInsertRowid)) as User;

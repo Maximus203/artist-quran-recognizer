@@ -10,7 +10,7 @@ export function InvitationsPane() {
   const [label, setLabel] = useState("");
   const [days, setDays] = useState("14");
   const [maxUses, setMaxUses] = useState("1");
-  const [role, setRole] = useState<"user" | "recitant">("user");
+  const [role, setRole] = useState<"user" | "recitant">("recitant");
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState("");
   const [fresh, setFresh] = useState<{

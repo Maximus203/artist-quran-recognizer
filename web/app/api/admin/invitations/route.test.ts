@@ -97,7 +97,7 @@ describe("création et liste", () => {
     expect(listing).not.toContain("token_hash");
   });
 
-  it("invitation de récitateur : le rôle est porté par l'invitation, testeur par défaut", async () => {
+  it("invitation de récitateur : le rôle est porté par l'invitation, récitateur par défaut", async () => {
     const { invitation } = await (
       await list.POST(req("POST", "admin", { label: "Imam", role: "recitant" }))
     ).json();
@@ -105,7 +105,7 @@ describe("création et liste", () => {
     const plain = await (
       await list.POST(req("POST", "admin", { label: "Ali" }))
     ).json();
-    expect(plain.invitation.role).toBe("user");
+    expect(plain.invitation.role).toBe("recitant");
     expect(
       (await list.POST(req("POST", "admin", { label: "x", role: "admin" })))
         .status,
