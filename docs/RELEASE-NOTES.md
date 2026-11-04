@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-04 — Un long verset s'affiche en plusieurs temps, aux pauses du récitant
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #212
 
 **Ce qui change.** Quand le récitant s'arrête, l'affichage change aussi : le verset arabe et sa traduction ne montrent que ce qui vient d'être dit, puis la suite. Un verset très long n'est plus posé d'un bloc dans la vidéo exportée, et les sous-titres (SRT, WebVTT, ASS) suivent la même règle. Quand il n'y a pas de pause mesurable, la coupe se fait à la durée maximale (7 s), de préférence après un signe d'arrêt du Mushaf. Le surlignage mot à mot de chaque carte ne porte que ses mots. Nouvelles options d'export `pause_split` (vrai) et `pause_s` (0,6 s).
 
