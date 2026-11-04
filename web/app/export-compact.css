@@ -13,8 +13,9 @@
   --xe-tools-h-narrow: 122px;
 }
 
-/* ── Largeur réduite : les outils passent à la ligne ─────────────────────────────────── */
-@media (max-width: 519px) {
+/* ── Largeur réduite (ou colonne étroite du paysage) : les outils passent à la ligne ───── */
+@media (max-width: 519px),
+  (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
   .xe-tools .xe-tb,
   .xt-rail .xe-tb {
     display: grid;
@@ -37,7 +38,9 @@
   .xt-rail .xe-tool {
     min-width: 0;
   }
-  /* L'état « rien de choisi » (outils du cadre) garde la même hauteur que celui d'un élément : la scène ne bouge pas. */
+}
+/* L'état « rien de choisi » (outils du cadre) garde la même hauteur que celui d'un élément : la scène ne bouge pas. */
+@media (max-width: 519px) {
   .xe-tools {
     min-height: var(--xe-tools-h-narrow);
   }

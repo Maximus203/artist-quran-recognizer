@@ -21,6 +21,10 @@ describe("les éditeurs d'export sur petits écrans", () => {
 
   it("largeur réduite : barre d'outils et rail passent à la ligne au lieu de défiler", () => {
     expect(css).toMatch(/@media \(max-width: 519px\)/);
+    // La colonne étroite du paysage (295 px) a la même règle que l'écran étroit.
+    expect(css).toMatch(
+      /@media \(max-width: 519px\),\s*\(orientation: landscape\) and \(max-height: 520px\)/,
+    );
     expect(css).toMatch(
       /\.xe-tools \.xe-tb,\s*\.xt-rail \.xe-tb\s*\{[^}]*display:\s*grid[^}]*repeat\(auto-fit/,
     );
