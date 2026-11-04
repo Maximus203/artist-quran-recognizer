@@ -125,7 +125,7 @@ export function refusalOf(verdict: ResultVerdict): ImportError | null {
     case "invalid": {
       const shown = verdict.findings
         .slice(0, MAX_SHOWN)
-        .map((f) => `${where(f)} : ${f.message}`)
+        .map((f) => `${where(f)} : ${f.message.replace(/\.+$/, "")}`)
         .join(" ; ");
       const more = verdict.total - Math.min(verdict.findings.length, MAX_SHOWN);
       return new ImportError(

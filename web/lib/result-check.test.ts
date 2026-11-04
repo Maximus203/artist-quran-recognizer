@@ -113,6 +113,7 @@ describe("refusalOf — le refus montré à la personne", () => {
     expect(error.message).toMatch(/intervalle 1 \(112:1\)/);
     expect(error.message).toMatch(/intervalle 4 \(2:255\)/);
     expect(error.message).toMatch(/Rien n'a été importé/);
+    expect(error.message).not.toMatch(/\.\./); // pas de point doublé
   });
   it("invalid : au plus trois écarts détaillés, le reste est compté", () => {
     const many = Array.from({ length: 5 }, (_, i) => finding({ index: i }));
