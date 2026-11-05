@@ -258,6 +258,88 @@ describe("import d'un résultat — fichiers que l'analyseur ne sait pas lire (N
     expect(calls).toBe(0);
     expect(await sessionIds()).toEqual([]);
   });
+  it("un fichier UTF-16 SANS BOM reçoit la même marche à suivre, pas un « JSON invalide » (P6)", async () => {
+    const wide = Buffer.from(recognition().toString("utf8"), "utf16le");
+    expect(wide[0]).toBe(0x7b); // pas de BOM : le fichier commence par « { »
+    let calls = 0;
+    const error = await attempt(wide, {
+      verifyResult: async () => {
+        calls += 1;
+        return { status: "ok" };
+      },
+    }).catch((e) => e);
+    expect(error).toBeInstanceOf(ImportError);
+    expect(error.status).toBe(400);
+    expect(error.code).toBe("result_encoding");
+    expect(error.message).toMatch(/UTF-8/);
+    expect(error.message).not.toMatch(/JSON/);
+    expect(calls).toBe(0);
+    expect(await sessionIds()).toEqual([]);
+  });
+  describe("un résultat que le contrat refuse dit QUEL champ (P6)", () => {
+    const bad = (edit: (doc: Record<string, any>) => void) => {
+      const doc = JSON.parse(recognition().toString("utf8"));
+      edit(doc);
+      return Buffer.from(JSON.stringify(doc));
+    };
+    const refusal = (prediction: Buffer): Promise<ImportError> =>
+      attempt(prediction, {}).then(
+        () => {
+          throw new Error("aucun refus");
+        },
+        (error: ImportError) => error,
+      );
+
+    it("un champ obligatoire absent est nommé", async () => {
+      const error = await refusal(bad((d) => delete d.engine.asr));
+      expect(error.status).toBe(400);
+      expect(error.message).toMatch(/engine\.asr/);
+      expect(error.message).toMatch(/absent ou mal formé/);
+      expect(error.message).not.toMatch(/Expected|received|\[\s*\{/);
+    });
+    it("un champ d'intervalle mal formé donne le rang de l'intervalle", async () => {
+      const error = await refusal(
+        bad((d) => {
+          d.intervals = [
+            { ...verse("x"), text: null },
+            { ...verse("x"), t: "pas un temps" },
+          ];
+        }),
+      );
+      expect(error.status).toBe(400);
+      expect(error.message).toMatch(/intervalle 2/);
+      expect(error.message).toMatch(/« t »|\bt\b/);
+    });
+    it("un moteur qui n'est pas un objet est nommé « engine »", async () => {
+      const error = await refusal(bad((d) => (d.engine = "whisper")));
+      expect(error.message).toMatch(/« engine »/);
+    });
+    it("un nom de champ qui n'est pas un nom du contrat (arabe, long) n'est jamais recopié", async () => {
+      const error = await refusal(
+        bad((d) => (d.decoder = { [FORGED]: "pas un nombre" })),
+      );
+      expect(error.status).toBe(400);
+      expect(error.message).not.toContain(FORGED);
+      expect(error.message).toMatch(/« decoder\./);
+      expect(error.message.length).toBeLessThan(220);
+    });
+    it("un JSON illisible n'est pas présenté comme un mauvais contrat", async () => {
+      const error = await refusal(Buffer.from("{ pas du json"));
+      expect(error.status).toBe(400);
+      expect(error.message).toMatch(/JSON/);
+      expect(error.message).not.toMatch(/aqr\.recognition\/1 valide/);
+    });
+    it("le champ fautif est journalisé (nom du contrat seulement)", async () => {
+      vi.mocked(log.event).mockClear();
+      await refusal(bad((d) => delete d.engine.asr));
+      const [, , detail] =
+        vi
+          .mocked(log.event)
+          .mock.calls.find(([, name]) => name === "import.result_refused") ??
+        [];
+      expect(detail).toMatchObject({ http: 400, field: "engine.asr" });
+    });
+  });
   it("un JSON de 20 000 niveaux est un 422 « trop imbriqué », jamais un 503 « indisponible »", async () => {
     let calls = 0;
     const deep = Buffer.from(`{"x":${"[".repeat(20000)}${"]".repeat(20000)}}`);

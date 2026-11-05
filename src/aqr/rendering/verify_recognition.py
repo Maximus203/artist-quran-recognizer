@@ -22,6 +22,14 @@ Les champs libres que l'interface affiche aussi (riwaya supposée, noms des mote
 zone non coranique) ne passent pas non plus sur parole : une liste blanche ou une forme bornée, sans
 aucune écriture arabe, car le moteur n'y écrit jamais d'arabe. Un faux verset glissé là
 s'afficherait sous une étiquette (« Riwaya … supposée ») qui lui donnerait du crédit (ADR-0024, N6).
+
+Les champs que l'interface n'affiche pas (`source.file`, `acoustic_checks`, `cascade`, champs en
+trop d'un intervalle ou du document) sont conservés tels quels et rendus par l'export : même règle,
+une seule. **Tout ce que ce module ne vérifie pas contre le corpus ou QuranEnc ne contient aucune
+écriture arabe** (clés comprises). Exceptions : le texte du Mushaf et la traduction (vérifiés), les
+avertissements (bornés, masqués à la lecture) et le nom du fichier source (« الفاتحة.mp3 » est un
+nom de récitation légitime ; borné, masqué à la lecture). Un champ inconnu reste permis tant qu'il
+n'écrit pas d'arabe : un moteur plus récent peut en ajouter (ADR-0024, P5).
 """
 
 from __future__ import annotations
@@ -49,6 +57,27 @@ MAX_RIWAYA_NOTICE = 1000
 MAX_WARNINGS = 200
 MAX_WARNING_LENGTH = 2000
 """Un avertissement peut citer un chemin ou le message d'une exception : pas un roman."""
+MAX_SOURCE_FILE = 255
+"""Un nom de fichier (limite des systèmes de fichiers courants)."""
+MAX_LABEL = 64
+HANDLED_DOCUMENT_KEYS = frozenset(
+    {"source", "engine", "riwaya", "warnings", "intervals", "acoustic_checks", "cascade"}
+)
+"""Parties du document vérifiées une à une ; les autres clés passent par `_inert`."""
+VERSE_CHECKED = frozenset({"ref", "words", "candidates", "text", "translation"})
+NON_QURAN_CHECKED = frozenset({"label", "text", "translation", "label_ar"})
+TRANSLATION_CHECKED = frozenset(
+    {"text", "version", "attribution", "translation_id", "segments", "fragment"}
+)
+"""Champs relus contre le corpus ou QuranEnc (intervalle, traduction) : le reste est inerte."""
+
+_PROBLEM_REASON = {
+    "absent": "valeur absente ou nulle",
+    "type": "un texte est attendu",
+    "long": "texte trop long (au plus {limit} signes)",
+    "arabic": "écriture arabe, que le moteur n'écrit jamais dans ce champ",
+    "control": "caractère de contrôle ou de mise en forme",
+}
 
 
 @dataclass(frozen=True)
@@ -120,6 +149,9 @@ class _Check:
         self.riwaya(document.get("riwaya"))
         self.engine(document.get("engine"))
         self.warnings(document.get("warnings"))
+        self.source(document.get("source"))
+        self.diagnostics(document)
+        self.leftovers(None, None, document, HANDLED_DOCUMENT_KEYS)
 
     def riwaya(self, value: object) -> None:
         if value is None:
@@ -137,13 +169,15 @@ class _Check:
                 "riwaya.assumed",
                 "La riwaya supposée n'est pas une riwaya connue (hafs ou warsh).",
             )
-        if not _plain(value.get("notice"), MAX_RIWAYA_NOTICE):
+        problem = _text_problem(value.get("notice"), MAX_RIWAYA_NOTICE)
+        if problem:
             self.found(
                 None,
                 None,
                 "riwaya.notice",
-                "La notice de riwaya n'est pas un court texte sans écriture arabe.",
+                _refusal("La notice de riwaya", problem, MAX_RIWAYA_NOTICE),
             )
+        self.leftovers(None, None, value, {"assumed", "notice"})
 
     def engine(self, value: object) -> None:
         if value is None:
@@ -152,13 +186,17 @@ class _Check:
             self.found(None, None, "engine", "La description du moteur est illisible.")
             return
         for key in ENGINE_TEXT_FIELDS:
-            if key in value and not _plain(value[key], MAX_ENGINE_TEXT):
+            if key not in value or (key == "acoustic" and value[key] is None):
+                continue  # `acoustic` vide ou nul = aucune vérification acoustique
+            problem = _text_problem(value[key], MAX_ENGINE_TEXT)
+            if problem:
                 self.found(
                     None,
                     None,
                     f"engine.{key}",
-                    "Un nom de moteur est une ligne courte sans écriture arabe.",
+                    _refusal(f"Le nom de moteur « {key} »", problem, MAX_ENGINE_TEXT),
                 )
+        self.leftovers(None, None, value, set(ENGINE_TEXT_FIELDS))
 
     def warnings(self, value: object) -> None:
         """Texte libre du moteur (chemins, messages d'erreur) : borné, pas filtré. L'arabe d'un
@@ -177,6 +215,81 @@ class _Check:
                 f"Les avertissements sont une liste d'au plus {MAX_WARNINGS} courts textes.",
             )
 
+    def source(self, value: object) -> None:
+        """Le nom du fichier audio tel que le moteur l'a reçu : arabe permis (un nom de fichier de
+        l'utilisateur), borné, sans caractère de contrôle ; la lecture le masque."""
+        if not isinstance(value, Mapping):
+            if not _inert(value):
+                self.extra(None, None, "Le champ source du résultat")
+            return
+        if "file" in value:
+            problem = _text_problem(
+                value["file"], MAX_SOURCE_FILE, allow_arabic=True, formatting_ok=True
+            )
+            if problem:
+                self.found(
+                    None,
+                    None,
+                    "source.file",
+                    _refusal("Le nom du fichier source", problem, MAX_SOURCE_FILE),
+                )
+        self.leftovers(None, None, value, {"file"}, "Le champ source du résultat")
+
+    def diagnostics(self, document: Mapping[str, Any]) -> None:
+        """Vérifications acoustiques (liste de relevés), cascade (un objet) : forme attendue,
+        aucune écriture arabe. Conservées et exportées, jamais affichées."""
+        checks = document.get("acoustic_checks")
+        if checks is not None:
+            if not isinstance(checks, list) or any(not isinstance(c, Mapping) for c in checks):
+                self.found(
+                    None,
+                    None,
+                    "acoustic_checks",
+                    "Les vérifications acoustiques sont une liste de relevés (un objet chacun).",
+                )
+            elif not _inert(checks):
+                self.found(
+                    None,
+                    None,
+                    "acoustic_checks",
+                    "Les vérifications acoustiques contiennent de l'écriture arabe : le moteur "
+                    "n'y écrit que des chiffres, des références et des noms de modèles.",
+                )
+        cascade = document.get("cascade")
+        if cascade is not None:
+            if not isinstance(cascade, Mapping):
+                self.found(None, None, "cascade", "La cascade de moteurs est un objet.")
+            elif not _inert(cascade):
+                self.found(
+                    None,
+                    None,
+                    "cascade",
+                    "La cascade de moteurs contient de l'écriture arabe : le moteur n'y écrit que "
+                    "des noms de modèles et des compteurs.",
+                )
+
+    def extra(self, index: int | None, ref: str | None, subject: str) -> None:
+        self.found(
+            index,
+            ref,
+            "extra_field",
+            f"{subject} contient de l'écriture arabe : le moteur n'en écrit que dans les textes "
+            "du Mushaf, vérifiés à part.",
+        )
+
+    def leftovers(
+        self,
+        index: int | None,
+        ref: str | None,
+        value: Mapping[str, Any],
+        checked: Collection[str],
+        subject: str = "Un champ du résultat",
+    ) -> None:
+        """Les clés qu'aucun contrôle propre ne relit : pas d'arabe, ni dans leurs valeurs ni dans
+        leurs noms. Un seul constat par partie, jamais le contenu."""
+        if not _inert({k: v for k, v in value.items() if k not in checked}):
+            self.extra(index, ref, subject)
+
     # --- intervalles ---------------------------------------------------------------------------
 
     def interval(self, index: int, item: object) -> None:
@@ -184,12 +297,17 @@ class _Check:
             self.found(index, None, "interval", "Intervalle illisible : un objet est attendu.")
             return
         kind = item.get("kind")
+        subject = "Un champ de l'intervalle"
         if kind == "verse":
             self.checked += 1
             self.verse(index, item)
+            self.leftovers(index, None, item, VERSE_CHECKED, subject)
         elif kind == "non_quran":
             self.checked += 1
             self.non_quran(index, item)
+            self.leftovers(index, None, item, NON_QURAN_CHECKED, subject)
+        else:
+            self.leftovers(index, None, item, (), subject)
 
     def verse(self, index: int, item: Mapping[str, Any]) -> None:
         raw_ref = item.get("ref")
@@ -221,7 +339,10 @@ class _Check:
 
     def non_quran(self, index: int, item: Mapping[str, Any]) -> None:
         text, translation = item.get("text"), item.get("translation")
-        if not _known_label(item.get("label")):
+        problem = _text_problem(item.get("label"), MAX_LABEL)
+        if problem and problem not in ("absent", "type"):
+            self.found(index, None, "label", _refusal("Le libellé de la zone", problem, MAX_LABEL))
+        elif not _known_label(item.get("label")):
             self.found(
                 index,
                 None,
@@ -298,6 +419,13 @@ class _Check:
         if not isinstance(value, Mapping):
             self.found(index, shown, "translation", "La traduction est illisible.")
             return
+        if not _inert(_translation_leftovers(value)):
+            self.found(
+                index,
+                shown,
+                "translation.extra",
+                "La traduction contient, hors de son texte, de l'écriture arabe.",
+            )
         identifier = value.get("translation_id")
         if not isinstance(identifier, str) or (
             self.known_ids is not None and identifier not in self.known_ids
@@ -384,15 +512,66 @@ def _present(value: object) -> bool:
     return value is not None and value != ""
 
 
-def _plain(value: object, limit: int) -> bool:
-    """Une chaîne courte d'une ligne : ni contrôle, ni caractère de mise en forme (retournement du
-    sens d'écriture, largeur nulle), ni écriture arabe. Vide : permis (`engine.acoustic` vide)."""
-    return (
-        isinstance(value, str)
-        and len(value) <= limit
-        and not ARABIC_SCRIPT.search(value)
-        and all(unicodedata.category(c) not in ("Cc", "Cf") for c in value)
-    )
+def _text_problem(
+    value: object, limit: int, *, allow_arabic: bool = False, formatting_ok: bool = False
+) -> str | None:
+    """Pourquoi `value` n'est pas une courte chaîne d'une ligne (`None` : elle l'est) : `absent`,
+    `type`, `long`, `arabic` (écriture arabe, sauf `allow_arabic`) ou `control` (caractère de
+    contrôle ; ceux de mise en forme — retournement du sens d'écriture, largeur nulle — aussi, sauf
+    `formatting_ok`). Une chaîne vide est permise (`engine.acoustic` vide)."""
+    if value is None:
+        return "absent"
+    if not isinstance(value, str):
+        return "type"
+    if len(value) > limit:
+        return "long"
+    if not allow_arabic and ARABIC_SCRIPT.search(value):
+        return "arabic"
+    refused = ("Cc",) if formatting_ok else ("Cc", "Cf")
+    if any(unicodedata.category(c) in refused for c in value):
+        return "control"
+    return None
+
+
+def _refusal(subject: str, problem: str, limit: int) -> str:
+    """La phrase qui dit la vraie raison, sans jamais recopier le contenu reçu."""
+    reason = _PROBLEM_REASON[problem].format(limit=f"{limit:,}".replace(",", " "))
+    return f"{subject} : {reason}."
+
+
+def _inert(value: object) -> bool:
+    """Aucune écriture arabe dans `value`, valeurs ET clés, à toute profondeur (parcours itératif :
+    pas de limite de pile). Les nombres, booléens, `null` et l'ASCII sont inertes."""
+    stack = [value]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            if ARABIC_SCRIPT.search(item):
+                return False
+        elif isinstance(item, Mapping):
+            for key, child in item.items():
+                if isinstance(key, str) and ARABIC_SCRIPT.search(key):
+                    return False
+                stack.append(child)
+        elif isinstance(item, list | tuple):
+            stack.extend(item)
+    return True
+
+
+def _translation_leftovers(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Ce qu'une traduction porte HORS des textes comparés à QuranEnc : champs annexes, et dans les
+    segments et le fragment tout sauf leur `text` (lui est un extrait du texte officiel)."""
+    rest = {k: v for k, v in value.items() if k not in TRANSLATION_CHECKED}
+
+    def bare(piece: object) -> object:
+        if isinstance(piece, Mapping):
+            return {k: v for k, v in piece.items() if k != "text"}
+        return piece
+
+    segments = value.get("segments")
+    rest["segments"] = [bare(p) for p in segments] if isinstance(segments, list) else segments
+    rest["fragment"] = bare(value.get("fragment"))
+    return rest
 
 
 def _simple(label: str) -> str:

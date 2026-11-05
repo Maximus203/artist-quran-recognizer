@@ -30,7 +30,52 @@ chaque catégorie, résultats réels de `docs/evaluation/`).
 **Attendu** : `201` ; le fichier conservé est le même sans les trois octets ; `prediction_sha256` est celle du fichier conservé.
 **Preuve** : `web/lib/import-session-verify.test.ts`, `web/lib/import-session-corpus.test.ts`, `r17` (cas BOM).
 
+### I.10 — [API] P5/P6 : ce qui est légitime et inhabituel passe
+**Priorité** : critique · **Technique** : partition-équivalence, non-régression
+**Action** : importer (a) un résultat réel du moteur avec `acoustic_checks` de toutes natures (`chain`, `continuation`, `neighbor`,
+`head`, `relisten`, `gap` et ses rôles) et `cascade` ; (b) `source.file` = « سورة الإخلاص.mp3 » ; (c) un champ inconnu fait de lettres
+latines et de chiffres (document, intervalle) ; (d) `engine.acoustic` = `null`, `""` ou absent.
+**Attendu** : `201` pour chacun ; (b) la session s'ouvre, `GET /api/sessions/:id` rend `source.file` masqué (« [texte arabe masqué].mp3 »).
+**Preuve** : `tests/unit/test_verify_recognition.py` (`real_engine_document`, 1 594 résultats réels relus hors test), `web/lib/recognition.test.ts`.
+
 ## Must-fail
+
+### I.11 — [API] P5 : du faux arabe dans un champ que personne ne lit est refusé
+**Priorité** : critique · **Technique** : injection
+**Action** : un résultat légitime avec du faux arabe, tour à tour, dans une valeur de `acoustic_checks` (kind, verses, role, clé, imbriqué),
+dans `cascade`, dans une clé de `decoder`, une valeur de `timing`, `windows`, `source.note`, `engine.constrained`, `riwaya.verified`, un
+champ en trop d'un intervalle (`promoted_by`, `word_times_source`, `note`), d'une zone non coranique, d'une abstention, d'une traduction,
+d'un segment, du fragment, un champ inconnu du document ; un libellé « [isti'adha] » suivi de faux arabe ; `source.file` de 256 signes
+ou avec un caractère de contrôle ; `acoustic_checks` qui n'est pas une liste de relevés ; `cascade` qui n'est pas un objet.
+**Attendu** : `422 result_contradicts_corpus`, rien n'est conservé, le message nomme la partie (`acoustic_checks`, `cascade`,
+`source.file`, `extra_field`, `translation.extra`, `label`) sans recopier aucun signe arabe.
+**Preuve** : `tests/unit/test_verify_recognition.py` (cas paramétrés), scripts QA `t03`, `t06` rejoués.
+
+### I.12 — [API] P6 : chaque refus dit sa vraie raison
+**Priorité** : important · **Technique** : partition-équivalence
+**Action** : `riwaya` sans `notice` ; `notice` = 5 ; `notice` de 1 001 signes ; `notice` arabe ; `notice` avec un caractère de contrôle ;
+`engine.asr` = `null` ; `engine.matcher` arabe ; un champ obligatoire absent (`engine.asr`) ; un intervalle au champ `t` mal formé ; un
+fichier qui n'est pas du JSON.
+**Attendu** : des phrases DIFFÉRENTES — « valeur absente ou nulle », « un texte est attendu », « texte trop long (au plus 1 000 signes) »,
+« écriture arabe », « caractère de contrôle » ; un contrat refusé nomme `engine.asr` ou « intervalle 2, champ « t » » ; un fichier
+illisible est dit « pas du JSON lisible », jamais « pas un résultat aqr.recognition/1 valide ». Un nom d'utilisateur (arabe) n'est
+jamais recopié (« … »).
+**Preuve** : `tests/unit/test_verify_recognition.py` (messages), `web/lib/import-session-verify.test.ts` (P6).
+
+### I.13 — [API] P6 : UTF-16 et UTF-32 sans BOM reçoivent la marche à suivre
+**Priorité** : important · **Technique** : valeur-limite
+**Action** : résultat enregistré en UTF-16 petit-boutiste, gros-boutiste, avec espace ou saut de ligne devant, puis en UTF-32, SANS BOM.
+**Attendu** : `400 result_encoding`, « enregistre-le en UTF-8 … `Out-File -Encoding utf8` … Bloc-notes », jamais « JSON invalide » ; un JSON
+UTF-8 (arabe, accentué, vide, `[]`) n'est jamais pris pour du UTF-16. **Preuve** : `web/lib/prediction-bytes.test.ts`,
+`import-session-verify.test.ts`.
+
+### I.14 — [API] P5 : ce qui est déjà conservé ne ressort pas par l'API de la session
+**Priorité** : important · **Technique** : état obsolète
+**Action** : réécrire sur le disque du serveur de banc le fichier conservé d'une session (faux arabe dans `source.file`, `acoustic_checks`,
+`cascade`, une clé de `decoder`), puis `GET /api/sessions/:id`.
+**Attendu** : la réponse ne contient aucun signe du faux arabe (`source.file` masqué, `decoder` sans la clé) ; la session reste lisible.
+Limite assumée : `GET /api/sessions/:id/export` cite le fichier à l'octet près (son empreinte en dépend).
+**Preuve** : `web/lib/store.test.ts`, `qa/t06-api-leak.mjs`.
 
 ### I.4 — [API] N6 : un faux verset dans un champ libre est refusé
 **Priorité** : critique · **Technique** : injection
@@ -70,6 +115,21 @@ pour (b), « aucune source » pour (c). **Preuve** : `r19`, `tests/unit/test_ver
 **Attendu** : une ligne `import.result_refused` par refus avec `code`, `http`, `owner`, `verdict`, `rank`, `ref`, `field` (et `cause` ou
 `reason` pour un 503) ; niveau `error` pour `result_check_unavailable`, `warn` sinon ; AUCUN signe arabe dans le journal.
 **Preuve** : `import-session-verify.test.ts` (« les refus sont journalisés »), lecture du journal du serveur de banc.
+
+## Preuves P5 / P6 (2026-11-05, build de la branche `fix/import-p5-p6` @ 6e9222a, banc jetable sur le port 3660)
+- `qa/r17-import.mjs` : **75 / 75**, dont les 23 résultats légitimes acceptés (201) et 49 falsifications refusées, 0 message qui recopie de l'arabe.
+- `qa/t03-import.mjs` : 70 / 75 ; les 5 écarts sont ceux déjà connus de la recette (400 `invalid` au lieu de 422 pour `engine` chaîne/objet,
+  `decoder`/`timing` non numériques : refus corrects, message qui nomme maintenant le champ ; fichier vide = « pas de résultat joint », 201). Nouveaux
+  refus : N27 `acoustic_checks`, N28 `cascade`, N29 champ en trop = 422 ; N24 `source.file` arabe = 201 (voulu) ; B8 UTF-16 sans BOM et B9
+  UTF-32 = 400 `result_encoding` avec la marche à suivre ; E1-E4 (valeurs exactes du moteur) = 201.
+- `qa/t04-real-import.mjs` : les 10 résultats réels recomposés (`docs/evaluation/`) = 10 / 10 acceptés.
+- 1 594 résultats réels du moteur trouvés sur le poste (92 921 intervalles, 1 387 avec `acoustic_checks`, 303 avec `cascade`), relus hors
+  banc : 1 593 sans constat (le seul : plage de mots 1-144 pour 2:282, contrôle antérieur).
+- `qa/t05` (Chrome) : aucun faux arabe visible, `__pwned` nul ; `qa/p5-legacy.mjs` : fichier conservé réécrit avec du faux arabe,
+  `GET /api/sessions/:id` propre (`source.file` masqué, clé arabe de `decoder` écartée), `…/export` cite le fichier tel quel (limite assumée).
+- Journal : 105 lignes `import.result_refused` (champ nommé pour les 400), 0 signe arabe, 0 `error` hors le 500 d'un pack de revue que j'ai
+  provoqué en réécrivant le fichier sur le disque (empreinte différente).
+- Non rejoué : `r19`/`t13` hors ligne (le chemin des traductions n'est pas touché).
 
 ## Preuves (2026-11-04, build de la branche, serveur de banc jetable sur le port 3641, 3642 hors ligne)
 - `qa/r17-import.mjs` rejoué : **75 / 75 conformes**, 0 message qui recopie du faux arabe ; F37 (20 000 niveaux) = `422 result_too_deep` (au lieu du `503`) ; F39 (BOM UTF-8) = `201` ; G1 (riwaya = faux verset) et G3 (`engine.asr`) = `422` ; G2 (avertissements avec arabe et balise) = `201`, jamais montré.

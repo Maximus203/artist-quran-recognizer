@@ -102,5 +102,56 @@ opaque), issue, rang de l'intervalle, verset, champ du premier écart, champs di
 (avec la raison du moteur, une ligne bornée), `warn` pour le reste. Jamais le message ni le contenu reçu : un verset ne figure que
 s'il a la forme `sourate:verset`, un champ que s'il a la forme d'un nom de champ du rapport (`describeVerdict`).
 
-**Toujours hors contrôle** (inchangé) : un résultat de moteur distant authentifié ou du moteur local ; `source.file` n'est restitué
-nulle part dans l'interface ni dans l'export (examiné, non contrôlé) ; `PUT …/decisions` ne porte ni arabe ni traduction.
+**Toujours hors contrôle** (inchangé) : un résultat de moteur distant authentifié ou du moteur local ; `PUT …/decisions` ne porte ni
+arabe ni traduction. (`source.file`, écrit ici « non restitué », l'était par l'API : corrigé par l'addendum suivant.)
+
+## Addendum 2026-11-04 (3) — champs libres résiduels et messages exacts (troisième recette QA : P5, P6)
+
+La troisième recette a rejoué 23 résultats légitimes et 10 résultats réels du moteur (tous acceptés) et trouvé deux restes. Rien ne
+change à la décision ; la règle est étendue aux champs que l'interface n'affiche pas.
+
+**P5 — `source.file`, `acoustic_checks`, `cascade`, champs en trop : une seule règle.** Ces champs acceptaient du faux arabe (201)
+et `GET /api/sessions/:id` (`source.file`) comme `…/export` (le fichier entier) le rendaient. La règle, unique, vit dans
+`verify_recognition` : **tout ce que le contrôle ne relit pas contre le corpus ou QuranEnc ne contient aucune écriture arabe, clés
+comprises** (`_inert`, parcours itératif). S'y appliquent : `acoustic_checks` (liste de relevés), `cascade` (objet), `decoder`,
+`timing`, `windows`, `source.*` hors `file`, `engine.*` hors noms de moteur, `riwaya.*` hors `assumed`/`notice`, les champs d'un
+intervalle hors `ref`/`words`/`candidates`/`text`/`translation`/`label`/`label_ar` (donc aussi `promoted_by` et
+`word_times_source`, que le contrat web tolère), les champs annexes d'une traduction et ce que portent ses segments et son fragment
+hors leur `text`, et tout champ inconnu du document. Constats `extra_field` (avec le rang de l'intervalle), `acoustic_checks`,
+`cascade`, `translation.extra` ; messages fixes, jamais le contenu. Le libellé d'une zone non coranique est aussi contrôlé dans sa
+forme (l'ancien rapprochement ignorait tout ce qui n'est pas a-z : « [isti'adha] » suivi d'un faux verset passait).
+- **Un champ inconnu reste permis tant qu'il n'écrit pas d'arabe.** « Refuser les champs inconnus » aurait refusé le résultat d'un
+  moteur plus récent qui ajoute un champ, alors que le contrat est additif ; « écarter » les champs aurait réécrit le fichier, donc
+  changé son empreinte (Décision 2).
+- **`source.file` : l'arabe est permis.** Une récitation s'appelle souvent « الفاتحة.mp3 » : refuser le résultat d'un vrai moteur
+  pour cela serait pire que le risque. Le nom est borné (255 signes) et sans caractère de contrôle (refus, message exact) ; à la
+  lecture il est masqué (`recognition.ts`, comme les avertissements).
+- **Lecture** : le contrat web ne rendait déjà ni `acoustic_checks`, ni `cascade`, ni les champs en trop (zod les écarte). Il rend
+  maintenant `source.file` borné et masqué, et écarte les clés arabes de `decoder` / `timing` (fichiers conservés avant ce contrôle,
+  ou venus d'un moteur distant). Un test fixe que rien du faux arabe de ces champs ne ressort de `readResult().parsed`.
+- **Export (`…/export`, `aqr.review-pack/1`) : le fichier reste cité à l'octet près.** `prediction.original_json` est le fichier dont
+  `prediction.sha256` est l'empreinte, celle à laquelle les décisions humaines se réfèrent (ADR-0014) : le masquer ou le réécrire le
+  ferait mentir sur son empreinte. Pour un import fait après ce correctif, ce fichier ne contient d'arabe que dans le texte du Mushaf
+  et la traduction (relus), les avertissements et `source.file` (bornés, masqués par l'interface). **Limite** : un fichier conservé
+  avant ce correctif, ou venu d'un moteur distant authentifié (hors contrôle), est exporté tel qu'il est ; l'interface et
+  `GET /api/sessions/:id` ne le rendent jamais tel quel.
+- **Non-régression mesurée** : 1 594 résultats distincts du moteur trouvés sur le poste (92 921 intervalles ; 1 387 avec
+  `acoustic_checks`, 303 avec `cascade`) : 1 593 sans aucun constat. Le seul constat est une plage de mots 1-144 pour 2:282 (128
+  mots), refusée par le contrôle des plages de mots d'avant ce correctif, inchangé ici. S'y ajoutent les valeurs exactes des
+  constantes du moteur et la sortie réelle de `build_json` avec des vérifications de toutes natures (`chain`, `continuation`,
+  `neighbor`, `head`, `relisten`, `gap` et ses rôles) dans `tests/unit/test_verify_recognition.py`.
+
+**P6 — messages exacts.** Le contrôle disait « n'est pas un court texte sans écriture arabe » pour une notice ABSENTE ou un nom nul.
+`_text_problem` distingue maintenant `absent`, `type`, `long`, `arabic`, `control`, et chaque phrase dit la vraie raison (« La
+notice de riwaya : valeur absente ou nulle. »).
+- **`riwaya` sans `notice`** : refusé, avec ce message. Aucune version du moteur ne l'écrit sans (introduite avec la notice, #58) ; et
+  sans notice le contrat web écarterait toute la riwaya, donc le bandeau « supposée, non vérifiée » (I3).
+- **`engine.acoustic: null`** : **accepté**, comme vide ou absent (« aucun modèle acoustique »). Le champ n'est lu nulle part ; un
+  autre producteur peut écrire `null` pour dire la même chose. Les autres noms de moteur nuls restent refusés (le contrat web les
+  refuse déjà).
+- **UTF-16 / UTF-32 sans BOM** : **refusé avec la marche à suivre**, comme avec BOM (400 `result_encoding`). Détection : un octet nul
+  parmi les 8 premiers (un JSON UTF-8 n'en a jamais). Il n'est pas converti : ce serait réécrire le fichier (Décision 2) ; le message
+  indique `Out-File -Encoding utf8` et le Bloc-notes. Le BOM UTF-8 reste le seul octet retiré.
+- **Contrat refusé** : au lieu du « n'est pas un JSON aqr.recognition/1 valide » unique, un JSON illisible est dit tel, et un
+  contrat refusé nomme le rang de l'intervalle et le champ (« intervalle 2, champ « t » absent ou mal formé »). Seuls les noms du
+  contrat sont recopiés (un autre nom devient « … ») ; le champ est aussi dans le journal `import.result_refused`.

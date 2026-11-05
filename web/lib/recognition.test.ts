@@ -370,6 +370,58 @@ describe("contrat recognition", () => {
       expect(labels).toEqual([MASK, "arabic_speech"]);
     });
   });
+
+  describe("champs que l'interface n'affiche pas : la lecture ne les rend jamais (P5)", () => {
+    const FAKE = "قل هو الله أحد فلان بن فلان نص مزيف";
+    const MASK = "[texte arabe masqué]";
+    const parse = (over: object) => parseRecognition({ ...base, ...over });
+
+    it("le nom du fichier source : intact s'il est ordinaire, masqué s'il est arabe, borné, sans contrôle", () => {
+      const file = (name: string) =>
+        parse({ source: { ...base.source, file: name } }).source.file;
+      expect(file("récitation 01.mp3")).toBe("récitation 01.mp3");
+      expect(file("sourate 112.mp3")).toBe("sourate 112.mp3");
+      expect(file(`${FAKE}.mp3`)).toBe(`${MASK}.mp3`);
+      expect(file(`a‮b\u0000c.mp3`)).toBe("abc.mp3");
+      expect(file("x".repeat(5000))).toHaveLength(255);
+    });
+    it("acoustic_checks, cascade, engine.acoustic et les champs en trop d'un intervalle ne ressortent pas", () => {
+      const parsed = parse({
+        acoustic_checks: [{ kind: "chain", verses: FAKE, accepted: true }],
+        cascade: { secondary: [FAKE], relistened_windows: 2 },
+        engine: { ...base.engine, acoustic: FAKE, extra: FAKE },
+        extension: { note: FAKE },
+        intervals: [
+          {
+            ...base.intervals[0],
+            promoted_by: FAKE,
+            note: { deep: [FAKE] },
+          },
+          {
+            kind: "abstention",
+            reason: "silence",
+            t: [2, 5],
+            best_score: null,
+            memo: FAKE,
+          },
+          { kind: "non_quran", label: "takbir", t: [5, 6], memo: FAKE },
+        ],
+      });
+      expect(JSON.stringify(parsed)).not.toContain("قل هو");
+      expect(JSON.stringify(parsed)).not.toContain("مزيف");
+      expect(parsed).not.toHaveProperty("acoustic_checks");
+      expect(parsed).not.toHaveProperty("cascade");
+      expect(parsed.engine).not.toHaveProperty("acoustic");
+    });
+    it("les clés de decoder et de timing qui contiennent de l'arabe sont écartées, les autres gardées", () => {
+      const parsed = parse({
+        decoder: { min_recognized_score: 0.75, [FAKE]: 1 },
+        timing: { total_s: 5, [`x ${FAKE}`]: 2 },
+      });
+      expect(parsed.decoder).toEqual({ min_recognized_score: 0.75 });
+      expect(parsed.timing).toEqual({ total_s: 5 });
+    });
+  });
   it("lit une vraie sortie expurgée du moteur sans inventer de texte", () => {
     const file = path.resolve(
       process.cwd(),

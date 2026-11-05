@@ -16,6 +16,24 @@
   présent), mesures avant / après dans le rapport de la PR ; `web/e2e/stage-floor.mjs` ; `app/export-qa3-layout.test.ts`,
   `lib/percent-input.test.ts`, `lib/export-video-assets.test.ts`.
 
+## 2026-11-04 — Import : champs libres résiduels et messages exacts (ADR-0024, addendum 3, PR #217)
+- **Quoi** : P5 `verify_recognition` applique une règle unique : ce que le contrôle ne relit pas contre le corpus ou QuranEnc ne
+  contient aucune écriture arabe (`_inert`) — `acoustic_checks`, `cascade`, `decoder`, `timing`, champs en trop d'un intervalle, d'une
+  traduction ou du document ; `source.file` borné (255, sans contrôle) mais arabe permis ; libellé de zone contrôlé dans sa forme.
+  `recognition.ts` masque `source.file` et écarte les clés arabes de `decoder` / `timing` à la lecture. P6 `_text_problem` : absent,
+  type, long, arabe, contrôle sont dits chacun ; `engine.acoustic: null` accepté ; UTF-16 / UTF-32 sans BOM refusés avec la marche à
+  suivre (octet nul parmi les 8 premiers) ; un contrat refusé nomme le rang de l'intervalle et le champ.
+- **Choix pris seul** : (1) champs inconnus permis sans arabe, ni refusés (contrat additif, moteur plus récent) ni écartés (réécrire
+  le fichier changerait son empreinte) ; (2) `source.file` arabe permis : un vrai moteur reçoit des fichiers « الفاتحة.mp3 » ; (3) export
+  inchangé, `original_json` reste le fichier à l'octet près (son empreinte est citée par les décisions, ADR-0014) ; la limite (fichier
+  conservé avant ce correctif) est écrite dans l'ADR ; (4) notice de riwaya absente refusée (aucune version du moteur ne l'écrit sans,
+  et sans elle le bandeau « supposée » disparaîtrait) ; (5) `acoustic: null` accepté (champ lu nulle part, sens « aucun ») ; (6)
+  UTF-16 refusé et non converti (réécrire le fichier), comme avec BOM.
+- **Limites connues** : une translittération latine reste possible dans un champ libre ; moteur distant authentifié toujours non relu ;
+  1 résultat réel sur 1 594 (plage de mots 1-144 pour 2:282, 128 mots) est refusé par un contrôle antérieur, hors périmètre ici.
+- **Preuve** : 1 594 résultats réels relus (0 refus nouveau), `tests/unit/test_verify_recognition.py`,
+  `web/lib/{prediction-bytes,recognition,store,import-session-verify}.test.ts`, scripts de la recette rejoués sur un build de la branche.
+
 ## 2026-11-04 — Corrections de la recette QA de l'éditeur d'export (PR #200 à #206)
 - **Quoi** : B1 le lecteur réduit ne recouvre plus les commandes (une variable `--mini-reserve`, un test qui garde toute hauteur
   plein écran) ; M1 cadenas de l'arabe et attribution dans le plateau (`ElementNote`, `DockBelow`) ; m4 l'encart « déjà prête » et
