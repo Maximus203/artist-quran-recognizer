@@ -708,7 +708,12 @@ export function SessionsPage({ search }: { search: string }) {
         />
       ) : null}
 
-      <div className="sr" role="status" aria-live="polite" data-testid="live">
+      <div
+        className="sr sr-live"
+        role="status"
+        aria-live="polite"
+        data-testid="live"
+      >
         {announcement}
       </div>
       {toastNode}

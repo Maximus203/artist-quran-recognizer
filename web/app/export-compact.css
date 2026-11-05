@@ -116,6 +116,76 @@
   }
 }
 
+/* ── Téléphone court (recette QA 3, P3) : la chronologie se lit AU REPOS ──────────────────────────────────────────────
+   À 360 × 640 la colonne des commandes fait ~285 px : un rail de deux rangées (126 px) en prenait presque la moitié et la
+   chronologie n'y montrait qu'une piste et demie. Sous 700 px de haut, le rail est AUSSI sur une seule rangée d'icônes quand
+   rien n'est ouvert (leur nom reste lu aux lecteurs d'écran, et c'est celui que montre la bulle d'aide du premier affichage) :
+   la règle de temps et les trois pistes tiennent. Chaque outil garde sa cible de 44 px, y compris à 320 px (7 × 44 = 308). */
+@media (max-width: 519px) and (max-height: 700px) {
+  .xt .xt-rail .xe-tb {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0;
+  }
+  .xt .xt-rail {
+    padding-inline: var(--sp-1);
+  }
+  .xt .xt-rail .xe-tool {
+    min-height: var(--hit);
+    padding: 4px 0;
+  }
+  .xt .xt-rail .xe-tool > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .xt {
+    --xt-rail-h: var(--xt-rail-h-open, 62px);
+  }
+}
+/* Un rail d'une rangée, panneau ouvert : à 320 px ses sept outils tenaient à 42 px ; sans marge ni espace, 44 px. */
+@media (max-width: 359px) {
+  .xt:not([data-mode="idle"]) .xt-rail .xe-tb {
+    gap: 0;
+  }
+  .xt:not([data-mode="idle"]) .xt-rail {
+    padding-inline: var(--sp-1);
+  }
+}
+
+/* ── Tablette tenue en large (recette QA 3, P3) : l'aperçu à gauche, la table à droite ──────────────────────────────────
+   De 700 à 1023 px de large et plus de 520 px de haut (par exemple 1023 × 768), la table empilait son aperçu au-dessus d'une
+   chronologie de 380 px : le cadre tombait à 284 × 160 sur 1023 px de large. Comme sur un téléphone en paysage, l'aperçu
+   prend sa colonne et les commandes la leur ; les outils passent à la ligne dans la colonne (aucun défilement caché). */
+@media (orientation: landscape) and (min-width: 700px) and (min-height: 521px) and (max-width: 1023px) {
+  .xt {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(var(--xe-stage-area-min), 1fr);
+    min-height: calc(var(--xe-top-h) + var(--xe-stage-area-min));
+  }
+  .xt > .xe-top {
+    grid-column: 1 / -1;
+  }
+  .xt > .xe-stage-area {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .xt > .xe-dock {
+    grid-column: 2;
+    grid-row: 2;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+  }
+  .xt .xt-rail .xe-tb {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    gap: 2px;
+    overflow: visible;
+  }
+}
+
 /* ── Paysage sur téléphone : l'aperçu à gauche, les commandes à droite ───────────────── */
 @media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
   /* Le plancher de l'aperçu est un peu plus bas : la colonne de gauche est étroite et la hauteur très courte. */

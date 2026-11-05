@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-04 — Éditeur d'export : fenêtre utile, chronologie et tablette (recette QA 3)
+Étiquettes : utilisateur, technique, décision
+PR : #216
+
+**Ce qui change.** Sur téléphone, la page de l'éditeur « Pas à pas » ne défile plus dans le vide à l'étape 1, et un glissement parti de l'aperçu ne la fait plus sortir de l'écran. La taille du texte (− / +) est maintenant le premier réglage de la fiche à l'étape des textes, visible sans défiler ; la barre « Suivant » ne recouvre plus la fenêtre de contenu à 360 × 640. À cet écran, la table de montage montre sa règle de temps et ses trois pistes (passages, onde, fond) dès l'ouverture, ses outils tenant sur une rangée d'icônes. Sur une tablette tenue en large (par exemple 1 023 × 768) la table met l'aperçu à gauche et ses commandes à droite ; au bureau étroit (1 024 px) l'aperçu est plus large. Dans les champs « Place et zone exactes », les chiffres arabo-indiens (« ٣٠ ») sont lus, et un texte qui n'est pas un nombre n'est plus laissé à l'écran : le champ reprend la valeur gardée et le dit. Une session d'un autre compte (ou inexistante) affiche « Cette session n'existe pas ou n'est pas visible avec ton compte » et plus « Lecture impossible pour cet audio ». Au bureau, la fenêtre-résumé de l'export passe au-dessus du petit lecteur. Un fond d'écran qui ne se charge pas est dit (« Ce fond n'a pas pu être chargé… ») avec un bouton Réessayer, au lieu de laisser l'ancien fond ; ses vignettes cassées deviennent des tuiles grises. Il n'y a plus de pixel de défilement en trop sur les éditeurs, et à 320 px le cadre de l'aperçu garde 160 px de haut.
+
+**Pourquoi / décision.** Troisième recette QA indépendante (points P1 à P4, P7 à P10 ; rapport joint à la PR). Cause de P1 : une région annoncée de la vidéo de fond, absolue, restait posée sur la PAGE au lieu de rester dans le défilement de la fenêtre (356 px de document en trop) ; la correction est une colonne positionnée, pas un cache-misère. Sur écran court (moins de 760 px de haut) la barre du haut, la marge des poignées et le bouton de lecture se serrent sans passer sous 44 px de cible ; l'aperçu garde son plancher de 160 px. Les couches (`--z-player`, `--z-modal-scrim`, `--z-modal`) sont écrites une fois dans `tokens.css`. Un fond choisi qui ne charge pas lève une erreur claire aussi à l'export (avant, il retombait en silence sur un dégradé). Non fait, décidé : deux onglets ouverts (N8, limite documentée) et les suggestions S1 à S5.
+
 ## 2026-11-04 — Un long verset s'affiche en plusieurs temps, aux pauses du récitant
 Étiquettes : utilisateur, technique, décision
 PR : #212

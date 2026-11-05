@@ -10,8 +10,23 @@
   /* Ce que le panneau d'une étape garde AU MOINS (recette QA 2, N5) : les trois pastilles, une fenêtre de contenu qui se
      lit (160 px), et la barre Précédent / Suivant. Sous la hauteur qui le permet, la page défile ; la fenêtre ne s'écrase pas. */
   --xp-body-min: 160px;
+  --xp-steps-h: 58px; /* les trois pastilles */
   --xp-foot-h: 72px; /* la barre Précédent / Suivant : sa hauteur sert de marge de défilement au contenu */
-  --xp-panel-min: calc(58px + var(--xp-body-min) + 70px);
+  --xp-btn-h: 52px; /* ses boutons */
+  --xp-foot-pad: var(--sp-2);
+  --xp-panel-min: calc(
+    var(--xp-steps-h) + var(--xp-body-min) + var(--xp-foot-h)
+  );
+}
+/* Écran court (recette QA 3, P2) : pastilles et barre se serrent (leurs boutons gardent 44 px de cible au moins) pour que la
+   fenêtre de contenu, elle, se lise : à 360 × 640 la barre « Suivant » ne la recouvre plus (avant : 19 px de moins). */
+@media (max-height: 760px) {
+  :root {
+    --xp-steps-h: 52px;
+    --xp-foot-h: 58px;
+    --xp-btn-h: 48px;
+    --xp-foot-pad: var(--sp-1);
+  }
 }
 
 .xp-root {
@@ -55,7 +70,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   margin: 0;
-  padding: 10px var(--gutter) 4px;
+  padding: calc(var(--xp-steps-h) - var(--hit) - 4px) var(--gutter) 4px;
   list-style: none;
 }
 .xp-step {
@@ -122,6 +137,10 @@
 
 /* ── Le contenu de l'étape ───────────────────────────────────────────────────────────── */
 .xp-body {
+  /* Positionnée : la région annoncée de la vidéo de fond (absolue, cachée) restait posée sur la PAGE et la rallongeait de
+     356 px à l'étape 1 : la page défilait dans le vide (recette QA 3, P1). Dans le défilement de la fenêtre, plus rien ne
+     déborde. */
+  position: relative;
   min-height: 0;
   overflow-y: auto;
   /* La barre du bas est collée : sur un écran trop court elle recouvre le pied de la fenêtre ; un contrôle qu'on atteint
@@ -162,6 +181,33 @@
 .xp-head[data-compact] p {
   margin: 0;
   font-size: var(--fs-sm);
+}
+/* Écran court (recette QA 3, P2) : à l'étape des textes la taille − / + est le contrôle principal, elle doit être dans la
+   fenêtre au premier regard (avant : à ~300 px sous son haut). La phrase d'aide passe donc APRÈS la fiche (le titre, lui,
+   reste en tête pour les lecteurs d'écran : seul l'ordre à l'écran change) et les espaces se resserrent. */
+@media (max-height: 760px) {
+  .xp-pane {
+    gap: var(--sp-2);
+  }
+  .xp-card {
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+  }
+  /* L'onglet choisi dit déjà quel élément on règle : le titre de la fiche ne reste que pour les lecteurs d'écran. */
+  .xp-card-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .xp-head[data-compact] {
+    display: contents;
+  }
+  .xp-head[data-compact] p {
+    order: 9;
+  }
 }
 
 /* L'encart d'ouverture : déjà prête, exporter maintenant. */
@@ -288,8 +334,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--gutter)
-    calc(var(--sp-2) + env(safe-area-inset-bottom));
+  padding: var(--xp-foot-pad) var(--gutter)
+    calc(var(--xp-foot-pad) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-1);
   /* Sur un écran trop court pour tout montrer, la page défile mais cette barre reste sous le pouce, au-dessus du lecteur. */
@@ -301,7 +347,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 .xp-btn {
-  min-height: 52px;
+  min-height: var(--xp-btn-h);
   gap: var(--sp-2);
   font-size: var(--fs-md);
 }

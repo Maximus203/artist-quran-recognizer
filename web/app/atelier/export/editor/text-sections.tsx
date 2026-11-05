@@ -4,6 +4,7 @@ import { accentSolidCss, DEFAULT_ACCENT } from "@/lib/export-video-accent";
 import { BOX_FIELDS, boxFields, type BoxField } from "@/lib/export-video-edit";
 import { BLOCK_LABEL, BLOCK_ROLE } from "@/lib/export-video-edit-text";
 import { PANEL_SWATCHES, waveLimits } from "@/lib/export-video-editor";
+import { percentRejection, readPercent } from "@/lib/percent-input";
 import {
   PANEL_LIMITS,
   type BlockId,
@@ -416,35 +417,51 @@ const FIELD_LABEL: Record<BoxField, string> = {
   height: "Hauteur",
 };
 
-/** Un champ en pourcents du cadre : on tape, Entrée ou la sortie du champ valide. */
+/**
+ * Un champ en pourcents du cadre : on tape, Entrée ou la sortie du champ valide. Le texte est LU (`readPercent` : virgule,
+ * « % », chiffres arabo-indiens) ; un texte qui n'est pas un nombre n'est jamais appliqué NI laissé à l'écran : le champ
+ * reprend la valeur gardée et `onUnreadable` le dit (recette QA 3, P4).
+ */
 function PercentField({
   field,
   value,
   onCommit,
+  onUnreadable,
 }: {
   field: BoxField;
   value: number;
   onCommit: (percent: number) => void;
+  onUnreadable: (message: string) => void;
 }) {
+  // Un nouveau `key` redonne au champ la valeur gardée : après une saisie illisible, ou une saisie lue mais d'une autre
+  // écriture (« ٣٠ » pour 30), la valeur ne change pas toujours et le texte tapé resterait affiché.
+  const [round, setRound] = useState(0);
+  const settle = (typed: string) => {
+    const reading = readPercent(typed);
+    setRound((n) => n + 1);
+    if (reading.ok) onCommit(reading.percent);
+    else
+      onUnreadable(
+        percentRejection(FIELD_LABEL[field], typed, reading.reason, value),
+      );
+  };
   return (
     <label className="xe-pct">
       <span>{FIELD_LABEL[field]}</span>
       <span className="xe-pct-box">
         <input
-          key={value}
+          key={`${value}:${round}`}
           defaultValue={String(value).replace(".", ",")}
           inputMode="decimal"
           autoComplete="off"
           spellCheck={false}
           data-testid={`field-${field}`}
           aria-label={`${FIELD_LABEL[field]}, en pourcents de l’image`}
-          onBlur={(event) =>
-            onCommit(Number(event.currentTarget.value.replace(",", ".")))
-          }
+          onBlur={(event) => settle(event.currentTarget.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
-              onCommit(Number(event.currentTarget.value.replace(",", ".")));
+              settle(event.currentTarget.value);
             }
           }}
         />
@@ -522,6 +539,7 @@ export function PositionFields({
   onField: (field: BoxField, percent: number) => void;
 }) {
   const fields = boxFields(box);
+  const [note, setNote] = useState("");
   return (
     <Field title="Place et zone exactes" hint="en % de l’image">
       <div className="xe-pcts">
@@ -530,10 +548,18 @@ export function PositionFields({
             key={field}
             field={field}
             value={fields[field]}
-            onCommit={(percent) => onField(field, percent)}
+            onCommit={(percent) => {
+              setNote("");
+              onField(field, percent);
+            }}
+            onUnreadable={setNote}
           />
         ))}
       </div>
+      {/* Toujours là (vide) : une région annoncée doit exister AVANT son texte pour être lue. */}
+      <p className="xe-hint xe-pct-note" role="status" data-testid="field-note">
+        {note}
+      </p>
     </Field>
   );
 }

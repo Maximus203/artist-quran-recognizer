@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { loadClipVideo, type ClipDeps } from "./export-video-assets";
+import {
+  BACKGROUND_IMAGE_ERROR,
+  loadBackground,
+  loadClipVideo,
+  type ClipDeps,
+} from "./export-video-assets";
+import {
+  DEFAULT_BACKGROUND_ID,
+  findBackground,
+  type GradientBackground,
+  type PhotoBackground,
+} from "./export-video-backgrounds";
 
 /** Faux élément vidéo : charge ses métadonnées (ou échoue) quand on lui donne une source. */
 class FakeVideo extends EventTarget {
@@ -126,5 +137,72 @@ describe("loadClipVideo : la vidéo de fond choisie", () => {
     const d = deps(video);
     expect(await loadClipVideo(file, d)).toBeNull();
     expect(d.revoked).toEqual(["blob:fond-1"]);
+  });
+});
+
+describe("loadBackground : un fond choisi qui ne charge pas est DIT, jamais remplacé en silence (QA 3, P9)", () => {
+  const fallback = findBackground(DEFAULT_BACKGROUND_ID) as GradientBackground;
+  const photo: PhotoBackground = {
+    kind: "photo",
+    id: "mosquee-test",
+    label: "Mosquée",
+    group: "Mosquées",
+    src: "/backgrounds/mosquee-test.jpg",
+    thumb: "/backgrounds/mosquee-test-thumb.jpg",
+  };
+  const choice = { kind: "preset", preset: photo } as const;
+  const context = (
+    imageLoader: (src: string) => Promise<CanvasImageSource>,
+  ) => ({
+    upload: null,
+    sessionId: "s1",
+    fallback,
+    imageLoader,
+  });
+
+  it("une photo proposée qui ne se charge pas : l'erreur est levée avec une phrase claire", async () => {
+    const failing = () => Promise.reject(new Error(BACKGROUND_IMAGE_ERROR));
+    await expect(loadBackground(choice, context(failing))).rejects.toThrow(
+      BACKGROUND_IMAGE_ERROR,
+    );
+    expect(BACKGROUND_IMAGE_ERROR).toMatch(/Réessaie/);
+    expect(BACKGROUND_IMAGE_ERROR).toMatch(/choisis un autre fond/);
+  });
+
+  it("même une erreur inattendue du chargeur n'est pas avalée", async () => {
+    const boom = () => Promise.reject(new Error("réseau"));
+    await expect(loadBackground(choice, context(boom))).rejects.toThrow(
+      "réseau",
+    );
+  });
+
+  it("une photo qui se charge : l'image est posée, avec le voile sous l'onde", async () => {
+    const image = {} as CanvasImageSource;
+    const seen: string[] = [];
+    const loaded = await loadBackground(
+      choice,
+      context((src) => {
+        seen.push(src);
+        return Promise.resolve(image);
+      }),
+    );
+    expect(seen).toEqual(["/backgrounds/mosquee-test.jpg"]);
+    expect(loaded.image).toBe(image);
+    expect(loaded.scrim).toBe(true);
+    expect(loaded.gradient).toBeNull();
+  });
+
+  it("un dégradé n'appelle jamais le chargeur d'images", async () => {
+    let calls = 0;
+    const loaded = await loadBackground(
+      { kind: "preset", preset: fallback },
+      context(() => {
+        calls += 1;
+        return Promise.reject(new Error("ne doit pas être appelé"));
+      }),
+    );
+    expect(calls).toBe(0);
+    expect(loaded.gradient).toBe(fallback);
+    expect(loaded.image).toBeNull();
   });
 });

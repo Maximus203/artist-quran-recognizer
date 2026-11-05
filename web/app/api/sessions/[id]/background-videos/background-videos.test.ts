@@ -58,10 +58,19 @@ beforeEach(async () => {
   const { createMeta } = await import("@/lib/session-index");
   const { saveSession } = await import("@/lib/store");
   const db = getDb();
-  // Le premier compte créé est administrateur : c'est « chef » ; awa et bou sont de simples testeurs.
+  // Le premier compte créé est administrateur : c'est « chef » ; awa et bou sont de simples testeurs (le rôle par défaut est
+  // récitateur depuis #211 : on le dit ici).
   const admin = createUser(db, { username: "chef", passwordHash: "x" });
-  const awa = createUser(db, { username: "awa", passwordHash: "x" });
-  const bou = createUser(db, { username: "bou", passwordHash: "x" });
+  const awa = createUser(db, {
+    username: "awa",
+    passwordHash: "x",
+    role: "user",
+  });
+  const bou = createUser(db, {
+    username: "bou",
+    passwordHash: "x",
+    role: "user",
+  });
   expect(admin.role).toBe("admin");
   expect([awa.role, bou.role]).toEqual(["user", "user"]);
   cookies = {

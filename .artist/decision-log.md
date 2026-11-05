@@ -1,5 +1,21 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-04 — Recette QA 3 de l'éditeur d'export, côté éditeur (P1 à P4, P7 à P10)
+- **Quoi** : P1 et P10 colonnes qui défilent positionnées + région annoncée fixe ; P2 taille − / + en tête de fiche, jetons de
+  hauteur qui se serrent sous 760 px ; P3 rail de la table sur une rangée sous 700 px de haut, table en deux colonnes sur tablette
+  en large, bureau 1 024 plus large ; P4 `readPercent` (chiffres arabo-indiens, retour de la valeur gardée) ; P7 pas de faux titre de
+  lecture sur une session introuvable ; P8 échelle de couches dans `tokens.css` ; P9 erreur claire et « Réessayer » pour un fond
+  qui ne charge pas (aussi à l'export).
+- **Choix pris seul** : (1) un champ vide n'est plus un zéro mais illisible (valeur gardée), pour qu'on n'écrase pas une zone en
+  la vidant ; (2) à 320 px la marge latérale des poignées passe à 16 px plutôt que de baisser le plancher de 160 px ; (3) le
+  rail de la table perd ses libellés au repos sous 700 px de haut (noms gardés aux lecteurs d'écran) : la chronologie y gagne
+  126 → 62 px ; (4) l'échec de fond est posé SUR le cadre, pas dans la rangée de lecture, pour ne pas toucher au plancher ;
+  (5) sous 320 × 568 la page garde 57 px de défilement légitime (plancher de l'aperçu + de la fenêtre), noté, non réduit ;
+  (6) NON faits : N8 (deux onglets), suggestions S1 à S5.
+- **Preuve** : Chrome tactile sur build de production de la branche, parcours réel (session puis « Exporter », lecteur réduit
+  présent), mesures avant / après dans le rapport de la PR ; `web/e2e/stage-floor.mjs` ; `app/export-qa3-layout.test.ts`,
+  `lib/percent-input.test.ts`, `lib/export-video-assets.test.ts`.
+
 ## 2026-11-04 — Corrections de la recette QA de l'éditeur d'export (PR #200 à #206)
 - **Quoi** : B1 le lecteur réduit ne recouvre plus les commandes (une variable `--mini-reserve`, un test qui garde toute hauteur
   plein écran) ; M1 cadenas de l'arabe et attribution dans le plateau (`ElementNote`, `DockBelow`) ; m4 l'encart « déjà prête » et

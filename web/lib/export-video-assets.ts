@@ -175,16 +175,24 @@ export function videoSeeker(
   };
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+/** Ce que l'on dit quand une photo de fond proposée ne se charge pas (réseau coupé, images bloquées : recette QA 3, P9). */
+export const BACKGROUND_IMAGE_ERROR =
+  "Ce fond n’a pas pu être chargé (connexion ?). Réessaie, ou choisis un autre fond.";
+
+function loadImage(src: string): Promise<CanvasImageSource> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Image de fond introuvable."));
+    image.onerror = () => reject(new Error(BACKGROUND_IMAGE_ERROR));
     image.src = src;
   });
 }
 
-/** Charge le fond choisi. Un échec de chargement retombe sur le dégradé par défaut (sauf image ou vidéo que l'on a choisies : l'erreur est dite). */
+/**
+ * Charge le fond choisi. Un échec de chargement d'un fond que l'on a CHOISI (image ou vidéo téléversée, photo proposée) est
+ * dit, jamais caché : retomber sans bruit sur le dégradé par défaut laissait l'aperçu (et l'export !) sur un autre fond que
+ * celui qu'on venait de toucher. Seule la vidéo d'origine de la session, qui n'est pas un choix de fond, retombe sur le défaut.
+ */
 export async function loadBackground(
   choice: BackgroundChoice,
   context: {
@@ -193,6 +201,8 @@ export async function loadBackground(
     clip?: File | null;
     sessionId: string;
     fallback: GradientBackground;
+    /** Le chargement d'une photo (le navigateur ; remplaçable dans les tests). */
+    imageLoader?: (src: string) => Promise<CanvasImageSource>;
   },
 ): Promise<LoadedBackground> {
   const none = (): LoadedBackground => ({
@@ -256,7 +266,7 @@ export async function loadBackground(
           clip: false,
           close: () => undefined,
         };
-      const image = await loadImage(choice.preset.src);
+      const image = await (context.imageLoader ?? loadImage)(choice.preset.src);
       return {
         image,
         gradient: null,
@@ -267,7 +277,12 @@ export async function loadBackground(
       };
     }
   } catch (error) {
-    if (choice.kind === "upload" || choice.kind === "video") throw error;
+    if (
+      choice.kind === "upload" ||
+      choice.kind === "video" ||
+      choice.kind === "preset"
+    )
+      throw error;
   }
   return choice.kind === "color" ? { ...none(), gradient: null } : none();
 }

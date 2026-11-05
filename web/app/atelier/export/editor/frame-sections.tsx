@@ -208,7 +208,17 @@ export function BackgroundSection({
           >
             <span className="img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.thumb} alt="" loading="lazy" width={96} height={64} />
+              <img
+                src={p.thumb}
+                alt=""
+                loading="lazy"
+                width={96}
+                height={64}
+                // Une vignette qui ne charge pas laisse la tuile grise et son nom, pas l'icône de fichier cassé (QA 3, P9).
+                onError={(event) => {
+                  event.currentTarget.hidden = true;
+                }}
+              />
             </span>
             <span className="nm">{p.label}</span>
           </button>

@@ -391,6 +391,27 @@ plateau pour la séance du navigateur) ; le récitateur a le pas à pas sans auc
   de la traduction, `editor/dock-below.tsx`) partagent une seule case : la scène ne bouge plus au premier toucher.
 - *Une coupure de réseau pendant le rendu est dite* (`lib/export-video-follow.ts`, message du bordereau) : le rendu continue sur le
   serveur, la progression se rattrape seule.
+- *La page ne défile jamais plus que son contenu* (recette QA 3, P1 et P10). Une colonne qui défile (`.xp-body`, `.xe-dock`,
+  `.xe-sheet-body`) est POSITIONNÉE : un élément absolu caché qu'elle porte (région annoncée, champ de fichier) reste dans son
+  défilement au lieu de rallonger le document (la région de la vidéo de fond ajoutait 356 px à l'étape 1 du pas à pas). La
+  région annoncée du pied de page (`.sr-live`) est fixe : posée en absolu après tout le contenu, elle ajoutait 1 px.
+- *Écran court : l'aperçu garde 160 px, le reste se serre* (recette QA 3, P2 et P3). Sous 760 px de haut, la barre du haut
+  (`--xe-top-pad`), la marge des poignées (`--xe-halo`) et le bouton de lecture (`--xe-play`) rendent quelques pixels, sans jamais
+  passer sous 44 px de cible ; les pastilles et la barre du pas à pas aussi (`--xp-steps-h`, `--xp-foot-h`, `--xp-btn-h`). À
+  l'étape des textes, la taille − / + est le premier réglage de la fiche (`TextsPane`), la phrase d'aide passe après elle et le
+  titre de la fiche n'est plus lu qu'aux lecteurs d'écran. Sous 340 px de large la marge latérale (`--xe-halo-x`) se réduit : le
+  cadre garde son plancher à 320 px. La table, sous 700 px de haut, range son rail sur une rangée d'icônes au repos (comme quand un
+  panneau est ouvert) : la règle de temps et les trois pistes tiennent. De 700 à 1 023 px de large en paysage (hauteur > 520 px),
+  la table met l'aperçu à gauche et les commandes à droite ; le bureau de 1 024 à 1 199 px a des colonnes de côté plus étroites.
+  Gardes : `app/export-qa3-layout.test.ts`, mesures : `web/e2e/stage-floor.mjs`.
+- *Les couches ont une échelle* (recette QA 3, P8). `--z-player` (40), `--z-modal-scrim` (60) et `--z-modal` (61) sont dans
+  `tokens.css` (et son original `docs/design/tokens.css`) : une fenêtre modale passe au-dessus du lecteur réduit et des en-têtes.
+  Toute nouvelle fenêtre modale lit ces jetons, jamais un nombre.
+- *Un fond choisi qui ne charge pas est dit* (recette QA 3, P9). `loadBackground` lève `BACKGROUND_IMAGE_ERROR` pour une photo
+  proposée comme pour un fichier téléversé (aperçu ET export : plus de repli silencieux sur le dégradé) ; l'aperçu pose la phrase et
+  « Réessayer » sur le cadre, sans toucher à la rangée de lecture.
+- *Un champ en pourcents lit ce qu'on tape* (recette QA 3, P4, `lib/percent-input.ts`) : virgule, « % », chiffres arabo-indiens et
+  persans ; un texte illisible n'est jamais appliqué ni laissé affiché, le champ reprend la valeur gardée et le dit.
 - **Attribution de la traduction (rappel, décision du 2026-10-27, inchangée).** L'attribution QuranEnc reste affichée dans les trois
   éditeurs et le bureau, collée à la traduction (I2). La vidéo exportée, elle, n'en porte aucune (`attribution: null` dans
   `lib/export-video-frames.ts`, choix du mainteneur) ; elle reste dans l'export des sous-titres (JSON, ASS, WebVTT).

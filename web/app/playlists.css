@@ -211,7 +211,7 @@
   position: fixed;
   left: 50%;
   bottom: var(--mini-gap);
-  z-index: 40;
+  z-index: var(--z-player);
   display: flex;
   align-items: center;
   gap: var(--sp-3);
