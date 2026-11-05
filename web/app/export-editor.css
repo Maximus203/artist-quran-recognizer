@@ -30,7 +30,8 @@
      (posées autour du cadre) et la rangée de lecture. Un cadre 16:9 de 160 px de haut fait 284 px de large. */
   --xe-stage-h-min: 160px;
   --xe-halo: 26px; /* marge au-dessus du cadre : les poignées y sont posées */
-  --xe-halo-x: var(--xe-halo); /* ... et de chaque côté : plus étroite sous 340 px (voir plus bas) */
+  /* ... et de chaque côté : plus étroite sous 340 px (voir plus bas) */
+  --xe-halo-x: var(--xe-halo);
   --xe-halo-bottom: 12px;
   --xe-play: 48px; /* le bouton de lecture */
   --xe-transport-h: calc(

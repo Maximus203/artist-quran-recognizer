@@ -151,7 +151,9 @@ describe("loadBackground : un fond choisi qui ne charge pas est DIT, jamais remp
     thumb: "/backgrounds/mosquee-test-thumb.jpg",
   };
   const choice = { kind: "preset", preset: photo } as const;
-  const context = (imageLoader: (src: string) => Promise<CanvasImageSource>) => ({
+  const context = (
+    imageLoader: (src: string) => Promise<CanvasImageSource>,
+  ) => ({
     upload: null,
     sessionId: "s1",
     fallback,

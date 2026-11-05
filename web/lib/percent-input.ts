@@ -30,8 +30,7 @@ export function normalizeNumberText(text: string): string {
   let out = "";
   for (const char of text.normalize("NFKC")) {
     if (char === "٫" || char === ",") out += ".";
-    else if (char === "−" || char === "–" || char === "—")
-      out += "-";
+    else if (char === "−" || char === "–" || char === "—") out += "-";
     else out += asciiDigit(char);
   }
   return out;
