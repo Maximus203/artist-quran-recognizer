@@ -27,7 +27,7 @@ PR : #212
 
 ## 2026-11-04 — Import : les champs que personne ne lit sont contrôlés aussi, les refus disent la vraie raison
 Étiquettes : utilisateur, technique, décision
-PR : #213
+PR : #217
 
 **Ce qui change.** Importer un résultat d'analyse refuse désormais du faux texte arabe glissé n'importe où ailleurs que dans les textes vérifiés : vérifications acoustiques, cascade de moteurs, réglages, champs ajoutés à un intervalle ou à une traduction. Un moteur plus récent peut toujours ajouter un champ, pourvu qu'il n'y écrive pas d'arabe. Le nom du fichier source peut rester arabe (une récitation s'appelle souvent « الفاتحة.mp3 ») : il est borné et l'interface ne le montre jamais tel quel. Les messages disent la vraie raison : une notice de riwaya absente est dite absente, un fichier enregistré en UTF-16 ou UTF-32, avec ou sans BOM, reçoit la marche à suivre (enregistrer en UTF-8), un résultat que le format refuse nomme l'intervalle et le champ en cause. Un nom de modèle acoustique `null` est accepté comme « aucun ».
 

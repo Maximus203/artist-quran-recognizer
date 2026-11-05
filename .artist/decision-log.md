@@ -16,7 +16,7 @@
   présent), mesures avant / après dans le rapport de la PR ; `web/e2e/stage-floor.mjs` ; `app/export-qa3-layout.test.ts`,
   `lib/percent-input.test.ts`, `lib/export-video-assets.test.ts`.
 
-## 2026-11-04 — Import : champs libres résiduels et messages exacts (ADR-0024, addendum 3, PR #213)
+## 2026-11-04 — Import : champs libres résiduels et messages exacts (ADR-0024, addendum 3, PR #217)
 - **Quoi** : P5 `verify_recognition` applique une règle unique : ce que le contrôle ne relit pas contre le corpus ou QuranEnc ne
   contient aucune écriture arabe (`_inert`) — `acoustic_checks`, `cascade`, `decoder`, `timing`, champs en trop d'un intervalle, d'une
   traduction ou du document ; `source.file` borné (255, sans contrôle) mais arabe permis ; libellé de zone contrôlé dans sa forme.
