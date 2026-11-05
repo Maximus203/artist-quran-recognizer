@@ -116,6 +116,21 @@ pour (b), « aucune source » pour (c). **Preuve** : `r19`, `tests/unit/test_ver
 `reason` pour un 503) ; niveau `error` pour `result_check_unavailable`, `warn` sinon ; AUCUN signe arabe dans le journal.
 **Preuve** : `import-session-verify.test.ts` (« les refus sont journalisés »), lecture du journal du serveur de banc.
 
+## Preuves P5 / P6 (2026-11-05, build de la branche `fix/import-p5-p6` @ 6e9222a, banc jetable sur le port 3660)
+- `qa/r17-import.mjs` : **75 / 75**, dont les 23 résultats légitimes acceptés (201) et 49 falsifications refusées, 0 message qui recopie de l'arabe.
+- `qa/t03-import.mjs` : 70 / 75 ; les 5 écarts sont ceux déjà connus de la recette (400 `invalid` au lieu de 422 pour `engine` chaîne/objet,
+  `decoder`/`timing` non numériques : refus corrects, message qui nomme maintenant le champ ; fichier vide = « pas de résultat joint », 201). Nouveaux
+  refus : N27 `acoustic_checks`, N28 `cascade`, N29 champ en trop = 422 ; N24 `source.file` arabe = 201 (voulu) ; B8 UTF-16 sans BOM et B9
+  UTF-32 = 400 `result_encoding` avec la marche à suivre ; E1-E4 (valeurs exactes du moteur) = 201.
+- `qa/t04-real-import.mjs` : les 10 résultats réels recomposés (`docs/evaluation/`) = 10 / 10 acceptés.
+- 1 594 résultats réels du moteur trouvés sur le poste (92 921 intervalles, 1 387 avec `acoustic_checks`, 303 avec `cascade`), relus hors
+  banc : 1 593 sans constat (le seul : plage de mots 1-144 pour 2:282, contrôle antérieur).
+- `qa/t05` (Chrome) : aucun faux arabe visible, `__pwned` nul ; `qa/p5-legacy.mjs` : fichier conservé réécrit avec du faux arabe,
+  `GET /api/sessions/:id` propre (`source.file` masqué, clé arabe de `decoder` écartée), `…/export` cite le fichier tel quel (limite assumée).
+- Journal : 105 lignes `import.result_refused` (champ nommé pour les 400), 0 signe arabe, 0 `error` hors le 500 d'un pack de revue que j'ai
+  provoqué en réécrivant le fichier sur le disque (empreinte différente).
+- Non rejoué : `r19`/`t13` hors ligne (le chemin des traductions n'est pas touché).
+
 ## Preuves (2026-11-04, build de la branche, serveur de banc jetable sur le port 3641, 3642 hors ligne)
 - `qa/r17-import.mjs` rejoué : **75 / 75 conformes**, 0 message qui recopie du faux arabe ; F37 (20 000 niveaux) = `422 result_too_deep` (au lieu du `503`) ; F39 (BOM UTF-8) = `201` ; G1 (riwaya = faux verset) et G3 (`engine.asr`) = `422` ; G2 (avertissements avec arabe et balise) = `201`, jamais montré.
 - `qa/r19-offline-import.mjs` rejoué (cache vide, proxy mort) : 503 `result_unverifiable` en 2,7 s dont le message dit « QuranEnc n'est pas joignable » (cause `offline`) ; 201 sans traduction ; 422 pour le faux arabe.
