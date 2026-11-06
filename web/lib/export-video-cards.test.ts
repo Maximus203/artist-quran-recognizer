@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Interval } from "./recognition";
-import { videoCardInputs } from "./export-video-cards";
+import { videoCardInputs, videoCardSources } from "./export-video-cards";
+import { FORMULAS } from "./formulas";
 
 const verse = (over: Partial<Interval> = {}): Interval =>
   ({
@@ -71,5 +72,79 @@ describe("videoCardInputs", () => {
     const card = videoCardInputs([verse({ translation: undefined })])[0];
     expect(card.translation).toBeNull();
     expect(card.attribution).toBeNull();
+  });
+
+  describe("formules récitées", () => {
+    const basmala = {
+      kind: "non_quran",
+      label: "basmala",
+      basmala: true,
+      ref: "1:1",
+      t: [1, 4],
+      text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+      translation: {
+        text: "Au nom d'Allah, le Tout Miséricordieux, le Très Miséricordieux.",
+        translation_id: "fr.hamidullah",
+        attribution: "Muhammad Hamidullah",
+        version: "1",
+        scope: "verse",
+      },
+    } as unknown as Interval;
+    const formula = (label: string, t: [number, number]) =>
+      ({ kind: "non_quran", label, t }) as unknown as Interval;
+
+    it("la basmala devient une carte avec le texte et la traduction du corpus (I1, I2)", () => {
+      const [card] = videoCardInputs([basmala]);
+      expect(card).toMatchObject({
+        start: 1,
+        end: 4,
+        refLabel: "Basmala",
+        arabic: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        translation:
+          "Au nom d'Allah, le Tout Miséricordieux, le Très Miséricordieux.",
+      });
+    });
+
+    it("une basmala sans texte (copie expurgée) ne produit pas de carte", () => {
+      expect(
+        videoCardInputs([{ ...basmala, text: null } as unknown as Interval]),
+      ).toEqual([]);
+    });
+
+    it.each([
+      ["istiadha", "istiadha"],
+      ["isti'adha", "istiadha"],
+      ["takbir", "takbir"],
+      ["amin", "amin"],
+    ] as const)(
+      "%s : arabe et traduction constants, jamais attribués à QuranEnc",
+      (label, id) => {
+        const [card] = videoCardInputs([formula(label, [5, 8])]);
+        expect(card).toMatchObject({
+          start: 5,
+          end: 8,
+          refLabel: FORMULAS[id].name,
+          arabic: FORMULAS[id].arabic,
+          translation: FORMULAS[id].translation,
+          attribution: null,
+          formula: true,
+        });
+      },
+    );
+
+    it("une parole non coranique inconnue ne produit aucune carte (I4)", () => {
+      expect(
+        videoCardInputs([
+          formula("french", [5, 8]),
+          formula("silence", [9, 10]),
+        ]),
+      ).toEqual([]);
+    });
+
+    it("les cartes restent dans l'ordre du temps, sans surlignage mot à mot pour une formule", () => {
+      const sources = videoCardSources([formula("istiadha", [0, 2]), verse()]);
+      expect(sources.map((s) => s.card.start)).toEqual([0, 10]);
+      expect(sources[0].range).toBeNull();
+    });
   });
 });

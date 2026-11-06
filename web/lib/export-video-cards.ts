@@ -12,6 +12,7 @@ import {
   splitVerse,
   type SplitOptions,
 } from "./export-video-split";
+import { formulaFromLabel } from "./formulas";
 import type { Interval } from "./recognition";
 import { surahName } from "./surahs";
 
@@ -26,6 +27,8 @@ export type VideoCardInput = {
   part?: [number, number];
   /** Vrai si la traduction de cette carte a été coupée au prorata des mots, pas par QuranEnc. */
   approximate?: boolean;
+  /** Vrai pour une formule récitée hors Mushaf (isti'adha, takbir, âmîn) : arabe et traduction constants, pas QuranEnc. */
+  formula?: true;
 };
 
 export type VideoOverlay = { start: number; end: number; png: string };
@@ -47,6 +50,50 @@ export type CardSource = {
 };
 
 /**
+ * La carte d'une zone non coranique que l'on connaît (I4 : toute autre parole reste sans carte).
+ * - basmala : verset 1:1, texte du corpus et traduction QuranEnc telles que le résultat les porte
+ *   (I1, I2) ; sans texte (copie expurgée), pas de carte ;
+ * - isti'adha, takbir, âmîn : arabe et traduction constants de `formulas.ts`, jamais présentés
+ *   comme le Mushaf ni comme QuranEnc (`formula: true`, aucune attribution).
+ */
+function formulaSource(item: Interval): CardSource | null {
+  if (item.kind !== "non_quran" || !item.t) return null;
+  const [start, end] = item.t;
+  if (item.basmala === true) {
+    if (!item.text || EMPTY.test(item.text)) return null;
+    const translation = item.translation?.text;
+    return {
+      interval: item,
+      range: null,
+      card: {
+        start,
+        end,
+        refLabel: "Basmala",
+        arabic: item.text,
+        translation:
+          translation && !EMPTY.test(translation) ? translation : null,
+        attribution: item.translation?.attribution ?? null,
+      },
+    };
+  }
+  const formula = formulaFromLabel(item.label);
+  if (!formula) return null;
+  return {
+    interval: item,
+    range: null,
+    card: {
+      start,
+      end,
+      refLabel: formula.name,
+      arabic: formula.arabic,
+      translation: formula.translation,
+      attribution: null,
+      formula: true,
+    },
+  };
+}
+
+/**
  * Les cartes d'un export vidéo, chacune avec son verset d'origine : les versets avec texte, temps et
  * traduction du résultat. Un verset est affiché en plusieurs temps quand le récitant s'arrête ou
  * quand il dépasse la durée maximale (`splitVerse`) : le texte ne dépasse jamais ce qui vient d'être dit.
@@ -57,6 +104,11 @@ export function videoCardSources(
 ): CardSource[] {
   const out: CardSource[] = [];
   for (const item of intervals) {
+    const formula = formulaSource(item);
+    if (formula) {
+      out.push(formula);
+      continue;
+    }
     if (item.kind !== "verse" || !item.t || !item.ref) continue;
     if (!item.text || EMPTY.test(item.text)) continue;
     const attribution = item.translation?.attribution ?? null;
