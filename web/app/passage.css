@@ -51,6 +51,34 @@
   padding: var(--sp-2) 0;
   font-feature-settings: "liga", "calt";
 }
+/* Parole libre (ADR-0027) : transcription automatique, jamais dans la police du Mushaf. */
+.free-ar {
+  font-size: var(--fs-xl);
+  line-height: 1.8;
+  text-align: center;
+  padding: var(--sp-2) 0;
+  text-wrap: pretty;
+}
+.xe-free {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0 var(--sp-4) var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.xe-free small {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.free-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.free-actions .btn[aria-pressed="true"] {
+  border-color: var(--text-2);
+}
 .arabic.basmala {
   font-size: calc(var(--quran-size) * 1.15);
 }

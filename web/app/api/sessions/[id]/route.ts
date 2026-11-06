@@ -7,10 +7,11 @@ import { audit } from "@/lib/audit";
 import { deleteMeta, updateMeta } from "@/lib/session-index";
 import { cleanUserName, defaultSessionName } from "@/lib/session-name";
 import { viewForUser } from "@/lib/session-service";
+import { readFreeSpeech } from "@/lib/free-speech-store";
 import { ReviewWorkError, readResult, readReview } from "@/lib/store";
 export const runtime = "nodejs";
 
-/** `{ session, result, review }` : la session (avec son propriétaire, sa portée, ses droits), son résultat et sa revue. */
+/** `{ session, result, review, free_speech }` (parole libre ou null) : la session (avec son propriétaire, sa portée, ses droits), son résultat et sa revue. */
 async function handleGET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -21,11 +22,17 @@ async function handleGET(
     await ensureQueueRecovered().catch(() => []);
     const session = await viewForUser(access.db, access.user, access.meta);
     if (!session) return notFound();
-    const [result, review] = await Promise.all([
+    const [result, review, free_speech] = await Promise.all([
       readResult(access.id),
       readReview(access.id),
+      readFreeSpeech(access.id),
     ]);
-    return json({ session, result: result?.parsed ?? null, review });
+    return json({
+      session,
+      result: result?.parsed ?? null,
+      review,
+      free_speech,
+    });
   } catch {
     return notFound();
   }

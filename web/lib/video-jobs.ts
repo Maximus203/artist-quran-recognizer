@@ -469,6 +469,7 @@ export function renderPayload(job: VideoJob) {
     suggest: job.options.suggest,
     margins: suggestOptionsOf(job.options),
     padRanges: job.options.pad_ranges === true,
+    freeSpeech: job.options.free_speech ?? "off",
     prefs: videoPrefsFromOptions(job.options, job.background !== null),
     hasBackground: job.background !== null,
     hasBackgroundVideo: job.backgroundVideo !== null,

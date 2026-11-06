@@ -1,9 +1,11 @@
 """Parole libre : choisit les passages éligibles, transcrit, contrôle, traduit (ADR-0027).
 
-Éligible : une zone `non_quran` d'étiquette `arabic_speech` et rien d'autre. Les formules connues
-(basmala, isti'adha, takbir, amin) ont leur texte fixe ; le français, les autres langues, le silence
-et le bruit n'ont rien à traduire ; une abstention ou un verset incertain reste tel quel, sans
-transcription ni traduction. À chaque doute, le passage est retenu sans aucun texte (I3).
+Éligible : une zone `non_quran` d'étiquette `arabic_speech`, ou une abstention `no_candidate`
+(aucun verset ne ressemble au passage : le moteur n'émet pas encore de zone `arabic_speech`, la
+parole arabe hors Coran se trouve là). Les formules connues ont leur texte fixe ; le français, les
+autres langues, le silence et le bruit n'ont rien à traduire ; une abstention `below_threshold`, un
+transcript vide ou un verset incertain reste tel quel, sans transcription ni traduction. À chaque
+doute, le passage est retenu sans aucun texte (I3).
 """
 
 from __future__ import annotations
@@ -30,11 +32,22 @@ ELIGIBLE_LABEL = NonQuranKind.ARABIC_SPEECH.value
 SILENCE_RMS = 1e-4
 
 
-def eligible_intervals(intervals: Sequence[Mapping[str, Any]]) -> list[tuple[int, TimeSpan]]:
+def _is_candidate(interval: Mapping[str, Any], config: FreeSpeechConfig) -> bool:
+    if interval.get("kind") == "non_quran":
+        return interval.get("label") == ELIGIBLE_LABEL
+    return (
+        interval.get("kind") == "abstention" and interval.get("reason") in config.abstention_reasons
+    )
+
+
+def eligible_intervals(
+    intervals: Sequence[Mapping[str, Any]], config: FreeSpeechConfig | None = None
+) -> list[tuple[int, TimeSpan]]:
+    config = config or FreeSpeechConfig()
     out: list[tuple[int, TimeSpan]] = []
     for index, interval in enumerate(intervals):
         t = interval.get("t")
-        if interval.get("kind") != "non_quran" or interval.get("label") != ELIGIBLE_LABEL:
+        if not _is_candidate(interval, config):
             continue
         if not (isinstance(t, list) and len(t) == 2 and t[1] > t[0] >= 0):
             continue
@@ -111,5 +124,5 @@ def run_free_speech(
 ) -> list[FreeSpeechItem]:
     return [
         process_interval(index, span, clip, transcriber, translator, guard, config)
-        for index, span in eligible_intervals(intervals)
+        for index, span in eligible_intervals(intervals, config)
     ]

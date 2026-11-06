@@ -48,6 +48,8 @@ export type SuggestOptions = {
   mergeGap?: number;
   /** Garde aussi les versets `inferred` (déduits de la position) ; défaut oui. */
   includeInferred?: boolean;
+  /** Rangs d'intervalles (paroles libres affichées dans la vidéo) traités comme des formules : absorbés par le verset voisin. */
+  shownSpeech?: ReadonlySet<number>;
 };
 
 export type SuggestedRange = ExportRange & {
@@ -174,10 +176,11 @@ function absorbFormulas(
   passages: Passage[],
   intervals: readonly SuggestTiming[],
   maxGap: number,
+  shownSpeech: ReadonlySet<number> = new Set(),
 ): Set<SuggestTiming> {
   const absorbed = new Set<SuggestTiming>();
-  for (const item of intervals) {
-    if (!isFormula(item) || !isTimed(item)) continue;
+  for (const [rank, item] of intervals.entries()) {
+    if (!(isFormula(item) || shownSpeech.has(rank)) || !isTimed(item)) continue;
     const [a, b] = item.t;
     let best: Passage | null = null;
     let bestGap = Infinity;
@@ -258,6 +261,7 @@ export function suggestRanges(
     passages,
     intervals,
     Math.max(FORMULA_GAP, options.mergeGap ?? DEFAULT_MERGE_GAP),
+    options.shownSpeech,
   );
   const speech = otherSpeech(intervals, absorbed);
   const snap = (options.snapToSilence ?? true) && wave !== null;

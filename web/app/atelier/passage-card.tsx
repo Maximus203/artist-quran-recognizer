@@ -2,6 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { FORMULA_NOTICE } from "@/lib/formulas";
+import {
+  FREE_SPEECH_NOTICE,
+  type FreeSpeechItem,
+  type FreeSpeechReview,
+} from "@/lib/free-speech";
 import { formatTime, type Interval } from "@/lib/recognition";
 import { calibrationWindow } from "@/lib/audio-offset";
 import {
@@ -49,6 +54,9 @@ type Props = {
   onListen: (range: [number, number]) => void;
   /** Clé qui change quand le passage affiché change (déclenche le fondu). */
   fadeKey: string;
+  /** Parole libre automatique du passage affiché (ADR-0027), si le fichier en porte une. */
+  spoken?: FreeSpeechItem | null;
+  onSpokenReview?: (index: number, review: FreeSpeechReview) => void;
 };
 
 /** Traduction d'un verset : seul le fragment du passage quand le moteur l'a découpé, sinon le verset. */
@@ -94,14 +102,22 @@ const Range = ({ range }: { range: [number, number] | null }) => (
   </span>
 );
 
+const REVIEW_LABELS: Record<FreeSpeechReview, string> = {
+  pending: "À relire",
+  approved: "Validée",
+  rejected: "Rejetée",
+};
+
 function Body({
   model,
   showTranslation,
   live,
+  onReview,
 }: {
   model: PassageModel;
   showTranslation: boolean;
   live: LiveView;
+  onReview?: (index: number, review: FreeSpeechReview) => void;
 }) {
   switch (model.type) {
     case "verse": {
@@ -295,6 +311,78 @@ function Body({
           ) : null}
         </>
       );
+    case "free_speech":
+      return (
+        <>
+          <div className="p-meta">
+            <span className="badge badge--warn" data-testid="badges">
+              <span className="sw s-formula" />
+              Parole hors Coran · automatique
+            </span>
+            <span className="p-ref ref" data-testid="ref">
+              {REVIEW_LABELS[model.review]}
+            </span>
+            <Range range={model.range} />
+          </div>
+          <p
+            className="free-ar"
+            lang="ar"
+            dir="rtl"
+            data-testid="free-speech-arabic"
+          >
+            {model.arabic}
+          </p>
+          {showTranslation ? (
+            <div className="translation" data-testid="free-speech-translation">
+              <p>{model.translation}</p>
+              <small>{FREE_SPEECH_NOTICE}</small>
+            </div>
+          ) : null}
+          {onReview ? (
+            <div className="free-actions">
+              <button
+                type="button"
+                className="btn btn--secondary"
+                data-testid="free-speech-approve"
+                aria-pressed={model.review === "approved"}
+                onClick={() => onReview(model.index, "approved")}
+              >
+                Valider
+              </button>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                data-testid="free-speech-reject"
+                aria-pressed={model.review === "rejected"}
+                onClick={() => onReview(model.index, "rejected")}
+              >
+                Rejeter
+              </button>
+            </div>
+          ) : null}
+        </>
+      );
+    case "free_speech_held":
+      return (
+        <>
+          <div className="p-meta">
+            <span className="badge" data-testid="badges">
+              <span className="sw s-formula" />
+              Parole non traduite
+            </span>
+            <span className="p-ref ref" data-testid="ref">
+              {model.reason}
+            </span>
+            <Range range={model.range} />
+          </div>
+          <div className="p-empty">
+            <p>
+              Aucun texte n’est affiché : dans le doute, ce passage est laissé
+              tel quel.
+            </p>
+          </div>
+        </>
+      );
     case "other_speech":
       return (
         <>
@@ -341,7 +429,10 @@ function Body({
 }
 
 export function PassageCard(props: Props) {
-  const model = useMemo(() => describePassage(props.item), [props.item]);
+  const model = useMemo(
+    () => describePassage(props.item, props.spoken ?? null),
+    [props.item, props.spoken],
+  );
   const card = useRef<HTMLElement>(null);
   const range = props.item?.t ?? null;
   useEffect(() => {
@@ -376,6 +467,7 @@ export function PassageCard(props: Props) {
         model={model}
         showTranslation={props.showTranslation}
         live={props.live}
+        onReview={props.onSpokenReview}
       />
       <div className="p-actions">
         <button
@@ -429,7 +521,7 @@ export function PassageCard(props: Props) {
  * de lecture : un retour en arrière (seek, boucle, reprise) se recale à l'image suivante.
  */
 export function LivePassage(
-  props: Omit<Props, "item" | "fadeKey" | "live" | "calibration"> & {
+  props: Omit<Props, "item" | "fadeKey" | "live" | "calibration" | "spoken"> & {
     store: Store<PlayerState>;
     intervals: readonly Interval[];
     selectedIndex: number | null;
@@ -445,6 +537,8 @@ export function LivePassage(
     /** Lit cette plage en boucle (calage à l'oreille) / arrête cette lecture. */
     onLoop: (range: [number, number]) => void;
     onStopLoop: () => void;
+    /** Parole libre de la session par rang d'intervalle (ADR-0027). */
+    freeSpeech?: ReadonlyMap<number, FreeSpeechItem>;
   },
 ) {
   const {
@@ -459,6 +553,7 @@ export function LivePassage(
     onSeek,
     onLoop,
     onStopLoop,
+    freeSpeech,
     ...rest
   } = props;
   // Calage à l'oreille : le verset épinglé reste affiché pendant que le curseur déplace le surlignage.
@@ -557,6 +652,7 @@ export function LivePassage(
       live={live}
       calibration={calibration}
       item={item}
+      spoken={index >= 0 ? (freeSpeech?.get(index) ?? null) : null}
       fadeKey={`${sessionId}:${index}`}
     />
   );

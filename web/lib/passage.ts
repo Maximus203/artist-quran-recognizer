@@ -8,6 +8,12 @@
  * sans modification ; `splitNoteMarkers` ne fait que la découper pour styler les `[n]` à l'affichage.
  */
 import { formulaFromLabel, type Formula } from "./formulas";
+import {
+  isFreeSpeechCandidate,
+  WITHHELD_REASONS,
+  type FreeSpeechItem,
+  type FreeSpeechReview,
+} from "./free-speech";
 import { indexAt, timeIndexOf } from "./interval-index";
 import { heardTime } from "./audio-offset";
 import {
@@ -63,6 +69,18 @@ export type PassageModel =
     }
   | { type: "formula"; formula: Formula; range: [number, number] }
   | { type: "other_speech"; label: string; range: [number, number] }
+  | {
+      type: "free_speech";
+      /** Rang de l'intervalle dans le résultat (clé de la relecture). */
+      index: number;
+      range: [number, number];
+      /** Transcription automatique : jamais présentée comme du Mushaf (I1). */
+      arabic: string;
+      translation: string;
+      confidence: number | null;
+      review: FreeSpeechReview;
+    }
+  | { type: "free_speech_held"; range: [number, number]; reason: string }
   | { type: "abstention"; reason: string; range: [number, number] };
 
 export type IntervalStyle =
@@ -131,7 +149,10 @@ function translationView(
   };
 }
 
-export function describePassage(item: Interval | null): PassageModel {
+export function describePassage(
+  item: Interval | null,
+  spoken: FreeSpeechItem | null = null,
+): PassageModel {
   if (!item) return { type: "empty" };
   const range = item.t ?? null;
   if (item.kind === "non_quran" && isBasmala(item))
@@ -165,6 +186,23 @@ export function describePassage(item: Interval | null): PassageModel {
       badges,
       live: liveWords(item),
     };
+  }
+  if (spoken && isFreeSpeechCandidate(item) && item.t) {
+    return spoken.status === "translated"
+      ? {
+          type: "free_speech",
+          index: spoken.index,
+          range: item.t,
+          arabic: spoken.transcript_ar,
+          translation: spoken.translation_fr,
+          confidence: spoken.confidence,
+          review: spoken.review,
+        }
+      : {
+          type: "free_speech_held",
+          range: item.t,
+          reason: WITHHELD_REASONS[spoken.reason] ?? spoken.reason,
+        };
   }
   if (item.kind === "non_quran") {
     const formula = formulaFromLabel(item.label);

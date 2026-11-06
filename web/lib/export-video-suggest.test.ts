@@ -277,4 +277,20 @@ describe("aimant : seulement un VRAI silence (relatif au niveau de la voix)", ()
       expect(r.start).toBeGreaterThanOrEqual(4);
     });
   });
+
+  describe("paroles libres affichées", () => {
+    it("une parole libre choisie entre dans la plage du verset voisin ; sinon elle la borne", () => {
+      const timings: SuggestTiming[] = [
+        { kind: "non_quran", label: "arabic_speech", t: [2, 4] },
+        verse("R:1", 4.3, 9),
+      ];
+      const [kept] = suggestRanges(timings, 15, null, {
+        shownSpeech: new Set([0]),
+      });
+      expect(kept.core_start).toBe(2);
+      const [bounded] = suggestRanges(timings, 15, null);
+      expect(bounded.core_start).toBe(4.3);
+      expect(bounded.start).toBeGreaterThanOrEqual(4);
+    });
+  });
 });

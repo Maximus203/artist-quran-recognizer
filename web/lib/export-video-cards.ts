@@ -13,6 +13,7 @@ import {
   type SplitOptions,
 } from "./export-video-split";
 import { formulaFromLabel } from "./formulas";
+import { isFreeSpeechCandidate, type TranslatedItem } from "./free-speech";
 import type { Interval } from "./recognition";
 import { surahName } from "./surahs";
 
@@ -29,6 +30,8 @@ export type VideoCardInput = {
   approximate?: boolean;
   /** Vrai pour une formule récitée hors Mushaf (isti'adha, takbir, âmîn) : arabe et traduction constants, pas QuranEnc. */
   formula?: true;
+  /** Vrai pour une parole libre : arabe transcrit et traduction produits par des modèles, hors Coran. */
+  automatic?: true;
 };
 
 export type VideoOverlay = { start: number; end: number; png: string };
@@ -93,6 +96,28 @@ function formulaSource(item: Interval): CardSource | null {
   };
 }
 
+/** Libellé de la carte d'une parole libre : jamais une référence du Coran (I1, I4). */
+export const FREE_SPEECH_CARD_LABEL =
+  "Parole hors Coran · traduction automatique";
+
+/** La carte d'une parole libre déjà filtrée par `shownFreeSpeech` ; temps de l'intervalle du résultat. */
+function freeSpeechSource(item: Interval, spoken: TranslatedItem): CardSource {
+  const [start, end] = item.t as [number, number];
+  return {
+    interval: item,
+    range: null,
+    card: {
+      start,
+      end,
+      refLabel: FREE_SPEECH_CARD_LABEL,
+      arabic: spoken.transcript_ar,
+      translation: spoken.translation_fr,
+      attribution: null,
+      automatic: true,
+    },
+  };
+}
+
 /**
  * Les cartes d'un export vidéo, chacune avec son verset d'origine : les versets avec texte, temps et
  * traduction du résultat. Un verset est affiché en plusieurs temps quand le récitant s'arrête ou
@@ -101,9 +126,15 @@ function formulaSource(item: Interval): CardSource | null {
 export function videoCardSources(
   intervals: readonly Interval[],
   split: SplitOptions = DEFAULT_SPLIT,
+  freeSpeech: ReadonlyMap<number, TranslatedItem> | null = null,
 ): CardSource[] {
   const out: CardSource[] = [];
-  for (const item of intervals) {
+  for (const [rank, item] of intervals.entries()) {
+    const spoken = freeSpeech?.get(rank);
+    if (spoken && isFreeSpeechCandidate(item)) {
+      out.push(freeSpeechSource(item, spoken));
+      continue;
+    }
     const formula = formulaSource(item);
     if (formula) {
       out.push(formula);
@@ -135,6 +166,9 @@ export function videoCardSources(
 export function videoCardInputs(
   intervals: readonly Interval[],
   split: SplitOptions = DEFAULT_SPLIT,
+  freeSpeech: ReadonlyMap<number, TranslatedItem> | null = null,
 ): VideoCardInput[] {
-  return videoCardSources(intervals, split).map((source) => source.card);
+  return videoCardSources(intervals, split, freeSpeech).map(
+    (source) => source.card,
+  );
 }

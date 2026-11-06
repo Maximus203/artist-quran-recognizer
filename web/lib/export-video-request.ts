@@ -12,6 +12,10 @@
  * `apiDifferences`.
  */
 import {
+  DEFAULT_FREE_SPEECH_MODE,
+  type FreeSpeechMode,
+} from "./export-video-free-speech";
+import {
   BACKGROUND_PRESETS,
   CLIP_BACKGROUND_ID,
 } from "./export-video-backgrounds";
@@ -50,6 +54,8 @@ const apiLayoutKey = (prefs: VideoPrefs): LayoutKey =>
 export type RequestExtras = {
   /** Identifiant (côté serveur) de la vidéo de fond déjà envoyée et prête ; absent = pas encore envoyée. */
   backgroundVideoUploadId?: string | null;
+  /** Parole libre automatique dans la vidéo (ADR-0027) ; absent = désactivée. */
+  freeSpeech?: FreeSpeechMode;
 };
 
 export function exportVideoRequest(
@@ -75,6 +81,9 @@ export function exportVideoRequest(
       API_SIZE.translation.max,
     ),
     show_translation: prefs.showTranslation,
+    ...(extras.freeSpeech && extras.freeSpeech !== DEFAULT_FREE_SPEECH_MODE
+      ? { free_speech: extras.freeSpeech }
+      : {}),
     show_arabic: prefs.showArabic,
     show_wave: prefs.showWave,
     text_position: Math.round(

@@ -22,6 +22,7 @@ import {
 import type { Interval } from "./recognition";
 import { barHeights, peakNorm } from "./waveform";
 import { videoCardSources, type VideoCardInput } from "./export-video-cards";
+import type { TranslatedItem } from "./free-speech";
 import { DEFAULT_SPLIT, type SplitOptions } from "./export-video-split";
 import type { ListeningPeaks } from "./listening";
 import { layoutFor, type VideoPrefs } from "./export-video-prefs";
@@ -61,8 +62,9 @@ export function frameCards(
   showTranslation: boolean,
   showArabic = true,
   split: SplitOptions = DEFAULT_SPLIT,
+  freeSpeech: ReadonlyMap<number, TranslatedItem> | null = null,
 ): FrameCard[] {
-  return videoCardSources(intervals, split).map(
+  return videoCardSources(intervals, split, freeSpeech).map(
     ({ card, interval, range }) => ({
       card: {
         ...card,

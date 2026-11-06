@@ -10,6 +10,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class FreeSpeechConfig:
+    abstention_reasons: tuple[str, ...] = ("no_candidate",)
+    """Abstentions éligibles : aucun verset ne ressemble au passage. `below_threshold` (un verset
+    ressemble mais le moteur doute) reste tel quel, comme `empty_transcript` : possible Coran."""
     min_duration_s: float = 1.0
     """Passage plus court : ni transcrit ni traduit."""
     min_language_prob: float = 0.8

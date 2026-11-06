@@ -4,6 +4,13 @@
  * en H.264 puis envoie les segments au serveur, qui muxe le MP4 avec la copie d'écoute.
  */
 import {
+  DEFAULT_FREE_SPEECH_MODE,
+  freeSpeechForVideo,
+  type FreeSpeechMode,
+} from "./export-video-free-speech";
+import { parseFreeSpeech } from "./free-speech";
+import { DEFAULT_SPLIT } from "./export-video-split";
+import {
   announceVideosChanged,
   savedVideoUrl,
   videoKey,
@@ -118,6 +125,8 @@ export type RenderVideoInputs = {
   margins?: SuggestOptions;
   /** Élargit aussi les `ranges` donnés avec ces marges. */
   padRanges?: boolean;
+  /** Parole libre automatique (ADR-0027) ; absent = « off ». */
+  freeSpeech?: FreeSpeechMode;
   /** Annonce les vidéos qui vont être produites, avec leur nom de fichier (avant la première). */
   onCount?: (count: number, names: string[]) => void;
   /** Avancement structuré, fichier par fichier. */
@@ -166,6 +175,7 @@ export async function renderSessionVideo(
     api<{
       session: SessionInfo & { state?: string };
       result: Recognition | null;
+      free_speech?: unknown;
     }>(`/api/sessions/${sessionId}`),
     api<ListeningPeaks>(`/api/sessions/${sessionId}/peaks`),
   ]);
@@ -175,10 +185,16 @@ export async function renderSessionVideo(
   if (!(duration > 0))
     throw new Error("Copie d'écoute illisible : durée absente.");
 
+  const spoken = freeSpeechForVideo(
+    parseFreeSpeech(detail.free_speech),
+    inputs.freeSpeech ?? DEFAULT_FREE_SPEECH_MODE,
+  );
   const cards = frameCards(
     result.intervals,
     prefs.showTranslation,
     prefs.showArabic,
+    DEFAULT_SPLIT,
+    spoken,
   );
   if (cards.length === 0)
     throw new Error("Aucun passage coranique avec texte : rien à montrer.");
@@ -188,13 +204,17 @@ export async function renderSessionVideo(
     ? suggestRanges(result.intervals, duration, peaks, {
         ...margins,
         group: mode,
+        shownSpeech: new Set(spoken?.keys()),
       }).map((r) => ({
         start: r.start,
         end: r.end,
         name: nameFromRefs(r.refs),
       }))
     : inputs.padRanges && inputs.ranges && inputs.ranges.length > 0
-      ? padRanges(inputs.ranges, result.intervals, duration, peaks, margins)
+      ? padRanges(inputs.ranges, result.intervals, duration, peaks, {
+          ...margins,
+          shownSpeech: new Set(spoken?.keys()),
+        })
       : inputs.ranges;
   const plan = normalizeRanges(requested, duration);
   if (!plan.ok) throw new Error(plan.error);

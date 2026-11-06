@@ -1,3 +1,4 @@
+import { FREE_SPEECH_MODES } from "./export-video-free-speech";
 import { z } from "zod";
 import { optionIssuesFr } from "./video-option-errors";
 import {
@@ -190,6 +191,8 @@ export const videoJobOptionsSchema = z
     merge_gap: z.number().min(0).max(30).optional(),
     /** Élargit aussi les `ranges` donnés avec ces marges, sans empiéter sur la récitation voisine. */
     pad_ranges: z.boolean().optional(),
+    /** Parole libre automatique (hors Coran, ADR-0027) : « off » (défaut), « approved » (validée) ou « all ». */
+    free_speech: z.enum(FREE_SPEECH_MODES).optional(),
     /** Remplir l'espace : le texte grandit pour occuper la zone libre. */
     fill: z.boolean().optional(),
     /** Hauteur du texte : 0 (haut) à 100 (bas), ou « top », « middle », « bottom ». */
@@ -393,6 +396,8 @@ export function videoOptionsCatalog() {
       notes:
         "Écart maximal entre deux versets d'un même passage (suggest « passage »).",
     },
+    free_speech:
+      "« off » (défaut) | « approved » (passages arabes hors Coran transcrits et traduits automatiquement, validés par un humain) | « all » (aussi ceux à relire). Jamais du Coran : tout passage qui lui ressemble est retenu.",
     pad_ranges:
       "boolean : élargit aussi tes `ranges` avec lead_in / tail_out sans empiéter sur la récitation voisine (sinon tes plages sont prises telles quelles).",
     layouts:
@@ -447,7 +452,7 @@ export function suggestOptionsOf(
     VideoJobOptions,
     "lead_in" | "tail_out" | "snap_to_silence" | "merge_gap" | "suggest"
   >,
-): Required<SuggestOptions> {
+): Required<Omit<SuggestOptions, "shownSpeech">> {
   return {
     leadIn: options.lead_in ?? DEFAULT_LEAD_IN,
     tailOut: options.tail_out ?? DEFAULT_TAIL_OUT,
@@ -465,7 +470,7 @@ const flagOf = (value: string | null): boolean | undefined =>
 export function suggestOptionsFromQuery(
   query: URLSearchParams,
 ):
-  | { ok: true; options: Required<SuggestOptions> }
+  | { ok: true; options: Required<Omit<SuggestOptions, "shownSpeech">> }
   | { ok: false; error: string } {
   const read: Record<string, number | undefined> = {};
   for (const name of ["lead_in", "tail_out", "merge_gap"]) {
