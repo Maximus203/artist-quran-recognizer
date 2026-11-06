@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-06 — Page « Fichiers » et quota ramené à 2 Go
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #223
 
 **Ce qui change.** Le menu « Récitations » a une nouvelle page, « Fichiers » : elle liste les vidéos exportées gardées sur le serveur, les plus lourdes d'abord, avec téléchargement et suppression pour libérer de l'espace. Chaque compte voit les fichiers de ses propres récitations ; l'administrateur voit ceux de tous les comptes, avec leur propriétaire. Le quota par compte passe de 5 Go à 2 Go et compte maintenant l'audio envoyé ET les vidéos exportées gardées (avant, les vidéos n'y comptaient pas). Quand l'espace du propriétaire est plein, une vidéo exportée est quand même téléchargée mais n'est plus gardée sur le serveur.
 
