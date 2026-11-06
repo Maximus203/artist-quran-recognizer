@@ -163,9 +163,12 @@ describe("lancement du moteur", () => {
   it("refuse un identifiant invalide", async () => {
     await expect(launch("../..")).rejects.toThrow("Identifiant invalide");
   });
-  it("refuse de relancer une session déjà terminée", async () => {
-    await seed({ state: "done" });
-    await expect(launch(ID)).rejects.toThrow(/résultat existe/);
+  it("relance une session déjà terminée (réanalyse) : le résultat précédent est gardé le temps du traitement", async () => {
+    await seed({ state: "done", prediction_sha256: "b".repeat(64) });
+    await launch(ID);
+    const done = await settle();
+    expect(done.state).toBe("done");
+    expect(done.previous ?? null).toBeNull();
   });
   it("refuse de relancer une session en cours", async () => {
     await seed({ state: "running", pid: process.pid });

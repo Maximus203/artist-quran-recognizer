@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseAsrChoice, type AsrChoice } from "./asr-choice";
 import { describeFailure, isMissingSession } from "./errors";
@@ -23,9 +23,11 @@ import {
   listSessions,
   readSession,
   recordOutcome,
+  restorePrevious,
   saveSession,
   sessionDir,
   sha,
+  snapshotOutcome,
   UPDATE,
   type Session,
 } from "./store";
@@ -274,8 +276,9 @@ export async function launch(
     const session = await readSession(id);
     if (session.state === "running")
       throw new Error("Traitement déjà en cours");
-    if (session.state === "done")
-      throw new Error("Un résultat existe déjà ; crée une nouvelle session.");
+    // Une session terminée se réanalyse avec la version actuelle du moteur : son résultat reste en
+    // place (`previous`) jusqu'à ce que le nouveau l'ait remplacé.
+    const rerun = session.state === "done";
     if (!process.env.AQR_MODELS_DIR && !remoteEngineEnabled())
       throw new Error(
         "AQR_MODELS_DIR absent : les poids du moteur ne sont pas configurés sur cette machine.",
@@ -297,7 +300,15 @@ export async function launch(
       const queuedAt = nextQueuedAt();
       shared().requestedAsr.set(id, asr);
       shared().requestedQueuedAt.set(id, queuedAt);
-      if (!queue.wouldStartNow()) {
+      if (rerun) {
+        session.previous = snapshotOutcome(session);
+        session.rerun_error = null;
+        // La sortie du moteur d'avant, sinon la lecture de la session la prendrait pour la fin de la nouvelle.
+        await rm(path.join(sessionDir(id), "source.recognition.json"), {
+          force: true,
+        });
+      }
+      if (rerun || !queue.wouldStartNow()) {
         // Persisté avant d'entrer dans la file : l'ordre survit à un redémarrage du serveur.
         session.state = "queued";
         session.asr = asr;
@@ -313,6 +324,8 @@ export async function launch(
     } catch (error) {
       shared().requestedAsr.delete(id);
       shared().requestedQueuedAt.delete(id);
+      if (rerun && restorePrevious(session, "La relance n’a pas démarré."))
+        await saveSession(session, UPDATE).catch(() => undefined);
       throw error;
     } finally {
       shared().launching.delete(id);
@@ -355,8 +368,7 @@ async function run(id: string, signal: JobSignal): Promise<void> {
     output = sessionDir(id);
   if (shared().cancelRequests.has(id)) {
     // Annulée entre la sortie de file et le lancement : rien à tuer, on consigne seulement.
-    session.state = "cancelled";
-    session.pid = null;
+    markCancelledSession(session);
     await saveSession(session, UPDATE);
     return;
   }
@@ -450,7 +462,8 @@ async function run(id: string, signal: JobSignal): Promise<void> {
       await started.catch(() => undefined);
       if (aborted) return;
       const current = await readSession(id);
-      if (current.state === "cancelled") return;
+      if (current.state === "cancelled" || shared().cancelRequests.has(id))
+        return;
       current.pid = null;
       // Moteur distant : on garde le nom de l'agent qui a fait (ou tenté) l'analyse ; local : rien.
       current.engine_agent = remote
@@ -508,6 +521,8 @@ async function run(id: string, signal: JobSignal): Promise<void> {
     } finally {
       // Libère le job seulement maintenant : jusque-là, aucun lecteur ne sonde le processus.
       if (jobs.get(id)?.child === child) jobs.delete(id);
+      // L'annulation de ce processus est consommée : une relance immédiate ne doit pas la retrouver.
+      shared().cancelRequests.delete(id);
       settle();
     }
   });
@@ -563,18 +578,29 @@ async function cancelNow(id: string): Promise<void> {
     throw new Error("Aucun traitement actif dans ce serveur");
   }
   const session = await readSession(id);
-  session.state = "cancelled";
-  session.pid = null;
-  session.finished_at = new Date().toISOString();
+  // Le gestionnaire de fin du processus ne doit pas écraser cette annulation (voir `close`).
+  shared().cancelRequests.add(id);
+  markCancelledSession(session);
   await saveSession(session, UPDATE);
   job.child.kill();
 }
 async function markCancelled(id: string): Promise<void> {
   const session = await readSession(id);
+  markCancelledSession(session);
+  await saveSession(session, UPDATE);
+}
+/** Annulée : « cancelled », sauf une réanalyse, qui rend la session terminée avec son ancien résultat. */
+function markCancelledSession(session: Session): void {
+  if (
+    restorePrevious(
+      session,
+      "Relance annulée : l’ancien résultat est conservé.",
+    )
+  )
+    return;
   session.state = "cancelled";
   session.pid = null;
   session.finished_at = new Date().toISOString();
-  await saveSession(session, UPDATE);
 }
 
 /** Supprime une session dans l'ordre des lancements (voir `cancel`) ; mêmes refus que le stockage. */

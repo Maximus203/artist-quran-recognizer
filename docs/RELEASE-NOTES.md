@@ -16,6 +16,13 @@ PR : #221
 **Ce qui change.** Une vidéo d'export affiche maintenant les formules récitées : la basmala (texte du Mushaf et traduction officielle, comme un verset), puis l'isti'adha, le takbir et l'âmîn (arabe et traduction françaises fixes, marquées comme formules). Elles étaient absentes. Quand une formule est à 3 secondes ou moins d'un verset, la plage de vidéo proposée l'englobe ; une formule isolée, plus loin, n'est pas ajoutée d'office (elle reste choisissable à la main) et une parole non coranique inconnue (français, hadith…) n'apparaît toujours pas.
 
 **Pourquoi / décision.** La basmala garde le texte du corpus et la traduction QuranEnc sans modification (I1, I2). Les traductions de l'isti'adha, du takbir et de l'âmîn sont des constantes de `web/lib/formulas.ts`, indicatives et hors QuranEnc, jamais présentées comme le Mushaf ; aucune attribution n'est dessinée. Les formules non encore reconnues par le moteur (alhamdulillah, subhan Allah…) ne sont pas ajoutées : une reconnaissance trop large nommerait de faux passages (I3, I4). (renvoyer vers l'ADR ou le rapport concerné ; supprimer ce paragraphe s'il n'apporte rien)
+## 2026-11-06 — Réanalyser une session terminée avec la version actuelle du moteur
+Étiquettes : utilisateur, technique, décision
+PR : #222
+
+**Ce qui change.** Une session déjà analysée porte un bouton « Réanalyser avec la version actuelle » (après une confirmation). L'audio repasse dans le moteur d'aujourd'hui : un enregistrement analysé avec un ancien système profite des améliorations (traductions par carte, formules récitées, etc.) sans être réimporté. L'ancien résultat reste affiché jusqu'à ce que le nouveau ait abouti ; si la réanalyse échoue ou est annulée, l'ancien résultat est conservé et un message dit pourquoi. Les corrections déjà faites sont rapprochées du nouveau résultat (calque de décisions, ADR-0014).
+
+**Pourquoi / décision.** Jusqu'ici le serveur refusait de relancer une session terminée (« crée une nouvelle session »). Le résultat précédent est gardé dans `session.json` (`previous`) le temps de la relance ; la sortie moteur périmée est retirée au lancement, sinon la lecture de la session la prendrait pour la fin de la nouvelle analyse. Les vidéos déjà exportées ne changent pas : il faut les réexporter.
 
 ## 2026-11-06 — Barre de gauche : le sélecteur « Afficher » ne chevauche plus sa flèche
 Étiquettes : utilisateur

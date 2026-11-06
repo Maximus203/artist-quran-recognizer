@@ -601,3 +601,86 @@ describe("robustesse", () => {
     }
   });
 });
+
+describe("réanalyse d'une session terminée (nouvelle version du moteur)", () => {
+  const setMode = (id: string, mode: string) =>
+    writeFile(path.join(sessionDir(id), "mode.txt"), mode);
+  const gone = (id: string, file: string) =>
+    !existsSync(path.join(sessionDir(id), file));
+  const doneOnce = async (id: string) => {
+    await seed(id, "ok");
+    await launch(id);
+    return finished(id);
+  };
+
+  it("repart pour de bon : le résultat précédent ne la déclare pas terminée d'office", async () => {
+    const first = await doneOnce(A);
+    await setMode(A, "hold");
+    const result = await launch(A);
+    expect(result.state).toBe("running");
+    await until(async () => (await startedIds()).length === 2);
+    expect(await state(A)).toBe("running");
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(await state(A)).toBe("running");
+    // l'ancien résultat reste lisible pendant la relance (décisions, exports)
+    expect(
+      existsSync(path.join(sessionDir(A), "prediction.recognition.json")),
+    ).toBe(true);
+    await release(A);
+    await until(
+      async () =>
+        (await readSession(A)).previous == null && (await state(A)) === "done",
+    );
+    const again = await readSession(A);
+    expect(again.finished_at).not.toBe(first.finished_at);
+    expect(again.viewed_at).toBeNull();
+  });
+
+  it("une relance en échec rend la session terminée avec l'ancien résultat et dit pourquoi", async () => {
+    const first = await doneOnce(A);
+    await setMode(A, "fail");
+    await launch(A);
+    await until(async () => Boolean((await readSession(A)).rerun_error));
+    const back = await readSession(A);
+    expect(back.state).toBe("done");
+    expect(back.prediction_sha256).toBe(first.prediction_sha256);
+    expect(back.finished_at).toBe(first.finished_at);
+    expect(back.rerun_error).toMatch(/boom/);
+    expect(back.error).toBeNull();
+    expect(gone(A, "prediction.recognition.json")).toBe(false);
+  });
+
+  it("annuler une relance en cours rend l'ancien résultat", async () => {
+    const first = await doneOnce(A);
+    await setMode(A, "hold");
+    await launch(A);
+    await until(async () => (await startedIds()).length === 2);
+    await cancel(A);
+    await until(async () => (await readSession(A)).state === "done");
+    await jobQueue().idle();
+    const back = await readSession(A);
+    expect(back.state).toBe("done");
+    expect(back.prediction_sha256).toBe(first.prediction_sha256);
+    expect(back.rerun_error).toMatch(/annulée/i);
+  });
+
+  it("une relance mise en attente puis annulée rend aussi l'ancien résultat", async () => {
+    const first = await doneOnce(A);
+    await seed(B);
+    await launch(B); // occupe l'unique place
+    await launch(A);
+    expect(await state(A)).toBe("queued");
+    await cancel(A);
+    const back = await readSession(A);
+    expect(back.state).toBe("done");
+    expect(back.prediction_sha256).toBe(first.prediction_sha256);
+  });
+
+  it("une session en échec ou prête se lance comme avant, sans trace de relance", async () => {
+    await seed(A, "ok");
+    await launch(A);
+    const done = await finished(A);
+    expect(done.previous ?? null).toBeNull();
+    expect(done.rerun_error ?? null).toBeNull();
+  });
+});

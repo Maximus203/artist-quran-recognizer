@@ -1947,3 +1947,8 @@ Contexte : la vidéo posait un long verset d'un bloc (réduction jusqu'au planch
 - **Décision** : palier « fin » (0,3) écrit dans le fichier de coupes, lu par les seules cartes d'export ; attribution à la carte majoritaire.
 - **Résultat** : sur la session réelle, chaque carte reçoit sa partie ; il reste une carte sans traduction (mots 27-30 hors du fragment fiable du passage).
 - **Non vérifié** : précision des coupures < 0,6 ; rendu de la vidéo au navigateur.
+
+## 2026-11-06 — Réanalyse d'une session terminée
+- **Contexte** : une session analysée avec un ancien moteur ne pouvait pas profiter des améliorations ; le seul recours était de réimporter l'audio. Demande du mainteneur, y compris pour la production.
+- **Décision** : `launch` accepte une session `done` ; l'ancien résultat (`previous`) revient si la relance échoue ou est annulée (`rerun_error` explique) ; confirmation avant de lancer dans l'atelier.
+- **Non vérifié** : comportement sur une session volumineuse en production ; vidéos déjà exportées non régénérées (à refaire par l'utilisateur).
