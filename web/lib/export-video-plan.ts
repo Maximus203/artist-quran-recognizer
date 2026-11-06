@@ -34,6 +34,8 @@ export type PlanContext = {
   duration: number;
   peaks: SuggestPeaks | null;
   padding: Padding;
+  /** Rangs des paroles libres affichées dans la vidéo : absorbées par le verset voisin. */
+  shownSpeech?: ReadonlySet<number>;
 };
 
 export const WHOLE_AUDIO_NAME = "Tout l’audio";
@@ -46,6 +48,7 @@ export function suggestions(ctx: PlanContext): SuggestedRange[] {
     snapToSilence: ctx.padding.snap,
     group: "verse",
     includeInferred: true,
+    shownSpeech: ctx.shownSpeech,
   });
 }
 

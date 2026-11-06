@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Interval } from "./recognition";
 import { videoCardInputs, videoCardSources } from "./export-video-cards";
 import { FORMULAS } from "./formulas";
+import type { TranslatedItem } from "./free-speech";
 
 const verse = (over: Partial<Interval> = {}): Interval =>
   ({
@@ -145,6 +146,78 @@ describe("videoCardInputs", () => {
       const sources = videoCardSources([formula("istiadha", [0, 2]), verse()]);
       expect(sources.map((s) => s.card.start)).toEqual([0, 10]);
       expect(sources[0].range).toBeNull();
+    });
+  });
+
+  describe("parole libre", () => {
+    const speech = {
+      kind: "non_quran",
+      label: "arabic_speech",
+      t: [20, 26],
+    } as unknown as Interval;
+    const item = (index: number): [number, TranslatedItem] => [
+      index,
+      {
+        index,
+        t: [20, 26],
+        status: "translated",
+        transcript_ar: "اليوم نتحدث عن الصبر",
+        translation_fr: "Aujourd'hui nous parlons de la patience.",
+        confidence: 0.9,
+        language: "ar",
+        review: "approved",
+      },
+    ];
+
+    it("sans option : aucune carte pour une parole libre", () => {
+      expect(videoCardInputs([verse(), speech])).toHaveLength(1);
+    });
+
+    it("avec un passage validé : une carte automatique, sans référence ni attribution", () => {
+      const cards = videoCardInputs(
+        [verse(), speech],
+        undefined,
+        new Map([item(1)]),
+      );
+      expect(cards).toHaveLength(2);
+      expect(cards[1]).toMatchObject({
+        start: 20,
+        end: 26,
+        refLabel: "Parole hors Coran · traduction automatique",
+        arabic: "اليوم نتحدث عن الصبر",
+        translation: "Aujourd'hui nous parlons de la patience.",
+        attribution: null,
+        automatic: true,
+      });
+    });
+
+    it("une abstention no_candidate est concernée ; below_threshold reste telle quelle", () => {
+      const abstention = (reason: string) =>
+        ({ kind: "abstention", reason, t: [20, 26] }) as unknown as Interval;
+      const shown = new Map([item(1)]);
+      expect(
+        videoCardInputs(
+          [verse(), abstention("no_candidate")],
+          undefined,
+          shown,
+        ),
+      ).toHaveLength(2);
+      expect(
+        videoCardInputs(
+          [verse(), abstention("below_threshold")],
+          undefined,
+          shown,
+        ),
+      ).toHaveLength(1);
+    });
+
+    it("le rang doit correspondre à une zone arabic_speech (jamais un verset)", () => {
+      const cards = videoCardInputs(
+        [verse(), speech],
+        undefined,
+        new Map([item(0)]),
+      );
+      expect(cards.map((c) => c.refLabel)).toEqual(["Al-Baqara 2:255"]);
     });
   });
 });

@@ -1,4 +1,5 @@
 "use client";
+import type { FreeSpeech } from "@/lib/free-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import {
@@ -18,6 +19,8 @@ export type Detail = {
   session: ApiSession;
   result: Recognition | null;
   review: Review | null;
+  /** Parole libre automatique (ADR-0027), ou null. */
+  free_speech?: FreeSpeech | null;
 };
 
 const isActive = (state: ApiSession["state"]) =>
@@ -288,7 +291,11 @@ export function useSidebarSessions(recentCount: number = SIDEBAR_RECENT) {
 /* ───────────────────────── Session ouverte ───────────────────────── */
 
 const signatureOf = (detail: Detail): string =>
-  `${JSON.stringify(detail.session)}|${detail.result ? "r" : "-"}`;
+  `${JSON.stringify(detail.session)}|${detail.result ? "r" : "-"}|${JSON.stringify(
+    detail.free_speech?.items.map((i) =>
+      i.status === "translated" ? [i.index, i.review] : [i.index],
+    ) ?? null,
+  )}`;
 
 /**
  * Détail de la session ouverte. Tant qu'elle attend ou tourne, on la relit (état, file, estimation,

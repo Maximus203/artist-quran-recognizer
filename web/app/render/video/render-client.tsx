@@ -1,4 +1,5 @@
 "use client";
+import type { FreeSpeechMode } from "@/lib/export-video-free-speech";
 import { useEffect, useRef, useState } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
 import type { SavedVideo } from "@/lib/export-video-library";
@@ -30,6 +31,7 @@ type Payload = {
     mergeGap?: number;
   };
   padRanges?: boolean;
+  freeSpeech?: FreeSpeechMode;
   /** Vidéo identique déjà gardée : récupérée sans être refaite (défaut). */
   reuse?: boolean;
 };
@@ -102,6 +104,7 @@ export function RenderClient() {
         suggest: payload.suggest,
         margins: payload.margins,
         padRanges: payload.padRanges,
+        freeSpeech: payload.freeSpeech,
         onCount: (count) => {
           state.total = count;
           state.files_total = count;

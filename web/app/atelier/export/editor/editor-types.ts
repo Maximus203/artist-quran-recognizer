@@ -1,3 +1,4 @@
+import type { TranslatedItem } from "@/lib/free-speech";
 import type { ComponentType, ReactNode } from "react";
 import type { VideoPrefs } from "@/lib/export-video-prefs";
 import type { ListeningPeaks } from "@/lib/listening";
@@ -19,6 +20,8 @@ export {
 /** D'où viennent l'image et le son de l'aperçu : ce que `VideoPreview` lit, sans les réglages. */
 export type PreviewSource = {
   intervals: readonly Interval[] | null;
+  /** Paroles libres automatiques montrées (ADR-0027), par rang d'intervalle. */
+  spoken?: ReadonlyMap<number, TranslatedItem> | null;
   peaks: ListeningPeaks | null;
   /** Image de fond choisie par la personne. */
   upload: File | null;

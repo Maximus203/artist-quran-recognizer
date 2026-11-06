@@ -13,6 +13,18 @@ import {
   SOURCE_BACKGROUND_ID,
 } from "@/lib/export-video-backgrounds";
 import { videoCardInputs } from "@/lib/export-video-cards";
+import {
+  DEFAULT_FREE_SPEECH_MODE,
+  FREE_SPEECH_MODES,
+  FREE_SPEECH_MODE_LABELS,
+  freeSpeechForVideo,
+  type FreeSpeechMode,
+} from "@/lib/export-video-free-speech";
+import {
+  FREE_SPEECH_NOTICE,
+  parseFreeSpeech,
+  type FreeSpeech,
+} from "@/lib/free-speech";
 import { EXPORT_VIDEO_CONFIG } from "@/lib/export-video-config";
 import { videoDimensions } from "@/lib/export-video-format";
 import { videoFileName, videoRangeFileName } from "@/lib/export-video-name";
@@ -161,6 +173,18 @@ export function VideoPanel({
   const [prefsReady, setPrefsReady] = useState(false);
   const [sessionName, setSessionName] = useState("");
   const [intervals, setIntervals] = useState<readonly Interval[] | null>(null);
+  const [freeDoc, setFreeDoc] = useState<FreeSpeech | null>(null);
+  const [freeMode, setFreeMode] = useState<FreeSpeechMode>(
+    DEFAULT_FREE_SPEECH_MODE,
+  );
+  const freeModeRef = useRef(freeMode);
+  freeModeRef.current = freeMode;
+  const spoken = useMemo(
+    () => freeSpeechForVideo(freeDoc, freeMode),
+    [freeDoc, freeMode],
+  );
+  const spokenRef = useRef(spoken);
+  spokenRef.current = spoken;
   const [peaks, setPeaks] = useState<ListeningPeaks | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
@@ -211,6 +235,7 @@ export function VideoPanel({
       api<{
         session: { extension?: string; name?: string };
         result: Recognition | null;
+        free_speech?: unknown;
       }>(`/api/sessions/${sessionId}`),
       api<ListeningPeaks>(`/api/sessions/${sessionId}/peaks`).catch(() => null),
     ])
@@ -220,6 +245,7 @@ export function VideoPanel({
         setVideoCandidate(candidate);
         setSessionName(data.session.name ?? "");
         setIntervals(data.result?.intervals ?? []);
+        setFreeDoc(parseFreeSpeech(data.free_speech));
         setPeaks(peakData);
         if (!peakData) setLoadFailed(true);
         if (candidate)
@@ -325,6 +351,7 @@ export function VideoPanel({
               after: prefs.paddingAfter,
               snap: prefs.snapToSilence,
             },
+            shownSpeech: new Set(spoken?.keys()),
           }
         : null,
     [
@@ -342,8 +369,9 @@ export function VideoPanel({
     [peaks, intervals],
   );
   const cardCount = useMemo(
-    () => (intervals ? videoCardInputs(intervals).length : null),
-    [intervals],
+    () =>
+      intervals ? videoCardInputs(intervals, undefined, spoken).length : null,
+    [intervals, spoken],
   );
 
   // Première composition : tout l'audio (comme avant la refonte), vue d'ensemble complète.
@@ -546,13 +574,10 @@ export function VideoPanel({
       JSON.stringify(
         {
           id: sessionId,
-          ...exportVideoRequest(
-            prefs,
-            ranges,
-            duration,
-            undefined,
-            backgroundVideoRequest(clip),
-          ),
+          ...exportVideoRequest(prefs, ranges, duration, undefined, {
+            ...backgroundVideoRequest(clip),
+            freeSpeech: freeMode,
+          }),
         },
         null,
         2,
@@ -690,7 +715,10 @@ export function VideoPanel({
             useWhole ? [] : subset,
             duration,
             undefined,
-            backgroundVideoRequest(clipRef.current),
+            {
+              ...backgroundVideoRequest(clipRef.current),
+              freeSpeech: freeModeRef.current,
+            },
           ),
           bgFile,
           savedRef.current.reuseVideos,
@@ -1047,63 +1075,89 @@ export function VideoPanel({
           ) : null}
         </div>
       ) : (
-        <ExportEditorGate
-          sessionId={sessionId}
-          title={sessionName || "Vidéo de la récitation"}
-          subtitle={`${cardCount ?? 0} passage${(cardCount ?? 0) > 1 ? "s" : ""} · ${formatDurationFr(duration)}`}
-          prefs={prefs}
-          patch={patch}
-          preview={{
-            intervals,
-            peaks,
-            upload: bgFile,
-            clip: clip?.file ?? null,
-            isVideo,
-            sourceSize,
-            at: previewAt,
-            attribution,
-          }}
-          frame={{
-            isVideo,
-            sourceSize,
-            sourceUnreadable: videoCandidate && videoChecked && !isVideo,
-            previewUnavailable: isVideo && !previewReadable,
-            selectedBg,
-            upload: bgFile,
-            uploadThumb: bgThumb,
-            onUpload: pickUpload,
-            backgroundVideo: (
-              <BackgroundVideoSection
-                sessionId={sessionId}
-                recitationSeconds={longest}
-                parts={ranges.length}
-                value={clip}
-                onChange={changeClip}
-              />
-            ),
-            onChooseBg: (id) => {
-              pickUpload(null);
-              patch((current) => ({
-                background: id,
-                styles: applyBackgroundPanels(
-                  current.styles,
-                  current.background,
-                  id,
-                ),
-              }));
-            },
-          }}
-          passages={{
-            summary: whatSummary,
-            short: whole ? "Tout l’audio" : `${ranges.length} plages`,
-            content: passagesContent,
-            count: ranges.length,
-          }}
-          advanced={advanced}
-          exportAction={exportAction}
-          onLeave={onLeave}
-          montage={{ ranges, longest, clip, onClip: changeClip }}
-        />
+        <>
+          {freeDoc?.items.some((i) => i.status === "translated") ? (
+            <div className="xe-free" data-testid="free-speech-export">
+              <label htmlFor="free-speech-mode">
+                Paroles hors Coran (traduction automatique)
+              </label>
+              <select
+                id="free-speech-mode"
+                className="input"
+                data-testid="free-speech-mode"
+                value={freeMode}
+                onChange={(event) =>
+                  setFreeMode(event.target.value as FreeSpeechMode)
+                }
+              >
+                {FREE_SPEECH_MODES.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {FREE_SPEECH_MODE_LABELS[mode]}
+                  </option>
+                ))}
+              </select>
+              <small>{FREE_SPEECH_NOTICE}</small>
+            </div>
+          ) : null}
+          <ExportEditorGate
+            sessionId={sessionId}
+            title={sessionName || "Vidéo de la récitation"}
+            subtitle={`${cardCount ?? 0} passage${(cardCount ?? 0) > 1 ? "s" : ""} · ${formatDurationFr(duration)}`}
+            prefs={prefs}
+            patch={patch}
+            preview={{
+              intervals,
+              spoken,
+              peaks,
+              upload: bgFile,
+              clip: clip?.file ?? null,
+              isVideo,
+              sourceSize,
+              at: previewAt,
+              attribution,
+            }}
+            frame={{
+              isVideo,
+              sourceSize,
+              sourceUnreadable: videoCandidate && videoChecked && !isVideo,
+              previewUnavailable: isVideo && !previewReadable,
+              selectedBg,
+              upload: bgFile,
+              uploadThumb: bgThumb,
+              onUpload: pickUpload,
+              backgroundVideo: (
+                <BackgroundVideoSection
+                  sessionId={sessionId}
+                  recitationSeconds={longest}
+                  parts={ranges.length}
+                  value={clip}
+                  onChange={changeClip}
+                />
+              ),
+              onChooseBg: (id) => {
+                pickUpload(null);
+                patch((current) => ({
+                  background: id,
+                  styles: applyBackgroundPanels(
+                    current.styles,
+                    current.background,
+                    id,
+                  ),
+                }));
+              },
+            }}
+            passages={{
+              summary: whatSummary,
+              short: whole ? "Tout l’audio" : `${ranges.length} plages`,
+              content: passagesContent,
+              count: ranges.length,
+            }}
+            advanced={advanced}
+            exportAction={exportAction}
+            onLeave={onLeave}
+            montage={{ ranges, longest, clip, onClip: changeClip }}
+          />
+        </>
       )}
 
       <ExportSheet open={sheet} onClose={() => setSheet(false)}>

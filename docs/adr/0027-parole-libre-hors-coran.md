@@ -37,3 +37,22 @@ reste tel quel, ni nommé ni traduit.
 - Le garde-fou ne détecte pas un verset très altéré par l'ASR au point de ne plus ressembler au corpus.
 - Dialectes (hassaniya, égyptien…) : la transcription peut être faible ; la confiance retient alors le passage.
 - Aucune mesure de qualité de traduction avant le banc réel sur audios locaux.
+
+## Addendum du 2026-11-06 — où se trouve la parole libre dans le résultat
+
+Mesure sur les 85 sessions locales : le moteur n'émet **aucune** zone `arabic_speech` (seulement basmala, isti'adha, takbir,
+âmîn) ; tout le reste est une abstention (`no_candidate` 7 905, `below_threshold` 6 386, `empty_transcript` 473). La parole arabe
+hors Coran est donc une abstention `no_candidate` (aucun verset ne ressemble au passage). Règle d'éligibilité :
+`arabic_speech` **ou** abstention `no_candidate`, jamais `below_threshold` (un verset ressemble, le moteur doute : c'est le cas
+« coranique mais douteux » à laisser tel quel) ni `empty_transcript`. Les garde-fous de la décision 3 s'appliquent à ces
+abstentions comme aux autres : une récitation que le moteur a ratée est retenue par la ressemblance au Coran.
+
+## Mesure du 2026-11-06 sur un enregistrement local (session a732dea0, 1 130 s, 9 versets, 73 abstentions `no_candidate`)
+
+- **Garde-fou** : 8 versets reconnus présentés comme parole libre, 8 retenus (`quran_like`), **0 fuite**.
+- **Passages éligibles** : 66 traduits, 7 retenus (langue 3, trop court 3, traduction implausible 1).
+- **Qualité** : la transcription (Whisper large-v3) est correcte ; la **traduction `opus-mt-ar-fr` est mauvaise sur l'arabe religieux
+  ou littéraire**, avec une confiance de transcription élevée qui ne la reflète pas (« رواه البخاري » → « Le roman de la
+  vapeur », « علو الهمة » → « Allonge le boulot »). Décision : le module reste **désactivé à l'export** et chaque passage `pending` ;
+  **aucune mise en production avant un meilleur traducteur** (NLLB-200 3,3 B ou équivalent, à mesurer sur ces mêmes passages)
+  et un contrôle de la traduction elle-même (aller-retour français → arabe, par exemple).

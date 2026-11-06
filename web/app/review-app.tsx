@@ -23,6 +23,7 @@ import {
 import { IntervalsList } from "./atelier/intervals-list";
 import { NewTrial } from "./atelier/new-trial";
 import { LivePassage } from "./atelier/passage-card";
+import { useFreeSpeech } from "./atelier/use-free-speech";
 import { ReviewPanel, type ReviewTab } from "./atelier/review-panel";
 import { SessionHead } from "./atelier/session-head";
 import { SessionsPanel } from "./atelier/sessions-panel";
@@ -101,6 +102,11 @@ export default function ReviewApp() {
   } = useSessionDetail(currentId);
   const currentView = detail?.session ?? null;
   const intervals = useMemo(() => detail?.result?.intervals ?? [], [detail]);
+  const spoken = useFreeSpeech(
+    detail?.session.id ?? null,
+    detail?.free_speech,
+    reload,
+  );
   const intervalsRef = useRef(intervals);
   intervalsRef.current = intervals;
   /* ── forme d'onde : crêtes de la copie d'écoute, calculées par le serveur ── */
@@ -790,6 +796,8 @@ export default function ReviewApp() {
                     onStopLoop={player.stopPlayback}
                     tools={fontTools}
                     onListen={listenPassage}
+                    freeSpeech={spoken.items}
+                    onSpokenReview={spoken.review}
                   />
                   <IntervalsList
                     intervals={intervals}

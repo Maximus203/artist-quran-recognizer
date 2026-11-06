@@ -24,6 +24,7 @@ import { LivePassage } from "./passage-card";
 import { useShell } from "./shell";
 import type { TimelineHandle } from "./timeline";
 import { usePeaks } from "./use-peaks";
+import { useFreeSpeech } from "./use-free-speech";
 import { useSessionDetail } from "./use-sessions";
 
 type Item = {
@@ -141,13 +142,20 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
   }, [active, registerFullUi]);
 
   /* ── l'audio courant : résultat, onde, passage actif ── */
-  const { detail: session } = useSessionDetail(active ? audioId : null);
+  const { detail: session, reload: reloadSession } = useSessionDetail(
+    active ? audioId : null,
+  );
   const intervals = useMemo(
     () =>
       session && session.session.id === audioId
         ? (session.result?.intervals ?? [])
         : [],
     [session, audioId],
+  );
+  const spoken = useFreeSpeech(
+    active ? audioId : null,
+    session?.free_speech,
+    reloadSession,
   );
   const { peaks, listening } = usePeaks(active ? audioId : null, setNotice);
   const playerDuration = useStoreValue(player.store, (s) => s.duration);
@@ -440,6 +448,8 @@ export function PlaylistPlayer({ playlistId }: { playlistId: number }) {
                     onStopLoop={player.stopPlayback}
                     tools={<ArabicFontTools intervals={intervals} />}
                     onListen={listenPassage}
+                    freeSpeech={spoken.items}
+                    onSpokenReview={spoken.review}
                   />
                   <Console
                     player={player}

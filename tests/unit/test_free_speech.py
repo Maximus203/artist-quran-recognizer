@@ -81,9 +81,12 @@ class TestEligibility:
             interval("takbir", 14, 16),
             interval("other_language", 16, 20),
             {"kind": "abstention", "reason": "silence", "t": [20, 25]},
-            {"kind": "verse", "ref": "2:1", "status": "uncertain", "t": [25, 30]},
+            {"kind": "abstention", "reason": "below_threshold", "t": [25, 28]},
+            {"kind": "abstention", "reason": "empty_transcript", "t": [28, 29]},
+            {"kind": "verse", "ref": "2:1", "status": "uncertain", "t": [29, 30]},
+            {"kind": "abstention", "reason": "no_candidate", "t": [30, 36]},
         ]
-        assert [i for i, _ in eligible_intervals(intervals)] == [0]
+        assert [i for i, _ in eligible_intervals(intervals)] == [0, 10]
 
     def test_un_temps_invalide_est_ecarte(self) -> None:
         assert (

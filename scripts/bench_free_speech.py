@@ -3,7 +3,7 @@
 Pour un enregistrement et son résultat `aqr.recognition/1` :
 - les versets RECONNUS sont présentés au module comme de la parole libre : tous doivent être
   retenus (`withheld`) ; un seul traduit est une fuite, le critère n°1 (I3) ;
-- les zones `arabic_speech` sont la parole libre : part traduite et raisons de retenue ;
+- les passages éligibles (`arabic_speech`, abstentions `no_candidate`) : part traduite et raisons ;
 
 Usage : python scripts/bench_free_speech.py RÉSULTAT AUDIO [--max-verses N] [--out RAPPORT]
 Le rapport ne contient aucun texte arabe (des comptes et des raisons), il peut être versionné.

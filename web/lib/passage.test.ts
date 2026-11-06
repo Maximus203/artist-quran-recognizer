@@ -446,3 +446,59 @@ describe("liveAt : passage et mot entendus, avec le décalage audio", () => {
     });
   });
 });
+
+describe("describePassage : parole libre (ADR-0027)", () => {
+  const speech = {
+    kind: "non_quran",
+    label: "arabic_speech",
+    t: [20, 26],
+  } as unknown as Interval;
+  const translated = {
+    index: 3,
+    t: [20, 26] as [number, number],
+    status: "translated" as const,
+    transcript_ar: "اليوم نتحدث عن الصبر",
+    translation_fr: "Aujourd'hui nous parlons de la patience.",
+    confidence: 0.9,
+    language: "ar",
+    review: "pending" as const,
+  };
+
+  it("sans fichier : une parole non coranique, sans aucun texte (I4)", () => {
+    expect(describePassage(speech)).toMatchObject({ type: "other_speech" });
+  });
+
+  it("traduite : texte automatique et revue, jamais présentée comme un verset", () => {
+    expect(describePassage(speech, translated)).toMatchObject({
+      type: "free_speech",
+      index: 3,
+      arabic: "اليوم نتحدث عن الصبر",
+      review: "pending",
+    });
+  });
+
+  it("retenue : la raison seulement", () => {
+    expect(
+      describePassage(speech, {
+        index: 3,
+        t: [20, 26],
+        status: "withheld",
+        reason: "quran_like",
+      }),
+    ).toEqual({
+      type: "free_speech_held",
+      range: [20, 26],
+      reason: "ressemble au Coran",
+    });
+  });
+
+  it("n'agit jamais sur un verset ni une formule", () => {
+    expect(describePassage(verse(), translated).type).toBe("verse");
+    const takbir = {
+      kind: "non_quran",
+      label: "takbir",
+      t: [1, 2],
+    } as unknown as Interval;
+    expect(describePassage(takbir, translated).type).toBe("formula");
+  });
+});

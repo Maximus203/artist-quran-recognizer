@@ -12,6 +12,7 @@ dependencies = [
 audio = ["soundfile>=0.12", "numpy>=1.26"]
 asr = ["torch>=2.7", "torchaudio>=2.7", "transformers>=4.44", "nemo_toolkit[asr]>=2.0", "huggingface_hub>=0.24"]
 muno = ["numpy>=1.26", "torch>=2.7", "torchaudio>=2.7", "onnxruntime>=1.18,<2", "sentencepiece>=0.2,<1", "huggingface_hub>=0.24"]
+freespeech = ["faster-whisper>=1.0", "transformers>=4.40", "torch>=2.7", "sentencepiece>=0.2,<1", "huggingface_hub>=0.24"]
 data = ["huggingface_hub>=0.24"]
 # Jeu de fine-tuning (scripts/build_finetune_manifest.py) : lecture Parquet, décodage, rééchantillonnage.
 finetune = ["huggingface_hub>=0.24", "pyarrow>=14", "soundfile>=0.12", "soxr>=0.3", "numpy>=1.26"]

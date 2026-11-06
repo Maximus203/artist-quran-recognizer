@@ -43,6 +43,7 @@ export function EditableStage({
     <VideoPreview
       sessionId={sessionId}
       intervals={source.intervals}
+      spoken={source.spoken}
       peaks={source.peaks}
       prefs={controller.prefs}
       upload={source.upload}

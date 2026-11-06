@@ -1,4 +1,6 @@
 "use client";
+import type { TranslatedItem } from "@/lib/free-speech";
+import { DEFAULT_SPLIT } from "@/lib/export-video-split";
 import {
   useCallback,
   useEffect,
@@ -101,6 +103,8 @@ function backgroundTime(
 export type PreviewInputs = {
   sessionId: string;
   intervals: readonly Interval[] | null;
+  /** Paroles libres automatiques montrées (ADR-0027), par rang d'intervalle ; absent = aucune. */
+  spoken?: ReadonlyMap<number, TranslatedItem> | null;
   peaks: ListeningPeaks | null;
   prefs: VideoPrefs;
   upload: File | null;
@@ -231,6 +235,7 @@ export function VideoPreview(inputs: PreviewInputs) {
   const {
     sessionId,
     intervals,
+    spoken = null,
     peaks,
     prefs,
     upload,
@@ -266,9 +271,15 @@ export function VideoPreview(inputs: PreviewInputs) {
   const cards = useMemo(
     () =>
       intervals
-        ? frameCards(intervals, prefs.showTranslation, prefs.showArabic)
+        ? frameCards(
+            intervals,
+            prefs.showTranslation,
+            prefs.showArabic,
+            DEFAULT_SPLIT,
+            spoken,
+          )
         : [],
-    [intervals, prefs.showTranslation, prefs.showArabic],
+    [intervals, spoken, prefs.showTranslation, prefs.showArabic],
   );
   const cardsRef = useRef(cards);
   cardsRef.current = cards;
