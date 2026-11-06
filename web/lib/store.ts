@@ -134,7 +134,57 @@ export type Session = {
    * session d'avant le suivi, considérée lue.
    */
   viewed_at?: string | null;
+  /**
+   * Résultat précédent, gardé pendant la réanalyse d'une session terminée (`launch`). Il revient tel
+   * quel si la relance échoue ou est annulée ; il disparaît quand la nouvelle analyse aboutit.
+   */
+  previous?: SessionOutcome | null;
+  /** Pourquoi la dernière relance n'a pas remplacé le résultat (échec, annulation) ; effacé à la suivante. */
+  rerun_error?: string | null;
 };
+/** Ce que la réanalyse écrase dans `session.json` et que `restorePrevious` remet. */
+export type SessionOutcome = Pick<
+  Session,
+  | "prediction_sha256"
+  | "started_at"
+  | "finished_at"
+  | "duration_s"
+  | "engine"
+  | "engine_agent"
+  | "audio_duration_s"
+  | "asr"
+  | "viewed_at"
+>;
+export function snapshotOutcome(value: Session): SessionOutcome {
+  return {
+    prediction_sha256: value.prediction_sha256,
+    started_at: value.started_at,
+    finished_at: value.finished_at,
+    duration_s: value.duration_s ?? null,
+    engine: value.engine ?? null,
+    engine_agent: value.engine_agent ?? null,
+    audio_duration_s: value.audio_duration_s ?? null,
+    asr: value.asr,
+    viewed_at: value.viewed_at,
+  };
+}
+/**
+ * Une réanalyse n'a pas abouti : la session redevient terminée avec son résultat d'avant, et
+ * `rerun_error` dit pourquoi (message déjà posé dans `error`, ou `fallback`). Sans résultat
+ * précédent (première analyse), rien ne change et la fonction rend `false`.
+ */
+export function restorePrevious(value: Session, fallback: string): boolean {
+  const previous = value.previous;
+  if (!previous) return false;
+  Object.assign(value, previous, {
+    state: "done",
+    error: null,
+    pid: null,
+    previous: null,
+    rerun_error: value.error || fallback,
+  });
+  return true;
+}
 /**
  * Crochets d'observation (motif Observer) : la couche données (`session-sync.ts`) s'y branche pour
  * suivre les sessions dans la base SQLite sans que ce module la connaisse. Un crochet qui échoue
@@ -210,9 +260,12 @@ export function recordOutcome(
   parsed: Recognition | null,
   finishedAt: string,
 ): void {
+  if (!parsed && restorePrevious(value, "La relance n’a pas abouti.")) return;
   value.finished_at = finishedAt;
   value.duration_s = realDurationSeconds(value.started_at, finishedAt);
   if (parsed) {
+    value.previous = null;
+    value.rerun_error = null;
     value.audio_duration_s = parsed.source.duration_s;
     value.engine = sessionEngine(value, parsed.engine.asr);
   }

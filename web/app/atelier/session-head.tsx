@@ -12,6 +12,7 @@ import { buildRow, engineWithAgent, isVideoSession } from "@/lib/session-list";
 import { ExportEntry } from "./export/export-entry";
 import { PersonChip, useOwnerPerson } from "./avatar";
 import { Icon } from "./icons";
+import { RunControls } from "./run-controls";
 import { FavButton, InlineName, ScopeBadge, useDismiss } from "./session-bits";
 
 type Props = {
@@ -287,37 +288,15 @@ export function SessionHead({
           {view.error}
         </p>
       ) : null}
-      {view.can_edit &&
-      (view.state === "ready" ||
-        view.state === "failed" ||
-        view.state === "cancelled") ? (
-        <div>
-          <button
-            type="button"
-            className="btn btn--primary"
-            data-testid="run-engine"
-            disabled={busy}
-            onClick={onRun}
-          >
-            {view.state === "ready" ? "Lancer l’analyse" : "Relancer l’analyse"}
-          </button>
-        </div>
-      ) : view.can_edit &&
-        (view.state === "running" || view.state === "queued") ? (
-        <div>
-          <button
-            type="button"
-            className="btn btn--danger"
-            data-testid="cancel-run"
-            disabled={busy}
-            onClick={onCancel}
-          >
-            {view.state === "queued"
-              ? "Retirer de la file"
-              : "Arrêter le traitement"}
-          </button>
-        </div>
-      ) : null}
+      <RunControls
+        state={view.state}
+        canEdit={view.can_edit}
+        busy={busy}
+        rerun={Boolean(view.previous)}
+        rerunError={view.rerun_error ?? null}
+        onRun={onRun}
+        onCancel={onCancel}
+      />
     </header>
   );
 }
