@@ -16,6 +16,7 @@ from aqr.rendering.translation_segments import (
     SegmentStore,
     SegmentStoreError,
     fingerprint,
+    select_best_fragment,
     select_fragment,
 )
 
@@ -200,3 +201,86 @@ def test_library_rejects_unsafe_translation_id(tmp_path: Path) -> None:
 def test_library_with_corrupt_file_degrades_to_none(tmp_path: Path) -> None:
     (tmp_path / "french_test.json").write_text("{pas du json", encoding="utf-8")
     assert SegmentLibrary(tmp_path).store("french_test") is None
+
+
+# --- paliers de confiance : frontières fermes (≥ 0,95), souples (0,8 ; 0,6), trop faibles (< 0,6)
+TIERED = [
+    [3, CUT_OFFSETS[0], 0.85],
+    [5, CUT_OFFSETS[1], 0.97],
+    [7, CUT_OFFSETS[2], 0.65],
+]
+
+
+def _tiered(cuts: list[list[float]] = TIERED) -> SegmentStore:
+    return _store({"h": fingerprint(TEXT), "w": 8, "cuts": cuts})
+
+
+def _best(first: int, last: int, store: SegmentStore | None = None) -> object:
+    return select_best_fragment(store or _tiered(), REF, TEXT, first, last, 8, POLICY)
+
+
+def test_min_confidence_merges_the_segments_of_a_dropped_cut() -> None:
+    store = _tiered()
+
+    def spans(floor: float | None) -> list[tuple[int, int]]:
+        found = store.segments(REF, TEXT, 8, min_confidence=floor) or ()
+        return [(s.first_word, s.last_word) for s in found]
+
+    assert spans(0.95) == [(1, 4), (5, 8)]
+    assert spans(0.8) == [(1, 2), (3, 4), (5, 8)]
+    assert spans(0.6) == [(1, 2), (3, 4), (5, 6), (7, 8)]
+    assert spans(None) == spans(0.6)
+
+
+def test_cut_without_confidence_is_always_kept() -> None:
+    store = _tiered([[3, CUT_OFFSETS[0]], [5, CUT_OFFSETS[1], 0.97]])
+    segments = store.segments(REF, TEXT, 8, min_confidence=0.95)
+    assert segments is not None and len(segments) == 3
+
+
+def test_best_fragment_uses_a_softer_tier_when_the_firm_one_is_too_wide() -> None:
+    fragment = _best(3, 4)
+    assert fragment is not None
+    assert (fragment.first_word, fragment.last_word) == (3, 4)  # type: ignore[attr-defined]
+    assert not fragment.approximate  # type: ignore[attr-defined]
+    assert fragment.floor == 0.8  # type: ignore[attr-defined]
+    assert fragment.text == "gamma delta."  # type: ignore[attr-defined]
+
+
+def test_best_fragment_reaches_the_softest_tier_for_the_last_words() -> None:
+    fragment = _best(7, 8)
+    assert fragment is not None
+    assert (fragment.first_word, fragment.last_word) == (7, 8)  # type: ignore[attr-defined]
+    assert fragment.floor == 0.6  # type: ignore[attr-defined]
+    assert fragment.ellipsis_before and not fragment.ellipsis_after  # type: ignore[attr-defined]
+
+
+def test_best_fragment_prefers_the_surest_tier_when_it_is_exact() -> None:
+    fragment = _best(5, 8)
+    assert fragment is not None
+    assert fragment.floor == 0.95 and not fragment.approximate  # type: ignore[attr-defined]
+
+
+def test_best_fragment_never_uses_a_cut_below_the_lowest_tier() -> None:
+    weak = [[3, CUT_OFFSETS[0], 0.5], [5, CUT_OFFSETS[1], 0.97], [7, CUT_OFFSETS[2], 0.4]]
+    fragment = _best(3, 4, _tiered(weak))
+    assert fragment is not None
+    assert (fragment.first_word, fragment.last_word) == (1, 4)  # type: ignore[attr-defined]
+    assert fragment.approximate  # type: ignore[attr-defined]
+
+
+def test_best_fragment_picks_the_least_overreaching_approximation() -> None:
+    # mots 4-6 : aucun palier n'est exact ; le palier souple déborde moins (3-6 au lieu de 1-8)
+    fragment = _best(4, 6)
+    assert fragment is not None
+    assert fragment.approximate  # type: ignore[attr-defined]
+    assert (fragment.first_word, fragment.last_word) == (3, 6)  # type: ignore[attr-defined]
+
+
+def test_best_fragment_of_the_whole_verse_is_none() -> None:
+    assert _best(1, 8) is None
+
+
+def test_best_fragment_of_a_stale_verse_is_none() -> None:
+    other = _store({"h": "0" * 16, "w": 8, "cuts": TIERED})
+    assert select_best_fragment(other, REF, TEXT, 3, 4, 8, POLICY) is None

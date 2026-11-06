@@ -31,7 +31,8 @@ from aqr.rendering.translation_segments import (
     FragmentPolicy,
     Segment,
     SegmentLibrary,
-    select_fragment,
+    SegmentStore,
+    select_best_fragment,
 )
 
 BASMALA_REF: Final = VerseRef(1, 1)
@@ -121,6 +122,11 @@ class HomeRenderer:
         total = len(self._corpus.words(det.span.ref))
         return not (det.span.first_word == 1 and det.span.last_word >= total)
 
+    def _store_of(self, translation: Translation) -> SegmentStore:
+        store = self._segments.store(translation.translation_id) if self._segments else None
+        assert store is not None  # appelée seulement après `_segments_of`
+        return store
+
     def _segments_of(self, translation: Translation) -> tuple[Segment, ...] | None:
         """Découpage de la traduction du verset, ou None s'il n'est pas disponible ou périmé."""
         if self._segments is None:
@@ -164,8 +170,14 @@ class HomeRenderer:
             for s in segments
         ]
         if words is not None:
-            fragment = select_fragment(
-                segments, translation.text, words[0], words[1], segments[-1].last_word, self._policy
+            fragment = select_best_fragment(
+                self._store_of(translation),
+                translation.ref,
+                translation.text,
+                words[0],
+                words[1],
+                segments[-1].last_word,
+                self._policy,
             )
             if fragment is not None:
                 out["scope"] = "fragment"

@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Un passage partiel n'affiche plus la traduction du verset entier
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Sur l'écran de lecture (et donc dans l'export), quand seuls quelques mots d'un verset sont affichés, la traduction se limite à la portion correspondante, avec des points de suspension aux bords. Sur 811 passages partiels de sessions réelles, le verset entier ne s'affiche plus que dans 12,5 % des cas (23 % avant) ; la portion exacte passe de 41 % à 52 %. Quand le découpage est moins sûr, l'écran l'indique (« Découpage approximatif »).
+
+**Pourquoi / décision.** Le fichier de coupes garde désormais aussi des frontières « souples » (confiance 0,6 à 0,95) en plus des fermes ; le moteur prend le palier le plus sûr qui colle aux mots affichés. Aucun texte réécrit, aucun modèle génératif (I1, I2). Seuils mesurés sur la pseudo-vérité ; ADR-0026.
+
 ## 2026-11-04 — Éditeur d'export : fenêtre utile, chronologie et tablette (recette QA 3)
 Étiquettes : utilisateur, technique, décision
 PR : #216

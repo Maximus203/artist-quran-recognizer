@@ -30,7 +30,7 @@ from aqr.translation_align.lexicon import (
     fit_length,
     train_ibm1,
 )
-from aqr.translation_align.segmenter import VerseInput, segment_verse
+from aqr.translation_align.segmenter import Cut, VerseInput, segment_verse
 from aqr.translation_align.tokens import (
     arabic_letter_count,
     arabic_stem,
@@ -125,6 +125,24 @@ def train_models(
     )
 
 
+def merge_soft_cuts(firm: Sequence[Cut], soft: Sequence[Cut], tolerance: int) -> list[Cut]:
+    """Frontières fermes + frontières souples compatibles : les fermes ne bougent jamais ; une
+    souple n'est ajoutée que si sa frontière candidate est libre et si sa place reste strictement
+    entre celles de ses voisines (l'ordre des mots arabes ne s'inverse jamais). `tolerance` : une
+    souple qui retomberait à moins de cette distance d'une ferme est écartée (même coupure)."""
+    kept = {c.boundary: c for c in firm}
+    for cut in sorted(soft, key=lambda c: -c.confidence):
+        if cut.boundary in kept:
+            continue
+        ordered = sorted([*kept.values(), cut], key=lambda c: c.boundary)
+        words = [c.word for c in ordered]
+        if all(a < b for a, b in itertools.pairwise(words)) and all(
+            abs(cut.word - f.word) > tolerance for f in firm
+        ):
+            kept[cut.boundary] = cut
+    return sorted(kept.values(), key=lambda c: c.boundary)
+
+
 def build_document(
     sources: Sequence[VerseSource],
     translation_id: str,
@@ -144,7 +162,7 @@ def build_document(
     say("modèles appris ; découpage des versets")
 
     verses: dict[str, dict[str, object]] = {}
-    stats = {"verses": 0, "single_clause": 0, "split": 0, "fallback": 0, "cuts": 0}
+    stats = {"verses": 0, "single_clause": 0, "split": 0, "fallback": 0, "cuts": 0, "soft_cuts": 0}
     for done, item in enumerate(prepared, start=1):
         source = item.source
         cuts = segment_verse(item.verse, models, config)
@@ -161,12 +179,19 @@ def build_document(
                 if c.boundary in other
                 and abs(other[c.boundary] - c.word) <= config.position_tolerance
             ]
+        firm_count = len(cuts)
+        if item.starts and config.soft_min_boundary_confidence < config.min_boundary_confidence:
+            merged = merge_soft_cuts(
+                cuts, segment_verse(item.verse, models, config.soft()), config.position_tolerance
+            )
+            stats["soft_cuts"] += len(merged) - firm_count
+            cuts = merged
         stats["verses"] += 1
         if not item.starts:
             stats["single_clause"] += 1
-        elif cuts:
+        elif firm_count:
             stats["split"] += 1
-            stats["cuts"] += len(cuts)
+            stats["cuts"] += firm_count
         else:
             stats["fallback"] += 1
         verses[str(source.ref)] = {
