@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Parole libre : transcrire et traduire l'arabe hors Coran, avec garde-fous (moteur)
+Étiquettes : technique, décision
+PR : #224
+
+**Ce qui change.** Nouvelle commande `aqr free-speech RÉSULTAT AUDIO` : elle transcrit puis traduit en français les paroles arabes hors Coran (hadith, dou'a, cours) et écrit un fichier à part, `aqr.free-speech/1`. Tout passage qui ressemble au Coran, ou dont la langue, la confiance ou la traduction paraît douteuse, est retenu sans aucun texte. Rien n'apparaît encore dans l'atelier ni dans la vidéo : c'est la prochaine brique ; le modèle de traduction n'est pas encore téléchargé et le banc réel n'a pas encore tourné.
+
+**Pourquoi / décision.** Le résultat de reconnaissance reste du texte relu contre le corpus (I1) ; la parole libre vit dans un fichier séparé, marquée automatique et à relire. Un verset reconnu présenté au module comme de la parole libre doit ressortir retenu : c'est le critère du banc (`scripts/bench_free_speech.py`). ADR-0027.
+
 ## 2026-11-06 — Page « Fichiers » et quota ramené à 2 Go
 Étiquettes : utilisateur, technique, décision
 PR : #223
@@ -23,7 +31,7 @@ PR : #221
 
 **Ce qui change.** Une vidéo d'export affiche maintenant les formules récitées : la basmala (texte du Mushaf et traduction officielle, comme un verset), puis l'isti'adha, le takbir et l'âmîn (arabe et traduction françaises fixes, marquées comme formules). Elles étaient absentes. Quand une formule est à 3 secondes ou moins d'un verset, la plage de vidéo proposée l'englobe ; une formule isolée, plus loin, n'est pas ajoutée d'office (elle reste choisissable à la main) et une parole non coranique inconnue (français, hadith…) n'apparaît toujours pas.
 
-**Pourquoi / décision.** La basmala garde le texte du corpus et la traduction QuranEnc sans modification (I1, I2). Les traductions de l'isti'adha, du takbir et de l'âmîn sont des constantes de `web/lib/formulas.ts`, indicatives et hors QuranEnc, jamais présentées comme le Mushaf ; aucune attribution n'est dessinée. Les formules non encore reconnues par le moteur (alhamdulillah, subhan Allah…) ne sont pas ajoutées : une reconnaissance trop large nommerait de faux passages (I3, I4). (renvoyer vers l'ADR ou le rapport concerné ; supprimer ce paragraphe s'il n'apporte rien)
+**Pourquoi / décision.** La basmala garde le texte du corpus et la traduction QuranEnc sans modification (I1, I2). Les traductions de l'isti'adha, du takbir et de l'âmîn sont des constantes de `web/lib/formulas.ts`, indicatives et hors QuranEnc, jamais présentées comme le Mushaf ; aucune attribution n'est dessinée. Les formules non encore reconnues par le moteur (alhamdulillah, subhan Allah…) ne sont pas ajoutées : une reconnaissance trop large nommerait de faux passages (I3, I4).
 ## 2026-11-06 — Réanalyser une session terminée avec la version actuelle du moteur
 Étiquettes : utilisateur, technique, décision
 PR : #222

@@ -462,6 +462,13 @@
     "summary": "Accepté le 2026-11-06 : le fichier de coupes garde des frontières fermes (≥ 0,95) et souples (0,6-0,95) avec leur confiance ; le moteur choisit le palier dont le fragment colle le mieux aux mots affichés. Sur 811 passages partiels réels : verset entier 23 % à 12,5 %, fragment exact 41 % à 52 %. Traduction jamais réécrite (I2)."
   },
   {
+    "slug": "adr-0027-parole-libre-hors-coran",
+    "title": "ADR-0027 — Parole libre : transcription et traduction automatiques de l'arabe hors Coran",
+    "section": "Décisions",
+    "file": "docs/adr/0027-parole-libre-hors-coran.md",
+    "summary": "Accepté le 2026-11-06 : seules les zones arabes hors Coran sont transcrites (Whisper) puis traduites (Marian ar-fr), derrière des garde-fous qui retiennent tout passage ressemblant au Coran. Un passage retenu ne porte aucun texte ; fichier séparé aqr.free-speech/1 ; désactivé par défaut à l'export. Aucune mesure de qualité avant le banc réel."
+  },
+  {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
     "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
     "section": "Décisions",
