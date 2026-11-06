@@ -31,3 +31,9 @@ class SpeechTranscriber(Protocol):
 
 class FrenchTranslator(Protocol):
     def translate(self, arabic: str) -> FrenchText: ...
+
+
+class BackTranslator(Protocol):
+    """Traduit le français obtenu vers l'arabe : sert à contrôler la traduction (aller-retour)."""
+
+    def translate_back(self, french: str) -> str: ...

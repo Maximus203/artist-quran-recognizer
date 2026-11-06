@@ -42,6 +42,7 @@ export const WITHHELD_REASONS: Readonly<Record<string, string>> = {
   quran_like: "ressemble au Coran",
   known_formula: "formule connue",
   translation_implausible: "traduction douteuse",
+  translation_unreliable: "traduction non confirmée",
   no_translation: "pas de traduction",
 };
 
@@ -57,6 +58,8 @@ const translated = z
     confidence: z.number().min(0).max(1).nullable(),
     language: z.string().nullable(),
     review: z.enum(FREE_SPEECH_REVIEWS),
+    /** `glossary` : formule fixe écrite à la main ; `model` (défaut) : traduction automatique. */
+    translation_source: z.enum(["glossary", "model"]).optional(),
   })
   .strict();
 

@@ -18,6 +18,8 @@ NOTICE: Final = (
 )
 
 STATUSES: Final = ("translated", "withheld")
+SOURCES: Final = ("glossary", "model")
+
 REVIEWS: Final = ("pending", "approved", "rejected")
 REASONS: Final = (
     "too_short",
@@ -29,10 +31,11 @@ REASONS: Final = (
     "quran_like",
     "known_formula",
     "translation_implausible",
+    "translation_unreliable",
     "no_translation",
 )
 _TEXT_FIELDS: Final = frozenset(
-    {"transcript_ar", "translation_fr", "confidence", "language", "review"}
+    {"transcript_ar", "translation_fr", "confidence", "language", "review", "translation_source"}
 )
 
 
@@ -51,6 +54,7 @@ class FreeSpeechItem:
     confidence: float | None = None
     language: str | None = None
     review: str | None = None
+    translation_source: str | None = None
 
     def to_json(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -68,6 +72,8 @@ class FreeSpeechItem:
             language=self.language,
             review=self.review or "pending",
         )
+        if self.translation_source:
+            out["translation_source"] = self.translation_source
         return out
 
 
@@ -134,5 +140,7 @@ def validate_document(document: object) -> None:
             continue
         _text(raw, "transcript_ar", where)
         _text(raw, "translation_fr", where)
+        if raw.get("translation_source", "model") not in SOURCES:
+            raise SidecarError(f"{where} : translation_source parmi {', '.join(SOURCES)}")
         if raw.get("review") not in REVIEWS:
             raise SidecarError(f"{where} : review parmi {', '.join(REVIEWS)}")

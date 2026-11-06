@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import Counter
+from difflib import SequenceMatcher
 
-from aqr.corpus.normalize import tokenize
+from aqr.corpus.normalize import normalize_arabic, tokenize
 
 _ARABIC_LETTER = range(0x0621, 0x064B)
 _ARABIC_EXTRA = frozenset("ٱپچژڤگکی")
@@ -31,6 +32,18 @@ def repeat_share(words: list[str]) -> float:
     if len(words) < 4:
         return 0.0
     return Counter(words).most_common(1)[0][1] / len(words)
+
+
+def roundtrip_similarity(original: str, back: str) -> float:
+    """Ressemblance, dans [0, 1], de l'arabe d'origine et de l'arabe obtenu par aller-retour.
+
+    Rapport de séquence sur les lettres de l'arabe normalisé (`normalize_arabic`) : tolère un
+    synonyme ou une particule, pas un passage qui a changé de sens."""
+    a = "".join(words_of(normalize_arabic(original)))
+    b = "".join(words_of(normalize_arabic(back)))
+    if not a or not b:
+        return 0.0
+    return SequenceMatcher(None, a, b).ratio()
 
 
 def letter_count(text: str) -> int:

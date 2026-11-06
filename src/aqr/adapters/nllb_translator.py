@@ -58,6 +58,26 @@ class NllbTranslator:  # pragma: no cover - modèle réel (banc)
         ).to(self._device)
         self._model.eval()
 
+    def translate_back(self, french: str) -> str:
+        """Français → arabe, pour le contrôle par aller-retour (jamais affiché)."""
+        import torch
+
+        self._load()
+        self._tokenizer.src_lang = TARGET_LANGUAGE
+        try:
+            batch = self._tokenizer([french], return_tensors="pt", truncation=True).to(self._device)
+        finally:
+            self._tokenizer.src_lang = SOURCE_LANGUAGE
+        with torch.no_grad():
+            out = self._model.generate(
+                **batch,
+                forced_bos_token_id=self._tokenizer.convert_tokens_to_ids(SOURCE_LANGUAGE),
+                num_beams=self._config.num_beams,
+                do_sample=False,
+                max_new_tokens=self._config.max_new_tokens,
+            )
+        return str(self._tokenizer.batch_decode(out, skip_special_tokens=True)[0]).strip()
+
     def translate(self, arabic: str) -> FrenchText:
         import torch
 

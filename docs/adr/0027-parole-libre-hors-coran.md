@@ -66,3 +66,17 @@ traduction maladroite. **Aucun des deux n'est publiable.** Le module reste désa
 Pistes à mesurer avant toute production : glossaire des formules religieuses fixes (« رواه البخاري » → « Rapporté par Al-Boukhari »),
 contrôle de la traduction par aller-retour, traducteur plus gros ou modèle de conversation cadré (à décider : cela touche l'ADR-0001),
 relecture humaine obligatoire (déjà : `pending`).
+
+## Glossaire et aller-retour, mesure du 2026-11-06 (mêmes 66 passages)
+
+- **Glossaire** (`freespeech/glossary.py`) : formules religieuses fixes (références de hadith, bénédictions, « فقال عز من قائل »…),
+  traduites à la main, sur le passage entier seulement, sans modèle ni contrôle. Il rattrape les cas les pires (« رواه البخاري » →
+  « Rapporté par Al-Boukhari. ») mais couvre **2 passages sur 66** : une garantie sur le vocabulaire fixe, pas une réponse générale.
+- **Aller-retour** (français → arabe par NLLB, ressemblance de l'arabe normalisé, `min_roundtrip` = 0,35) : **faible filtre**. Les
+  traductions fausses (« C'est tout à fait normal », « خير زاد للسالكين » → « C'est encore mieux pour ceux qui partent ») tombent à
+  0,17-0,34 et sont retenues (8 passages sur 64 hors glossaire), mais d'autres fausses (« des crêpes pour les sommets », « Qu'ils soient
+  pleins d'espoir ») restent à 0,41-0,44, à côté de traductions correctes (« Il se lève avec détermination », 0,40). Pire : le Marian
+  « Le roman de la vapeur » revient à 0,91 de « رواه البخاري », car NLLB retraduit le contresens vers le bon arabe. Le contrôle ne se
+  substitue donc pas à la relecture humaine.
+- **Conséquence** : aucun changement de décision. Module désactivé à l'export, passages `pending`, rien en production. Le contrôle n'est
+  disponible qu'avec `--translator nllb` (le Marian ne traduit pas vers l'arabe).

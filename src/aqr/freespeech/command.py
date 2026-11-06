@@ -17,7 +17,7 @@ from typing import TextIO
 from aqr.domain.ports import AudioClip
 from aqr.freespeech.config import FreeSpeechConfig
 from aqr.freespeech.guard import CorpusGuard
-from aqr.freespeech.ports import FrenchTranslator, SpeechTranscriber
+from aqr.freespeech.ports import BackTranslator, FrenchTranslator, SpeechTranscriber
 from aqr.freespeech.service import eligible_intervals, run_free_speech
 from aqr.freespeech.sidecar import build_document, validate_document
 
@@ -35,6 +35,8 @@ class FreeSpeechOptions:
     device: str = "auto"
     whisper_model: str = "large-v3"
     translator: str = "marian"
+    translator_dir: Path | None = None
+    """Dossier des poids du traducteur, à la place de `<AQR_MODELS_DIR>/<nom>` (disque plein…)."""
     """`marian` ou `nllb` : le dossier des poids est sous `AQR_MODELS_DIR`."""
 
 
@@ -46,6 +48,8 @@ class FreeSpeechEngine:
     extract: Callable[[Path], AudioClip]
     transcriber_name: str
     translator_name: str
+    back: BackTranslator | None = None
+    """Contrôle par aller-retour : avec NLLB, seul modèle ici qui traduit aussi vers l'arabe."""
 
 
 FreeSpeechFactory = Callable[[FreeSpeechOptions, Mapping[str, str]], FreeSpeechEngine]
@@ -74,7 +78,9 @@ def build_engine(options: FreeSpeechOptions, env: Mapping[str, str]) -> FreeSpee
         raise FreeSpeechUnavailable(
             f"traducteur inconnu : {options.translator!r} ({' | '.join(TRANSLATORS)})"
         )
-    translator_dir = models / (NLLB_DIR if options.translator == "nllb" else MARIAN_DIR)
+    translator_dir = options.translator_dir or models / (
+        NLLB_DIR if options.translator == "nllb" else MARIAN_DIR
+    )
     if not translator_dir.is_dir():
         raise FreeSpeechUnavailable(
             f"modèle de traduction absent ({translator_dir}) : "
@@ -102,6 +108,7 @@ def build_engine(options: FreeSpeechOptions, env: Mapping[str, str]) -> FreeSpee
         extract=FfmpegAudioExtractor().extract,
         transcriber_name=transcriber.engine,
         translator_name=translator.engine,
+        back=translator if isinstance(translator, NllbTranslator) else None,
     )
 
 
@@ -152,7 +159,13 @@ def run_command(
         clip = engine.extract(audio)
         config = FreeSpeechConfig()
         items = run_free_speech(
-            intervals, clip, engine.transcriber, engine.translator, engine.guard, config
+            intervals,
+            clip,
+            engine.transcriber,
+            engine.translator,
+            engine.guard,
+            config,
+            engine.back,
         )
     except FreeSpeechUnavailable as exc:
         print(str(exc), file=err)
