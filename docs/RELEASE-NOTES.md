@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-06 — Un passage partiel n'affiche plus la traduction du verset entier
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Sur l'écran de lecture (et donc dans l'export), quand seuls quelques mots d'un verset sont affichés, la traduction se limite à la portion correspondante, avec des points de suspension aux bords. Sur 811 passages partiels de sessions réelles, le verset entier ne s'affiche plus que dans 12,5 % des cas (23 % avant) ; la portion exacte passe de 41 % à 52 %. Quand le découpage est moins sûr, l'écran l'indique (« Découpage approximatif »).
 
@@ -212,7 +212,7 @@ PR : #181
 
 ## 2026-11-03 — Le 1080p est la résolution maximale de l'export vidéo
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Les formats « Grand écran » (1440p) et « Maximum » (4K) disparaissent de l'export vidéo, ainsi que
 1440p et 2160p dans « Sur mesure ». Il reste Léger (720p), Standard (1080p, 30 im/s) et Fluide (1080p, 60 im/s), et les
@@ -226,7 +226,7 @@ avec elle.
 
 ## 2026-11-03 — L'export avec la vidéo d'origine en fond ne prend plus des heures
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** L'export d'une vidéo envoyée avec « Vidéo d'origine » en fond (le choix par défaut) était trop lent
 sur le serveur : une vidéo 4K de 2 minutes mettait plus d'une heure et occupait deux cœurs du serveur partagé. Le
@@ -241,7 +241,7 @@ supprimées.
 
 ## 2026-11-03 — Plus de double barre de défilement sur l'accueil
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** Sur un écran de bureau peu haut, la page d'accueil avait deux barres de défilement et un fond qui
 s'arrêtait en cours de page (le panneau des sessions finissait au milieu de l'écran, avec du vide dessous). Il n'y a
@@ -254,7 +254,7 @@ plusieurs tailles d'écran (bureau 1534 × 700 et 1280 × 720, 1100 px, téléph
 
 ## 2026-11-03 — Une vidéo envoyée ressort telle quelle, avec la traduction par-dessus
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Pour une vidéo envoyée, « Vidéo d'origine » est désormais proposée à chaque fois, et c'est le
 fond et le format par défaut de l'export, quels que soient les réglages enregistrés du compte. La personne peut
@@ -270,7 +270,7 @@ l'emporte désormais, sans toucher aux préférences.
 
 ## 2026-11-03 — Les réglages d'export sont ceux de chaque compte
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Les réglages des sous-titres et de la vidéo (format, tailles, fond, traduction, qualité…)
 sont enregistrés sur ton compte, plus sur l'appareil : un navigateur partagé par l'administrateur et un testeur
@@ -293,7 +293,7 @@ PR : #180
 
 ## 2026-11-02 — La préparation de la vidéo ne bloque plus la page
 Étiquettes : technique
-PR : -
+PR : #218
 
 **Ce qui change.** Quand la vidéo d'origine doit être convertie pour le navigateur du serveur (HEVC des téléphones), la page ne reste plus bloquée pendant la conversion : elle répond « en préparation » tout de suite. L'export attend la conversion avant le rendu.
 
@@ -301,7 +301,7 @@ PR : -
 
 ## 2026-11-02 — Progression réelle de l'export, fond vidéo en HEVC, index recalé au démarrage
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** La barre de la vidéo en cours reflète son avancement réel (elle restait à 50 % puis passait à 100 %). Une vidéo d'origine en HEVC (la plupart des téléphones) sert de fond à l'export serveur : le serveur fabrique une copie H.264 une fois, puis la réutilise. Les compteurs d'exports des sessions d'avant la migration 009 sont justes dès le démarrage.
 
@@ -317,7 +317,7 @@ PR : #177
 
 ## 2026-11-02 — L'administrateur voit toutes les sessions ; l'export vidéo continue sur le serveur
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** L'administrateur voit toutes les sessions de tous les testeurs, privées comprises, avec leur propriétaire, le nombre d'exports et l'espace de chaque compte (en pourcentage de son quota, dans « Testeurs »). Un bandeau prévient le testeur dès que son espace atteint 80 %. Un export vidéo lancé depuis l'atelier se fabrique sur le serveur : quitter la page ne l'interrompt pas, et au retour la progression reprend ; la vidéo finie rejoint « Vidéos de cet enregistrement ». Dans la liste des sessions, chaque ligne indique le nombre d'exports gardés, ceux « à récupérer » (lancés par toi, terminés pendant ton absence) et un export « en cours ».
 
@@ -325,7 +325,7 @@ PR : -
 
 ## 2026-11-01 — Les vidéos déjà faites restent sur le serveur : les revoir, les retélécharger, les supprimer
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** Chaque vidéo fabriquée dans l'onglet « Vidéo » de l'export est gardée sur le serveur et apparaît dans « Vidéos de cet enregistrement » (nom, format, plage, taille, date). On peut la lire dans la page, la télécharger à nouveau ou la supprimer pour libérer de l'espace (le propriétaire ou un administrateur). Un nouvel export identique (mêmes réglages, même plage, même contenu) récupère la vidéo existante sans la refaire ; la case « Refaire même si une vidéo identique existe déjà » force un nouveau rendu. Un autre format, une autre plage ou un texte corrigé donne une vidéo nouvelle.
 
@@ -333,7 +333,7 @@ PR : -
 
 ## 2026-11-01 — La vidéo animée s'exporte depuis l'adresse publique
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** À la fin du rendu, l'envoi de la vidéo échouait avec « Le corps de la requête est trop gros ». Le navigateur envoie maintenant la vidéo encodée par morceaux de 4 Mio au lieu de gros segments d'un coup ; le MP4 se télécharge comme avant.
 
@@ -341,7 +341,7 @@ PR : -
 
 ## 2026-11-01 — « Vérifier avant d'exporter » marche sur l'adresse publique
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** Sur l'adresse publique, la page « Vérifier avant d'exporter » affichait « Le contrôle n'a pas pu se faire » (erreur interne). Elle répond maintenant : le contrôle des passages ambigus et l'export des sous-titres (SRT, WebVTT, ASS, JSON) fonctionnent. L'export vidéo reste non servi sur cette adresse (pas de Chromium dans l'image).
 
@@ -469,7 +469,7 @@ PR : #153
 
 ## 2026-10-29 — `npm run start` redevient la commande de lancement sur son poste
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** `npm run start -- -p 3100` fonctionne de nouveau sans variable supplémentaire : sans `AQR_ACCESS_TOKEN`, il déclare lui-même le mode poste local. Avec un jeton, c'est un accès public et toutes les variables de `docs/SECRETS-ET-CONFIGURATION.md` sont exigées. Les unités de déploiement lancent `next start` directement, elles ne sont pas touchées.
 
@@ -477,7 +477,7 @@ PR : -
 
 ## 2026-10-29 — Lancer l'atelier en production sur son poste : `npm run start:local`
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** `npm run start:local -- -p 3100` (dans `web/`) lance l'atelier construit pour soi seul, sans jeton ni variable à régler. En mode poste local, une version de Node touchée par CVE-2026-111497 est signalée par un avertissement au lieu d'empêcher le démarrage. Un accès public, lui, refuse toujours de démarrer sur une version touchée.
 
@@ -485,7 +485,7 @@ PR : -
 
 ## 2026-10-29 — Moteur d'analyse à distance : la couture côté atelier (courtier, baux, routes, jetons d'agent)
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Rien ne change pour l'utilisateur tant que `AQR_ENGINE=remote` n'est pas posé. Avec lui, l'atelier ne lance plus le moteur lui-même : une analyse attend qu'un agent la réclame (`POST /api/engine/claim`), télécharge l'audio, signale sa vie, puis dépose le résultat ; sans signe de vie le bail expire et l'analyse échoue avec un message clair, et l'annulation d'un utilisateur est transmise à l'agent. Un administrateur crée et révoque les agents (`/api/admin/engine-agents`) ; le jeton `qea_…` n'est montré qu'une fois.
 
@@ -493,7 +493,7 @@ PR : -
 
 ## 2026-10-29 — Déploiement préparé pour Alpha : atelier seul, en conteneur derrière Traefik
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Rien ne change pour l'utilisateur. Le serveur cible est Alpha (Hetzner, sans GPU, qui héberge déjà d'autres projets en production) pour l'**atelier seul** ; le moteur d'analyse et le direct restent sur une machine à GPU. Les modèles de déploiement passent de l'installation sur l'hôte à un conteneur : `deploy/docker/Dockerfile` (Node corrigé, utilisateur non administrateur) et `compose.alpha.yaml` (Traefik existant, 2 Gio et 2 processeurs au plus, système de fichiers en lecture seule, démarrage en mode restreint). Bascule, retour arrière, arrêt d'urgence, sauvegarde et rapport quotidien sont adaptés au conteneur.
 
@@ -501,7 +501,7 @@ PR : -
 
 ## 2026-10-29 — Infrastructure préparée : arrêt d'urgence, sonde de santé, sauvegardes éprouvées, modèles de déploiement
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Un administrateur peut suspendre le service sans le couper : `service-mode.sh restricted` supprime les inscriptions, les envois, les analyses et le direct (la lecture et la connexion continuent) ; `maintenance` affiche une page claire en 503 ; effet en moins de 2 secondes, sans redémarrage. Une sonde publique `/api/health` (200 ou 503, sans chiffre ni chemin) permet la supervision. Un outil de sauvegarde (`web/scripts/backup.mjs`) copie la base de façon cohérente avec une empreinte par fichier, vérifie et restaure sans jamais écraser. Le script d'essai des testeurs fournit désormais les valeurs de sécurité exigées au démarrage (sans quoi l'atelier aurait refusé de démarrer).
 
@@ -509,7 +509,7 @@ PR : -
 
 ## 2026-10-29 — Tests de sécurité : entrées hostiles sur chaque route, plafonds de débit par famille, scans préparés
 Étiquettes : technique
-PR : -
+PR : #218
 
 **Ce qui change.** Rien ne change pour l'utilisateur. Deux nouveaux tests de sécurité tournent à chaque suite : l'un attaque chaque route de l'API (découvertes sur le disque) avec 21 charges hostiles (SQL, chemin, commande, HTML, texte de 100 Ko, pollution de prototype) dans le chemin, la requête et 37 champs JSON, sans connexion, avec un compte et avec un administrateur ; l'autre vérifie, pour les 9 familles de routes, que le plafond est atteint puis refusé en 429 avec `Retry-After`. Un contrôleur d'en-têtes (`web/scripts/check-headers.mjs`) remplace securityheaders.com sans envoyer l'adresse à un tiers, et un lanceur (`scripts/run_security_scans.sh`) prépare ZAP, testssl, Trivy, gitleaks et les audits de dépendances.
 
@@ -517,7 +517,7 @@ PR : -
 
 ## 2026-10-29 — Secrets et configuration : le serveur refuse de démarrer sans ses valeurs de sécurité
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** En production, l'atelier vérifie sa configuration avant d'accepter la moindre requête et s'arrête avec une ligne claire du journal s'il manque une valeur de sécurité (sans jamais citer de valeur). Il faut déclarer un mode d'accès : poste local (`AQR_LOCAL_ONLY=1`) ou accès public (jeton d'au moins 32 caractères, origine https, proxy de confiance déclaré, mode d'inscription, sel d'audit, clé des formulaires, et clé du direct si le direct est branché). Rien ne change pour l'utilisateur d'un poste local, hors cette déclaration en production.
 
@@ -525,7 +525,7 @@ PR : -
 
 ## 2026-10-29 — Direct : journal en fichier, contrôles éprouvés, clé de signature et rotation
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Le service du direct écrit maintenant son journal aussi en fichier (`live-AAAA-MM-JJ.log`, une ligne JSON par événement, droits 0640, conservé 30 jours) dans le même dossier que celui de l'atelier ; le rapport quotidien (`node web/scripts/log-report.mjs`) le lit avec les autres et signale une erreur du direct qui revient depuis des jours. Rien d'autre ne change pour l'utilisateur.
 
@@ -533,7 +533,7 @@ PR : -
 
 ## 2026-10-29 — Envois de fichiers : contenu réel vérifié, disque protégé, plafonds, noms sûrs
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Un envoi n'est plus jugé sur son extension : l'atelier lit les premiers octets du fichier et refuse (415, message clair) tout ce qui n'est pas un conteneur audio ou vidéo reconnu (page HTML, exécutable, archive, image, script nommés « .mp3 »), avant que ffprobe ou ffmpeg y touchent. Avant d'accepter un envoi, il vérifie qu'il restera au moins 1 Gio de libre sur le disque (`AQR_MIN_FREE_BYTES`) ; un disque plein pendant l'écriture donne aussi un message clair (507) et ne laisse aucun fichier partiel. Un envoi par formulaire est plafonné à 64 Mio (`AQR_MAX_FORM_BYTES`, il est lu en mémoire) et un résultat joint à 25 Mio ; l'envoi en flux, utilisé par l'atelier pour les fichiers, garde sa limite (500 Mo l'audio, 2 Gio la vidéo). Les noms de fichier perdent les caractères qui retournent le sens d'écriture ou de largeur nulle et les points et espaces finaux. Le pack de revue (ZIP) ne montre plus à l'appelant le message d'erreur du script.
 
@@ -541,7 +541,7 @@ PR : -
 
 ## 2026-10-29 — Pièges à robots : champs leurres, routes pièges, adresses bloquées
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Les formulaires de connexion et d'inscription portent un champ caché aux humains (hors écran, sans clavier) et un jeton d'horodatage signé par le serveur. Un robot qui remplit le champ est refusé en silence, avec la même réponse et le même temps de calcul qu'un mauvais mot de passe, et son adresse est bloquée pour une durée croissante (1 h, 6 h, 24 h, 3 j, 7 j). Les adresses qu'aucun humain n'ouvre (`/wp-admin`, `/.env`, `/.git`, `/api/debug`, `/phpmyadmin`…) répondent « Introuvable » et bloquent aussi l'adresse qui les visite. Un formulaire envoyé en moins de 2 secondes est refusé mais ne bloque personne (un gestionnaire de mots de passe va vite). Un administrateur voit les blocages (`GET /api/admin/blocks`) et les lève (`DELETE /api/admin/blocks/{empreinte}`). Aucun CAPTCHA.
 
@@ -549,7 +549,7 @@ PR : -
 
 ## 2026-10-29 — Journaux en fichiers : un flux par usage, corrélation, audit en chaîne, rapport des erreurs récurrentes
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Le serveur écrit maintenant ses journaux en fichiers (`<dossier de données>/logs` ou `AQR_LOG_DIR`), en plus de la console : un fichier par flux et par jour (application, accès, analyses et exports, sécurité), une ligne JSON par événement, rotation par taille, conservation de 30 jours (365 pour la sécurité), droits 0640. Chaque requête a un identifiant (`X-Request-Id`) présent dans toutes ses lignes. Le journal de sécurité est une chaîne d'audit : toute modification d'une ligne se détecte. Sont consignés : démarrage et arrêt du service, connexions et refus (401, 403, 429), analyses (début, fin, échec, délai dépassé, durée, moteur, attente), exports, erreurs serveur. Un rapport quotidien (`node web/scripts/log-report.mjs`) signale les erreurs qui reviennent depuis des jours.
 
@@ -557,7 +557,7 @@ PR : -
 
 ## 2026-10-29 — Corps d'API validés strictement, jetons d'API toujours datés et journalisés, cookies et erreurs éprouvés
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Les routes de connexion, d'inscription, de changement de mot de passe, de création de jeton et de lancement d'analyse valident leur corps par un schéma strict : un champ inconnu, un mauvais type ou un dépassement de borne donne une erreur 400 claire qui ne renvoie jamais la valeur reçue (un mot de passe mal formé ne revient pas dans la réponse). Un jeton d'API n'est plus jamais sans date de fin : 180 jours par défaut, 365 au plus (avant : sans fin possible). Sa création et sa révocation sont consignées dans le journal, sans la valeur du jeton.
 
@@ -565,7 +565,7 @@ PR : -
 
 ## 2026-10-29 — Autorisation : balayage automatique des routes contre l'accès à la session privée d'un autre compte
 Étiquettes : technique
-PR : -
+PR : #218
 
 **Ce qui change.** Aucun changement visible, sauf un journal : le passage d'une session de privée à partagée (et l'inverse), par l'écran ou l'action groupée, est maintenant consigné (identifiant de la session, jamais son titre). Un nouveau test découvre sur le disque toutes les routes de session et vérifie que, sans connexion, elles répondent 401, que ni un autre compte ni un administrateur ne peuvent lire, modifier, supprimer ou télécharger la session privée d'un autre compte (404 partout, jamais 200, 403 ni 500), et qu'une session partagée se lit mais ne se modifie pas.
 
@@ -573,7 +573,7 @@ PR : -
 
 ## 2026-10-29 — Mots de passe et connexions : coût scrypt OWASP, politique de 12 caractères, verrouillage persistant, journal d'audit
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Les mots de passe font maintenant 12 caractères au moins (une phrase de passe est recommandée, aucun symbole n'est exigé) et le serveur refuse le pseudonyme, les mots de passe courants ou liés au service, les suites et les répétitions ; la jauge de l'inscription le dit. Les empreintes sont plus coûteuses (scrypt 2^17, au lieu de 2^15) et les anciennes sont refaites à la connexion suivante. Le verrouillage des échecs de connexion survit à un redémarrage du serveur (en base, sans adresse ni pseudonyme en clair) et s'applique aussi par compte, toutes adresses confondues : au plus 2 minutes, et un administrateur peut le lever. Chaque connexion, échec, verrouillage, inscription et changement de mot de passe est consigné (adresse pseudonymisée, jamais de secret). Nouveau bouton « Fermer les autres connexions » dans Compte › Sécurité.
 
@@ -581,7 +581,7 @@ PR : -
 
 ## 2026-10-29 — Garde-fous HTTP : proxy, en-têtes de sécurité, CSP, limitation de débit, refus des requêtes inter-sites
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Une nouvelle couche `web/proxy.ts` (Next 16, ex-middleware) traite chaque requête avant les routes : identifiant de requête (`X-Request-Id`), refus d'une modification inter-sites faite avec le cookie de connexion (403), plafond de 1 Mio pour les corps JSON (413), limitation de débit par famille de route, par adresse et par compte (429 avec `Retry-After`), et en-têtes de sécurité : CSP stricte à nonce (aucun script en ligne sans nonce, aucun `eval` en production, rien hors de l'origine sauf le service du direct), `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` (micro autorisé pour l'atelier seulement), HSTS en HTTPS. `X-Powered-By` est retiré. La lecture des corps JSON est bornée côté route.
 
@@ -589,7 +589,7 @@ PR : -
 
 ## 2026-10-29 — Node corrigé de CVE-2026-111497, Next.js 16.4.3, zod corrigé, registre des dépendances
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** En production, le serveur refuse maintenant de démarrer (et s'arrête avec un message clair) sur une version de Node touchée par la faille CVE-2026-111497 (décodeur Brotli) : il faut Node 22.23.4, 24.22.1 ou 26.12.1 au minimum, 24.22.2 recommandée (`.nvmrc`). En développement, il prévient seulement. Next.js passe en 16.4.3 et zod en 4.6.7 (faille de mémoire sur les grandes collections validées) : `npm audit` ne trouve plus rien. Dependabot suit npm et pip chaque semaine.
 
@@ -597,7 +597,7 @@ PR : -
 
 ## 2026-10-29 — File d'attente visible : on sait qu'on attend et pourquoi, sans voir les autres
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Une pastille en bas à droite de chaque page connectée dit où en est ta file : « Votre analyse : 3e dans la file · environ 12 min » (ou « estimation indisponible » tant que l'historique ne permet pas d'estimer), « Votre export vidéo est en cours », et, quand d'autres comptes occupent la machine, « Le système est occupé : une génération est en cours et une autre est en attente ». Les exports vidéo comptent maintenant dans la file visible. Une génération publique reste visible de tous ; une génération privée d'un autre compte n'apparaît que dans les nombres, jamais par son titre, son nom, son identifiant ou sa durée.
 
@@ -605,7 +605,7 @@ PR : -
 
 ## 2026-10-29 — Test de charge de la file, annulation des exports vidéo, worker rechargé après mise à jour des modèles
 Étiquettes : technique, utilisateur
-PR : -
+PR : #218
 
 **Ce qui change.** Un export vidéo en attente ou en cours peut maintenant être annulé par l'API (`DELETE …/export/video/jobs/{job}`) : la place est rendue, l'état devient « échec » avec le message « Export annulé. ». Le worker Python chaud se recharge si le verrou des modèles (`LOCK.json`) ou le dossier des poids change entre deux analyses : une mise à jour de modèle n'est plus ignorée par un moteur resté en mémoire.
 
@@ -613,7 +613,7 @@ PR : -
 
 ## 2026-10-29 — Redémarrage du serveur : les analyses laissées en cours sont réglées explicitement
 Étiquettes : technique
-PR : -
+PR : #218
 
 **Ce qui change.** Au démarrage, le serveur règle chaque analyse « en cours » que plus aucun processus ne suit : sans numéro de processus, ou processus disparu, elle passe en échec avec un message clair (« interrompue par un redémarrage… Relance-la »), ou en terminée si son résultat avait déjà été écrit. Un processus encore vivant garde sa place seulement jusqu'au délai maximal de l'analyse ; au-delà il est abandonné (son numéro a pu être réutilisé par un autre programme) et la file repart.
 
@@ -621,7 +621,7 @@ PR : -
 
 ## 2026-10-29 — Moteur chaud : les analyses ne rechargent plus les modèles
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Le serveur garde un processus Python « chaud » (`aqr worker`) dont le moteur reste chargé : la deuxième analyse et les suivantes ne repaient plus le chargement des modèles. Sur la machine de développement (cascade, enregistrements courts d'environ 5 s), la première requête prend 32,5 s, la suivante 0,5 s. Annuler ou dépasser le délai arrête le worker (modèles perdus) : l'analyse suivante en relance un neuf. `AQR_WARM_WORKER=0` revient à un processus par analyse.
 
@@ -629,7 +629,7 @@ PR : -
 
 ## 2026-10-29 — Pile de traitement unique : analyses et exports vidéo, équité et délai maximal
 Étiquettes : technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** Les analyses et les exports vidéo partagent désormais une seule file : deux charges lourdes ne tournent plus ensemble au-delà de `AQR_MAX_CONCURRENT`. À chaque place libre, on sert le compte servi le moins récemment (tour à tour), et un compte ne peut pas avoir plus de `AQR_MAX_WAITING_PER_USER` (5) jobs en attente (réponse 429 en clair). Un job qui dépasse son délai (`AQR_JOB_TIMEOUT_S`, sinon 8 fois la durée audio, au moins 30 min ; 31 min pour un rendu vidéo) est arrêté, marqué en échec lisible, et sa place est reprise.
 
@@ -685,7 +685,7 @@ PR : #118
 
 ## 2026-10-28 — API : toutes les options d'export, vidéo comprise
 Étiquettes : utilisateur, technique
-PR : -
+PR : #218
 
 **Ce qui change.** Tout ce que l'atelier propose pour l'export se demande aussi par l'API et le MCP, sauf l'écoute en direct. Les sous-titres prenaient déjà toutes les options ; la **vidéo** s'exporte désormais par l'API avec les mêmes réglages que le formulaire (format horizontal, vertical, carré ou comme la vidéo source ; tailles de l'arabe et de la traduction ; traduction affichée ou non ; remplir l'espace, hauteur du texte, onde, couleur d'accent, nom du fichier ; fond proposé, vidéo d'origine, couleur unie ou image envoyée) : on crée un job, on suit son avancement, on télécharge le MP4. Un catalogue (`GET /api/v1/export/options`) dit quelles options existent et quelles valeurs sont permises ; le MCP gagne `get_export_options`, `export_video`, `get_video_export` et `get_verse`. Un jeton lit aussi les statistiques et le texte d'un verset du corpus.
 
@@ -693,7 +693,7 @@ PR : -
 
 ## 2026-10-28 — Quran TR : nouveau nom, essais privés par défaut, API et MCP
 Étiquettes : utilisateur, technique, décision
-PR : -
+PR : #218
 
 **Ce qui change.** L'outil s'appelle désormais **Quran TR** (titres, en-tête, documentation). Les nouveaux audios sont **privés par défaut** — chaque compte ne voit que les siens, y compris pour les testeurs qui arrivent par le tunnel ; « Partagé » reste un choix par essai (réglage de compte et à l'import). Nouvelle page **Compte → API & MCP** : on y crée des jetons d'accès (lecture seule ou écriture, durée facultative), affichés une seule fois et révocables. Avec un jeton, une application ou un agent IA utilise Quran TR au nom du compte, même en local : API REST sous `/api/v1/recordings`, serveur MCP sous `/mcp` (lister les essais, lire les versets avec leur statut de preuve, générer des sous-titres, importer un audio), et une compétence `SKILL.md` téléchargeable qui apprend à l'agent à s'en servir.
 
@@ -868,7 +868,7 @@ PR : #82
 
 ## 2026-10-23 — Glisser pour naviguer dans la timeline, tracé qui se ferme tout seul
 Étiquettes : utilisateur
-PR : -
+PR : #218
 
 **Ce qui change.** Quand la timeline est zoomée, on la saisit avec la souris et on la glisse vers la gauche ou la droite pour naviguer, au lieu d'aller chercher la barre de défilement tout en bas (un simple clic déplace toujours la lecture). Dans la revue, l'outil « Tracer sur l'onde » se ferme tout seul dès qu'une plage ou un point est tracé, et aussi quand on valide le signalement : on continue d'écouter, et on le réactive pour un nouveau signalement.
 
@@ -876,7 +876,7 @@ PR : -
 
 ## 2026-10-23 — La carte du passage actif reste vide quand rien n'est détecté
 Étiquettes : utilisateur
-PR : -
+PR : #218
 
 **Ce qui change.** Pendant la lecture, quand aucun verset n'est localisé à cet instant (silence, parole non coranique ou abstention), la carte « Passage actif » reste vide au lieu d'afficher « Aucun verset localisé à cet instant » ou l'explication d'une abstention à chaque trou. Sa hauteur est conservée pour que la page ne saute pas. L'explication d'une abstention reste affichée quand on la choisit dans la liste des intervalles.
 
@@ -884,7 +884,7 @@ PR : -
 
 ## 2026-10-23 — Dataset du lot 1 repassé en privé
 Étiquettes : décision, technique
-PR : -
+PR : #218
 
 **Ce qui change.** Le dataset Hugging Face qui héberge les 12 audios du lot 1 n'est plus public : il est repassé en privé à la demande du mainteneur (vérifié sans compte : l'API, la page et les fichiers répondent HTTP 401). La lecture sans jeton de la révision épinglée ne fonctionne donc plus ; un agent cloud qui a besoin du lot doit disposer d'un jeton de lecture.
 
