@@ -1925,3 +1925,9 @@ Contexte : la vidéo posait un long verset d'un bloc (réduction jusqu'au planch
   Option écartée : publier une fin de mot distincte dans `aqr.recognition` (mesure exacte par l'énergie) : changement de contrat, lot suivant.
 - **Piège relevé** : l'arrondi de Python (moitié au pair) diffère de `Math.round` ; reproduit en TypeScript pour la coupe de traduction au prorata.
 - **Non vérifié** : rendu de la vidéo au navigateur sur un vrai long verset (tests unitaires seulement).
+
+## 2026-11-06 — Traduction des passages partiels : paliers de confiance (ADR-0026)
+- **Contexte** : testeurs, écran de lecture : traduction du verset entier sur un passage partiel. Mesure : 23 % de repli sur 811 intervalles réels.
+- **Décision** : frontières souples (0,6-0,95) écrites avec leur confiance, paliers (0,95 ; 0,8 ; 0,6) choisis sur la pseudo-vérité ; pas d'IA neuronale pour l'instant (corriger sans IA d'abord, accord du mainteneur).
+- **Résultat** : verset entier 12,5 %, exact 51,8 %. Reste : ~36 % approchés, 12,5 % entiers (sans ponctuation exploitable).
+- **Non vérifié** : rendu à l'écran sur une vraie récitation (à faire avec le mainteneur).

@@ -55,6 +55,9 @@ def test_cuts_are_structurally_valid_against_the_corpus(document: dict[str, obje
     corpus = TanzilCorpusRepository(CORPUS_DIR)
     verses = document["verses"]
     assert isinstance(verses, dict)
+    config = document["config"]
+    assert isinstance(config, dict)
+    floor = config["soft_min_boundary_confidence"]  # le palier le plus souple écrit (ADR-0026)
     for ref in corpus.all_refs():
         entry = verses[str(ref)]
         assert entry["w"] == len(corpus.words(ref))
@@ -62,7 +65,7 @@ def test_cuts_are_structurally_valid_against_the_corpus(document: dict[str, obje
         offsets = [cut[1] for cut in entry["cuts"]]
         assert words == sorted(set(words)) and offsets == sorted(set(offsets))
         assert all(1 < w <= entry["w"] for w in words)
-        assert all(0.9 <= cut[2] <= 1.0 for cut in entry["cuts"])
+        assert all(floor <= cut[2] <= 1.0 for cut in entry["cuts"])
         assert len(entry["h"]) == 16
 
 

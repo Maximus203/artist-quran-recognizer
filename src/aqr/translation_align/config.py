@@ -67,9 +67,25 @@ class TranslationAlignmentConfig:
     """Une seconde chaîne, avec une autre normalisation des mots, recalcule le découpage : une
     frontière n'est gardée que si elle y tombe à la tolérance près (les erreurs d'une seule
     normalisation ne passent pas)."""
+    soft_min_boundary_confidence: float = 0.6
+    """Palier « souple » : les frontières entre ce seuil et `min_boundary_confidence` sont écrites
+    dans le fichier avec leur confiance (la valeur de la confiance les distingue des fermes). Le
+    moteur ne s'en sert que pour affiner un fragment trop large ; sous 0,6 la mesure sur la
+    pseudo-vérité tombe à ~57 % à ±1 mot : rien n'est écrit. Pas de seconde chaîne ni d'accord
+    des deux sens pour ces frontières : leur confiance dit déjà ce qu'elles valent."""
     second_fr_stem_len: int = 4
     second_arabic_stemming: bool = False
-    method: str = "ibm1-bidirectional-clause-dp/2"
+    method: str = "ibm1-bidirectional-clause-dp/3"
+
+    def soft(self) -> TranslationAlignmentConfig:
+        """Réglages de la chaîne qui propose les frontières souples (seuil abaissé, sans accord des
+        sens ni seconde chaîne)."""
+        return replace(
+            self,
+            min_boundary_confidence=self.soft_min_boundary_confidence,
+            require_direction_agreement=False,
+            second_opinion=False,
+        )
 
     def second(self) -> TranslationAlignmentConfig:
         """Réglages de la seconde chaîne : mêmes seuils, autre normalisation des mots."""

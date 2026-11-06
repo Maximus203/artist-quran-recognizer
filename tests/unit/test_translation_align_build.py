@@ -16,9 +16,11 @@ from aqr.translation_align.build import (
     build_document,
     dump_document,
     leading_basmala,
+    merge_soft_cuts,
     verify_reconstruction,
 )
 from aqr.translation_align.config import TranslationAlignmentConfig
+from aqr.translation_align.segmenter import Cut
 
 ARABIC = [a + b + c for a in "كقفرسم" for b in "تلنب" for c in "رمدش"][:48]
 FRENCH = [f"mot{chr(97 + i // 6)}{chr(97 + i % 6)}x" for i in range(48)]
@@ -115,3 +117,26 @@ def test_leading_basmala_is_detected_only_on_first_verses() -> None:
     assert leading_basmala(first) == 4
     assert leading_basmala(second) == 0
     assert leading_basmala(fatiha) == 0
+
+
+def _cut(boundary: int, word: int, confidence: float) -> Cut:
+    return Cut(boundary=boundary, word=word, confidence=confidence)
+
+
+def test_merge_soft_cuts_keeps_firm_cuts_untouched_and_adds_compatible_soft_ones() -> None:
+    firm = [_cut(1, 10, 0.99)]
+    soft = [_cut(0, 4, 0.7), _cut(1, 11, 0.99), _cut(2, 16, 0.65)]
+    merged = merge_soft_cuts(firm, soft, tolerance=1)
+    assert [(c.boundary, c.word) for c in merged] == [(0, 4), (1, 10), (2, 16)]
+    assert merged[1] is firm[0]  # la ferme garde sa place, pas celle que la chaîne souple propose
+
+
+def test_merge_soft_cuts_drops_a_soft_cut_that_would_reverse_the_word_order() -> None:
+    firm = [_cut(1, 10, 0.99)]
+    soft = [_cut(0, 12, 0.8), _cut(2, 8, 0.7)]  # avant la ferme mais au-delà ; après mais en deçà
+    assert merge_soft_cuts(firm, soft, tolerance=1) == firm
+
+
+def test_merge_soft_cuts_drops_a_soft_cut_next_to_a_firm_one() -> None:
+    firm = [_cut(1, 10, 0.99)]
+    assert merge_soft_cuts(firm, [_cut(2, 11, 0.9)], tolerance=1) == firm

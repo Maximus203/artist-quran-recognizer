@@ -30,7 +30,7 @@ import numpy as np
 from aqr.adapters.quranenc import QuranEncTranslationRepository
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.eval.recognition import VerseInterval, load_recognition
-from aqr.rendering.translation_segments import FragmentPolicy, SegmentStore, select_fragment
+from aqr.rendering.translation_segments import FragmentPolicy, SegmentStore, select_best_fragment
 from aqr.translation_align import segmenter as seg
 from aqr.translation_align.build import Prepared, VerseSource, prepare, train_models
 from aqr.translation_align.config import TranslationAlignmentConfig
@@ -175,15 +175,15 @@ def sessions(
             if segments is None or len(segments) < 2:
                 outcome["verset entier (pas de découpage)"] += 1
                 continue
-            fragment = select_fragment(
-                segments, text, interval.first_word, interval.last_word, words, policy
+            fragment = select_best_fragment(
+                store, interval.ref, text, interval.first_word, interval.last_word, words, policy
             )
             if fragment is None:
                 outcome["verset entier (fragment trop large)"] += 1
             elif fragment.approximate:
-                outcome["fragment approché"] += 1
+                outcome[f"fragment approché (palier {fragment.floor})"] += 1
             else:
-                outcome["fragment exact"] += 1
+                outcome[f"fragment exact (palier {fragment.floor})"] += 1
     total = sum(outcome.values())
     print(f"== 3. Intervalles partiels de {len(files)} sessions : {total}")
     for key, value in outcome.most_common():

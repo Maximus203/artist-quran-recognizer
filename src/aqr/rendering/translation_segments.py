@@ -19,7 +19,7 @@ import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Final
 
@@ -63,6 +63,9 @@ class Fragment:
     approximate: bool
     ellipsis_before: bool
     ellipsis_after: bool
+    floor: float | None = None
+    """Palier de confiance des frontières qui ont servi (None : toutes, ou frontières sans
+    confiance) : plus il est bas, moins le fragment est sûr (il est alors `approximate`)."""
 
 
 @dataclass(frozen=True)
@@ -71,6 +74,10 @@ class FragmentPolicy:
 
     min_edge_overlap: float = 0.5
     """Un segment de bord n'est gardé que si la plage en couvre au moins cette part (en mots)."""
+    tiers: tuple[float, ...] = (0.95, 0.8, 0.6)
+    """Paliers de confiance des frontières, du plus sûr au plus souple (pseudo-vérité : ±1 mot
+    dans 99,9 %, ~94 %, ~75 % des cas). Un fragment exact au palier sûr l'emporte toujours ;
+    sinon, le palier dont le fragment s'écarte le moins de la plage affichée."""
     max_overreach: float = 1.0
     """Mots du fragment au-delà de la plage affichée, en part de la largeur de la plage ;
     au-delà, la traduction du verset entier est préférée (repli honnête)."""
@@ -133,9 +140,14 @@ class SegmentStore:
             verses=verses,
         )
 
-    def segments(self, ref: VerseRef, text: str, word_count: int) -> tuple[Segment, ...] | None:
+    def segments(
+        self, ref: VerseRef, text: str, word_count: int, min_confidence: float | None = None
+    ) -> tuple[Segment, ...] | None:
         """Segments du verset, ou None si le verset est inconnu, si le texte français a changé
-        (empreinte) ou si le nombre de mots arabes ne correspond plus : pas de découpage."""
+        (empreinte) ou si le nombre de mots arabes ne correspond plus : pas de découpage.
+
+        `min_confidence` : seules les frontières de confiance au moins égale ouvrent un segment
+        (les autres fusionnent leurs voisins) ; None : toutes celles du fichier."""
         entry = self.verses.get(str(ref))
         if not isinstance(entry, Mapping):
             return None
@@ -144,6 +156,13 @@ class SegmentStore:
         cuts = entry.get("cuts")
         if not isinstance(cuts, Sequence) or isinstance(cuts, str):
             return None
+        if min_confidence is not None:
+            cuts = [
+                c
+                for c in cuts
+                if not (isinstance(c, Sequence) and len(c) > 2 and isinstance(c[2], int | float))
+                or c[2] >= min_confidence
+            ]
         return _build_segments(cuts, text, word_count)
 
 
@@ -220,3 +239,35 @@ def select_fragment(
         ellipsis_before=first_word > 1,
         ellipsis_after=last_word < word_count,
     )
+
+
+def select_best_fragment(
+    store: SegmentStore,
+    ref: VerseRef,
+    text: str,
+    first: int,
+    last: int,
+    word_count: int,
+    policy: FragmentPolicy,
+) -> Fragment | None:
+    """Fragment de la plage [first, last] au meilleur palier de confiance, ou None (verset entier).
+
+    On essaie les paliers du plus sûr au plus souple. Un fragment exact l'emporte dès qu'il existe ;
+    sinon le fragment qui déborde ou rogne le moins la plage (à égalité, le palier le plus sûr).
+    Un palier plus souple ne fait que subdiviser les segments du palier sûr : il n'écarte jamais un
+    résultat qui était déjà bon."""
+    best: tuple[int, Fragment] | None = None
+    for floor in policy.tiers:
+        segments = store.segments(ref, text, word_count, min_confidence=floor)
+        if segments is None:
+            return None
+        fragment = select_fragment(segments, text, first, last, word_count, policy)
+        if fragment is None:
+            continue
+        fragment = replace(fragment, floor=floor)
+        if not fragment.approximate:
+            return fragment
+        gap = abs(fragment.first_word - first) + abs(fragment.last_word - last)
+        if best is None or gap < best[0]:
+            best = (gap, fragment)
+    return best[1] if best else None
