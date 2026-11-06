@@ -80,3 +80,17 @@ relecture humaine obligatoire (déjà : `pending`).
   substitue donc pas à la relecture humaine.
 - **Conséquence** : aucun changement de décision. Module désactivé à l'export, passages `pending`, rien en production. Le contrôle n'est
   disponible qu'avec `--translator nllb` (le Marian ne traduit pas vers l'arabe).
+
+## NLLB-200 3,3 B (17,6 Go), mêmes 66 passages, 2026-11-06
+
+- **Mieux, pas assez.** Le 3,3 B corrige des contresens du 1,3 B (« ومرقات الصعود » : « les étapes de l'ascension » au lieu de « des crêpes » ;
+  « وخدمة أمتهم » : « leur nation » ; « علو الهمة ليس ترفًا فكريًا » : « La hauteur d'esprit n'est pas un luxe intellectuel »). Il reste faux
+  sur d'autres (« رواه البخاري » : « Il y a de la vapeur » ; « السالكين » : « les Salkins » ; « من دلائل رجاحة العقل » : « des signes
+  d'humilité d'esprit »). 8 passages sur 64 hors glossaire donnent exactement la même traduction qu'avec le 1,3 B.
+- **L'aller-retour ne s'améliore pas** : sous 0,35, il retient 11 passages avec le 3,3 B contre 7 avec le 1,3 B, dont des traductions correctes
+  (« Il s'élève avec détermination », 0,33). Le seuil de 0,35 n'est pas transférable d'un modèle à l'autre ; il faudrait un jeu étiqueté à la
+  main pour le calibrer sérieusement.
+- **Décision inchangée** : module désactivé à l'export, passages `pending`, rien en production. Gagner un cran de qualité ne suffit pas : le
+  taux de contresens reste trop élevé pour un texte affiché comme traduction. Reste à trancher : un modèle de conversation cadré (touche
+  l'ADR-0001) ou une relecture humaine systématique.
+- **Coût** : 17 Go de poids (`AQR_MODELS_DIR/nllb-200-3.3B`), environ 14 Go de mémoire pour charger le modèle sur CPU.

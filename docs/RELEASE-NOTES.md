@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Parole libre : NLLB-200 3,3 B mesuré, décision inchangée
+Étiquettes : décision
+PR : #228
+
+**Ce qui change.** Aucun changement de comportement : le traducteur NLLB-200 de 3,3 milliards de paramètres a été mesuré sur les 66 passages réels de la parole libre. La parole libre reste désactivée à l'export.
+
+**Pourquoi / décision.** Le 3,3 B corrige plusieurs contresens du 1,3 B mais en garde d'autres, et l'aller-retour ne l'améliore pas (11 passages retenus au lieu de 7, dont des traductions correctes). Pas de mise en production ; reste à trancher entre un modèle de conversation cadré (ADR-0001) et une relecture humaine systématique. ADR-0027 (NLLB 3,3 B). (renvoyer vers l'ADR ou le rapport concerné ; supprimer ce paragraphe s'il n'apporte rien)
+
 ## 2026-11-06 — Parole libre : glossaire des formules fixes et contrôle par aller-retour
 Étiquettes : technique, décision
 PR : #227
