@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Parole libre : glossaire des formules fixes et contrôle par aller-retour
+Étiquettes : technique, décision
+PR : #227
+
+**Ce qui change.** Dans le fichier de parole libre, les formules religieuses fixes (références de hadith, bénédictions…) reçoivent une traduction écrite à la main (`translation_source: glossary`) au lieu de celle d'un modèle. Avec `--translator nllb`, chaque traduction est aussi retraduite vers l'arabe : si le sens s'éloigne trop, le passage est retenu (« traduction non confirmée »). Rien ne change à l'écran ni dans la vidéo : le module reste désactivé à l'export.
+
+**Pourquoi / décision.** Mesure sur 66 passages réels : le glossaire ne couvre que 2 passages ; l'aller-retour ne retient que 8 passages sur 64 et laisse passer des contresens. Ce sont des garde-fous partiels, pas une garantie : relecture humaine obligatoire, rien en production. ADR-0027 (glossaire et aller-retour).
+
 ## 2026-11-06 — Parole libre : option NLLB-200 et comparaison des traducteurs
 Étiquettes : technique, décision
 PR : #226

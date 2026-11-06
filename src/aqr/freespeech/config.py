@@ -31,6 +31,8 @@ class FreeSpeechConfig:
     """Suite de mots consécutifs identique à une suite du Coran : retenue dès cette longueur."""
     max_repeat_share: float = 0.5
     """Part maximale du mot le plus répété (une boucle d'hallucination du transcripteur)."""
+    min_roundtrip: float = 0.35
+    """Ressemblance minimale de l'arabe d'origine et de son aller-retour (provisoire, banc)."""
     ratio_low: float = 0.25
     ratio_high: float = 3.0
     """Bornes du rapport (lettres françaises / lettres arabes) d'une traduction plausible."""

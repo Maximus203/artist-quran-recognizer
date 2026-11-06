@@ -20,11 +20,13 @@ from aqr.freespeech.checks import (
     arabic_letter_share,
     plausible_length,
     repeat_share,
+    roundtrip_similarity,
     words_of,
 )
 from aqr.freespeech.config import FreeSpeechConfig
+from aqr.freespeech.glossary import glossary_translation
 from aqr.freespeech.guard import CorpusGuard
-from aqr.freespeech.ports import FrenchTranslator, SpeechTranscriber
+from aqr.freespeech.ports import BackTranslator, FrenchTranslator, SpeechTranscriber
 from aqr.freespeech.sidecar import FreeSpeechItem
 from aqr.pipeline.formulae import FormulaConfig, classify_formula
 
@@ -76,6 +78,7 @@ def process_interval(
     translator: FrenchTranslator,
     guard: CorpusGuard,
     config: FreeSpeechConfig,
+    back: BackTranslator | None = None,
 ) -> FreeSpeechItem:
     if span.end_s - span.start_s < config.min_duration_s:
         return _held(index, span, "too_short")
@@ -97,11 +100,17 @@ def process_interval(
         return _held(index, span, "quran_like")
     if classify_formula(words, (), FormulaConfig()) is not None:
         return _held(index, span, "known_formula")
-    french = translator.translate(heard.text).text.strip()
+    fixed = glossary_translation(words)
+    french = fixed or translator.translate(heard.text).text.strip()
     if not french:
         return _held(index, span, "no_translation")
-    if not plausible_length(heard.text, french, config.ratio_low, config.ratio_high):
-        return _held(index, span, "translation_implausible")
+    if not fixed:
+        if not plausible_length(heard.text, french, config.ratio_low, config.ratio_high):
+            return _held(index, span, "translation_implausible")
+        if back is not None and (
+            roundtrip_similarity(heard.text, back.translate_back(french)) < config.min_roundtrip
+        ):
+            return _held(index, span, "translation_unreliable")
     return FreeSpeechItem(
         index,
         (span.start_s, span.end_s),
@@ -111,6 +120,7 @@ def process_interval(
         confidence=heard.confidence,
         language=heard.language,
         review="pending",
+        translation_source="glossary" if fixed else "model",
     )
 
 
@@ -121,8 +131,9 @@ def run_free_speech(
     translator: FrenchTranslator,
     guard: CorpusGuard,
     config: FreeSpeechConfig,
+    back: BackTranslator | None = None,
 ) -> list[FreeSpeechItem]:
     return [
-        process_interval(index, span, clip, transcriber, translator, guard, config)
+        process_interval(index, span, clip, transcriber, translator, guard, config, back)
         for index, span in eligible_intervals(intervals, config)
     ]

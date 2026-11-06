@@ -9,6 +9,7 @@ import pytest
 
 from aqr.domain.models import TimeSpan
 from aqr.domain.ports import AudioClip
+from aqr.freespeech.checks import roundtrip_similarity
 from aqr.freespeech.config import FreeSpeechConfig
 from aqr.freespeech.guard import CorpusGuard
 from aqr.freespeech.ports import FrenchText, SpeechTranscript
@@ -267,3 +268,82 @@ class TestGardeSurLeVraiCorpus:
 
         text = "اليوم نتحدث عن اهمية الصبر في حياتنا اليومية"
         assert not guard.check(tokenize(normalize_arabic(text))).quranic
+
+
+class Back:
+    def __init__(self, arabic: str) -> None:
+        self.arabic = arabic
+        self.calls = 0
+
+    def translate_back(self, french: str) -> str:
+        self.calls += 1
+        return self.arabic
+
+
+class TestGlossaire:
+    def test_formule_fixe_traduite_a_la_main_sans_modele(self) -> None:
+        translator = Translator("Je ne sais pas.")
+        item, _ = run(Heard(text="رواه البخاري"), translator)
+        assert item.translation_fr == "Rapporté par Al-Boukhari."
+        assert item.translation_source == "glossary"
+        assert translator.calls == 0
+
+    def test_la_formule_doit_etre_le_passage_entier(self) -> None:
+        item, translator = run(Heard(text="هذا حديث رواه البخاري في صحيحه كما قال"))
+        assert item.translation_source == "model" and translator.calls == 1
+
+    def test_pas_de_controle_d_aller_retour_sur_le_glossaire(self) -> None:
+        back = Back("كلام لا علاقة له بشيء")
+        items = run_free_speech(
+            [interval("arabic_speech", 2, 8)],
+            CLIP,
+            Heard(text="صلى الله عليه وسلم"),
+            Translator(),
+            GUARD,
+            CONFIG,
+            back,
+        )
+        assert items[0].status == "translated" and back.calls == 0
+
+
+class TestAllerRetour:
+    def _run(self, back: Back | None) -> FreeSpeechItem:
+        [item] = run_free_speech(
+            [interval("arabic_speech", 2, 8)], CLIP, Heard(), Translator(), GUARD, CONFIG, back
+        )
+        return item
+
+    def test_un_aller_retour_fidele_laisse_passer(self) -> None:
+        assert self._run(Back(FREE)).status == "translated"
+
+    def test_un_aller_retour_qui_change_de_sens_retient_le_passage(self) -> None:
+        item = self._run(Back("لا اعلم شيئا عن هذا الموضوع ابدا"))
+        assert (item.status, item.reason) == ("withheld", "translation_unreliable")
+        assert item.translation_fr is None
+
+    def test_sans_traducteur_retour_le_controle_est_sauté(self) -> None:
+        assert self._run(None).status == "translated"
+
+    def test_similarite(self) -> None:
+        assert roundtrip_similarity(FREE, FREE) == 1.0
+        assert roundtrip_similarity(FREE, "") == 0.0
+        assert roundtrip_similarity(FREE, "لا اعلم شيئا") < 0.5
+
+
+def test_le_fichier_garde_la_source_de_la_traduction() -> None:
+    item = FreeSpeechItem(
+        0,
+        (1.0, 2.0),
+        "translated",
+        transcript_ar="س",
+        translation_fr="x",
+        translation_source="glossary",
+    )
+    doc = build_document(
+        [item], transcriber="a", translator="b", recognition_sha256="0" * 64, thresholds={}
+    )
+    validate_document(doc)
+    assert doc["items"][0]["translation_source"] == "glossary"
+    doc["items"][0]["translation_source"] = "devine"
+    with pytest.raises(SidecarError, match="translation_source"):
+        validate_document(doc)
