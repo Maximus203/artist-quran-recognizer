@@ -73,9 +73,15 @@ class TranslationAlignmentConfig:
     moteur ne s'en sert que pour affiner un fragment trop large ; sous 0,6 la mesure sur la
     pseudo-vérité tombe à ~57 % à ±1 mot : rien n'est écrit. Pas de seconde chaîne ni d'accord
     des deux sens pour ces frontières : leur confiance dit déjà ce qu'elles valent."""
+    fine_min_boundary_confidence: float = 0.3
+    """Palier « fin » : coupures entre ce seuil et `soft_min_boundary_confidence`, sur des
+    propositions candidates plus courtes (un seul mot porteur de sens suffit). Écrites avec leur
+    confiance, le moteur ne s'en sert que pour partager une proposition entre les cartes d'une
+    vidéo d'export (une carte arabe courte ne doit pas afficher la traduction de plusieurs)."""
+    fine_min_clause_tokens: int = 1
     second_fr_stem_len: int = 4
     second_arabic_stemming: bool = False
-    method: str = "ibm1-bidirectional-clause-dp/3"
+    method: str = "ibm1-bidirectional-clause-dp/4"
 
     def soft(self) -> TranslationAlignmentConfig:
         """Réglages de la chaîne qui propose les frontières souples (seuil abaissé, sans accord des
@@ -83,6 +89,17 @@ class TranslationAlignmentConfig:
         return replace(
             self,
             min_boundary_confidence=self.soft_min_boundary_confidence,
+            require_direction_agreement=False,
+            second_opinion=False,
+        )
+
+    def fine(self) -> TranslationAlignmentConfig:
+        """Réglages de la chaîne qui propose les coupures fines (propositions plus courtes, seuil
+        encore abaissé, sans accord des sens ni seconde chaîne)."""
+        return replace(
+            self,
+            min_boundary_confidence=self.fine_min_boundary_confidence,
+            min_clause_tokens=self.fine_min_clause_tokens,
             require_direction_agreement=False,
             second_opinion=False,
         )

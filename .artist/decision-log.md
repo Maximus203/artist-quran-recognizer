@@ -1931,3 +1931,9 @@ Contexte : la vidéo posait un long verset d'un bloc (réduction jusqu'au planch
 - **Décision** : frontières souples (0,6-0,95) écrites avec leur confiance, paliers (0,95 ; 0,8 ; 0,6) choisis sur la pseudo-vérité ; pas d'IA neuronale pour l'instant (corriger sans IA d'abord, accord du mainteneur).
 - **Résultat** : verset entier 12,5 %, exact 51,8 %. Reste : ~36 % approchés, 12,5 % entiers (sans ponctuation exploitable).
 - **Non vérifié** : rendu à l'écran sur une vraie récitation (à faire avec le mainteneur).
+
+## 2026-11-06 — Vidéo d'export : traduction par carte (ADR-0026, addendum)
+- **Contexte** : le mainteneur a lu 2:255 : une carte arabe de 3 s recevait la traduction de toute une proposition, la suivante rien.
+- **Décision** : palier « fin » (0,3) écrit dans le fichier de coupes, lu par les seules cartes d'export ; attribution à la carte majoritaire.
+- **Résultat** : sur la session réelle, chaque carte reçoit sa partie ; il reste une carte sans traduction (mots 27-30 hors du fragment fiable du passage).
+- **Non vérifié** : précision des coupures < 0,6 ; rendu de la vidéo au navigateur.

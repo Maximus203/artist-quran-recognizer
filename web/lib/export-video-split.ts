@@ -198,19 +198,26 @@ function translationPieces(
       ? translation.fragment
       : undefined;
   const [low, high] = fragment ? fragment.words : [-1, 1_000_000];
-  const segments = (translation.segments ?? []).filter(
+  // Les cartes sont plus courtes que les propositions : les coupures fines, quand il y en a.
+  const segments = (translation.phrases ?? translation.segments ?? []).filter(
     ({ words }) => words[0] >= low && words[0] <= high,
   );
   if (segments.length > 0) {
     const buckets = ranges.map(() => "");
     for (const { words, text } of segments) {
-      const absolute = Math.min(
-        Math.max(words[0], first),
-        first + wordCount - 1,
-      );
-      const slot = ranges.findIndex(
-        ([i, j]) => first + i <= absolute && absolute <= first + j - 1,
-      );
+      // La carte qui porte le plus de mots arabes de la tranche (à égalité, la première) : le
+      // français ne s'affiche pas avant ce qui est dit, ni après.
+      const lo = Math.max(words[0], first);
+      const hi = Math.min(words[1], first + wordCount - 1);
+      let slot = -1;
+      let best = 0;
+      ranges.forEach(([i, j], k) => {
+        const overlap = Math.min(hi, first + j - 1) - Math.max(lo, first + i) + 1;
+        if (overlap > best) {
+          best = overlap;
+          slot = k;
+        }
+      });
       if (slot >= 0) buckets[slot] = `${buckets[slot]} ${text}`.trim();
     }
     return {

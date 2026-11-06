@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Vidéo d'export : chaque carte arabe affiche sa propre traduction
+Étiquettes : utilisateur, technique, décision
+PR : #219
+
+**Ce qui change.** Quand le récitant s'arrête au milieu d'une phrase et que la vidéo affiche plusieurs cartes arabes, chaque carte porte maintenant la partie de la traduction qui lui correspond, au lieu de donner toute la phrase à la première carte. Sur 2:255 (enregistrement du 6 novembre), « ٱللَّهُ لَآ » affiche « Allah! » et non plus « Allah! Point de divinité à part Lui, le Vivant, ». Une carte dont les mots ne figurent dans aucune partie fiable n'affiche pas de traduction plutôt qu'une traduction fausse.
+
+**Pourquoi / décision.** Le fichier de coupes garde un palier « fin » (confiance 0,3 à 0,6, propositions d'un seul mot porteur de sens), réservé au partage d'une proposition entre cartes ; l'écran de lecture n'en dépend pas. Chaque morceau va dans la carte qui porte la majorité de ses mots arabes. Aucun texte réécrit (I1, I2) ; ADR-0026 (addendum).
+
 ## 2026-11-06 — Un passage partiel n'affiche plus la traduction du verset entier
 Étiquettes : utilisateur, technique, décision
 PR : #218

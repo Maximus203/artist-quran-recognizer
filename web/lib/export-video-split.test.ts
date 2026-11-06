@@ -208,6 +208,55 @@ describe("splitVerse", () => {
     expect(cards.some((c) => c.approximate)).toBe(false);
   });
 
+  it("une proposition plus longue qu'une carte est partagée par les coupures fines (phrases)", () => {
+    const item = verse({
+      ...base,
+      ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
+      translation: {
+        text: "Allah! Point de divinité, le Vivant.",
+        translation_id: "fr.hamidullah",
+        version: "1",
+        attribution: "Muhammad Hamidullah",
+        scope: "verse",
+        segments: [{ words: [1, 8], text: "Allah! Point de divinité, le Vivant." }],
+        phrases: [
+          { words: [1, 3], text: "Allah!" },
+          { words: [4, 8], text: "Point de divinité, le Vivant." },
+        ],
+      },
+    });
+    const cards = splitVerse(item, DEFAULT_SPLIT);
+    expect(cards.map((c) => c.translation)).toEqual([
+      "Allah!",
+      "Point de divinité, le Vivant.",
+    ]);
+  });
+
+  it("une phrase va dans la carte qui porte la majorité de ses mots arabes", () => {
+    const item = verse({
+      ...base,
+      ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
+      translation: {
+        text: "Allah! Point de divinité. Fin.",
+        translation_id: "fr.hamidullah",
+        version: "1",
+        attribution: "Muhammad Hamidullah",
+        scope: "verse",
+        phrases: [
+          { words: [1, 2], text: "Allah!" },
+          { words: [3, 6], text: "Point de divinité." },
+          { words: [7, 8], text: "Fin." },
+        ],
+        segments: [{ words: [1, 8], text: "Allah! Point de divinité. Fin." }],
+      },
+    });
+    const cards = splitVerse(item, DEFAULT_SPLIT);
+    expect(cards.map((c) => c.translation)).toEqual([
+      "Allah!",
+      "Point de divinité. Fin.",
+    ]);
+  });
+
   it("sans tranches, la traduction est coupée au prorata des mots et le dit", () => {
     const item = verse({
       ...base,
