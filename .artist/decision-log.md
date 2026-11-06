@@ -1,5 +1,15 @@
 # Journal des décisions — artist-quran-recognizer
 
+## 2026-11-06 — Formules récitées dans la vidéo d'export (PR #221)
+- **Quoi** : `videoCardSources` produit une carte pour la basmala (texte et traduction du résultat) et pour isti'adha, takbir, âmîn
+  (constantes de `formulas.ts`, `formula: true`, sans attribution) ; `suggestRanges` rattache une formule à moins de 3 s d'un verset
+  (`FORMULA_GAP`) à la plage de ce verset, la plus proche l'emporte.
+- **Choix pris seul** : (1) formule isolée : pas de plage propre (une vidéo d'un seul « Allahu akbar » n'est pas ce que l'on
+  exporte d'ordinaire), elle borne les marges comme avant ; (2) 3 s plutôt que le 1 s des versets : la basmala précède souvent le
+  verset d'une respiration ; (3) sous-titres SRT/VTT non touchés (leurs formules restent un libellé arabe, option `formulas`).
+- **Non fait, à décider** : élargir le lexique reconnu (hamdala, tasbih, salawat) : « ٱلْحَمْدُ لِلَّهِ » ouvre aussi des versets, le
+  risque de faux positif (I3) demande une mesure sur le banc avant tout ajout.
+
 ## 2026-11-04 — Recette QA 3 de l'éditeur d'export, côté éditeur (P1 à P4, P7 à P10)
 - **Quoi** : P1 et P10 colonnes qui défilent positionnées + région annoncée fixe ; P2 taille − / + en tête de fiche, jetons de
   hauteur qui se serrent sous 760 px ; P3 rail de la table sur une rangée sous 700 px de haut, table en deux colonnes sur tablette

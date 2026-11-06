@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Vidéo d'export : basmala, isti'adha, takbir et âmîn apparaissent avec leur traduction
+Étiquettes : utilisateur, technique, décision
+PR : #221
+
+**Ce qui change.** Une vidéo d'export affiche maintenant les formules récitées : la basmala (texte du Mushaf et traduction officielle, comme un verset), puis l'isti'adha, le takbir et l'âmîn (arabe et traduction françaises fixes, marquées comme formules). Elles étaient absentes. Quand une formule est à 3 secondes ou moins d'un verset, la plage de vidéo proposée l'englobe ; une formule isolée, plus loin, n'est pas ajoutée d'office (elle reste choisissable à la main) et une parole non coranique inconnue (français, hadith…) n'apparaît toujours pas.
+
+**Pourquoi / décision.** La basmala garde le texte du corpus et la traduction QuranEnc sans modification (I1, I2). Les traductions de l'isti'adha, du takbir et de l'âmîn sont des constantes de `web/lib/formulas.ts`, indicatives et hors QuranEnc, jamais présentées comme le Mushaf ; aucune attribution n'est dessinée. Les formules non encore reconnues par le moteur (alhamdulillah, subhan Allah…) ne sont pas ajoutées : une reconnaissance trop large nommerait de faux passages (I3, I4). (renvoyer vers l'ADR ou le rapport concerné ; supprimer ce paragraphe s'il n'apporte rien)
+
 ## 2026-11-06 — Barre de gauche : le sélecteur « Afficher » ne chevauche plus sa flèche
 Étiquettes : utilisateur
 PR : #220

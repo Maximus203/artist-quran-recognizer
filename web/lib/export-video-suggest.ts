@@ -9,9 +9,11 @@
  * résultat (I1) ; un passage incertain (`uncertain`) n'est jamais nommé (I3).
  */
 import type { ExportRange } from "./export-video-ranges";
+import { formulaFromLabel } from "./formulas";
 
 export type SuggestTiming = {
   kind: string;
+  label?: string | null;
   ref?: string | null;
   status?: string;
   t: [number, number] | null;
@@ -28,6 +30,8 @@ export const DEFAULT_TAIL_OUT = 0.4;
 export const MAX_PADDING = 5;
 /** Au-delà de cet écart entre deux versets, ce sont deux passages distincts (mode « passage »). */
 export const DEFAULT_MERGE_GAP = 1;
+/** Une formule (basmala, isti'adha, takbir, âmîn) à cet écart ou moins d'un verset entre dans sa plage. */
+export const FORMULA_GAP = 3;
 
 export type SuggestGroup = "verse" | "passage";
 
@@ -142,11 +146,54 @@ export function findSilences(
   return levels(peaks, intervals).silences;
 }
 
+const isTimed = (
+  i: SuggestTiming,
+): i is SuggestTiming & { t: [number, number] } => !!i.t && i.t[1] > i.t[0];
+
+/** Une formule récitée que la vidéo sait afficher : basmala, isti'adha, takbir, âmîn. */
+const isFormula = (i: SuggestTiming): boolean =>
+  i.kind === "non_quran" &&
+  !!i.label &&
+  (i.label === "basmala" || formulaFromLabel(i.label) !== null);
+
 /** Paroles hors récitation (abstentions, non coranique) : un bord ne doit jamais y entrer (I4). */
-function otherSpeech(intervals: readonly SuggestTiming[]): [number, number][] {
+function otherSpeech(
+  intervals: readonly SuggestTiming[],
+  absorbed: ReadonlySet<SuggestTiming>,
+): [number, number][] {
   return intervals
-    .filter((i) => i.kind !== "verse" && i.t && i.t[1] > i.t[0])
+    .filter((i) => i.kind !== "verse" && isTimed(i) && !absorbed.has(i))
     .map((i) => i.t as [number, number]);
+}
+
+/**
+ * Rattache chaque formule au passage le plus proche, s'il est à `maxGap` secondes ou moins : la
+ * plage englobe alors la formule. Une formule isolée n'est pas absorbée (elle borne les marges).
+ */
+function absorbFormulas(
+  passages: Passage[],
+  intervals: readonly SuggestTiming[],
+  maxGap: number,
+): Set<SuggestTiming> {
+  const absorbed = new Set<SuggestTiming>();
+  for (const item of intervals) {
+    if (!isFormula(item) || !isTimed(item)) continue;
+    const [a, b] = item.t;
+    let best: Passage | null = null;
+    let bestGap = Infinity;
+    for (const passage of passages) {
+      const gap = Math.max(passage.start - b, a - passage.end, 0);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = passage;
+      }
+    }
+    if (!best || bestGap > maxGap) continue;
+    best.start = Math.min(best.start, a);
+    best.end = Math.max(best.end, b);
+    absorbed.add(item);
+  }
+  return absorbed;
 }
 
 type Passage = {
@@ -207,7 +254,12 @@ export function suggestRanges(
     includeInferred: options.includeInferred ?? true,
   });
   const wave = peaks ? levels(peaks, intervals) : null;
-  const speech = otherSpeech(intervals);
+  const absorbed = absorbFormulas(
+    passages,
+    intervals,
+    Math.max(FORMULA_GAP, options.mergeGap ?? DEFAULT_MERGE_GAP),
+  );
+  const speech = otherSpeech(intervals, absorbed);
   const snap = (options.snapToSilence ?? true) && wave !== null;
   const out: SuggestedRange[] = [];
 

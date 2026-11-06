@@ -217,4 +217,64 @@ describe("aimant : seulement un VRAI silence (relatif au niveau de la voix)", ()
     expect(r.start).toBeGreaterThanOrEqual(4.9);
     expect(r.warnings.join(" ")).toMatch(/non coranique/);
   });
+
+  describe("formules récitées (basmala, isti'adha, takbir, âmîn)", () => {
+    const formula = (label: string, a: number, b: number): SuggestTiming => ({
+      kind: "non_quran",
+      label,
+      t: [a, b],
+    });
+
+    it("une formule qui précède un verset entre dans sa plage", () => {
+      const timings = [formula("istiadha", 2, 4), verse("R:1", 4.3, 9)];
+      const [r] = suggestRanges(timings, 15, null);
+      expect(r.start).toBeLessThanOrEqual(2);
+      expect(r.core_start).toBe(2);
+      expect(r.refs).toEqual(["R:1"]);
+    });
+
+    it("une formule qui suit un verset entre dans sa plage", () => {
+      const timings = [verse("R:1", 2, 6), formula("takbir", 6.4, 8)];
+      const [r] = suggestRanges(timings, 15, null);
+      expect(r.end).toBeGreaterThanOrEqual(8);
+      expect(r.core_end).toBe(8);
+    });
+
+    it("la formule va avec le verset le plus proche, pas avec l'autre", () => {
+      const timings = [
+        verse("R:1", 1, 4),
+        formula("amin", 4.2, 5),
+        verse("R:2", 8, 12),
+      ];
+      const ranges = suggestRanges(timings, 20, null);
+      expect(ranges[0].core_end).toBe(5);
+      expect(ranges[1].core_start).toBe(8);
+    });
+
+    it("une formule jusqu'à 3 s d'un verset entre dans sa plage", () => {
+      const [r] = suggestRanges(
+        [formula("istiadha", 1, 3), verse("R:1", 5.5, 9)],
+        15,
+        null,
+      );
+      expect(r.core_start).toBe(1);
+    });
+
+    it("une formule trop loin de tout verset reste hors plage et borne les marges (I4)", () => {
+      const timings = [formula("takbir", 1, 2), verse("R:1", 6, 9)];
+      const [r] = suggestRanges(timings, 15, null);
+      expect(r.core_start).toBe(6);
+      expect(r.start).toBeGreaterThanOrEqual(2);
+    });
+
+    it("une parole inconnue collée au verset ne s'absorbe pas", () => {
+      const timings: SuggestTiming[] = [
+        { kind: "non_quran", label: "french", t: [2, 4] },
+        verse("R:1", 4.3, 9),
+      ];
+      const [r] = suggestRanges(timings, 15, null);
+      expect(r.core_start).toBe(4.3);
+      expect(r.start).toBeGreaterThanOrEqual(4);
+    });
+  });
 });
