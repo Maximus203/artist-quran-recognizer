@@ -13,10 +13,16 @@ export type PageId =
   | "perf"
   | "live"
   | "docs"
-  | "playlists";
+  | "playlists"
+  | "files";
 
-/** Pages visibles par le récitateur : la lecture, ses récitations et ses playlists. */
-const RECITANT_PAGES: readonly PageId[] = ["revue", "sessions", "playlists"];
+/** Pages visibles par le récitateur : la lecture, ses récitations, ses playlists et ses fichiers. */
+const RECITANT_PAGES: readonly PageId[] = [
+  "revue",
+  "sessions",
+  "playlists",
+  "files",
+];
 
 export const pageVisibleTo = (role: Role, page: PageId): boolean =>
   role !== "recitant" || RECITANT_PAGES.includes(page);

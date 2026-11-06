@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Page « Fichiers » et quota ramené à 2 Go
+Étiquettes : utilisateur, technique, décision
+PR : -
+
+**Ce qui change.** Le menu « Récitations » a une nouvelle page, « Fichiers » : elle liste les vidéos exportées gardées sur le serveur, les plus lourdes d'abord, avec téléchargement et suppression pour libérer de l'espace. Chaque compte voit les fichiers de ses propres récitations ; l'administrateur voit ceux de tous les comptes, avec leur propriétaire. Le quota par compte passe de 5 Go à 2 Go et compte maintenant l'audio envoyé ET les vidéos exportées gardées (avant, les vidéos n'y comptaient pas). Quand l'espace du propriétaire est plein, une vidéo exportée est quand même téléchargée mais n'est plus gardée sur le serveur.
+
+**Pourquoi / décision.** Le serveur Alpha héberge d'autres applications critiques : l'espace disque doit être géré par les utilisateurs eux-mêmes (décision du mainteneur, 2026-11-06). Les comptes déjà au-dessus de 2 Go ne peuvent plus envoyer d'audio tant qu'ils n'ont pas supprimé de quoi repasser sous la limite ; rien n'est supprimé automatiquement. `GET /api/files` ; suppression par la route existante des vidéos. La variable `AQR_USER_QUOTA_BYTES` reste prioritaire sur le défaut.
+
 ## 2026-11-06 — Vidéo d'export : basmala, isti'adha, takbir et âmîn apparaissent avec leur traduction
 Étiquettes : utilisateur, technique, décision
 PR : #221

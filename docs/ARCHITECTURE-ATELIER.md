@@ -551,7 +551,7 @@ et surligne en lecture le mot arabe récité et le segment de traduction qui le 
 | `AQR_WARM_WORKER` | `0` : processus par analyse ; sinon worker chaud (`aqr worker`) | actif |
 | `AQR_FFMPEG`, `AQR_FFPROBE` | exécutables ffmpeg / ffprobe | du `PATH` |
 | `AQR_MAX_UPLOAD_BYTES`, `AQR_MAX_VIDEO_UPLOAD_BYTES` | plafonds d'envoi | 500 Mo, 2 Gio |
-| `AQR_USER_QUOTA_BYTES` | quota de stockage par compte (`0` = illimité) | 5 Gio |
+| `AQR_USER_QUOTA_BYTES` | quota de stockage par compte, audio envoyé + vidéos exportées gardées (`0` = illimité) | 2 Gio |
 | `AQR_DB_PATH`, `AQR_SIGNUP`, `AQR_SIGNUP_CODE`, `AQR_TRUST_PROXY`, `AQR_TIMEZONE`, `AQR_REPO_URL` | base, inscription, proxy, fuseau des noms, dépôt des liens de notes de version | voir `web/README.md` |
 | `AQR_ALLOWED_HOSTS`, `AQR_ACCESS_TOKEN`, `AQR_ACCESS_TTL_S` | mode test distant | vides, 3 600 s |
 | `AQR_LIVE_URL`, `AQR_LIVE_TOKEN_TTL_S`, `AQR_LIVE_KEY`, `AQR_LIVE_KEY_FILE` | détection en direct : adresse WebSocket donnée au navigateur, durée du jeton, clé de signature partagée avec `aqr live-serve` | `ws://127.0.0.1:8765/live`, 60 s, fichier `live-signing.key` dans `AQR_REVIEW_DIR` |
@@ -579,7 +579,8 @@ l'interface de la phase 2 pour les écrans). Le contrat détaillé d'API est dan
 | **Favoris, archivage, renommage** | Étoile par utilisateur ; archivage réversible (toast « Annuler ») ; renommage au double-clic ou au crayon ; nom par défaut calculé par le serveur et ligne « Contenu détecté ». |
 | **Revue multi-testeurs** | L'auteur d'un signalement est le **compte** (plus de saisie libre). Un testeur ne modifie pas le signalement d'un autre (l'interface le grise, le serveur le refuse : `rejected`). La **vérité terrain** est réservée aux administrateurs. |
 | **Documentation** | `/docs` et `/docs/<slug>` : navigation par document (liste blanche `docs/docs-index.json`), sommaire, rendu Markdown **sans HTML brut** (`react-markdown`, GFM), liens `.md` réécrits ; `/docs/release-notes` : chronologie lue dans `docs/RELEASE-NOTES.md`. |
-| **Statistiques et stockage** | `/compte/statistiques` et `/performance?vue=moi` : mes tests, mon audio, ma vitesse, mon espace ; `/performance` global ajoute la colonne « Testeur » et le stockage du serveur. Quota par compte (5 Gio par défaut) avec alerte à 80 %, import refusé avant l'envoi s'il dépasse l'espace libre. |
+| **Statistiques et stockage** | `/compte/statistiques` et `/performance?vue=moi` : mes tests, mon audio, ma vitesse, mon espace ; `/performance` global ajoute la colonne « Testeur » et le stockage du serveur. Quota par compte (2 Gio par défaut, audio + vidéos gardées) avec alerte à 80 %, import refusé avant l'envoi s'il dépasse l'espace libre ; une vidéo exportée n'est plus gardée sur le serveur si elle ferait dépasser le quota du propriétaire de la session (le téléchargement, lui, a lieu). |
+| **Fichiers** | `/fichiers` (menu Récitations, tous les rôles) : les vidéos exportées gardées sur le serveur, le plus gros d'abord, à télécharger ou supprimer pour libérer de l'espace ; jauge audio / vidéos. Un compte voit les fichiers de ses sessions, l'administrateur ceux de tous les comptes. `GET /api/files` ; la suppression réutilise `DELETE /api/sessions/<id>/videos/<id>`. |
 | **Page Compte** | `/compte` (préférences, enregistrées toutes seules, avec pastille annoncée aux lecteurs d'écran), `/compte/statistiques`, `/compte/securite` (changer le mot de passe ; les autres connexions sont fermées). |
 
 **Pages** (`web/app/(app)/…` : le fournisseur du compte reste monté d'une page à l'autre) : `/` (atelier : revue de la

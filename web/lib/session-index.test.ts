@@ -10,6 +10,7 @@ import {
   markViewedBy,
   recordAnalysis,
   setFavorite,
+  storageBreakdown,
   syncMirror,
   updateMeta,
   usedBytes,
@@ -565,6 +566,24 @@ describe("mirroir, quota et journal", () => {
     expect(usedBytes(db, awa)).toBe(3000);
     deleteMeta(db, id(1));
     expect(usedBytes(db, cherif)).toBe(2000);
+  });
+
+  it("quota : les vidéos gardées comptent pour le propriétaire de la session", () => {
+    add(1);
+    add(3, { ownerId: awa });
+    const video = db.prepare(
+      `INSERT INTO exports (id, session_id, owner_id, name, bytes, created_at)
+       VALUES (?, ?, ?, 'v', ?, 'now')`,
+    );
+    video.run("v1", id(1), cherif, 5000);
+    // Lancée par Awa sur la session de Cherif : l'espace est celui de Cherif.
+    video.run("v2", id(1), awa, 700);
+    expect(usedBytes(db, cherif)).toBe(1000 + 5700);
+    expect(usedBytes(db, awa)).toBe(3000);
+    expect(storageBreakdown(db, cherif)).toEqual({
+      audio_bytes: 1000,
+      video_bytes: 5700,
+    });
   });
 
   it("journal des analyses : idempotent, survit à la suppression de la session", () => {

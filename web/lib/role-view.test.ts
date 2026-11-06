@@ -15,7 +15,7 @@ describe("interface par rôle", () => {
   it("le récitateur a la lecture, ses récitations et ses playlists, rien d'autre", () => {
     for (const page of ["perf", "live", "docs"] as const)
       expect(pageVisibleTo("recitant", page)).toBe(false);
-    for (const page of ["revue", "sessions", "playlists"] as const)
+    for (const page of ["revue", "sessions", "playlists", "files"] as const)
       expect(pageVisibleTo("recitant", page)).toBe(true);
   });
 
