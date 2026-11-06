@@ -82,6 +82,12 @@ from aqr.export.service import (
     run_readiness,
 )
 from aqr.export.service import Inputs as ExportInputs
+from aqr.freespeech.command import (
+    FreeSpeechFactory,
+    FreeSpeechOptions,
+    build_engine,
+    run_command,
+)
 from aqr.live.service_config import LiveServiceConfig
 from aqr.pipeline.factory import (
     ASR_CHOICES,
@@ -174,6 +180,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="ne pas vérifier les suites sur le treillis du FastConformer (ADR-0008) : preuve "
         "textuelle seule, temps = bords des fenêtres",
     )
+
+    free = commands.add_parser(
+        "free-speech",
+        help="paroles arabes hors Coran : transcription et traduction automatiques (ADR-0027)",
+    )
+    free.add_argument("recognition", type=Path, help="résultat aqr.recognition/1")
+    free.add_argument("audio", type=Path)
+    free.add_argument("--out-dir", type=Path, default=Path("aqr-out"))
+    free.add_argument("--force", action="store_true", help="écraser une sortie existante")
+    free.add_argument("--models-dir", type=Path, help="défaut : $AQR_MODELS_DIR")
+    free.add_argument("--corpus-dir", type=Path, default=Path("data/corpus"))
+    free.add_argument("--device", default="auto", help="auto | cpu | cuda")
+    free.add_argument("--whisper-model", default="large-v3")
 
     agent = commands.add_parser(
         "engine-agent",
@@ -879,6 +898,7 @@ def main(
     convert: Converter = ffmpeg_converter,
     recognizer_factory: RecognizerFactory = build_recognizer,
     aligner_factory: AlignerFactory = build_alignment_service,
+    free_speech_factory: FreeSpeechFactory = build_engine,
     live_runner: LiveRunner | None = None,
     stdin: Iterable[str] | None = None,
 ) -> int:
@@ -892,6 +912,23 @@ def main(
         return _engine_agent(args, env, err)
     if args.command == "recognize":
         return _recognize(args, env, out, err, recognizer_factory)
+    if args.command == "free-speech":
+        return run_command(
+            args.recognition,
+            args.audio,
+            args.out_dir,
+            FreeSpeechOptions(
+                models_dir=args.models_dir,
+                corpus_dir=args.corpus_dir,
+                device=args.device,
+                whisper_model=args.whisper_model,
+            ),
+            env,
+            out,
+            err,
+            free_speech_factory,
+            args.force,
+        )
     if args.command == "align":
         return _align(args, env, out, err, aligner_factory)
     if args.command == "plan-alignment":

@@ -92,7 +92,7 @@ follow_imports = "skip"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["nemo.*", "omegaconf.*", "torch.*", "torchaudio.*", "transformers.*", "silero_vad.*", "recitations_segmenter.*"]
+module = ["nemo.*", "omegaconf.*", "torch.*", "torchaudio.*", "transformers.*", "silero_vad.*", "faster_whisper.*", "recitations_segmenter.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]
