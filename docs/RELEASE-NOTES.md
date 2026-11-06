@@ -9,13 +9,21 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Parole libre : option NLLB-200 et comparaison des traducteurs
+Étiquettes : technique, décision
+PR : #226
+
+**Ce qui change.** `aqr free-speech --translator nllb` permet de traduire avec NLLB-200 au lieu de Marian (poids à installer sous `AQR_MODELS_DIR`). Marian reste le défaut. Aucun changement à l'écran ni dans la vidéo.
+
+**Pourquoi / décision.** Comparaison sur 66 passages réels : NLLB est meilleur par endroits mais reste faux avec aplomb sur l'arabe religieux (« رواه البخاري » devient « Je ne sais pas »). Aucun des deux traducteurs n'est publiable : le module reste désactivé à l'export. ADR-0027 (comparaison).
+
 ## 2026-11-06 — Parole libre : l'atelier l'affiche et la vidéo peut l'inclure, sur choix
 Étiquettes : utilisateur, technique, décision
 PR : #225
 
 **Ce qui change.** Quand un fichier de parole libre existe pour une session (commande `aqr free-speech`), l'écran de lecture montre, sur les passages arabes hors Coran, la transcription et la traduction automatiques avec l'étiquette « Parole hors Coran · automatique », la notice « à vérifier » et deux boutons Valider / Rejeter ; un passage retenu par les garde-fous dit seulement pourquoi, sans aucun texte. L'export vidéo a un choix « Paroles hors Coran » : non inclus par défaut, ou les passages validés, ou aussi ceux à relire ; un passage rejeté n'entre jamais. Les plages de vidéo proposées englobent une parole choisie proche d'un verset.
 
-**Pourquoi / décision.** Le moteur n'émet pas de zone `arabic_speech` : la parole arabe hors Coran est aujourd'hui une abstention `no_candidate` (aucun verset ne ressemble). Elle devient éligible ; `below_threshold` (un verset ressemble, le moteur doute) et un transcript vide restent tels quels, sans transcription ni traduction. Le fichier est séparé du résultat (I1) ; un texte sur un passage retenu le fait ignorer en entier (I3). Mesure locale du 6 novembre : 0 verset sur 8 ne fuit, mais la traduction du modèle actuel est mauvaise sur l'arabe religieux ; le module reste donc désactivé à l'export, rien n'est prévu pour la production avant un meilleur traducteur. ADR-0027 (addendum). (renvoyer vers l'ADR ou le rapport concerné ; supprimer ce paragraphe s'il n'apporte rien)
+**Pourquoi / décision.** Le moteur n'émet pas de zone `arabic_speech` : la parole arabe hors Coran est aujourd'hui une abstention `no_candidate` (aucun verset ne ressemble). Elle devient éligible ; `below_threshold` (un verset ressemble, le moteur doute) et un transcript vide restent tels quels, sans transcription ni traduction. Le fichier est séparé du résultat (I1) ; un texte sur un passage retenu le fait ignorer en entier (I3). Mesure locale du 6 novembre : 0 verset sur 8 ne fuit, mais la traduction du modèle actuel est mauvaise sur l'arabe religieux ; le module reste donc désactivé à l'export, rien n'est prévu pour la production avant un meilleur traducteur. ADR-0027 (addendum).
 
 ## 2026-11-06 — Parole libre : transcrire et traduire l'arabe hors Coran, avec garde-fous (moteur)
 Étiquettes : technique, décision

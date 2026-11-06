@@ -56,3 +56,13 @@ abstentions comme aux autres : une récitation que le moteur a ratée est retenu
   vapeur », « علو الهمة » → « Allonge le boulot »). Décision : le module reste **désactivé à l'export** et chaque passage `pending` ;
   **aucune mise en production avant un meilleur traducteur** (NLLB-200 3,3 B ou équivalent, à mesurer sur ces mêmes passages)
   et un contrôle de la traduction elle-même (aller-retour français → arabe, par exemple).
+
+## Comparaison Marian / NLLB-200 (distilled 1.3B), mêmes 66 passages, 2026-11-06
+
+NLLB-200 (option `--translator nllb`, poids CC-BY-NC-4.0) est meilleur par endroits (« فحمل أعباء الدعوة » : « Il a porté le fardeau de
+l'invitation » contre « J'ai pris le fardeau de l'appel ») mais reste **faux avec aplomb** sur le vocabulaire religieux : « رواه البخاري »
+donne « Je ne sais pas », « علو الهمة » donne « C'est tout à fait normal ». Une traduction fluette et fausse est plus trompeuse qu'une
+traduction maladroite. **Aucun des deux n'est publiable.** Le module reste désactivé à l'export ; Marian reste le défaut (léger).
+Pistes à mesurer avant toute production : glossaire des formules religieuses fixes (« رواه البخاري » → « Rapporté par Al-Boukhari »),
+contrôle de la traduction par aller-retour, traducteur plus gros ou modèle de conversation cadré (à décider : cela touche l'ADR-0001),
+relecture humaine obligatoire (déjà : `pending`).

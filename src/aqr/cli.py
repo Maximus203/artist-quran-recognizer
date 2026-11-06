@@ -193,6 +193,7 @@ def _build_parser() -> argparse.ArgumentParser:
     free.add_argument("--corpus-dir", type=Path, default=Path("data/corpus"))
     free.add_argument("--device", default="auto", help="auto | cpu | cuda")
     free.add_argument("--whisper-model", default="large-v3")
+    free.add_argument("--translator", default="marian", choices=("marian", "nllb"))
 
     agent = commands.add_parser(
         "engine-agent",
@@ -922,6 +923,7 @@ def main(
                 corpus_dir=args.corpus_dir,
                 device=args.device,
                 whisper_model=args.whisper_model,
+                translator=args.translator,
             ),
             env,
             out,

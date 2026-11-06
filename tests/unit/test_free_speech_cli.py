@@ -122,3 +122,15 @@ def test_fichier_introuvable(tmp_path: Path) -> None:
         free_speech_factory=engine,
     )
     assert code == 1 and "introuvable" in err.getvalue()
+
+
+def test_le_choix_du_traducteur_est_transmis(tmp_path: Path) -> None:
+    seen: list[str] = []
+
+    def spy(options: FreeSpeechOptions, env: object) -> FreeSpeechEngine:
+        seen.append(options.translator)
+        return engine(options, env)
+
+    run(tmp_path, [SPEECH], factory=spy, extra=("--translator", "nllb"))
+    run(tmp_path, [SPEECH], factory=spy, extra=("--force",))
+    assert seen == ["nllb", "marian"]
