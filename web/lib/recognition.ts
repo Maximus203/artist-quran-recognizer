@@ -55,6 +55,8 @@ const wordSpan = z.tuple([
  * un champ mal formé retombe sur « absent » (`catch`) au lieu de rendre tout le résultat illisible ;
  * l'interface montre alors la traduction du verset entier.
  * - `segments` : la traduction du verset entière, découpée par plages de mots contiguës ;
+ * - `phrases` : le même découpage, plus fin (coupures de confiance basse) : il ne sert qu'à partager une
+ *   proposition entre les cartes d'une vidéo, jamais à l'affichage de lecture ;
  * - `fragment` : la portion qui correspond à la plage de mots affichée en arabe (`scope: "fragment"`),
  *   avec `approximate` et les points de suspension à ajouter à l'affichage (jamais dans `text`).
  */
@@ -76,6 +78,7 @@ const translation = z.object({
   attribution: z.string(),
   scope: z.enum(["verse", "fragment"]).catch("verse"),
   segments: z.array(translationSegment).optional().catch(undefined),
+  phrases: z.array(translationSegment).optional().catch(undefined),
   fragment: translationFragment.nullish().catch(undefined),
   ellipsis_before: z.boolean().optional().catch(undefined),
   ellipsis_after: z.boolean().optional().catch(undefined),

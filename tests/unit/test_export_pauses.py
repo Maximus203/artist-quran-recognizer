@@ -217,6 +217,28 @@ def test_la_traduction_suit_la_coupe_et_se_recompose_a_l_identique(corpus):
     assert [c.translation for c in build.cues] == [("Et nul n'est",), ("égal à Lui.",)]
 
 
+@needs_corpus
+def test_une_proposition_plus_longue_qu_une_carte_est_partagee_par_les_phrases(corpus):
+    ref = "112:4"
+    n = len(corpus.words(VerseRef.parse(ref)))
+    durations = [0.5] * n
+    durations[1] = 2.2  # pause après le 2e mot
+    times = timeline(durations)
+    translation = {
+        "text": "Et nul n'est égal à Lui.",
+        "translation_id": "french_hameedullah",
+        "scope": "verse",
+        "segments": [{"words": [1, n], "text": "Et nul n'est égal à Lui."}],
+        "phrases": [
+            {"words": [1, 2], "text": "Et nul n'est"},
+            {"words": [3, n], "text": "égal à Lui."},
+        ],
+    }
+    interval = verse(ref, (1, n), (0.0, times[-1][1]), word_times=times, translation=translation)
+    build, _ = _build(corpus, document(interval), max_s=60.0)
+    assert [c.translation for c in build.cues] == [("Et nul n'est",), ("égal à Lui.",)]
+
+
 # --- mêmes cas que l'atelier (web/lib/export-video-split.test.ts) ------------------------------
 
 SHARED = json.loads(

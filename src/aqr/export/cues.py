@@ -166,14 +166,15 @@ def _split_translation(
         return [shown]
     translation = entry.translation or {}
     first_word = entry.words[0] if entry.words else 1
-    segments = translation.get("segments")
+    # Les cartes sont plus courtes que les propositions : coupures fines quand il y en a.
+    segments = translation.get("phrases") or translation.get("segments")
     fragment = translation.get("fragment")
     use_fragment = (
         entry.scope != "verse"
         and (entry.scope == "fragment" or translation.get("scope") == "fragment")
         and isinstance(fragment, Mapping)
     )
-    pieces: list[tuple[int, str]] = []
+    pieces: list[tuple[tuple[int, int], str]] = []
     if isinstance(segments, list) and segments:
         low, high = (-1, 10**6)
         if use_fragment and isinstance(fragment, Mapping):
@@ -181,16 +182,19 @@ def _split_translation(
         for segment in segments:
             start = int(segment["words"][0])
             if low <= start <= high:
-                pieces.append((start, str(segment["text"])))
+                pieces.append(((start, int(segment["words"][1])), str(segment["text"])))
     if pieces:
         buckets = [""] * len(ranges)
-        for start, text in pieces:
-            absolute = min(max(start, first_word), first_word + len(entry.arabic_words) - 1)
-            slot = next(
-                k
-                for k, (i, j) in enumerate(ranges)
-                if first_word + i <= absolute <= first_word + j - 1
-            )
+        for (low_word, high_word), text in pieces:
+            # La carte qui porte le plus de mots arabes de la tranche (à égalité, la première).
+            lo = max(low_word, first_word)
+            hi = min(high_word, first_word + len(entry.arabic_words) - 1)
+            overlaps = [
+                min(hi, first_word + j - 1) - max(lo, first_word + i) + 1 for i, j in ranges
+            ]
+            if max(overlaps) <= 0:
+                continue
+            slot = overlaps.index(max(overlaps))
             buckets[slot] = f"{buckets[slot]} {text}".strip()
         if use_fragment and isinstance(fragment, Mapping):
             filled = [k for k, b in enumerate(buckets) if b]

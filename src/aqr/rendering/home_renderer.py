@@ -127,15 +127,18 @@ class HomeRenderer:
         assert store is not None  # appelée seulement après `_segments_of`
         return store
 
-    def _segments_of(self, translation: Translation) -> tuple[Segment, ...] | None:
-        """Découpage de la traduction du verset, ou None s'il n'est pas disponible ou périmé."""
+    def _segments_of(
+        self, translation: Translation, min_confidence: float | None = None
+    ) -> tuple[Segment, ...] | None:
+        """Découpage de la traduction du verset, ou None s'il n'est pas disponible ou périmé.
+        `min_confidence` : seules les coupures d'au moins cette confiance (None : toutes)."""
         if self._segments is None:
             return None
         store = self._segments.store(translation.translation_id)
         if store is None:
             return None
         words = len(self._corpus.words(translation.ref))
-        return store.segments(translation.ref, translation.text, words)
+        return store.segments(translation.ref, translation.text, words, min_confidence)
 
     def _translation_json(
         self,
@@ -162,13 +165,13 @@ class HomeRenderer:
             "attribution": translation.attribution,
             "scope": "verse",  # la traduction QuranEnc couvre le verset entier
         }
-        segments = self._segments_of(translation)
+        segments = self._segments_of(translation, self._policy.tiers[-1])
         if segments is None:
             return out
-        out["segments"] = [
-            {"words": [s.first_word, s.last_word], "text": translation.text[s.start : s.end]}
-            for s in segments
-        ]
+        out["segments"] = self._slices(translation, segments)
+        phrases = self._segments_of(translation)
+        if phrases is not None and len(phrases) > len(segments):
+            out["phrases"] = self._slices(translation, phrases)
         if words is not None:
             fragment = select_best_fragment(
                 self._store_of(translation),
@@ -189,6 +192,13 @@ class HomeRenderer:
                     "ellipsis_after": fragment.ellipsis_after,
                 }
         return out
+
+    @staticmethod
+    def _slices(translation: Translation, segments: tuple[Segment, ...]) -> list[dict[str, object]]:
+        return [
+            {"words": [s.first_word, s.last_word], "text": translation.text[s.start : s.end]}
+            for s in segments
+        ]
 
     def translation_json(
         self, ref: VerseRef, translation_id: str | None, words: tuple[int, int] | None = None

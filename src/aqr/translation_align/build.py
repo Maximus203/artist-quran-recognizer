@@ -143,6 +143,22 @@ def merge_soft_cuts(firm: Sequence[Cut], soft: Sequence[Cut], tolerance: int) ->
     return sorted(kept.values(), key=lambda c: c.boundary)
 
 
+def merge_fine_cuts(
+    base: Sequence[tuple[int, int, float]], fine: Sequence[tuple[int, int, float]]
+) -> list[tuple[int, int, float]]:
+    """Coupures `(mot, décalage, confiance)` : celles de `base` ne bougent jamais ; une coupure
+    fine n'est ajoutée que si son décalage est libre et si, rangée par décalage, l'ordre des mots
+    arabes reste strictement croissant (la plus sûre d'abord)."""
+    kept = {offset: (word, offset, conf) for word, offset, conf in base}
+    for cut in sorted(fine, key=lambda c: -c[2]):
+        if cut[1] in kept:
+            continue
+        ordered = sorted([*kept.values(), cut], key=lambda c: c[1])
+        if all(a[0] < b[0] for a, b in itertools.pairwise(ordered)):
+            kept[cut[1]] = cut
+    return sorted(kept.values(), key=lambda c: c[1])
+
+
 def build_document(
     sources: Sequence[VerseSource],
     translation_id: str,
@@ -159,10 +175,23 @@ def build_document(
         config2 = config.second()
         prepared2 = prepare(sources, config2)
         second = (config2, prepared2, train_models(prepared2, config2))
+    fine = None
+    if config.fine_min_boundary_confidence < config.soft_min_boundary_confidence:
+        config_fine = config.fine()
+        prepared_fine = prepare(sources, config_fine)
+        fine = (config_fine, prepared_fine, train_models(prepared_fine, config_fine))
     say("modèles appris ; découpage des versets")
 
     verses: dict[str, dict[str, object]] = {}
-    stats = {"verses": 0, "single_clause": 0, "split": 0, "fallback": 0, "cuts": 0, "soft_cuts": 0}
+    stats = {
+        "verses": 0,
+        "single_clause": 0,
+        "split": 0,
+        "fallback": 0,
+        "cuts": 0,
+        "soft_cuts": 0,
+        "fine_cuts": 0,
+    }
     for done, item in enumerate(prepared, start=1):
         source = item.source
         cuts = segment_verse(item.verse, models, config)
@@ -194,13 +223,25 @@ def build_document(
             stats["cuts"] += firm_count
         else:
             stats["fallback"] += 1
+        triples = [
+            (cut.word + item.skip, item.starts[cut.boundary], round(cut.confidence, 4))
+            for cut in cuts
+        ]
+        if fine is not None:
+            config_fine, prepared_fine, models_fine = fine
+            item_fine = prepared_fine[done - 1]
+            if item_fine.starts:
+                extra = [
+                    (c.word + item_fine.skip, item_fine.starts[c.boundary], round(c.confidence, 4))
+                    for c in segment_verse(item_fine.verse, models_fine, config_fine)
+                ]
+                merged_fine = merge_fine_cuts(triples, extra)
+                stats["fine_cuts"] += len(merged_fine) - len(triples)
+                triples = merged_fine
         verses[str(source.ref)] = {
             "h": fingerprint(source.french),
             "w": len(source.arabic_words),
-            "cuts": [
-                [cut.word + item.skip, item.starts[cut.boundary], round(cut.confidence, 4)]
-                for cut in cuts
-            ],
+            "cuts": [list(t) for t in triples],
         }
         if done % 1000 == 0:
             say(f"  {done}/{len(prepared)}")

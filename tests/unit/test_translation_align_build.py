@@ -16,6 +16,7 @@ from aqr.translation_align.build import (
     build_document,
     dump_document,
     leading_basmala,
+    merge_fine_cuts,
     merge_soft_cuts,
     verify_reconstruction,
 )
@@ -140,3 +141,16 @@ def test_merge_soft_cuts_drops_a_soft_cut_that_would_reverse_the_word_order() ->
 def test_merge_soft_cuts_drops_a_soft_cut_next_to_a_firm_one() -> None:
     firm = [_cut(1, 10, 0.99)]
     assert merge_soft_cuts(firm, [_cut(2, 11, 0.9)], tolerance=1) == firm
+
+
+def test_merge_fine_cuts_keeps_base_and_adds_only_order_preserving_cuts() -> None:
+    base = [(5, 40, 0.99), (12, 120, 0.97)]
+    fine = [
+        (2, 10, 0.5),  # libre, mot 2 < 5 : gardée
+        (5, 60, 0.9),  # même mot que la base à un décalage différent : écartée (ordre)
+        (8, 80, 0.4),  # entre les deux : gardée
+        (9, 40, 0.8),  # décalage déjà pris par la base : ignorée
+        (3, 100, 0.7),  # mot 3 après le mot 8 : écartée (ordre)
+    ]
+    merged = merge_fine_cuts(base, fine)
+    assert merged == [(2, 10, 0.5), (5, 40, 0.99), (8, 80, 0.4), (12, 120, 0.97)]

@@ -57,7 +57,7 @@ def test_cuts_are_structurally_valid_against_the_corpus(document: dict[str, obje
     assert isinstance(verses, dict)
     config = document["config"]
     assert isinstance(config, dict)
-    floor = config["soft_min_boundary_confidence"]  # le palier le plus souple écrit (ADR-0026)
+    floor = config["fine_min_boundary_confidence"]  # le palier le plus fin écrit (ADR-0026)
     for ref in corpus.all_refs():
         entry = verses[str(ref)]
         assert entry["w"] == len(corpus.words(ref))

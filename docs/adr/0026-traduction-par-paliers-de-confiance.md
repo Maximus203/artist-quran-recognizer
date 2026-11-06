@@ -33,3 +33,17 @@ mots arabes dans un verset découpé : 83,8 % → 90,7 %. Reconstitution (I2) : 
   sous la proposition (mots de liaison) exigerait une autre mesure ; un aligneur neuronal hors ligne reste l'étape suivante si besoin.
 - 12,5 % de passages gardent le verset entier : verset sans ponctuation exploitable, ou frontières sous 0,6.
 - Pseudo-vérité = fins de verset connues ; elle ne dit pas la précision sur une proposition interne. Seuils à revoir à la relecture.
+
+## Addendum 2026-11-06 — palier « fin » pour les cartes de la vidéo
+
+Constat (enregistrement réel, 2:255) : une carte arabe courte (deux mots, après une pause) recevait la traduction d'une
+proposition entière, la carte suivante rien. Les cartes d'export (ADR-0025) sont plus courtes que les propositions.
+
+- Troisième chaîne de construction (`config.fine()`) : propositions candidates d'un seul mot porteur de sens, seuil
+  `fine_min_boundary_confidence` = 0,3, sans accord des sens ni seconde chaîne ; ses coupures (`fine_cuts` : 1 804) s'ajoutent
+  à celles du fichier sans déplacer aucune autre (`merge_fine_cuts`). Méthode `/4`. Écrites avec leur confiance.
+- Le moteur émet `segments` (coupures de confiance ≥ 0,6, comme avant : l'écran de lecture est inchangé) et `phrases` (toutes).
+  Seules les cartes d'export (Python `cues.py`, TypeScript `export-video-split.ts`) lisent `phrases`.
+- Une phrase va dans la carte qui porte le plus de ses mots arabes (à égalité, la première) : le français ne devance pas ce qui est dit.
+- Limite : la précision des coupures < 0,6 n'est pas mesurée (~57 % à ±1 mot ou moins) ; une erreur déplace une phrase d'une carte
+  voisine, jamais n'invente de texte. Une carte hors du fragment fiable n'affiche aucune traduction.
