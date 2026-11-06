@@ -189,7 +189,7 @@ Objectif : détecter et ralentir les robots, sans bloquer les humains.
 
 ## 11. Envoi de fichiers (audio, vidéo, avatar)
 
-- [x] ✅ (quota par compte existant ; réserve de disque globale 1 Gio avant tout envoi ; purge des sessions expirées : `AQR_SESSION_TTL_S`, déclenchée à chaque envoi) Quota par compte (5 Gio) et refus avant envoi si l'espace manque : existant. **Vérifier** le quota
+- [x] ✅ (quota par compte existant ; réserve de disque globale 1 Gio avant tout envoi ; purge des sessions expirées : `AQR_SESSION_TTL_S`, déclenchée à chaque envoi) Quota par compte (2 Gio) et refus avant envoi si l'espace manque : existant. **Vérifier** le quota
   global du disque et la purge des fichiers expirés.
 - [x] ✅ (`media-sniff.ts` avant ffprobe ; avatars réencodés par le serveur) Vérification du type réel (contenu, pas seulement l'extension ou le type MIME déclaré) : audio, vidéo,
   image. Réencodage des avatars côté serveur (déjà en place : vérifier).

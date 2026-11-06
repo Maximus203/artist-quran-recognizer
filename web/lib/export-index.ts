@@ -99,6 +99,55 @@ export async function reconcileAllExports(db: Db): Promise<number> {
   return total;
 }
 
+export type FileEntry = ExportRecord & {
+  sessionName: string;
+  /** Propriétaire de la session (celui dont le fichier occupe l'espace) ; `null` : session sans compte. */
+  sessionOwnerId: number | null;
+  ownerName: string | null;
+};
+
+/**
+ * Inventaire des fichiers téléchargeables gardés sur le serveur, le plus gros d'abord. Un compte voit
+ * ceux de SES sessions (son espace) ; l'administrateur les voit tous.
+ */
+export function listFiles(
+  db: Db,
+  viewer: { id: number; role: string },
+): FileEntry[] {
+  const rows = db
+    .prepare(
+      `SELECT e.id, e.session_id, e.owner_id, e.name, e.bytes, e.created_at,
+              m.name AS session_name, m.owner_id AS session_owner_id, u.username AS owner_name
+       FROM exports e
+       JOIN session_meta m ON m.id = e.session_id
+       LEFT JOIN users u ON u.id = m.owner_id
+       ${viewer.role === "admin" ? "" : "WHERE m.owner_id = ?"}
+       ORDER BY e.bytes DESC, e.created_at DESC`,
+    )
+    .all(...(viewer.role === "admin" ? [] : [viewer.id])) as Array<{
+    id: string;
+    session_id: string;
+    owner_id: number | null;
+    name: string;
+    bytes: number;
+    created_at: string;
+    session_name: string;
+    session_owner_id: number | null;
+    owner_name: string | null;
+  }>;
+  return rows.map((row) => ({
+    id: row.id,
+    sessionId: row.session_id,
+    ownerId: row.owner_id,
+    name: row.name,
+    bytes: row.bytes,
+    createdAt: row.created_at,
+    sessionName: row.session_name,
+    sessionOwnerId: row.session_owner_id,
+    ownerName: row.owner_name,
+  }));
+}
+
 export type ExportSummary = {
   /** Exports gardés pour la session (tous lanceurs confondus). */
   total: number;

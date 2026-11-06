@@ -9,6 +9,8 @@ import { exportErrorResponse } from "@/lib/export-errors";
 import { safe } from "@/lib/http";
 import { log } from "@/lib/log";
 import { recordExport } from "@/lib/export-index";
+import { fitsQuota, userQuotaBytes } from "@/lib/quota";
+import { usedBytes } from "@/lib/session-index";
 import { sessionAccess } from "@/lib/route-guard";
 import { refreshDiskBytes } from "@/lib/session-sync";
 import {
@@ -46,6 +48,7 @@ async function keepVideo(
     id: string;
     db: Parameters<typeof refreshDiskBytes>[0];
     user: { id: number };
+    meta: { owner_id: number | null };
   },
   request: Request,
   file: { content: Buffer; name: string },
@@ -53,6 +56,19 @@ async function keepVideo(
   const meta = parseVideoMeta(request.headers.get(HEADER_META));
   if (!meta) return null;
   try {
+    // L'espace est celui du propriétaire de la session : plein, la vidéo est téléchargée mais pas gardée.
+    const owner = access.meta.owner_id;
+    if (
+      owner !== null &&
+      !fitsQuota(
+        usedBytes(access.db, owner),
+        file.content.length,
+        userQuotaBytes(),
+      )
+    ) {
+      log.warn("export", "vidéo non gardée : quota du propriétaire atteint");
+      return null;
+    }
     if ((await listVideos(access.id)).length >= MAX_VIDEOS_PER_SESSION)
       return null;
     const record = await saveVideo(access.id, {

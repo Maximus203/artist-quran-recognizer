@@ -402,15 +402,32 @@ export function estimationRows(db: Db): MetaRow[] {
   ).map(toMeta);
 }
 
-/** Octets déjà occupés par les fichiers envoyés de cet utilisateur (quota). */
+/**
+ * Octets occupés par un utilisateur : l'audio qu'il a envoyé et les vidéos exportées gardées sur ses
+ * sessions (quel qu'en soit le lanceur : le fichier est dans le dossier de sa session).
+ */
+export function storageBreakdown(
+  db: Db,
+  ownerId: number,
+): { audio_bytes: number; video_bytes: number } {
+  const audio = db
+    .prepare(
+      "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM session_meta WHERE owner_id = ?",
+    )
+    .get(ownerId) as { n: number };
+  const video = db
+    .prepare(
+      `SELECT COALESCE(SUM(e.bytes), 0) AS n FROM exports e
+       JOIN session_meta m ON m.id = e.session_id WHERE m.owner_id = ?`,
+    )
+    .get(ownerId) as { n: number };
+  return { audio_bytes: audio.n, video_bytes: video.n };
+}
+
+/** Octets déjà occupés par cet utilisateur : audio envoyé + vidéos gardées (quota). */
 export function usedBytes(db: Db, ownerId: number): number {
-  return (
-    db
-      .prepare(
-        "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM session_meta WHERE owner_id = ?",
-      )
-      .get(ownerId) as { n: number }
-  ).n;
+  const { audio_bytes, video_bytes } = storageBreakdown(db, ownerId);
+  return audio_bytes + video_bytes;
 }
 
 export function knownIds(db: Db): Set<string> {

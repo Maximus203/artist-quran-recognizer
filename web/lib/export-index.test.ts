@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   exportSummary,
   forgetExport,
+  listFiles,
   markExportsSeen,
   recordExport,
 } from "./export-index";
@@ -58,5 +59,55 @@ describe("index des exports vidéo", () => {
     recordExport(db, export_("a", awa));
     db.prepare("DELETE FROM session_meta WHERE id = 's1'").run();
     expect(exportSummary(db, "s1", awa)).toEqual({ total: 0, new: 0 });
+  });
+});
+
+describe("inventaire des fichiers téléchargeables", () => {
+  beforeEach(() => {
+    db.prepare(
+      `INSERT INTO session_meta (id, owner_id, name, original_name, created_at, updated_at)
+       VALUES ('s2', ?, 'Maryam', 'maryam.mp3', '2026-10-02T00:00:00.000Z', '2026-10-02T00:00:00.000Z')`,
+    ).run(awa);
+    recordExport(db, { ...export_("a", cherif), bytes: 300 });
+    recordExport(db, {
+      ...export_("b", cherif),
+      bytes: 900,
+      createdAt: "2026-11-02T10:00:00.000Z",
+    });
+    recordExport(db, { ...export_("c", awa), sessionId: "s2", bytes: 500 });
+  });
+
+  it("un compte ne voit que les fichiers de ses propres sessions, le plus gros d'abord", () => {
+    const mine = listFiles(db, { id: cherif, role: "user" });
+    expect(mine.map((f) => f.id)).toEqual(["b", "a"]);
+    expect(mine[0]).toMatchObject({
+      sessionId: "s1",
+      sessionName: "Yusuf",
+      ownerName: "Cherif",
+      bytes: 900,
+    });
+  });
+
+  it("une vidéo lancée par un autre sur ma session est dans mon inventaire (c'est mon espace)", () => {
+    recordExport(db, { ...export_("d", awa), bytes: 100 });
+    expect(
+      listFiles(db, { id: cherif, role: "user" }).map((f) => f.id),
+    ).toContain("d");
+    expect(listFiles(db, { id: awa, role: "user" }).map((f) => f.id)).toEqual([
+      "c",
+    ]);
+  });
+
+  it("l'administrateur voit tous les fichiers, avec leur propriétaire", () => {
+    const admin = createUser(db, { username: "Root", passwordHash: "x" }).id;
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(admin);
+    const all = listFiles(db, { id: admin, role: "admin" });
+    expect(all.map((f) => f.id)).toEqual(["b", "c", "a"]);
+    expect(all.find((f) => f.id === "c")?.ownerName).toBe("Awa");
+  });
+
+  it("un compte sans fichier reçoit une liste vide", () => {
+    const nobody = createUser(db, { username: "Zoe", passwordHash: "x" }).id;
+    expect(listFiles(db, { id: nobody, role: "user" })).toEqual([]);
   });
 });
