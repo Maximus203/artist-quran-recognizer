@@ -416,7 +416,10 @@
 .sb-count select {
   width: auto;
   min-height: 0;
-  padding: 2px var(--sp-2);
+  padding: 2px 26px 2px var(--sp-3);
+  background-position:
+    calc(100% - 13px) 52%,
+    calc(100% - 8px) 52%;
 }
 
 /* Groupes de la barre du haut (Récitations, Administration) : un bouton qui déplie ses pages */
