@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-06 — Barre de gauche : le sélecteur « Afficher » ne chevauche plus sa flèche
+Étiquettes : utilisateur
+PR : #220
+
+**Ce qui change.** Dans la barre de gauche, le chiffre du sélecteur « Afficher » ne passe plus sous la flèche du menu.
+
+**Pourquoi / décision.** Une règle de la barre écrasait la marge droite réservée à la flèche des menus ; elle la rétablit (shell.css).
+
 ## 2026-11-06 — Vidéo d'export : chaque carte arabe affiche sa propre traduction
 Étiquettes : utilisateur, technique, décision
 PR : #219
