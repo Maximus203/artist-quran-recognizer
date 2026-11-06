@@ -163,8 +163,18 @@ export function FilesView({
         ) : (
           <ul className="api-tokens">
             {files.map((file) => (
-              <li key={file.id} data-state="active">
-                <div>
+              <li
+                key={file.id}
+                data-state="active"
+                style={{ flexWrap: "wrap", gap: "var(--sp-3)" }}
+              >
+                <div
+                  style={{
+                    flex: "1 1 14rem",
+                    minWidth: 0,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   <b>{file.name}</b>
                   <br />
                   <small>
@@ -187,7 +197,13 @@ export function FilesView({
                     ) : null}
                   </small>
                 </div>
-                <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "var(--sp-2)",
+                  }}
+                >
                   <a
                     className="btn btn--secondary btn--sm"
                     href={file.download_url}
