@@ -21,6 +21,8 @@ from aqr.freespeech.ports import FrenchTranslator, SpeechTranscriber
 from aqr.freespeech.service import eligible_intervals, run_free_speech
 from aqr.freespeech.sidecar import build_document, validate_document
 
+TRANSLATORS = ("marian", "nllb")
+
 
 class FreeSpeechUnavailable(RuntimeError):
     """Moteur ou modèle absent (message en français, code de sortie 2)."""
@@ -32,6 +34,8 @@ class FreeSpeechOptions:
     corpus_dir: Path = Path("data/corpus")
     device: str = "auto"
     whisper_model: str = "large-v3"
+    translator: str = "marian"
+    """`marian` ou `nllb` : le dossier des poids est sous `AQR_MODELS_DIR`."""
 
 
 @dataclass(frozen=True)
@@ -50,7 +54,10 @@ FreeSpeechFactory = Callable[[FreeSpeechOptions, Mapping[str, str]], FreeSpeechE
 def build_engine(options: FreeSpeechOptions, env: Mapping[str, str]) -> FreeSpeechEngine:
     from aqr.adapters.ffmpeg_extractor import FfmpegAudioExtractor
     from aqr.adapters.free_whisper import FreeWhisperConfig, FreeWhisperTranscriber
-    from aqr.adapters.marian_translator import DEFAULT_MODEL_NAME, MarianConfig, MarianTranslator
+    from aqr.adapters.marian_translator import DEFAULT_MODEL_NAME as MARIAN_DIR
+    from aqr.adapters.marian_translator import MarianConfig, MarianTranslator
+    from aqr.adapters.nllb_translator import DEFAULT_MODEL_NAME as NLLB_DIR
+    from aqr.adapters.nllb_translator import NllbConfig, NllbTranslator
     from aqr.corpus.imlai_corrections import build_word_corrections, load_simple_clean_words
     from aqr.corpus.normalize import normalize_arabic, tokenize
     from aqr.corpus.tanzil_repository import TanzilCorpusRepository
@@ -63,11 +70,17 @@ def build_engine(options: FreeSpeechOptions, env: Mapping[str, str]) -> FreeSpee
         raise FreeSpeechUnavailable(
             "Variable d'environnement manquante : AQR_MODELS_DIR (ou --models-dir)"
         )
-    translator_dir = models / DEFAULT_MODEL_NAME
+    if options.translator not in TRANSLATORS:
+        raise FreeSpeechUnavailable(
+            f"traducteur inconnu : {options.translator!r} ({' | '.join(TRANSLATORS)})"
+        )
+    translator_dir = models / (NLLB_DIR if options.translator == "nllb" else MARIAN_DIR)
     if not translator_dir.is_dir():
         raise FreeSpeechUnavailable(
             f"modèle de traduction absent ({translator_dir}) : "
             "`python scripts/fetch_free_speech_models.py`"
+            if options.translator == "marian"
+            else "voir ADR-0027"
         )
     config = FreeSpeechConfig()
     corpus = TanzilCorpusRepository(options.corpus_dir)
@@ -77,7 +90,11 @@ def build_engine(options: FreeSpeechOptions, env: Mapping[str, str]) -> FreeSpee
     transcriber = FreeWhisperTranscriber(
         FreeWhisperConfig(model=options.whisper_model, device=options.device)
     )
-    translator = MarianTranslator(MarianConfig(translator_dir, device=options.device))
+    translator: MarianTranslator | NllbTranslator = (
+        NllbTranslator(NllbConfig(translator_dir, device=options.device))
+        if options.translator == "nllb"
+        else MarianTranslator(MarianConfig(translator_dir, device=options.device))
+    )
     return FreeSpeechEngine(
         transcriber=transcriber,
         translator=translator,
