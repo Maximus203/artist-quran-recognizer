@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "gsap": "^3.13.0",
-    "next": "^16.4.3",
+    "next": "^16.4.5",
     "playwright-core": "1.56.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
