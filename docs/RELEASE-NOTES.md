@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-17 — Export vidéo : réglages mémorisés par vidéo
 Étiquettes : utilisateur, technique, décision
-PR : #0
+PR : #231
 
 **Ce qui change.** Les réglages de l'éditeur d'export (traduction, arabe seul, onde, sourate, style, calques, format, fond…) sont maintenant mémorisés pour chaque vidéo, sur le serveur et pour le compte. En revenant sur la même récitation, on retrouve exactement ce qu'on y avait réglé, même après un rechargement ou une reconnexion ; une autre récitation n'en hérite jamais. La sauvegarde est automatique (une demi-seconde après le dernier changement) et part aussi au lancement d'un export. Une récitation jamais personnalisée part du réglage global du compte.
 
