@@ -74,6 +74,11 @@ export const EXPORT_VIDEO_CONFIG = {
     /** Planches gardées par session (chaque taille de frise en produit une) ; les plus anciennes partent. */
     keepPerSession: 3,
   },
+  /** Réglages mémorisés par vidéo (`session-video-prefs`). */
+  videoPrefs: {
+    /** Sauvegarde automatique : les changements rapprochés partent en une seule requête après ce délai. */
+    saveDelayMs: 600,
+  },
 } as const;
 
 export type WeightLimits = {

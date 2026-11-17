@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-17 — Export vidéo : réglages mémorisés par vidéo
+Étiquettes : utilisateur, technique, décision
+PR : #0
+
+**Ce qui change.** Les réglages de l'éditeur d'export (traduction, arabe seul, onde, sourate, style, calques, format, fond…) sont maintenant mémorisés pour chaque vidéo, sur le serveur et pour le compte. En revenant sur la même récitation, on retrouve exactement ce qu'on y avait réglé, même après un rechargement ou une reconnexion ; une autre récitation n'en hérite jamais. La sauvegarde est automatique (une demi-seconde après le dernier changement) et part aussi au lancement d'un export. Une récitation jamais personnalisée part du réglage global du compte.
+
+**Pourquoi / décision.** Avant, un seul jeu de réglages servait toutes les vidéos du compte : changer l'une changeait les autres. Le réglage global n'est plus modifié par l'éditeur ; il ne sert que de point de départ. Un compte ne lit et n'écrit que ses propres réglages d'une vidéo visible pour lui, y compris sur une session partagée. ADR-0028.
+
 ## 2026-11-06 — Parole libre : NLLB-200 3,3 B mesuré, décision inchangée
 Étiquettes : décision
 PR : #228

@@ -418,7 +418,11 @@ plateau pour la séance du navigateur) ; le récitateur a le pas à pas sans auc
 - **Limite connue (recette QA, m1).** Les réglages de la vidéo (`videoPrefs`) sont écrits en entier par l'onglet qui les modifie :
   avec DEUX onglets ouverts sur le même compte, le dernier écrit l'emporte et peut effacer, sans message, un réglage fait dans
   l'autre. La corriger proprement demande d'envoyer seulement les champs changés et de les fusionner côté serveur (changement du
-  contrat `PATCH /api/me/preferences`) : non fait ici, à décider.
+  contrat `PATCH /api/me/preferences`) : non fait ici, à décider. **Depuis l'ADR-0028**, l'éditeur n'écrit plus `videoPrefs` :
+  les réglages sont mémorisés PAR VIDÉO (table `session_video_prefs`, migration 012, route `/api/sessions/<id>/video-prefs`,
+  `lib/session-video-prefs.ts` côté serveur, `lib/session-video-prefs-client.ts` côté navigateur). Le réglage global du compte
+  (`videoPrefs`) n'est plus que le point de départ d'une vidéo jamais personnalisée ; la limite ci-dessus ne concerne donc plus
+  l'éditeur (deux onglets sur DEUX vidéos différentes ne se touchent plus ; sur la même vidéo, le dernier écrit l'emporte encore).
 
 Styles : `web/app/export-refonte.css` (jetons `--x-*`, composants `.xr-*`) ; l'éditeur a les siens (voir ci-dessus).
 

@@ -26,6 +26,12 @@ import {
   type FreeSpeech,
 } from "@/lib/free-speech";
 import { EXPORT_VIDEO_CONFIG } from "@/lib/export-video-config";
+import {
+  fetchSessionVideoPrefs,
+  PrefsAutosave,
+  saveSessionVideoPrefs,
+  startingVideoPrefs,
+} from "@/lib/session-video-prefs-client";
 import { videoDimensions } from "@/lib/export-video-format";
 import { videoFileName, videoRangeFileName } from "@/lib/export-video-name";
 import {
@@ -168,7 +174,7 @@ export function VideoPanel({
   const savedRef = useRef({ existingVideos, reuseVideos });
   savedRef.current = { existingVideos, reuseVideos };
   // Réglages du compte (pas de l’appareil) : déjà chargés avec la page, donc aucun clignotement.
-  const { prefs: accountPrefs, update } = useShell();
+  const { prefs: accountPrefs } = useShell();
   const [prefs, setPrefs] = useState<VideoPrefs>(accountPrefs.videoPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
   const [sessionName, setSessionName] = useState("");
@@ -192,8 +198,26 @@ export function VideoPanel({
   const [videoChecked, setVideoChecked] = useState(false);
   // Le navigateur de cette personne sait-il afficher l'image dans l'aperçu ? (l'export, lui, est sur le serveur)
   const [previewReadable, setPreviewReadable] = useState(true);
-  // Ce que le COMPTE a retenu : le défaut « vidéo d'origine » d'une session vidéo n'y entre jamais.
-  const accountRef = useRef(accountPrefs.videoPrefs);
+  // Cette vidéo a-t-elle des réglages enregistrés (priorité sur le compte) ? Et leur sauvegarde automatique.
+  const storedRef = useRef(false);
+  const autosave = useRef(
+    new PrefsAutosave({
+      send: (value) =>
+        saveSessionVideoPrefs(sessionId, value, { keepalive: true }),
+    }),
+  );
+  useEffect(() => {
+    const saver = autosave.current;
+    // Quitter l'éditeur, changer d'onglet ou fermer la page ne perd pas le dernier réglage.
+    const leave = () => void saver.flush();
+    document.addEventListener("visibilitychange", leave);
+    window.addEventListener("pagehide", leave);
+    return () => {
+      document.removeEventListener("visibilitychange", leave);
+      window.removeEventListener("pagehide", leave);
+      leave();
+    };
+  }, []);
   const [sourceSize, setSourceSize] = useState<{
     width: number;
     height: number;
@@ -229,8 +253,19 @@ export function VideoPanel({
 
   // --- données : résultat, crêtes, vidéo d'origine, imagettes ------------------------------
   useEffect(() => {
-    setPrefsReady(true);
     let cancelled = false;
+    // Les réglages de cette vidéo, d'abord : l'écran n'apparaît qu'avec eux (jamais ceux d'une autre vidéo).
+    fetchSessionVideoPrefs(sessionId)
+      .catch(() => null) // illisible : on part du compte, rien n'est perdu côté serveur
+      .then((stored) => {
+        if (cancelled) return;
+        if (stored) {
+          storedRef.current = true;
+          prefsRef.current = stored;
+          setPrefs(stored);
+        }
+        setPrefsReady(true);
+      });
     Promise.all([
       api<{
         session: { extension?: string; name?: string };
@@ -309,35 +344,37 @@ export function VideoPanel({
     };
   }, [isVideo, duration, sessionId]);
 
-  // Une vidéo envoyée ressort telle quelle, avec la traduction par-dessus : « Vidéo d'origine » est le fond ET le
-  // format par défaut, quels que soient les réglages enregistrés du compte. Un choix de la personne le remplace
-  // pour cette session seulement ; ce défaut n'est jamais écrit dans ses préférences.
+  // Réglages mémorisés pour CETTE vidéo : ils l'emportent sur le compte. Sans eux (jamais personnalisée), le
+  // compte est le point de départ ; une vidéo envoyée ressort alors telle quelle, avec la traduction par-dessus
+  // (« Vidéo d'origine » est le fond ET le format par défaut). Ce défaut n'est écrit qu'au premier vrai changement.
   const defaulted = useRef(false);
   useEffect(() => {
-    if (!isVideo || defaulted.current) return;
+    if (!prefsReady || defaulted.current) return;
+    if (storedRef.current) {
+      defaulted.current = true;
+      return;
+    }
+    if (!isVideo) return;
     defaulted.current = true;
-    const next: VideoPrefs = {
-      ...prefsRef.current,
-      orientation: "source",
-      background: SOURCE_BACKGROUND_ID,
-    };
+    const next = startingVideoPrefs({
+      stored: null,
+      account: prefsRef.current,
+      isVideo: true,
+    });
     prefsRef.current = next;
     setPrefs(next);
-  }, [isVideo]);
+  }, [isVideo, prefsReady]);
 
-  const patch = useCallback<PatchPrefs>(
-    (change) => {
-      // Une fonction part des réglages LES PLUS RÉCENTS : deux pas rapprochés d'un appui long ne se perdent pas.
-      const next =
-        typeof change === "function" ? change(prefsRef.current) : change;
-      const value = { ...prefsRef.current, ...next };
-      prefsRef.current = value;
-      setPrefs(value);
-      accountRef.current = { ...accountRef.current, ...next };
-      update({ videoPrefs: accountRef.current });
-    },
-    [update],
-  );
+  const patch = useCallback<PatchPrefs>((change) => {
+    // Une fonction part des réglages LES PLUS RÉCENTS : deux pas rapprochés d'un appui long ne se perdent pas.
+    const next =
+      typeof change === "function" ? change(prefsRef.current) : change;
+    const value = { ...prefsRef.current, ...next };
+    prefsRef.current = value;
+    setPrefs(value);
+    // Mémorisé pour CETTE vidéo seulement (sauvegarde automatique) : le réglage global du compte n'est pas touché.
+    autosave.current.schedule(value);
+  }, []);
 
   const ctx: PlanContext | null = useMemo(
     () =>
@@ -685,6 +722,8 @@ export function VideoPanel({
       setPhase("render");
       setFailure(null);
       setStopRequested(false);
+      // Les réglages avec lesquels on exporte sont ceux que cette vidéo retrouvera au retour.
+      void autosave.current.flush();
       if (offset === 0) links.current = [];
       const names = subset.map((r) =>
         useWhole

@@ -469,6 +469,13 @@
     "summary": "Accepté le 2026-11-06 : seules les zones arabes hors Coran sont transcrites (Whisper) puis traduites (Marian ar-fr), derrière des garde-fous qui retiennent tout passage ressemblant au Coran. Un passage retenu ne porte aucun texte ; fichier séparé aqr.free-speech/1 ; désactivé par défaut à l'export. Aucune mesure de qualité avant le banc réel."
   },
   {
+    "slug": "adr-0028-reglages-d-export-par-video",
+    "title": "ADR-0028 — Les réglages de l'éditeur d'export sont mémorisés par vidéo",
+    "section": "Décisions",
+    "file": "docs/adr/0028-reglages-d-export-par-video.md",
+    "summary": "Accepté le 2026-11-17 : une ligne par (compte, session) dans session_video_prefs ; les réglages de la vidéo l'emportent sur le réglage global, qui ne sert plus que de point de départ ; sauvegarde automatique et au lancement d'un export ; accès serveur limité aux vidéos visibles du compte."
+  },
+  {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
     "title": "ADR-0019 — La vidéo de fond choisie est envoyée au serveur",
     "section": "Décisions",
