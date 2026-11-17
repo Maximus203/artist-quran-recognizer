@@ -1,16 +1,8 @@
-import type { Metadata } from "next";
-import { requirePageUser } from "@/lib/page-auth";
-import { FilesPane } from "../../atelier/files-pane";
-import { PageFrame } from "../../atelier/page-frame";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Fichiers · Quran TR" };
 
-export default async function Page() {
-  await requirePageUser("/fichiers");
-  return (
-    <PageFrame active="files">
-      <FilesPane />
-    </PageFrame>
-  );
+/** L'ancienne page « Fichiers » est devenue « Téléchargements » : les anciens liens y mènent. */
+export default function Page() {
+  redirect("/telechargements");
 }

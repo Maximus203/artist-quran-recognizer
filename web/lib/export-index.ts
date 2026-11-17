@@ -104,27 +104,36 @@ export type FileEntry = ExportRecord & {
   /** Propriétaire de la session (celui dont le fichier occupe l'espace) ; `null` : session sans compte. */
   sessionOwnerId: number | null;
   ownerName: string | null;
+  /** Portée de la génération : `global` (publique) ou `private`. */
+  visibility: "global" | "private";
+  /** Compte qui a lancé l'export. */
+  launcherName: string | null;
 };
 
 /**
- * Inventaire des fichiers téléchargeables gardés sur le serveur, le plus gros d'abord. Un compte voit
- * ceux de SES sessions (son espace) ; l'administrateur les voit tous.
+ * Inventaire des fichiers téléchargeables gardés sur le serveur, le plus gros d'abord. Mêmes règles de
+ * visibilité que les générations (`access.ts`) : un compte voit ceux de SES générations et de celles
+ * rendues publiques ; l'administrateur les voit toutes. Le filtre est dans la requête : aucune ligne
+ * d'une génération privée d'autrui ne remonte jusqu'à la route.
  */
 export function listFiles(
   db: Db,
   viewer: { id: number; role: string },
 ): FileEntry[] {
+  const admin = viewer.role === "admin";
   const rows = db
     .prepare(
       `SELECT e.id, e.session_id, e.owner_id, e.name, e.bytes, e.created_at,
-              m.name AS session_name, m.owner_id AS session_owner_id, u.username AS owner_name
+              m.name AS session_name, m.owner_id AS session_owner_id, m.visibility AS visibility,
+              u.username AS owner_name, l.username AS launcher_name
        FROM exports e
        JOIN session_meta m ON m.id = e.session_id
        LEFT JOIN users u ON u.id = m.owner_id
-       ${viewer.role === "admin" ? "" : "WHERE m.owner_id = ?"}
+       LEFT JOIN users l ON l.id = e.owner_id
+       ${admin ? "" : "WHERE m.owner_id = ? OR m.visibility = 'global'"}
        ORDER BY e.bytes DESC, e.created_at DESC`,
     )
-    .all(...(viewer.role === "admin" ? [] : [viewer.id])) as Array<{
+    .all(...(admin ? [] : [viewer.id])) as Array<{
     id: string;
     session_id: string;
     owner_id: number | null;
@@ -133,7 +142,9 @@ export function listFiles(
     created_at: string;
     session_name: string;
     session_owner_id: number | null;
+    visibility: "global" | "private";
     owner_name: string | null;
+    launcher_name: string | null;
   }>;
   return rows.map((row) => ({
     id: row.id,
@@ -145,6 +156,8 @@ export function listFiles(
     sessionName: row.session_name,
     sessionOwnerId: row.session_owner_id,
     ownerName: row.owner_name,
+    visibility: row.visibility,
+    launcherName: row.launcher_name,
   }));
 }
 

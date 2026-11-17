@@ -1,0 +1,61 @@
+/* Page « Téléchargements » : groupes par récitation, statuts d'export, barre d'avancement.
+   Uniquement des jetons de tokens.css ; mobile d'abord (la rangée passe à la ligne). */
+.dl-h {
+  font: 400 var(--fs-xl) / 1.2 var(--font-display);
+  margin: 0 0 var(--sp-2);
+}
+.dl-group {
+  padding: var(--sp-4) var(--sp-5);
+  display: grid;
+  gap: var(--sp-3);
+}
+.dl-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+  min-height: 44px;
+}
+.dl-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.dl-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.api-tokens .dl-row {
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.dl-main {
+  flex: 1 1 14rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.dl-bar {
+  margin-top: var(--sp-2);
+  height: 6px;
+  border-radius: var(--r-xs);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.dl-bar > i {
+  display: block;
+  height: 100%;
+  width: var(--w);
+  background: var(--accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dl-bar > i {
+    transition: width 0.4s ease-out;
+  }
+}

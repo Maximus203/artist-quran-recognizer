@@ -469,6 +469,13 @@
     "summary": "Accepté le 2026-11-06 : seules les zones arabes hors Coran sont transcrites (Whisper) puis traduites (Marian ar-fr), derrière des garde-fous qui retiennent tout passage ressemblant au Coran. Un passage retenu ne porte aucun texte ; fichier séparé aqr.free-speech/1 ; désactivé par défaut à l'export. Aucune mesure de qualité avant le banc réel."
   },
   {
+    "slug": "adr-0030-page-telechargements-et-file-des-exports",
+    "title": "ADR-0030 — Une seule page « Téléchargements » pour les exports, prêts et en file",
+    "section": "Décisions",
+    "file": "docs/adr/0030-page-telechargements-et-file-des-exports.md",
+    "summary": "Accepté le 2026-11-17 : la page Fichiers devient Téléchargements et réunit les vidéos prêtes et les exports en file (en attente, en cours, échoués), regroupés par récitation. Pas de nouvelle file : celle des analyses, plafond d'attente commun. Visibilité appliquée côté serveur (propriétaire, publique, administrateur). Liste de la file en mémoire : limite connue."
+  },
+  {
     "slug": "adr-0029-coupe-de-verset-traduction-exacte",
     "title": "ADR-0029 — Un verset n'est coupé que là où la traduction se coupe exactement",
     "section": "Décisions",

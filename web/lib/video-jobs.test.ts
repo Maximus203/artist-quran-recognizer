@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { TEXT_BASE_SIZE, textStackPosition } from "./export-video-model";
+import { maxWaitingPerUser } from "./jobs";
 
 const mocks = vi.hoisted(() => ({ root: "" }));
 vi.mock("./store", () => ({
@@ -10,6 +11,7 @@ vi.mock("./store", () => ({
 }));
 
 import {
+  allVideoJobs,
   applyRenderState,
   cancelVideoJob,
   browserExecutable,
@@ -449,7 +451,7 @@ describe("jobs d'export vidéo", () => {
     expect(publicJob(done).download).toBeNull();
   });
 
-  it("limite à deux exports actifs par compte", async () => {
+  it("plafonne les exports en file ou en cours par compte, sans gêner les autres comptes", async () => {
     let release: () => void = () => undefined;
     const gate = new Promise<void>((r) => (release = r));
     const slow = async (j: VideoJob) => {
@@ -457,15 +459,46 @@ describe("jobs d'export vidéo", () => {
       j.file = path.join(j.dir, "v.mp4");
       await writeFile(j.file, "x");
     };
-    const a = await startVideoJob({ ...base, userId: 7, runner: slow });
-    const b = await startVideoJob({ ...base, userId: 7, runner: slow });
+    // Même plafond que les analyses : un export en cours, puis `maxWaitingPerUser()` en attente.
+    const mine: VideoJob[] = [];
+    for (let i = 0; i < 1 + maxWaitingPerUser(); i++)
+      mine.push(await startVideoJob({ ...base, userId: 7, runner: slow }));
     await expect(
       startVideoJob({ ...base, userId: 7, runner: slow }),
     ).rejects.toBeInstanceOf(VideoJobLimitError);
     // un autre compte n'est pas gêné
     const c = await startVideoJob({ ...base, userId: 8, runner: slow });
+    // l'export refusé n'a laissé aucune fiche fantôme ; la liste donne tous les exports avec leur lanceur
+    // (le filtre de visibilité est dans downloads.ts)
+    expect(
+      allVideoJobs().filter((j) => j.userId === 7 && j.state !== "done"),
+    ).toHaveLength(1 + maxWaitingPerUser());
     release();
-    for (const j of [a, b, c]) expect((await settle(j.id)).state).toBe("done");
+    for (const j of [...mine, c])
+      expect((await settle(j.id)).state).toBe("done");
+  });
+
+  it("plusieurs exports lancés d'affilée (générations différentes) passent un à un et finissent tous", async () => {
+    const order: string[] = [];
+    let running = 0;
+    let peak = 0;
+    const run = async (j: VideoJob) => {
+      running++;
+      peak = Math.max(peak, running);
+      order.push(j.sessionId);
+      await new Promise((r) => setTimeout(r, 15));
+      j.file = path.join(j.dir, "v.mp4");
+      await writeFile(j.file, "x");
+      running--;
+    };
+    const jobs = [];
+    for (const sessionId of ["g1", "g2", "g3"])
+      jobs.push(
+        await startVideoJob({ ...base, userId: 9, sessionId, runner: run }),
+      );
+    for (const j of jobs) expect((await settle(j.id)).state).toBe("done");
+    expect(peak).toBe(1);
+    expect(order).toEqual(["g1", "g2", "g3"]);
   });
 });
 

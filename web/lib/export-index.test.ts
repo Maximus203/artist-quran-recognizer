@@ -18,8 +18,8 @@ beforeEach(() => {
   cherif = createUser(db, { username: "Cherif", passwordHash: "x" }).id;
   awa = createUser(db, { username: "Awa", passwordHash: "x" }).id;
   db.prepare(
-    `INSERT INTO session_meta (id, owner_id, name, original_name, created_at, updated_at)
-     VALUES ('s1', ?, 'Yusuf', 'yusuf.mp3', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')`,
+    `INSERT INTO session_meta (id, owner_id, name, original_name, visibility, created_at, updated_at)
+     VALUES ('s1', ?, 'Yusuf', 'yusuf.mp3', 'private', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')`,
   ).run(cherif);
 });
 afterEach(() => db.close());
@@ -65,8 +65,8 @@ describe("index des exports vidéo", () => {
 describe("inventaire des fichiers téléchargeables", () => {
   beforeEach(() => {
     db.prepare(
-      `INSERT INTO session_meta (id, owner_id, name, original_name, created_at, updated_at)
-       VALUES ('s2', ?, 'Maryam', 'maryam.mp3', '2026-10-02T00:00:00.000Z', '2026-10-02T00:00:00.000Z')`,
+      `INSERT INTO session_meta (id, owner_id, name, original_name, visibility, created_at, updated_at)
+       VALUES ('s2', ?, 'Maryam', 'maryam.mp3', 'private', '2026-10-02T00:00:00.000Z', '2026-10-02T00:00:00.000Z')`,
     ).run(awa);
     recordExport(db, { ...export_("a", cherif), bytes: 300 });
     recordExport(db, {
@@ -104,6 +104,23 @@ describe("inventaire des fichiers téléchargeables", () => {
     const all = listFiles(db, { id: admin, role: "admin" });
     expect(all.map((f) => f.id)).toEqual(["b", "c", "a"]);
     expect(all.find((f) => f.id === "c")?.ownerName).toBe("Awa");
+  });
+
+  it("les fichiers d'une génération rendue publique sont visibles de tous ; repassée en privée, ils se referment", () => {
+    db.prepare(
+      "UPDATE session_meta SET visibility = 'global' WHERE id = 's2'",
+    ).run();
+    const seen = () =>
+      listFiles(db, { id: cherif, role: "user" }).map((f) => f.id);
+    expect(seen()).toContain("c");
+    const entry = listFiles(db, { id: cherif, role: "user" }).find(
+      (f) => f.id === "c",
+    );
+    expect(entry).toMatchObject({ visibility: "global", launcherName: "Awa" });
+    db.prepare(
+      "UPDATE session_meta SET visibility = 'private' WHERE id = 's2'",
+    ).run();
+    expect(seen()).not.toContain("c");
   });
 
   it("un compte sans fichier reçoit une liste vide", () => {

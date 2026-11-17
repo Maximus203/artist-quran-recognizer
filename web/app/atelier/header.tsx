@@ -12,7 +12,7 @@ export type NavId =
   | "revue"
   | "sessions"
   | "playlists"
-  | "files"
+  | "downloads"
   | "perf"
   | "live"
   | "docs"
@@ -44,14 +44,14 @@ const LINKS: Record<PageId, { href: string; label: string }> = {
   revue: { href: "/", label: "Lecture" },
   sessions: { href: "/sessions", label: "Récitations" },
   playlists: { href: "/playlists", label: "Playlists" },
-  files: { href: "/fichiers", label: "Fichiers" },
+  downloads: { href: "/telechargements", label: "Téléchargements" },
   perf: { href: "/performance", label: "Performance" },
   live: { href: "/direct", label: "En direct" },
   docs: { href: "/docs", label: "Documentation" },
 };
 
-/** Les pages qui se rangent sous « Récitations » : la liste, les playlists, puis les fichiers. */
-const LIBRARY: PageId[] = ["sessions", "playlists", "files"];
+/** Les pages qui se rangent sous « Récitations » : la liste, les playlists, puis les téléchargements. */
+const LIBRARY: PageId[] = ["sessions", "playlists", "downloads"];
 /** Le reste, à plat, dans l'ordre de la barre. */
 const FLAT_AFTER: PageId[] = ["perf", "live", "docs"];
 
