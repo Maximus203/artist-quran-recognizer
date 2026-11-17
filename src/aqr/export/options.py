@@ -37,7 +37,7 @@ class ExportOptions:
     pause_split: bool = True
     """Coupe un verset là où le récitant s'arrête (temps mesurés) et, au plafond `max_s`, de
     préférence à un signe d'arrêt du Mushaf."""
-    pause_s: float = 0.6
+    pause_s: float = 0.9
     """Silence (trou, ou allongement d'un mot au-delà de son débit) d'où part une coupe."""
     line_chars: int = 42
     offset_ms: int = 0

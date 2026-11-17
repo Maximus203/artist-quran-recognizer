@@ -98,7 +98,7 @@ def test_un_marqueur_est_du_texte_latin_jamais_encadre_en_rtl(corpus):
     assert cue.arabic is None and cue.translation == ("[incertain : 112:2 | 112:3]",)
 
 
-def test_les_points_de_suspension_d_un_fragment_ne_tombent_que_sur_une_ligne_pleine(corpus):
+def test_un_fragment_qui_ne_couvre_pas_tous_les_mots_garde_le_verset_entier(corpus):
     ref = "112:4"
     n = len(corpus.words(VerseRef.parse(ref)))
     translation = {
@@ -118,7 +118,8 @@ def test_les_points_de_suspension_d_un_fragment_ne_tombent_que_sur_une_ligne_ple
     interval = verse(ref, (1, n), (0.0, 4.0 * n), translation=translation, word_times=times)
     view, ctx = view_of(corpus, document(interval), max_s=8.0)
     cues = build_cues(view.entries, ctx).cues
-    assert [c.translation for c in cues] == [("Et nul n'est …",), (), ()]
+    # Une carte sans traduction est exclue (ADR-0027) : le verset reste d'un bloc avec son fragment.
+    assert [c.translation for c in cues] == [("Et nul n'est …",)]
 
 
 def test_politique_premier_candidat_ne_nomme_que_l_incertain(corpus):

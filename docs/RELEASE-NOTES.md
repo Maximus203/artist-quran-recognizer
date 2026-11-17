@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-17 — Export vidéo : peu de coupes, traduction exacte ou verset entier
+Étiquettes : utilisateur, technique, décision
+PR : #232
+
+**Ce qui change.** Un long verset est coupé en moins de cartes (pause d'au moins 0,9 s, carte d'au moins 2 s), et la traduction affichée sur chaque carte correspond exactement à la partie récitée : on ne coupe qu'à la fin d'une tranche de traduction de QuranEnc. Si le verset n'a pas de tranches exactes, il reste d'un bloc avec toute sa traduction, et les mots récités sont surlignés un à un. Plus aucune carte sans traduction ; plus de traduction coupée « à peu près ». Vidéo et sous-titres suivent la même règle.
+
+**Pourquoi / décision.** Sur un verset en sept morceaux, seul le plus grand recevait une traduction : la coupe au prorata des mots était approximative et laissait les petits morceaux vides (I2 : jamais de réécriture, I3 : l'à-peu-près est pire que rien). Amende l'ADR-0025 : voir ADR-0029.
+
 ## 2026-11-17 — Export vidéo : réglages mémorisés par vidéo
 Étiquettes : utilisateur, technique, décision
 PR : #231

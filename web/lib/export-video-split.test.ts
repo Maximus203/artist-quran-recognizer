@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { Interval } from "./recognition";
 import {
   DEFAULT_SPLIT,
+  alignToSegments,
   chunkRanges,
   pauseAfter,
   signStops,
@@ -21,6 +22,10 @@ type SharedCase = {
   pauses: number[];
   stops: number[];
   chunks: [number, number][];
+  /** Coupe de la traduction : tranches QuranEnc (numéros de mots du verset) et plages retenues. */
+  first_word?: number;
+  segments?: [number, number][] | null;
+  aligned?: [number, number][];
 };
 
 // Les mêmes cas que le moteur Python (tests/unit/test_export_pauses.py) : une coupe d'aperçu,
@@ -42,6 +47,16 @@ describe("même découpe que le moteur Python", () => {
       expect(
         chunkRanges(c.times, c.start_s, c.max_s, c.min_s, pauses, stops),
       ).toEqual(c.chunks);
+      if (c.aligned) {
+        expect(
+          alignToSegments(
+            c.chunks,
+            c.segments ?? [],
+            c.first_word!,
+            c.words.length,
+          ),
+        ).toEqual(c.aligned);
+      }
     });
   }
 });
@@ -218,7 +233,9 @@ describe("splitVerse", () => {
         version: "1",
         attribution: "Muhammad Hamidullah",
         scope: "verse",
-        segments: [{ words: [1, 8], text: "Allah! Point de divinité, le Vivant." }],
+        segments: [
+          { words: [1, 8], text: "Allah! Point de divinité, le Vivant." },
+        ],
         phrases: [
           { words: [1, 3], text: "Allah!" },
           { words: [4, 8], text: "Point de divinité, le Vivant." },
@@ -232,7 +249,7 @@ describe("splitVerse", () => {
     ]);
   });
 
-  it("une phrase va dans la carte qui porte la majorité de ses mots arabes", () => {
+  it("une phrase à cheval sur la pause : pas de coupe, le verset reste entier avec sa traduction", () => {
     const item = verse({
       ...base,
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
@@ -251,13 +268,12 @@ describe("splitVerse", () => {
       },
     });
     const cards = splitVerse(item, DEFAULT_SPLIT);
-    expect(cards.map((c) => c.translation)).toEqual([
-      "Allah!",
-      "Point de divinité. Fin.",
-    ]);
+    expect(cards).toHaveLength(1);
+    expect(cards[0].arabic).toBe(ARABIC);
+    expect(cards[0].translation).toBe("Allah! Point de divinité. Fin.");
   });
 
-  it("sans tranches, la traduction est coupée au prorata des mots et le dit", () => {
+  it("sans tranches exactes, jamais de coupe au prorata : le verset reste entier", () => {
     const item = verse({
       ...base,
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
@@ -270,10 +286,50 @@ describe("splitVerse", () => {
       },
     });
     const cards = splitVerse(item, DEFAULT_SPLIT);
-    expect(cards.map((c) => c.translation).join(" ")).toBe(
+    expect(cards).toHaveLength(1);
+    expect(cards[0].translation).toBe(
       "un deux trois quatre cinq six sept huit",
     );
-    expect(cards.every((c) => c.approximate)).toBe(true);
+    expect(cards[0].approximate).toBe(false);
+  });
+
+  it("sans traduction à afficher, l'arabe garde ses coupes", () => {
+    const item = verse({
+      ...base,
+      ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
+    });
+    expect(splitVerse(item, DEFAULT_SPLIT)).toHaveLength(2);
+  });
+
+  it("un verset long à 7 morceaux : seules les coupes sur une fin de tranche restent, aucune carte sans traduction", () => {
+    const words = Array.from({ length: 24 }, () => WORD);
+    const pauseIdx = new Set([2, 6, 9, 13, 17, 20]);
+    const durations = words.map((_, k) => (pauseIdx.has(k) ? 1.6 : 0.5));
+    const item = verse({
+      text: words.join(" "),
+      words: [1, 24],
+      ...measured(durations),
+      translation: {
+        text: "A B C",
+        translation_id: "fr.hamidullah",
+        version: "1",
+        attribution: "Muhammad Hamidullah",
+        scope: "verse",
+        segments: [
+          { words: [1, 7], text: "A" },
+          { words: [8, 14], text: "B" },
+          { words: [15, 24], text: "C" },
+        ],
+      },
+    });
+    const cards = splitVerse(item, DEFAULT_SPLIT);
+    expect(cards.map((c) => c.translation)).toEqual(["A", "B", "C"]);
+    expect(cards.every((c) => c.translation !== null)).toBe(true);
+    expect(cards.map((c) => c.range)).toEqual([
+      [0, 7],
+      [7, 14],
+      [14, 24],
+    ]);
   });
 
   it("une traduction de fragment est découpée dans sa plage seulement", () => {
@@ -296,28 +352,6 @@ describe("splitVerse", () => {
     });
     const cards = splitVerse(item, DEFAULT_SPLIT);
     expect(cards.map((c) => c.translation)).toEqual(["début", "fin"]);
-  });
-});
-
-describe("coupe de la traduction au prorata", () => {
-  it("arrondit comme le moteur Python : la moitié va au pair (5 mots × 4/8 = 2,5 → 2)", () => {
-    const item = verse({
-      text: ARABIC,
-      words: [1, 8],
-      ...measured([0.5, 0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5]),
-      translation: {
-        text: "un deux trois quatre cinq",
-        translation_id: "fr.hamidullah",
-        version: "1",
-        attribution: "Muhammad Hamidullah",
-        scope: "verse",
-      },
-    });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
-    expect(cards.map((c) => c.translation)).toEqual([
-      "un deux",
-      "trois quatre cinq",
-    ]);
   });
 });
 
