@@ -3,6 +3,9 @@
 - Statut : **accepté** — demande du mainteneur du 2026-11-04 (la vidéo exportée ne doit pas poser un long verset d'un bloc).
   Respecte I1 (l'arabe n'est que découpé aux frontières de mots) et I2 (la traduction n'est que découpée, jamais réécrite).
 
+> Amendé par l'ADR-0028 (2026-11-17) : seuils plus conservateurs ; la traduction n'est plus coupée au prorata, la coupe n'a lieu qu'à la fin
+> d'une tranche exacte de QuranEnc, sinon le verset reste entier.
+
 ## Contexte
 
 Avant ce changement, un verset était une seule carte pendant tout son intervalle. Dans la vidéo, un verset long (Al-Baqara 2:282,

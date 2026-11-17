@@ -114,8 +114,16 @@ describe("frameCards", () => {
   });
 
   it("désactivée, la coupe laisse une carte par verset comme avant", () => {
-    const long = verse({ t: [10, 40], word_times: undefined });
+    const long = verse({
+      t: [10, 40],
+      word_times: undefined,
+      translation: null,
+    });
     expect(frameCards([long], true)).toHaveLength(4); // 4 mots, 30 s : le plafond de 7 s coupe à chaque mot
+    // Avec une traduction sans tranches exactes, le verset reste entier (ADR-0027).
+    expect(
+      frameCards([verse({ t: [10, 40], word_times: undefined })], true),
+    ).toHaveLength(1);
     expect(
       frameCards([long], true, true, { ...DEFAULT_SPLIT, enabled: false }),
     ).toHaveLength(1);

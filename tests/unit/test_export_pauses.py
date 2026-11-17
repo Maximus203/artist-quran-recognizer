@@ -20,7 +20,7 @@ from tests.support.export_docs import document, verse
 from aqr.corpus.tanzil_repository import TanzilCorpusRepository
 from aqr.domain.models import VerseRef
 from aqr.export.analysis import Context, analyze
-from aqr.export.cues import _chunks, build_cues, pause_after, sign_stops
+from aqr.export.cues import _chunks, align_to_segments, build_cues, pause_after, sign_stops
 from aqr.export.options import ExportOptions, OptionsError, parse_options
 from aqr.export.view import build_view
 from aqr.rendering.passages import Passages
@@ -132,7 +132,7 @@ def test_les_morceaux_couvrent_tous_les_mots_sans_trou_ni_recouvrement():
 
 def test_les_options_de_pause_ont_des_defauts_et_des_bornes():
     base = parse_options({})
-    assert base.pause_split is True and base.pause_s == 0.6
+    assert base.pause_split is True and base.pause_s == 0.9
     assert parse_options({"pause_split": False}).pause_split is False
     assert parse_options({"pause_s": 1.2}).pause_s == 1.2
     for bad in ({"pause_s": 0.05}, {"pause_s": 9}, {"pause_s": "1"}, {"pause_split": 1}):
@@ -165,8 +165,8 @@ def _build(corpus, doc, **options):
 def test_un_verset_mesure_avec_une_pause_est_affiche_en_deux_temps(corpus):
     ref = "112:4"
     n = len(corpus.words(VerseRef.parse(ref)))
-    durations = [0.5] * n
-    durations[n // 2 - 1] = 2.2  # le récitant s'arrête après le mot du milieu
+    durations = [1.0] * n
+    durations[n // 2 - 1] = 3.2  # le récitant s'arrête après le mot du milieu
     times = timeline(durations)
     interval = verse(ref, (1, n), (0.0, times[-1][1]), word_times=times)
     build, view = _build(corpus, document(interval), content="ar", max_s=60.0)
@@ -181,7 +181,7 @@ def test_un_verset_mesure_avec_une_pause_est_affiche_en_deux_temps(corpus):
 def test_sans_la_coupe_aux_pauses_le_verset_reste_d_un_bloc(corpus):
     ref = "112:4"
     n = len(corpus.words(VerseRef.parse(ref)))
-    durations = [0.5] * n
+    durations = [1.0] * n
     durations[n // 2 - 1] = 2.2
     times = timeline(durations)
     interval = verse(ref, (1, n), (0.0, times[-1][1]), word_times=times)
@@ -200,8 +200,8 @@ def test_des_temps_estimes_n_inventent_aucune_pause(corpus):
 def test_la_traduction_suit_la_coupe_et_se_recompose_a_l_identique(corpus):
     ref = "112:4"
     n = len(corpus.words(VerseRef.parse(ref)))
-    durations = [0.5] * n
-    durations[1] = 2.2  # pause après le 2e mot
+    durations = [1.0] * n
+    durations[1] = 3.2  # pause après le 2e mot
     times = timeline(durations)
     translation = {
         "text": "Et nul n'est égal à Lui.",
@@ -221,8 +221,8 @@ def test_la_traduction_suit_la_coupe_et_se_recompose_a_l_identique(corpus):
 def test_une_proposition_plus_longue_qu_une_carte_est_partagee_par_les_phrases(corpus):
     ref = "112:4"
     n = len(corpus.words(VerseRef.parse(ref)))
-    durations = [0.5] * n
-    durations[1] = 2.2  # pause après le 2e mot
+    durations = [1.0] * n
+    durations[1] = 3.2  # pause après le 2e mot
     times = timeline(durations)
     translation = {
         "text": "Et nul n'est égal à Lui.",
@@ -257,6 +257,10 @@ def test_meme_decoupe_que_l_atelier(case: dict[str, Any]) -> None:
     assert sorted(stops) == case["stops"]
     chunks = _chunks(times, case["start_s"], case["max_s"], case["min_s"], pauses, stops)
     assert [list(c) for c in chunks] == case["chunks"]
+    if "aligned" in case:  # coupe de la traduction : seulement là où une tranche exacte finit
+        spans = [(a, b) for a, b in case["segments"]] if case["segments"] else []
+        aligned = align_to_segments(chunks, spans, case["first_word"], len(case["words"]))
+        assert [list(c) for c in aligned] == case["aligned"]
 
 
 # --- propriétés (hypothesis) -------------------------------------------------------------------
@@ -297,8 +301,8 @@ def test_une_pause_ne_designe_jamais_le_dernier_mot(times, pause_s):
 
 def _paused_interval(corpus, ref="112:4", **kw):
     n = len(corpus.words(VerseRef.parse(ref)))
-    durations = [0.5] * n
-    durations[1] = 2.2  # pause après le 2e mot
+    durations = [1.0] * n
+    durations[1] = 3.2  # pause après le 2e mot
     times = timeline(durations)
     return n, times, verse(ref, (1, n), (0.0, times[-1][1]), word_times=times, **kw)
 
@@ -339,3 +343,56 @@ def test_le_verset_garde_sa_reference_sur_le_premier_morceau_seulement(corpus):
     build, _ = _build(corpus, document(interval), content="ar", max_s=60.0, show_ref=True)
     first, second = build.cues
     assert first.reference == "112:4" and second.reference is None
+
+
+# --- la traduction suit exactement l'arabe, ou le verset reste entier (ADR-0027) ----------------
+
+
+def _long_verse(corpus, ref, pauses_after, translation=None):
+    n = len(corpus.words(VerseRef.parse(ref)))
+    durations = [1.0] * n
+    for k in pauses_after:
+        durations[k] = 3.0
+    times = timeline(durations)
+    extra = {"translation": translation} if translation else {}
+    return n, verse(ref, (1, n), (0.0, times[-1][1]), word_times=times, **extra)
+
+
+@needs_corpus
+def test_sans_tranches_exactes_le_verset_reste_entier_avec_toute_sa_traduction(corpus):
+    text = "Et nul n'est égal à Lui."
+    translation = {"text": text, "translation_id": "french_hameedullah", "scope": "verse"}
+    _, interval = _long_verse(corpus, "112:4", [1], translation)
+    build, _ = _build(corpus, document(interval), max_s=60.0)
+    assert len(build.cues) == 1 and build.split == 0
+    assert build.cues[0].translation == (text,)
+
+
+@needs_corpus
+def test_un_verset_long_a_sept_pauses_ne_laisse_aucun_morceau_sans_traduction(corpus):
+    ref = "2:282"
+    n = len(corpus.words(VerseRef.parse(ref)))
+    pauses = [2, 5, 8, 11, 14, 17]  # sept morceaux sur les temps mesurés
+    # Des tranches exactes seulement après les 3e, 9e et 15e mots : trois coupes sont permises.
+    bounds = [0, 3, 9, 15, n]
+    segments = [
+        {"words": [a + 1, b], "text": f"tranche {k}"} for k, (a, b) in enumerate(pairwise(bounds))
+    ]
+    translation = {
+        "text": " ".join(s["text"] for s in segments),
+        "translation_id": "french_hameedullah",
+        "scope": "verse",
+        "segments": segments,
+    }
+    _, interval = _long_verse(corpus, ref, pauses, translation)
+    build, _ = _build(corpus, document(interval), max_s=60.0)
+    assert len(build.cues) == 4
+    assert all(c.translation for c in build.cues)
+    assert [c.translation[0] for c in build.cues] == [s["text"] for s in segments]
+
+
+@needs_corpus
+def test_la_traduction_desactivee_garde_les_coupes_de_l_arabe(corpus):
+    _, interval = _long_verse(corpus, "2:282", [4, 12])
+    build, _ = _build(corpus, document(interval), content="ar", max_s=60.0)
+    assert len(build.cues) >= 3  # les deux pauses coupent, traduction désactivée ou non

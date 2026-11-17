@@ -11,8 +11,8 @@
  *
  * INVARIANT I1 : l'arabe n'est que découpé aux frontières de mots (chaque mot garde ses signes), la
  * concaténation des cartes redonne le texte du corpus. I2 : la traduction n'est que découpée, jamais
- * réécrite ; la coupe par tranches de QuranEnc est exacte, la coupe au prorata est signalée
- * (`approximate`).
+ * réécrite. ADR-0027 : on ne coupe qu'à la fin d'une tranche exacte de QuranEnc ; sans tranches
+ * exactes, jamais de coupe au prorata, le verset reste entier (surligné mot à mot).
  */
 import { layoutArabicWords, validateWordTimes } from "./live-highlight";
 import type { Interval } from "./recognition";
@@ -31,8 +31,11 @@ export const DEFAULT_SPLIT: SplitOptions = {
   enabled: true,
   maxS: 7,
   minS: 1,
-  pauseS: 0.6,
+  pauseS: 0.9,
 };
+
+/** Durée minimale d'une carte issue d'une coupe (ADR-0027) : plus conservateur que `minS`. */
+export const MIN_CARD_S = 2;
 
 /** Signes où l'on peut s'arrêter : ۗ ۘ ۚ ۛ. Ni ۙ (ne pas s'arrêter) ni ۖ (mieux vaut continuer). */
 const STOP_SIGNS = /[ۗۘۚۛ]/u;
@@ -48,15 +51,6 @@ function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = sorted.length >> 1;
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
-/** Arrondi au plus proche, la moitié allant au pair : celui de Python (`round`), pour la parité. */
-function roundHalfEven(x: number): number {
-  const floor = Math.floor(x);
-  const diff = x - floor;
-  if (diff < 0.5) return floor;
-  if (diff > 0.5) return floor + 1;
-  return floor % 2 === 0 ? floor : floor + 1;
 }
 
 /**
@@ -161,7 +155,7 @@ export type SplitCard = {
   end: number;
   arabic: string;
   translation: string | null;
-  /** Vrai si la traduction a été coupée au prorata des mots (pas par les tranches de QuranEnc). */
+  /** Toujours faux depuis ADR-0027 (plus de coupe au prorata) ; champ gardé pour les appelants. */
   approximate: boolean;
   /** Rang de la carte et nombre de cartes du verset ; absent quand le verset n'est pas coupé. */
   part?: [number, number];
@@ -182,62 +176,92 @@ function shownTranslation(item: Interval): string | null {
   return blank(text) ? null : text;
 }
 
-function translationPieces(
-  item: Interval,
+type Slice = { words: readonly [number, number]; text: string };
+
+/**
+ * Ne garde des coupes que celles où une tranche de traduction exacte finit (ADR-0027). `spans` sont
+ * les plages de mots arabes (numérotées dans le verset, bornes comprises) des tranches QuranEnc ;
+ * `firstWord` est le numéro du premier mot du passage. Une coupe est permise si aucune tranche ne la
+ * chevauche : chaque carte porte alors des tranches entières, jamais un morceau de tranche. Si les
+ * tranches ne couvrent pas tous les mots (ou n'existent pas), la traduction ne peut pas suivre
+ * l'arabe : le verset reste d'un bloc. Même règle que `align_to_segments` (Python).
+ */
+export function alignToSegments(
   ranges: readonly (readonly [number, number])[],
+  spans: readonly (readonly [number, number])[],
+  firstWord: number,
   wordCount: number,
-): { pieces: (string | null)[]; approximate: boolean } {
-  const shown = shownTranslation(item);
-  if (item.kind !== "verse" || shown === null)
-    return { pieces: ranges.map(() => null), approximate: false };
-  if (ranges.length === 1) return { pieces: [shown], approximate: false };
-  const first = item.words?.[0] ?? 1;
-  const translation = item.translation!;
+): [number, number][] {
+  if (ranges.length <= 1) return ranges.map(([i, j]) => [i, j]);
+  const whole: [number, number][] = [[0, wordCount]];
+  for (let k = 0; k < wordCount; k++) {
+    const word = firstWord + k;
+    if (!spans.some(([lo, hi]) => lo <= word && word <= hi)) return whole;
+  }
+  const kept = [0];
+  for (const [, end] of ranges.slice(0, -1)) {
+    const boundary = firstWord + end;
+    if (!spans.some(([lo, hi]) => lo < boundary && boundary <= hi))
+      kept.push(end);
+  }
+  kept.push(wordCount);
+  return kept.slice(1).map((end, k) => [kept[k], end] as [number, number]);
+}
+
+/** Les tranches exactes de QuranEnc du passage (phrases si elles existent, sinon propositions). */
+function exactSlices(item: Interval): Slice[] {
+  if (item.kind !== "verse" || !item.translation) return [];
+  const { translation } = item;
   const fragment =
     translation.scope === "fragment" && translation.fragment
       ? translation.fragment
       : undefined;
   const [low, high] = fragment ? fragment.words : [-1, 1_000_000];
-  // Les cartes sont plus courtes que les propositions : les coupures fines, quand il y en a.
-  const segments = (translation.phrases ?? translation.segments ?? []).filter(
+  return (translation.phrases ?? translation.segments ?? []).filter(
     ({ words }) => words[0] >= low && words[0] <= high,
   );
-  if (segments.length > 0) {
-    const buckets = ranges.map(() => "");
-    for (const { words, text } of segments) {
-      // La carte qui porte le plus de mots arabes de la tranche (à égalité, la première) : le
-      // français ne s'affiche pas avant ce qui est dit, ni après.
-      const lo = Math.max(words[0], first);
-      const hi = Math.min(words[1], first + wordCount - 1);
-      let slot = -1;
-      let best = 0;
-      ranges.forEach(([i, j], k) => {
-        const overlap = Math.min(hi, first + j - 1) - Math.max(lo, first + i) + 1;
-        if (overlap > best) {
-          best = overlap;
-          slot = k;
-        }
-      });
-      if (slot >= 0) buckets[slot] = `${buckets[slot]} ${text}`.trim();
-    }
-    return {
-      pieces: buckets.map((b) => (b === "" ? null : b)),
-      approximate: false,
-    };
-  }
-  const tokens = shown.split(/\s+/).filter(Boolean);
-  return {
-    pieces: ranges.map(([i, j]) => {
-      const part = tokens
-        .slice(
-          roundHalfEven((tokens.length * i) / wordCount),
-          roundHalfEven((tokens.length * j) / wordCount),
-        )
-        .join(" ");
-      return part === "" ? null : part;
-    }),
-    approximate: true,
+}
+
+/**
+ * Les plages retenues et la traduction de chacune. La traduction suit l'arabe exactement ou pas du
+ * tout : on ne coupe qu'à la fin d'une tranche de QuranEnc (jamais de coupe au prorata, I2) ; sans
+ * tranches exactes, ou si une carte resterait sans traduction, le verset reste entier.
+ */
+function translationPieces(
+  item: Interval,
+  ranges: readonly (readonly [number, number])[],
+  wordCount: number,
+): { ranges: [number, number][]; pieces: (string | null)[] } {
+  const shown = shownTranslation(item);
+  const same = ranges.map(([i, j]) => [i, j] as [number, number]);
+  if (item.kind !== "verse" || shown === null)
+    return { ranges: same, pieces: ranges.map(() => null) };
+  const entire = {
+    ranges: [[0, wordCount]] as [number, number][],
+    pieces: [shown],
   };
+  if (ranges.length === 1) return { ranges: same, pieces: [shown] };
+  const first = item.words?.[0] ?? 1;
+  const slices = exactSlices(item);
+  const aligned = alignToSegments(
+    ranges,
+    slices.map(({ words }) => words),
+    first,
+    wordCount,
+  );
+  if (aligned.length <= 1) return entire;
+  const buckets = aligned.map(() => "");
+  for (const { words, text } of slices) {
+    // Aucune tranche ne chevauche une coupe : la carte est celle qui contient son début.
+    const start = Math.max(words[0], first);
+    let slot = aligned.findIndex(
+      ([i, j]) => first + i <= start && start < first + j,
+    );
+    if (slot < 0) slot = 0;
+    buckets[slot] = `${buckets[slot]} ${text}`.trim();
+  }
+  if (buckets.some((b) => b === "")) return entire;
+  return { ranges: aligned, pieces: buckets };
 }
 
 /** Les cartes d'un verset : une seule si rien ne justifie de le couper. `[]` si ce n'est pas un verset affichable. */
@@ -281,22 +305,23 @@ export function splitVerse(item: Interval, options: SplitOptions): SplitCard[] {
     given && item.word_times_source === "ctc-alignment"
       ? pauseAfter(words, times, options.pauseS)
       : new Set<number>();
-  const ranges = chunkRanges(
+  const cut = chunkRanges(
     times,
     start,
     options.maxS,
-    options.minS,
+    Math.max(options.minS, MIN_CARD_S),
     pauses,
     signStops(words),
   );
+  if (cut.length === 1) return [whole];
+  const { ranges, pieces } = translationPieces(item, cut, wordCount);
   if (ranges.length === 1) return [whole];
-  const { pieces, approximate } = translationPieces(item, ranges, wordCount);
   return ranges.map(([i, j], k) => ({
     start: k === 0 ? start : times[i][0],
     end: k === ranges.length - 1 ? end : times[j][0],
     arabic: words.slice(i, j).join(" "),
     translation: pieces[k],
-    approximate: approximate && pieces[k] !== null,
+    approximate: false,
     part: [k + 1, ranges.length],
     range: [i, j],
   }));

@@ -2,15 +2,17 @@
 
 Un verset plus long que la durée maximale est coupé aux frontières de mots : aux temps mesurés
 quand le moteur les a (alignement forcé), sinon au prorata de la longueur des mots (et l'aperçu le
-dit). La traduction suit l'arabe : les tranches `segments` de QuranEnc (jamais réécrites) quand
-elles existent, sinon une coupe proportionnelle aux espaces. Rien n'est inventé : chaque ligne est
-un morceau du texte du corpus ou de la traduction.
+dit). La traduction suit l'arabe exactement ou pas du tout (ADR-0027) : on ne coupe que là où une
+tranche `segments` de QuranEnc (jamais réécrite) finit ; sans tranches exactes, le verset reste
+entier avec toute sa traduction. Rien n'est inventé : chaque ligne est un morceau du texte du
+corpus ou de la traduction.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from itertools import pairwise
 from statistics import median
 from typing import Any, Final
 
@@ -72,6 +74,11 @@ s'arrêter) ni ۖ (mieux vaut continuer)."""
 MIN_CAP_SHARE: Final = 0.5
 """Au plafond, un signe d'arrêt n'est préféré que si le morceau couvre au moins cette part de
 `max_s` : sinon on afficherait un tout petit morceau pour rien."""
+
+
+MIN_CARD_S: Final = 2.0
+"""Durée minimale d'une carte issue d'une coupe de verset (ADR-0027) : une coupe ne se justifie que
+si chaque morceau se lit. Plus conservateur que `min_s` (durée minimale d'un sous-titre)."""
 
 
 def pause_after(
@@ -154,19 +161,38 @@ def _absorb_short(
     return out
 
 
-def _split_translation(
-    entry: Entry, ranges: Sequence[tuple[int, int]], ctx: Context, warnings: list[str]
-) -> list[str]:
-    """Le texte de traduction de chaque plage de mots de l'arabe."""
-    options = ctx.options
-    shown = translation_text(entry.translation, scope=entry.scope, strip_notes=options.strip_notes)
-    if shown is None:
-        return [""] * len(ranges)
-    if len(ranges) == 1:
-        return [shown]
+def align_to_segments(
+    ranges: Sequence[tuple[int, int]],
+    spans: Sequence[tuple[int, int]],
+    first_word: int,
+    word_count: int,
+) -> list[tuple[int, int]]:
+    """Ne garde des coupes que celles où une tranche de traduction exacte finit (ADR-0027).
+
+    `spans` sont les plages de mots arabes (numérotées dans le verset, bornes comprises) des
+    tranches QuranEnc ; `first_word` est le numéro du premier mot de l'entrée. Une coupe est
+    permise si aucune tranche ne la chevauche : chaque carte porte alors des tranches entières,
+    jamais un morceau de tranche. Si les tranches ne couvrent pas tous les mots (ou n'existent
+    pas), la traduction ne peut pas suivre l'arabe : le verset reste d'un bloc."""
+    whole = [(0, word_count)]
+    if len(ranges) <= 1:
+        return list(ranges)
+    covered = [any(lo <= first_word + k <= hi for lo, hi in spans) for k in range(word_count)]
+    if not spans or not all(covered):
+        return whole
+    kept = [0]
+    for _, end in ranges[:-1]:
+        boundary = first_word + end  # numéro du premier mot de la carte suivante
+        if not any(lo < boundary <= hi for lo, hi in spans):
+            kept.append(end)
+    kept.append(word_count)
+    return list(pairwise(kept))
+
+
+def _translation_spans(entry: Entry) -> list[tuple[tuple[int, int], str]]:
+    """Les tranches exactes de QuranEnc du passage (phrases si elles existent, sinon propositions),
+    limitées à la plage du fragment quand la traduction n'en couvre qu'une."""
     translation = entry.translation or {}
-    first_word = entry.words[0] if entry.words else 1
-    # Les cartes sont plus courtes que les propositions : coupures fines quand il y en a.
     segments = translation.get("phrases") or translation.get("segments")
     fragment = translation.get("fragment")
     use_fragment = (
@@ -174,48 +200,59 @@ def _split_translation(
         and (entry.scope == "fragment" or translation.get("scope") == "fragment")
         and isinstance(fragment, Mapping)
     )
-    pieces: list[tuple[tuple[int, int], str]] = []
-    if isinstance(segments, list) and segments:
-        low, high = (-1, 10**6)
-        if use_fragment and isinstance(fragment, Mapping):
-            low, high = int(fragment["words"][0]), int(fragment["words"][1])
+    low, high = (-1, 10**6)
+    if use_fragment and isinstance(fragment, Mapping):
+        low, high = int(fragment["words"][0]), int(fragment["words"][1])
+    out: list[tuple[tuple[int, int], str]] = []
+    if isinstance(segments, list):
         for segment in segments:
             start = int(segment["words"][0])
             if low <= start <= high:
-                pieces.append(((start, int(segment["words"][1])), str(segment["text"])))
-    if pieces:
-        buckets = [""] * len(ranges)
-        for (low_word, high_word), text in pieces:
-            # La carte qui porte le plus de mots arabes de la tranche (à égalité, la première).
-            lo = max(low_word, first_word)
-            hi = min(high_word, first_word + len(entry.arabic_words) - 1)
-            overlaps = [
-                min(hi, first_word + j - 1) - max(lo, first_word + i) + 1 for i, j in ranges
-            ]
-            if max(overlaps) <= 0:
-                continue
-            slot = overlaps.index(max(overlaps))
-            buckets[slot] = f"{buckets[slot]} {text}".strip()
-        if use_fragment and isinstance(fragment, Mapping):
-            filled = [k for k, b in enumerate(buckets) if b]
-            if filled and fragment.get("ellipsis_before"):
-                buckets[filled[0]] = "… " + buckets[filled[0]]
-            if filled and fragment.get("ellipsis_after"):
-                buckets[filled[-1]] = buckets[filled[-1]] + " …"
-        if options.strip_notes:
-            buckets = [strip_note_marks(b) for b in buckets]
-        return buckets
-    note = "traduction coupée au prorata des mots (découpage de QuranEnc indisponible)"
-    if note not in warnings:
-        warnings.append(note)
-    pieces_words = shown.split()
-    total = len(entry.arabic_words)
-    buckets = []
-    for i, j in ranges:
-        low = round(len(pieces_words) * i / total)
-        high = round(len(pieces_words) * j / total)
-        buckets.append(" ".join(pieces_words[low:high]))
-    return buckets
+                out.append(((start, int(segment["words"][1])), str(segment["text"])))
+    return out
+
+
+def _split_translation(
+    entry: Entry, ranges: Sequence[tuple[int, int]], ctx: Context
+) -> tuple[list[tuple[int, int]], list[str]]:
+    """Les plages de mots retenues et le texte de traduction de chacune.
+
+    La traduction suit l'arabe exactement ou ne le suit pas : seules les coupes qui tombent à la
+    fin d'une tranche QuranEnc sont gardées (jamais de coupe au prorata, I2), et si aucune ne
+    l'est le verset reste entier avec toute sa traduction. Aucune carte n'est sans traduction."""
+    options = ctx.options
+    shown = translation_text(entry.translation, scope=entry.scope, strip_notes=options.strip_notes)
+    if shown is None:
+        return list(ranges), [""] * len(ranges)
+    whole = [(0, len(entry.arabic_words))]
+    if len(ranges) == 1:
+        return list(ranges), [shown]
+    first_word = entry.words[0] if entry.words else 1
+    pieces = _translation_spans(entry)
+    aligned = align_to_segments(
+        ranges, [span for span, _ in pieces], first_word, len(entry.arabic_words)
+    )
+    if len(aligned) <= 1:
+        return whole, [shown]
+    buckets = [""] * len(aligned)
+    for (low_word, _), text in pieces:
+        # Aucune tranche ne chevauche une coupe : la carte est celle qui contient son début.
+        start = max(low_word, first_word)
+        for slot, (i, j) in enumerate(aligned):
+            if first_word + i <= start < first_word + j or (slot == 0 and start < first_word + i):
+                buckets[slot] = f"{buckets[slot]} {text}".strip()
+                break
+    if not all(buckets):
+        return whole, [shown]
+    fragment = (entry.translation or {}).get("fragment")
+    if entry.scope != "verse" and isinstance(fragment, Mapping):
+        if fragment.get("ellipsis_before"):
+            buckets[0] = "… " + buckets[0]
+        if fragment.get("ellipsis_after"):
+            buckets[-1] = buckets[-1] + " …"
+    if options.strip_notes:
+        buckets = [strip_note_marks(b) for b in buckets]
+    return aligned, buckets
 
 
 def _reference(entry: Entry, ctx: Context) -> str | None:
@@ -229,7 +266,7 @@ def _reference(entry: Entry, ctx: Context) -> str | None:
     return f"{entry.ref} [{entry.words[0]}-{entry.words[1]}]"
 
 
-def _cues_for(entry: Entry, ctx: Context, warnings: list[str]) -> list[Cue]:
+def _cues_for(entry: Entry, ctx: Context) -> list[Cue]:
     options = ctx.options
     if entry.kind == "note":
         line = entry.label or ""
@@ -254,8 +291,12 @@ def _cues_for(entry: Entry, ctx: Context, warnings: list[str]) -> list[Cue]:
         else frozenset()
     )
     stops = sign_stops(entry.arabic_words) if split_on_pauses else frozenset()
-    ranges = _chunks(times, entry.start_s, options.max_s, options.min_s, pauses, stops)
-    pieces = _split_translation(entry, ranges, ctx, warnings) if options.with_translation else []
+    ranges = _chunks(
+        times, entry.start_s, options.max_s, max(options.min_s, MIN_CARD_S), pauses, stops
+    )
+    pieces: list[str] = []
+    if options.with_translation:
+        ranges, pieces = _split_translation(entry, ranges, ctx)
     cues: list[Cue] = []
     for k, (i, j) in enumerate(ranges):
         first, last = k == 0, k == len(ranges) - 1
@@ -297,7 +338,7 @@ def build_cues(entries: Sequence[Entry], ctx: Context) -> CueBuild:
     cues: list[Cue] = []
     split = 0
     for entry in ordered:
-        made = _cues_for(entry, ctx, warnings)
+        made = _cues_for(entry, ctx)
         if len(made) > 1:
             split += 1
         if not entry.measured and entry.kind == "verse" and len(made) > 1:
