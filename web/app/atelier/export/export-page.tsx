@@ -775,6 +775,7 @@ function ExportView({
         >
           {tab === "video" && !failed ? (
             <VideoPanel
+              key={sessionId}
               sessionId={sessionId}
               player={player}
               onError={toast.show}

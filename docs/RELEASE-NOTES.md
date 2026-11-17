@@ -15,7 +15,15 @@ PR : #232
 
 **Ce qui change.** Un long verset est coupé en moins de cartes (pause d'au moins 0,9 s, carte d'au moins 2 s), et la traduction affichée sur chaque carte correspond exactement à la partie récitée : on ne coupe qu'à la fin d'une tranche de traduction de QuranEnc. Si le verset n'a pas de tranches exactes, il reste d'un bloc avec toute sa traduction, et les mots récités sont surlignés un à un. Plus aucune carte sans traduction ; plus de traduction coupée « à peu près ». Vidéo et sous-titres suivent la même règle.
 
-**Pourquoi / décision.** Sur un verset en sept morceaux, seul le plus grand recevait une traduction : la coupe au prorata des mots était approximative et laissait les petits morceaux vides (I2 : jamais de réécriture, I3 : l'à-peu-près est pire que rien). Amende l'ADR-0025 : voir ADR-0028.
+**Pourquoi / décision.** Sur un verset en sept morceaux, seul le plus grand recevait une traduction : la coupe au prorata des mots était approximative et laissait les petits morceaux vides (I2 : jamais de réécriture, I3 : l'à-peu-près est pire que rien). Amende l'ADR-0025 : voir ADR-0029.
+
+## 2026-11-17 — Export vidéo : réglages mémorisés par vidéo
+Étiquettes : utilisateur, technique, décision
+PR : #231
+
+**Ce qui change.** Les réglages de l'éditeur d'export (traduction, arabe seul, onde, sourate, style, calques, format, fond…) sont maintenant mémorisés pour chaque vidéo, sur le serveur et pour le compte. En revenant sur la même récitation, on retrouve exactement ce qu'on y avait réglé, même après un rechargement ou une reconnexion ; une autre récitation n'en hérite jamais. La sauvegarde est automatique (une demi-seconde après le dernier changement) et part aussi au lancement d'un export. Une récitation jamais personnalisée part du réglage global du compte.
+
+**Pourquoi / décision.** Avant, un seul jeu de réglages servait toutes les vidéos du compte : changer l'une changeait les autres. Le réglage global n'est plus modifié par l'éditeur ; il ne sert que de point de départ. Un compte ne lit et n'écrit que ses propres réglages d'une vidéo visible pour lui, y compris sur une session partagée. ADR-0028.
 
 ## 2026-11-06 — Parole libre : NLLB-200 3,3 B mesuré, décision inchangée
 Étiquettes : décision

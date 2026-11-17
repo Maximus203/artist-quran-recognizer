@@ -469,11 +469,18 @@
     "summary": "Accepté le 2026-11-06 : seules les zones arabes hors Coran sont transcrites (Whisper) puis traduites (Marian ar-fr), derrière des garde-fous qui retiennent tout passage ressemblant au Coran. Un passage retenu ne porte aucun texte ; fichier séparé aqr.free-speech/1 ; désactivé par défaut à l'export. Aucune mesure de qualité avant le banc réel."
   },
   {
-    "slug": "adr-0028-coupe-de-verset-traduction-exacte",
-    "title": "ADR-0028 — Un verset n'est coupé que là où la traduction se coupe exactement",
+    "slug": "adr-0029-coupe-de-verset-traduction-exacte",
+    "title": "ADR-0029 — Un verset n'est coupé que là où la traduction se coupe exactement",
     "section": "Décisions",
-    "file": "docs/adr/0028-coupe-de-verset-traduction-exacte.md",
+    "file": "docs/adr/0029-coupe-de-verset-traduction-exacte.md",
     "summary": "Accepté le 2026-11-17, amende l'ADR-0025 : seuil de coupe plus conservateur (pause 0,9 s, carte 2 s), coupe seulement à la fin d'une tranche exacte de QuranEnc, sinon verset entier avec toute sa traduction et surlignage mot à mot. Plus de coupe au prorata, aucune carte sans traduction. Mêmes cas partagés en Python et TypeScript."
+  },
+  {
+    "slug": "adr-0028-reglages-d-export-par-video",
+    "title": "ADR-0028 — Les réglages de l'éditeur d'export sont mémorisés par vidéo",
+    "section": "Décisions",
+    "file": "docs/adr/0028-reglages-d-export-par-video.md",
+    "summary": "Accepté le 2026-11-17 : une ligne par (compte, session) dans session_video_prefs ; les réglages de la vidéo l'emportent sur le réglage global, qui ne sert plus que de point de départ ; sauvegarde automatique et au lancement d'un export ; accès serveur limité aux vidéos visibles du compte."
   },
   {
     "slug": "adr-0019-video-de-fond-envoyee-au-serveur",
