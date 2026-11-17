@@ -25,6 +25,7 @@ import "./export-table.css";
 import "./export-steps.css";
 import "./export-compact.css";
 import "./editor-mode.css";
+import "./downloads.css";
 
 export const metadata: Metadata = {
   title: "Quran TR",

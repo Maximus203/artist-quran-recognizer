@@ -87,7 +87,6 @@ export type PublicVideoJob = Omit<
 };
 
 const RETENTION_MS = 60 * 60 * 1000;
-const MAX_ACTIVE_PER_USER = 2;
 const RENDER_TIMEOUT_MS = 30 * 60 * 1000;
 
 const HOLDER = Symbol.for("aqr.video-jobs");
@@ -99,7 +98,9 @@ function registry(): Registry {
 
 export class VideoJobLimitError extends Error {
   constructor() {
-    super("Deux exports vidéo au plus en même temps : attends la fin de l'un.");
+    super(
+      "Trop d'exports en attente pour ce compte : attends la fin de l'un, ou annule-en un depuis la page Téléchargements.",
+    );
     this.name = "VideoJobLimitError";
   }
 }
@@ -228,6 +229,18 @@ export function jobsForSession(
     .map(publicJob);
 }
 
+/**
+ * Tous les exports connus (en file, en cours, terminés depuis moins d'une heure), avec le compte qui les a
+ * lancés. SANS filtre de visibilité : l'appelant (`downloads.ts`) applique les règles d'accès avant de rendre
+ * quoi que ce soit.
+ */
+export function allVideoJobs(): Array<PublicVideoJob & { userId: number }> {
+  return [...registry().jobs.values()].map((job) => ({
+    ...publicJob(job),
+    userId: job.userId,
+  }));
+}
+
 /** Nombre d'exports en file ou en cours pour chaque session (bandeau de la liste). */
 export function activeJobsBySession(): Map<string, number> {
   const counts = new Map<string, number>();
@@ -264,12 +277,6 @@ export async function startVideoJob(input: {
   runner?: (job: VideoJob, aborted: AbortSignal) => Promise<void>;
 }): Promise<VideoJob> {
   await purgeOld();
-  const active = [...registry().jobs.values()].filter(
-    (job) =>
-      job.userId === input.userId &&
-      (job.state === "queued" || job.state === "running"),
-  );
-  if (active.length >= MAX_ACTIVE_PER_USER) throw new VideoJobLimitError();
   if (!input.runner && !browserExecutable())
     throw new BrowserUnavailableError();
   const id = randomUUID();
@@ -317,88 +324,98 @@ export async function startVideoJob(input: {
   };
   registry().jobs.set(id, job);
   const run = input.runner ?? renderInBrowser;
-  // Même file que les analyses : une seule charge lourde à la fois, équité entre comptes, watchdog.
-  jobQueue().enqueue(`video:${id}`, {
-    owner: String(input.userId),
-    timeoutMs: RENDER_TIMEOUT_MS + 60_000,
-    run: async (_queueId, signal) => {
-      signal.started();
-      job.state = "running";
-      job.progress = "Démarrage";
-      const startedAt = Date.now();
-      log.event("export", "video.start", {
-        session: job.sessionId,
-        job: job.id,
-      });
-      try {
-        // Session vidéo dont la source n'est pas lisible par le navigateur du serveur : la copie d'abord.
-        let session: Awaited<ReturnType<typeof readSession>> | null = null;
-        try {
-          session = await readSession(job.sessionId);
-        } catch {
-          session = null; // session illisible : le rendu tentera sa chance sans copie
-        }
-        if (session && isVideoContainer(session.extension)) {
-          job.progress = "Préparation de la vidéo d'origine";
-          await prepareBrowserFile(
-            job.sessionId,
-            await audioPath(job.sessionId),
-            (ratio) => {
-              // La copie 1080p se fabrique une fois (minutes pour une 4K) : la barre avance pendant ce temps.
-              job.prepare_share = PREPARE_SHARE;
-              job.ratio = ratio * PREPARE_SHARE;
-              job.progress = `Préparation de la vidéo d'origine : ${Math.round(ratio * 100)} %`;
-            },
-          );
-        }
-        await Promise.race([
-          run(job, signal.aborted),
-          new Promise<never>((_, reject) =>
-            signal.aborted.addEventListener(
-              "abort",
-              () =>
-                reject(
-                  new Error(
-                    job.cancelRequested
-                      ? "Export annulé."
-                      : "Le rendu a dépassé le délai maximal et a été arrêté.",
-                  ),
-                ),
-              { once: true },
-            ),
-          ),
-        ]);
-        if (!job.file) throw new Error("Aucune vidéo produite.");
-        if (job.files.length === 0)
-          job.files = [{ name: path.basename(job.file), path: job.file }];
-        job.state = "done";
-        job.ratio = 1;
-        job.progress = "Terminé";
-        job.files_done = job.files.length;
-        job.files_total = job.files.length;
-        log.event("export", "video.done", {
+  // Même file que les analyses : une seule charge lourde à la fois, équité entre comptes, watchdog, et le
+  // même plafond d'attente par compte (`AQR_MAX_WAITING_PER_USER`) : une seule règle pour toute la machine.
+  try {
+    jobQueue().enqueue(`video:${id}`, {
+      owner: String(input.userId),
+      timeoutMs: RENDER_TIMEOUT_MS + 60_000,
+      run: async (_queueId, signal) => {
+        signal.started();
+        job.state = "running";
+        job.progress = "Démarrage";
+        const startedAt = Date.now();
+        log.event("export", "video.start", {
           session: job.sessionId,
           job: job.id,
-          ms: Date.now() - startedAt,
-          files: job.files.length,
         });
-      } catch (error) {
-        job.state = "failed";
-        job.error =
-          error instanceof Error ? error.message : "Rendu impossible.";
-        job.progress = "Échec";
-        log.event(
-          "export",
-          job.cancelRequested ? "video.cancelled" : "video.failed",
-          { session: job.sessionId, job: job.id, ms: Date.now() - startedAt },
-          job.cancelRequested ? "info" : "error",
-        );
-      } finally {
-        job.credential = null;
-        job.finishedAt = new Date().toISOString();
-      }
-    },
-  });
+        try {
+          // Session vidéo dont la source n'est pas lisible par le navigateur du serveur : la copie d'abord.
+          let session: Awaited<ReturnType<typeof readSession>> | null = null;
+          try {
+            session = await readSession(job.sessionId);
+          } catch {
+            session = null; // session illisible : le rendu tentera sa chance sans copie
+          }
+          if (session && isVideoContainer(session.extension)) {
+            job.progress = "Préparation de la vidéo d'origine";
+            await prepareBrowserFile(
+              job.sessionId,
+              await audioPath(job.sessionId),
+              (ratio) => {
+                // La copie 1080p se fabrique une fois (minutes pour une 4K) : la barre avance pendant ce temps.
+                job.prepare_share = PREPARE_SHARE;
+                job.ratio = ratio * PREPARE_SHARE;
+                job.progress = `Préparation de la vidéo d'origine : ${Math.round(ratio * 100)} %`;
+              },
+            );
+          }
+          await Promise.race([
+            run(job, signal.aborted),
+            new Promise<never>((_, reject) =>
+              signal.aborted.addEventListener(
+                "abort",
+                () =>
+                  reject(
+                    new Error(
+                      job.cancelRequested
+                        ? "Export annulé."
+                        : "Le rendu a dépassé le délai maximal et a été arrêté.",
+                    ),
+                  ),
+                { once: true },
+              ),
+            ),
+          ]);
+          if (!job.file) throw new Error("Aucune vidéo produite.");
+          if (job.files.length === 0)
+            job.files = [{ name: path.basename(job.file), path: job.file }];
+          job.state = "done";
+          job.ratio = 1;
+          job.progress = "Terminé";
+          job.files_done = job.files.length;
+          job.files_total = job.files.length;
+          log.event("export", "video.done", {
+            session: job.sessionId,
+            job: job.id,
+            ms: Date.now() - startedAt,
+            files: job.files.length,
+          });
+        } catch (error) {
+          job.state = "failed";
+          job.error =
+            error instanceof Error ? error.message : "Rendu impossible.";
+          job.progress = "Échec";
+          log.event(
+            "export",
+            job.cancelRequested ? "video.cancelled" : "video.failed",
+            { session: job.sessionId, job: job.id, ms: Date.now() - startedAt },
+            job.cancelRequested ? "info" : "error",
+          );
+        } finally {
+          job.credential = null;
+          job.finishedAt = new Date().toISOString();
+        }
+      },
+    });
+  } catch (error) {
+    // File pleine pour ce compte : l'export n'a jamais existé, on ne laisse ni fiche fantôme ni dossier.
+    registry().jobs.delete(id);
+    await rm(dir, { recursive: true, force: true }).catch(() => undefined);
+    if (error instanceof Error && error.name === "QueueLimitError")
+      throw new VideoJobLimitError();
+    throw error;
+  }
   return job;
 }
 

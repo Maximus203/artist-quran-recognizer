@@ -1952,3 +1952,8 @@ Contexte : la vidéo posait un long verset d'un bloc (réduction jusqu'au planch
 - **Contexte** : une session analysée avec un ancien moteur ne pouvait pas profiter des améliorations ; le seul recours était de réimporter l'audio. Demande du mainteneur, y compris pour la production.
 - **Décision** : `launch` accepte une session `done` ; l'ancien résultat (`previous`) revient si la relance échoue ou est annulée (`rerun_error` explique) ; confirmation avant de lancer dans l'atelier.
 - **Non vérifié** : comportement sur une session volumineuse en production ; vidéos déjà exportées non régénérées (à refaire par l'utilisateur).
+
+## 2026-11-17 — Page Téléchargements et file des exports (ADR-0030)
+- **Contexte** : demande du mainteneur : centraliser les exports téléchargeables et pouvoir en enchaîner plusieurs sans rester sur la page.
+- **Décisions prises seul** : étendre et renommer « Fichiers » (une seule page, `/fichiers` redirige, `/api/files` remplacé par `/api/downloads`) ; ne pas créer de seconde file (celle des analyses existe déjà) et retirer le plafond propre aux exports (2) au profit du plafond d'attente commun (5) ; l'administrateur peut annuler l'export d'un compte ; un compte voit aussi les fichiers des récitations publiques ; pas de brief Sofia (même langage visuel que les pages existantes, jetons de `tokens.css`).
+- **Limite** : la liste des exports en file est en mémoire du serveur (un redémarrage l'efface).

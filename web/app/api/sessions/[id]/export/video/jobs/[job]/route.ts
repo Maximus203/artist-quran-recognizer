@@ -33,7 +33,12 @@ async function handleDELETE(
   );
   if (!access.ok) return access.response;
   const job = getVideoJob((await params).job);
-  if (!job || job.sessionId !== access.id || job.userId !== access.user.id)
+  // Le lanceur annule le sien ; l'administrateur peut annuler celui de n'importe quel compte (il régule la machine).
+  if (
+    !job ||
+    job.sessionId !== access.id ||
+    (job.userId !== access.user.id && access.user.role !== "admin")
+  )
     return apiError(404, "Export vidéo introuvable (ou expiré).");
   if (!cancelVideoJob(job.id))
     return apiError(409, "Cet export est déjà terminé.", { code: "finished" });

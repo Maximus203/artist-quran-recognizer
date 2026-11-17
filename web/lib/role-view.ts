@@ -14,14 +14,14 @@ export type PageId =
   | "live"
   | "docs"
   | "playlists"
-  | "files";
+  | "downloads";
 
 /** Pages visibles par le récitateur : la lecture, ses récitations, ses playlists et ses fichiers. */
 const RECITANT_PAGES: readonly PageId[] = [
   "revue",
   "sessions",
   "playlists",
-  "files",
+  "downloads",
 ];
 
 export const pageVisibleTo = (role: Role, page: PageId): boolean =>

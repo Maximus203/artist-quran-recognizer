@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-17 — Page Téléchargements et file d'attente des exports
+Étiquettes : utilisateur, technique, décision
+PR : #233
+
+**Ce qui change.** La page « Fichiers » devient « Téléchargements » (`/telechargements` ; l'ancienne adresse y renvoie). Elle liste, regroupés par récitation et repliables, les exports vidéo prêts (à télécharger ou supprimer) et ceux de la file : en attente, en cours (avec pourcentage et barre), échoués (message en français), ou terminés mais non gardés faute d'espace. On peut lancer un export dans une récitation, quitter, en lancer un autre ailleurs : ils passent un à un sur le serveur, et la page se met à jour toute seule. Un export en attente ou en cours peut être annulé depuis la page. Chaque compte voit ses récitations, les publiques et ses propres exports ; l'administrateur voit tout, avec le propriétaire, et peut annuler l'export d'un compte.
+
+**Pourquoi / décision.** Les exports étaient suivis récitation par récitation : impossible de savoir, depuis une autre page, où en était un export. La file existait déjà (la même que les analyses : une charge lourde à la fois, 5 en attente par compte au plus, `AQR_MAX_WAITING_PER_USER`) ; le plafond propre aux exports (2 par compte) disparaît au profit de cette règle unique. La visibilité est appliquée côté serveur (`web/lib/downloads.ts`), avec les mêmes règles que les récitations. Limite connue : la liste des exports en file est en mémoire, un redémarrage du serveur l'efface (les vidéos déjà gardées restent). ADR-0030.
+
 ## 2026-11-17 — Export vidéo : peu de coupes, traduction exacte ou verset entier
 Étiquettes : utilisateur, technique, décision
 PR : #232
