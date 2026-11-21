@@ -1,6 +1,7 @@
 # ADR-0029 — Un verset n'est coupé que là où la traduction se coupe exactement
 
-- Statut : **accepté** — demande du mainteneur du 2026-11-17. **Amende l'ADR-0025** (points 2 et 3). Respecte I1, I2 et I3.
+- Statut : **remplacé par l'ADR-0031** (2026-11-21 : mesure réelle du mainteneur, le découpage reste défaillant ; aucun verset n'est coupé par défaut).
+  Était : accepté — demande du mainteneur du 2026-11-17. **Amende l'ADR-0025** (points 2 et 3). Respecte I1, I2 et I3.
   (Numéro 0029 : le 0027 est pris par la parole libre, le 0028 par les réglages par vidéo.)
 
 ## Contexte

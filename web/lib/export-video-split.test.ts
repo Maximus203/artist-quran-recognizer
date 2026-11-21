@@ -26,6 +26,8 @@ type SharedCase = {
   first_word?: number;
   segments?: [number, number][] | null;
   aligned?: [number, number][];
+  /** "whole" : avec les réglages par défaut le verset reste d'une seule carte, entier (ADR-0031). */
+  by_default?: "whole";
 };
 
 // Les mêmes cas que le moteur Python (tests/unit/test_export_pauses.py) : une coupe d'aperçu,
@@ -47,6 +49,19 @@ describe("même découpe que le moteur Python", () => {
       expect(
         chunkRanges(c.times, c.start_s, c.max_s, c.min_s, pauses, stops),
       ).toEqual(c.chunks);
+      if (c.by_default === "whole") {
+        const item = verse({
+          text: c.words.join(" "),
+          words: [1, c.words.length],
+          t: [c.times[0][0], c.times[c.times.length - 1][1]],
+          word_times: c.times,
+          word_times_source: "ctc-alignment",
+        });
+        const cards = splitVerse(item, DEFAULT_SPLIT);
+        expect(cards).toHaveLength(1);
+        expect(cards[0].arabic).toBe(c.words.join(" "));
+        expect(cards[0].part).toBeUndefined();
+      }
       if (c.aligned) {
         expect(
           alignToSegments(
@@ -118,6 +133,8 @@ const verse = (over: Partial<Interval> = {}): Interval =>
   }) as Interval;
 
 const ARABIC = "كلمة ۚ كلمتان كلمات كلمة كلمة كلمتان كلمة كلمات";
+/** La coupe est désactivée par défaut (ADR-0031) : ces cas l'activent explicitement. */
+const SPLIT_ON = { ...DEFAULT_SPLIT, enabled: true };
 const measured = (durations: number[], start = 10): Partial<Interval> => ({
   t: [start, start + durations.reduce((a, b) => a + b, 0)],
   word_times: timeline(durations).map(([a, b]) => [a + start, b + start]),
@@ -130,12 +147,39 @@ describe("splitVerse", () => {
     words: [1, 8] as [number, number],
   };
 
+  it("par défaut (ADR-0031) : un verset à pauses, à traduction à tranches ou plus long que le plafond reste une carte entière", () => {
+    expect(DEFAULT_SPLIT.enabled).toBe(false);
+    const paused = verse({
+      ...base,
+      ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
+      translation: {
+        text: "Premier temps. Second temps.",
+        translation_id: "fr.hamidullah",
+        version: "1",
+        attribution: "Muhammad Hamidullah",
+        scope: "verse",
+        segments: [
+          { words: [1, 3], text: "Premier temps." },
+          { words: [4, 8], text: "Second temps." },
+        ],
+      },
+    });
+    const [card, ...rest] = splitVerse(paused, DEFAULT_SPLIT);
+    expect(rest).toHaveLength(0);
+    expect(card.arabic).toBe(ARABIC);
+    expect(card.translation).toBe("Premier temps. Second temps.");
+    expect(card.part).toBeUndefined();
+    const longer = verse({ ...base, t: [0, 40] }); // 40 s, sans temps de mots
+    expect(splitVerse(longer, DEFAULT_SPLIT)).toHaveLength(1);
+    expect(splitVerse(longer, SPLIT_ON).length).toBeGreaterThan(1);
+  });
+
   it("un verset sans pause reste une seule carte", () => {
     const item = verse({
       ...base,
       ...measured([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
     });
-    expect(splitVerse(item, DEFAULT_SPLIT)).toHaveLength(1);
+    expect(splitVerse(item, SPLIT_ON)).toHaveLength(1);
   });
 
   it("coupe là où le récitant s'arrête, sans perdre ni ajouter un mot (I1)", () => {
@@ -143,7 +187,7 @@ describe("splitVerse", () => {
       ...base,
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards).toHaveLength(2);
     expect(cards.map((c) => c.arabic).join(" ")).toBe(ARABIC);
     expect(cards[0].start).toBe(10);
@@ -160,9 +204,7 @@ describe("splitVerse", () => {
       ...base,
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
     });
-    expect(splitVerse(item, DEFAULT_SPLIT)[0].arabic).toBe(
-      "كلمة ۚ كلمتان كلمات",
-    );
+    expect(splitVerse(item, SPLIT_ON)[0].arabic).toBe("كلمة ۚ كلمتان كلمات");
   });
 
   it("désactivé, ou temps non mesurés : pas de coupe sur pause", () => {
@@ -178,12 +220,12 @@ describe("splitVerse", () => {
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
       word_times_source: "interpolated",
     });
-    expect(splitVerse(estimated, DEFAULT_SPLIT)).toHaveLength(1);
+    expect(splitVerse(estimated, SPLIT_ON)).toHaveLength(1);
   });
 
   it("un long verset sans pause est coupé au plafond, au prorata s'il n'a pas de temps de mots", () => {
     const item = verse({ ...base, t: [0, 20] });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards.length).toBeGreaterThan(1);
     expect(cards.map((c) => c.arabic).join(" ")).toBe(ARABIC);
     expect(cards[0].start).toBe(0);
@@ -196,7 +238,7 @@ describe("splitVerse", () => {
       words: [1, 5],
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5]),
     });
-    expect(splitVerse(item, DEFAULT_SPLIT)).toHaveLength(1);
+    expect(splitVerse(item, SPLIT_ON)).toHaveLength(1);
   });
 
   it("la traduction suit les tranches de QuranEnc, rejointes elles redonnent le texte (I2)", () => {
@@ -215,7 +257,7 @@ describe("splitVerse", () => {
         ],
       },
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards.map((c) => c.translation)).toEqual([
       "Premier temps.",
       "Second temps.",
@@ -242,7 +284,7 @@ describe("splitVerse", () => {
         ],
       },
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards.map((c) => c.translation)).toEqual([
       "Allah!",
       "Point de divinité, le Vivant.",
@@ -267,7 +309,7 @@ describe("splitVerse", () => {
         segments: [{ words: [1, 8], text: "Allah! Point de divinité. Fin." }],
       },
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards).toHaveLength(1);
     expect(cards[0].arabic).toBe(ARABIC);
     expect(cards[0].translation).toBe("Allah! Point de divinité. Fin.");
@@ -285,7 +327,7 @@ describe("splitVerse", () => {
         scope: "verse",
       },
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards).toHaveLength(1);
     expect(cards[0].translation).toBe(
       "un deux trois quatre cinq six sept huit",
@@ -298,7 +340,7 @@ describe("splitVerse", () => {
       ...base,
       ...measured([0.5, 0.5, 2.4, 0.5, 0.5, 0.5, 0.5, 0.5]),
     });
-    expect(splitVerse(item, DEFAULT_SPLIT)).toHaveLength(2);
+    expect(splitVerse(item, SPLIT_ON)).toHaveLength(2);
   });
 
   it("un verset long à 7 morceaux : seules les coupes sur une fin de tranche restent, aucune carte sans traduction", () => {
@@ -322,7 +364,7 @@ describe("splitVerse", () => {
         ],
       },
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards.map((c) => c.translation)).toEqual(["A", "B", "C"]);
     expect(cards.every((c) => c.translation !== null)).toBe(true);
     expect(cards.map((c) => c.range)).toEqual([
@@ -350,7 +392,7 @@ describe("splitVerse", () => {
         ],
       },
     });
-    const cards = splitVerse(item, DEFAULT_SPLIT);
+    const cards = splitVerse(item, SPLIT_ON);
     expect(cards.map((c) => c.translation)).toEqual(["début", "fin"]);
   });
 });

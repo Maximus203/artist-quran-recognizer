@@ -132,7 +132,8 @@ def test_les_morceaux_couvrent_tous_les_mots_sans_trou_ni_recouvrement():
 
 def test_les_options_de_pause_ont_des_defauts_et_des_bornes():
     base = parse_options({})
-    assert base.pause_split is True and base.pause_s == 0.9
+    assert base.pause_split is False and base.pause_s == 0.9  # ADR-0031 : un verset = un cue
+    assert parse_options({"pause_split": True}).pause_split is True  # option explicite seulement
     assert parse_options({"pause_split": False}).pause_split is False
     assert parse_options({"pause_s": 1.2}).pause_s == 1.2
     for bad in ({"pause_s": 0.05}, {"pause_s": 9}, {"pause_s": "1"}, {"pause_split": 1}):
@@ -161,6 +162,11 @@ def _build(corpus, doc, **options):
     return build_cues(view.entries, ctx), view
 
 
+def _build_split(corpus, doc, **options):
+    """La coupe des versets est désactivée par défaut (ADR-0031) : ces cas l'activent."""
+    return _build(corpus, doc, pause_split=True, **options)
+
+
 @needs_corpus
 def test_un_verset_mesure_avec_une_pause_est_affiche_en_deux_temps(corpus):
     ref = "112:4"
@@ -169,7 +175,7 @@ def test_un_verset_mesure_avec_une_pause_est_affiche_en_deux_temps(corpus):
     durations[n // 2 - 1] = 3.2  # le récitant s'arrête après le mot du milieu
     times = timeline(durations)
     interval = verse(ref, (1, n), (0.0, times[-1][1]), word_times=times)
-    build, view = _build(corpus, document(interval), content="ar", max_s=60.0)
+    build, view = _build_split(corpus, document(interval), content="ar", max_s=60.0)
     assert len(build.cues) == 2 and build.split == 1
     assert build.cues[0].end_s <= build.cues[1].start_s + 1e-9  # l'un après l'autre
     assert build.cues[0].start_s == 0.0 and build.cues[-1].end_s == times[-1][1]
@@ -192,7 +198,7 @@ def test_sans_la_coupe_aux_pauses_le_verset_reste_d_un_bloc(corpus):
 @needs_corpus
 def test_des_temps_estimes_n_inventent_aucune_pause(corpus):
     interval = verse("112:4", (1, 4), (0.0, 12.0))  # pas de temps au mot : prorata de l'intervalle
-    build, _ = _build(corpus, document(interval), content="ar", max_s=60.0)
+    build, _ = _build_split(corpus, document(interval), content="ar", max_s=60.0)
     assert len(build.cues) == 1
 
 
@@ -213,7 +219,7 @@ def test_la_traduction_suit_la_coupe_et_se_recompose_a_l_identique(corpus):
         ],
     }
     interval = verse(ref, (1, n), (0.0, times[-1][1]), word_times=times, translation=translation)
-    build, _ = _build(corpus, document(interval), max_s=60.0)
+    build, _ = _build_split(corpus, document(interval), max_s=60.0)
     assert [c.translation for c in build.cues] == [("Et nul n'est",), ("égal à Lui.",)]
 
 
@@ -235,7 +241,7 @@ def test_une_proposition_plus_longue_qu_une_carte_est_partagee_par_les_phrases(c
         ],
     }
     interval = verse(ref, (1, n), (0.0, times[-1][1]), word_times=times, translation=translation)
-    build, _ = _build(corpus, document(interval), max_s=60.0)
+    build, _ = _build_split(corpus, document(interval), max_s=60.0)
     assert [c.translation for c in build.cues] == [("Et nul n'est",), ("égal à Lui.",)]
 
 
@@ -261,6 +267,8 @@ def test_meme_decoupe_que_l_atelier(case: dict[str, Any]) -> None:
         spans = [(a, b) for a, b in case["segments"]] if case["segments"] else []
         aligned = align_to_segments(chunks, spans, case["first_word"], len(case["words"]))
         assert [list(c) for c in aligned] == case["aligned"]
+    if case.get("by_default") == "whole":  # ADR-0031 : sans option explicite, jamais de coupe
+        assert ExportOptions().pause_split is False and parse_options({}).pause_split is False
 
 
 # --- propriétés (hypothesis) -------------------------------------------------------------------
@@ -310,7 +318,7 @@ def _paused_interval(corpus, ref="112:4", **kw):
 @needs_corpus
 def test_le_karaoke_de_chaque_morceau_ne_porte_que_ses_mots(corpus):
     n, _, interval = _paused_interval(corpus)
-    build, _ = _build(corpus, document(interval), content="ar", max_s=60.0, karaoke=True)
+    build, _ = _build_split(corpus, document(interval), content="ar", max_s=60.0, karaoke=True)
     first, second = build.cues
     assert " ".join(w.text for w in first.words) == first.arabic
     assert " ".join(w.text for w in second.words) == second.arabic
@@ -321,7 +329,7 @@ def test_le_karaoke_de_chaque_morceau_ne_porte_que_ses_mots(corpus):
 @needs_corpus
 def test_le_decalage_garde_l_ordre_des_morceaux(corpus):
     _, _, interval = _paused_interval(corpus)
-    build, _ = _build(corpus, document(interval), content="ar", max_s=60.0, offset_ms=-300)
+    build, _ = _build_split(corpus, document(interval), content="ar", max_s=60.0, offset_ms=-300)
     first, second = build.cues
     assert first.start_s == 0.0 and first.end_s <= second.start_s + 1e-9
 
@@ -331,7 +339,7 @@ def test_une_repetition_fusionnee_perd_ses_temps_donc_aucune_pause(corpus):
     _, times, interval = _paused_interval(corpus)
     again = {**interval, "repetition": True, "t": [times[-1][1], times[-1][1] + 6.0]}
     again["word_times"] = [[a + times[-1][1], b + times[-1][1]] for a, b in times]
-    build, _ = _build(
+    build, _ = _build_split(
         corpus, document(interval, again), content="ar", max_s=60.0, repetitions="merge"
     )
     assert len(build.cues) == 1  # un seul sous-titre, de la première à la dernière lecture
@@ -340,7 +348,7 @@ def test_une_repetition_fusionnee_perd_ses_temps_donc_aucune_pause(corpus):
 @needs_corpus
 def test_le_verset_garde_sa_reference_sur_le_premier_morceau_seulement(corpus):
     _, _, interval = _paused_interval(corpus)
-    build, _ = _build(corpus, document(interval), content="ar", max_s=60.0, show_ref=True)
+    build, _ = _build_split(corpus, document(interval), content="ar", max_s=60.0, show_ref=True)
     first, second = build.cues
     assert first.reference == "112:4" and second.reference is None
 
@@ -363,7 +371,7 @@ def test_sans_tranches_exactes_le_verset_reste_entier_avec_toute_sa_traduction(c
     text = "Et nul n'est égal à Lui."
     translation = {"text": text, "translation_id": "french_hameedullah", "scope": "verse"}
     _, interval = _long_verse(corpus, "112:4", [1], translation)
-    build, _ = _build(corpus, document(interval), max_s=60.0)
+    build, _ = _build_split(corpus, document(interval), max_s=60.0)
     assert len(build.cues) == 1 and build.split == 0
     assert build.cues[0].translation == (text,)
 
@@ -385,7 +393,7 @@ def test_un_verset_long_a_sept_pauses_ne_laisse_aucun_morceau_sans_traduction(co
         "segments": segments,
     }
     _, interval = _long_verse(corpus, ref, pauses, translation)
-    build, _ = _build(corpus, document(interval), max_s=60.0)
+    build, _ = _build_split(corpus, document(interval), max_s=60.0)
     assert len(build.cues) == 4
     assert all(c.translation for c in build.cues)
     assert [c.translation[0] for c in build.cues] == [s["text"] for s in segments]
@@ -394,5 +402,47 @@ def test_un_verset_long_a_sept_pauses_ne_laisse_aucun_morceau_sans_traduction(co
 @needs_corpus
 def test_la_traduction_desactivee_garde_les_coupes_de_l_arabe(corpus):
     _, interval = _long_verse(corpus, "2:282", [4, 12])
-    build, _ = _build(corpus, document(interval), content="ar", max_s=60.0)
+    build, _ = _build_split(corpus, document(interval), content="ar", max_s=60.0)
     assert len(build.cues) >= 3  # les deux pauses coupent, traduction désactivée ou non
+
+
+# --- ADR-0031 : par défaut, un verset = un cue, entier -------------------------------------------
+
+
+@needs_corpus
+def test_par_defaut_un_verset_long_reste_un_seul_cue_entier_avec_toute_sa_traduction(corpus):
+    ref = "2:282"
+    n = len(corpus.words(VerseRef.parse(ref)))
+    segments = [
+        {"words": [a + 1, b], "text": f"tranche {k}"}
+        for k, (a, b) in enumerate(pairwise([0, 3, 9, 15, n]))
+    ]
+    text = " ".join(s["text"] for s in segments)
+    translation = {
+        "text": text,
+        "translation_id": "french_hameedullah",
+        "scope": "verse",
+        "segments": segments,
+    }
+    _, interval = _long_verse(corpus, ref, [2, 5, 8, 11, 14, 17], translation)
+    build, view = _build(corpus, document(interval))  # options par défaut : max_s = 7 s
+    assert len(build.cues) == 1 and build.split == 0
+    (entry,) = view.entries
+    assert build.cues[0].arabic == " ".join(entry.arabic_words)  # arabe entier (I1)
+    assert build.cues[0].translation == (text,)  # traduction entière (I2)
+    assert (build.cues[0].start_s, build.cues[0].end_s) == (interval["t"][0], interval["t"][1])
+
+
+@needs_corpus
+def test_par_defaut_le_plafond_max_s_ne_coupe_pas_non_plus_l_arabe_seul(corpus):
+    _, interval = _long_verse(corpus, "2:282", [])  # 24 mots d'une seconde : bien au-delà de 7 s
+    build, _ = _build(corpus, document(interval), content="ar")
+    assert len(build.cues) == 1
+
+
+@needs_corpus
+def test_par_defaut_le_karaoke_porte_tous_les_mots_du_verset_entier(corpus):
+    n, interval = _long_verse(corpus, "2:282", [3, 9])
+    build, _ = _build(corpus, document(interval), content="ar", karaoke=True)
+    (cue,) = build.cues
+    assert len(cue.words) == n

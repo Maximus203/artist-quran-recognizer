@@ -34,9 +34,11 @@ class ExportOptions:
     repetitions: str = "keep"
     min_s: float = 1.0
     max_s: float = 7.0
-    pause_split: bool = True
-    """Coupe un verset là où le récitant s'arrête (temps mesurés) et, au plafond `max_s`, de
-    préférence à un signe d'arrêt du Mushaf."""
+    pause_split: bool = False
+    """Découpage d'un verset en plusieurs sous-titres, DÉSACTIVÉ par défaut (ADR-0031) : un verset
+    est un seul sous-titre, arabe et traduction entiers, quelle que soit sa durée (`max_s` ne le
+    coupe pas). Activé (option explicite), il coupe là où le récitant s'arrête (temps mesurés) et,
+    au plafond `max_s`, de préférence à un signe d'arrêt du Mushaf."""
     pause_s: float = 0.9
     """Silence (trou, ou allongement d'un mot au-delà de son débit) d'où part une coupe."""
     line_chars: int = 42

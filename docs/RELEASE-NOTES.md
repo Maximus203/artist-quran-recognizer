@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-21 — Un verset = une carte entière
+Étiquettes : utilisateur, technique, décision
+PR : #235
+
+**Ce qui change.** Dans l'export, un verset reste désormais sur une seule carte de sous-titre : il n'est plus découpé aux pauses de récitation par défaut (le réglage de découpe reste disponible, désactivé au départ).
+
+**Pourquoi / décision.** Une carte par verset est plus lisible et évite de couper une phrase en plein sens. Voir ADR-0031 (`docs/adr/0031-un-verset-un-cue-sans-decoupe.md`) ; elle nuance les ADR-0025 et ADR-0029.
+
 ## 2026-11-17 — Page Téléchargements et file d'attente des exports
 Étiquettes : utilisateur, technique, décision
 PR : #233

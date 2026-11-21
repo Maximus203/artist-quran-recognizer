@@ -1,4 +1,8 @@
 /**
+ * ADR-0031 : DÉSACTIVÉE par défaut (`DEFAULT_SPLIT.enabled === false`). Un verset est une seule carte,
+ * arabe et traduction entiers, tout son intervalle. Ce module ne sert que si l'option est explicitement
+ * activée.
+ *
  * Découpe d'un verset en plusieurs cartes de la vidéo d'export : là où le récitant s'arrête, et
  * pas au-delà de `maxS` d'affichage. Fonctions pures, sans canvas ni React. C'est la même règle que
  * le moteur Python des sous-titres (`src/aqr/export/cues.py`) ; les deux lisent les mêmes cas
@@ -18,6 +22,7 @@ import { layoutArabicWords, validateWordTimes } from "./live-highlight";
 import type { Interval } from "./recognition";
 
 export type SplitOptions = {
+  /** Faux par défaut (ADR-0031) : un verset = une carte entière ; la coupe n'existe que derrière cette option. */
   enabled: boolean;
   /** Durée d'affichage maximale d'une carte (s) ; un mot seul peut la dépasser. */
   maxS: number;
@@ -28,7 +33,7 @@ export type SplitOptions = {
 };
 
 export const DEFAULT_SPLIT: SplitOptions = {
-  enabled: true,
+  enabled: false,
   maxS: 7,
   minS: 1,
   pauseS: 0.9,
