@@ -13,7 +13,8 @@
 ### V.2 — [WEB] Vidéo : verset entier avec traduction entière
 **Action** : ouvrir l'éditeur vidéo (16:9 puis 9:16) sur 2:282 et lancer l'export MP4.
 **Attendu** : à plusieurs instants, arabe complet + traduction complète + mot courant surligné ; rien ne déborde du cadre.
-**Verdict** : voir le rapport de la PR (images ffmpeg du MP4).
+**Observé** : export serveur réel de 2:282 (128 mots, traduction de 1331 caractères) : MP4 1920×1080 (34 s de rendu) et 1080×1920 (30 s), 102 s ; images ffmpeg à 30, 60 et 90 s : arabe entier, traduction entière, mot courant surligné, rien ne déborde.
+**Verdict** : ✅ (16:9 et 9:16).
 
 ### V.3 — [WEB] Cas partagé Python / TypeScript
 **Action** : `pytest tests/unit/test_export_pauses.py` et `vitest lib/export-video-split.test.ts`.
