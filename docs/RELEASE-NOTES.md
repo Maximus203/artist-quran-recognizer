@@ -9,6 +9,14 @@ Format STRICT (une page de l'atelier l'affiche en chronologie ; scripts/check_do
 Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur,technique --pr 69
 -->
 
+## 2026-11-21 — Navigation identique du téléphone au bureau
+Étiquettes : utilisateur, technique, décision
+PR : #237
+
+**Ce qui change.** Sur téléphone, le menu du compte offre maintenant toutes les pages de la barre du haut, pour le rôle connecté : Téléchargements (absent jusqu'ici), et pour l'administrateur Moteur, Comptes et Invitations (il n'avait que Moteur). Le tiroir de gauche ne propose plus Performance au récitateur. De 768 à 1023 px, la barre complète de l'administrateur débordait de la fenêtre (logo et premier onglet coupés) : elle n'apparaît plus qu'à partir de 1024 px, les mêmes pages restent dans le menu du compte en dessous. Toutes les commandes de l'en-tête et du menu font au moins 44 px, le menu défile sur écran bas, et la page Compte ne déborde plus à 320 px.
+
+**Pourquoi / décision.** Trois listes de pages (barre, menu du compte, tiroir) avaient divergé. Elles dérivent désormais d'une seule (`web/app/atelier/nav-entries.ts`), avec un test de parité par rôle et une garde navigateur (`npm run check:nav`, 360 à 1440 px). Mesures dans un navigateur réel : avant, 3 pages absentes du téléphone pour l'administrateur, 1 pour le testeur et le récitateur, débordement à 768 px ; après, aucune page absente, aucun débordement, et la garde `check:layout` passe de 48 mesures en échec à 0. ADR-0032.
+
 ## 2026-11-17 — Page Téléchargements et file d'attente des exports
 Étiquettes : utilisateur, technique, décision
 PR : #233
