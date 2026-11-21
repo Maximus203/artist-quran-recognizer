@@ -248,7 +248,7 @@ def test_un_long_verset_est_coupe_aux_temps_mesures(corpus):
     n = len(corpus.words(VerseRef.parse(ref)))
     times = [(10.0 + i * 3.0, 13.0 + i * 3.0) for i in range(n)]  # 3 s par mot
     interval = verse(ref, (1, n), (10.0, 13.0 + (n - 1) * 3.0), word_times=times)
-    view, ctx = view_of(corpus, document(interval), content="ar", max_s=7.0)
+    view, ctx = view_of(corpus, document(interval), content="ar", max_s=7.0, pause_split=True)
     build = build_cues(view.entries, ctx)
     assert len(build.cues) > 1 and build.split == 1
     assert all(c.end_s - c.start_s <= 7.0 + 3.0 for c in build.cues)  # un mot seul peut dépasser
@@ -260,7 +260,7 @@ def test_un_long_verset_est_coupe_aux_temps_mesures(corpus):
 
 def test_la_coupe_sans_temps_mesures_est_proportionnelle_et_le_dit(corpus):
     interval = verse("2:255", (1, 50), (0.0, 40.0))
-    view, ctx = view_of(corpus, document(interval), content="ar", max_s=10.0)
+    view, ctx = view_of(corpus, document(interval), content="ar", max_s=10.0, pause_split=True)
     build = build_cues(view.entries, ctx)
     assert len(build.cues) >= 4
     assert any("estimés" in w for w in build.warnings)
@@ -280,7 +280,7 @@ def test_la_traduction_suit_les_tranches_de_quranenc(corpus):
     }
     times = [(float(i * 4), float(i * 4 + 4)) for i in range(n)]
     interval = verse(ref, (1, n), (0.0, 4.0 * n), translation=translation, word_times=times)
-    view, ctx = view_of(corpus, document(interval), max_s=8.0)
+    view, ctx = view_of(corpus, document(interval), max_s=8.0, pause_split=True)
     cues = build_cues(view.entries, ctx).cues
     parts = [" ".join(c.translation) for c in cues if c.translation]
     assert (

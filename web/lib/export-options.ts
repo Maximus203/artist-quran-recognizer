@@ -106,14 +106,32 @@ export function resolveExportOptions(input: unknown): ExportOptions {
  * Ce qui se mémorise sur le compte. Jamais le forçage ni la politique : forcer est un choix à refaire
  * à chaque export, en connaissance de cause.
  */
-export const storedExportOptionsSchema = exportOptionsSchema
-  .omit({
-    allow_unresolved: true,
-    policy: true,
-    pause_split: true,
-    pause_s: true,
-  })
-  .required();
+/**
+ * ADR-0031 : la coupe d'un verset est désactivée. Une ancienne ligne mémorisée qui porterait encore
+ * `pause_split` / `pause_s` est lue sans ces deux clés (le reste des réglages survit) : un ancien
+ * « coupe activée » ne peut pas ressusciter la coupe.
+ */
+function withoutLegacySplit(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const {
+    pause_split: _split,
+    pause_s: _pause,
+    ...kept
+  } = raw as Record<string, unknown>;
+  return kept;
+}
+
+export const storedExportOptionsSchema = z.preprocess(
+  withoutLegacySplit,
+  exportOptionsSchema
+    .omit({
+      allow_unresolved: true,
+      policy: true,
+      pause_split: true,
+      pause_s: true,
+    })
+    .required(),
+);
 export type StoredExportOptions = z.infer<typeof storedExportOptionsSchema>;
 
 export function toStoredExportOptions(
@@ -133,7 +151,10 @@ export function toStoredExportOptions(
 export function fromStoredExportOptions(
   stored: StoredExportOptions,
 ): ExportOptions {
-  const options = { ...DEFAULT_EXPORT_OPTIONS, ...stored };
+  const options = {
+    ...DEFAULT_EXPORT_OPTIONS,
+    ...(withoutLegacySplit(stored) as StoredExportOptions),
+  };
   if (options.max_s < options.min_s) return { ...DEFAULT_EXPORT_OPTIONS };
   return { ...options, allow_unresolved: false, policy: "omit" };
 }

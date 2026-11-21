@@ -3,7 +3,11 @@
 - Statut : **accepté** — demande du mainteneur du 2026-11-04 (la vidéo exportée ne doit pas poser un long verset d'un bloc).
   Respecte I1 (l'arabe n'est que découpé aux frontières de mots) et I2 (la traduction n'est que découpée, jamais réécrite).
 
-> Amendé par l'ADR-0029 (2026-11-17) : seuils plus conservateurs ; la traduction n'est plus coupée au prorata, la coupe n'a lieu qu'à la fin
+> **Amendé par l'ADR-0031 (2026-11-21) : plus aucune coupe par défaut** — un verset = une carte / un sous-titre, entier, avec sa
+> traduction entière et le surlignage mot à mot ; la coupe décrite ici reste dans le code derrière une option désactivée par défaut
+> (mesure réelle du mainteneur : le découpage des versets reste défaillant).
+
+> Amendé par l'ADR-0029 (2026-11-17, remplacé depuis par l'ADR-0031) : seuils plus conservateurs ; la traduction n'est plus coupée au prorata, la coupe n'a lieu qu'à la fin
 > d'une tranche exacte de QuranEnc, sinon le verset reste entier.
 
 ## Contexte

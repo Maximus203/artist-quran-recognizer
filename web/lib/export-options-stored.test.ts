@@ -42,6 +42,32 @@ describe("réglages d'export mémorisés sur le compte", () => {
     ).toEqual(DEFAULT_EXPORT_OPTIONS);
   });
 
+  it("un ancien réglage « coupe aux pauses activée » est neutralisé, il ne ressuscite pas la coupe (ADR-0031)", () => {
+    const legacy = {
+      ...PREFERENCE_DEFAULTS.exportOptions,
+      content: "ar",
+      pause_split: true,
+      pause_s: 1.5,
+    };
+    const parsed = storedExportOptionsSchema.safeParse(legacy);
+    expect(parsed.success).toBe(true); // la ligne n'est pas rejetée : les autres réglages survivent
+    if (!parsed.success) return;
+    expect(parsed.data).toMatchObject({ content: "ar" });
+    expect(parsed.data).not.toHaveProperty("pause_split");
+    expect(parsed.data).not.toHaveProperty("pause_s");
+    // Même une valeur brute, lue sans passer par le schéma, ne rallume pas la coupe.
+    const restored = fromStoredExportOptions(
+      legacy as unknown as Parameters<typeof fromStoredExportOptions>[0],
+    );
+    expect(restored.content).toBe("ar");
+    expect(restored).not.toHaveProperty("pause_split");
+    expect(restored).not.toHaveProperty("pause_s");
+    // Les préférences du compte, lues comme écrites, acceptent aussi l'ancienne ligne.
+    expect(
+      preferencesPatchSchema.safeParse({ exportOptions: legacy }).success,
+    ).toBe(true);
+  });
+
   it("refuse une valeur hors liste dans les préférences du compte", () => {
     expect(
       preferencesPatchSchema.safeParse({

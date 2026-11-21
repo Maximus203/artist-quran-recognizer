@@ -57,9 +57,9 @@ Un passage **ignoré** suit la même politique mais sort du compteur. Le résum�
 
 `format` srt · `content` ar_fr · `formulas` [basmala] (basmala = verset 1:1 du corpus ; les autres formules
 sont des libellés arabes entre crochets, exportés seulement avec l'arabe) · `repetitions` keep|merge ·
-`min_s` 1,0 · `pause_split` vrai · `pause_s` 0,6 (un verset est coupé là où le récitant s'arrête, d'après les temps mesurés : un mot anormalement long ; ADR-0025) · `max_s` 7,0 (un verset plus long est coupé aux temps mesurés des mots, sinon au prorata des
-mots avec un avertissement ; la traduction suit les tranches `segments` de QuranEnc, sinon une coupe
-proportionnelle) · `line_chars` 42 · `offset_ms` 0 · `rtl` vrai (U+202B…U+202C autour de l'arabe, SRT et WebVTT)
+`min_s` 1,0 · `pause_split` faux (ADR-0031 : un verset est UN sous-titre, arabe et traduction entiers ; activé, il serait coupé là où le
+récitant s'arrête, d'après les temps mesurés, ADR-0025) · `pause_s` 0,9 (seuil de pause, seulement avec `pause_split`) · `max_s` 7,0
+(plafond de durée d'un sous-titre de verset coupé, seulement avec `pause_split` : il ne coupe plus un verset par défaut) · `line_chars` 42 · `offset_ms` 0 · `rtl` vrai (U+202B…U+202C autour de l'arabe, SRT et WebVTT)
 · `strip_notes` faux (retire les renvois `[1]` : écart assumé à I2) · `show_ref` faux · `bom` faux ·
 `karaoke` vrai (ASS, seulement avec des temps de mots mesurés) · `font` Amiri Quran | Scheherazade New | Noto
 Naskh Arabic (OFL ; KFGQPC n'est jamais proposée) · `policy` omit · `allow_unresolved` faux.

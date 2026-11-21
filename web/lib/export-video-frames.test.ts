@@ -93,6 +93,7 @@ describe("frameCards", () => {
     } as Partial<Interval>);
     const cards = frameCards([paused], false, true, {
       ...DEFAULT_SPLIT,
+      enabled: true,
       maxS: 60,
       pauseS: 1,
     });
@@ -113,20 +114,20 @@ describe("frameCards", () => {
     expect(activeCardAt(cards, 18)?.card.part).toEqual([2, 2]);
   });
 
-  it("désactivée, la coupe laisse une carte par verset comme avant", () => {
+  it("par défaut (ADR-0031), aucune coupe : une carte par verset, même long et sans traduction", () => {
     const long = verse({
       t: [10, 40],
       word_times: undefined,
       translation: null,
     });
-    expect(frameCards([long], true)).toHaveLength(4); // 4 mots, 30 s : le plafond de 7 s coupe à chaque mot
-    // Avec une traduction sans tranches exactes, le verset reste entier (ADR-0027).
+    expect(frameCards([long], true)).toHaveLength(1);
     expect(
       frameCards([verse({ t: [10, 40], word_times: undefined })], true),
     ).toHaveLength(1);
+    // La coupe reste possible, derrière une option explicite : le plafond de 7 s coupe à chaque mot.
     expect(
-      frameCards([long], true, true, { ...DEFAULT_SPLIT, enabled: false }),
-    ).toHaveLength(1);
+      frameCards([long], true, true, { ...DEFAULT_SPLIT, enabled: true }),
+    ).toHaveLength(4);
   });
 });
 
