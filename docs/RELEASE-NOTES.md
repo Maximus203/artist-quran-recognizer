@@ -11,11 +11,11 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-21 — Un verset = une carte entière
 Étiquettes : utilisateur, technique, décision
-PR : #235
+PR : #236
 
-**Ce qui change.** Dans l'export, un verset reste désormais sur une seule carte de sous-titre : il n'est plus découpé aux pauses de récitation par défaut (le réglage de découpe reste disponible, désactivé au départ).
+**Ce qui change.** Dans l'export, un verset reste sur une seule carte (vidéo) ou un seul sous-titre (SRT, WebVTT, ASS), quelle que soit sa durée : arabe entier, traduction entière, mots récités surlignés un à un. Le plafond de durée ne coupe plus non plus un verset. Vérifié sur un export vidéo réel de 2:282 (128 mots) en 16:9 : texte et traduction entiers dans le cadre, surlignage du mot courant. Les anciens réglages mémorisés « coupe activée » sont neutralisés.
 
-**Pourquoi / décision.** Une carte par verset est plus lisible et évite de couper une phrase en plein sens. Voir ADR-0031 (`docs/adr/0031-un-verset-un-cue-sans-decoupe.md`) ; elle nuance les ADR-0025 et ADR-0029.
+**Pourquoi / décision.** Mesure réelle du mainteneur le 2026-11-21 : le découpage des versets (même avec les tranches exactes de l'ADR-0029) reste défaillant ; la précision prime sur le rappel (I3). La coupe reste dans le code derrière une option désactivée par défaut. ADR-0031 : remplace l'ADR-0029, amende l'ADR-0025.
 
 ## 2026-11-17 — Page Téléchargements et file d'attente des exports
 Étiquettes : utilisateur, technique, décision
