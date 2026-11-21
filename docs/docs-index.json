@@ -483,11 +483,18 @@
     "summary": "Accepté le 2026-11-17 : la page Fichiers devient Téléchargements et réunit les vidéos prêtes et les exports en file (en attente, en cours, échoués), regroupés par récitation. Pas de nouvelle file : celle des analyses, plafond d'attente commun. Visibilité appliquée côté serveur (propriétaire, publique, administrateur). Liste de la file en mémoire : limite connue."
   },
   {
+    "slug": "adr-0031-un-verset-un-cue-sans-decoupe",
+    "title": "ADR-0031 — Un verset = une carte, entière : plus aucune coupe dans l'export",
+    "section": "Décisions",
+    "file": "docs/adr/0031-un-verset-un-cue-sans-decoupe.md",
+    "summary": "Accepté le 2026-11-21, remplace l'ADR-0029 et amende l'ADR-0025 : mesure réelle du mainteneur, le découpage des versets reste défaillant. Par défaut un verset est une seule carte (vidéo) ou un seul sous-titre, arabe et traduction entiers avec surlignage mot à mot ; le plafond max_s ne coupe plus. Le code de coupe reste derrière une option désactivée ; un ancien réglage « coupe activée » mémorisé est neutralisé."
+  },
+  {
     "slug": "adr-0029-coupe-de-verset-traduction-exacte",
     "title": "ADR-0029 — Un verset n'est coupé que là où la traduction se coupe exactement",
     "section": "Décisions",
     "file": "docs/adr/0029-coupe-de-verset-traduction-exacte.md",
-    "summary": "Accepté le 2026-11-17, amende l'ADR-0025 : seuil de coupe plus conservateur (pause 0,9 s, carte 2 s), coupe seulement à la fin d'une tranche exacte de QuranEnc, sinon verset entier avec toute sa traduction et surlignage mot à mot. Plus de coupe au prorata, aucune carte sans traduction. Mêmes cas partagés en Python et TypeScript."
+    "summary": "Remplacé par l'ADR-0031 (2026-11-21). Accepté le 2026-11-17, amende l'ADR-0025 : seuil de coupe plus conservateur (pause 0,9 s, carte 2 s), coupe seulement à la fin d'une tranche exacte de QuranEnc, sinon verset entier avec toute sa traduction et surlignage mot à mot. Plus de coupe au prorata, aucune carte sans traduction. Mêmes cas partagés en Python et TypeScript."
   },
   {
     "slug": "adr-0028-reglages-d-export-par-video",

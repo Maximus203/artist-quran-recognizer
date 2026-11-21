@@ -1,11 +1,14 @@
-"""De la vue fusionnée aux sous-titres : découpe d'un long verset, durées, décalage, karaoké.
+"""De la vue fusionnée aux sous-titres : durées, décalage, karaoké, découpe (désactivée).
 
-Un verset plus long que la durée maximale est coupé aux frontières de mots : aux temps mesurés
-quand le moteur les a (alignement forcé), sinon au prorata de la longueur des mots (et l'aperçu le
-dit). La traduction suit l'arabe exactement ou pas du tout (ADR-0027) : on ne coupe que là où une
-tranche `segments` de QuranEnc (jamais réécrite) finit ; sans tranches exactes, le verset reste
-entier avec toute sa traduction. Rien n'est inventé : chaque ligne est un morceau du texte du
-corpus ou de la traduction.
+Par défaut un verset est UN sous-titre, arabe et traduction entiers (ADR-0031, qui remplace
+l'ADR-0029) ; la découpe ci-dessous n'existe que derrière `pause_split`, désactivé par défaut.
+
+Avec `pause_split`, un verset plus long que la durée maximale est coupé aux frontières de mots :
+aux temps mesurés quand le moteur les a (alignement forcé), sinon au prorata de la longueur des mots
+(et l'aperçu le dit). La traduction suit l'arabe exactement ou pas du tout (ADR-0027) : on ne
+coupe que là où une tranche `segments` de QuranEnc (jamais réécrite) finit ; sans tranches
+exactes, le verset reste entier avec toute sa traduction. Rien n'est inventé : chaque ligne est
+un morceau du texte du corpus ou de la traduction.
 """
 
 from __future__ import annotations
@@ -291,9 +294,13 @@ def _cues_for(entry: Entry, ctx: Context) -> list[Cue]:
         else frozenset()
     )
     stops = sign_stops(entry.arabic_words) if split_on_pauses else frozenset()
-    ranges = _chunks(
-        times, entry.start_s, options.max_s, max(options.min_s, MIN_CARD_S), pauses, stops
-    )
+    if entry.kind == "verse" and not options.pause_split:
+        # ADR-0031 : un verset = un cue, entier ; ni les pauses ni le plafond `max_s` ne le coupent.
+        ranges = [(0, len(times))] if times else []
+    else:
+        ranges = _chunks(
+            times, entry.start_s, options.max_s, max(options.min_s, MIN_CARD_S), pauses, stops
+        )
     pieces: list[str] = []
     if options.with_translation:
         ranges, pieces = _split_translation(entry, ranges, ctx)

@@ -17,6 +17,14 @@ PR : #237
 
 **Pourquoi / décision.** Trois listes de pages (barre, menu du compte, tiroir) avaient divergé. Elles dérivent désormais d'une seule (`web/app/atelier/nav-entries.ts`), avec un test de parité par rôle et une garde navigateur (`npm run check:nav`, 360 à 1440 px). Mesures dans un navigateur réel : avant, 3 pages absentes du téléphone pour l'administrateur, 1 pour le testeur et le récitateur, débordement à 768 px ; après, aucune page absente, aucun débordement, et la garde `check:layout` passe de 48 mesures en échec à 0. ADR-0032.
 
+## 2026-11-21 — Un verset = une carte entière
+Étiquettes : utilisateur, technique, décision
+PR : #236
+
+**Ce qui change.** Dans l'export, un verset reste sur une seule carte (vidéo) ou un seul sous-titre (SRT, WebVTT, ASS), quelle que soit sa durée : arabe entier, traduction entière, mots récités surlignés un à un. Le plafond de durée ne coupe plus non plus un verset. Vérifié sur un export vidéo réel de 2:282 (128 mots) en 16:9 : texte et traduction entiers dans le cadre, surlignage du mot courant. Les anciens réglages mémorisés « coupe activée » sont neutralisés.
+
+**Pourquoi / décision.** Mesure réelle du mainteneur le 2026-11-21 : le découpage des versets (même avec les tranches exactes de l'ADR-0029) reste défaillant ; la précision prime sur le rappel (I3). La coupe reste dans le code derrière une option désactivée par défaut. ADR-0031 : remplace l'ADR-0029, amende l'ADR-0025.
+
 ## 2026-11-17 — Page Téléchargements et file d'attente des exports
 Étiquettes : utilisateur, technique, décision
 PR : #233
