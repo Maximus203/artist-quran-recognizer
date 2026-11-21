@@ -5,10 +5,10 @@ import { api } from "@/lib/api-client";
 import { formatBytesFr } from "@/lib/format";
 import { storageState } from "@/lib/storage-meter";
 import { Avatar } from "./avatar";
-import { pageVisibleTo, type PageId } from "@/lib/role-view";
 import type { Role } from "@/lib/users";
 import type { NavId } from "./header";
-import { Icon, type IconName } from "./icons";
+import { Icon } from "./icons";
+import { SheetNav } from "./sheet-nav";
 import { useShell } from "./shell";
 
 const THEMES = [
@@ -16,20 +16,6 @@ const THEMES = [
   { id: "dark", label: "Sombre" },
   { id: "system", label: "Système" },
 ] as const;
-
-const GO_TO: { id: PageId; href: string; label: string; icon: IconName }[] = [
-  { id: "revue", href: "/", label: "Lecture", icon: "wave" },
-  { id: "sessions", href: "/sessions", label: "Récitations", icon: "list" },
-  {
-    id: "playlists",
-    href: "/playlists",
-    label: "Playlists",
-    icon: "playlist",
-  },
-  { id: "perf", href: "/performance", label: "Performance", icon: "gauge" },
-  { id: "live", href: "/direct", label: "En direct", icon: "live" },
-  { id: "docs", href: "/docs", label: "Documentation", icon: "book" },
-];
 
 const ROLE_LABEL: Record<Role, string> = {
   user: "Testeur",
@@ -40,9 +26,14 @@ const ROLE_LABEL: Record<Role, string> = {
 const MENU_ITEMS = '[role="menuitem"], .menu-theme button, .menu-quota a';
 
 /** Menu du compte : préférences, statistiques, thème, espace utilisé, déconnexion. */
-export function AccountMenu({ active }: { active: NavId }) {
+export function AccountMenu({
+  active,
+  activeAdmin,
+}: {
+  active: NavId;
+  activeAdmin?: string;
+}) {
   const { user, prefs, update, quota } = useShell();
-  const pages = GO_TO.filter((item) => pageVisibleTo(user.role, item.id));
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -136,23 +127,12 @@ export function AccountMenu({ active }: { active: NavId }) {
                 </small>
               </div>
             </div>
-            <div className="menu-only-sm">
-              <div className="menu-sep" />
-              <p className="eyebrow menu-label">Aller à</p>
-              {pages.map((item) => (
-                <Link
-                  key={item.id}
-                  role="menuitem"
-                  className="menu-item"
-                  href={item.href}
-                  aria-current={active === item.id ? "page" : undefined}
-                  onClick={() => close(false)}
-                >
-                  <Icon name={item.icon} />
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+            <SheetNav
+              role={user.role}
+              active={active}
+              activeAdmin={activeAdmin}
+              onNavigate={() => close(false)}
+            />
             <div className="menu-sep" />
             <Link
               role="menuitem"
@@ -174,18 +154,6 @@ export function AccountMenu({ active }: { active: NavId }) {
               <Icon name="chart" />
               Mes statistiques
             </Link>
-            {user.role === "admin" ? (
-              <Link
-                role="menuitem"
-                className="menu-item"
-                href="/gestion/moteur"
-                data-testid="menu-admin"
-                onClick={() => close(false)}
-              >
-                <Icon name="shield" />
-                Administration
-              </Link>
-            ) : null}
             <p className="eyebrow menu-label" id={`${menuId}-theme`}>
               Thème
             </p>

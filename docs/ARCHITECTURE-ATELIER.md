@@ -33,6 +33,7 @@ disque de la machine, dans un dossier hors Git ; aucune base de données, aucun 
 | Zone | Fichiers | Rôle |
 |---|---|---|
 | Pages | `web/app/(app)/*`, `app/login`, `app/register`, `review-app.tsx`, `app/atelier/*` | L'atelier (`/` : barre du haut, panneau Sessions à gauche, console au centre, revue humaine à droite) et les pages Sessions, Performance, Documentation, Compte, plus connexion et inscription. Un composant par zone. |
+| Navigation | `web/app/atelier/nav-entries.ts`, `header.tsx`, `sheet-nav.tsx`, `account-menu.tsx`, `admin-frame.tsx` | Source unique des pages par rôle (`navTree`) : la barre du haut (dès 1024 px), le menu du compte sur téléphone et tablette (`SheetNav`), le tiroir de gauche (`DrawerNav`) et les onglets d'administration en dérivent (ADR-0032). Cibles tactiles de 44 px ; garde navigateur : `web/e2e/nav-parity.mjs`. |
 | Routes API | `web/app/api/**/route.ts` | Voir §4. Les routes de données exigent un accès local autorisé (§9). |
 | File d'attente | `web/lib/queue.ts` | File FIFO pure (sans disque ni processus). |
 | Lancement | `web/lib/jobs.ts`, `python.ts` | Démarre le processus du moteur, consigne l'issue, annule, reprend après redémarrage. |

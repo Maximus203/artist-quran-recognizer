@@ -15,7 +15,8 @@
     "check:layout": "node e2e/layout-overflow.mjs",
     "test": "vitest run",
     "format:check": "prettier --check app lib e2e next.config.ts tsconfig.json package.json",
-    "format": "prettier --write app lib e2e next.config.ts tsconfig.json package.json"
+    "format": "prettier --write app lib e2e next.config.ts tsconfig.json package.json",
+    "check:nav": "node e2e/nav-parity.mjs"
   },
   "dependencies": {
     "gsap": "^3.13.0",

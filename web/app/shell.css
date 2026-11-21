@@ -11,7 +11,8 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 0 var(--sp-3);
+  padding: 0 max(var(--sp-3), env(safe-area-inset-right)) 0
+    max(var(--sp-3), env(safe-area-inset-left));
   background: var(--surface-1);
   border-bottom: 1px solid var(--border);
 }
@@ -19,6 +20,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: var(--hit);
+  min-width: var(--hit);
   padding: 0 var(--sp-2);
 }
 .brand svg {
@@ -39,7 +42,7 @@
   margin-left: var(--sp-4);
 }
 .nav button {
-  min-height: 36px;
+  min-height: var(--hit);
   padding: 0 var(--sp-3);
   border-radius: var(--r-sm);
   font-weight: 600;
@@ -58,7 +61,7 @@
   position: absolute;
   left: var(--sp-3);
   right: var(--sp-3);
-  bottom: -10px;
+  bottom: -6px;
   height: 2px;
   background: var(--text);
 }
@@ -94,6 +97,13 @@
   .nav a[data-testid="nav-live"] {
     display: none;
   }
+}
+/* Cibles tactiles : chaque commande de l'en-tête fait au moins 44 px (WCAG 2.5.5), « petits » boutons compris. */
+.header .btn {
+  min-height: var(--hit);
+}
+.header .btn.btn--icon {
+  width: var(--hit);
 }
 .toggle-panel {
   position: relative;
@@ -190,9 +200,6 @@
     border-width: 0;
     transition: visibility 0s linear var(--dur-3);
   }
-  .nav {
-    display: flex;
-  }
   .hide-sm {
     display: inline;
   }
@@ -245,12 +252,16 @@
     pointer-events: auto;
   }
 }
-@media (min-width: 768px) and (max-width: 1279px) {
-  .nav {
-    display: flex;
-  }
+/* La barre de pages (jusqu'à cinq entrées pour l'administrateur) n'a la place qu'à partir de 1024 px ;
+   en dessous, les mêmes pages sont dans le menu du compte (même source : nav-entries.ts). */
+@media (min-width: 768px) {
   .hide-sm {
     display: inline;
+  }
+}
+@media (min-width: 1024px) {
+  .nav {
+    display: flex;
   }
 }
 @media (max-width: 767px) {
@@ -272,9 +283,9 @@
     display: none;
   }
 }
-/* En-tête compact (< 1200 px) : tout tient sur une ligne, du plus utile au plus accessoire.
-   Plus de 1199 px : libellés complets (l'onglet « En direct » a élargi la barre). Le thème reste dans le menu du compte. */
-@media (max-width: 1199px) {
+/* En-tête compact (< 1360 px) : tout tient sur une ligne, du plus utile au plus accessoire (administrateur :
+   cinq pages, deux panneaux, des boutons de 44 px). Au-delà : libellés complets. Le thème reste dans le menu du compte. */
+@media (max-width: 1359px) {
   .brand b em,
   .hide-compact {
     display: none;
@@ -415,7 +426,7 @@
 }
 .sb-count select {
   width: auto;
-  min-height: 0;
+  min-height: var(--hit);
   padding: 2px 26px 2px var(--sp-3);
   background-position:
     calc(100% - 13px) 52%,

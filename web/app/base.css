@@ -528,8 +528,9 @@ input[type="range"]::-moz-range-thumb {
 }
 .sec-title {
   display: flex;
+  flex-wrap: wrap; /* à 320 px, le bouton (« Replier ») passe à la ligne au lieu de sortir de sa carte */
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-3);
 }
 .sec-title h2,

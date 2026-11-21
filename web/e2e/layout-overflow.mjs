@@ -121,6 +121,9 @@ try {
   const password = process.env.AQR_SMOKE_PASSWORD;
   if (user && password) {
     await page.goto(`${base}/login`, { waitUntil: "domcontentloaded" });
+    // Un envoi en moins de 2 s est pris pour un robot (honeypot) : on laisse passer le délai minimal.
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(2200);
     await page.getByLabel("Pseudonyme").fill(user);
     await page.getByLabel("Mot de passe", { exact: true }).fill(password);
     await page.getByTestId("login-submit").click();
