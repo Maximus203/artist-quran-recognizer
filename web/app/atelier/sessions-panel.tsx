@@ -6,6 +6,7 @@ import { buildRow, queueSummary, type SessionRow } from "@/lib/session-list";
 import { Avatar, useOwnerPerson } from "./avatar";
 import { Icon, SessionGlyph } from "./icons";
 import { SIDEBAR_RECENT_COUNTS } from "@/lib/preferences-schema";
+import { DrawerNav } from "./sheet-nav";
 import { useShell } from "./shell";
 import { SIDEBAR_FAVORITES, type Sidebar } from "./use-sessions";
 
@@ -127,7 +128,7 @@ export function SessionsPanel({
   onClose,
 }: Props) {
   const now = Date.now();
-  const { prefs, update } = useShell();
+  const { prefs, update, user } = useShell();
   const mineQueue = useMemo(
     () => data.queue.filter((s) => s.mine),
     [data.queue],
@@ -279,20 +280,7 @@ export function SessionsPanel({
           Voir toutes les récitations <span className="n">{total}</span>
         </Link>
       </div>
-      <nav className="panel-nav only-drawer" aria-label="Autres pages">
-        <Link href="/performance">
-          <Icon name="gauge" />
-          Performance
-        </Link>
-        <Link href="/docs">
-          <Icon name="book" />
-          Documentation
-        </Link>
-        <Link href="/compte">
-          <Icon name="sliders" />
-          Préférences
-        </Link>
-      </nav>
+      <DrawerNav role={user.role} />
     </div>
   );
 }

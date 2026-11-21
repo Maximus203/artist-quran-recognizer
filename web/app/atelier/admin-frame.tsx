@@ -1,19 +1,9 @@
 "use client";
 import Link from "next/link";
-import { Icon, type IconName } from "./icons";
+import { Icon } from "./icons";
+import { ADMIN_ITEMS } from "./nav-entries";
 
 export type AdminTab = "moteur" | "comptes" | "invitations";
-
-const TABS: { id: AdminTab; href: string; label: string; icon: IconName }[] = [
-  { id: "moteur", href: "/gestion/moteur", label: "Moteur", icon: "live" },
-  { id: "comptes", href: "/gestion/comptes", label: "Comptes", icon: "users" },
-  {
-    id: "invitations",
-    href: "/gestion/invitations",
-    label: "Invitations",
-    icon: "key",
-  },
-];
 
 /** Cadre de la zone Administration (réservée aux administrateurs) : titre, sections et contenu. */
 export function AdminFrame({
@@ -33,19 +23,19 @@ export function AdminFrame({
       </div>
       <div className="acct-layout">
         <nav className="subnav" aria-label="Sections de l’administration">
-          {TABS.map((item) => (
+          {ADMIN_ITEMS.map((item) => (
             <Link
               key={item.id}
               href={item.href}
-              data-testid={`admin-tab-${item.id}`}
-              aria-current={tab === item.id ? "page" : undefined}
+              data-testid={`admin-tab-${item.id.replace("admin-", "")}`}
+              aria-current={item.id === `admin-${tab}` ? "page" : undefined}
             >
               <Icon name={item.icon} />
               {item.label}
             </Link>
           ))}
         </nav>
-        <div style={{ display: "grid", gap: "var(--sp-5)", minWidth: 0 }}>
+        <div className="acct-main">
           {children}
         </div>
       </div>

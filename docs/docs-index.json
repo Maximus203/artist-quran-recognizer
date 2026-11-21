@@ -469,6 +469,13 @@
     "summary": "Accepté le 2026-11-06 : seules les zones arabes hors Coran sont transcrites (Whisper) puis traduites (Marian ar-fr), derrière des garde-fous qui retiennent tout passage ressemblant au Coran. Un passage retenu ne porte aucun texte ; fichier séparé aqr.free-speech/1 ; désactivé par défaut à l'export. Aucune mesure de qualité avant le banc réel."
   },
   {
+    "slug": "adr-0032-navigation-source-unique-mobile-d-abord",
+    "title": "ADR-0032 — Une seule source pour la navigation de l'atelier, pensée d'abord pour le téléphone",
+    "section": "Décisions",
+    "file": "docs/adr/0032-navigation-source-unique-mobile-d-abord.md",
+    "summary": "Accepté le 2026-11-21 : barre du haut, menu du téléphone, tiroir de gauche et onglets d'administration dérivent d'une seule liste par rôle (nav-entries.ts). Barre visible dès 1024 px, menu du compte en dessous ; cibles de 44 px ; garde navigateur de parité 360 à 1440 px. Corrige des pages absentes du téléphone et un débordement entre 768 et 1023 px."
+  },
+  {
     "slug": "adr-0030-page-telechargements-et-file-des-exports",
     "title": "ADR-0030 — Une seule page « Téléchargements » pour les exports, prêts et en file",
     "section": "Décisions",

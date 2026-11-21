@@ -18,7 +18,7 @@ a.btn {
 .nav a {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
+  min-height: var(--hit);
   padding: 0 var(--sp-3);
   border-radius: var(--r-sm);
   font-weight: 600;
@@ -43,7 +43,7 @@ a.btn {
   position: absolute;
   left: var(--sp-3);
   right: var(--sp-3);
-  bottom: -10px;
+  bottom: -6px;
   height: 2px;
   background: var(--text);
 }
@@ -185,6 +185,10 @@ a.btn {
   top: calc(100% + 8px);
   z-index: 50;
   width: 300px;
+  /* Tablette : le menu (pages + compte) peut dépasser un écran bas ; il défile au lieu de sortir de la fenêtre. */
+  max-height: calc(100dvh - var(--header-h) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   background: var(--surface-2);
   border: 1px solid var(--border-strong);
@@ -257,6 +261,10 @@ a.btn {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
+  /* Zone de toucher de 44 px sans déplacer le texte : le remplissage est compensé par la marge. */
+  display: inline-block;
+  padding: 14px 6px;
+  margin: -14px -6px;
 }
 .menu-theme {
   display: grid;
@@ -265,7 +273,7 @@ a.btn {
   padding: 6px 4px 8px;
 }
 .menu-theme button {
-  min-height: 36px;
+  min-height: var(--hit);
   border-radius: var(--r-sm);
   border: 1px solid var(--border);
   font-size: var(--fs-sm);
@@ -278,8 +286,14 @@ a.btn {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
   color: var(--accent);
 }
+/* Les pages du menu : visibles tant que la barre du haut ne les porte pas (< 1024 px). */
 .menu-only-sm {
-  display: none;
+  display: block;
+}
+@media (min-width: 1024px) {
+  .menu-only-sm {
+    display: none;
+  }
 }
 .sheet-scrim {
   position: fixed;
@@ -299,9 +313,6 @@ a.btn {
     max-height: 86dvh;
     overflow-y: auto;
     box-shadow: var(--shadow-drawer);
-  }
-  .menu-only-sm {
-    display: block;
   }
 }
 /* Bouton du compte réduit à l'avatar tant que l'en-tête manque de place (nom lisible dans le menu) */
@@ -2596,8 +2607,22 @@ body.auth-pg {
 /* ───────── Compte : préférences, statistiques, stockage ───────── */
 .acct-layout {
   display: grid;
+  /* Une colonne qui PEUT rétrécir : sans minmax(0, …), un contenu large (liste, code) élargit toute la page à 320 px. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-5);
   align-items: start;
+}
+/* Contenu d'une page de compte / d'administration : une colonne qui PEUT rétrécir (minmax(0, 1fr)), sinon
+   la plus large de ses commandes élargit toute la page (320 px : défilement horizontal). */
+.acct-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+  min-width: 0;
+}
+/* Les sections de ces pages sont elles-mêmes des grilles (style en ligne) : même règle pour leur colonne. */
+.acct-main > * {
+  grid-template-columns: minmax(0, 1fr);
 }
 @media (min-width: 900px) {
   .acct-layout {
@@ -2736,6 +2761,8 @@ body.auth-pg {
 }
 .srow2 {
   display: grid;
+  /* Une colonne qui PEUT rétrécir : sans cela, ses commandes (segments, listes) élargissent la page à 320 px. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
   border-top: 1px solid var(--border-subtle);

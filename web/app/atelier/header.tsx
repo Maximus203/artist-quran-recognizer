@@ -5,7 +5,8 @@ import { useEffectiveTheme } from "./hooks";
 import { Icon } from "./icons";
 import { AccountMenu } from "./account-menu";
 import { NavMenu } from "./nav-menu";
-import { pageVisibleTo, type PageId } from "@/lib/role-view";
+import { navTree } from "./nav-entries";
+import { pageVisibleTo } from "@/lib/role-view";
 import { useShell } from "./shell";
 
 export type NavId =
@@ -40,32 +41,6 @@ type Props = {
   activeAdmin?: string;
 };
 
-const LINKS: Record<PageId, { href: string; label: string }> = {
-  revue: { href: "/", label: "Lecture" },
-  sessions: { href: "/sessions", label: "Récitations" },
-  playlists: { href: "/playlists", label: "Playlists" },
-  downloads: { href: "/telechargements", label: "Téléchargements" },
-  perf: { href: "/performance", label: "Performance" },
-  live: { href: "/direct", label: "En direct" },
-  docs: { href: "/docs", label: "Documentation" },
-};
-
-/** Les pages qui se rangent sous « Récitations » : la liste, les playlists, puis les téléchargements. */
-const LIBRARY: PageId[] = ["sessions", "playlists", "downloads"];
-/** Le reste, à plat, dans l'ordre de la barre. */
-const FLAT_AFTER: PageId[] = ["perf", "live", "docs"];
-
-/** Administration : réservée à l'administrateur. */
-const ADMIN_ITEMS = [
-  { id: "admin-moteur", href: "/gestion/moteur", label: "Moteur" },
-  { id: "admin-comptes", href: "/gestion/comptes", label: "Comptes" },
-  {
-    id: "admin-invitations",
-    href: "/gestion/invitations",
-    label: "Invitations",
-  },
-] as const;
-
 /** Barre du haut commune à toutes les pages connectées. */
 export function Header({
   active,
@@ -77,6 +52,7 @@ export function Header({
 }: Props) {
   const { prefs, update, user } = useShell();
   const dark = useEffectiveTheme(prefs.theme) === "dark";
+  const tree = navTree(user.role);
   return (
     <header className="header">
       {left ? (
@@ -125,52 +101,39 @@ export function Header({
         </b>
       </Link>
       <nav className="nav" aria-label="Pages">
-        {pageVisibleTo(user.role, "revue") ? (
-          <Link
-            href={LINKS.revue.href}
-            data-testid="nav-revue"
-            aria-current={active === "revue" ? "page" : undefined}
-            onClick={(event) => {
-              if (onRevue) {
-                event.preventDefault();
-                onRevue();
+        {tree.map((node) =>
+          node.kind === "group" ? (
+            <NavMenu
+              key={node.id}
+              id={node.id}
+              label={node.label}
+              active={
+                node.id === "admin" && active === "admin"
+                  ? (activeAdmin ?? "admin-moteur")
+                  : active
               }
-            }}
-          >
-            {LINKS.revue.label}
-          </Link>
-        ) : null}
-        <NavMenu
-          id="library"
-          label="Récitations"
-          active={active}
-          items={LIBRARY.filter((id) => pageVisibleTo(user.role, id)).map(
-            (id) => ({ id, ...LINKS[id] }),
-          )}
-        />
-        {FLAT_AFTER.filter((id) => pageVisibleTo(user.role, id)).map((id) => (
-          <Link
-            key={id}
-            href={LINKS[id].href}
-            data-testid={`nav-${id}`}
-            aria-current={active === id ? "page" : undefined}
-          >
-            {id === "live" ? (
-              <span className="livedot" aria-hidden="true" />
-            ) : null}
-            {LINKS[id].label}
-          </Link>
-        ))}
-        {user.role === "admin" ? (
-          <NavMenu
-            id="admin"
-            label="Administration"
-            active={
-              active === "admin" ? (activeAdmin ?? "admin-moteur") : active
-            }
-            items={ADMIN_ITEMS}
-          />
-        ) : null}
+              items={node.items}
+            />
+          ) : (
+            <Link
+              key={node.id}
+              href={node.href}
+              data-testid={`nav-${node.id}`}
+              aria-current={active === node.id ? "page" : undefined}
+              onClick={(event) => {
+                if (node.id === "revue" && onRevue) {
+                  event.preventDefault();
+                  onRevue();
+                }
+              }}
+            >
+              {node.id === "live" ? (
+                <span className="livedot" aria-hidden="true" />
+              ) : null}
+              {node.label}
+            </Link>
+          ),
+        )}
       </nav>
       <span className="spacer" />
       {pageVisibleTo(user.role, "live") ? (
@@ -215,7 +178,7 @@ export function Header({
       >
         <Icon name={dark ? "sun" : "moon"} />
       </button>
-      <AccountMenu active={active} />
+      <AccountMenu active={active} activeAdmin={activeAdmin} />
       {right ? (
         <button
           ref={right.buttonRef}

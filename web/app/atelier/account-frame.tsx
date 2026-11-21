@@ -131,7 +131,7 @@ export function AccountFrame({
             </Link>
           ))}
         </nav>
-        <div style={{ display: "grid", gap: "var(--sp-5)", minWidth: 0 }}>
+        <div className="acct-main">
           {children}
         </div>
       </div>
