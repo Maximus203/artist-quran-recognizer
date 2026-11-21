@@ -11,7 +11,7 @@ Nouvelle entrée : python scripts/new_release_note.py "Titre" --tags utilisateur
 
 ## 2026-11-21 — Un verset = une carte entière
 Étiquettes : utilisateur, technique, décision
-PR : #235
+PR : #236
 
 **Ce qui change.** Dans l'export, un verset reste sur une seule carte (vidéo) ou un seul sous-titre (SRT, WebVTT, ASS), quelle que soit sa durée : arabe entier, traduction entière, mots récités surlignés un à un. Le plafond de durée ne coupe plus non plus un verset. Vérifié sur un export vidéo réel de 2:282 (128 mots) en 16:9 : texte et traduction entiers dans le cadre, surlignage du mot courant. Les anciens réglages mémorisés « coupe activée » sont neutralisés.
 
